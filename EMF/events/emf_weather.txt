@@ -1,0 +1,190 @@
+namespace = emf_weather
+
+### Handler Stuff
+### 0-99 reserved
+character_event = {
+	id = emf_weather.0
+	hide_window = yes
+	is_triggered_only = yes
+	
+	option = {
+		name = OK
+		any_independent_ruler = {
+			character_event = { id = emf_weather.1 }
+			any_realm_lord = {
+				limit = { higher_tier_than = baron }
+				character_event = { id = emf_weather.1 }
+			}
+		}
+	}
+}
+
+# Recurses through ruler provinces
+character_event = {
+	id = emf_weather.1
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		any_demesne_province = { NOT = { has_province_flag = emf_weather_check } }
+	}
+	
+	option = {
+		name = OK
+		
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { NOT = { has_province_flag = emf_weather_check } }
+			}
+			location = {
+				set_province_flag = emf_weather_check
+				# add_province_modifier = {
+					# name = religious_tension
+					# duration = 90
+				# }
+				province_event = { id = emf_weather.99 }
+			}
+			# Somewhere around here is likely where the logic will be
+			# It will decide whether the province gets a weather event
+			# And what kind of event it will be
+			# Then call the appropriate notification event to actually place the modifier
+			# owner = { character_event = { id = emf_weather.2 } }
+		}
+		
+		# Recurse
+		character_event = { id = emf_weather.1 }
+	}
+}
+
+# Handler event
+character_event = {
+	id = emf_weather.2
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		random_list = { #Advance random seed
+			50 = { if = { limit = { always = yes } } } #Fool the engine
+			50 = { }
+		}
+
+		# For testing purposes, we're going to always add a modifier
+		random_list = {
+			33 = {
+				random_demesne_title = {
+					limit = {
+						tier = count
+						location = { has_province_flag = emf_weather_check }
+					}
+					# clr_province_flag = emf_weather_check
+					location = {
+						add_province_modifier = {
+							name = thugs_rampant
+							duration = 90
+						}
+					}
+				}
+			}
+			33 = {
+				random_demesne_title = {
+					limit = {
+						tier = count
+						location = { has_province_flag = emf_weather_check }
+					}
+					# clr_province_flag = emf_weather_check
+					location = {
+						add_province_modifier = {
+							name = appeased_religious
+							duration = 90
+						}
+					}
+				}
+			}
+			33 = {
+				random_demesne_title = {
+					limit = {
+						tier = count
+						location = { has_province_flag = emf_weather_check }
+					}
+					# clr_province_flag = emf_weather_check
+					location = {
+						add_province_modifier = {
+							name = religious_tension
+							duration = 90
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	option = { name = OK }
+}
+
+### Seasons
+### All events will be simple notification = yes
+### Possible effects: Effective fort readiness on coastal provinces, trade value, tax modifiers, possibly movement speed (though the new local_speed_modifier), levy_sizes, attrition, and in particularly nasty cases increased revolt risk
+
+# Factors: Terrain type and season
+# Each terrain type will be assumed to have its normal weather pattern, so desert's unusual event is excessive rain, but not drought.
+# Dimensions of weather: Hot/Cold, Precipitation/Drought, Sun/Cloud
+# In some places: Wind (desert only?), Storms (though storms might just be a variant of other things, like rainy), River floods (can we check for river presence?)
+# Easter egg events? Plague of rats?
+# Limited to outliers, the unusually good or bad weather, so mostly nothing happens
+# Probably 1-5% chance of any given province getting an event, but most events will spread to neighboring provinces for realism's sake
+# Represented by province modifiers
+# So: Low chance per province of picking up a modifier, plus bleed over into other provinces if applicable
+# Maximum modifier length: 85 days
+# Minimum modifier length: 45 days
+# Spread notes:
+# Check for lack of emf_weather_check flag so if spread happens it's only into provinces which haven't gotten evaluated separately yet; but don't we want to spread into neighboring provinces no matter what? For realism's sake?
+# If spread does happen, flag those provinces so they won't be evaluated on their own
+# For testing purposes, initial events will add modifiers which increase revolt risk, allowing revolt risk map mode to be used to view weather spread
+
+## Winter
+## 100-199 reserved
+
+## Spring
+## 200-299 reserved
+
+## Summer
+## 300-399 reserved
+
+## Autumn
+## 400-499 reserved
+
+# Example seasonal event
+character_event = {
+	id = emf_weather.100
+	desc = EVTDESC62000
+	title = EVTNAME62000
+	picture = GFX_evt_siege
+	border = GFX_event_normal_frame_war
+	is_triggered_only = yes
+	notification = yes
+	
+	immediate = {
+		random_demesne_province = {
+			limit = {
+				NOT = { has_province_flag = emf_weather_check }
+				has_province_flag = emf_weather_event
+			}
+			add_province_modifier = {
+				name = thugs_rampant
+				duration = 90
+			}
+		}
+	}
+	
+	option = {
+		name = EVTOPTA62000
+		
+		tooltip = {
+			add_province_modifier = {
+				name = thugs_rampant
+				duration = 90
+			}
+		}
+	}
+}
