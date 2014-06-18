@@ -1,0 +1,245 @@
+namespace = emf_regional
+
+### EMF Regional Events Module
+### Provides a framework for doing random events with a regional focus
+
+### Regional Events Framework
+### 0-99 reserved
+# Sends recursive events to rulers
+character_event = {
+	id = emf_regional.0
+	hide_window = yes
+	is_triggered_only = yes
+	
+	option = {
+		name = OK
+		any_independent_ruler = {
+			character_event = { id = emf_regional.1 }
+			any_realm_lord = {
+				limit = { higher_tier_than = baron }
+				character_event = { id = emf_regional.1 }
+			}
+		}
+	}
+}
+
+# Recurses through ruler provinces
+# Probably going to do a global flag controlled switch + some extra logic
+# So first time through it places flags, second time through it removes, and so forth
+character_event = {
+	id = emf_regional.1
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		any_demesne_province = { NOT = { has_province_flag = emf_region_sweep } }
+	}
+	
+	immediate = {
+		random_list = { #Advance random seed
+			50 = { if = { limit = { always = yes } } } #Fool the engine
+			50 = { }
+		}
+	}
+	
+	option = {
+		name = OK
+		
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { NOT = { has_province_flag = emf_region_sweep } }
+			}
+			location = {
+				set_province_flag = emf_region_sweep
+				
+				# EMF Seasonal Events
+				random_list = {
+					97 = {} # Nothing happens
+					3 = { # Weather event!
+						if = { # Winter
+							limit = {
+								month = 11 # At least December
+								NOT = { month = 2 } # Before March
+							}
+							set_province_flag = emf_seasonal_event
+							owner = { character_event = { id = emf_regional.100 } }
+						}
+						if = { # Spring
+							limit = {
+								month = 2 # At least March
+								NOT = { month = 5 } # Before June
+							}
+							set_province_flag = emf_seasonal_event
+							owner = { character_event = { id = emf_regional.200 } }
+						}
+						if = { # Summer
+							limit = {
+								month = 5 # At least June
+								NOT = { month = 8 } # Before September
+							}
+							set_province_flag = emf_seasonal_event
+							owner = { character_event = { id = emf_regional.300 } }
+						}
+						if = { # Autumn
+							limit = {
+								month = 8 # At least September
+								NOT = { month = 11 } # Before December
+							}
+							set_province_flag = emf_seasonal_event
+							owner = { character_event = { id = emf_regional.400 } }
+						}
+					}
+				}
+			}
+		}
+		
+		# Recurse
+		character_event = { id = emf_regional.1 }
+	}
+}
+
+### Seasonal Events
+### Possible effects: Effective fort readiness on coastal provinces, trade value, tax modifiers, possibly movement speed (though the new local_speed_modifier), levy_sizes, attrition (supply_limit and max_attrition), and in particularly nasty cases increased revolt risk
+### And don't forget, we'll probably want some weather/other modifier graphics!
+
+# Rain: Bad for ripening or harvest, but good for growing (Heavy Rain is enough)
+# Heavy Rain: Very bad for ripening or ready crops (Heavy Snow in Winter)
+# Storms: Damage crops, bad for livestock (Blizzards in Winter)
+# Cloudy: Poor effect on ripening crops (doesn't apply in Winter)
+# Bright: Good for ripening crops (doesn't apply in Winter)
+# Drought: Bad for everything
+# Heat Wave: ? (Mild Winter in Winter)
+# Unusually Cold: ? (Harsh Winter in Winter)
+
+# Rats: Eat stored food
+# Wolves: Harass livestock
+# Avalanche: In mountains?
+# Landslides: In hills?
+
+# Province terrain specific events:
+# Wind: Desert only
+# River flooding: Happens in place of heavy rain/storms, uses borders_major_river trigger
+# Coastal flooding: Heavy rain/storms, happens in coastal provinces
+
+# Probably 1-5% chance of any given province getting an event, but most events will spread to neighboring provinces for realism's sake
+# Represented by province modifiers
+# So: Low chance per province of picking up a modifier, plus bleed over into other provinces if applicable
+# Maximum modifier length: 85 days?
+# Minimum modifier length: 45 days?
+# Spread notes:
+# Check for lack of emf_weather_check flag so if spread happens it's only into provinces which haven't gotten evaluated separately yet; but don't we want to spread into neighboring provinces no matter what? For realism's sake?
+# If spread does happen, flag those provinces so they won't be evaluated on their own
+# For testing purposes, initial events will add modifiers which increase revolt risk, allowing revolt risk map mode to be used to view weather spread
+
+# Seasons:
+# Spring = March, April, May
+# Summer = June, July, August
+# Autumn = September, October, November
+# Winter = December, January, February
+
+# steppe, jungle, forest, hills, plains, farmlands, mountain, desert
+
+# Winter
+# Weather: Heavy Snows, Blizzards, Mild Winter (warm), Harsh Winter (cold)
+# Other: Rats, Wolves
+
+# Spring
+# Weather: Heavy Rains, Storms, Pleasant Spring (warm), Cold Snap (or Late Freeze) (cold), Drought
+# Other: Rats, Wolves
+
+# Summer
+# Weather: Heavy Rains, Storms, Heat Wave (warm), Mild Summer (cold), Drought, Cloudy, Bright
+# Other: Rats, Wolves
+
+# Autumn
+# Weather: Heavy Rains, Storms, Mild Autumn (warm), Early Freeze (cold), Drought
+# Other: Rats, Wolves
+
+# Terrain Specific
+# Heavy Rains/Storms in river/coast provinces = River or Coastal flooding
+# Storms in desert = Sandstorms
+
+# Seasonal handler event decides which modifier to hand out based on province terrain and random factors
+# Actual modifier is added by notification = yes event, most likely, and the same event probably handles spill over
+# This way we avoid stacking massive piles of logic into a single event
+
+## Winter
+## 100-199 reserved
+# Winter Handler Event
+character_event = {
+	id = emf_regional.100
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				if = {
+					limit = {}
+				}
+			}
+		}
+	}
+	
+	option = { name = OK }
+}
+
+#
+character_event = {
+	id = emf_regional.101
+	desc = EVTDESC62000
+	title = EVTNAME62000
+	picture = GFX_evt_siege
+	border = GFX_event_normal_frame_war
+	is_triggered_only = yes
+	notification = yes
+	
+	immediate = {
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				clr_province_flag = emf_seasonal_event
+				add_province_modifier = {
+					name = religious_unrest
+					duration = 90
+				}
+				any_neighbor_province = {
+					# limit = { NOT = { has_province_flag = emf_weather_check } }
+					# Might need to add terrain filter to make sure the correct type of modifier gets added
+
+					set_province_flag = emf_region_sweep
+					add_province_modifier = {
+						modifier = religious_unrest
+						duration = 85
+					}
+				}
+			}
+		}
+	}
+	
+	option = {
+		name = EVTOPTA62000
+		
+		tooltip = {
+		}
+	}
+}
+
+## Spring
+## 200-299 reserved
+
+## Summer
+## 300-399 reserved
+
+## Autumn
+## 400-499 reserved
+
+
