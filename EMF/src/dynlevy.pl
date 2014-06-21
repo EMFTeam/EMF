@@ -1,5 +1,12 @@
 #!/usr/bin/perl
 
+# Copyright (C) 2014 Matthew D. Hall <zijistark@gmail.com>
+#
+# Free for personal modification. Any redistribution, even
+# without modification, of this program or its output is
+# expressly forbidden without the consent of the author.
+
+
 use strict;
 use warnings;
 use Carp;
@@ -29,6 +36,7 @@ GetOptions(
 	'min-modifier=f' => \$opt_modifier_min,
 	'h|help|usage' => \&usage,
 	't|target=s' => \$opt_target) or usage();
+
 unless ($opt_target) {
 	print STDERR "You must specify a codegen target with --target.  See usage info below:\n\n";
 	usage();
