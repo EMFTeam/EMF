@@ -1,0 +1,185 @@
+vf_legalize_cooperation = {
+	name = CB_NAME_LEGALIZE_COOPERATION
+	war_name = WAR_NAME_LEGALIZE_COOPERATION
+	sprite = 6
+	truce_days = 1825
+	hostile_against_others = yes
+	is_permanent = yes
+	check_all_titles = yes
+	
+#	can_ask_to_join_war = no # Unsure
+	is_revolt_cb = yes
+	can_call_vassals = no
+	attacker_can_call_allies = no
+	major_revolt = yes
+	
+	can_use_gui = {
+		ROOT = {
+			war = no
+		}
+
+		# No liege is in a revolt
+		FROM = {
+			custom_tooltip = {
+				text = emf_ctt_no_liege_in_revolt
+				hidden_tooltip = {
+					in_revolt = no
+					liege = {
+						in_revolt = no
+						liege = {
+							in_revolt = no
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	can_use = {
+		ROOT = {
+			independent = no
+			liege = {
+				character = FROM
+				higher_real_tier_than = count
+			}
+			not = { # No temporary titles held by attacker
+				any_demesne_title = {
+					temporary = yes
+				}
+			}
+		}
+		
+		# Liege has banned autonomous vassal cooperation
+		FROM = {
+			has_law = vf_cooperation_0
+		}
+	}
+	
+	can_use_title = {
+		# Tie this CB to the primary title of the liege so that we may inherit a proper
+		# set of revolter colors and coat of arms.
+
+		FROM = {
+			primary_title = {
+				title = PREVPREV
+			}
+		}
+	}
+	
+	is_valid = {
+		# Do we really want the war to invalidate under any circumstances but those that
+		# we directly control? Not when we're hacking the revolt title system. No.
+		always = yes
+	}
+	
+	is_valid_title = {
+		always = yes
+	}
+	
+	on_add = {
+		FROM = { character_event = { id = emf_vf.1000 } } # Call to arms for this CB
+	}
+	
+	on_attacker_leader_death = {
+		# In a normal VF revolt CB (not one to fight for the right to have a VF):
+		#
+		# If the faction leader dies, something will have to be done. His heir does not inherit
+		# the faction leadership, so he shouldn't become the warleader. Likewise, anybody that
+		# takes his place ought to be the new faction leader, so from here, we should probably set
+		# off an automatic leader election chain (whilst the heir remains the warleader).  Whether
+		# that chain is a special war-time one and what the mechanics of that might be, I do not
+		# yet know.
+		
+		# But in this case:
+		hidden_tooltip = {
+			ROOT = { character_event = { id = emf_vf.0 } } # Reassign all revolters to liege
+		}
+		end_war = invalid
+	}
+	
+	on_success_title = {
+		add_law_w_cooldown = vf_cooperation_1
+		
+		FROM = { prestige = -100 }
+		ROOT = { prestige = 100 }
+
+		any_defender = {
+			limit = { character = FROM }
+			participation_scaled_prestige = 100
+		}
+		any_defender = {
+			limit = { not = { character = FROM } }
+			hidden_tooltip = { participation_scaled_prestige = 100 }
+		}
+		
+		# TODO: Make ROOT the acting VF leader post-revolt, or add STOMs at least to track
+		# the relationship of having legalized the VF for the rest of the vassals, giving ROOT
+		# a much better shot at being elected to lead the VF.
+		
+		hidden_tooltip = {
+			ROOT = { character_event = { id = emf_vf.0 } } # Reassign all revolters to liege
+		}
+	}
+	
+	on_fail = {
+		FROM = { prestige = 50 }
+		ROOT = { prestige = -50 }
+		
+		any_attacker = {
+			limit = { character = FROM }
+			participation_scaled_prestige = 50
+		}
+		any_attacker = {
+			limit = { not = { character = FROM } }
+			hidden_tooltip = { participation_scaled_prestige = 50 }
+		}
+		
+		custom_tooltip = {
+			text = emf_ctt_vf_civil_war_penalty_light # Light penalties are usually used for whitepeace
+			hidden_tooltip = { ROOT = { character_event = { id = emf_vf.1 } } } # Reparations, prestige hits for all revolters, STOMs, etc.
+		}
+		hidden_tooltip = {
+			ROOT = { character_event = { id = emf_vf.0 } } # Reassign all revolters to liege
+		}
+	}
+	
+	on_reverse_demand = {
+		FROM = { prestige = 100 }
+		ROOT = { prestige = -100 }
+		
+		any_attacker = {
+			limit = { character = ROOT }
+			participation_scaled_prestige = 100
+		}
+		any_attacker = {
+			limit = { not = { character = ROOT } }
+			hidden_tooltip = { participation_scaled_prestige = 100 }
+		}
+		
+		custom_tooltip = {
+			text = emf_ctt_vf_civil_war_penalty_severe # Severe penalty is used for reverse_demand of a, well, severe nature
+			hidden_tooltip = { ROOT = { character_event = { id = emf_vf.3 } } } # War reparations, prestige hits for all revolters, STOMS, prison_reasons, etc.
+		}
+		hidden_tooltip = {
+			ROOT = { character_event = { id = emf_vf.0 } } # Reassign all revolters to liege
+		}
+		
+		ROOT = { imprison = FROM }
+	}
+	
+	attacker_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+	attacker_ai_defeat_worth = {
+		factor = 100
+	}
+	defender_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+	defender_ai_defeat_worth = {
+		factor = 100
+	}
+	ai_will_do = {
+		factor = 2
+	}
+}
