@@ -1188,7 +1188,7 @@ for i in xrange(1,len(array[0])):
 
     combat_tactics += tactic_name+" = {\n";
     combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
-    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"]))+"\n"
+    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-7)+"\n"
     combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
     combat_tactics += "\ttrigger = {\n"
     combat_tactics += big_ol_block_of_conditionals[tactic_name] + "\n"
@@ -1341,7 +1341,7 @@ for i in xrange(1,len(array2[0])):
 
     combat_tactics += tactic_name+" = {\n";
     combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
-    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"]))+"\n"
+    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-7)+"\n"
     combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
     combat_tactics += "\ttrigger = {\n"
     combat_tactics += big_ol_block_of_conditionals[matching_tactics_list[tactic_name]] + "\n"
@@ -1389,7 +1389,7 @@ for i in xrange(1,len(array2[0])):
 
     combat_tactics += "bad_"+tactic_name+" = {\n";
     combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
-    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])+7)+"\n"
+    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-7)+"\n"
     combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
     combat_tactics += "\ttrigger = {\n"
     combat_tactics += big_ol_block_of_conditionals[matching_tactics_list[tactic_name]] + "\n"
