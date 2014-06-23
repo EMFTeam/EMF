@@ -1130,6 +1130,7 @@ big_ol_block_of_conditionals = {
             }
 
 combat_tactics = ""
+localization = "#CODE;ENGLISH;FRENCH;GERMAN;;SPANISH;;;;;;;;;x\n"
 
 for i in xrange(1,len(array[0])):
     tactic_name = array[0][i]
@@ -1137,10 +1138,12 @@ for i in xrange(1,len(array[0])):
     for j in xrange(1,len(array)):
         tactic_values[array[j][0]] = array[j][i]
     combat_tactics += "good_"+tactic_name+" = {\n";
+    localization += "good_"+tactic_name+";Devastating "+tactic_values["name"]+";;;;;;;;;;;;;x\n"
     combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
     combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-7)+"\n"
     combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
     combat_tactics += "\ttrigger = {\n"
+    combat_tactics += "\t\tphase = "+tactic_values["phase"]+"\n"
     combat_tactics += big_ol_block_of_conditionals[tactic_name] + "\n"
     combat_tactics += "\t\tflank_has_leader = yes\n"
     if exempt_cultures[tactic_name] != []:
@@ -1187,10 +1190,12 @@ for i in xrange(1,len(array[0])):
     combat_tactics += "}\n"
 
     combat_tactics += tactic_name+" = {\n";
+    localization += tactic_name+";"+tactic_values["name"]+";;;;;;;;;;;;;x\n"
     combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
     combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-7)+"\n"
     combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
     combat_tactics += "\ttrigger = {\n"
+    combat_tactics += "\t\tphase = "+tactic_values["phase"]+"\n"
     combat_tactics += big_ol_block_of_conditionals[tactic_name] + "\n"
     combat_tactics += "\t\tflank_has_leader = yes\n"
     if exempt_cultures[tactic_name] != []:
@@ -1237,10 +1242,12 @@ for i in xrange(1,len(array[0])):
     combat_tactics += "}\n"
 
     combat_tactics += "bad_"+tactic_name+" = {\n";
+    localization += "bad_"+tactic_name+";Failed "+tactic_values["name"]+";;;;;;;;;;;;;x\n"
     combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
-    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])+7)+"\n"
+    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-7)+"\n"
     combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
     combat_tactics += "\ttrigger = {\n"
+    combat_tactics += "\t\tphase = "+tactic_values["phase"]+"\n"
     combat_tactics += big_ol_block_of_conditionals[tactic_name] + "\n"
     combat_tactics += "\t\tflank_has_leader = yes\n"
     if exempt_cultures[tactic_name] != []:
@@ -1292,10 +1299,12 @@ for i in xrange(1,len(array2[0])):
     for j in xrange(1,len(array2)):
         tactic_values[array2[j][0]] = array2[j][i]
     combat_tactics += "good_"+tactic_name+" = {\n";
+    localization += "good_"+tactic_name+";Devastating "+tactic_values["name"]+";;;;;;;;;;;;;x\n"
     combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
     combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-7)+"\n"
     combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
     combat_tactics += "\ttrigger = {\n"
+    combat_tactics += "\t\tphase = "+tactic_values["phase"]+"\n"
     combat_tactics += big_ol_block_of_conditionals[matching_tactics_list[tactic_name]] + "\n"
     combat_tactics += "\t\tflank_has_leader = yes\n"
     if cultural_tactics_list[tactic_name] != []:
@@ -1340,10 +1349,12 @@ for i in xrange(1,len(array2[0])):
     combat_tactics += "}\n"
 
     combat_tactics += tactic_name+" = {\n";
+    localization += tactic_name+";"+tactic_values["name"]+";;;;;;;;;;;;;x\n"
     combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
     combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-7)+"\n"
     combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
     combat_tactics += "\ttrigger = {\n"
+    combat_tactics += "\t\tphase = "+tactic_values["phase"]+"\n"
     combat_tactics += big_ol_block_of_conditionals[matching_tactics_list[tactic_name]] + "\n"
     combat_tactics += "\t\tflank_has_leader = yes\n"
     if cultural_tactics_list[tactic_name] != []:
@@ -1388,10 +1399,12 @@ for i in xrange(1,len(array2[0])):
     combat_tactics += "}\n"
 
     combat_tactics += "bad_"+tactic_name+" = {\n";
+    localization += "bad_"+tactic_name+";Failed "+tactic_values["name"]+";;;;;;;;;;;;;x\n"
     combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
     combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-7)+"\n"
     combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
     combat_tactics += "\ttrigger = {\n"
+    combat_tactics += "\t\tphase = "+tactic_values["phase"]+"\n"
     combat_tactics += big_ol_block_of_conditionals[matching_tactics_list[tactic_name]] + "\n"
     combat_tactics += "\t\tflank_has_leader = yes\n"
     if cultural_tactics_list[tactic_name] != []:
@@ -1439,3 +1452,14 @@ combat_tactics += base_tactics
 f = open("combat_tactics.txt", "w")
 f.write(combat_tactics)
 f.close()
+f = open("emf_sts.csv", "w")
+f.write(localization)
+f.close()
+
+
+
+
+
+
+
+
