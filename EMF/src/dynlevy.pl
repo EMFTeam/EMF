@@ -12,28 +12,29 @@ use warnings;
 use Carp;
 use Getopt::Long qw(:config gnu_getopt);
 
-my $VERSION = "0.9.2";
+my $VERSION = "0.9-3";
 
-my %targets = (
-	laws => \&print_laws,
-	i18n => \&print_i18n,
-	events => \&print_events,
-);
+my $DEFAULT_N      = 64;
+my $DEFAULT_STRIDE = 4;
+my $DEFAULT_OFFSET = 16;
 
-my $opt_n = 64;
-my $opt_stride = 4;
-my $opt_offset = 24;
-my $opt_modifier_max = 1.0;
-my $opt_modifier_min = 0.5;
+# NOTE: returns law modifier as function of law index (starting at 0)
+sub scale_function {
+	my $i = shift;
+	return 1 / ( 1 + log(1 + $i/36.75) );
+}
 
+####
+
+my $opt_n = $DEFAULT_N;
+my $opt_stride = $DEFAULT_STRIDE;
+my $opt_offset = $DEFAULT_OFFSET;
 my $opt_target;
 
 GetOptions(
 	'n|N=i' => \$opt_n,
 	'stride=i' => \$opt_stride,
 	'offset=i' => \$opt_offset,
-	'max-modifier=f' => \$opt_modifier_max,
-	'min-modifier=f' => \$opt_modifier_min,
 	'h|help|usage' => \&usage,
 	't|target=s' => \$opt_target) or usage();
 
@@ -42,7 +43,13 @@ unless ($opt_target) {
 	usage();
 }
 
-$opt_target = "\L$opt_target";
+$opt_target = "\L$opt_target"; # Case-insensitive
+
+my %targets = (
+	laws => \&print_laws,
+	i18n => \&print_i18n,
+	events => \&print_events,
+);
 
 unless (exists $targets{$opt_target}) {
 	print STDERR "Undefined codegen target '$opt_target'.  See usage info below:\n\n";
@@ -64,22 +71,19 @@ Usage:
 	OPTIONAL PARAMETERS:
 	
 		-N <num_laws>
-			Number of distinct classes of dynamic levy laws [$opt_n]
+			Number of distinct classes of dynamic levy laws [$DEFAULT_N]
 			Currently is assumed to be a power of 2.
 			
 		--stride <holdings/law>
-			Number of holdings covered by a single class on the curve [$opt_stride]
+			Number of holdings covered by a single class on the curve [$DEFAULT_STRIDE]
 			
-		--offset <max. holdings for exempt>
-			The realm_size-scaled curve starts here. [$opt_offset]
-			
-		--max-modifier <max. vassal_levy_law modifier value>
-			Maximum levy law applied by curve. [$opt_modifier_max]
-			
-		--min-modifier <min. vassal_levy_law modifier value>
-			Minimum levy law applied by curve. [$opt_modifier_min]
+		--offset <max. holdings for exemption>
+			The realm_size-scaled curve starts here. [$DEFAULT_OFFSET]
 			
 		--help, --usage  Show this help/usage information.
+		
+		NOTE: The law modifier scaling function is hard-coded near the top of the
+		      and does assume the default of N=$DEFAULT_N.
 	
 	REQUIRED PARAMETER:
 	
@@ -106,8 +110,8 @@ sub print_params {
 	print "#   N=$opt_n (total law increments)\n";
 	print "#   stride=$opt_stride (holdings per law increment)\n";
 	print "#   offset=$opt_offset (scaling curve starts at holdings > offset)\n";
-	print "#   max_modifier=", sprintf("%0.03f", $opt_modifier_max), "\n";
-	print "#   min_modifier=", sprintf("%0.03f", $opt_modifier_min), "\n";
+	print "#   range=[".sprintf("%0.03f",scale_function($opt_n-1)).", ".sprintf("%0.03f",scale_function(0))."]\n";
+	print "#   curve: m = 1 / (1 + ln(1 + i/36.75)) for levy law modifier m and dynlevy law index i\n";
 	print "\n";
 }
 
@@ -122,18 +126,34 @@ sub print_laws {
 	print "laws = {\n";
 
 	for my $i (0..$opt_n-1) {
-		my $mod = ($opt_n-1-$i)*($opt_modifier_max - $opt_modifier_min)/($opt_n-1); # not the real thing, silly!
+		my $mod = scale_function($i);
 		my $mod_str = sprintf("%0.03f", $mod);
 
-		print "\tdynlevy_$i = {\n";
+		my $law = "dynlevy_$i";
+		
+		print "\t$law = {\n";
 		print "\t\tgroup = dynlevy\n";
 		print <<EOS;
 
-		potential = { always = no }
-		revoke_allowed = { always = no }
-		ai_will_do = { factor = 0 }
-		ai_will_revoke = { factor = 0 }
+		potential = {
+			has_law = $law
+		}
+		allow = {
+			always = no
+		}
+		revoke_allowed = {
+			always = no
+		}
+		ai_will_do = {
+			factor = 0
+		}
+		ai_will_revoke = {
+			factor = 0
+		}
 		effect = {
+			custom_tooltip = {
+				text = emf_ctt_$law
+			}
 			hidden_tooltip = {
 EOS
 
@@ -141,11 +161,11 @@ EOS
 			print "\t\t\t\t# Turns out, due to Paradox script's severe overhead, it's faster (and simpler)\n";
 			print "\t\t\t\t# to just revoke all the other ",$opt_n-1, " laws directly than use a binary search\n";
 			print "\t\t\t\t# to precisely locate the correct, single law to revoke in O(lg N) time. revoke_law\n";
-			print "\t\t\t\t# is apparently just as fast clr_character_flag anyhow, due to the fact that law\n";
-			print "\t\t\t\t# revocation is technically an in-name-only operation (feature was never implemented).\n";
-			print "\t\t\t\t# It may even be faster than clr_character_flag, because laws are tagged, IDed, and\n";
-			print "\t\t\t\t# presumably just a bitset. Basically, w/ 64 laws, you'd be looking at a 64-bit\n";
-			print "\t\t\t\t# integer-- clearing a single bit in it. Of course, that's not the full picture.\n\n";
+			print "\t\t\t\t# should be just as fast clr_character_flag anyhow (perhaps faster since laws are\n";
+			print "\t\t\t\t# tagged (assigned unique integer IDs before script execution), so I don't see the\n";
+			print "\t\t\t\t# point in trying to optimize this by stuffing realm_size into a var upon update\n";
+			print "\t\t\t\t# and then doing a binary search on that variable's previous value to identify the\n";
+			print "\t\t\t\t# the correct law to revoke with lower complexity. Oh, what I'd give for pointers...\n\n";
 		}
 		
 		for my $j (0..$opt_n-1) {
@@ -311,15 +331,20 @@ sub print_search_tree {
 ####
 
 sub print_i18n {
+	print "#CODE;ENGLISH;FRENCH;GERMAN;;SPANISH;;;;;;;;;x\n";
 	my $eol = ";;;;;;;;;;;;;x\n";
 	print "dynlevy;Levy Efficiency$eol";
 	
 	for my $i (0..$opt_n-1) {
-		my $mod = ($opt_n-1-$i)*($opt_modifier_max - $opt_modifier_min)/($opt_n-1); # not the real thing, silly!
+		my $mod = scale_function($i);
 		my $mod_str = sprintf("%0.01f", $mod*100);
 		$mod_str =~ s/0+$//;
 		$mod_str =~ s/\.$//;
+		my $law = "dynlevy_$i";
 		
-		print "dynlevy_$i;$mod_str\%$eol";
+		print "$law;$mod_str\%$eol";
+		print "emf_ctt_$law;Due to the de facto size of the §Y[This.GetFullName]§!, as measured ";
+		print "by its total number of holdings (realm size), it is able to raise levies from its ";
+		print "vassals with a base efficiency of §Y$mod_str\%§! before the effects of levy laws.$eol";
 	}
 }
