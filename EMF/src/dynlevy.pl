@@ -83,7 +83,7 @@ Usage:
 		--help, --usage  Show this help/usage information.
 		
 		NOTE: The law modifier scaling function is hard-coded near the top of the
-		      and does assume the default of N=$DEFAULT_N.
+		      script and does assume the default of N=$DEFAULT_N.
 	
 	REQUIRED PARAMETER:
 	
