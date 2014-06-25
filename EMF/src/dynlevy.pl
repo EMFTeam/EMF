@@ -12,11 +12,11 @@ use warnings;
 use Carp;
 use Getopt::Long qw(:config gnu_getopt);
 
-my $VERSION = "0.9-3";
+my $VERSION = "0.9.4";
 
 my $DEFAULT_N      = 64;
-my $DEFAULT_STRIDE = 4;
-my $DEFAULT_OFFSET = 16;
+my $DEFAULT_STRIDE = 5;
+my $DEFAULT_OFFSET = 15;
 
 # NOTE: returns law modifier as function of law index (starting at 0)
 sub scale_function {
@@ -136,9 +136,6 @@ sub print_laws {
 		print <<EOS;
 
 		potential = {
-			has_law = $law
-		}
-		allow = {
 			always = no
 		}
 		revoke_allowed = {
@@ -151,9 +148,6 @@ sub print_laws {
 			factor = 0
 		}
 		effect = {
-			custom_tooltip = {
-				text = emf_ctt_$law
-			}
 			hidden_tooltip = {
 EOS
 
@@ -260,10 +254,38 @@ EOS
 		$opt_n,
 		2); # start with an indent level of 2
 
-print <<EOS;
+	print <<EOS;
 	}
 	
 	option = { name = OK }
+}
+
+
+# dynlevy.22
+# debug event for identifying the dynlevy law applied to a character
+character_event = {
+	id = dynlevy.22
+	desc = dynlevy.22.desc
+	picture = GFX_evt_battle
+	is_triggered_only = yes
+	
+	option = {
+		name = OK
+
+EOS
+
+	for my $i (0..$opt_n-1) {
+		my $law = "dynlevy_$i";
+		print <<EOS;
+		if = {
+			limit = { has_law = $law }
+			custom_tooltip = { text = emf_ctt_dbg_$law }
+		}
+EOS
+	}
+
+	print <<EOS;
+	}
 }
 EOS
 }
@@ -333,6 +355,7 @@ sub print_search_tree {
 sub print_i18n {
 	print "#CODE;ENGLISH;FRENCH;GERMAN;;SPANISH;;;;;;;;;x\n";
 	my $eol = ";;;;;;;;;;;;;x\n";
+	print "dynlevy.22.desc;Hover over the event option for my levy efficiency law. If no tooltip appears, I have no dynlevy law applied.$eol\n";
 	print "dynlevy;Levy Efficiency$eol";
 	
 	for my $i (0..$opt_n-1) {
@@ -343,8 +366,6 @@ sub print_i18n {
 		my $law = "dynlevy_$i";
 		
 		print "$law;$mod_str\%$eol";
-		print "emf_ctt_$law;Due to the de facto size of the §Y[This.GetFullName]§!, as measured ";
-		print "by its total number of holdings (realm size), it is able to raise levies from its ";
-		print "vassals with a base efficiency of §Y$mod_str\%§! before the effects of levy laws.$eol";
+		print "emf_ctt_dbg_$law;Dynamic Levy Law: §Y$law§!\nLevy Efficiency: §Y$mod_str\%§!\n$eol";
 	}
 }
