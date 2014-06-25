@@ -287,8 +287,8 @@ good_charge_tactic = {
 	change_phase_to = melee
 	
 	light_infantry_offensive = 0.5
-	heavy_infantry_offensive = 1.0
-	pikemen_offensive = 0.25
+	heavy_infantry_offensive = 0.75
+	pikemen_offensive = 1.0
 	light_cavalry_offensive = 0.5
 	camel_cavalry_offensive = 0.5
 	knights_offensive = 1.50
@@ -422,8 +422,8 @@ charge_tactic = {
 	change_phase_to = melee
 	
 	light_infantry_offensive = 0.25
-	heavy_infantry_offensive = 0.75
-	pikemen_offensive = 0
+	heavy_infantry_offensive = 0.5
+	pikemen_offensive = 0.75
 	light_cavalry_offensive = 0.25
 	camel_cavalry_offensive = 0.25
 	knights_offensive = 1.25
@@ -557,8 +557,8 @@ bad_charge_tactic = {
 	change_phase_to = melee
 	
 	light_infantry_offensive = 0.25
-	heavy_infantry_offensive = 0.25
-	pikemen_offensive = 0
+	heavy_infantry_offensive = 0
+	pikemen_offensive = 0.25
 	light_cavalry_offensive = 0.25
 	camel_cavalry_offensive = 0.25
 	knights_offensive = 0.75
@@ -576,7 +576,7 @@ bad_charge_tactic = {
 }
 
 charge_on_undefended_tactic = {
-	days = 2
+	days = 5
 	sprite = 5
 	group = charge
 	
@@ -600,6 +600,24 @@ charge_on_undefended_tactic = {
 			}
 		}
 	}
+
+	light_infantry_offensive = 0.5
+	heavy_infantry_offensive = 0.75
+	pikemen_offensive = 1.0
+	light_cavalry_offensive = 0.5
+	camel_cavalry_offensive = 0.5
+	knights_offensive = 1.50
+	archers_offensive = 0.25
+	horse_archers_offensive = 0.25
+
+	light_infantry_defensive = 0
+	heavy_infantry_defensive = 0
+	pikemen_defensive = 0
+	light_cavalry_defensive = 0
+	camel_cavalry_defensive = 0
+	knights_defensive = 0
+	archers_defensive = 0
+	horse_archers_defensive = 0
 	
 	change_phase_to = melee
 }
@@ -1448,18 +1466,10 @@ for i in xrange(1,len(array2[0])):
     combat_tactics += "\t}\n"
     combat_tactics += "}\n"
                 
-combat_tactics += base_tactics
+combat_tactics = base_tactics + combat_tactics
 f = open("combat_tactics.txt", "w")
 f.write(combat_tactics)
 f.close()
 f = open("emf_sts.csv", "w")
 f.write(localization)
 f.close()
-
-
-
-
-
-
-
-
