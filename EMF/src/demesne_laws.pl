@@ -6,7 +6,7 @@
 # without modification, of this program or its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "0.1";
+my $VERSION = "0.1.1";
 
 my $opt = {
 	max_total_levy      => 0.5, # Maximum levy, of all possible settings, for any vassal class is always this
@@ -125,16 +125,28 @@ sub print_law {
 	my $law_up = '';
 	my $law_reqs = '';
 	
+	my $tabs = 3;
+	
+	if ($level > 0 && $level < 4) {
+		$law_reqs .= ("\t" x $tabs)."or = {\n";
+		++$tabs;
+	}
+	
 	if ($level > 0) {
 		$law_down = $law_group.'_'.($level-1);
-		$law_reqs .= "\t\t\thas_law = $law_down\n";
+		$law_reqs .= ("\t" x $tabs)."has_law = $law_down\n";
 	}
 	
 	if ($level < 4) {
 		$law_up = $law_group.'_'.($level+1);
-		$law_reqs .= "\t\t\thas_law = $law_up\n";
+		$law_reqs .= ("\t" x $tabs)."has_law = $law_up\n";
 	}
 
+	if ($level > 0 && $level < 4) {
+		--$tabs;
+		$law_reqs .= ("\t" x $tabs)."}\n";
+	}
+	
 	chop $law_reqs;
 	
 	my $revoke_laws = '';
