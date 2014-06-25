@@ -64,6 +64,7 @@ exit 0;
 sub print_params {
 	print "# Written by zijistark via demesne_laws.pl v$VERSION on ".localtime." (Pacific)\n";
 	print "# Code generation parameters:\n";
+	print "#   min_total_levy=$opt->{min_total_levy}\n";
 	print "#   max_total_levy=$opt->{max_total_levy}\n";
 	for my $t ( qw( castle temple city iqta ) ) {
 		print "#   ${t}_tax_per_levy=".$opt->{"${t}_tax_per_levy"}."\n";
