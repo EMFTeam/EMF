@@ -9,11 +9,12 @@
 my $VERSION = "0.9.3";
 
 my $opt = {
-	max_total_levy      => 0.5,
-	castle_tax_per_levy => 0.6,
-	temple_tax_per_levy => 0.8,
-	city_tax_per_levy   => 1.0,
-	iqta_tax_per_levy   => 0.75,
+	min_total_levy      => -0.2,
+	max_total_levy      => 0.3,
+	castle_tax_per_levy => 0.5,
+	temple_tax_per_levy => 1.0,
+	city_tax_per_levy   => 1.5,
+	iqta_tax_per_levy   => 0.8,
 	opinion_offset => 4,
 	opinion_slope  => -8,
 	default_laws => {
@@ -30,12 +31,17 @@ my $opt = {
 
 ####
 
+use strict;
+use warnings;
+
+my $N_LAWS = 5;
 
 sub slider_function {
 	my ($i, $tax_per_levy) = @_;
 	
-	my $levy_delta = $i * $opt->{max_total_levy}/20;
-	my $levy = $opt->{max_total_levy}/5 - $levy_delta;
+	my $levy_range = $opt->{max_total_levy} - $opt->{min_total_levy};
+	my $levy_delta = 2*$i * $levy_range/($N_LAWS)/($N_LAWS-1);
+	my $levy = $levy_range/$N_LAWS - $levy_delta;
 	my $tax = $tax_per_levy * $levy_delta;
 
 	return ($levy, $tax);
@@ -45,7 +51,9 @@ sub slider_function {
 sub obligations_function {
 	my ($i, $tax_per_levy) = @_;
 
-	my $levy = $i * $opt->{max_total_levy}/5;
+	my $levy_range = $opt->{max_total_levy} - $opt->{min_total_levy};
+	my $levy_tradeoff_max = $levy_range / $N_LAWS;
+	my $levy = $opt->{min_total_levy} + $i*($levy_range-$levy_tradeoff_max*2)/($N_LAWS-1) + $levy_tradeoff_max;
 	my $tax = $tax_per_levy * $levy;
 
 	return ($levy, $tax);
@@ -53,10 +61,6 @@ sub obligations_function {
 
 
 #####
-
-
-use strict;
-use warnings;
 
 print_laws();
 exit 0;
@@ -127,13 +131,13 @@ sub print_summary {
 		printf("# %12s ", "Focus:");
 		
 		for my $i (0..4) {
-			printf("%5.3f/%5.3f  ", slider_function($i, $tax_per_levy));
+			printf("%13s  ", sprintf("%5.3f/%5.3f", slider_function($i, $tax_per_levy)));
 		}
 		
 		printf("\n# %12s ", "Obligations:");
 		
 		for my $i (0..4) {
-			printf("%5.3f/%5.3f  ", obligations_function($i, $tax_per_levy));
+			printf("%13s  ", sprintf("%5.3f/%5.3f", obligations_function($i, $tax_per_levy)));
 		}
 		
 		print "\n";
@@ -154,8 +158,8 @@ sub print_law {
 	
 	my ($vtype, $class, $law_group, $law, $default, $muslim) = get_law_info($type, $level, $focus);
 	
-	$levy = sprintf("%5.3f", $levy);
-	$tax  = sprintf("%5.3f", $tax);
+	$levy = sprintf("%-5.3f", $levy);
+	$tax  = sprintf("%-5.3f", $tax);
 	
 	my $opinion_effect = '';
 	
