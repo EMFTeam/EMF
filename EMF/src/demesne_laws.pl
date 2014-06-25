@@ -6,7 +6,7 @@
 # without modification, of this program or its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "0.9.3";
+my $VERSION = "0.9.4";
 
 my $opt = {
 	min_total_levy      => -0.2,
@@ -23,9 +23,9 @@ my $opt = {
 		temple_obligations => 0,
 		temple_slider      => 2,
 		city_obligations   => 0,
-		city_slider        => 4,
+		city_slider        => 3,
 		iqta_obligations   => 0,
-		iqta_slider        => 4,
+		iqta_slider        => 2,
 	},
 };
 
@@ -35,28 +35,21 @@ use strict;
 use warnings;
 
 my $N_LAWS = 5;
+my $LEVY_RANGE = $opt->{max_total_levy} - $opt->{min_total_levy};
+my $LEVY_TRADEOFF_MAX = $LEVY_RANGE / $N_LAWS;
 
 sub slider_function {
 	my ($i, $tax_per_levy) = @_;
-	
-	my $levy_range = $opt->{max_total_levy} - $opt->{min_total_levy};
-	my $levy_delta = 2*$i * $levy_range/($N_LAWS)/($N_LAWS-1);
-	my $levy = $levy_range/$N_LAWS - $levy_delta;
-	my $tax = $tax_per_levy * $levy_delta;
-
-	return ($levy, $tax);
+	my $levy_delta = 2 * $i * $LEVY_RANGE/($N_LAWS)/($N_LAWS-1);
+	my $levy = $LEVY_RANGE/$N_LAWS - $levy_delta;
+	return ($levy, $tax_per_levy*$levy_delta);
 }
 
 
 sub obligations_function {
 	my ($i, $tax_per_levy) = @_;
-
-	my $levy_range = $opt->{max_total_levy} - $opt->{min_total_levy};
-	my $levy_tradeoff_max = $levy_range / $N_LAWS;
-	my $levy = $opt->{min_total_levy} + $i*($levy_range-$levy_tradeoff_max*2)/($N_LAWS-1) + $levy_tradeoff_max;
-	my $tax = $tax_per_levy * $levy;
-
-	return ($levy, $tax);
+	my $levy = $opt->{min_total_levy} + $i*($LEVY_RANGE - 2*$LEVY_TRADEOFF_MAX)/($N_LAWS-1) + $LEVY_TRADEOFF_MAX;
+	return ($levy, $tax_per_levy*$levy);
 }
 
 
