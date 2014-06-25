@@ -6,7 +6,7 @@
 # without modification, of this program or its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "0.1.1";
+my $VERSION = "0.9.2";
 
 my $opt = {
 	max_total_levy      => 0.5, # Maximum levy, of all possible settings, for any vassal class is always this
@@ -26,6 +26,29 @@ my $opt = {
 		iqta_slider        => 4,
 	},
 };
+
+####
+
+
+sub slider_function {
+	my ($i, $tax_per_levy) = @_;
+	
+	my $levy_delta = $i * $opt->{max_total_levy}/20;
+	my $levy = $opt->{max_total_levy}/5 - $levy_delta;
+	my $tax = $tax_per_levy * $levy_delta;
+
+	return ($levy, $tax);
+}
+
+
+sub obligations_function {
+	my ($i, $tax_per_levy) = @_;
+
+	my $levy = $i * $opt->{max_total_levy}/5;
+	my $tax = $tax_per_levy * $levy;
+
+	return ($levy, $tax);
+}
 
 
 #####
@@ -62,6 +85,7 @@ sub print_laws {
 EOS
 
 	print_params();
+	print_summary();
 	
 	print "laws = {";
 
@@ -73,26 +97,49 @@ EOS
 		
 		# focus
 		for my $i (0..4) {
-			my $levy_delta = $i * $opt->{max_total_levy}/20;
-			my $levy = $opt->{max_total_levy}/5 - $levy_delta;
-			my $tax = $tax_per_levy * $levy_delta;
-			print_law(1, $type, $i, $levy, $tax);
+			print_law(1, $type, $i, slider_function($i, $tax_per_levy));
 		}
 
 		print "\n\t# \U$type OBLIGATIONS\n";
 		
 		# obligations
 		for my $i (0..4) {
-			my $levy = $i * $opt->{max_total_levy}/5;
-			my $tax = $tax_per_levy * $levy;
-			print_law(0, $type, $i, $levy, $tax);
+			print_law(0, $type, $i, obligations_function($i, $tax_per_levy));
 		}
 	}
 	
 	print "}\n";
 }
 
+####
 
+sub print_summary {
+
+	print "# Law modifier summary (max_levy/tax):\n#\n";
+
+	for my $type ( qw( castle temple city iqta ) ) {
+
+		my $tax_per_levy = $opt->{ get_real_type($type).'_tax_per_levy' };
+		
+		print "#\n# \U$type\n";
+
+		printf("# %-12s: ", "Focus");
+		
+		for my $i (0..4) {
+			printf("%5.3f/%5.3f  ", slider_function($i, $tax_per_levy));
+		}
+		
+		printf("\n# %-12s: ", "Obligations");
+		
+		for my $i (0..4) {
+			printf("%5.3f/%5.3f  ", obligations_function($i, $tax_per_levy));
+		}
+		
+		print "\n";
+	}
+	
+	print "\n";
+}
 
 ####
 
