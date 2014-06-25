@@ -6,13 +6,15 @@
 # without modification, of this program or its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "0.1.1";
+my $VERSION = "0.9.4";
 
 my $opt = {
-	max_total_levy      => 0.5, # Maximum levy, of all possible settings, for any vassal class is always this
-	castle_tax_per_levy => 0.6, # If you trade-off -100% feudal levies, you'll get 60% ROI on max. potential tax
-	temple_tax_per_levy => 0.8, # If you trade-off -100% levies, you'll get 80% ROI on max. potential tax
-	city_tax_per_levy   => 1.0, # If you trade-off -100% levies, you'll get 100% ROI on max. potential tax
+	min_total_levy      => -0.2,
+	max_total_levy      => 0.3,
+	castle_tax_per_levy => 0.75,
+	temple_tax_per_levy => 1.0,
+	city_tax_per_levy   => 1.5,
+	iqta_tax_per_levy   => 0.8,
 	opinion_offset => 4,
 	opinion_slope  => -8,
 	default_laws => {
@@ -21,18 +23,37 @@ my $opt = {
 		temple_obligations => 0,
 		temple_slider      => 2,
 		city_obligations   => 0,
-		city_slider        => 4,
+		city_slider        => 3,
 		iqta_obligations   => 0,
-		iqta_slider        => 4,
+		iqta_slider        => 2,
 	},
 };
 
-
-#####
-
+####
 
 use strict;
 use warnings;
+
+my $N_LAWS = 5;
+my $LEVY_RANGE = $opt->{max_total_levy} - $opt->{min_total_levy};
+my $LEVY_TRADEOFF_MAX = $LEVY_RANGE / $N_LAWS;
+
+sub slider_function {
+	my ($i, $tax_per_levy) = @_;
+	my $levy_delta = 2 * $i * $LEVY_RANGE/($N_LAWS)/($N_LAWS-1);
+	my $levy = $LEVY_RANGE/$N_LAWS - $levy_delta;
+	return ($levy, $tax_per_levy*$levy_delta);
+}
+
+
+sub obligations_function {
+	my ($i, $tax_per_levy) = @_;
+	my $levy = $opt->{min_total_levy} + $i*($LEVY_RANGE - 2*$LEVY_TRADEOFF_MAX)/($N_LAWS-1) + $LEVY_TRADEOFF_MAX;
+	return ($levy, $tax_per_levy*$levy);
+}
+
+
+#####
 
 print_laws();
 exit 0;
@@ -43,8 +64,9 @@ exit 0;
 sub print_params {
 	print "# Written by zijistark via demesne_laws.pl v$VERSION on ".localtime." (Pacific)\n";
 	print "# Code generation parameters:\n";
+	print "#   min_total_levy=$opt->{min_total_levy}\n";
 	print "#   max_total_levy=$opt->{max_total_levy}\n";
-	for my $t ( qw( castle temple city ) ) {
+	for my $t ( qw( castle temple city iqta ) ) {
 		print "#   ${t}_tax_per_levy=".$opt->{"${t}_tax_per_levy"}."\n";
 	}
 	print "#   opinion_offset=$opt->{opinion_offset}\n";
@@ -62,37 +84,61 @@ sub print_laws {
 EOS
 
 	print_params();
+	print_summary();
 	
 	print "laws = {";
 
 	for my $type ( qw( castle temple city iqta ) ) {
 
-		my $tax_per_levy = $opt->{ get_real_type($type).'_tax_per_levy' };
+		my $tax_per_levy = $opt->{ "${type}_tax_per_levy" };
 		
 		print "\n\n\t# \U$type FOCUS\n";
 		
 		# focus
 		for my $i (0..4) {
-			my $levy_delta = $i * $opt->{max_total_levy}/20;
-			my $levy = $opt->{max_total_levy}/5 - $levy_delta;
-			my $tax = $tax_per_levy * $levy_delta;
-			print_law(1, $type, $i, $levy, $tax);
+			print_law(1, $type, $i, slider_function($i, $tax_per_levy));
 		}
 
 		print "\n\t# \U$type OBLIGATIONS\n";
 		
 		# obligations
 		for my $i (0..4) {
-			my $levy = $i * $opt->{max_total_levy}/5;
-			my $tax = $tax_per_levy * $levy;
-			print_law(0, $type, $i, $levy, $tax);
+			print_law(0, $type, $i, obligations_function($i, $tax_per_levy));
 		}
 	}
 	
 	print "}\n";
 }
 
+####
 
+sub print_summary {
+
+	print "# Law modifier summary (max_levy/tax):\n#\n";
+
+	for my $type ( qw( castle temple city iqta ) ) {
+
+		my $tax_per_levy = $opt->{ "${type}_tax_per_levy" };
+		
+		print "#\n# \U$type\n";
+
+		printf("# %12s ", "Focus:");
+		
+		for my $i (0..4) {
+			printf("%13s  ", sprintf("%5.3f/%5.3f", slider_function($i, $tax_per_levy)));
+		}
+		
+		printf("\n# %12s ", "Obligations:");
+		
+		for my $i (0..4) {
+			printf("%13s  ", sprintf("%5.3f/%5.3f", obligations_function($i, $tax_per_levy)));
+		}
+		
+		print "\n";
+	}
+	
+	print "\n";
+}
 
 ####
 
@@ -106,8 +152,8 @@ sub print_law {
 	
 	my ($vtype, $class, $law_group, $law, $default, $muslim) = get_law_info($type, $level, $focus);
 	
-	$levy = sprintf("%5.3f", $levy);
-	$tax  = sprintf("%5.3f", $tax);
+	$levy = sprintf("%-5.3f", $levy);
+	$tax  = sprintf("%-5.3f", $tax);
 	
 	my $opinion_effect = '';
 	
