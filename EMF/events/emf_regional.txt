@@ -32,7 +32,16 @@ character_event = {
 	is_triggered_only = yes
 	
 	trigger = {
-		any_demesne_province = { NOT = { has_province_flag = emf_region_sweep } }
+		OR = {
+			AND = {
+				has_global_flag = emf_region_sweep_1
+				any_demesne_province = { NOT = { has_province_flag = emf_region_sweep } }
+			}
+			AND = {
+				has_global_flag = emf_region_sweep_2
+				any_demesne_province = { has_province_flag = emf_region_sweep }
+			}
+		}
 	}
 	
 	immediate = {
@@ -48,46 +57,98 @@ character_event = {
 		random_demesne_title = {
 			limit = {
 				tier = count
-				location = { NOT = { has_province_flag = emf_region_sweep } }
+				OR = {
+					AND = {
+						has_global_flag = emf_region_sweep_1
+						location = { NOT = { has_province_flag = emf_region_sweep } }
+					}
+					AND = {
+						has_global_flag = emf_region_sweep_2
+						location = { has_province_flag = emf_region_sweep }
+					}
+				}
 			}
 			location = {
-				set_province_flag = emf_region_sweep
+				if = {
+					limit = { has_global_flag = emf_region_sweep_1 }
+					set_province_flag = emf_region_sweep
+				}
+				if = {
+					limit = { has_global_flag = emf_region_sweep_2 }
+					clr_province_flag = emf_region_sweep
+				}
 				
 				# EMF Seasonal Events
 				random_list = {
 					97 = {} # Nothing happens
-					3 = { # Weather event!
+					3 = { # Seasonal event!
+						set_province_flag = emf_seasonal_event
 						if = { # Winter
 							limit = {
-								month = 11 # At least December
-								NOT = { month = 2 } # Before March
+								OR = {
+									month = 11 # At least December
+									AND = {
+										month = 0
+										NOT = { month = 2 } # Before March
+									}
+								}
 							}
-							set_province_flag = emf_seasonal_event
-							owner = { character_event = { id = emf_regional.100 } }
+							owner = {
+								random_list = {
+									20 = { character_event = { id = emf_regional.102 } } # Drought
+									20 = { character_event = { id = emf_regional.200 } } # Heavy Snow
+									20 = { character_event = { id = emf_regional.201 } } # Blizzards
+									20 = { character_event = { id = emf_regional.202 } } # Mild Winter (warm)
+									20 = { character_event = { id = emf_regional.203 } } # Harsh Winter (cold)
+								}
+							}
 						}
 						if = { # Spring
 							limit = {
 								month = 2 # At least March
 								NOT = { month = 5 } # Before June
 							}
-							set_province_flag = emf_seasonal_event
-							owner = { character_event = { id = emf_regional.200 } }
+							owner = {
+								random_list = {
+									20 = { character_event = { id = emf_regional.100 } } # Heavy Rain
+									20 = { character_event = { id = emf_regional.101 } } # Storms
+									20 = { character_event = { id = emf_regional.102 } } # Drought
+									20 = { character_event = { id = emf_regional.250 } } # Pleasant Spring (warm)
+									20 = { character_event = { id = emf_regional.251 } } # Cold Snap (cold)
+								}
+							}
 						}
 						if = { # Summer
 							limit = {
 								month = 5 # At least June
 								NOT = { month = 8 } # Before September
 							}
-							set_province_flag = emf_seasonal_event
-							owner = { character_event = { id = emf_regional.300 } }
+							owner = {
+								random_list = {
+									15 = { character_event = { id = emf_regional.100 } } # Heavy Rain
+									15 = { character_event = { id = emf_regional.101 } } # Storms
+									15 = { character_event = { id = emf_regional.102 } } # Drought
+									15 = { character_event = { id = emf_regional.300 } } # Heat Wave (warm)
+									15 = { character_event = { id = emf_regional.301 } } # Mild Summer (cold)
+									15 = { character_event = { id = emf_regional.302 } } # Cloudy
+									15 = { character_event = { id = emf_regional.303 } } # Bright
+								}
+							}
 						}
 						if = { # Autumn
 							limit = {
 								month = 8 # At least September
 								NOT = { month = 11 } # Before December
 							}
-							set_province_flag = emf_seasonal_event
-							owner = { character_event = { id = emf_regional.400 } }
+							owner = {
+								random_list = {
+									20 = { character_event = { id = emf_regional.100 } } # Heavy Rain
+									20 = { character_event = { id = emf_regional.101 } } # Storms
+									20 = { character_event = { id = emf_regional.102 } } # Drought
+									20 = { character_event = { id = emf_regional.350 } } # Mild Autumn (warm)
+									20 = { character_event = { id = emf_regional.351 } } # Early Cold (cold)
+								}
+							}
 						}
 					}
 				}
@@ -100,8 +161,29 @@ character_event = {
 }
 
 ### Seasonal Events
-### Possible effects: Effective fort readiness on coastal provinces, trade value, tax modifiers, possibly movement speed (though the new local_speed_modifier), levy_sizes, attrition (supply_limit and max_attrition), and in particularly nasty cases increased revolt risk
-### And don't forget, we'll probably want some weather/other modifier graphics!
+
+# Probably 1-5% chance of any given province getting an event, but most events will spread to neighboring provinces for realism's sake
+# Represented by province modifiers
+# So: Low chance per province of picking up a modifier, plus bleed over into other provinces if applicable
+# For testing purposes, initial events will add modifiers which increase revolt risk, allowing revolt risk map mode to be used to view weather spread
+
+# And don't forget, we'll probably want some weather/other modifier graphics!
+
+# How viable would it be for the Isis pulse to be limited only to the beginning months of each season?
+# So: March, June, September, and December
+
+# Seasons:
+# Spring = March, April, May
+# Summer = June, July, August
+# Autumn = September, October, November
+# Winter = December, January, February
+
+# Terrain:
+# Vanilla: steppe, jungle, forest, hills, plains, farmlands, mountain, desert, arctic
+# SWMH: marsh, coastal_desert, woods
+
+# Effects:
+# Possible effects: Effective fort readiness on coastal provinces, trade value, tax modifiers, possibly movement speed (though the new local_speed_modifier), levy_sizes, attrition (supply_limit and max_attrition), and in particularly nasty cases increased revolt risk
 
 # Rain: Bad for ripening or harvest, but good for growing (Heavy Rain is enough)
 # Heavy Rain: Very bad for ripening or ready crops (Heavy Snow in Winter)
@@ -112,90 +194,17 @@ character_event = {
 # Heat Wave: ? (Mild Winter in Winter)
 # Unusually Cold: ? (Harsh Winter in Winter)
 
-# Rats: Eat stored food
-# Wolves: Harass livestock
-# Avalanche: In mountains?
-# Landslides: In hills?
+# The notification events will also handle substitution depending on province terrain type (thus, if you call storms, it will automatically be transmuted into flooding in river or coastal provinces or sandstorms in desert provinces?)
+# Notification events might also substitute modifiers to get different localizations depending on terrain (so the localization for harsh winter might be different for jungle and desert) if, you know, that actually turns out to be a thing I want to do.
 
-# Province terrain specific events:
-# Wind: Desert only
-# River flooding: Happens in place of heavy rain/storms, uses borders_major_river trigger
-# Coastal flooding: Heavy rain/storms, happens in coastal provinces
-
-# Probably 1-5% chance of any given province getting an event, but most events will spread to neighboring provinces for realism's sake
-# Represented by province modifiers
-# So: Low chance per province of picking up a modifier, plus bleed over into other provinces if applicable
-# Maximum modifier length: 85 days?
-# Minimum modifier length: 45 days?
-# Spread notes:
-# Check for lack of emf_weather_check flag so if spread happens it's only into provinces which haven't gotten evaluated separately yet; but don't we want to spread into neighboring provinces no matter what? For realism's sake?
-# If spread does happen, flag those provinces so they won't be evaluated on their own
-# For testing purposes, initial events will add modifiers which increase revolt risk, allowing revolt risk map mode to be used to view weather spread
-
-# Seasons:
-# Spring = March, April, May
-# Summer = June, July, August
-# Autumn = September, October, November
-# Winter = December, January, February
-
-# steppe, jungle, forest, hills, plains, farmlands, mountain, desert
-
-# Winter
-# Weather: Heavy Snows, Blizzards, Mild Winter (warm), Harsh Winter (cold)
-# Other: Rats, Wolves
-
-# Spring
-# Weather: Heavy Rains, Storms, Pleasant Spring (warm), Cold Snap (or Late Freeze) (cold), Drought
-# Other: Rats, Wolves
-
-# Summer
-# Weather: Heavy Rains, Storms, Heat Wave (warm), Mild Summer (cold), Drought, Cloudy, Bright
-# Other: Rats, Wolves
-
-# Autumn
-# Weather: Heavy Rains, Storms, Mild Autumn (warm), Early Freeze (cold), Drought
-# Other: Rats, Wolves
-
-# Terrain Specific
-# Heavy Rains/Storms in river/coast provinces = River or Coastal flooding
-# Storms in desert = Sandstorms
-
-# Seasonal handler event decides which modifier to hand out based on province terrain and random factors
-# Actual modifier is added by notification = yes event, most likely, and the same event probably handles spill over
-# This way we avoid stacking massive piles of logic into a single event
-
-## Winter
-## 100-199 reserved
-# Winter Handler Event
+## General
+# 100-149 reserved
+# 100 - Heavy Rain
 character_event = {
 	id = emf_regional.100
-	hide_window = yes
-	is_triggered_only = yes
-	
-	immediate = {
-		random_demesne_title = {
-			limit = {
-				tier = count
-				location = { has_province_flag = emf_seasonal_event }
-			}
-			location = {
-				if = {
-					limit = {}
-				}
-			}
-		}
-	}
-	
-	option = { name = OK }
-}
-
-#
-character_event = {
-	id = emf_regional.101
-	desc = EVTDESC62000
-	title = EVTNAME62000
+	desc = emf_regional.100.desc
+	title = emf_regional.100.title
 	picture = GFX_evt_siege
-	border = GFX_event_normal_frame_war
 	is_triggered_only = yes
 	notification = yes
 	
@@ -207,17 +216,467 @@ character_event = {
 			}
 			location = {
 				clr_province_flag = emf_seasonal_event
-				add_province_modifier = {
-					name = religious_unrest
-					duration = 90
+				# Most provinces get Heavy Rain
+				if = {
+					limit = {
+						NOT = { terrain = desert }
+						NOT = { borders_major_river = yes }
+						NOT = { port = yes }
+					}
+					add_province_modifier = {
+						name = emf_mod_heavy_rain
+						duration = 85
+					}
+				}
+				# River Flooding
+				if = {
+					limit = { borders_major_river = yes }
+					add_province_modifier = {
+						name = emf_mod_river_flooding
+						duration = 85
+					}
+				}
+				# Coastal Flooding
+				if = {
+					limit = { port = yes }
+					add_province_modifier = {
+						name = emf_mod_coastal_flooding
+						duration = 85
+					}
+				}
+				# Deserts get their own Rain
+				if = {
+					limit = { terrain = desert }
+					add_province_modifier = {
+						name = emf_mod_desert_rain
+						duration = 85
+					}
 				}
 				any_neighbor_province = {
-					# limit = { NOT = { has_province_flag = emf_weather_check } }
-					# Might need to add terrain filter to make sure the correct type of modifier gets added
-
-					set_province_flag = emf_region_sweep
+					if = {
+						limit = { has_global_flag = emf_region_sweep_1 }
+						set_province_flag = emf_region_sweep
+					}
+					if = {
+						limit = { has_global_flag = emf_region_sweep_2 }
+						clr_province_flag = emf_region_sweep
+					}
+					# Most provinces get Heavy Rain
+					if = {
+						limit = {
+							NOT = { terrain = desert }
+							NOT = { borders_major_river = yes }
+							NOT = { port = yes }
+						}
+						add_province_modifier = {
+							name = emf_mod_heavy_rain
+							duration = 85
+						}
+					}
+					# River Flooding
+					if = {
+						limit = { borders_major_river = yes }
+						add_province_modifier = {
+							name = emf_mod_river_flooding
+							duration = 85
+						}
+					}
+					# Coastal Flooding
+					if = {
+						limit = { port = yes }
+						add_province_modifier = {
+							name = emf_mod_coastal_flooding
+							duration = 85
+						}
+					}
+					# Deserts get their own Rain
+					if = {
+						limit = { terrain = desert }
+						add_province_modifier = {
+							name = emf_mod_desert_rain
+							duration = 85
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	option = { name = emf_regional.100.a }
+}
+# 101 - Storms
+character_event = {
+	id = emf_regional.101
+	desc = emf_regional.101.desc
+	title = emf_regional.101.title
+	picture = GFX_evt_siege
+	is_triggered_only = yes
+	notification = yes
+	
+	immediate = {
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				clr_province_flag = emf_seasonal_event
+				# Most provinces get Storms
+				if = {
+					limit = {
+						NOT = { terrain = desert }
+						NOT = { borders_major_river = yes }
+						NOT = { port = yes }
+					}
 					add_province_modifier = {
-						modifier = religious_unrest
+						name = emf_mod_storms
+						duration = 85
+					}
+				}
+				# River Flooding
+				if = {
+					limit = { borders_major_river = yes }
+					add_province_modifier = {
+						name = emf_mod_river_flooding
+						duration = 85
+					}
+				}
+				# Coastal Flooding
+				if = {
+					limit = { port = yes }
+					add_province_modifier = {
+						name = emf_mod_coastal_flooding
+						duration = 85
+					}
+				}
+				# Deserts get Sandstorms
+				if = {
+					limit = { terrain = desert }
+					add_province_modifier = {
+						name = emf_mod_sandstorms
+						duration = 85
+					}
+				}
+				any_neighbor_province = {
+					if = {
+						limit = { has_global_flag = emf_region_sweep_1 }
+						set_province_flag = emf_region_sweep
+					}
+					if = {
+						limit = { has_global_flag = emf_region_sweep_2 }
+						clr_province_flag = emf_region_sweep
+					}
+					# Most provinces get Storms
+					if = {
+						limit = {
+							NOT = { terrain = desert }
+							NOT = { borders_major_river = yes }
+							NOT = { port = yes }
+						}
+						add_province_modifier = {
+							name = emf_mod_storms
+							duration = 85
+						}
+					}
+					# River Flooding
+					if = {
+						limit = { borders_major_river = yes }
+						add_province_modifier = {
+							name = emf_mod_river_flooding
+							duration = 85
+						}
+					}
+					# Coastal Flooding
+					if = {
+						limit = { port = yes }
+						add_province_modifier = {
+							name = emf_mod_coastal_flooding
+							duration = 85
+						}
+					}
+					# Deserts get Sandstorms
+					if = {
+						limit = { terrain = desert }
+						add_province_modifier = {
+							name = emf_mod_sandstorms
+							duration = 85
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	option = { name = emf_regional.101.a }
+}
+# 102 - Drought
+character_event = {
+	id = emf_regional.102
+	desc = emf_regional.102.desc
+	title = emf_regional.102.title
+	picture = GFX_evt_siege
+	is_triggered_only = yes
+	notification = yes
+	
+	immediate = {
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				clr_province_flag = emf_seasonal_event
+				# Most provinces get Drought
+				if = {
+					limit = {
+						NOT = { terrain = desert }
+					}
+					add_province_modifier = {
+						name = emf_mod_drought
+						duration = 85
+					}
+				}
+				any_neighbor_province = {
+					if = {
+						limit = { has_global_flag = emf_region_sweep_1 }
+						set_province_flag = emf_region_sweep
+					}
+					if = {
+						limit = { has_global_flag = emf_region_sweep_2 }
+						clr_province_flag = emf_region_sweep
+					}
+					# Most provinces get Drought
+					if = {
+						limit = {
+							NOT = { terrain = desert }
+						}
+						add_province_modifier = {
+							name = emf_mod_drought
+							duration = 85
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	option = { name = emf_regional.102.a }
+}
+
+## Special
+# 150-199 reserved
+# Rats
+# Wolves
+# Landslides
+# Avalanches
+# Other?
+
+## Winter
+# 200-249 reserved
+# 200 - Heavy Snow
+character_event = {
+	id = emf_regional.200
+	desc = emf_regional.200.desc
+	title = emf_regional.200.title
+	picture = GFX_evt_siege
+	is_triggered_only = yes
+	notification = yes
+	
+	immediate = {
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				clr_province_flag = emf_seasonal_event
+				# Most provinces get Heavy Snow
+				if = {
+					limit = {
+						OR = {
+							NOT = { terrain = jungle }
+							NOT = { terrain = desert }
+						}
+					}
+					add_province_modifier = {
+						name = emf_mod_heavy_snow
+						duration = 85
+					}
+				}
+				# Desert and Jungle get Heavy Rains
+				if = {
+					limit = {
+						OR = {
+							terrain = jungle
+							terrain = desert
+						}
+					}
+					add_province_modifier = {
+						name = emf_mod_heavy_rain
+						duration = 85
+					}
+				}
+				any_neighbor_province = {
+					if = {
+						limit = { has_global_flag = emf_region_sweep_1 }
+						set_province_flag = emf_region_sweep
+					}
+					if = {
+						limit = { has_global_flag = emf_region_sweep_2 }
+						clr_province_flag = emf_region_sweep
+					}
+					# Most provinces get Heavy Snow
+					if = {
+						limit = {
+							OR = {
+								NOT = { terrain = jungle }
+								NOT = { terrain = desert }
+							}
+						}
+						add_province_modifier = {
+							name = emf_mod_heavy_snow
+							duration = 85
+						}
+					}
+					# Desert and Jungle get Heavy Rains
+					if = {
+						limit = {
+							OR = {
+								terrain = jungle
+								terrain = desert
+							}
+						}
+						add_province_modifier = {
+							name = emf_mod_heavy_rain
+							duration = 85
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	option = { name = emf_regional.200.a }
+}
+# 201 - Blizzards
+character_event = {
+	id = emf_regional.201
+	desc = emf_regional.201.desc
+	title = emf_regional.201.title
+	picture = GFX_evt_siege
+	is_triggered_only = yes
+	notification = yes
+	
+	immediate = {
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				clr_province_flag = emf_seasonal_event
+				# Most provinces get Blizzards
+				if = {
+					limit = {
+						OR = {
+							NOT = { terrain = jungle }
+							NOT = { terrain = desert }
+						}
+					}
+					add_province_modifier = {
+						name = emf_mod_blizzards
+						duration = 85
+					}
+				}
+				# Desert and Jungle get Storms
+				if = {
+					limit = {
+						OR = {
+							terrain = jungle
+							terrain = desert
+						}
+					}
+					add_province_modifier = {
+						name = emf_mod_storms
+						duration = 85
+					}
+				}
+				any_neighbor_province = {
+					if = {
+						limit = { has_global_flag = emf_region_sweep_1 }
+						set_province_flag = emf_region_sweep
+					}
+					if = {
+						limit = { has_global_flag = emf_region_sweep_2 }
+						clr_province_flag = emf_region_sweep
+					}
+					# Most provinces get Blizzards
+					if = {
+						limit = {
+							OR = {
+								NOT = { terrain = jungle }
+								NOT = { terrain = desert }
+							}
+						}
+						add_province_modifier = {
+							name = emf_mod_blizzards
+							duration = 85
+						}
+					}
+					# Desert and Jungle get Storms
+					if = {
+						limit = {
+							OR = {
+								terrain = jungle
+								terrain = desert
+							}
+						}
+						add_province_modifier = {
+							name = emf_mod_storms
+							duration = 85
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	option = { name = emf_regional.201.a }
+}
+# 202 - Mild Winter (warm)
+character_event = {
+	id = emf_regional.202
+	desc = emf_regional.202.desc
+	title = emf_regional.202.title
+	picture = GFX_evt_siege
+	is_triggered_only = yes
+	notification = yes
+	
+	immediate = {
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				clr_province_flag = emf_seasonal_event
+				# All provinces get Mild Winter
+				add_province_modifier = {
+					name = emf_mod_mild_winter
+					duration = 85
+				}
+				any_neighbor_province = {
+					if = {
+						limit = { has_global_flag = emf_region_sweep_1 }
+						set_province_flag = emf_region_sweep
+					}
+					if = {
+						limit = { has_global_flag = emf_region_sweep_2 }
+						clr_province_flag = emf_region_sweep
+					}
+					# All provinces get Mild Winter
+					add_province_modifier = {
+						name = emf_mod_mild_winter
 						duration = 85
 					}
 				}
@@ -225,21 +684,401 @@ character_event = {
 		}
 	}
 	
-	option = {
-		name = EVTOPTA62000
-		
-		tooltip = {
+	option = { name = emf_regional.202.a }
+}
+# 203 - Harsh Winter (cold)
+character_event = {
+	id = emf_regional.203
+	desc = emf_regional.203.desc
+	title = emf_regional.203.title
+	picture = GFX_evt_siege
+	is_triggered_only = yes
+	notification = yes
+	
+	immediate = {
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				clr_province_flag = emf_seasonal_event
+				# All provinces get Harsh Winter
+				add_province_modifier = {
+					name = emf_mod_harsh_winter
+					duration = 85
+				}
+				any_neighbor_province = {
+					if = {
+						limit = { has_global_flag = emf_region_sweep_1 }
+						set_province_flag = emf_region_sweep
+					}
+					if = {
+						limit = { has_global_flag = emf_region_sweep_2 }
+						clr_province_flag = emf_region_sweep
+					}
+					# All provinces get Harsh Winter
+					add_province_modifier = {
+						name = emf_mod_harsh_winter
+						duration = 85
+					}
+				}
+			}
 		}
 	}
+	
+	option = { name = emf_regional.203.a }
 }
 
 ## Spring
-## 200-299 reserved
+# 250-299 reserved
+# 250 - Pleasant Spring
+character_event = {
+	id = emf_regional.250
+	desc = emf_regional.250.desc
+	title = emf_regional.250.title
+	picture = GFX_evt_siege
+	is_triggered_only = yes
+	notification = yes
+	
+	immediate = {
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				clr_province_flag = emf_seasonal_event
+				# All provinces get Pleasant Spring
+				add_province_modifier = {
+					name = emf_mod_pleasant_spring
+					duration = 85
+				}
+				any_neighbor_province = {
+					if = {
+						limit = { has_global_flag = emf_region_sweep_1 }
+						set_province_flag = emf_region_sweep
+					}
+					if = {
+						limit = { has_global_flag = emf_region_sweep_2 }
+						clr_province_flag = emf_region_sweep
+					}
+					# All provinces get Pleasant Spring
+					add_province_modifier = {
+						name = emf_mod_pleasant_spring
+						duration = 85
+					}
+				}
+			}
+		}
+	}
+	
+	option = { name = emf_regional.250.a }
+}
+# 251 - Long Winter
+character_event = {
+	id = emf_regional.251
+	desc = emf_regional.251.desc
+	title = emf_regional.251.title
+	picture = GFX_evt_siege
+	is_triggered_only = yes
+	notification = yes
+	
+	immediate = {
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				clr_province_flag = emf_seasonal_event
+				# All provinces get Long Winter
+				add_province_modifier = {
+					name = emf_mod_long_winter
+					duration = 85
+				}
+				any_neighbor_province = {
+					if = {
+						limit = { has_global_flag = emf_region_sweep_1 }
+						set_province_flag = emf_region_sweep
+					}
+					if = {
+						limit = { has_global_flag = emf_region_sweep_2 }
+						clr_province_flag = emf_region_sweep
+					}
+					# All provinces get Long Winter
+					add_province_modifier = {
+						name = emf_mod_long_winter
+						duration = 85
+					}
+				}
+			}
+		}
+	}
+	
+	option = { name = emf_regional.251.a }
+}
 
 ## Summer
-## 300-399 reserved
+# 300-349 reserved
+# 300 - Heat Wave
+character_event = {
+	id = emf_regional.300
+	desc = emf_regional.300.desc
+	title = emf_regional.300.title
+	picture = GFX_evt_siege
+	is_triggered_only = yes
+	notification = yes
+	
+	immediate = {
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				clr_province_flag = emf_seasonal_event
+				# All provinces get Heat Wave
+				add_province_modifier = {
+					name = emf_mod_heat_wave
+					duration = 85
+				}
+				any_neighbor_province = {
+					if = {
+						limit = { has_global_flag = emf_region_sweep_1 }
+						set_province_flag = emf_region_sweep
+					}
+					if = {
+						limit = { has_global_flag = emf_region_sweep_2 }
+						clr_province_flag = emf_region_sweep
+					}
+					# All provinces get Heat Wave
+					add_province_modifier = {
+						name = emf_mod_heat_wave
+						duration = 85
+					}
+				}
+			}
+		}
+	}
+	
+	option = { name = emf_regional.300.a }
+}
+# 301 - Mild Summer
+character_event = {
+	id = emf_regional.301
+	desc = emf_regional.301.desc
+	title = emf_regional.301.title
+	picture = GFX_evt_siege
+	is_triggered_only = yes
+	notification = yes
+	
+	immediate = {
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				clr_province_flag = emf_seasonal_event
+				# All provinces get Mild Summer
+				add_province_modifier = {
+					name = emf_mod_mild_summer
+					duration = 85
+				}
+				any_neighbor_province = {
+					if = {
+						limit = { has_global_flag = emf_region_sweep_1 }
+						set_province_flag = emf_region_sweep
+					}
+					if = {
+						limit = { has_global_flag = emf_region_sweep_2 }
+						clr_province_flag = emf_region_sweep
+					}
+					# All provinces get Mild Summer
+					add_province_modifier = {
+						name = emf_mod_mild_summer
+						duration = 85
+					}
+				}
+			}
+		}
+	}
+	
+	option = { name = emf_regional.301.a }
+}
+# 302 - Cloudy
+character_event = {
+	id = emf_regional.302
+	desc = emf_regional.302.desc
+	title = emf_regional.302.title
+	picture = GFX_evt_siege
+	is_triggered_only = yes
+	notification = yes
+	
+	immediate = {
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				clr_province_flag = emf_seasonal_event
+				# All provinces get Cloudy
+				add_province_modifier = {
+					name = emf_mod_cloudy
+					duration = 85
+				}
+				any_neighbor_province = {
+					if = {
+						limit = { has_global_flag = emf_region_sweep_1 }
+						set_province_flag = emf_region_sweep
+					}
+					if = {
+						limit = { has_global_flag = emf_region_sweep_2 }
+						clr_province_flag = emf_region_sweep
+					}
+					# All provinces get Cloudy
+					add_province_modifier = {
+						name = emf_mod_cloudy
+						duration = 85
+					}
+				}
+			}
+		}
+	}
+	
+	option = { name = emf_regional.302.a }
+}
+# 303 - Bright
+character_event = {
+	id = emf_regional.303
+	desc = emf_regional.303.desc
+	title = emf_regional.303.title
+	picture = GFX_evt_siege
+	is_triggered_only = yes
+	notification = yes
+	
+	immediate = {
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				clr_province_flag = emf_seasonal_event
+				# All provinces get Bright
+				add_province_modifier = {
+					name = emf_mod_bright
+					duration = 85
+				}
+				any_neighbor_province = {
+					if = {
+						limit = { has_global_flag = emf_region_sweep_1 }
+						set_province_flag = emf_region_sweep
+					}
+					if = {
+						limit = { has_global_flag = emf_region_sweep_2 }
+						clr_province_flag = emf_region_sweep
+					}
+					# All provinces get Bright
+					add_province_modifier = {
+						name = emf_mod_bright
+						duration = 85
+					}
+				}
+			}
+		}
+	}
+	
+	option = { name = emf_regional.303.a }
+}
 
 ## Autumn
-## 400-499 reserved
-
-
+# 350-399 reserved
+# 350 - Mild Autumn
+character_event = {
+	id = emf_regional.350
+	desc = emf_regional.350.desc
+	title = emf_regional.350.title
+	picture = GFX_evt_siege
+	is_triggered_only = yes
+	notification = yes
+	
+	immediate = {
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				clr_province_flag = emf_seasonal_event
+				# All provinces get Mild Autumn
+				add_province_modifier = {
+					name = emf_mod_mild_autumn
+					duration = 85
+				}
+				any_neighbor_province = {
+					if = {
+						limit = { has_global_flag = emf_region_sweep_1 }
+						set_province_flag = emf_region_sweep
+					}
+					if = {
+						limit = { has_global_flag = emf_region_sweep_2 }
+						clr_province_flag = emf_region_sweep
+					}
+					# All provinces get Mild Autumn
+					add_province_modifier = {
+						name = emf_mod_mild_autumn
+						duration = 85
+					}
+				}
+			}
+		}
+	}
+	
+	option = { name = emf_regional.350.a }
+}
+# 351 - Early Winter
+character_event = {
+	id = emf_regional.351
+	desc = emf_regional.351.desc
+	title = emf_regional.351.title
+	picture = GFX_evt_siege
+	is_triggered_only = yes
+	notification = yes
+	
+	immediate = {
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				clr_province_flag = emf_seasonal_event
+				# All provinces get Early Winter
+				add_province_modifier = {
+					name = emf_mod_early_winter
+					duration = 85
+				}
+				any_neighbor_province = {
+					if = {
+						limit = { has_global_flag = emf_region_sweep_1 }
+						set_province_flag = emf_region_sweep
+					}
+					if = {
+						limit = { has_global_flag = emf_region_sweep_2 }
+						clr_province_flag = emf_region_sweep
+					}
+					# All provinces get Early Winter
+					add_province_modifier = {
+						name = emf_mod_early_winter
+						duration = 85
+					}
+				}
+			}
+		}
+	}
+	
+	option = { name = emf_regional.351.a }
+}
