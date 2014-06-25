@@ -12,7 +12,7 @@ use warnings;
 use Carp;
 use Getopt::Long qw(:config gnu_getopt);
 
-my $VERSION = "0.9.4";
+my $VERSION = "0.9.5";
 
 my $DEFAULT_N      = 64;
 my $DEFAULT_STRIDE = 5;
@@ -229,13 +229,13 @@ EOS
 }
 
 
-# dynlevy.21
+# emf_dynlevy.21
 # on_new_handler event for immediate levy law application upon title creation
 #
-# Like dynlevy.20, the approach is to use a binary search tree expansion upon
+# Like emf_dynlevy.20, the approach is to use a binary search tree expansion upon
 # realm_size to determine the correct levy law to apply to the target title.
 character_event = {
-	id = dynlevy.21
+	id = emf_dynlevy.21
 	desc = HIDE_EVENT
 	hide_window = yes
 	is_triggered_only = yes
@@ -261,11 +261,11 @@ EOS
 }
 
 
-# dynlevy.22
+# emf_dynlevy.22
 # debug event for identifying the dynlevy law applied to a character
 character_event = {
-	id = dynlevy.22
-	desc = dynlevy.22.desc
+	id = emf_dynlevy.22
+	desc = emf_dynlevy.22.desc
 	picture = GFX_evt_battle
 	is_triggered_only = yes
 	
@@ -355,7 +355,7 @@ sub print_search_tree {
 sub print_i18n {
 	print "#CODE;ENGLISH;FRENCH;GERMAN;;SPANISH;;;;;;;;;x\n";
 	my $eol = ";;;;;;;;;;;;;x\n";
-	print "dynlevy.22.desc;Hover over the event option for my levy efficiency law. If no tooltip appears, I have no dynlevy law applied.$eol\n";
+	print "emf_dynlevy.22.desc;Hover over the event option for my levy efficiency law. If no tooltip appears, I have no dynlevy law applied.$eol\n";
 	print "dynlevy;Levy Efficiency$eol";
 	
 	for my $i (0..$opt_n-1) {
