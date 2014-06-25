@@ -129,7 +129,7 @@ base_tactics = """### At the moment we have a pretty basic icon system for comba
 # Must be first in file. This tactic will be set if anything goes wrong
 no_tactic = {
 	days = 3 # tactic lasts one day
-	sprite = 15 # index of icon
+	sprite = 1 # index of icon
 
 	trigger = {
 		always = no # never use unless set explicitly by code
@@ -156,7 +156,7 @@ no_tactic = {
 
 generic_skirmish_tactic = {
 	days = 5 # tactic lasts one day
-	sprite = 15 # index of icon
+	sprite = 1 # index of icon
 	group = skirmish
 
 	trigger = {
@@ -307,7 +307,7 @@ good_charge_tactic = {
 
 charge_tactic = {
 	days = 5
-	sprite = 12 # index of icon
+	sprite = 5 # index of icon
 	group = charge
 	
 	trigger = {
@@ -442,7 +442,7 @@ charge_tactic = {
 
 bad_charge_tactic = {
 	days = 5
-	sprite = 19 # index of icon
+	sprite = 5 # index of icon
 	group = charge
 	
 	trigger = {
