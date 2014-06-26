@@ -1149,8 +1149,8 @@ big_ol_block_of_conditionals = {
 
 combat_tactics = ""
 localization = "#CODE;ENGLISH;FRENCH;GERMAN;;SPANISH;;;;;;;;;x\n"
-localization += "good_charge_tactic;Devestating Charge Tactic;FRENCH;GERMAN;;SPANISH;;;;;;;;;x\n"
-localization += "bad_charge_tactic;Failed Charge Tactic;FRENCH;GERMAN;;SPANISH;;;;;;;;;x\n"
+localization += "good_charge_tactic;Devestating Charge Tactic;;;;;;;;;;;;;x\n"
+localization += "bad_charge_tactic;Failed Charge Tactic;;;;;;;;;;;;;x\n"
 
 for i in xrange(1,len(array[0])):
     tactic_name = array[0][i]
