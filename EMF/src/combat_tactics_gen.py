@@ -166,7 +166,7 @@ generic_skirmish_tactic = {
 
 	mean_time_to_happen = {
 		days = 0
-		}
+	}
 }
 
 #### Charge Tactics ####
