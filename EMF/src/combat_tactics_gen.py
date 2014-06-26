@@ -725,7 +725,7 @@ big_ol_block_of_conditionals = {
 			}
 			horse_archers = 0.01
 		}
-		NOT = {
+		NOT = { AND = {
 			OR = {
 				light_infantry = 0.30
 				heavy_infantry = 0.30
@@ -762,7 +762,7 @@ big_ol_block_of_conditionals = {
 					}
 				}
 			}
-		}""",
+		} }""",
             "raid_tactic": """		OR = {
 			light_infantry = 0.01
 			OR = {
@@ -771,7 +771,7 @@ big_ol_block_of_conditionals = {
 			}
 			horse_archers = 0.01
 		}
-		NOT = {
+		NOT = { AND = {
 			OR = {
 				knights = 0.16
 				heavy_infantry = 0.30
@@ -816,14 +816,14 @@ big_ol_block_of_conditionals = {
 					}
 				}
 			}
-		}""",
+		} }""",
             "advance_tactic": """		OR = {
 			light_infantry = 0.01
 			heavy_infantry = 0.01
 			pikemen = 0.01
 			war_elephants = 0.01
 		}
-		NOT = {
+		NOT = { AND = {
 			OR = {
 				knights = 0.16
 				light_cavalry = 0.30
@@ -855,14 +855,14 @@ big_ol_block_of_conditionals = {
 					}
 				}
 			}
-		}""",
+		} }""",
             "stand_fast_tactic": """		OR = {
 			archers = 0.01
 			heavy_infantry = 0.01
 			war_elephants = 0.01
 			pikemen = 0.01
 		}
-		NOT = {
+		NOT = { AND = {
 			OR = {
 				knights = 0.16
 				light_cavalry = 0.30
@@ -884,7 +884,7 @@ big_ol_block_of_conditionals = {
 					}
 				}
 			}
-		}""",
+		} }""",
             "harass_tactic": """		OR = {
 			light_cavalry = 0.01
 			camel_cavalry = 0.01
@@ -1149,6 +1149,8 @@ big_ol_block_of_conditionals = {
 
 combat_tactics = ""
 localization = "#CODE;ENGLISH;FRENCH;GERMAN;;SPANISH;;;;;;;;;x\n"
+localization += "good_charge_tactic;Devestating Charge Tactic;FRENCH;GERMAN;;SPANISH;;;;;;;;;x\n"
+localization += "bad_charge_tactic;Failed Charge Tactic;FRENCH;GERMAN;;SPANISH;;;;;;;;;x\n"
 
 for i in xrange(1,len(array[0])):
     tactic_name = array[0][i]
@@ -1156,7 +1158,7 @@ for i in xrange(1,len(array[0])):
     for j in xrange(1,len(array)):
         tactic_values[array[j][0]] = array[j][i]
     combat_tactics += "good_"+tactic_name+" = {\n";
-    localization += "good_"+tactic_name+";Devastating "+tactic_values["name"]+";;;;;;;;;;;;;x\n"
+    localization += "good_"+tactic_name+";Devastating "+tactic_values["name"]+" Tactic;;;;;;;;;;;;;x\n"
     combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
     combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-7)+"\n"
     combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
@@ -1208,7 +1210,7 @@ for i in xrange(1,len(array[0])):
     combat_tactics += "}\n"
 
     combat_tactics += tactic_name+" = {\n";
-    localization += tactic_name+";"+tactic_values["name"]+";;;;;;;;;;;;;x\n"
+    localization += tactic_name+";"+tactic_values["name"]+" Tactic;;;;;;;;;;;;;x\n"
     combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
     combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-7)+"\n"
     combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
@@ -1260,7 +1262,7 @@ for i in xrange(1,len(array[0])):
     combat_tactics += "}\n"
 
     combat_tactics += "bad_"+tactic_name+" = {\n";
-    localization += "bad_"+tactic_name+";Failed "+tactic_values["name"]+";;;;;;;;;;;;;x\n"
+    localization += "bad_"+tactic_name+";Failed "+tactic_values["name"]+" Tactic;;;;;;;;;;;;;x\n"
     combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
     combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-7)+"\n"
     combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
@@ -1317,7 +1319,7 @@ for i in xrange(1,len(array2[0])):
     for j in xrange(1,len(array2)):
         tactic_values[array2[j][0]] = array2[j][i]
     combat_tactics += "good_"+tactic_name+" = {\n";
-    localization += "good_"+tactic_name+";Devastating "+tactic_values["name"]+";;;;;;;;;;;;;x\n"
+    localization += "good_"+tactic_name+";Devastating "+tactic_values["name"]+" Tactic;;;;;;;;;;;;;x\n"
     combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
     combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-7)+"\n"
     combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
@@ -1367,7 +1369,7 @@ for i in xrange(1,len(array2[0])):
     combat_tactics += "}\n"
 
     combat_tactics += tactic_name+" = {\n";
-    localization += tactic_name+";"+tactic_values["name"]+";;;;;;;;;;;;;x\n"
+    localization += tactic_name+";"+tactic_values["name"]+" Tactic;;;;;;;;;;;;;x\n"
     combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
     combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-7)+"\n"
     combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
@@ -1417,7 +1419,7 @@ for i in xrange(1,len(array2[0])):
     combat_tactics += "}\n"
 
     combat_tactics += "bad_"+tactic_name+" = {\n";
-    localization += "bad_"+tactic_name+";Failed "+tactic_values["name"]+";;;;;;;;;;;;;x\n"
+    localization += "bad_"+tactic_name+";Failed "+tactic_values["name"]+" Tactic;;;;;;;;;;;;;x\n"
     combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
     combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-7)+"\n"
     combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
