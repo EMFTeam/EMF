@@ -727,7 +727,7 @@ big_ol_block_of_conditionals = {
 		}
 		NOT = { AND = {
 			OR = {
-				light_infantry = 0.30
+				light_infantry = 0.60
 				heavy_infantry = 0.30
 				pikemen = 0.30
 				war_elephants = 0.03
@@ -782,7 +782,7 @@ big_ol_block_of_conditionals = {
 			NOT = {
 				OR = {
 					AND = {
-						light_infantry = 0.30
+						light_infantry = 0.60
 						OR = {
 							NOT = { heavy_infantry = 0.10 }
 							horse_archers = 0.10
@@ -835,12 +835,14 @@ big_ol_block_of_conditionals = {
 				OR = {
 					heavy_infantry = 0.30
 					AND = { 
-						light_infantry = 0.30
+						light_infantry = 0.60
 						OR = {
 							heavy_infantry = 0.10
-							NOT = { horse_archers = 0.10 }
-							NOT = { light_cavalry = 0.10 }
-							NOT = { camel_cavalry = 0.10 }
+							NOT = {
+								horse_archers = 0.10
+								light_cavalry = 0.10
+								camel_cavalry = 0.10
+							}
 						}
 					}
 					AND = {
@@ -868,7 +870,7 @@ big_ol_block_of_conditionals = {
 				light_cavalry = 0.30
 				camel_cavalry = 0.30
 				horse_archers = 0.30
-				light_infantry = 0.30
+				light_infantry = 0.60
 			}
 			NOT = {
 				OR = {
@@ -1469,9 +1471,9 @@ for i in xrange(1,len(array2[0])):
     combat_tactics += "}\n"
                 
 combat_tactics = base_tactics + combat_tactics
-f = open("combat_tactics.txt", "w")
+f = open(".."+os.sep+"common"+os.sep+"combat_tactics.txt", "w")
 f.write(combat_tactics)
 f.close()
-f = open("emf_sts.csv", "w")
+f = open(".."+os.sep+"localisation"+os.sep+"emf_sts.csv", "w")
 f.write(localization)
 f.close()
