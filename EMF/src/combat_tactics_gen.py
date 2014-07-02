@@ -69,7 +69,6 @@ cultural_tactics = {
             "tuareg":           ("raid_tactic", "horseback_raid_tactic"),
             "zanata":           ("raid_tactic", "horseback_raid_tactic"),
             "beja":             ("raid_tactic", "horseback_raid_tactic"),
-            "bedouin_arabic":   ("raid_tactic", "horseback_raid_tactic"),
             "afar":             ("raid_tactic", "horseback_raid_tactic"),
             "zaghawa":          ("raid_tactic", "horseback_raid_tactic"),
             "daju":             ("raid_tactic", "horseback_raid_tactic"),
