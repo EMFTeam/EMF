@@ -369,6 +369,6 @@ sub print_i18n {
 		my $max_rs = ($i == $opt_n-1) ? "INF" : ($opt_offset + $opt_stride*($i+1)-1);
 		
 		print "$law;$mod_str\%$eol";
-		print "emf_ctt_dbg_$law;Dynamic Levy Law: §Y$law§!\nLevy Efficiency: §Y$mod_str\%§!\nRealm Size: §Y$min_rs§! through §Y$max_rs§!\n$eol";
+		print "emf_ctt_dbg_$law;Dynamic Levy Law: §Y$law§!\\nLevy Efficiency: §Y$mod_str\%§!\\nRealm Size: §Y$min_rs§! through §Y$max_rs§!\\n$eol";
 	}
 }
