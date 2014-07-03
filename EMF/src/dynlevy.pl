@@ -12,7 +12,7 @@ use warnings;
 use Carp;
 use Getopt::Long qw(:config gnu_getopt);
 
-my $VERSION = "0.9.5";
+my $VERSION = "0.9.6";
 
 my $DEFAULT_N      = 64;
 my $DEFAULT_STRIDE = 5;
@@ -188,7 +188,7 @@ EOS
 ####
 
 sub print_events {
-	print "Dynamic levy law scaling events (code-generated)\n";
+	print "# Dynamic levy law scaling events (code-generated)\n";
 	print_params();
 	print <<EOS;
 namespace = emf_dynlevy
@@ -230,7 +230,7 @@ EOS
 
 
 # emf_dynlevy.21
-# on_new_handler event for immediate levy law application upon title creation
+# on_new_holder event for immediate levy law application upon title creation
 #
 # Like emf_dynlevy.20, the approach is to use a binary search tree expansion upon
 # realm_size to determine the correct levy law to apply to the target title.
@@ -241,7 +241,7 @@ character_event = {
 	is_triggered_only = yes
 
 	trigger = {
-		NOT = { FROMFROM = { always = yes } }
+		not = { FROMFROM = { always = yes } }
 		FROM = { higher_tier_than = count }
 	}
 	
@@ -355,7 +355,7 @@ sub print_search_tree {
 sub print_i18n {
 	print "#CODE;ENGLISH;FRENCH;GERMAN;;SPANISH;;;;;;;;;x\n";
 	my $eol = ";;;;;;;;;;;;;x\n";
-	print "emf_dynlevy.22.desc;Hover over the event option for my levy efficiency law. If no tooltip appears, I have no dynlevy law applied.$eol\n";
+	print "emf_dynlevy.22.desc;Hover over the event option for my levy efficiency law. If no tooltip appears, I have no dynlevy law applied.$eol";
 	print "dynlevy;Levy Efficiency$eol";
 	
 	for my $i (0..$opt_n-1) {
@@ -365,7 +365,10 @@ sub print_i18n {
 		$mod_str =~ s/\.$//;
 		my $law = "dynlevy_$i";
 		
+		my $min_rs = ($i == 0) ? 1 : ($opt_offset + $opt_stride*$i);
+		my $max_rs = ($i == $opt_n-1) ? "INF" : ($opt_offset + $opt_stride*($i+1)-1);
+		
 		print "$law;$mod_str\%$eol";
-		print "emf_ctt_dbg_$law;Dynamic Levy Law: §Y$law§!\nLevy Efficiency: §Y$mod_str\%§!\n$eol";
+		print "emf_ctt_dbg_$law;Dynamic Levy Law: §Y$law§!\\nLevy Efficiency: §Y$mod_str\%§!\\nRealm Size: §Y$min_rs§! through §Y$max_rs§!\\n$eol";
 	}
 }
