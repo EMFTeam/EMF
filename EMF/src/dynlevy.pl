@@ -188,7 +188,7 @@ EOS
 ####
 
 sub print_events {
-	print "Dynamic levy law scaling events (code-generated)\n";
+	print "# Dynamic levy law scaling events (code-generated)\n";
 	print_params();
 	print <<EOS;
 namespace = emf_dynlevy
@@ -230,7 +230,7 @@ EOS
 
 
 # emf_dynlevy.21
-# on_new_handler event for immediate levy law application upon title creation
+# on_new_holder event for immediate levy law application upon title creation
 #
 # Like emf_dynlevy.20, the approach is to use a binary search tree expansion upon
 # realm_size to determine the correct levy law to apply to the target title.
@@ -241,7 +241,7 @@ character_event = {
 	is_triggered_only = yes
 
 	trigger = {
-		NOT = { FROMFROM = { always = yes } }
+		not = { FROMFROM = { always = yes } }
 		FROM = { higher_tier_than = count }
 	}
 	
