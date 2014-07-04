@@ -3,6 +3,16 @@ namespace = emf_regional
 ### EMF Regional Events Module
 ### Provides a framework for doing random events with a regional focus
 
+character_event = {
+	id = emf_regional.666
+	desc = "Pulse"
+	picture = GFX_evt_siege
+	is_triggered_only = yes
+	
+	option = { name = OK }
+
+}
+
 ### Regional Events Framework
 ### 0-99 reserved
 # Sends recursive events to rulers
@@ -13,6 +23,7 @@ character_event = {
 	
 	option = {
 		name = OK
+		
 		any_independent_ruler = {
 			character_event = { id = emf_regional.1 }
 			any_realm_lord = {
@@ -24,139 +35,442 @@ character_event = {
 }
 
 # Recurses through ruler provinces
-# Probably going to do a global flag controlled switch + some extra logic
-# So first time through it places flags, second time through it removes, and so forth
 character_event = {
 	id = emf_regional.1
 	hide_window = yes
 	is_triggered_only = yes
 	
 	trigger = {
-		OR = {
-			AND = {
-				has_global_flag = emf_region_sweep_1
-				any_demesne_province = { NOT = { has_province_flag = emf_region_sweep } }
+		or = {
+			and = {
+				not = { has_global_flag = emf_region_invert }
+				any_demesne_province = { not = { has_province_flag = emf_region_sweep } }
 			}
-			AND = {
-				has_global_flag = emf_region_sweep_2
+			and = {
+				has_global_flag = emf_region_invert
 				any_demesne_province = { has_province_flag = emf_region_sweep }
 			}
 		}
 	}
 	
-	immediate = {
-		random_list = { #Advance random seed
-			50 = { if = { limit = { always = yes } } } #Fool the engine
-			50 = { }
-		}
-	}
+
 	
-	option = {
+	option = { # No event
 		name = OK
+		ai_chance = {
+			factor = 95
+		}
 		
 		random_demesne_title = {
 			limit = {
 				tier = count
-				OR = {
-					AND = {
-						has_global_flag = emf_region_sweep_1
-						location = { NOT = { has_province_flag = emf_region_sweep } }
+				or = {
+					and = {
+						not = { has_global_flag = emf_region_invert }
+						location = { not = { has_province_flag = emf_region_sweep } }
 					}
-					AND = {
-						has_global_flag = emf_region_sweep_2
+					and = {
+						has_global_flag = emf_region_invert
 						location = { has_province_flag = emf_region_sweep }
 					}
 				}
 			}
 			location = {
 				if = {
-					limit = { has_global_flag = emf_region_sweep_1 }
+					limit = { not = { has_global_flag = emf_region_invert } }
 					set_province_flag = emf_region_sweep
 				}
 				if = {
-					limit = { has_global_flag = emf_region_sweep_2 }
+					limit = { has_global_flag = emf_region_invert }
 					clr_province_flag = emf_region_sweep
-				}
-				
-				# EMF Seasonal Events
-				random_list = {
-					97 = {} # Nothing happens
-					3 = { # Seasonal event!
-						set_province_flag = emf_seasonal_event
-						if = { # Winter
-							limit = {
-								OR = {
-									month = 11 # At least December
-									AND = {
-										month = 0
-										NOT = { month = 2 } # Before March
-									}
-								}
-							}
-							owner = {
-								random_list = {
-									20 = { character_event = { id = emf_regional.102 } } # Drought
-									20 = { character_event = { id = emf_regional.200 } } # Heavy Snow
-									20 = { character_event = { id = emf_regional.201 } } # Blizzards
-									20 = { character_event = { id = emf_regional.202 } } # Mild Winter (warm)
-									20 = { character_event = { id = emf_regional.203 } } # Harsh Winter (cold)
-								}
-							}
-						}
-						if = { # Spring
-							limit = {
-								month = 2 # At least March
-								NOT = { month = 5 } # Before June
-							}
-							owner = {
-								random_list = {
-									20 = { character_event = { id = emf_regional.100 } } # Heavy Rain
-									20 = { character_event = { id = emf_regional.101 } } # Storms
-									20 = { character_event = { id = emf_regional.102 } } # Drought
-									20 = { character_event = { id = emf_regional.250 } } # Pleasant Spring (warm)
-									20 = { character_event = { id = emf_regional.251 } } # Cold Snap (cold)
-								}
-							}
-						}
-						if = { # Summer
-							limit = {
-								month = 5 # At least June
-								NOT = { month = 8 } # Before September
-							}
-							owner = {
-								random_list = {
-									15 = { character_event = { id = emf_regional.100 } } # Heavy Rain
-									15 = { character_event = { id = emf_regional.101 } } # Storms
-									15 = { character_event = { id = emf_regional.102 } } # Drought
-									15 = { character_event = { id = emf_regional.300 } } # Heat Wave (warm)
-									15 = { character_event = { id = emf_regional.301 } } # Mild Summer (cold)
-									15 = { character_event = { id = emf_regional.302 } } # Cloudy
-									15 = { character_event = { id = emf_regional.303 } } # Bright
-								}
-							}
-						}
-						if = { # Autumn
-							limit = {
-								month = 8 # At least September
-								NOT = { month = 11 } # Before December
-							}
-							owner = {
-								random_list = {
-									20 = { character_event = { id = emf_regional.100 } } # Heavy Rain
-									20 = { character_event = { id = emf_regional.101 } } # Storms
-									20 = { character_event = { id = emf_regional.102 } } # Drought
-									20 = { character_event = { id = emf_regional.350 } } # Mild Autumn (warm)
-									20 = { character_event = { id = emf_regional.351 } } # Early Cold (cold)
-								}
-							}
-						}
-					}
 				}
 			}
 		}
 		
 		# Recurse
 		character_event = { id = emf_regional.1 }
+	}
+
+	option = { # Event!
+		name = OK
+		ai_chance = {
+			factor = 5
+		}
+		
+		random_demesne_title = {
+			limit = {
+				tier = count
+				or = {
+					and = {
+						not = { has_global_flag = emf_region_invert }
+						location = { not = { has_province_flag = emf_region_sweep } }
+					}
+					and = {
+						has_global_flag = emf_region_invert
+						location = { has_province_flag = emf_region_sweep }
+					}
+				}
+			}
+			location = {
+				if = {
+					limit = { not = { has_global_flag = emf_region_invert } }
+					set_province_flag = emf_region_sweep
+				}
+				if = {
+					limit = { has_global_flag = emf_region_invert }
+					clr_province_flag = emf_region_sweep
+				}
+				
+				# EMF Seasonal Events
+				set_province_flag = emf_seasonal_event
+				owner = { character_event = { id = emf_regional.2 } }
+			}
+		}
+		
+		# Recurse
+		character_event = { id = emf_regional.1 }
+	}
+}
+
+# Handout Event
+character_event = {
+	id = emf_regional.2
+	hide_window = yes
+	is_triggered_only = yes
+	
+	# Shared
+	option = { # Heavy Rain
+		name = OK
+		ai_chance = {
+			factor = 1
+			modifier = { # Not in Winter
+				factor = 0
+				or = {
+					month = 11 # At least December
+					and = {
+						month = 0
+						not = { month = 2 } # Before March
+					}
+				}
+			}
+		}
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				owner = { character_event = { id = emf_regional.100 } }
+			}
+		}
+	}
+	option = { # Storms
+		name = OK
+		ai_chance = {
+			factor = 1
+			modifier = { # Not in Winter
+				factor = 0
+				or = {
+					month = 11 # At least December
+					and = {
+						month = 0
+						not = { month = 2 } # Before March
+					}
+				}
+			}
+		}
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				owner = { character_event = { id = emf_regional.101 } }
+			}
+		}
+	}
+	option = { # Drought
+		name = OK
+		ai_chance = {
+			factor = 1
+		}
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				owner = { character_event = { id = emf_regional.102 } }
+			}
+		}
+	}
+	
+	# Winter
+	option = { # Heavy Snow
+		trigger = {
+			or = {
+				month = 11 # At least December
+				and = {
+					month = 0
+					not = { month = 2 } # Before March
+				}
+			}
+		}
+		name = OK
+		ai_chance = {
+			factor = 1
+		}
+		
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				owner = { character_event = { id = emf_regional.200 } }
+			}
+		}
+	}
+	option = { # Blizzards
+		trigger = {
+			or = {
+				month = 11 # At least December
+				and = {
+					month = 0
+					not = { month = 2 } # Before March
+				}
+			}
+		}
+		name = OK
+		ai_chance = {
+			factor = 1
+		}
+		
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				owner = { character_event = { id = emf_regional.201 } }
+			}
+		}
+	}
+	option = { # Mild Winter (warm)
+		trigger = {
+			or = {
+				month = 11 # At least December
+				and = {
+					month = 0
+					not = { month = 2 } # Before March
+				}
+			}
+		}
+		name = OK
+		ai_chance = {
+			factor = 1
+		}
+		
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				owner = { character_event = { id = emf_regional.202 } }
+			}
+		}
+	}
+	option = { # Harsh Winter (cold)
+		trigger = {
+			or = {
+				month = 11 # At least December
+				and = {
+					month = 0
+					not = { month = 2 } # Before March
+				}
+			}
+		}
+		name = OK
+		ai_chance = {
+			factor = 1
+		}
+		
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				owner = { character_event = { id = emf_regional.203 } }
+			}
+		}
+	}
+	
+	# Spring
+	option = { # Pleasant Spring (warm)
+		trigger = {
+			month = 2 # At least March
+			not = { month = 5 } # Before June
+		}
+		name = OK
+		ai_chance = {
+			factor = 1
+		}
+		
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				owner = { character_event = { id = emf_regional.250 } }
+			}
+		}
+	}
+	option = { # Cold Snap (cold)
+		trigger = {
+			month = 2 # At least March
+			not = { month = 5 } # Before June
+		}
+		name = OK
+		ai_chance = {
+			factor = 1
+		}
+		
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				owner = { character_event = { id = emf_regional.251 } }
+			}
+		}
+	}
+	
+	# Summer
+	option = { # Heat Wave (warm)
+		trigger = {
+			month = 5 # At least June
+			not = { month = 8 } # Before September
+		}
+		name = OK
+		ai_chance = {
+			factor = 1
+		}
+		
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				owner = { character_event = { id = emf_regional.300 } }
+			}
+		}
+	}
+	option = { # Mild Summer (cold)
+		trigger = {
+			month = 5 # At least June
+			not = { month = 8 } # Before September
+		}
+		name = OK
+		ai_chance = {
+			factor = 1
+		}
+		
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				owner = { character_event = { id = emf_regional.301 } }
+			}
+		}
+	}
+	option = { # Cloudy
+		trigger = {
+			month = 5 # At least June
+			not = { month = 8 } # Before September
+		}
+		name = OK
+		ai_chance = {
+			factor = 1
+		}
+		
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				owner = { character_event = { id = emf_regional.302 } }
+			}
+		}
+	}
+	option = { # Bright
+		trigger = {
+			month = 5 # At least June
+			not = { month = 8 } # Before September
+		}
+		name = OK
+		ai_chance = {
+			factor = 1
+		}
+		
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				owner = { character_event = { id = emf_regional.303 } }
+			}
+		}
+	}
+	
+	# Autumn
+	option = { # Mild Autumn (warm)
+		trigger = {
+			month = 8 # At least September
+			not = { month = 11 } # Before December
+		}
+		name = OK
+		ai_chance = {
+			factor = 1
+		}
+		
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				owner = { character_event = { id = emf_regional.350 } }
+			}
+		}
+	}
+	option = { # Early Cold (cold)
+		trigger = {
+			month = 8 # At least September
+			not = { month = 11 } # Before December
+		}
+		name = OK
+		ai_chance = {
+			factor = 1
+		}
+		
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				owner = { character_event = { id = emf_regional.351 } }
+			}
+		}
 	}
 }
 
@@ -194,7 +508,6 @@ character_event = {
 # Heat Wave: ? (Mild Winter in Winter)
 # Unusually Cold: ? (Harsh Winter in Winter)
 
-# The notification events will also handle substitution depending on province terrain type (thus, if you call storms, it will automatically be transmuted into flooding in river or coastal provinces or sandstorms in desert provinces?)
 # Notification events might also substitute modifiers to get different localizations depending on terrain (so the localization for harsh winter might be different for jungle and desert) if, you know, that actually turns out to be a thing I want to do.
 
 ## General
@@ -219,9 +532,9 @@ character_event = {
 				# Most provinces get Heavy Rain
 				if = {
 					limit = {
-						NOT = { terrain = desert }
-						NOT = { borders_major_river = yes }
-						NOT = { port = yes }
+						not = { terrain = desert }
+						not = { borders_major_river = yes }
+						not = { port = yes }
 					}
 					add_province_modifier = {
 						name = emf_mod_heavy_rain
@@ -254,19 +567,19 @@ character_event = {
 				}
 				any_neighbor_province = {
 					if = {
-						limit = { has_global_flag = emf_region_sweep_1 }
+						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
 					}
 					if = {
-						limit = { has_global_flag = emf_region_sweep_2 }
+						limit = { has_global_flag = emf_region_invert }
 						clr_province_flag = emf_region_sweep
 					}
 					# Most provinces get Heavy Rain
 					if = {
 						limit = {
-							NOT = { terrain = desert }
-							NOT = { borders_major_river = yes }
-							NOT = { port = yes }
+							not = { terrain = desert }
+							not = { borders_major_river = yes }
+							not = { port = yes }
 						}
 						add_province_modifier = {
 							name = emf_mod_heavy_rain
@@ -324,9 +637,9 @@ character_event = {
 				# Most provinces get Storms
 				if = {
 					limit = {
-						NOT = { terrain = desert }
-						NOT = { borders_major_river = yes }
-						NOT = { port = yes }
+						not = { terrain = desert }
+						not = { borders_major_river = yes }
+						not = { port = yes }
 					}
 					add_province_modifier = {
 						name = emf_mod_storms
@@ -359,19 +672,19 @@ character_event = {
 				}
 				any_neighbor_province = {
 					if = {
-						limit = { has_global_flag = emf_region_sweep_1 }
+						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
 					}
 					if = {
-						limit = { has_global_flag = emf_region_sweep_2 }
+						limit = { has_global_flag = emf_region_invert }
 						clr_province_flag = emf_region_sweep
 					}
 					# Most provinces get Storms
 					if = {
 						limit = {
-							NOT = { terrain = desert }
-							NOT = { borders_major_river = yes }
-							NOT = { port = yes }
+							not = { terrain = desert }
+							not = { borders_major_river = yes }
+							not = { port = yes }
 						}
 						add_province_modifier = {
 							name = emf_mod_storms
@@ -429,7 +742,7 @@ character_event = {
 				# Most provinces get Drought
 				if = {
 					limit = {
-						NOT = { terrain = desert }
+						not = { terrain = desert }
 					}
 					add_province_modifier = {
 						name = emf_mod_drought
@@ -438,17 +751,17 @@ character_event = {
 				}
 				any_neighbor_province = {
 					if = {
-						limit = { has_global_flag = emf_region_sweep_1 }
+						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
 					}
 					if = {
-						limit = { has_global_flag = emf_region_sweep_2 }
+						limit = { has_global_flag = emf_region_invert }
 						clr_province_flag = emf_region_sweep
 					}
 					# Most provinces get Drought
 					if = {
 						limit = {
-							NOT = { terrain = desert }
+							not = { terrain = desert }
 						}
 						add_province_modifier = {
 							name = emf_mod_drought
@@ -493,9 +806,9 @@ character_event = {
 				# Most provinces get Heavy Snow
 				if = {
 					limit = {
-						OR = {
-							NOT = { terrain = jungle }
-							NOT = { terrain = desert }
+						or = {
+							not = { terrain = jungle }
+							not = { terrain = desert }
 						}
 					}
 					add_province_modifier = {
@@ -506,7 +819,7 @@ character_event = {
 				# Desert and Jungle get Heavy Rains
 				if = {
 					limit = {
-						OR = {
+						or = {
 							terrain = jungle
 							terrain = desert
 						}
@@ -518,20 +831,18 @@ character_event = {
 				}
 				any_neighbor_province = {
 					if = {
-						limit = { has_global_flag = emf_region_sweep_1 }
+						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
 					}
 					if = {
-						limit = { has_global_flag = emf_region_sweep_2 }
+						limit = { has_global_flag = emf_region_invert }
 						clr_province_flag = emf_region_sweep
 					}
 					# Most provinces get Heavy Snow
 					if = {
 						limit = {
-							OR = {
-								NOT = { terrain = jungle }
-								NOT = { terrain = desert }
-							}
+							not = { terrain = jungle }
+							not = { terrain = desert }
 						}
 						add_province_modifier = {
 							name = emf_mod_heavy_snow
@@ -541,7 +852,7 @@ character_event = {
 					# Desert and Jungle get Heavy Rains
 					if = {
 						limit = {
-							OR = {
+							or = {
 								terrain = jungle
 								terrain = desert
 							}
@@ -578,10 +889,8 @@ character_event = {
 				# Most provinces get Blizzards
 				if = {
 					limit = {
-						OR = {
-							NOT = { terrain = jungle }
-							NOT = { terrain = desert }
-						}
+						not = { terrain = jungle }
+						not = { terrain = desert }
 					}
 					add_province_modifier = {
 						name = emf_mod_blizzards
@@ -591,7 +900,7 @@ character_event = {
 				# Desert and Jungle get Storms
 				if = {
 					limit = {
-						OR = {
+						or = {
 							terrain = jungle
 							terrain = desert
 						}
@@ -603,19 +912,19 @@ character_event = {
 				}
 				any_neighbor_province = {
 					if = {
-						limit = { has_global_flag = emf_region_sweep_1 }
+						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
 					}
 					if = {
-						limit = { has_global_flag = emf_region_sweep_2 }
+						limit = { has_global_flag = emf_region_invert }
 						clr_province_flag = emf_region_sweep
 					}
 					# Most provinces get Blizzards
 					if = {
 						limit = {
-							OR = {
-								NOT = { terrain = jungle }
-								NOT = { terrain = desert }
+							or = {
+								not = { terrain = jungle }
+								not = { terrain = desert }
 							}
 						}
 						add_province_modifier = {
@@ -626,7 +935,7 @@ character_event = {
 					# Desert and Jungle get Storms
 					if = {
 						limit = {
-							OR = {
+							or = {
 								terrain = jungle
 								terrain = desert
 							}
@@ -667,11 +976,11 @@ character_event = {
 				}
 				any_neighbor_province = {
 					if = {
-						limit = { has_global_flag = emf_region_sweep_1 }
+						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
 					}
 					if = {
-						limit = { has_global_flag = emf_region_sweep_2 }
+						limit = { has_global_flag = emf_region_invert }
 						clr_province_flag = emf_region_sweep
 					}
 					# All provinces get Mild Winter
@@ -710,11 +1019,11 @@ character_event = {
 				}
 				any_neighbor_province = {
 					if = {
-						limit = { has_global_flag = emf_region_sweep_1 }
+						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
 					}
 					if = {
-						limit = { has_global_flag = emf_region_sweep_2 }
+						limit = { has_global_flag = emf_region_invert }
 						clr_province_flag = emf_region_sweep
 					}
 					# All provinces get Harsh Winter
@@ -756,11 +1065,11 @@ character_event = {
 				}
 				any_neighbor_province = {
 					if = {
-						limit = { has_global_flag = emf_region_sweep_1 }
+						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
 					}
 					if = {
-						limit = { has_global_flag = emf_region_sweep_2 }
+						limit = { has_global_flag = emf_region_invert }
 						clr_province_flag = emf_region_sweep
 					}
 					# All provinces get Pleasant Spring
@@ -799,11 +1108,11 @@ character_event = {
 				}
 				any_neighbor_province = {
 					if = {
-						limit = { has_global_flag = emf_region_sweep_1 }
+						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
 					}
 					if = {
-						limit = { has_global_flag = emf_region_sweep_2 }
+						limit = { has_global_flag = emf_region_invert }
 						clr_province_flag = emf_region_sweep
 					}
 					# All provinces get Long Winter
@@ -845,11 +1154,11 @@ character_event = {
 				}
 				any_neighbor_province = {
 					if = {
-						limit = { has_global_flag = emf_region_sweep_1 }
+						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
 					}
 					if = {
-						limit = { has_global_flag = emf_region_sweep_2 }
+						limit = { has_global_flag = emf_region_invert }
 						clr_province_flag = emf_region_sweep
 					}
 					# All provinces get Heat Wave
@@ -888,11 +1197,11 @@ character_event = {
 				}
 				any_neighbor_province = {
 					if = {
-						limit = { has_global_flag = emf_region_sweep_1 }
+						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
 					}
 					if = {
-						limit = { has_global_flag = emf_region_sweep_2 }
+						limit = { has_global_flag = emf_region_invert }
 						clr_province_flag = emf_region_sweep
 					}
 					# All provinces get Mild Summer
@@ -931,11 +1240,11 @@ character_event = {
 				}
 				any_neighbor_province = {
 					if = {
-						limit = { has_global_flag = emf_region_sweep_1 }
+						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
 					}
 					if = {
-						limit = { has_global_flag = emf_region_sweep_2 }
+						limit = { has_global_flag = emf_region_invert }
 						clr_province_flag = emf_region_sweep
 					}
 					# All provinces get Cloudy
@@ -974,11 +1283,11 @@ character_event = {
 				}
 				any_neighbor_province = {
 					if = {
-						limit = { has_global_flag = emf_region_sweep_1 }
+						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
 					}
 					if = {
-						limit = { has_global_flag = emf_region_sweep_2 }
+						limit = { has_global_flag = emf_region_invert }
 						clr_province_flag = emf_region_sweep
 					}
 					# All provinces get Bright
@@ -996,7 +1305,7 @@ character_event = {
 
 ## Autumn
 # 350-399 reserved
-# 350 - Mild Autumn
+# 350 - Warm Autumn
 character_event = {
 	id = emf_regional.350
 	desc = emf_regional.350.desc
@@ -1013,23 +1322,23 @@ character_event = {
 			}
 			location = {
 				clr_province_flag = emf_seasonal_event
-				# All provinces get Mild Autumn
+				# All provinces get Warm Autumn
 				add_province_modifier = {
-					name = emf_mod_mild_autumn
+					name = emf_mod_warm_autumn
 					duration = 85
 				}
 				any_neighbor_province = {
 					if = {
-						limit = { has_global_flag = emf_region_sweep_1 }
+						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
 					}
 					if = {
-						limit = { has_global_flag = emf_region_sweep_2 }
+						limit = { has_global_flag = emf_region_invert }
 						clr_province_flag = emf_region_sweep
 					}
-					# All provinces get Mild Autumn
+					# All provinces get Warm Autumn
 					add_province_modifier = {
-						name = emf_mod_mild_autumn
+						name = emf_mod_warm_autumn
 						duration = 85
 					}
 				}
@@ -1063,11 +1372,11 @@ character_event = {
 				}
 				any_neighbor_province = {
 					if = {
-						limit = { has_global_flag = emf_region_sweep_1 }
+						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
 					}
 					if = {
-						limit = { has_global_flag = emf_region_sweep_2 }
+						limit = { has_global_flag = emf_region_invert }
 						clr_province_flag = emf_region_sweep
 					}
 					# All provinces get Early Winter
