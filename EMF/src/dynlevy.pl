@@ -132,11 +132,13 @@ sub print_laws {
 		my $law = "dynlevy_$i";
 		
 		print "\t$law = {\n";
-		print "\t\tgroup = dynlevy\n";
+		print "\t\tgroup = dynlevy_g$i\n";
 		print <<EOS;
 
 		potential = {
-			always = no
+			has_law = $law
+		}
+		allow = {
 		}
 		revoke_allowed = {
 			always = no
@@ -356,19 +358,25 @@ sub print_i18n {
 	print "#CODE;ENGLISH;FRENCH;GERMAN;;SPANISH;;;;;;;;;x\n";
 	my $eol = ";;;;;;;;;;;;;x\n";
 	print "emf_dynlevy.22.desc;Hover over the event option for my levy efficiency law. If no tooltip appears, I have no dynlevy law applied.$eol";
-	print "dynlevy;Levy Efficiency$eol";
 	
 	for my $i (0..$opt_n-1) {
+		print "dynlevy_g$i;Levy Efficiency$eol";
+		
 		my $mod = scale_function($i);
 		my $mod_str = sprintf("%0.01f", $mod*100);
 		$mod_str =~ s/0+$//;
 		$mod_str =~ s/\.$//;
+		$mod_str .= '%';
 		my $law = "dynlevy_$i";
 		
 		my $min_rs = ($i == 0) ? 1 : ($opt_offset + $opt_stride*$i);
 		my $max_rs = ($i == $opt_n-1) ? "INF" : ($opt_offset + $opt_stride*($i+1)-1);
 		
 		print "$law;$mod_str\%$eol";
-		print "emf_ctt_dbg_$law;Dynamic Levy Law: §Y$law§!\\nLevy Efficiency: §Y$mod_str\%§!\\nRealm Size: §Y$min_rs§! through §Y$max_rs§!\\n$eol";
+		print "emf_ctt_dbg_$law;Dynamic Levy Law: §Y$law§!\\nLevy Efficiency: §Y$mod_str§!\\nRealm Size: §Y$min_rs§! through §Y$max_rs§!\\n$eol";
+		print "dynlevy_g$i;Levy Efficiency$eol";
+		print "$law;$mod_str Realm Levy-Raising Efficiency$eol";
+		print "${law}_option;$mod_str$eol";
+		print "${law}_desc;As the size of a decentralized feudal realm grows, its efficiency at raising liege levies drops. Demesne levies are unaffected.\\n\\nRealm size range: §Y$min_rs§!-§Y$max_rs§!$eol";
 	}
 }
