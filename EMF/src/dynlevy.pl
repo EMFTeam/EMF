@@ -12,7 +12,7 @@ use warnings;
 use Carp;
 use Getopt::Long qw(:config gnu_getopt);
 
-my $VERSION = "0.9.6";
+my $VERSION = "0.9.8";
 
 my $DEFAULT_N      = 64;
 my $DEFAULT_STRIDE = 5;
@@ -129,14 +129,40 @@ sub print_laws {
 		my $mod = scale_function($i);
 		my $mod_str = sprintf("%0.03f", $mod);
 
-		my $law = "dynlevy_$i";
+		my $law_group = "dynlevy$i";
+		my $law = $law_group."_0";
 		
-		print "\t$law = {\n";
-		print "\t\tgroup = dynlevy\n";
+		my $is_default = '';
+		
+		if ($i == 0) {
+			$is_default = "\n\t\tdefault = yes";
+		}
+		
 		print <<EOS;
+	$law = {
+		group = $law_group$is_default
 
 		potential = {
-			always = no
+			not = { tier = baron }
+EOS
+
+		if ($i == 0) {
+			print <<EOS;
+			or = {
+				tier = count
+				has_law = $law
+			}
+EOS
+		}
+		else {
+			print <<EOS;
+			has_law = $law
+EOS
+		}
+
+		print <<EOS;
+		}
+		allow = {
 		}
 		revoke_allowed = {
 			always = no
@@ -164,7 +190,7 @@ EOS
 		
 		for my $j (0..$opt_n-1) {
 			next if $i == $j;
-			print "\t\t\t\trevoke_law = dynlevy_$j\n"
+			print "\t\t\t\trevoke_law = dynlevy${j}_0\n"
 		}
 
 		print "\t\t\t}\n\t\t}\n";
@@ -246,6 +272,7 @@ character_event = {
 	}
 	
 	immediate = {
+		set_character_flag = dbg_dynlevy_evt21
 EOS
 
 	print_search_tree(
@@ -275,7 +302,7 @@ character_event = {
 EOS
 
 	for my $i (0..$opt_n-1) {
-		my $law = "dynlevy_$i";
+		my $law = "dynlevy${i}_0";
 		print <<EOS;
 		if = {
 			limit = { has_law = $law }
@@ -304,6 +331,9 @@ sub print_search_tree {
 	if ($range == 1) {
 		# base case
 		
+		my $lg = "dynlevy$min";
+		my $law = $lg."_0";
+		
 		if ($mode == 0) {
 			print "\t" x $tab, "primary_title = {\n";
 			++$tab;
@@ -314,10 +344,10 @@ sub print_search_tree {
 			print "\t" x $tab, "limit = {\n";
 			++$tab;
 			print "\t" x $tab, "not = { lower_tier_than = PREVPREV }\n";
-			print "\t" x $tab, "not = { has_law = dynlevy_$min }\n";
+			print "\t" x $tab, "not = { has_law = $law }\n";
 			--$tab;
 			print "\t" x $tab, "}\n"; # limit
-			print "\t" x $tab, "add_law = dynlevy_$min\n";
+			print "\t" x $tab, "add_law = $law\n";
 			--$tab;
 			print "\t" x $tab, "}\n"; # any_demesne_title
 			--$tab;
@@ -326,7 +356,7 @@ sub print_search_tree {
 			print "\t" x $tab, "}\n"; # primary_title
 		}
 		elsif ($mode == 1) {
-			print "\t" x $tab, "FROM = { add_law = dynlevy_$min }\n";
+			print "\t" x $tab, "FROM = { add_law = $law }\n";
 		}
 		
 		return;
@@ -356,19 +386,24 @@ sub print_i18n {
 	print "#CODE;ENGLISH;FRENCH;GERMAN;;SPANISH;;;;;;;;;x\n";
 	my $eol = ";;;;;;;;;;;;;x\n";
 	print "emf_dynlevy.22.desc;Hover over the event option for my levy efficiency law. If no tooltip appears, I have no dynlevy law applied.$eol";
-	print "dynlevy;Levy Efficiency$eol";
 	
 	for my $i (0..$opt_n-1) {
 		my $mod = scale_function($i);
 		my $mod_str = sprintf("%0.01f", $mod*100);
 		$mod_str =~ s/0+$//;
 		$mod_str =~ s/\.$//;
-		my $law = "dynlevy_$i";
+		$mod_str .= '%';
+		my $law_group = "dynlevy$i";
+		my $law = $law_group."_0";
 		
 		my $min_rs = ($i == 0) ? 1 : ($opt_offset + $opt_stride*$i);
 		my $max_rs = ($i == $opt_n-1) ? "INF" : ($opt_offset + $opt_stride*($i+1)-1);
 		
-		print "$law;$mod_str\%$eol";
-		print "emf_ctt_dbg_$law;Dynamic Levy Law: §Y$law§!\\nLevy Efficiency: §Y$mod_str\%§!\\nRealm Size: §Y$min_rs§! through §Y$max_rs§!\\n$eol";
+		print "emf_ctt_dbg_$law;Dynamic Levy Law: §Y$law§!\\nLevy Efficiency: §Y$mod_str§!\\nRealm Size: §Y$min_rs§! through §Y$max_rs§!\\n$eol";
+		print "${law_group};Levy Efficiency$eol";
+		print "${law_group}_desc;As your realm grows, your liege levy will grow with it. But by how much?$eol";
+		print "${law};$mod_str Realm Levy-Raising Efficiency$eol";
+		print "${law}_option;$mod_str$eol";
+		print "${law}_desc;In a decentralized feudal system, rulers of large realms are less efficient at raising liege levies than rulers of smaller realms. Demesne levies are unaffected.\\n\\nSmaller realms pack a harder punch per capita, all else being equal. For larger realms to compete per capita, they inevitably must centralize. See the EMF manual for details on levy efficiency.\\n\\nRealm size class: §G$min_rs§! - §G$max_rs§!$eol";
 	}
 }
