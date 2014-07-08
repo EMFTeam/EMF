@@ -933,18 +933,18 @@ NMilitary = {
 	
 	REBEL_LEADER_MINIMUM_LIEGE_LEVY_MULT = 1, 	-- Leader of a civil war will always get at least this multiplier of levies from fellow rebels
 	CAPITAL_COUNTY_VASSAL_COUNT_LEVY_MULT = 1,	-- Used instead of CAPITAL_COUNTY_LEVY_MULT for vassal counts
-	CAPITAL_COUNTY_VASSAL_LEVY_MULT = 1.4,		-- Used instead of CAPITAL_COUNTY_LEVY_MULT for non-count vassals
+	CAPITAL_COUNTY_VASSAL_LEVY_MULT = 1.25,		-- Used instead of CAPITAL_COUNTY_LEVY_MULT for non-count vassals
 	CAPITAL_COUNTY_LEVY_MULT = 1.5,				-- Multiplier to direct levies in the capital county
 	CAPITAL_COUNTY_LIEGE_LEVY_MULT = 1,			-- Multiplier to liege levies in the capital county
-	CAPITAL_DUCHY_VASSAL_LEVY_MULT = 1.25,		-- Used instead of CAPITAL_DUCHY_LEVY_MULT for non-count vassals
+	CAPITAL_DUCHY_VASSAL_LEVY_MULT = 1,			-- Used instead of CAPITAL_DUCHY_LEVY_MULT for non-count vassals
 	CAPITAL_DUCHY_LEVY_MULT = 1.25,
-	CAPITAL_DUCHY_LIEGE_LEVY_MULT = 1.2,
+	CAPITAL_DUCHY_LIEGE_LEVY_MULT = 1,
 	CAPITAL_KINGDOM_LEVY_MULT = 1,
-	CAPITAL_KINGDOM_LIEGE_LEVY_MULT = 1,
+	CAPITAL_KINGDOM_LIEGE_LEVY_MULT = 0.9,
 	CAPITAL_EMPIRE_LEVY_MULT = 1,
-	CAPITAL_EMPIRE_LIEGE_LEVY_MULT = 0.9,
+	CAPITAL_EMPIRE_LIEGE_LEVY_MULT = 0.8,
 	OUTSIDE_LEVY_MULT = 1,						-- Multiplier to direct levies outside all capital regions
-	OUTSIDE_LIEGE_LEVY_MULT = 0.8,				-- Multiplier to liege levies outside all capital regions
+	OUTSIDE_LIEGE_LEVY_MULT = 0.7,				-- Multiplier to liege levies outside all capital regions
 	
 	SUPPLY_CAPACITY = 31,						-- Amount of days of worth supply that a unit can hold.
 	OUT_OF_SUPPLY_ATTRITION_BASE = 0.001,		-- The attrition a unit that is out of supply takes.
