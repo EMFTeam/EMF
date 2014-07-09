@@ -6,15 +6,15 @@
 # without modification, of this program or its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "0.9.4";
+my $VERSION = "0.9.5";
 
 my $opt = {
-	min_total_levy      => -0.2,
-	max_total_levy      => 0.3,
-	castle_tax_per_levy => 0.75,
-	temple_tax_per_levy => 1.0,
-	city_tax_per_levy   => 1.5,
-	iqta_tax_per_levy   => 0.8,
+	min_total_levy      => -0.1,
+	max_total_levy      => 0.4,
+	castle_tax_per_levy => 0.6,
+	temple_tax_per_levy => 0.8,
+	city_tax_per_levy   => 1.0,
+	iqta_tax_per_levy   => 0.7,
 	opinion_offset => 4,
 	opinion_slope  => -8,
 	default_laws => {
@@ -40,17 +40,22 @@ my $LEVY_TRADEOFF_MAX = $LEVY_RANGE / $N_LAWS;
 
 sub slider_function {
 	my ($i, $tax_per_levy) = @_;
-	my $levy_delta = 2 * $i * $LEVY_RANGE/($N_LAWS)/($N_LAWS-1);
+	
+	my $levy_delta = 2 * $i * $LEVY_RANGE / $N_LAWS / ($N_LAWS-1);
 	my $levy = $LEVY_RANGE/$N_LAWS - $levy_delta;
-	return ($levy, $tax_per_levy*$levy_delta);
-}
 
+	return ($levy, $tax_per_levy * $levy_delta);
+}
 
 sub obligations_function {
 	my ($i, $tax_per_levy) = @_;
+
 	my $levy = $opt->{min_total_levy} + $i*($LEVY_RANGE - 2*$LEVY_TRADEOFF_MAX)/($N_LAWS-1) + $LEVY_TRADEOFF_MAX;
-	return ($levy, $tax_per_levy*$levy);
+	my $tax = $tax_per_levy * $levy;
+	
+	return ($levy, $tax);
 }
+
 
 
 #####
@@ -92,18 +97,22 @@ EOS
 
 		my $tax_per_levy = $opt->{ "${type}_tax_per_levy" };
 		
+		# Focus
 		print "\n\n\t# \U$type FOCUS\n";
 		
-		# focus
 		for my $i (0..4) {
 			print_law(1, $type, $i, slider_function($i, $tax_per_levy));
 		}
 
+		# Obligations
 		print "\n\t# \U$type OBLIGATIONS\n";
 		
-		# obligations
+		# Normalize/offset the actual "None" level of tax obligations to always be 0
+		my (undef, $min_tax_offset) = obligations_function(0, $tax_per_levy);
+		
 		for my $i (0..4) {
-			print_law(0, $type, $i, obligations_function($i, $tax_per_levy));
+			my ($levy, $tax) = obligations_function($i, $tax_per_levy);
+			print_law(0, $type, $i, $levy, $tax - $min_tax_offset);
 		}
 	}
 	
@@ -130,8 +139,12 @@ sub print_summary {
 		
 		printf("\n# %12s ", "Obligations:");
 		
+		# Normalize/offset the actual "None" level of tax obligations to always be 0
+		my (undef, $min_tax_offset) = obligations_function(0, $tax_per_levy);
+		
 		for my $i (0..4) {
-			printf("%13s  ", sprintf("%5.3f/%5.3f", obligations_function($i, $tax_per_levy)));
+			my ($levy, $tax) = obligations_function($i, $tax_per_levy);
+			printf("%13s  ", sprintf("%5.3f/%5.3f", $levy, $tax - $min_tax_offset));
 		}
 		
 		print "\n";
