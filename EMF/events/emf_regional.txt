@@ -3,16 +3,6 @@ namespace = emf_regional
 ### EMF Regional Events Module
 ### Provides a framework for doing random events with a regional focus
 
-character_event = {
-	id = emf_regional.666
-	desc = "Pulse"
-	picture = GFX_evt_siege
-	is_triggered_only = yes
-	
-	option = { name = OK }
-
-}
-
 ### Regional Events Framework
 ### 0-99 reserved
 # Sends recursive events to rulers
@@ -57,9 +47,7 @@ character_event = {
 	
 	option = { # No event
 		name = OK
-		ai_chance = {
-			factor = 96
-		}
+		ai_chance = { factor = 95 }
 		
 		random_demesne_title = {
 			limit = {
@@ -91,11 +79,9 @@ character_event = {
 		character_event = { id = emf_regional.1 }
 	}
 
-	option = { # Event!
+	option = { # Weather event!
 		name = OK
-		ai_chance = {
-			factor = 4
-		}
+		ai_chance = { factor = 4 }
 		
 		random_demesne_title = {
 			limit = {
@@ -120,7 +106,6 @@ character_event = {
 					limit = { has_global_flag = emf_region_invert }
 					clr_province_flag = emf_region_sweep
 				}
-				
 				# EMF Seasonal Events
 				set_province_flag = emf_seasonal_event
 				owner = { character_event = { id = emf_regional.2 } }
@@ -130,9 +115,46 @@ character_event = {
 		# Recurse
 		character_event = { id = emf_regional.1 }
 	}
+	
+	option = { # Other seasonal event
+		name = OK
+		ai_chance = { factor = 1 }
+		
+		random_demesne_title = {
+			limit = {
+				tier = count
+				or = {
+					and = {
+						not = { has_global_flag = emf_region_invert }
+						location = { not = { has_province_flag = emf_region_sweep } }
+					}
+					and = {
+						has_global_flag = emf_region_invert
+						location = { has_province_flag = emf_region_sweep }
+					}
+				}
+			}
+			location = {
+				if = {
+					limit = { not = { has_global_flag = emf_region_invert } }
+					set_province_flag = emf_region_sweep
+				}
+				if = {
+					limit = { has_global_flag = emf_region_invert }
+					clr_province_flag = emf_region_sweep
+				}
+				# EMF Seasonal Events
+				# set_province_flag = emf_seasonal_event
+				# owner = { character_event = { id = emf_regional.3 } }
+			}
+		}
+		
+		# Recurse
+		character_event = { id = emf_regional.1 }
+	}
 }
 
-# Handout Event
+# Hand out seasonal weather events
 character_event = {
 	id = emf_regional.2
 	hide_window = yes
@@ -474,6 +496,47 @@ character_event = {
 	}
 }
 
+# Hand out other seasonal events
+# This is where wolves and rats and stuff go
+character_event = {
+	id = emf_regional.3
+	hide_window = yes
+	is_triggered_only = yes
+	
+	# Shared
+	option = { # Rats
+		name = OK
+		ai_chance = {
+			factor = 1
+		}
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				owner = { character_event = { id = emf_regional.150 } }
+			}
+		}
+	}
+	option = { # Wolves
+		name = OK
+		ai_chance = {
+			factor = 1
+		}
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				owner = { character_event = { id = emf_regional.151 } }
+			}
+		}
+	}
+}
+
+
 ### Seasonal Events
 # And don't forget, we'll probably want some weather/other modifier graphics!
 
@@ -524,15 +587,31 @@ character_event = {
 			}
 			location = {
 				clr_province_flag = emf_seasonal_event
-				# Most provinces get Heavy Rain
+				# Heavy Rain is good during spring
 				if = {
 					limit = {
 						not = { terrain = desert }
 						not = { borders_major_river = yes }
 						not = { port = yes }
+						month = 2 # At least March
+						not = { month = 5 } # Before June
 					}
 					add_province_modifier = {
-						name = emf_mod_heavy_rain
+						name = emf_mod_heavy_rain_good
+						duration = 80
+					}
+				}
+				# Heavy Rain is bad during other seasons
+				if = {
+					limit = {
+						not = { terrain = desert }
+						not = { borders_major_river = yes }
+						not = { port = yes }
+						month = 5 # At least June
+						not = { month = 11 } # Before December
+					}
+					add_province_modifier = {
+						name = emf_mod_heavy_rain_bad
 						duration = 80
 					}
 				}
@@ -561,6 +640,35 @@ character_event = {
 					}
 				}
 				any_neighbor_province = {
+					limit = {
+						# General
+						not = { has_province_modifier = emf_mod_heavy_rain_good }
+						not = { has_province_modifier = emf_mod_heavy_rain_bad }
+						not = { has_province_modifier = emf_mod_storms }
+						not = { has_province_modifier = emf_mod_drought }
+						# Special
+						not = { has_province_modifier = emf_mod_river_flooding }
+						not = { has_province_modifier = emf_mod_coastal_flooding }
+						not = { has_province_modifier = emf_mod_sandstorms }
+						not = { has_province_modifier = emf_mod_desert_rain }
+						# Winter
+						not = { has_province_modifier = emf_mod_heavy_snow }
+						not = { has_province_modifier = emf_mod_blizzards }
+						not = { has_province_modifier = emf_mod_mild_winter }
+						not = { has_province_modifier = emf_mod_harsh_winter }
+						# Spring
+						not = { has_province_modifier = emf_mod_pleasant_spring }
+						not = { has_province_modifier = emf_mod_long_winter }
+						# Summer
+						not = { has_province_modifier = emf_mod_heat_wave }
+						not = { has_province_modifier = emf_mod_mild_summer }
+						not = { has_province_modifier = emf_mod_cloudy }
+						not = { has_province_modifier = emf_mod_bright }
+						# Autumn
+						not = { has_province_modifier = emf_mod_warm_autumn }
+						not = { has_province_modifier = emf_mod_early_winter }
+					}
+					# Set or remove flags
 					if = {
 						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
@@ -656,15 +764,48 @@ character_event = {
 						duration = 80
 					}
 				}
-				# Deserts get Sandstorms
+				# Deserts get Sandstorms unless they're coastal or border a major river
 				if = {
-					limit = { terrain = desert }
+					limit = {
+						terrain = desert
+						not = { borders_major_river = yes }
+						not = { port = yes }
+					}
 					add_province_modifier = {
 						name = emf_mod_sandstorms
 						duration = 80
 					}
 				}
 				any_neighbor_province = {
+					limit = {
+						# General
+						not = { has_province_modifier = emf_mod_heavy_rain_good }
+						not = { has_province_modifier = emf_mod_heavy_rain_bad }
+						not = { has_province_modifier = emf_mod_storms }
+						not = { has_province_modifier = emf_mod_drought }
+						# Special
+						not = { has_province_modifier = emf_mod_river_flooding }
+						not = { has_province_modifier = emf_mod_coastal_flooding }
+						not = { has_province_modifier = emf_mod_sandstorms }
+						not = { has_province_modifier = emf_mod_desert_rain }
+						# Winter
+						not = { has_province_modifier = emf_mod_heavy_snow }
+						not = { has_province_modifier = emf_mod_blizzards }
+						not = { has_province_modifier = emf_mod_mild_winter }
+						not = { has_province_modifier = emf_mod_harsh_winter }
+						# Spring
+						not = { has_province_modifier = emf_mod_pleasant_spring }
+						not = { has_province_modifier = emf_mod_long_winter }
+						# Summer
+						not = { has_province_modifier = emf_mod_heat_wave }
+						not = { has_province_modifier = emf_mod_mild_summer }
+						not = { has_province_modifier = emf_mod_cloudy }
+						not = { has_province_modifier = emf_mod_bright }
+						# Autumn
+						not = { has_province_modifier = emf_mod_warm_autumn }
+						not = { has_province_modifier = emf_mod_early_winter }
+					}
+					# Set or remove flags
 					if = {
 						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
@@ -743,6 +884,35 @@ character_event = {
 					}
 				}
 				any_neighbor_province = {
+					limit = {
+						# General
+						not = { has_province_modifier = emf_mod_heavy_rain_good }
+						not = { has_province_modifier = emf_mod_heavy_rain_bad }
+						not = { has_province_modifier = emf_mod_storms }
+						not = { has_province_modifier = emf_mod_drought }
+						# Special
+						not = { has_province_modifier = emf_mod_river_flooding }
+						not = { has_province_modifier = emf_mod_coastal_flooding }
+						not = { has_province_modifier = emf_mod_sandstorms }
+						not = { has_province_modifier = emf_mod_desert_rain }
+						# Winter
+						not = { has_province_modifier = emf_mod_heavy_snow }
+						not = { has_province_modifier = emf_mod_blizzards }
+						not = { has_province_modifier = emf_mod_mild_winter }
+						not = { has_province_modifier = emf_mod_harsh_winter }
+						# Spring
+						not = { has_province_modifier = emf_mod_pleasant_spring }
+						not = { has_province_modifier = emf_mod_long_winter }
+						# Summer
+						not = { has_province_modifier = emf_mod_heat_wave }
+						not = { has_province_modifier = emf_mod_mild_summer }
+						not = { has_province_modifier = emf_mod_cloudy }
+						not = { has_province_modifier = emf_mod_bright }
+						# Autumn
+						not = { has_province_modifier = emf_mod_warm_autumn }
+						not = { has_province_modifier = emf_mod_early_winter }
+					}
+					# Set or remove flags
 					if = {
 						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
@@ -771,8 +941,60 @@ character_event = {
 
 ## Special
 # 150-199 reserved
-# Rats
-# Wolves
+# 150 - Rats
+character_event = {
+	id = emf_regional.150
+	desc = emf_regional.150.desc
+	picture = GFX_evt_siege
+	is_triggered_only = yes
+	notification = yes
+	
+	immediate = {
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				clr_province_flag = emf_seasonal_event
+				# Rats in the food supply
+				add_province_modifier = {
+					name = emf_mod_rats
+					duration = 80
+				}
+			}
+		}
+	}
+	
+	option = { name = OK }
+}
+# 151 - Wolves
+character_event = {
+	id = emf_regional.151
+	desc = emf_regional.151.desc
+	picture = GFX_evt_siege
+	is_triggered_only = yes
+	notification = yes
+	
+	immediate = {
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = { has_province_flag = emf_seasonal_event }
+			}
+			location = {
+				clr_province_flag = emf_seasonal_event
+				# Rats in the food supply
+				add_province_modifier = {
+					name = emf_mod_wolves
+					duration = 80
+				}
+			}
+		}
+	}
+	
+	option = { name = OK }
+}
 # Landslides
 # Avalanches
 # Other?
@@ -822,6 +1044,35 @@ character_event = {
 					}
 				}
 				any_neighbor_province = {
+					limit = {
+						# General
+						not = { has_province_modifier = emf_mod_heavy_rain_good }
+						not = { has_province_modifier = emf_mod_heavy_rain_bad }
+						not = { has_province_modifier = emf_mod_storms }
+						not = { has_province_modifier = emf_mod_drought }
+						# Special
+						not = { has_province_modifier = emf_mod_river_flooding }
+						not = { has_province_modifier = emf_mod_coastal_flooding }
+						not = { has_province_modifier = emf_mod_sandstorms }
+						not = { has_province_modifier = emf_mod_desert_rain }
+						# Winter
+						not = { has_province_modifier = emf_mod_heavy_snow }
+						not = { has_province_modifier = emf_mod_blizzards }
+						not = { has_province_modifier = emf_mod_mild_winter }
+						not = { has_province_modifier = emf_mod_harsh_winter }
+						# Spring
+						not = { has_province_modifier = emf_mod_pleasant_spring }
+						not = { has_province_modifier = emf_mod_long_winter }
+						# Summer
+						not = { has_province_modifier = emf_mod_heat_wave }
+						not = { has_province_modifier = emf_mod_mild_summer }
+						not = { has_province_modifier = emf_mod_cloudy }
+						not = { has_province_modifier = emf_mod_bright }
+						# Autumn
+						not = { has_province_modifier = emf_mod_warm_autumn }
+						not = { has_province_modifier = emf_mod_early_winter }
+					}
+					# Set or remove flags
 					if = {
 						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
@@ -902,6 +1153,35 @@ character_event = {
 					}
 				}
 				any_neighbor_province = {
+					limit = {
+						# General
+						not = { has_province_modifier = emf_mod_heavy_rain_good }
+						not = { has_province_modifier = emf_mod_heavy_rain_bad }
+						not = { has_province_modifier = emf_mod_storms }
+						not = { has_province_modifier = emf_mod_drought }
+						# Special
+						not = { has_province_modifier = emf_mod_river_flooding }
+						not = { has_province_modifier = emf_mod_coastal_flooding }
+						not = { has_province_modifier = emf_mod_sandstorms }
+						not = { has_province_modifier = emf_mod_desert_rain }
+						# Winter
+						not = { has_province_modifier = emf_mod_heavy_snow }
+						not = { has_province_modifier = emf_mod_blizzards }
+						not = { has_province_modifier = emf_mod_mild_winter }
+						not = { has_province_modifier = emf_mod_harsh_winter }
+						# Spring
+						not = { has_province_modifier = emf_mod_pleasant_spring }
+						not = { has_province_modifier = emf_mod_long_winter }
+						# Summer
+						not = { has_province_modifier = emf_mod_heat_wave }
+						not = { has_province_modifier = emf_mod_mild_summer }
+						not = { has_province_modifier = emf_mod_cloudy }
+						not = { has_province_modifier = emf_mod_bright }
+						# Autumn
+						not = { has_province_modifier = emf_mod_warm_autumn }
+						not = { has_province_modifier = emf_mod_early_winter }
+					}
+					# Set or remove flags
 					if = {
 						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
@@ -965,6 +1245,35 @@ character_event = {
 					duration = 80
 				}
 				any_neighbor_province = {
+					limit = {
+						# General
+						not = { has_province_modifier = emf_mod_heavy_rain_good }
+						not = { has_province_modifier = emf_mod_heavy_rain_bad }
+						not = { has_province_modifier = emf_mod_storms }
+						not = { has_province_modifier = emf_mod_drought }
+						# Special
+						not = { has_province_modifier = emf_mod_river_flooding }
+						not = { has_province_modifier = emf_mod_coastal_flooding }
+						not = { has_province_modifier = emf_mod_sandstorms }
+						not = { has_province_modifier = emf_mod_desert_rain }
+						# Winter
+						not = { has_province_modifier = emf_mod_heavy_snow }
+						not = { has_province_modifier = emf_mod_blizzards }
+						not = { has_province_modifier = emf_mod_mild_winter }
+						not = { has_province_modifier = emf_mod_harsh_winter }
+						# Spring
+						not = { has_province_modifier = emf_mod_pleasant_spring }
+						not = { has_province_modifier = emf_mod_long_winter }
+						# Summer
+						not = { has_province_modifier = emf_mod_heat_wave }
+						not = { has_province_modifier = emf_mod_mild_summer }
+						not = { has_province_modifier = emf_mod_cloudy }
+						not = { has_province_modifier = emf_mod_bright }
+						# Autumn
+						not = { has_province_modifier = emf_mod_warm_autumn }
+						not = { has_province_modifier = emf_mod_early_winter }
+					}
+					# Set or remove flags
 					if = {
 						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
@@ -1007,6 +1316,35 @@ character_event = {
 					duration = 80
 				}
 				any_neighbor_province = {
+					limit = {
+						# General
+						not = { has_province_modifier = emf_mod_heavy_rain_good }
+						not = { has_province_modifier = emf_mod_heavy_rain_bad }
+						not = { has_province_modifier = emf_mod_storms }
+						not = { has_province_modifier = emf_mod_drought }
+						# Special
+						not = { has_province_modifier = emf_mod_river_flooding }
+						not = { has_province_modifier = emf_mod_coastal_flooding }
+						not = { has_province_modifier = emf_mod_sandstorms }
+						not = { has_province_modifier = emf_mod_desert_rain }
+						# Winter
+						not = { has_province_modifier = emf_mod_heavy_snow }
+						not = { has_province_modifier = emf_mod_blizzards }
+						not = { has_province_modifier = emf_mod_mild_winter }
+						not = { has_province_modifier = emf_mod_harsh_winter }
+						# Spring
+						not = { has_province_modifier = emf_mod_pleasant_spring }
+						not = { has_province_modifier = emf_mod_long_winter }
+						# Summer
+						not = { has_province_modifier = emf_mod_heat_wave }
+						not = { has_province_modifier = emf_mod_mild_summer }
+						not = { has_province_modifier = emf_mod_cloudy }
+						not = { has_province_modifier = emf_mod_bright }
+						# Autumn
+						not = { has_province_modifier = emf_mod_warm_autumn }
+						not = { has_province_modifier = emf_mod_early_winter }
+					}
+					# Set or remove flags
 					if = {
 						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
@@ -1052,6 +1390,35 @@ character_event = {
 					duration = 80
 				}
 				any_neighbor_province = {
+					limit = {
+						# General
+						not = { has_province_modifier = emf_mod_heavy_rain_good }
+						not = { has_province_modifier = emf_mod_heavy_rain_bad }
+						not = { has_province_modifier = emf_mod_storms }
+						not = { has_province_modifier = emf_mod_drought }
+						# Special
+						not = { has_province_modifier = emf_mod_river_flooding }
+						not = { has_province_modifier = emf_mod_coastal_flooding }
+						not = { has_province_modifier = emf_mod_sandstorms }
+						not = { has_province_modifier = emf_mod_desert_rain }
+						# Winter
+						not = { has_province_modifier = emf_mod_heavy_snow }
+						not = { has_province_modifier = emf_mod_blizzards }
+						not = { has_province_modifier = emf_mod_mild_winter }
+						not = { has_province_modifier = emf_mod_harsh_winter }
+						# Spring
+						not = { has_province_modifier = emf_mod_pleasant_spring }
+						not = { has_province_modifier = emf_mod_long_winter }
+						# Summer
+						not = { has_province_modifier = emf_mod_heat_wave }
+						not = { has_province_modifier = emf_mod_mild_summer }
+						not = { has_province_modifier = emf_mod_cloudy }
+						not = { has_province_modifier = emf_mod_bright }
+						# Autumn
+						not = { has_province_modifier = emf_mod_warm_autumn }
+						not = { has_province_modifier = emf_mod_early_winter }
+					}
+					# Set or remove flags
 					if = {
 						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
@@ -1094,6 +1461,35 @@ character_event = {
 					duration = 80
 				}
 				any_neighbor_province = {
+					limit = {
+						# General
+						not = { has_province_modifier = emf_mod_heavy_rain_good }
+						not = { has_province_modifier = emf_mod_heavy_rain_bad }
+						not = { has_province_modifier = emf_mod_storms }
+						not = { has_province_modifier = emf_mod_drought }
+						# Special
+						not = { has_province_modifier = emf_mod_river_flooding }
+						not = { has_province_modifier = emf_mod_coastal_flooding }
+						not = { has_province_modifier = emf_mod_sandstorms }
+						not = { has_province_modifier = emf_mod_desert_rain }
+						# Winter
+						not = { has_province_modifier = emf_mod_heavy_snow }
+						not = { has_province_modifier = emf_mod_blizzards }
+						not = { has_province_modifier = emf_mod_mild_winter }
+						not = { has_province_modifier = emf_mod_harsh_winter }
+						# Spring
+						not = { has_province_modifier = emf_mod_pleasant_spring }
+						not = { has_province_modifier = emf_mod_long_winter }
+						# Summer
+						not = { has_province_modifier = emf_mod_heat_wave }
+						not = { has_province_modifier = emf_mod_mild_summer }
+						not = { has_province_modifier = emf_mod_cloudy }
+						not = { has_province_modifier = emf_mod_bright }
+						# Autumn
+						not = { has_province_modifier = emf_mod_warm_autumn }
+						not = { has_province_modifier = emf_mod_early_winter }
+					}
+					# Set or remove flags
 					if = {
 						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
@@ -1139,6 +1535,35 @@ character_event = {
 					duration = 80
 				}
 				any_neighbor_province = {
+					limit = {
+						# General
+						not = { has_province_modifier = emf_mod_heavy_rain_good }
+						not = { has_province_modifier = emf_mod_heavy_rain_bad }
+						not = { has_province_modifier = emf_mod_storms }
+						not = { has_province_modifier = emf_mod_drought }
+						# Special
+						not = { has_province_modifier = emf_mod_river_flooding }
+						not = { has_province_modifier = emf_mod_coastal_flooding }
+						not = { has_province_modifier = emf_mod_sandstorms }
+						not = { has_province_modifier = emf_mod_desert_rain }
+						# Winter
+						not = { has_province_modifier = emf_mod_heavy_snow }
+						not = { has_province_modifier = emf_mod_blizzards }
+						not = { has_province_modifier = emf_mod_mild_winter }
+						not = { has_province_modifier = emf_mod_harsh_winter }
+						# Spring
+						not = { has_province_modifier = emf_mod_pleasant_spring }
+						not = { has_province_modifier = emf_mod_long_winter }
+						# Summer
+						not = { has_province_modifier = emf_mod_heat_wave }
+						not = { has_province_modifier = emf_mod_mild_summer }
+						not = { has_province_modifier = emf_mod_cloudy }
+						not = { has_province_modifier = emf_mod_bright }
+						# Autumn
+						not = { has_province_modifier = emf_mod_warm_autumn }
+						not = { has_province_modifier = emf_mod_early_winter }
+					}
+					# Set or remove flags
 					if = {
 						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
@@ -1181,6 +1606,35 @@ character_event = {
 					duration = 80
 				}
 				any_neighbor_province = {
+					limit = {
+						# General
+						not = { has_province_modifier = emf_mod_heavy_rain_good }
+						not = { has_province_modifier = emf_mod_heavy_rain_bad }
+						not = { has_province_modifier = emf_mod_storms }
+						not = { has_province_modifier = emf_mod_drought }
+						# Special
+						not = { has_province_modifier = emf_mod_river_flooding }
+						not = { has_province_modifier = emf_mod_coastal_flooding }
+						not = { has_province_modifier = emf_mod_sandstorms }
+						not = { has_province_modifier = emf_mod_desert_rain }
+						# Winter
+						not = { has_province_modifier = emf_mod_heavy_snow }
+						not = { has_province_modifier = emf_mod_blizzards }
+						not = { has_province_modifier = emf_mod_mild_winter }
+						not = { has_province_modifier = emf_mod_harsh_winter }
+						# Spring
+						not = { has_province_modifier = emf_mod_pleasant_spring }
+						not = { has_province_modifier = emf_mod_long_winter }
+						# Summer
+						not = { has_province_modifier = emf_mod_heat_wave }
+						not = { has_province_modifier = emf_mod_mild_summer }
+						not = { has_province_modifier = emf_mod_cloudy }
+						not = { has_province_modifier = emf_mod_bright }
+						# Autumn
+						not = { has_province_modifier = emf_mod_warm_autumn }
+						not = { has_province_modifier = emf_mod_early_winter }
+					}
+					# Set or remove flags
 					if = {
 						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
@@ -1223,6 +1677,35 @@ character_event = {
 					duration = 80
 				}
 				any_neighbor_province = {
+					limit = {
+						# General
+						not = { has_province_modifier = emf_mod_heavy_rain_good }
+						not = { has_province_modifier = emf_mod_heavy_rain_bad }
+						not = { has_province_modifier = emf_mod_storms }
+						not = { has_province_modifier = emf_mod_drought }
+						# Special
+						not = { has_province_modifier = emf_mod_river_flooding }
+						not = { has_province_modifier = emf_mod_coastal_flooding }
+						not = { has_province_modifier = emf_mod_sandstorms }
+						not = { has_province_modifier = emf_mod_desert_rain }
+						# Winter
+						not = { has_province_modifier = emf_mod_heavy_snow }
+						not = { has_province_modifier = emf_mod_blizzards }
+						not = { has_province_modifier = emf_mod_mild_winter }
+						not = { has_province_modifier = emf_mod_harsh_winter }
+						# Spring
+						not = { has_province_modifier = emf_mod_pleasant_spring }
+						not = { has_province_modifier = emf_mod_long_winter }
+						# Summer
+						not = { has_province_modifier = emf_mod_heat_wave }
+						not = { has_province_modifier = emf_mod_mild_summer }
+						not = { has_province_modifier = emf_mod_cloudy }
+						not = { has_province_modifier = emf_mod_bright }
+						# Autumn
+						not = { has_province_modifier = emf_mod_warm_autumn }
+						not = { has_province_modifier = emf_mod_early_winter }
+					}
+					# Set or remove flags
 					if = {
 						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
@@ -1265,6 +1748,35 @@ character_event = {
 					duration = 80
 				}
 				any_neighbor_province = {
+					limit = {
+						# General
+						not = { has_province_modifier = emf_mod_heavy_rain_good }
+						not = { has_province_modifier = emf_mod_heavy_rain_bad }
+						not = { has_province_modifier = emf_mod_storms }
+						not = { has_province_modifier = emf_mod_drought }
+						# Special
+						not = { has_province_modifier = emf_mod_river_flooding }
+						not = { has_province_modifier = emf_mod_coastal_flooding }
+						not = { has_province_modifier = emf_mod_sandstorms }
+						not = { has_province_modifier = emf_mod_desert_rain }
+						# Winter
+						not = { has_province_modifier = emf_mod_heavy_snow }
+						not = { has_province_modifier = emf_mod_blizzards }
+						not = { has_province_modifier = emf_mod_mild_winter }
+						not = { has_province_modifier = emf_mod_harsh_winter }
+						# Spring
+						not = { has_province_modifier = emf_mod_pleasant_spring }
+						not = { has_province_modifier = emf_mod_long_winter }
+						# Summer
+						not = { has_province_modifier = emf_mod_heat_wave }
+						not = { has_province_modifier = emf_mod_mild_summer }
+						not = { has_province_modifier = emf_mod_cloudy }
+						not = { has_province_modifier = emf_mod_bright }
+						# Autumn
+						not = { has_province_modifier = emf_mod_warm_autumn }
+						not = { has_province_modifier = emf_mod_early_winter }
+					}
+					# Set or remove flags
 					if = {
 						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
@@ -1310,6 +1822,35 @@ character_event = {
 					duration = 80
 				}
 				any_neighbor_province = {
+					limit = {
+						# General
+						not = { has_province_modifier = emf_mod_heavy_rain_good }
+						not = { has_province_modifier = emf_mod_heavy_rain_bad }
+						not = { has_province_modifier = emf_mod_storms }
+						not = { has_province_modifier = emf_mod_drought }
+						# Special
+						not = { has_province_modifier = emf_mod_river_flooding }
+						not = { has_province_modifier = emf_mod_coastal_flooding }
+						not = { has_province_modifier = emf_mod_sandstorms }
+						not = { has_province_modifier = emf_mod_desert_rain }
+						# Winter
+						not = { has_province_modifier = emf_mod_heavy_snow }
+						not = { has_province_modifier = emf_mod_blizzards }
+						not = { has_province_modifier = emf_mod_mild_winter }
+						not = { has_province_modifier = emf_mod_harsh_winter }
+						# Spring
+						not = { has_province_modifier = emf_mod_pleasant_spring }
+						not = { has_province_modifier = emf_mod_long_winter }
+						# Summer
+						not = { has_province_modifier = emf_mod_heat_wave }
+						not = { has_province_modifier = emf_mod_mild_summer }
+						not = { has_province_modifier = emf_mod_cloudy }
+						not = { has_province_modifier = emf_mod_bright }
+						# Autumn
+						not = { has_province_modifier = emf_mod_warm_autumn }
+						not = { has_province_modifier = emf_mod_early_winter }
+					}
+					# Set or remove flags
 					if = {
 						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
@@ -1352,6 +1893,35 @@ character_event = {
 					duration = 80
 				}
 				any_neighbor_province = {
+					limit = {
+						# General
+						not = { has_province_modifier = emf_mod_heavy_rain_good }
+						not = { has_province_modifier = emf_mod_heavy_rain_bad }
+						not = { has_province_modifier = emf_mod_storms }
+						not = { has_province_modifier = emf_mod_drought }
+						# Special
+						not = { has_province_modifier = emf_mod_river_flooding }
+						not = { has_province_modifier = emf_mod_coastal_flooding }
+						not = { has_province_modifier = emf_mod_sandstorms }
+						not = { has_province_modifier = emf_mod_desert_rain }
+						# Winter
+						not = { has_province_modifier = emf_mod_heavy_snow }
+						not = { has_province_modifier = emf_mod_blizzards }
+						not = { has_province_modifier = emf_mod_mild_winter }
+						not = { has_province_modifier = emf_mod_harsh_winter }
+						# Spring
+						not = { has_province_modifier = emf_mod_pleasant_spring }
+						not = { has_province_modifier = emf_mod_long_winter }
+						# Summer
+						not = { has_province_modifier = emf_mod_heat_wave }
+						not = { has_province_modifier = emf_mod_mild_summer }
+						not = { has_province_modifier = emf_mod_cloudy }
+						not = { has_province_modifier = emf_mod_bright }
+						# Autumn
+						not = { has_province_modifier = emf_mod_warm_autumn }
+						not = { has_province_modifier = emf_mod_early_winter }
+					}
+					# Set or remove flags
 					if = {
 						limit = { not = { has_global_flag = emf_region_invert } }
 						set_province_flag = emf_region_sweep
