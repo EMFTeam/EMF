@@ -12,7 +12,7 @@ use warnings;
 use Carp;
 use Getopt::Long qw(:config gnu_getopt);
 
-my $VERSION = "0.9.8";
+my $VERSION = "0.9.9";
 
 my $DEFAULT_N      = 64;
 my $DEFAULT_STRIDE = 5;
@@ -21,7 +21,7 @@ my $DEFAULT_OFFSET = 15;
 # NOTE: returns law modifier as function of law index (starting at 0)
 sub scale_function {
 	my $i = shift;
-	return 1 / ( 1 + log(1 + $i/36.75) );
+	return 1 / ( 1 + log(1 + $i/36.75) ) - 1;
 }
 
 ####
@@ -111,7 +111,7 @@ sub print_params {
 	print "#   stride=$opt_stride (holdings per law increment)\n";
 	print "#   offset=$opt_offset (scaling curve starts at holdings > offset)\n";
 	print "#   range=[".sprintf("%0.03f",scale_function($opt_n-1)).", ".sprintf("%0.03f",scale_function(0))."]\n";
-	print "#   curve: m = 1 / (1 + ln(1 + i/36.75)) for levy law modifier m and dynlevy law index i\n";
+	print "#   curve: m = 1 / (1 + ln(1 + i/36.75)) - 1 for levy law modifier m and dynlevy law index i\n";
 	print "\n";
 }
 
@@ -388,7 +388,7 @@ sub print_i18n {
 	print "emf_dynlevy.22.desc;Hover over the event option for my levy efficiency law. If no tooltip appears, I have no dynlevy law applied.$eol";
 	
 	for my $i (0..$opt_n-1) {
-		my $mod = scale_function($i);
+		my $mod = scale_function($i) + 1;
 		my $mod_str = sprintf("%0.01f", $mod*100);
 		$mod_str =~ s/0+$//;
 		$mod_str =~ s/\.$//;
