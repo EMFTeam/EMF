@@ -12,7 +12,7 @@ use warnings;
 use Carp;
 use Getopt::Long qw(:config gnu_getopt);
 
-my $VERSION = "0.9.9";
+my $VERSION = "0.9.10";
 
 my $DEFAULT_N      = 64;
 my $DEFAULT_STRIDE = 5;
@@ -181,11 +181,7 @@ EOS
 			print "\t\t\t\t# Turns out, due to Paradox script's severe overhead, it's faster (and simpler)\n";
 			print "\t\t\t\t# to just revoke all the other ",$opt_n-1, " laws directly than use a binary search\n";
 			print "\t\t\t\t# to precisely locate the correct, single law to revoke in O(lg N) time. revoke_law\n";
-			print "\t\t\t\t# should be just as fast clr_character_flag anyhow (perhaps faster since laws are\n";
-			print "\t\t\t\t# tagged (assigned unique integer IDs before script execution), so I don't see the\n";
-			print "\t\t\t\t# point in trying to optimize this by stuffing realm_size into a var upon update\n";
-			print "\t\t\t\t# and then doing a binary search on that variable's previous value to identify the\n";
-			print "\t\t\t\t# the correct law to revoke with lower complexity. Oh, what I'd give for pointers...\n\n";
+			print "\t\t\t\t# should be just as fast clr_character_flag anyhow.\n\n";
 		}
 		
 		for my $j (0..$opt_n-1) {
@@ -335,6 +331,8 @@ sub print_search_tree {
 		my $law = $lg."_0";
 		
 		if ($mode == 0) {
+		
+			# Set all titles greater than or equal to primary-tier to correct law
 			print "\t" x $tab, "primary_title = {\n";
 			++$tab;
 			print "\t" x $tab, "ROOT = {\n";
@@ -346,14 +344,45 @@ sub print_search_tree {
 			print "\t" x $tab, "not = { lower_tier_than = PREVPREV }\n";
 			print "\t" x $tab, "not = { has_law = $law }\n";
 			--$tab;
-			print "\t" x $tab, "}\n"; # limit
+			print "\t" x $tab, "}\n"; # /limit
 			print "\t" x $tab, "add_law = $law\n";
 			--$tab;
-			print "\t" x $tab, "}\n"; # any_demesne_title
+			print "\t" x $tab, "}\n"; # /any_demesne_title
 			--$tab;
-			print "\t" x $tab, "}\n"; # ROOT
+			print "\t" x $tab, "}\n"; # /ROOT
 			--$tab;
-			print "\t" x $tab, "}\n"; # primary_title
+			print "\t" x $tab, "}\n"; # /primary_title
+			
+			my $rsz_idx = $min+1;
+
+			if ($min > 0) {
+				# Set a variable indicating law tier (a way to programatically track realm size)
+				print "\t" x $tab, "set_variable = { which = rsz_idx value = $rsz_idx }\n";
+			}
+			else { # Minimum realm size case
+			
+				# If no longer even ruling a landed realm...
+				print "\t" x $tab, "if = {\n";
+				++$tab;
+				print "\t" x $tab, "limit = { not = { realm_size = 1 } }\n";
+				
+				# Reset variable indicating law tier (variable goes poof)
+				print "\t" x $tab, "set_variable = { which = rsz_idx value = 0 } # Poof!\n";
+				
+				--$tab;
+				print "\t" x $tab, "}\n"; # /if
+
+				# Otherwise...
+				print "\t" x $tab, "if = {\n";
+				++$tab;
+				print "\t" x $tab, "limit = { realm_size = 1 }\n";
+				
+				# Set variable as normal
+				print "\t" x $tab, "set_variable = { which = rsz_idx value = $rsz_idx }\n";
+				
+				--$tab;
+				print "\t" x $tab, "}\n"; # /if
+			}
 		}
 		elsif ($mode == 1) {
 			print "\t" x $tab, "FROM = { add_law = $law }\n";
