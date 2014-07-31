@@ -824,10 +824,10 @@ NMilitary = {
 	
 	RETINUE_FROM_REALMSIZE = 6.0,
 	RETINUE_INCREASE_PER_TECH = 0.5,
-	RETINUE_HIRE_COST_MULTIPLIER = 0.1,				-- Retinues are free to hire atm, but they cost alot to reinforce
+	RETINUE_HIRE_COST_MULTIPLIER = 0.04,				-- Retinues are free to hire atm, but they cost alot to reinforce
 	RETINUE_REINFORCE_RATE = 0.05,
 	RETINUE_REINFORCE_COST = 1.65,					-- Retinues cost while reinforcing.
-	RETINUE_CONSTANT_COST = 0, 						-- Retinues cost at all times.
+	RETINUE_CONSTANT_COST = 0.08, 						-- Retinues cost at all times.
 	MIN_RETINUE = 0,								-- Minimum retinue ( Disabled for now, can be enabled by mods )
 	
 	TERRAIN_SPEC_BONUS = 0.2,						-- Bonus to fighting in this terrain if you have that terrain as your
