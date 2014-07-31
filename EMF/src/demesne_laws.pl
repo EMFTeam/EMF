@@ -6,7 +6,7 @@
 # without modification, of this program or its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "0.9.5";
+my $VERSION = "0.9.6";
 
 my $opt = {
 	min_total_levy      => -0.1,
@@ -16,7 +16,7 @@ my $opt = {
 	city_tax_per_levy   => 1.0,
 	iqta_tax_per_levy   => 0.7,
 	opinion_offset => 4,
-	opinion_slope  => -8,
+	opinion_slope  => -6,
 	default_laws => {
 		feudal_obligations => 0,
 		feudal_slider      => 0,
@@ -24,7 +24,7 @@ my $opt = {
 		temple_slider      => 2,
 		city_obligations   => 0,
 		city_slider        => 3,
-		iqta_obligations   => 0,
+		iqta_obligations   => 1,
 		iqta_slider        => 2,
 	},
 };
