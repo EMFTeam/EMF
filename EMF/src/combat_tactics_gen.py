@@ -13,11 +13,11 @@ normal_weight = 3
 cultural_weight = 6
 
 cultural_tactics = {
-            "finnish":          ("volley_tactic", "ambush_volley_tactic"),
-            "lappish":          ("volley_tactic", "ambush_volley_tactic"),
-            "komi":             ("volley_tactic", "ambush_volley_tactic"),
-            "mordvin":          ("volley_tactic", "ambush_volley_tactic"),
-            "samoyed":          ("volley_tactic", "ambush_volley_tactic"),
+            "finnish":          ("raid_tactic", "quick_attack_tactic"),
+            "lappish":          ("raid_tactic", "quick_attack_tactic"),
+            "komi":             ("raid_tactic", "quick_attack_tactic"),
+            "mordvin":          ("raid_tactic", "quick_attack_tactic"),
+            "samoyed":          ("raid_tactic", "quick_attack_tactic"),
             "english":          ("volley_tactic", "longbow_volley_tactic"),
             "welsh":            ("volley_tactic", "longbow_volley_tactic"),
             "ligurian":         ("volley_tactic", "ambush_volley_tactic"),
@@ -35,7 +35,7 @@ cultural_tactics = {
             "bohemian":         ("melee_charge_tactic", "heavy_charge_tactic"),
             "polish":           ("melee_charge_tactic", "combined_charge_tactic"),
             "serbian":          ("melee_charge_tactic", "heavy_charge_tactic"),
-            "russian":          ("melee_charge_tactic", "embolon_charge_tactic"),
+            "bulgarian":        ("melee_charge_tactic", "heavy_charge_tactic"),            "russian":          ("melee_charge_tactic", "embolon_charge_tactic"),
             "frankish":         ("melee_charge_tactic", "shock_charge_tactic"),
             "norman":           ("melee_charge_tactic", "heavy_charge_tactic"),
             "breton":           ("melee_charge_tactic", "heavy_charge_tactic"),
@@ -76,7 +76,6 @@ cultural_tactics = {
             "roman":            ("advance_tactic", "roman_triple_line_tactic"),
             "pommeranian":      ("advance_tactic", "infantry_rush_tactic"),
             "croatian":         ("advance_tactic", "infantry_rush_tactic"),
-            "bulgarian":        ("advance_tactic", "shield_rush_tactic"),
             "irish":            ("advance_tactic", "shield_rush_tactic"),
             "basque":           ("advance_tactic", "intimidating_advance_tactic"),
             "norse":            ("advance_tactic", "infantry_rush_tactic"),
