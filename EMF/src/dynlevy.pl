@@ -12,7 +12,7 @@ use warnings;
 use Carp;
 use Getopt::Long qw(:config gnu_getopt);
 
-my $VERSION = "0.9.10";
+my $VERSION = "0.9.11";
 
 my $DEFAULT_N      = 64;
 my $DEFAULT_STRIDE = 5;
@@ -185,7 +185,6 @@ EOS
 		}
 		
 		for my $j (0..$opt_n-1) {
-			next if $i == $j;
 			print "\t\t\t\trevoke_law = dynlevy${j}_0\n"
 		}
 
