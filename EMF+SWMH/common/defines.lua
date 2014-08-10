@@ -756,8 +756,8 @@ NMilitary = {
 	FLANKLEADER_PRESTIGE_PART = 0.125,				-- The % of the total prestige gained in the battle that each other flank leader will get
 	BATTLE_UNIT_OWNER_PRESTIGE_MULT = 0.5,			-- The % of the total prestige gained in the battle that will be divided among the participating unit owners
 	BATTLE_UNIT_OWNER_PIETY_MULT = 0.5,				-- The % of the total piety gained in the battle that will be divided among the participating unit owners
-	REINFORCE_RATE = 0.03,							-- Reinforce rate per year
-	MERC_REINFORCE_RATE = 0.015,					-- The rate at which mercenaries and holy orders reinforce in the field
+	REINFORCE_RATE = 0.04,							-- Reinforce rate per year
+	MERC_REINFORCE_RATE = 0.02,						-- The rate at which mercenaries and holy orders reinforce in the field
 	MERC_REINFORCE_RATE_WHEN_IDLE = 0.03,			-- The rate at which mercenaries and holy orders reinforce when not hired
 	GARRISON_REINFORCE_RATE_MULTIPLIER = 5,			-- The rate at which the garrison reinforce
 	LEVY_RAISED_REINFORCE_RATE_MULTIPLIER = 0.5,	-- The rate at which the garrison/levy reinforce when the levy is raised
@@ -824,17 +824,17 @@ NMilitary = {
 	
 	RETINUE_FROM_REALMSIZE = 6.0,
 	RETINUE_INCREASE_PER_TECH = 0.5,
-	RETINUE_HIRE_COST_MULTIPLIER = 0.04,				-- Retinues are free to hire atm, but they cost alot to reinforce
-	RETINUE_REINFORCE_RATE = 0.05,
-	RETINUE_REINFORCE_COST = 1.65,					-- Retinues cost while reinforcing.
-	RETINUE_CONSTANT_COST = 0.08, 						-- Retinues cost at all times.
+	RETINUE_HIRE_COST_MULTIPLIER = 0.08,			-- Retinues are free to hire atm, but they cost alot to reinforce
+	RETINUE_REINFORCE_RATE = 0.04,
+	RETINUE_REINFORCE_COST = 2.0,					-- Retinues cost while reinforcing.
+	RETINUE_CONSTANT_COST = 0.2,					-- Retinues cost at all times.
 	MIN_RETINUE = 0,								-- Minimum retinue ( Disabled for now, can be enabled by mods )
 	
 	TERRAIN_SPEC_BONUS = 0.2,						-- Bonus to fighting in this terrain if you have that terrain as your
 													-- terrain specialization ( gained through combat events in that terrrain )
 	MAX_LEADERSHIP_TRAITS = 2,
 	
-	LIEGE_LEVY_REINF_RATE = 0.025,
+	LIEGE_LEVY_REINF_RATE = 0.035,
 	LIEGE_LEVY_SIZE_MULTIPLIER = 0.5,				-- The Size of the liege levy will be the total troops in the vassal subrealm * this
 	LIEGE_FLEET_SIZE_MULTIPLIER = 1.0,				-- As above but for galleys
 	LIEGE_LEVY_COST_MULTIPLIER = 1.0,				-- The vassal will pay regular maintenance * this for the liege levy
@@ -902,7 +902,7 @@ NMilitary = {
 	ARCHERS_GRAPHICAL_FACTOR = 1,
 	
 	SPECIAL_TROOPS_MORALE = 5,
-	SPECIAL_TROOPS_MAINTENANCE = 3,
+	SPECIAL_TROOPS_MAINTENANCE = 2,
 	SPECIAL_TROOPS_PHASE_SKIRMISH_ATTACK = 4,
 	SPECIAL_TROOPS_PHASE_MELEE_ATTACK = 3,
 	SPECIAL_TROOPS_PHASE_PURSUE_ATTACK = 7,
@@ -912,7 +912,7 @@ NMilitary = {
 	SPECIAL_TROOPS_GRAPHICAL_FACTOR = 20.0,
 
 	GALLEYS_MORALE = 1,
-	GALLEYS_MAINTENANCE = 400,
+	GALLEYS_MAINTENANCE = 300,
 	GALLEYS_PHASE_SKIRMISH_ATTACK = 1,
 	GALLEYS_PHASE_MELEE_ATTACK = 1,
 	GALLEYS_PHASE_PURSUE_ATTACK = 1,
