@@ -1,0 +1,336 @@
+## normal scopes(including posttitle scopes) ##
+# ROOT = receiver
+# FROM = giver
+# <no scope change> = attacker or receiver
+## title scopes ##
+# ROOT = receiver
+# FROM = giver
+# <no scope change> = thirdparty landed title	
+#
+# the following effects/triggers exists (example execution order: on_success->on_success_title->on_success_posttitle):
+# is_valid, is_valid_title, on_add, on_add_title, on_add_posttitle, on_success, on_success_title, on_success_posttitle, on_fail, on_fail_title, on_fail_posttitle, on_reverse_demand, on_reverse_demand_title, on_reverse_demand_posttitle
+#
+# Added on_attacker_leader_death, on_defender_leader_death and on_thirdparty_death, which all trigger when corresponding character dies
+# These three all have war scopes, which currently has the following scope changes: 
+# attacker, defender, thirdparty(only valid if thirdparty character is involved), thirdparty_title(only valid if thirdparty title is involved)
+#
+# ai_will_do: modifies value AI places on the CB compared to other CBs (default: 1)
+# can_use_gui: If otherwise valid, the CB is listed in the Diplo View, but you can't declare war unless 'can_use_gui' is also valid (also shows a trigger tooltip.)
+
+
+# This CB is unique to a few specific titles. Some of the Christian holy orders get to use it with nearly no restrictions against specific religious groups
+# The king of Jerusalem also gets to use it freely within his dejure kingdom
+
+special_holy_war = {
+	name = CB_NAME_SPECIAL_RELIGIOUS
+	war_name = WAR_NAME_RELIGIOUS
+	sprite = 9
+	truce_days = 3650
+	is_permanent = yes
+	is_holy_war = yes
+	check_de_jure_tier = DUKE # this scans all dejure duchies for the counties which are held by or vassals(or below) of selected character. Only valid if is_permanent = yes
+	
+	can_use_gui = {
+		ROOT = {
+			NOT = { has_character_modifier = holy_war_cooldown }
+			is_merchant_republic = no
+			NOT = { any_liege = { is_merchant_republic = yes } }
+		}
+		NOT = {
+			FROM = {
+				has_character_modifier = formation_of_rum
+			}
+		}
+	}
+	
+	can_use = {
+		NOT = { has_global_flag = rapid_conquest }
+		ROOT = {
+			OR = {
+				NOT = { religion_group = FROM }
+				is_heresy_of = FROM
+				is_parent_religion = FROM
+				AND = {
+					religion_group = muslim
+					NOT = { religion = FROM }
+					FROM = {
+						NOT = { 
+							any_current_enemy = {
+								NOT = {
+									religion_group = muslim
+								}
+							}
+						}
+					}
+				}
+				AND = {
+					religion_group = pagan_group
+					NOT = { religion = FROM }
+				}
+				NOT = { same_realm = FROM }
+			}
+			top_liege = {
+				religion_group = ROOT
+				NOT = { religion = FROM }
+				OR = {
+					religion = ROOT
+					AND = {
+						is_heretic = no
+						ROOT = { is_heretic = no }
+					}
+				}
+				OR = {
+					NOT = { religion_group = pagan_group }
+					religion = ROOT
+				}
+			}
+		}
+	}
+	
+	can_use_title = {
+		NOT = { 
+			any_direct_de_jure_vassal_title = {
+				has_holder = yes
+				location = { continent = region_sahara }
+			}
+		}
+		OR = {
+			AND = {
+				ROOT = { has_landed_title = d_teutonic_order }
+				FROM = { religion_group = pagan_group }
+			}
+			AND = {
+				OR = {
+					ROOT = { has_landed_title = d_knights_templar }
+					ROOT = { has_landed_title = d_knights_hospitaler }
+				}
+				FROM = { religion_group = muslim }
+			}
+			AND = {
+				de_jure_liege_or_above = k_jerusalem
+				ROOT = { has_landed_title = k_jerusalem }
+				FROM = { religion_group = muslim }
+			}
+		}
+		# The attacker needs at least one county in the target duchy, or a border, or be only two sea zones away from one of your counties
+		any_direct_de_jure_vassal_title = {
+			OR = {
+				holder_scope = {
+					OR = {
+						character = ROOT
+						is_liege_or_above = ROOT
+					}
+				}
+				location = {
+					any_neighbor_province = {
+						OR = {
+							AND = {
+								has_owner = yes
+								owner = {
+									OR = {
+										character = ROOT
+										is_liege_or_above = ROOT
+									}
+								}
+							}
+							AND = {
+								is_land = no
+								OR = {
+									year = 1100
+									ROOT = { religion_group = muslim }
+									FROM = { religion_group = muslim }
+								}
+								any_neighbor_province = {
+									OR = {
+										AND = {
+											has_owner = yes
+											owner = {
+												OR = {
+													character = ROOT
+													is_liege_or_above = ROOT
+												}
+											}
+										}
+										AND = {
+											is_land = no
+											any_neighbor_province = {
+												owner = {
+													OR = {
+														character = ROOT
+														is_liege_or_above = ROOT
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	is_valid = {
+		ROOT = {
+			NOT = { same_realm = FROM }
+			OR = {
+				NOT = { religion_group = FROM }
+				is_heresy_of = FROM
+				is_parent_religion = FROM
+				AND = {
+					OR = {
+						religion_group = muslim
+						religion_group = pagan_group
+					}
+					NOT = { religion = FROM }
+				}
+			}
+			top_liege = {
+				NOT = { religion = FROM }
+			}
+		}
+	}
+	
+	on_add = {
+		ROOT = {
+			custom_tooltip = {
+				text = holy_war_cooldown_ctt
+				hidden_tooltip = {
+					add_character_modifier = {
+						name = holy_war_cooldown
+						duration = 1825
+					}
+				}
+			}
+		}
+	}
+	
+	on_success = {
+		any_attacker = {
+			limit = { character = ROOT }
+			participation_scaled_piety = 100
+			participation_scaled_prestige = 50
+			if = {
+				limit = {
+					religion_group = muslim
+				}
+				participation_scaled_decadence = -10
+			}
+		}
+		any_attacker = {
+			limit = { NOT = { character = ROOT } }
+			hidden_tooltip = { 
+				participation_scaled_piety = 100
+				participation_scaled_prestige = 50
+				if = {
+					limit = {
+						religion_group = muslim
+					}
+					participation_scaled_decadence = -10
+				}
+			}
+		}
+		
+		ROOT = { 
+			religion_authority = {
+				modifier = won_holy_war
+				years = 20
+			}
+		}
+		FROM = { 
+			religion_authority = {
+				modifier = lost_holy_war
+				years = 20
+			}		
+		}
+		FROM = { piety = -100 }
+		FROM = { prestige = -50 }
+	}
+
+	on_success_title = {
+		custom_tooltip = {
+			text = religious_cb_succ_tip
+			hidden_tooltip = {
+				ROOT = {
+					vassalize_or_take_under_title = {
+						title = PREV
+						enemy = FROM
+						same_religion = yes # Only vassalize rulers of my religion
+					}
+				}
+			}
+		}
+	}
+
+	on_fail = {
+		ROOT = { 
+			piety = -50 
+			prestige = -100
+		}
+	}
+
+	on_reverse_demand = {
+		ROOT = {
+			transfer_scaled_wealth = {
+				to = FROM
+				value = 4.0
+			}
+			piety = -75
+			prestige = -150
+		}
+		any_defender = {
+			limit = { character = FROM }
+			participation_scaled_piety = 200
+			participation_scaled_prestige = 100
+			if = {
+				limit = {
+					religion_group = muslim
+				}
+				participation_scaled_decadence = -10
+			}
+		}
+		any_defender = {
+			limit = { NOT = { character = FROM } }
+			hidden_tooltip = { 
+				participation_scaled_piety = 200
+				participation_scaled_prestige = 100
+				if = {
+					limit = {
+						religion_group = muslim
+					}
+					participation_scaled_decadence = -10
+				}
+			}
+		}
+		ROOT = { 
+			religion_authority = {
+				modifier = lost_holy_war
+				years = 20
+			}
+		}
+		FROM = { 
+			religion_authority = {
+				modifier = won_holy_war
+				years = 20
+			}		
+		}
+	}
+
+	attacker_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+	
+	attacker_ai_defeat_worth = {
+		factor = 100
+	}
+
+	defender_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+	
+	defender_ai_defeat_worth = {
+		factor = 100
+	}
+}

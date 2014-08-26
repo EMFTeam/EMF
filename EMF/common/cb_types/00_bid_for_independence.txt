@@ -1,0 +1,341 @@
+## normal scopes(including posttitle scopes) ##
+# ROOT = receiver
+# FROM = giver
+# <no scope change> = attacker or receiver
+## title scopes ##
+# ROOT = receiver
+# FROM = giver
+# <no scope change> = thirdparty landed title	
+#
+# the following effects/triggers exists (example execution order: on_success->on_success_title->on_success_posttitle):
+# is_valid, is_valid_title, on_add, on_add_title, on_add_posttitle, on_success, on_success_title, on_success_posttitle, on_fail, on_fail_title, on_fail_posttitle, on_reverse_demand, on_reverse_demand_title, on_reverse_demand_posttitle
+#
+# Added on_attacker_leader_death, on_defender_leader_death and on_thirdparty_death, which all trigger when corresponding character dies
+# These three all have war scopes, which currently has the following scope changes: 
+# attacker, defender, thirdparty(only valid if thirdparty character is involved), thirdparty_title(only valid if thirdparty title is involved)
+#
+# ai_will_do: modifies value AI places on the CB compared to other CBs (default: 1)
+# can_use_gui: If otherwise valid, the CB is listed in the Diplo View, but you can't declare war unless 'can_use_gui' is also valid (also shows a trigger tooltip.)
+
+
+bid_for_independence = {
+	name = CB_NAME_INDEPENDENCE
+	war_name = WAR_NAME_INDEPENDENCE
+	sprite = 12
+	truce_days = 3650
+	
+	is_permanent = yes
+	is_independence = yes
+	
+	can_use = {
+		ROOT = {
+			de_facto_liege = FROM
+			
+			higher_tier_than = BARON
+			OR = {
+				ai = yes
+				is_feudal = yes
+				higher_tier_than = COUNT
+			}
+			OR = {
+				NOT = { de_jure_liege_or_above = FROM }
+				trait = ambitious
+				trait = wroth
+				trait = arbitrary
+				trait = possessed
+				trait = lunatic
+				ai = no
+				primary_title = {
+					tier = KING
+				}
+			}
+		}
+		
+		FROM = {
+			NOT = {
+				any_war = {
+					attacker = {
+						character = FROM
+					}
+					OR = {
+						using_cb = bid_for_independence
+						using_cb = depose_liege
+					}
+				}
+			}
+		}
+	}
+
+	is_valid = {
+		ROOT = {
+			OR = {
+				liege = {
+					character = PREV # either independent
+				}
+				liege = { 
+					FROM = { 
+						is_liege_or_above = PREV # or have shared liege
+					}
+				}
+			}
+		}
+		FROM = {
+			any_demesne_title = {
+				NOT = { lower_tier_than = ROOT }
+				temporary = no
+			}
+		}
+	}
+
+	on_success = {
+		if = {
+			limit = {
+				FROM = {
+					independent = no
+				}
+			}
+			FROM = {
+				if = {
+					limit = {
+						in_revolt = yes
+					}
+					liege_before_war = {
+						ROOT = {
+							set_defacto_liege = PREV
+						}
+					}
+				}
+				if = {
+					limit = {
+						in_revolt = no
+					}
+					liege = {
+						ROOT = {
+							set_defacto_liege = PREV
+						}
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				FROM = {
+					independent = yes
+				}
+			}
+			ROOT = {
+				set_defacto_liege = ROOT
+			}
+		}
+		
+		hidden_tooltip = {
+			ROOT = {
+				prestige = 100
+			}
+		}
+		
+		any_attacker = {
+			limit = { character = ROOT }
+			participation_scaled_prestige = 100
+		}
+		any_attacker = {
+			limit = { NOT = { character = ROOT } }
+			hidden_tooltip = { participation_scaled_prestige = 100 }
+		}
+		any_attacker = {
+			limit = {
+				NOT = { character = ROOT }
+				liege = { character = PREV }
+				OR = {
+					trait = ambitious
+					NOT = { FROM = { de_jure_vassal_or_below = PREV } }
+				}
+			}
+			set_defacto_liege = THIS
+		}
+
+		FROM = {
+			if = {
+				limit = {
+					NOT = { has_character_modifier = ca_revoke_cooldown }
+					any_demesne_title = {
+						higher_tier_than = duke
+						OR = {
+							NOT = { has_law = crown_levies_0 }
+							NOT = { has_law = revokation_0 }
+							NOT = { has_law = inheritance_0 }
+							AND = {
+								NOT = { has_law = king_peace_0 }
+								NOT = { has_law = emperor_peace_0 }
+							}
+						}
+					}
+				}
+				
+				any_demesne_title = { # All titles
+					limit = { higher_tier_than = duke }
+					
+					if = {
+						limit = {
+							OR = {
+								has_law = king_peace_0
+								has_law = emperor_peace_0
+							}
+							has_law = revokation_0
+							has_law = crown_levies_0
+							NOT = { has_law = inheritance_0 }
+						}
+						add_law = inheritance_0
+					}
+					if = {
+						limit = {
+							has_law = crown_levies_1
+							OR = {
+								has_law = king_peace_0
+								has_law = emperor_peace_0
+							}
+							has_law = revokation_0
+						}
+						add_law = crown_levies_0
+					}
+					if = {
+						limit = {
+							has_law = crown_levies_2
+							OR = {
+								has_law = king_peace_0
+								has_law = emperor_peace_0
+							}
+							has_law = revokation_0
+						}
+						add_law = crown_levies_1
+					}
+					if = {
+						limit = {
+							has_law = crown_levies_3
+							OR = {
+								has_law = king_peace_0
+								has_law = emperor_peace_0
+							}
+							has_law = revokation_0
+						}
+						add_law = crown_levies_2
+					}
+					if = {
+						limit = {
+							has_law = crown_levies_4
+							OR = {
+								has_law = king_peace_0
+								has_law = emperor_peace_0
+							}
+							has_law = revokation_0
+						}
+						add_law = crown_levies_3
+					}
+					if = {
+						limit = {
+							OR = {
+								has_law = revokation_1
+								has_law = revokation_2
+							}
+							OR = {
+								has_law = king_peace_0
+								has_law = emperor_peace_0
+							}
+						}
+						add_law = revokation_0
+					}
+					if = {
+						limit = {
+							OR = {
+								has_law = king_peace_1
+								has_law = king_peace_2
+							}
+						}
+						add_law = king_peace_0
+					}
+					if = {
+						limit = {
+							OR = {
+								has_law = emperor_peace_1
+								has_law = emperor_peace_2
+							}
+						}
+						add_law = emperor_peace_0
+					}
+				} # END: All titles
+
+				custom_tooltip = {
+					text = ca_revoke_cooldown_ctt
+					hidden_tooltip = {
+						add_character_modifier = {
+							name = ca_revoke_cooldown
+							duration = 5475
+							inherit = yes
+						}
+					}
+				}
+			}
+		}
+	}
+
+	on_fail = {
+		ROOT = {
+			prestige = -50
+		}
+		any_attacker = {
+			limit = { character = ROOT }
+			participation_scaled_prestige = -50
+		}
+		any_attacker = {
+			limit = { NOT = { character = ROOT } }
+			hidden_tooltip = { participation_scaled_prestige = -50 }
+		}
+	}
+
+	on_reverse_demand = {
+		ROOT = {
+			prestige = -100
+			prisoner = FROM
+		}
+		any_attacker = {
+			limit = { character = ROOT }
+			participation_scaled_prestige = -100
+		}
+		any_attacker = {
+			limit = { NOT = { character = ROOT } }
+			hidden_tooltip = { participation_scaled_prestige = -100 }
+		}
+		FROM = {
+			prestige = 50
+		}
+	}
+
+	on_attacker_leader_death = {
+		hidden_tooltip = {
+			any_defender = {
+				letter_event = {
+					id = 251
+				}
+			}
+		}
+
+		end_war = invalid
+	}
+
+	attacker_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+	
+	attacker_ai_defeat_worth = {
+		factor = 150
+	}
+
+	defender_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+	
+	defender_ai_defeat_worth = {
+		factor = 100
+	}
+}

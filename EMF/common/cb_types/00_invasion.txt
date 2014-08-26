@@ -1,0 +1,216 @@
+## normal scopes(including posttitle scopes) ##
+# ROOT = receiver
+# FROM = giver
+# <no scope change> = attacker or receiver
+## title scopes ##
+# ROOT = receiver
+# FROM = giver
+# <no scope change> = thirdparty landed title	
+#
+# the following effects/triggers exists (example execution order: on_success->on_success_title->on_success_posttitle):
+# is_valid, is_valid_title, on_add, on_add_title, on_add_posttitle, on_success, on_success_title, on_success_posttitle, on_fail, on_fail_title, on_fail_posttitle, on_reverse_demand, on_reverse_demand_title, on_reverse_demand_posttitle
+#
+# Added on_attacker_leader_death, on_defender_leader_death and on_thirdparty_death, which all trigger when corresponding character dies
+# These three all have war scopes, which currently has the following scope changes: 
+# attacker, defender, thirdparty(only valid if thirdparty character is involved), thirdparty_title(only valid if thirdparty title is involved)
+#
+# ai_will_do: modifies value AI places on the CB compared to other CBs (default: 1)
+# can_use_gui: If otherwise valid, the CB is listed in the Diplo View, but you can't declare war unless 'can_use_gui' is also valid (also shows a trigger tooltip.)
+
+
+invasion = {
+	name = CB_NAME_INVASION
+	war_name = WAR_NAME_INVASION
+	sprite = 7
+	truce_days = 1825
+	hostile_against_others = yes
+	can_ask_to_join_war = no
+	apply_short_occ_mod = no # Do not apply the 'recently_conquered' modifier to Holdings
+	
+	# PB increases BATTLE_WARSCORE_MULT, so this reduces it to Vanilla levels for Invasion
+	# so that, e.g., an AI William the Conqueror at Stamford Bridge start will have enough
+	# time / be required to occupy a few provinces (thus gaining a more stable demesne in
+	# England upon success) before the warscore reaches 100% and the war ends early.
+	#
+	# This is also consistent with the concept of an invasion; partial occupation is at least
+	# necessary as follow-up to decisive battles before an entire kingdom is going to swear
+	# fealty to a foreign conqueror. If the conqueror simply walks away from a couple decisive
+	# battles victorious and sues for peace without establishing the legitimacy of his legal
+	# claim to a de facto kingdom or implicit claim to a de jure kingdom by right of conquest
+	# by proceeding to immediately sue for peace without any de facto occupation is entirely
+	# implausible. The PB Stamford Bridge start should now be much more stable in favoring a
+	# plausible outcome, ceteris paribus.
+	
+	battle_warscore_mult = 0.6
+	
+	can_use_title = {
+		OR = {
+			FROM = {
+				has_landed_title = PREV
+			}
+			holder_scope = {
+				is_liege_or_above = FROM
+			}
+		}
+	}
+	
+	is_valid_title = {
+		OR = {
+			FROM = {
+				has_landed_title = PREV
+			}
+			holder_scope = {
+				is_liege_or_above = FROM
+			}
+		}
+	}
+
+	on_success = {
+		ROOT = {
+			prestige = 200
+		}
+		any_attacker = {
+			limit = { character = ROOT }
+			participation_scaled_prestige = 200
+		}
+		any_attacker = {
+			limit = { NOT = { character = ROOT } }
+			hidden_tooltip = { participation_scaled_prestige = 200 }
+		}
+		
+		hidden_tooltip = {
+			ROOT = {
+				occupy_minors_of_occupied_settlements = FROM
+				gain_all_occupied_titles = FROM			
+				give_nickname = nick_the_conqueror
+			}
+			ROOT = {
+				if = {
+					limit = {
+						has_dlc = "Legacy of Rome"
+						OR = { 
+							has_landed_title = e_byzantium
+							has_landed_title = e_roman_empire
+						}
+						religion_group = christian
+					}
+					character_event = { id = LoR.30 days = 12 }
+				}
+			}
+		}
+		
+		FROM = {
+			prestige = -200
+		}
+	}
+
+	on_success_title = {
+		custom_tooltip = {
+			text = cb_invasion_succ_ctt
+		
+			hidden_tooltip = {
+				usurp_title_plus_barony_if_unlanded = ROOT
+				FROM = { set_defacto_liege = ROOT }
+				if = {
+					limit = {
+						FROM = { is_liege_or_above = ROOT }
+					}
+					FROM = { imprison = ROOT }
+				}
+			}
+			
+			if = {
+				limit = {
+					higher_tier_than = BARON
+					NOT = { culture = ROOT }
+				}
+				hidden_tooltip = { conquest_culture = ROOT }
+			}
+		}
+	}
+
+	on_fail = {
+		ROOT = {
+			prestige = -200
+		}
+		FROM = {
+			prestige = 100
+		}
+		any_defender = {
+			limit = { character = FROM }
+			participation_scaled_prestige = 100
+		}
+		any_defender = {
+			limit = { NOT = { character = FROM } }
+			hidden_tooltip = { participation_scaled_prestige = 100 }
+		}
+	}
+
+	on_reverse_demand = {
+		ROOT = {
+			prestige = -200
+			transfer_scaled_wealth = {
+				to = FROM
+				value = 8.0
+			}
+		}
+		FROM = {
+			prestige = 200
+		}
+		any_defender = {
+			limit = { character = FROM }
+			participation_scaled_prestige = 200
+		}
+		FROM = {
+			if = {
+				limit = { 
+					has_dlc = "Legacy of Rome"
+					OR = { 
+						has_landed_title = e_byzantium
+						has_landed_title = e_roman_empire
+					}
+					religion_group = christian
+				}
+				hidden_tooltip = { character_event = { id = LoR.30 days = 12 } }
+			}
+		}
+		any_defender = {
+			limit = { NOT = { character = FROM } }
+			hidden_tooltip = { participation_scaled_prestige = 200 }
+		}
+	}
+
+	on_reverse_demand_title = {
+		ROOT = {
+			remove_claim = PREV
+		}
+	}
+
+	on_attacker_leader_death = {
+		hidden_tooltip = {
+			any_defender = {
+				letter_event = {
+					id = 251
+				}
+			}
+		}
+
+		end_war = whitepeace
+	}
+
+	attacker_ai_victory_worth = {
+		factor = 150
+	}
+	
+	attacker_ai_defeat_worth = {
+		factor = 100
+	}
+
+	defender_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+	
+	defender_ai_defeat_worth = {
+		factor = 100
+	}
+}

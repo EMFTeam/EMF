@@ -1,0 +1,157 @@
+## normal scopes(including posttitle scopes) ##
+# ROOT = receiver
+# FROM = giver
+# <no scope change> = attacker or receiver
+## title scopes ##
+# ROOT = receiver
+# FROM = giver
+# <no scope change> = thirdparty landed title	
+#
+# the following effects/triggers exists (example execution order: on_success->on_success_title->on_success_posttitle):
+# is_valid, is_valid_title, on_add, on_add_title, on_add_posttitle, on_success, on_success_title, on_success_posttitle, on_fail, on_fail_title, on_fail_posttitle, on_reverse_demand, on_reverse_demand_title, on_reverse_demand_posttitle
+#
+# Added on_attacker_leader_death, on_defender_leader_death and on_thirdparty_death, which all trigger when corresponding character dies
+# These three all have war scopes, which currently has the following scope changes: 
+# attacker, defender, thirdparty(only valid if thirdparty character is involved), thirdparty_title(only valid if thirdparty title is involved)
+#
+# ai_will_do: modifies value AI places on the CB compared to other CBs (default: 1)
+# can_use_gui: If otherwise valid, the CB is listed in the Diplo View, but you can't declare war unless 'can_use_gui' is also valid (also shows a trigger tooltip.)
+
+
+#If the sultanate of Rum forms, Bulgarian unrest will usually start. If the Byzantines decide to crack down on it,
+#the Bulgarians may revolt. Victory will cause all of the dejure Bulgarian Empire held by Byzantium to be forfeit
+#Loss (not white peace) will cause the Bulgarian Empire to cease to exist dejure, becoming Byzantine once more
+
+bulgarian_uprising = {
+	name = CB_NAME_INVASION
+	war_name = BULGARIAN_UPRISING
+	sprite = 1
+	truce_days = 1850
+	hostile_against_others = yes
+	is_permanent = yes
+	can_ask_to_join_war = yes
+	check_de_jure_tier = EMPEROR # this scans all de jure kingdoms for the counties which are held by or vassals(or below) of selected character. Only valid if is_permanent = yes
+	
+	can_use = {
+		FROM = {
+			NOT = { culture = ROOT }
+			has_landed_title = e_byzantium
+		}
+		ROOT = {
+			has_character_flag = bulgarian_uprising
+			culture = bulgarian
+		}
+	}
+	
+	on_success_title = {
+		
+		hidden_tooltip = {
+			# Init laws before the empire is held so that we don't have to erase the pass_effect
+			# opinion modifiers that setting any laws would give.
+			add_law = crown_levies_1
+			add_law = emperor_peace_0
+			add_law = inheritance_0
+			add_law = revokation_0
+		
+			#Correctly preserve vassal-liege structure
+			ROOT = {
+				vassalize_or_take_under_title = {
+					title = PREV
+					enemy = FROM
+					is_crusade = yes
+				}
+			}
+			
+			#Take the empire title
+			gain_title = ROOT
+			
+			# Usurp tier >= count titles that are held by non-Bulgars and
+			# not the subject of one of my [new] Bulgar dukes or kings.
+			any_de_jure_vassal = {
+				limit = {
+					higher_tier_than = baron
+					is_liege_or_above = ROOT #Now our vassal if he qualifies
+					NOT = {
+						culture = ROOT
+						any_liege = {
+							culture = ROOT
+							NOT = { character = ROOT }
+						}
+					}
+				}
+				any_demesne_title = {
+					limit = {
+						higher_tier_than = baron
+						de_jure_liege_or_above = PREVPREV
+					}
+					usurp_title = ROOT
+				}
+			}
+		}
+	}
+	
+	on_success = {
+		ROOT = {
+			prestige = 200
+		}
+		FROM = {
+			prestige = -200
+		}
+	}
+	
+	on_fail = {
+		ROOT = {
+			prestige = -50
+			set_defacto_liege = FROM
+		}
+		FROM = {
+			prestige = 100
+		}
+		
+		# Destroy Bulgaria after vassalizing so as not to risk making a mess.
+		k_bulgaria = {
+			destroy_landed_title = THIS
+		}
+	}
+	
+	on_reverse_demand = {
+		ROOT = {
+			prestige = -100
+			set_defacto_liege = FROM
+		}
+		FROM = {
+			prestige = 200
+		}
+		
+		# Destroy Bulgaria after vassalizing so as not to risk making a mess.
+		k_bulgaria = {
+			destroy_landed_title = THIS
+		}
+		
+		set_global_flag = bulgarian_unrest_ends
+		e_byzantium = { k_bulgaria = { de_jure_liege = PREV } }
+		e_byzantium = { k_serbia = { de_jure_liege = PREV } }
+	}
+	
+	on_add = {
+		ROOT = {
+			clr_character_flag = bulgarian_uprising
+		}
+	}
+	
+	attacker_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+	
+	attacker_ai_defeat_worth = {
+		factor = 100
+	}
+
+	defender_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+	
+	defender_ai_defeat_worth = {
+		factor = 100
+	}
+}

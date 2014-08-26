@@ -1,0 +1,427 @@
+## normal scopes(including posttitle scopes) ##
+# ROOT = receiver
+# FROM = giver
+# <no scope change> = attacker or receiver
+## title scopes ##
+# ROOT = receiver
+# FROM = giver
+# <no scope change> = thirdparty landed title	
+#
+# the following effects/triggers exists (example execution order: on_success->on_success_title->on_success_posttitle):
+# is_valid, is_valid_title, on_add, on_add_title, on_add_posttitle, on_success, on_success_title, on_success_posttitle, on_fail, on_fail_title, on_fail_posttitle, on_reverse_demand, on_reverse_demand_title, on_reverse_demand_posttitle
+#
+# Added on_attacker_leader_death, on_defender_leader_death and on_thirdparty_death, which all trigger when corresponding character dies
+# These three all have war scopes, which currently has the following scope changes: 
+# attacker, defender, thirdparty(only valid if thirdparty character is involved), thirdparty_title(only valid if thirdparty title is involved)
+#
+# ai_will_do: modifies value AI places on the CB compared to other CBs (default: 1)
+# can_use_gui: If otherwise valid, the CB is listed in the Diplo View, but you can't declare war unless 'can_use_gui' is also valid (also shows a trigger tooltip.)
+
+
+crusade = {
+	name = CB_NAME_CRUSADE
+	war_name = WAR_NAME_CRUSADE
+	sprite = 9
+	truce_days = 3650
+	is_permanent = yes
+	is_holy_war = yes
+	battle_warscore_mult = 0.3
+	check_de_jure_tier = KING # this scans all de jure kingdoms for the counties which are held by or vassals(or below) of selected character. Only valid if is_permanent = yes
+	apply_short_occ_mod = no
+	
+	can_use_gui = {
+		NOT = { has_global_flag = shattered_balance }
+		
+		ROOT = {
+			has_called_crusade = no
+			religion_authority = 0.05
+			OR = {
+				religion_group = zoroastrian_group
+				religion_group = jewish_group
+				AND = {
+					religion_group = pagan_group
+					custom_tooltip = {
+						text = CTT_PAGAN_GHWS_UNLOCKED
+						has_global_flag = pagan_ghws_unlocked
+					}
+				}
+				AND = { 
+					religion_group = christian
+					custom_tooltip = {
+						text = CTT_CHRISTIAN_CRUSADES_UNLOCKED
+						has_global_flag = christian_crusades_unlocked
+					}
+				}
+				AND = {
+					religion_group = muslim
+					custom_tooltip = {
+						text = CTT_MUSLIM_JIHADS_UNLOCKED
+						has_global_flag = muslim_jihads_unlocked
+					}
+				}
+			}
+			is_landed = yes # Otherwise the war score starts at -100%
+			OR = {
+				NOT = { religion_group = muslim }
+				NOT = { FROM = { religion_group = pagan_group } }
+			}
+		}
+		custom_tooltip = {
+			text = baqt_active
+			hidden_tooltip = {
+				OR = {
+					FROM = {
+						NOT = { religion = miaphysite }
+						NOT = {
+							AND = {
+								religion = orthodox
+								culture_group = east_african
+							}
+						}
+					}
+					NOT = { 
+						ROOT = { religion_group = muslim }
+					}
+					has_global_flag = violated_baqt
+				}
+			}
+		}
+	}
+	
+	can_use = {
+		has_global_flag = pb_crusades_unlocked
+		ROOT = {
+			OR = {
+				NOT = {
+					religion_group = christian
+					religion_group = muslim
+				}
+				AND = {
+					religion_group = christian
+					has_global_flag = pb_cath_crusades_unlocked
+				}
+				AND = {
+					religion_group = muslim
+					has_global_flag = pb_mus_crusades_unlocked
+				}
+			}
+		}
+		ROOT = {
+			can_call_crusade = yes
+		}
+		FROM = {
+			OR = {
+				NOT = { religion_group = ROOT }
+				is_heresy_of = ROOT
+				is_parent_religion = ROOT
+				AND = {
+					religion_group = pagan_group
+					NOT = { religion = ROOT }
+				}
+			}
+		}
+		ROOT = {
+			NOT = { # Not if the Schism has been mended
+				AND = {
+					OR = {
+						religion = catholic
+						religion = fraticelli
+					}
+					has_global_flag = schism_mended
+					NOT = { has_global_flag = cath_schism_mended }
+				}
+			}
+		}
+	}
+
+	can_use_title = {
+		FROM = {
+			any_realm_title = {
+				de_jure_liege_or_above = PREVPREV
+			}
+			independent = yes # Don't declare Crusades on revolters - chances are high the war will invalidate
+			OR = {
+				num_of_realm_counties = {
+					value = 6
+					title = PREV
+				}
+				has_landed_title = PREV
+			}
+		}
+		OR = {
+			NOT = { ROOT = { religion_group = muslim } }
+			FROM = {
+				any_realm_province = {
+					de_jure_liege_or_above = PREVPREV
+					any_neighbor_province = {
+						owner = {
+							top_liege = { religion = ROOT }
+						}
+					}
+				}
+			}
+		}
+	}
+
+	is_valid = {
+		ROOT = {
+			can_call_crusade = yes
+		}
+		FROM = {
+			OR = {
+				NOT = { religion_group = ROOT }
+				is_heresy_of = ROOT
+				is_parent_religion = ROOT
+				AND = {
+					religion_group = pagan_group
+					NOT = { religion = ROOT }
+				}
+			}
+		}
+	}
+
+	is_valid_title = {
+		FROM = {
+			any_realm_title = {
+				de_jure_liege_or_above = PREVPREV
+			}
+		}
+	}
+
+	on_success_title = {
+
+		# Already-held & same-religion case (give land to them)
+		if = {
+			limit = {
+				has_holder = yes
+				holder_scope = {
+					religion = ROOT
+				}
+			}
+			holder_scope = {
+				gain_settlements_under_title = {
+					title = PREV
+					enemy = FROM
+					is_crusade = yes
+				}
+			}
+			hidden_tooltip = {
+				add_law = the_crusade_target
+				
+				holder_scope = {
+					character_event = { id = pb_crusades.0 } #Handle revolters [immediately]
+				}
+			}
+		}
+
+		# Not-held or different-religion case (give to most participating attacker, then to... someone)
+		if = {
+			limit = {
+				OR = {
+					has_holder = no
+					NOT = {
+						holder_scope = {
+							religion = ROOT
+						}
+					}
+				}
+			}
+
+			most_participating_attacker = {
+				gain_settlements_under_title = {
+					title = PREV
+					enemy = FROM
+				}
+
+				usurp_title = PREV # Usurp or create, whichever.
+				
+				hidden_tooltip = {
+					# Need to do this after usurpation/creation due to law potential of 'always = no'
+					PREV = { add_law = the_crusade_target }
+					
+					# Refill levies of conquered holdings within target kingdom
+					any_demesne_title = {
+						limit = {
+							tier = baron
+							de_jure_liege_or_above = PREVPREV
+						}
+						remove_holding_modifier = recently_conquered
+						remove_holding_modifier = new_administration
+						refill_holding_levy = yes
+					}
+					
+					character_event = { id = pb_crusades.12 } #Free holy orders from vassalage
+					character_event = { id = pb_crusades.0 } #Handle revolters [immediately]
+					
+					if = {
+						limit = {
+							OR = {
+								ROOT = { religion_group = christian } #A christian crusade
+								primary_title = { holy_order = yes } #Also want to give away the kingdom if a holy order won it
+								primary_title = { mercenary = yes } #Also want to give away the kingdom if a mercenary won it
+							}
+						}
+						character_event = { id = pb_crusades.1 } # Chance to give away the kingdom
+					}
+				}
+			}
+		}
+		
+		hidden_tooltip = { revoke_law = the_crusade_target }
+		
+		any_attacker = {
+			limit = { character = ROOT }
+			participation_scaled_prestige = 500
+			participation_scaled_piety = 1000
+			if = {
+				limit = {
+					religion_group = muslim
+				}
+				participation_scaled_decadence = -100
+			}
+		}
+		any_attacker = {
+			limit = { NOT = { character = ROOT } }
+			hidden_tooltip = { 
+				participation_scaled_prestige = 500
+				participation_scaled_piety = 1000
+				if = {
+					limit = {
+						religion_group = muslim
+					}
+					participation_scaled_decadence = -100
+				}
+			}
+		}
+		
+		ROOT = {
+			religion_authority = {
+				modifier = won_crusade
+				years = 20
+			}
+		}
+		
+		FROM = {
+			piety = -100
+			religion_authority = {
+				modifier = lost_crusade
+				years = 20
+			}			
+		}
+	}
+
+	on_fail = {
+		ROOT = {
+			piety = -100
+		}
+		
+		any_defender = {
+			limit = { character = FROM }
+			participation_scaled_piety = 200
+			participation_scaled_prestige = 100
+			if = {
+				limit = {
+					religion_group = muslim
+				}
+				participation_scaled_decadence = -50
+			}
+		}
+		any_defender = {
+			limit = { NOT = { character = FROM } }
+			hidden_tooltip = { 
+				participation_scaled_piety = 200
+				participation_scaled_prestige = 100
+				if = {
+					limit = {
+						religion_group = muslim
+					}
+					participation_scaled_decadence = -50
+				}
+			}
+		}
+		
+		FROM = {
+			if = {
+				limit = { 
+					has_dlc = "Legacy of Rome"
+					OR = { 
+						has_landed_title = e_byzantium
+						has_landed_title = e_roman_empire
+					}
+					religion_group = christian
+				}
+				hidden_tooltip = { character_event = { id = LoR.30 days = 12 } }
+			}
+		}
+	}
+
+	on_reverse_demand = {
+		ROOT = {
+			piety = -200
+			religion_authority = {
+				modifier = lost_crusade
+				years = 20
+			}
+		}
+		FROM = {
+			piety = 100
+			religion_authority = {
+				modifier = won_crusade
+				years = 20
+			}
+		}
+		any_defender = {
+			limit = { character = FROM }
+			participation_scaled_piety = 300
+			participation_scaled_prestige = 150
+			if = {
+				limit = {
+					religion_group = muslim
+				}
+				participation_scaled_decadence = -100
+			}
+		}
+		FROM = {
+			if = {
+				limit = { 
+					has_dlc = "Legacy of Rome"
+					OR = { 
+						has_landed_title = e_byzantium
+						has_landed_title = e_roman_empire
+					}
+					religion_group = christian
+				}
+				hidden_tooltip = { character_event = { id = LoR.30 days = 12 } }
+			}
+		}
+		any_defender = {
+			limit = { NOT = { character = FROM } }
+			hidden_tooltip = { 
+				participation_scaled_piety = 300
+				participation_scaled_prestige = 150
+				if = {
+					limit = {
+						religion_group = muslim
+					}
+					participation_scaled_decadence = -100
+				}
+			}
+		}
+	}
+
+	attacker_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+	
+	attacker_ai_defeat_worth = {
+		factor = 100
+	}
+
+	defender_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+	
+	defender_ai_defeat_worth = {
+		factor = 100
+	}
+}
