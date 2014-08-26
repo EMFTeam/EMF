@@ -12,7 +12,7 @@ use warnings;
 use Carp;
 use Getopt::Long qw(:config gnu_getopt);
 
-my $VERSION = "0.9.11";
+my $VERSION = "0.9.12";
 
 my $DEFAULT_N      = 64;
 my $DEFAULT_STRIDE = 5;
@@ -226,11 +226,17 @@ namespace = emf_dynlevy
 # the number of evaluations necessary to reach the correct law to pass.
 # Currently it takes at most log2 64 = 6 realm_size calls to reach the
 # correct effect to execute.
+#
+# Also called on annual pulse.
 character_event = {
 	id = emf_dynlevy.20
 	desc = HIDE_EVENT
 	hide_window = yes
 	is_triggered_only = yes
+	
+	only_playable = yes # Technically, the on_action should target tier >= duke,
+	                    # but we should split them into separate events if we
+						# were to filter that in this event's trigger.
 	
 	immediate = {
 		clr_character_flag = dynlevy_dirty # Clear batch-optimization flag
