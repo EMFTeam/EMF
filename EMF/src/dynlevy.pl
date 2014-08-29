@@ -12,7 +12,7 @@ use warnings;
 use Carp;
 use Getopt::Long qw(:config gnu_getopt);
 
-my $VERSION = "0.9.13";
+my $VERSION = "0.9.14";
 
 my $DEFAULT_N      = 64;
 my $DEFAULT_STRIDE = 5;
@@ -385,31 +385,31 @@ sub print_search_tree {
 
 			if ($min > 0) {
 				# Set a variable indicating law tier (a way to programatically track realm size)
-				print "\t" x $tab, "set_variable = { which = rsz_idx value = $rsz_idx }\n";
+				# print "\t" x $tab, "set_variable = { which = rsz_idx value = $rsz_idx }\n";
 			}
 			else { # Minimum realm size case
 			
 				# If no longer even ruling a landed realm...
-				print "\t" x $tab, "if = {\n";
-				++$tab;
-				print "\t" x $tab, "limit = { not = { realm_size = 1 } }\n";
+				# print "\t" x $tab, "if = {\n";
+				# ++$tab;
+				# print "\t" x $tab, "limit = { not = { realm_size = 1 } }\n";
 				
-				# Reset variable indicating law tier (variable goes poof)
-				print "\t" x $tab, "set_variable = { which = rsz_idx value = 0 } # Poof!\n";
+				# # Reset variable indicating law tier (variable goes poof)
+				# print "\t" x $tab, "set_variable = { which = rsz_idx value = 0 } # Poof!\n";
 				
-				--$tab;
-				print "\t" x $tab, "}\n"; # /if
+				# --$tab;
+				# print "\t" x $tab, "}\n"; # /if
 
-				# Otherwise...
-				print "\t" x $tab, "if = {\n";
-				++$tab;
-				print "\t" x $tab, "limit = { realm_size = 1 }\n";
+				# # Otherwise...
+				# print "\t" x $tab, "if = {\n";
+				# ++$tab;
+				# print "\t" x $tab, "limit = { realm_size = 1 }\n";
 				
-				# Set variable as normal
-				print "\t" x $tab, "set_variable = { which = rsz_idx value = $rsz_idx }\n";
+				# # Set variable as normal
+				# print "\t" x $tab, "set_variable = { which = rsz_idx value = $rsz_idx }\n";
 				
-				--$tab;
-				print "\t" x $tab, "}\n"; # /if
+				# --$tab;
+				# print "\t" x $tab, "}\n"; # /if
 			}
 		}
 		elsif ($mode == 1) {
