@@ -12,7 +12,7 @@ use warnings;
 use Carp;
 use Getopt::Long qw(:config gnu_getopt);
 
-my $VERSION = "0.9.12";
+my $VERSION = "0.9.14";
 
 my $DEFAULT_N      = 64;
 my $DEFAULT_STRIDE = 5;
@@ -218,25 +218,20 @@ namespace = emf_dynlevy
 # emf_dynlevy.20
 # Scale all of a character's primary-tier titles' levy laws by realm_size
 #
-# This is event is called from a fewer different trigger sources, mostly
+# This is event is called from many different trigger sources, mostly
 # title transfer on_action handlers (but always batch-optimized, deferred
-# by a game day in on_action cases).
+# by a game day in on_action cases). It is also called by a variety of CB
+# code.
 #
 # Uses a perfect binary search of the covered realm_size range to reduce
 # the number of evaluations necessary to reach the correct law to pass.
 # Currently it takes at most log2 64 = 6 realm_size calls to reach the
 # correct effect to execute.
-#
-# Also called on annual pulse.
 character_event = {
 	id = emf_dynlevy.20
 	desc = HIDE_EVENT
 	hide_window = yes
 	is_triggered_only = yes
-	
-	only_playable = yes # Technically, the on_action should target tier >= duke,
-	                    # but we should split them into separate events if we
-						# were to filter that in this event's trigger.
 	
 	immediate = {
 		clr_character_flag = dynlevy_dirty # Clear batch-optimization flag
@@ -273,7 +268,6 @@ character_event = {
 	}
 	
 	immediate = {
-		set_character_flag = dbg_dynlevy_evt21
 EOS
 
 	print_search_tree(
@@ -290,7 +284,7 @@ EOS
 
 
 # emf_dynlevy.22
-# debug event for identifying the dynlevy law applied to a character
+# Debug event for identifying the dynlevy law(s) applied to a character
 character_event = {
 	id = emf_dynlevy.22
 	desc = emf_dynlevy.22.desc
@@ -314,6 +308,35 @@ EOS
 
 	print <<EOS;
 	}
+}
+
+# emf_dynlevy.23
+# Maintenance version of emf_dynlevy.20, called on annual pulse
+character_event = {
+	id = emf_dynlevy.23
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	only_playable = yes
+	
+	trigger = {
+		higher_tier_than = count # For maintenance, we only care about tier >= DUKE.
+	}
+	
+	immediate = {
+EOS
+
+	print_search_tree(
+		0, # general case
+		0,
+		$opt_n,
+		2); # start with an indent level of 2
+
+	print <<EOS;
+	}
+	
+	option = { name = OK }
 }
 EOS
 }
@@ -362,31 +385,31 @@ sub print_search_tree {
 
 			if ($min > 0) {
 				# Set a variable indicating law tier (a way to programatically track realm size)
-				print "\t" x $tab, "set_variable = { which = rsz_idx value = $rsz_idx }\n";
+				# print "\t" x $tab, "set_variable = { which = rsz_idx value = $rsz_idx }\n";
 			}
 			else { # Minimum realm size case
 			
 				# If no longer even ruling a landed realm...
-				print "\t" x $tab, "if = {\n";
-				++$tab;
-				print "\t" x $tab, "limit = { not = { realm_size = 1 } }\n";
+				# print "\t" x $tab, "if = {\n";
+				# ++$tab;
+				# print "\t" x $tab, "limit = { not = { realm_size = 1 } }\n";
 				
-				# Reset variable indicating law tier (variable goes poof)
-				print "\t" x $tab, "set_variable = { which = rsz_idx value = 0 } # Poof!\n";
+				# # Reset variable indicating law tier (variable goes poof)
+				# print "\t" x $tab, "set_variable = { which = rsz_idx value = 0 } # Poof!\n";
 				
-				--$tab;
-				print "\t" x $tab, "}\n"; # /if
+				# --$tab;
+				# print "\t" x $tab, "}\n"; # /if
 
-				# Otherwise...
-				print "\t" x $tab, "if = {\n";
-				++$tab;
-				print "\t" x $tab, "limit = { realm_size = 1 }\n";
+				# # Otherwise...
+				# print "\t" x $tab, "if = {\n";
+				# ++$tab;
+				# print "\t" x $tab, "limit = { realm_size = 1 }\n";
 				
-				# Set variable as normal
-				print "\t" x $tab, "set_variable = { which = rsz_idx value = $rsz_idx }\n";
+				# # Set variable as normal
+				# print "\t" x $tab, "set_variable = { which = rsz_idx value = $rsz_idx }\n";
 				
-				--$tab;
-				print "\t" x $tab, "}\n"; # /if
+				# --$tab;
+				# print "\t" x $tab, "}\n"; # /if
 			}
 		}
 		elsif ($mode == 1) {
