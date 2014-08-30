@@ -672,7 +672,7 @@ NEconomy = {
 	MUSLIM_NONMUSLIM_PROVINCE_TAX_MOD = 0.25,		-- Muslims get more tax from non-muslim provinces
 	TRADEZONE_VALUE_MULT = 0.5,						-- Multiple on trade zone value in tradezone bonus to trade posts and cities
 	TRADE_ZONE_BONUS_MULTIPLIER = 0.01,				-- Trade posts get the trade zone value * 0.1 * this as a bonus
-	TRADE_ZONE_BONUS_MULT_CITY = 0.01,				-- Cities gain similar bonus for a tradepost being in the province
+	TRADE_ZONE_BONUS_MULT_CITY = 0.005,				-- Cities gain similar bonus for a tradepost being in the province
 	TRADE_CONNECTED_TO_CAPITAL_BONUS = 0.4,			-- Bonus to trade post income when connected to capital
 	TRADE_POST_COST_INC_DIST = 0.0045,				-- The % increase in cost due to distance to closest connected province
 	TRADE_POST_OPINION_EFFECT = 0.5,				-- The bonus or penalty depending on topliege opinion
@@ -737,14 +737,14 @@ NMilitary = {
 	VASSAL_MERC_HIRE_COST_FACTOR = 0.125,			-- Fraction of nominal hire cost when hiring vassal mercenaries OR Holy Orders
 	MERCENARY_HIRE_DISTANCE_THRESHOLD = 600,		-- Mercs will not be available if the province of origin is more distant from your capital
 	OPINION_WHEN_MARSHAL_INSTEAD_OF_SELF = 25,		-- Below this opinion value a vassal tends to use his marshal instead of himself when someone asks to raise his troops
-	OPINION_WHEN_NO_LEADER = 0,					-- Below this opinion a vassal will not supply a leader for subunits at all
+	OPINION_WHEN_NO_LEADER = -100,					-- Below this opinion a vassal will not supply a leader for subunits at all
 	BATTLE_WARSCORE_WORTH = 100,					-- Warscore from battles are multiplied with this value
 	BATTLE_WARSCORE_DEFENDER_MULTIPLIER = 1.6,		-- Defenders wins are multiplied with this value, which also means they get more prestige for a win
 	BATTLE_MINIMUM_WARSCORE = 0.2,					-- Battles below this value(in actual percentage) are removed from warscore calculations
 	MIN_LEVY_RAISE_OPINION_THRESHOLD = -100,			-- Below this opinion value you'll get the least amount of troops possible
 	MAX_LEVY_RAISE_OPINION_THRESHOLD = 100,			-- Above this opinion value you'll get the max amount of troops possible
 	MIN_LEVIES_ABOVE_OPINION_THRESHOLD = 0,			-- The minimum percentage of levies that will be provided if opinion is above threshold
-	LEVY_PERCENT_BEFORE_CAN_RAISE = 0.3,			-- Needs at least this much % of full levy before we can raise it
+	LEVY_PERCENT_BEFORE_CAN_RAISE = 0.2,			-- Needs at least this much % of full levy before we can raise it
 	SIEGE_DAMAGE = 0,								-- Siege attack values are multiplied by this value(when not doing a sally)
 	PERCENT_OF_GARRISON_DETACHED = 0.1,				-- This percent of the garrison is detached from the winning unit of a siege
 	NUM_DAYS_BETWEEN_SIEGE_MORALE_LOSS = 9,			-- Number of days between morale loss for defender in a siege
@@ -832,7 +832,7 @@ NMilitary = {
 	
 	TERRAIN_SPEC_BONUS = 0.2,						-- Bonus to fighting in this terrain if you have that terrain as your
 													-- terrain specialization ( gained through combat events in that terrrain )
-	MAX_LEADERSHIP_TRAITS = 2,
+	MAX_LEADERSHIP_TRAITS = 3,
 	
 	LIEGE_LEVY_REINF_RATE = 0.035,
 	LIEGE_LEVY_SIZE_MULTIPLIER = 0.5,				-- The Size of the liege levy will be the total troops in the vassal subrealm * this
