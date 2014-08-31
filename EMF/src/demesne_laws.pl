@@ -6,7 +6,7 @@
 # without modification, of this program or its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "0.9.6";
+my $VERSION = "0.9.7";
 
 my $opt = {
 	min_total_levy      => -0.1,
@@ -176,9 +176,14 @@ sub print_law {
 	
 	$default = ($default) ? "\t\tdefault = yes" : '';
 	$default .= "\n" if $opinion_effect;
-	
-	my $muslim_holder = "holder_scope = { religion_group = muslim }";
-	$muslim_holder = "not = { $muslim_holder }" unless $muslim;
+
+	my $muslim_holder = '';
+
+	if ($type ne 'city') {
+		$muslim_holder = "holder_scope = { religion_group = muslim }";
+		$muslim_holder = "not = { $muslim_holder }" unless $muslim;
+		$muslim_holder = "\n\t\t\t$muslim_holder";
+	}
 	
 	my $law_down = '';
 	my $law_up = '';
@@ -225,8 +230,7 @@ sub print_law {
 $default$opinion_effect
 
 		potential = {
-			not = { tier = baron }
-			$muslim_holder
+			not = { tier = baron }$muslim_holder
 		}
 		allow = {
 			hidden_tooltip = { temporary = no }
