@@ -315,7 +315,7 @@ NDiplomacy = {
 	ASK_FOR_INVASION_INTERACTION_PIETY = 500,
 	ASK_FOR_INVASION_INTERACTION_PRESTIGE = 0,
 	ASK_FOR_INVASION_INTERACTION_THRESHOLD_FOR_NO = 50,
-	ASK_FOR_INVASION_INTERACTION_THRESHOLD_FOR_YES = 125,
+	ASK_FOR_INVASION_INTERACTION_THRESHOLD_FOR_YES = 100,
 	ASK_FOR_INVASION_INTERACTION_MUST_HAVE_COST = 1,				-- Is having prestige/piety >= cost required for this action?
 	ASK_FOR_INVASION_INTERACTION_ENABLED = 1,						-- Should this action be used at all?	
 
@@ -432,10 +432,10 @@ NDiplomacy = {
 	ASK_FOR_MONEY_INTERACTION_ENABLED = 1,						-- Should this action be used at all?		
 	
 	ASK_FOR_CLAIM_INTERACTION_MONEY = 0,
-	ASK_FOR_CLAIM_INTERACTION_PIETY = 100,
+	ASK_FOR_CLAIM_INTERACTION_PIETY = 50,
 	ASK_FOR_CLAIM_INTERACTION_PRESTIGE = 0,
 	ASK_FOR_CLAIM_INTERACTION_THRESHOLD_FOR_NO = 50,
-	ASK_FOR_CLAIM_INTERACTION_THRESHOLD_FOR_YES = 125,
+	ASK_FOR_CLAIM_INTERACTION_THRESHOLD_FOR_YES = 100,
 	ASK_FOR_CLAIM_INTERACTION_MUST_HAVE_COST = 1,				-- Is having prestige/piety >= cost required for this action?
 	ASK_FOR_CLAIM_INTERACTION_ENABLED = 1,						-- Should this action be used at all?		
 	
@@ -467,7 +467,7 @@ NCharacter = {
 	PRESTIGE_FROM_DYNASTY_ON_MARRIAGE_DIV = 20, 	-- Characters get the dynasty prestige of the spouse divided by this on marriage
 	NEED_GUARDIAN_AT_AGE = 6, 						-- The age at which children should be appointed a mentor/guardian
 	ASSIGN_ACTION_DAYS = 0, 						-- Days before a Councillor can be assigned a new job in a county
-	MARRIAGE_TIER_DIFF_PRESTIGE_MULT = 75, 			-- Prestige multiplier from marrying below or above your rank.
+	MARRIAGE_TIER_DIFF_PRESTIGE_MULT = 100, 		-- Prestige multiplier from marrying below or above your rank.
 	CONSORT_TIER_PRESTIGE_MULT = 25,				-- Prestige multiplier for rank of consort	
 	RAISED_TROOPS_VASSAL_OPINION_DAYS = 61,			-- After 61 days of having their troops raised, vassals will get -1 opinion more of you
 	MAX_GENERATED_TRAITS_FOR_HISTORICAL = 5,		-- Generate random traits up this number for adult historical characters
@@ -490,7 +490,7 @@ NCharacter = {
 	AGE_YOUNG = 20,									-- Non-child characters below this age have the 'teen' static modifier applied
 	AGE_ADULT = 30,									-- Non-child characters below this age have the 'young' static modifier applied
 	AGE_OLD = 50,									-- Non-child characters below this age have the 'adult' static modifier applied
-	AGE_VERY_OLD = 70,								-- Non-child characters below this age have the 'old' static modifier applied
+	AGE_VERY_OLD = 60,								-- Non-child characters below this age have the 'old' static modifier applied
 	MAX_CHILD_BIRTH_AGE = 45,						-- Female menopause age.
 	CHILD_BIRTH_TO_PREGNANCY_WAIT = 3,
 	BASE_NR_OF_CHILDREN_PER_COUPLE = 2,
@@ -512,7 +512,7 @@ NCharacter = {
 	NATURAL_DEATH_CHANCE_AGE_90 = 4000,				-- Natural deaths per decade out of 10000 people: Age 90-99
 	NATURAL_DEATH_CHANCE_AGE_100 = 8160,			-- Natural deaths per decade out of 10000 people: Age 100+
 	FERTILITY_BASE_MULT = 0.50,						-- Base fertility multiplier to adjust the base chance of impregnation
-	SECONDARY_SPOUSE_FERTILITY_MULT = 0.50,			-- Applied to fertility of secondary spouses and concubines
+	SECONDARY_SPOUSE_FERTILITY_MULT = 0.25,			-- Applied to fertility of secondary spouses and concubines
 	NOT_SPOUSE_FERTILITY_MULT = 0.25,				-- Applied to fertility when the two characters are not married
 	MARRIED_LOVERS_FERTILITY_MULT = 1.5,			-- Applied to fertility when lovers are married
 	INFANT_DEATH_CHANCE = 0.0,						-- Chance of stillbirth / death at birth
@@ -548,8 +548,8 @@ NTitle = {
 	EMPEROR_TITLE_DYNASTY_PRESTIGE = 40,
 
 -- Piety from giving titles to the Church or Holy Orders
-	BARON_GRANT_TO_CHURCH_PIETY = 25,
-	COUNT_GRANT_TO_CHURCH_PIETY = 50,
+	BARON_GRANT_TO_CHURCH_PIETY = 75,
+	COUNT_GRANT_TO_CHURCH_PIETY = 125,
 	DUKE_GRANT_TO_CHURCH_PIETY = 0,
 	KING_GRANT_TO_CHURCH_PIETY = 0,
 	EMPEROR_GRANT_TO_CHURCH_PIETY = 0,
@@ -617,7 +617,7 @@ NTitle = {
 	DEJURE_COUNTY_LIMIT_TO_CREATE = 0.5,		-- Fraction of de jure counties that you must control to create a non-imperial title
 	DEJURE_COUNTY_LIMIT_TO_USURP = 0.5,		-- Fraction of de jure counties that you must control to usurp a non-imperial title
 	EMPIRE_DEJURE_COUNTY_LIMIT_TO_CREATE = 0.667,		-- Fraction of de jure counties that you must control to create an imperial title
-	EMPIRE_DEJURE_COUNTY_LIMIT_TO_USURP = 0.6		-- Fraction of de jure counties that you must control to usurp an imperial title	
+	EMPIRE_DEJURE_COUNTY_LIMIT_TO_USURP = 0.667		-- Fraction of de jure counties that you must control to usurp an imperial title	
 },
 
 NReligion = {
@@ -627,7 +627,7 @@ NReligion = {
 	CREATE_ANTIPOPE_AUTHORITY_LOSS = 0.2,
 	POPE_DIPLO_TO_AUTHORITY_DIV = 10000,
 	EXCOM_MIN_AUTHORITY = 0.4,
-	INVASION_MIN_AUTHORITY = 0.5,
+	INVASION_MIN_AUTHORITY = 0.4,
 	KINGDOM_CREATION_PIETY_COST = 200,
 	EMPIRE_CREATION_PIETY_COST = 400,
 	CRUSADE_AUTHORITY_COST = 0.05,
@@ -665,7 +665,7 @@ NEconomy = {
 	REPUBLIC_CAPITAL_CITY_TAX_BONUS = 1.25,			-- Duke or above tier Republics receive a tax bonus for their capital city
 	BISHOP_TAX_TO_POPE_FACTOR = 0.4,				-- Bishops only pay half the tax to the Pope if they are loyal to him
 	BISHOP_TAX_TO_ANTI_POPE_FACTOR = 0.20,			-- Bishops only pay a quarter taxes to an Anti-Pope if they are loyal to him	
-	DECADENCE_MODIFIER = 0.2,						-- Maximum effect of decadence, positive for low dec, negative for high
+	DECADENCE_MODIFIER = 0,							-- Maximum effect of decadence, positive for low dec, negative for high
 	DECADENCE_PER_WEEK_OF_COMBAT = -0.05,			-- Decadence lost per 7 days of combat, for each participant in the combat
 	DECADENCE_PER_WEEK_OF_SIEGE = -0.01,			-- Decadence lost per 7 days of siege, for each participant in the siege
 	MUSLIM_MUSLIM_PROVINCE_TAX_MOD = -0.1,			-- Muslims get less tax from muslim provinces
@@ -705,15 +705,15 @@ NEconomy = {
 },
 
 NDecadence = {
-	BASE_EMPEROR_GAIN = 0.32,
-	BASE_KING_GAIN = 0.24,
-	BASE_DUKE_GAIN = 0.16,
-	BASE_COUNT_GAIN = 0.08,
-	BASE_BARON_GAIN = 0.04,
-	BASE_UNLANDED_GAIN = 0.02,
-	REALM_SIZE_MULTIPLIER = 0.005,
-	DEMESNE_FRACTION_MULT_POS = 0.5,
-	DEMESNE_FRACTION_MULT_NEG = -0.8,
+	BASE_EMPEROR_GAIN = 0,
+	BASE_KING_GAIN = 0,
+	BASE_DUKE_GAIN = 0,
+	BASE_COUNT_GAIN = 0,
+	BASE_BARON_GAIN = 0,
+	BASE_UNLANDED_GAIN = 0,
+	REALM_SIZE_MULTIPLIER = 0,
+	DEMESNE_FRACTION_MULT_POS = 0,
+	DEMESNE_FRACTION_MULT_NEG = 0,
 }, 
 
 NMilitary = {
@@ -802,8 +802,8 @@ NMilitary = {
 	LEADER_MARTIAL_DAMAGE_BONUS = 0.05,				-- Percentage bonus to damage for each point of martial the flank leader has
 	WAR_CONTRIBUTION_OCCUPATION_PER_DAY = 15,		-- Occupying a Holding gives this Contribution score per day
 	WAR_CONTRIBUTION_BATTLE_PER_DAY = 0.25,			-- Every day in battle, a participant gets this. (My Troops / Total Friendly Troops) * Total Enemy Troops * WAR_CONTRIBUTION_BATTLE_PER_DAY. Max is [My Troops].
-	LOW_DECADENCE_MORALE_MOD = 0.5,					-- Extra Morale defence when at 0% decadence
-	HIGH_DECADENCE_MORALE_MOD = 2.0,				-- Extra Morale damage taken when at 100% decadence
+	LOW_DECADENCE_MORALE_MOD = 0,					-- Extra Morale defence when at 0% decadence
+	HIGH_DECADENCE_MORALE_MOD = 0,					-- Extra Morale damage taken when at 100% decadence
 	CAPTURED_CLOSE_MALE_RELATIVE_WAR_SCORE = 5.0,	-- War score for holding a close male relative prisoner
 	CAPTURED_HEIR_WAR_SCORE = 50.0,					-- War score for holding the heir prisoner
 	
