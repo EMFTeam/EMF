@@ -12,7 +12,7 @@ use warnings;
 use Carp;
 use Getopt::Long qw(:config gnu_getopt);
 
-my $VERSION = "0.9.14";
+my $VERSION = "0.9.15";
 
 my $DEFAULT_N      = 64;
 my $DEFAULT_STRIDE = 5;
@@ -265,6 +265,11 @@ character_event = {
 	trigger = {
 		not = { FROMFROM = { always = yes } }
 		FROM = { higher_tier_than = count }
+		
+		# Only titles of primary-tier or higher
+		primary_title = {
+			not = { higher_tier_than = FROM }
+		}
 	}
 	
 	immediate = {
@@ -310,6 +315,7 @@ EOS
 	}
 }
 
+
 # emf_dynlevy.23
 # Maintenance version of emf_dynlevy.20, called on annual pulse
 character_event = {
@@ -334,6 +340,39 @@ EOS
 		2); # start with an indent level of 2
 
 	print <<EOS;
+	}
+	
+	option = { name = OK }
+}
+
+
+# emf_dynlevy.24
+# Debug / fix event in case somebody should run into the mysterious, once-sighted
+# cosmetic bug of multiple dynlevy laws appearing to be activated at the same
+# time. [Not even sure it works, as I haven't been able to repeat this mystery.]
+character_event = {
+	id = emf_dynlevy.24
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+	
+		# Clear  all dynlevy laws from all tier >= DUKE titles
+		any_demesne_title = {
+			limit = { higher_tier_than = count }
+			
+EOS
+
+	for my $i (0..$opt_n-1) {
+		print "\t" x 3, "revoke_law = dynlevy${i}_0\n";
+	}
+
+	print <<EOS;
+		}
+		
+		# Reset appropriate law
+		character_event = { id = emf_dynlevy.20 }
 	}
 	
 	option = { name = OK }
@@ -369,6 +408,7 @@ sub print_search_tree {
 			++$tab;
 			print "\t" x $tab, "limit = {\n";
 			++$tab;
+			print "\t" x $tab, "higher_tier_than = count\n";
 			print "\t" x $tab, "not = { lower_tier_than = PREVPREV }\n";
 			print "\t" x $tab, "not = { has_law = $law }\n";
 			--$tab;
