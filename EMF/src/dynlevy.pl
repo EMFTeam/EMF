@@ -12,7 +12,7 @@ use warnings;
 use Carp;
 use Getopt::Long qw(:config gnu_getopt);
 
-my $VERSION = "0.9.15";
+my $VERSION = "1.0.0";
 
 my $DEFAULT_N      = 64;
 my $DEFAULT_STRIDE = 5;
@@ -501,6 +501,6 @@ sub print_i18n {
 		print "${law_group}_desc;As your realm grows, your liege levy will grow with it. But by how much?$eol";
 		print "${law};$mod_str Realm Levy-Raising Efficiency$eol";
 		print "${law}_option;$mod_str$eol";
-		print "${law}_desc;In a decentralized feudal system, rulers of large realms are less efficient at raising liege levies than rulers of smaller realms. Demesne levies are unaffected.\\n\\nSmaller realms pack a harder punch per capita, all else being equal. For larger realms to compete per capita, they inevitably must centralize. See the EMF manual for details on levy efficiency.\\n\\nRealm size class: §G$min_rs§! - §G$max_rs§!$eol";
+		print "${law}_desc;In a decentralized feudal system, rulers of large realms are less efficient at raising liege levies than rulers of smaller realms. Demesne levies are unaffected.\\n\\nSmaller realms pack a harder punch per capita, all else being equal. For larger realms to compete per capita, they inevitably must centralize. See the EMF manual for details on levy efficiency.$eol";
 	}
 }
