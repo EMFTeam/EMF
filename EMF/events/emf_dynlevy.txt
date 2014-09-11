@@ -1,0 +1,160 @@
+
+namespace = emf_dynlevy
+
+
+# emf_dynlevy.0
+# Scenario initialization event for dynlevies subsystem
+character_event = {
+	id = emf_dynlevy.0
+	desc = AI_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		# Set initial dynlevy laws for all tier >= count rulers' primary-tier tiles
+		any_playable_ruler = {
+			limit = { higher_tier_than = count }
+			character_event = { id = emf_dynlevy.20 }
+		}
+	}
+	
+	option = { name = OK }
+}
+
+
+# emf_dynlevy.1
+# on_new_holder[_usurpation} listeners for triggering dynlevy law updates
+#
+# Title transfers covered: usurpation, grant
+#
+# Uses a batch-optimization mechanism: maintains a "dirty" flag for enabling single
+# enqueues of the emf_dynlevy.20, the generic law update evaluation event.
+#
+# Trigger trickles-up law reevaluation to all lieges, if any
+character_event = {
+	id = emf_dynlevy.1
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		FROMFROM = { is_alive = yes }
+	}
+	
+	immediate = {
+		FROMFROM = {
+			if = {
+				limit = { not = { has_character_flag = dynlevy_dirty } }
+				set_character_flag = dynlevy_dirty
+				character_event = { id = emf_dynlevy.20 days = 1 }
+				
+				any_liege = {
+					limit = { not = { has_character_flag = dynlevy_dirty } }
+					set_character_flag = dynlevy_dirty
+					character_event = { id = emf_dynlevy.20 days = 1 }
+				}
+			}
+		}
+		
+		if = {
+			limit = { not = { has_character_flag = dynlevy_dirty } }
+			set_character_flag = dynlevy_dirty
+			character_event = { id = emf_dynlevy.20 days = 1 }
+
+			any_liege = {
+				limit = { not = { has_character_flag = dynlevy_dirty } }
+				set_character_flag = dynlevy_dirty
+				character_event = { id = emf_dynlevy.20 days = 1 }
+			}
+		}
+	}
+	
+	option = { name = OK }
+}
+
+
+# emf_dynlevy.2
+# on_new_holder_inheritance listener for triggering dynlevy law updates
+#
+# Title transfers covered: inheritance
+#
+# Uses a batch-optimization mechanism: maintains a "dirty" flag for enabling single
+# enqueues of the dynlevy.20, the generic law update evaluation event.
+#
+# Trigger trickles-up law reevaluation to all lieges, if any
+character_event = {
+	id = emf_dynlevy.2
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		if = {
+			limit = { not = { has_character_flag = dynlevy_dirty } }
+			set_character_flag = dynlevy_dirty
+			character_event = { id = emf_dynlevy.20 days = 1 }
+
+			any_liege = {
+				limit = { not = { has_character_flag = dynlevy_dirty } }
+				set_character_flag = dynlevy_dirty
+				character_event = { id = emf_dynlevy.20 days = 1 }
+			}
+		}
+	}
+	
+	option = { name = OK }
+}
+
+
+# emf_dynlevy.3
+# on_new_holder listener for triggering dynlevy law updates
+#
+# Title transfers covered: creation of a barony
+#
+# Does not use batch-optimization technique from above and
+# executes immediately.
+#
+# Trigger trickles-up law reevaluation to all lieges, if any
+character_event = {
+	id = emf_dynlevy.3
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		not = { FROMFROM = { always = yes } }
+		FROM = { tier = baron }
+	}
+	
+	immediate = {
+		character_event = { id = emf_dynlevy.20 }
+
+		any_liege = {
+			character_event = { id = emf_dynlevy.20 }
+		}
+	}
+	
+	option = { name = OK }
+}
+
+# emf_dynlevy.4
+# CB supplement to adjust both the dynlevy laws associated with ROOT and FROMFROM
+# It is called on the attacker (thus FROM in the CB becomes FROMFROM here)
+#
+# This is intended for major_revolt CBs, for application upon revolt start and end.
+# Note that we adjust the title laws immediately, unlike the title transfer listeners.
+character_event = {
+	id = emf_dynlevy.4
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		FROMFROM = {
+			character_event = { id = emf_dynlevy.20 }
+		}
+		character_event = { id = emf_dynlevy.20 }
+	}
+	
+	option = { name = OK }
+}
