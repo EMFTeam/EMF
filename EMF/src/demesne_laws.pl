@@ -216,7 +216,6 @@ sub print_law {
 	my $revoke_laws = '';
 	
 	for my $i (0..4) {
-		next if $i == $level;
 		$revoke_laws .= ("\t" x 4)."revoke_law = ".$law_group.'_'.$i."\n";
 	}
 	
