@@ -6,7 +6,7 @@
 # without modification, of this program or its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "0.9.7";
+my $VERSION = "1.0.0";
 
 my $opt = {
 	min_total_levy      => -0.1,
@@ -216,7 +216,6 @@ sub print_law {
 	my $revoke_laws = '';
 	
 	for my $i (0..4) {
-		next if $i == $level;
 		$revoke_laws .= ("\t" x 4)."revoke_law = ".$law_group.'_'.$i."\n";
 	}
 	
