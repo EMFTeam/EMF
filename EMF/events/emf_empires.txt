@@ -1,0 +1,204 @@
+
+namespace = emf_empires
+
+
+# emf_empires.0
+# Determine if an empire needs to be dismantled due to decline
+#
+# MTTH event rather than annual pulse so that the 'war = no'
+# requirement doesn't prevent empires from being dissolved
+# for potentially many years on end.
+character_event = {
+	id = emf_empires.0
+	desc = emf_empires.0.desc
+	picture = GFX_evt_bad_news
+	border = GFX_event_normal_frame_war
+	
+	only_independent = yes
+	
+	trigger = {
+		tier = emperor
+		war = no
+		any_demesne_title = {
+			tier = emperor
+			temporary = no
+			or = {
+				and = {
+					ROOT = { not = { realm_size = 100 } } # 150 on SWMH
+					not = {
+						title = e_hip
+						title = e_rebels
+						title = e_pirates
+						title = e_byzantium
+						title = e_roman_empire
+						title = e_latin_empire
+						title = e_timurids
+						title = e_mexikha
+						and = {
+							or = {
+								title = e_golden_horde
+								title = e_il-khanate
+							}
+							ROOT = { religion = tengri_pagan }
+						}
+					}
+				}
+				and = {
+					or = {
+						title = e_byzantium
+						title = e_latin_empire
+					}						
+					not = { c_byzantion = { owner = { same_realm = ROOT } } }
+				}
+			}
+		}
+	}
+	
+	immediate = {
+		if = { # If we don't have another empire or king title to fallback upon...
+			limit = {
+				not = {
+					num_of_emperor_titles = 2
+					any_demesne_title = {
+						tier = king
+						temporary = no
+					}
+				}
+			}
+			
+			# Then we will try to find one...
+			
+			# First, check capital kingdom for availability
+			if = {
+				limit = {
+					capital_scope = {
+						kingdom = {	has_holder = no	}
+					}
+				}
+				
+				# Good. Now determine whether we'd qualify to form it by the 51% rule.
+				
+				capital_scope = {
+					kingdom = {
+						any_direct_de_jure_vassal_title = { # Duchies...
+							any_direct_de_jure_vassal_title = { # Counties...
+								
+								if = {
+									limit = { owner = { same_realm = ROOT } }
+									ROOT = { change_variable = { which = king_counties value = 1 } }
+								}
+								
+								if = {
+									limit = { owner = { not = { same_realm = ROOT } } }
+									ROOT = { change_variable = { which = king_counties value = -1 } }
+								}
+								
+							}
+						}
+					}
+				}
+				
+				if = {
+					limit = { check_variable = { which = king_counties value = 0.9 } } # 51% rule passes
+					
+					capital_scope = {
+						kingdom = {
+							usurp_title = ROOT
+						}
+					}
+					
+					set_character_flag = found_kingdom
+				}
+				
+				set_variable = { which = king_counties value = 0 } # Toss it
+			}
+			
+			# If not found, check all the de jure kingdoms of any empire titles that ROOT has, if the empire is de jure
+
+			any_demesne_title = { # For all the de jure empires...
+				limit = {
+					tier = emperor
+					is_titular = no
+				}
+				
+				any_direct_de_jure_vassal_title = { # For all the kingdoms...
+					limit = {
+						not = { ROOT = { has_character_flag = found_kingdom } }
+						has_holder = no
+					}
+					
+					any_direct_de_jure_vassal_title = { # Duchies...
+						any_direct_de_jure_vassal_title = { # Counties...
+							
+							if = {
+								limit = { owner = { same_realm = ROOT } }
+								ROOT = { change_variable = { which = king_counties value = 1 } }
+							}
+							
+							if = {
+								limit = { owner = { not = { same_realm = ROOT } } }
+								ROOT = { change_variable = { which = king_counties value = -1 } }
+							}
+							
+						}
+					}
+					
+					if = {
+						limit = { ROOT = { check_variable = { which = king_counties value = 0.9 } } } # 51% rule passes
+						
+						usurp_title = ROOT
+						ROOT = { set_character_flag = found_kingdom }
+					}
+					
+					ROOT = { set_variable = { which = king_counties value = 0 } } # Toss it
+				}
+			}
+			
+			clr_character_flag = found_kingdom
+		}
+	}
+	
+	option = {
+		name = emf_empires.0.opt.a
+
+		random_demesne_title = {
+			limit = {
+				tier = emperor
+				temporary = no
+				or = {
+					and = {
+						ROOT = { not = { realm_size = 100 } } # 150 on SWMH
+						not = {
+							title = e_hip
+							title = e_rebels
+							title = e_pirates
+							title = e_byzantium
+							title = e_roman_empire
+							title = e_latin_empire
+							title = e_timurids
+							title = e_mexikha
+							and = {
+								or = {
+									title = e_golden_horde
+									title = e_il-khanate
+								}
+								ROOT = { religion = tengri_pagan }
+							}
+						}
+					}
+					and = {
+						or = {
+							title = e_byzantium
+							title = e_latin_empire
+						}						
+						not = { c_byzantion = { owner = { same_realm = ROOT } } }
+					}
+				}
+			}
+			
+			destroy_landed_title = THIS
+		}
+		
+		prestige = -1200
+	}
+}
