@@ -83,6 +83,7 @@ cultural_tactics = {
             "norsegaelic":      ("advance_tactic", "infantry_rush_tactic"),
             "gothic":           ("advance_tactic", "infantry_rush_tactic"),
             "anglonorse":       ("advance_tactic", "infantry_rush_tactic"),
+            "cumbric":          ("advance_tactic", "infantry_rush_tactic"),
             "scottish":         ("stand_fast_tactic", "schiltron_tactic"),
             "dutch":            ("stand_fast_tactic", "pike_assault_tactic"),
             "frisian":          ("stand_fast_tactic", "pike_assault_tactic"),
