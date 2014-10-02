@@ -2,25 +2,30 @@ namespace = emf_autolander
 
 
 # emf_autolander.1
-# on_new_holder_usurpation listener for applying Recently Acquired
+# Title transfer listener for applying Recently Acquired
+#
+# Taps: on_new_holder (grants + territory gained through gain_all_occupied_titles)
+#       on_new_holder_usurpation (general usurpation)
 #
 character_event = {
 	id = emf_autolander.1
 	desc = HIDE_EVENT
 	hide_window = yes
 	is_triggered_only = yes
+	
 	ai = no
 	
 	trigger = {
-		FROM = { 
+		FROM = {
 			tier = count
 		}
 	}
 	
 	immediate = {
-		FROM = { 
+		FROM = {
 			location = {
-				add_province_modifier = { name = emf_recently_acquired_timer duration = 14 }
+				remove_province_modifier = emf_mod_recently_acquired
+				add_province_modifier = { name = emf_mod_recently_acquired duration = 14 }
 			}
 		}
 	}
@@ -38,74 +43,113 @@ character_event = {
 	
 	trigger = {
 		NOT = { demesne_efficiency = 1 }
-	}
-	
-	immediate = {
-		if = {
-			limit = {
-				any_demesne_title = {
-					tier = count
-					location = {
-						has_province_modifier = emf_recently_acquired_timer
-						NOT = { capital_scope = { duchy = { de_jure_vassal_or_below = PREVPREVPREV } } }
+		any_demesne_title = {
+			tier = count
+			location = {
+				has_province_modifier = emf_mod_recently_acquired
+			}				
+			not = {
+				ROOT = {
+					capital_scope = {
+						duchy = {
+							de_jure_vassal_or_below = PREVPREVPREV
+						}
 					}
-					can_be_given_away = yes
 				}
 			}
-			random_demesne_title = {
-				limit = { 
-					tier = count
-					location = {
-						has_province_modifier = emf_recently_acquired_timer
-						NOT = { capital_scope = { duchy = { de_jure_vassal_or_below = PREVPREVPREV } } }
-					}
-					can_be_given_away = yes
-				}
-				location = {
-					remove_province_modifier = emf_recently_acquired_timer
-					province_event = { id = emf_autolander.3 }
-				}
-			}
+			can_be_given_away = yes
 		}
 	}
 	
-	option = { name = OK }
+	option = {
+		name = OK
+		
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = {
+					has_province_modifier = emf_mod_recently_acquired
+				}				
+				not = {
+					ROOT = {
+						capital_scope = {
+							duchy = {
+								de_jure_vassal_or_below = PREVPREVPREV
+							}
+						}
+					}
+				}
+				can_be_given_away = yes
+			}
+			location = {
+				province_event = { id = emf_autolander.3 } # Prompt to give it away
+			}
+		}
+	}
 }
 
-# Actually give it away
+
+# Bounce event (want to get the province into FROM)
 province_event = {
 	id = emf_autolander.3
-	desc = emf_autolander_prompt
+	desc = HIDE_EVENT
+	hide_window = yes
 	is_triggered_only = yes
 	
-	option = { 
-		name = OK 
+	trigger = {
+		has_province_modifier = emf_mod_recently_acquired
+	}
+	
+	immediate = {	
+		remove_province_modifier = emf_mod_recently_acquired
+		FROM = { character_event = { id = emf_autolander.4 } }
+	}
+	
+	option = {
+		name = OK
+	}
+}
+
+
+character_event = {
+	id = emf_autolander.4
+	desc = emf_autolander.4.desc
+	picture = GFX_evt_small_town
+	is_triggered_only = yes
+	
+	option = {
+		name = emf_autolander.4.opt.a
+		
 		create_character = {
-			dynasty = culture
+			dynasty = none
 			female = no
-			religion = FROM
-			culture = FROM
+			religion = ROOT
+			culture = ROOT
 			random_traits = yes
 		}
 		new_character = {
-			set_defacto_liege = FROM
-			ROOT = {
-				county = { 
-					grant_title = PREVPREV
-					FROM = { 
+			FROM = { # Province in question
+				county = {
+					grant_title = PREVPREV # County to new_character
+					ROOT = {
 						any_demesne_title = { 
-							limit = { tier = baron de_jure_liege = PREVPREV }
-							grant_title = PREVPREVPREVPREV
+							limit = {
+								tier = baron
+								de_jure_liege = PREVPREV # The county
+							}
+							grant_title = PREVPREVPREVPREV # Barony in county to new_character
 						}
 					}
 				}
 			}
 		}
-		hidden_tooltip = { FROM = { character_event = {id = emf_autolander.2 } } }
+		
+		hidden_tooltip = { character_event = { id = emf_autolander.2 } }
 	}
 	
-	option = { 
-		name = Nah
-		hidden_tooltip = { FROM = { character_event = {id = emf_autolander.2 } } }
+	option = {
+		name = emf_autolander.4.opt.b
+		
+		hidden_tooltip = { character_event = { id = emf_autolander.2 } }
 	}
 }
