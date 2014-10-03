@@ -590,11 +590,11 @@ NTitle = {
 	EMPEROR_REVOKE_PRESTIGE_COST = 400, -- Unused, impossible
 	
 -- Title Grant Decadence Reduction (Multiplied with current decadence)
-	BARON_GRANT_DECADENCE_RED = 0.01,
-	COUNT_GRANT_DECADENCE_RED = 0.02,
-	DUKE_GRANT_DECADENCE_RED = 0.04,
-	KING_GRANT_DECADENCE_RED = 0.1,
-	EMPEROR_GRANT_DECADENCE_RED = 0.2,
+	BARON_GRANT_DECADENCE_RED = 0,
+	COUNT_GRANT_DECADENCE_RED = 0,
+	DUKE_GRANT_DECADENCE_RED = 0,
+	KING_GRANT_DECADENCE_RED = 0,
+	EMPEROR_GRANT_DECADENCE_RED = 0,
 	
 	CLAIM_VASSAL_TITLE_COST_MOD = 0.75,
 	CLAIM_DE_JURE_TITLE_COST_MOD = 0.5,
@@ -816,16 +816,16 @@ NMilitary = {
 	OCCUPATION_PENALTY_MONTHS_DIFFERENT_CULTUREGROUP = 120,
 	
 	LOOTED_MODIFIER_MONTHS = 36,					-- How long pagan looting lasts
-	LOOT_TAX_MULTIPLIER = 1.5,						-- Base gold looted from raided holdings is (tax * LOOT_TAX_MULTIPLIER) + (total building value * LOOT_BUILDING_MULTIPLIER)
-	LOOT_BUILDING_MULTIPLIER = 0.02,				-- Extra gold looted from raided holdings, from buildings (LOOT_BUILDING_MULTIPLIER * building built cost)
+	LOOT_TAX_MULTIPLIER = 1.0,						-- Base gold looted from raided holdings is (tax * LOOT_TAX_MULTIPLIER) + (total building value * LOOT_BUILDING_MULTIPLIER)
+	LOOT_BUILDING_MULTIPLIER = 0.015,				-- Extra gold looted from raided holdings, from buildings (LOOT_BUILDING_MULTIPLIER * building built cost)
 	LOOT_HOLDING_DEST_MIN_SAFE = 4,					-- there is a 1 in LOOT_HOLDING_DESTRUCTION_ODDS chance that
 	LOOT_HOLDING_DESTRUCTION_ODDS = 20,				-- a holding with less than LOOT_HOLDING_DEST_MIN_SAFE buildings will be destroyed by looting
 	LOOT_HOLDING_BUILDING_DEST_ODDS = 10,			-- there is a 1 in this chance a random building is destroyed when looted
 	
-	RETINUE_FROM_REALMSIZE = 6.0,
+	RETINUE_FROM_REALMSIZE = 4.0,
 	RETINUE_INCREASE_PER_TECH = 0.5,
 	RETINUE_HIRE_COST_MULTIPLIER = 0.08,			-- Retinues are free to hire atm, but they cost alot to reinforce
-	RETINUE_REINFORCE_RATE = 0.04,
+	RETINUE_REINFORCE_RATE = 0.03,
 	RETINUE_REINFORCE_COST = 2.0,					-- Retinues cost while reinforcing.
 	RETINUE_CONSTANT_COST = 0.2,					-- Retinues cost at all times.
 	MIN_RETINUE = 0,								-- Minimum retinue ( Disabled for now, can be enabled by mods )
@@ -921,7 +921,7 @@ NMilitary = {
 	GALLEYS_PHASE_PURSUE_DEFENSE = 1,
 	GALLEYS_GRAPHICAL_FACTOR = 1,
 	
-	COMMAND_MODIFIER_MARTIAL_MULTIPLIER = 0.075,
+	COMMAND_MODIFIER_MARTIAL_MULTIPLIER = 0.05,
 	
 	MAX_RIVER_MOVEMENT_FORT_LEVEL = 10.0,
 	BOTTLENECK_SIZE_MODIFIER = 1.0,
@@ -967,7 +967,7 @@ NTechnology = {
 	IDEAL_YEAR_LEVEL_0 = 800, 					-- the chance to get a progress to this level will increase after this date and decrease before it
 	IDEAL_YEAR_LEVEL_8 = 1500,
 	IDEAL_YEAR_AHEAD_PENALTY = -0.2,			-- UNUSED
-	IDEAL_YEAR_AHEAD_PENALTY_INVEST = 0.25,		-- Percent increase in cost pre level ahead of ideal date
+	IDEAL_YEAR_AHEAD_PENALTY_INVEST = 0.3,	-- Percent increase in cost pre level ahead of ideal date
 	
 	PAGAN_HOME_ATTRITION_REMOVAL_LEVEL = 4.0,
 	
