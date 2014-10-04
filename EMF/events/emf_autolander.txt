@@ -1,0 +1,157 @@
+namespace = emf_autolander
+
+
+# emf_autolander.1
+# Title transfer listener for applying Recently Acquired
+#
+# Taps: on_new_holder (grants + territory gained through gain_all_occupied_titles)
+#       on_new_holder_usurpation (general usurpation)
+#
+character_event = {
+	id = emf_autolander.1
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	ai = no
+	
+	trigger = {
+		FROM = {
+			tier = count
+		}
+	}
+	
+	immediate = {
+		FROM = {
+			location = {
+				remove_province_modifier = emf_mod_recently_acquired
+				add_province_modifier = { name = emf_mod_recently_acquired duration = 14 }
+			}
+		}
+	}
+	
+	option = { name = OK }
+}
+
+# Give away our recently acquired provinces
+character_event = {
+	id = emf_autolander.2
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	ai = no
+	
+	trigger = {
+		NOT = { demesne_efficiency = 1 }
+		any_demesne_title = {
+			tier = count
+			location = {
+				has_province_modifier = emf_mod_recently_acquired
+			}				
+			not = {
+				ROOT = {
+					capital_scope = {
+						duchy = {
+							de_jure_vassal_or_below = PREVPREVPREV
+						}
+					}
+				}
+			}
+			can_be_given_away = yes
+		}
+	}
+	
+	option = {
+		name = OK
+		
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = {
+					has_province_modifier = emf_mod_recently_acquired
+				}				
+				not = {
+					ROOT = {
+						capital_scope = {
+							duchy = {
+								de_jure_vassal_or_below = PREVPREVPREV
+							}
+						}
+					}
+				}
+				can_be_given_away = yes
+			}
+			location = {
+				province_event = { id = emf_autolander.3 } # Prompt to give it away
+			}
+		}
+	}
+}
+
+
+# Bounce event (want to get the province into FROM)
+province_event = {
+	id = emf_autolander.3
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		has_province_modifier = emf_mod_recently_acquired
+	}
+	
+	immediate = {	
+		remove_province_modifier = emf_mod_recently_acquired
+		FROM = { character_event = { id = emf_autolander.4 } }
+	}
+	
+	option = {
+		name = OK
+	}
+}
+
+
+character_event = {
+	id = emf_autolander.4
+	desc = emf_autolander.4.desc
+	picture = GFX_evt_small_town
+	is_triggered_only = yes
+	
+	option = {
+		name = emf_autolander.4.opt.a
+		
+		create_character = {
+			random_traits = yes
+			religion = ROOT
+			culture = ROOT
+			dynasty = random
+			female = no
+			fertility = 0.5
+			health = 5
+		}
+		new_character = {
+			FROM = { # Province in question
+				county = {
+					grant_title = PREVPREV # County to new_character
+					ROOT = {
+						any_demesne_title = { 
+							limit = {
+								tier = baron
+								de_jure_liege = PREVPREV # The county
+							}
+							grant_title = PREVPREVPREVPREV # Barony in county to new_character
+						}
+					}
+				}
+			}
+		}
+		
+		hidden_tooltip = { character_event = { id = emf_autolander.2 } }
+	}
+	
+	option = {
+		name = emf_autolander.4.opt.b
+		
+		hidden_tooltip = { character_event = { id = emf_autolander.2 } }
+	}
+}
