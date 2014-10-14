@@ -305,7 +305,7 @@ NDiplomacy = {
 	GRANT_LANDED_TITLE_INTERACTION_THRESHOLD_FOR_YES = 0,
 	GRANT_LANDED_TITLE_INTERACTION_MUST_HAVE_COST = 1,				-- Is having prestige/piety >= cost required for this action?
 	GRANT_LANDED_TITLE_INTERACTION_ENABLED = 1,						-- Should this action be used at all?
-
+	
 	GRANT_VICE_ROYALTY_INTERACTION_MONEY = 0,
 	GRANT_VICE_ROYALTY_INTERACTION_PIETY = 0,
 	GRANT_VICE_ROYALTY_INTERACTION_PRESTIGE = 0,
@@ -712,6 +712,7 @@ NEconomy = {
 	DECADENCE_PER_WEEK_OF_SIEGE = -0.008,			-- Decadence lost per 7 days of siege, for each participant in the siege
 	MUSLIM_MUSLIM_PROVINCE_TAX_MOD = -0.1,			-- Muslims get less tax from muslim provinces
 	MUSLIM_NONMUSLIM_PROVINCE_TAX_MOD = 0.25,		-- Muslims get more tax from non-muslim provinces
+	MAX_TRIBAL_LIEGE_TAX = 0.2,						-- Default max tribal liege tax income if any
 	TRADEZONE_VALUE_MULT = 0.5,						-- Multiple on trade zone value in tradezone bonus to trade posts and cities
 	TRADE_ZONE_BONUS_MULTIPLIER = 0.01,				-- Trade posts get the trade zone value * 0.1 * this as a bonus
 	TRADE_ZONE_BONUS_MULT_CITY = 0.005,				-- Cities gain similar bonus for a tradepost being in the province
@@ -786,6 +787,7 @@ NMilitary = {
 	MIN_LEVY_RAISE_OPINION_THRESHOLD = -100,		-- Below this opinion value you'll get the least amount of troops possible
 	MAX_LEVY_RAISE_OPINION_THRESHOLD = 100,			-- Above this opinion value you'll get the max amount of troops possible
 	MIN_LEVIES_ABOVE_OPINION_THRESHOLD = 0,			-- The minimum percentage of levies that will be provided if opinion is above threshold
+	MAX_TRIBAL_LIEGE_LEVY = 0.6,					-- Default max tribal liege levy if any
 	LEVY_PERCENT_BEFORE_CAN_RAISE = 0.2,			-- Needs at least this much % of full levy before we can raise it
 	SIEGE_DAMAGE = 0,								-- Siege attack values are multiplied by this value(when not doing a sally)
 	PERCENT_OF_GARRISON_DETACHED = 0.1,				-- This percent of the garrison is detached from the winning unit of a siege
@@ -845,7 +847,7 @@ NMilitary = {
 	WAR_CONTRIBUTION_OCCUPATION_PER_DAY = 15,		-- Occupying a Holding gives this Contribution score per day
 	WAR_CONTRIBUTION_BATTLE_PER_DAY = 0.25,			-- Every day in battle, a participant gets this. (My Troops / Total Friendly Troops) * Total Enemy Troops * WAR_CONTRIBUTION_BATTLE_PER_DAY. Max is [My Troops].
 	LOW_DECADENCE_MORALE_MOD = 0.5,					-- Extra Morale defence when at 0% decadence
-	HIGH_DECADENCE_MORALE_MOD = 2.0,					-- Extra Morale damage taken when at 100% decadence
+	HIGH_DECADENCE_MORALE_MOD = 2.0,				-- Extra Morale damage taken when at 100% decadence
 	CAPTURED_CLOSE_MALE_RELATIVE_WAR_SCORE = 5.0,	-- War score for holding a close male relative prisoner
 	CAPTURED_HEIR_WAR_SCORE = 50.0,					-- War score for holding the heir prisoner
 	
@@ -1013,7 +1015,7 @@ NTechnology = {
 	IDEAL_YEAR_LEVEL_0 = 700, 					-- the chance to get a progress to this level will increase after this date and decrease before it
 	IDEAL_YEAR_LEVEL_8 = 1500,
 	IDEAL_YEAR_AHEAD_PENALTY = -0.2,			-- UNUSED
-	IDEAL_YEAR_AHEAD_PENALTY_INVEST = 0.4,	-- Percent increase in cost pre level ahead of ideal date
+	IDEAL_YEAR_AHEAD_PENALTY_INVEST = 0.4,		-- Percent increase in cost pre level ahead of ideal date
 	
 	PAGAN_HOME_ATTRITION_REMOVAL_LEVEL = 2.0,
 	
