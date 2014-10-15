@@ -6,7 +6,7 @@
 # without modification, of this program or its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "1.0.1";
+my $VERSION = "1.0.2";
 
 my $opt = {
 	min_total_levy      => -0.1,
@@ -1595,6 +1595,7 @@ sub print_cm_laws {
 		
 		effect = {
 			hidden_tooltip = {
+				revoke_law = feudal_administration
 				revoke_law = imperial_administration
 			}
 		}
@@ -1627,6 +1628,7 @@ sub print_cm_laws {
 		effect = {
 			hidden_tooltip = {
 				revoke_law = feudal_administration
+				revoke_law = imperial_administration
 			}
 			if  = {
 				limit = {
@@ -1639,5 +1641,289 @@ sub print_cm_laws {
 		vassal_limit = 25
 		feudal_opinion = -10
 	}
+	
+
+# BYZANTINE EMPIRE
+	themes_0 = {
+		show_as_title = yes
+		group = themes
+		default = yes
+		
+		potential = {
+			title = e_byzantium
+			NOT = { has_global_flag = shattered_balance }
+		}
+		revoke_allowed = {
+			always = no
+		}
+		ai_will_do = {
+			factor = 0
+		}
+		ai_will_revoke = {
+			factor = 0
+		}
+		effect = {
+			hidden_tooltip = {
+				revoke_law = themes_0
+				revoke_law = themes_1
+				revoke_law = themes_2
+			}
+			add_law = vice_royalty_2
+		}
+		
+		castle_vassal_max_levy = -0.1
+		castle_vassal_min_levy = -0.1
+		city_vassal_max_levy = -0.1
+		city_vassal_min_levy = -0.1
+		temple_vassal_max_levy = -0.1
+		temple_vassal_min_levy = -0.1
+		
+		castle_vassal_tax_modifier = -0.05
+		temple_vassal_tax_modifier = -0.1
+		city_vassal_tax_modifier = -0.15
+	}
+	
+	themes_1 = {
+		show_as_title = yes
+		group = themes
+		
+		feudal_opinion = -10
+		city_opinion = -10
+		temple_opinion = -10
+		
+		potential = {
+			title = e_byzantium
+			NOT = { has_global_flag = shattered_balance }
+		}
+		allow = {
+			holder_scope = {
+				prestige = 1000
+				custom_tooltip = {
+					text = pb_vassal_opinion_neg_25
+					hidden_tooltip = {
+						NOT = {
+							any_vassal = {
+								higher_tier_than = count
+								NOT = { opinion = { who = liege value = -25 } }
+								primary_title = { is_primary_type_title = no } # Mercs, the Pope, Holy Orders, etc
+								prisoner = no
+							}
+						}
+					}
+				}
+			}
+			NOT = { has_law = themes_2 }
+		}
+		revoke_allowed = {
+			always = no
+		}
+		ai_will_do = {
+			factor = 1
+		}
+		ai_will_revoke = {
+			factor = 0
+		}
+		pass_effect = {
+			hidden_tooltip = {
+				set_global_flag = theme_system_reformed
+				holder_scope = {
+					any_vassal = {
+						opinion = {
+							who = ROOT
+							modifier = opinion_increased_authority
+							months = 300
+						}
+					}
+				}
+			}
+		}
+		effect = {
+			hidden_tooltip = {
+				revoke_law = themes_0
+				revoke_law = themes_1
+				revoke_law = themes_2
+			}
+			add_law = vice_royalty_2
+		}
+		
+		city_vassal_min_levy = 0.1
+		castle_vassal_min_levy = 0.1
+		temple_vassal_min_levy = 0.1
+
+		castle_vassal_max_levy = -0.05
+		city_vassal_max_levy = -0.05
+		temple_vassal_max_levy = -0.05
+		
+		castle_vassal_tax_modifier = -0.025
+		temple_vassal_tax_modifier = -0.05
+		city_vassal_tax_modifier = -0.075
+	}
+	
+	themes_2 = {
+		show_as_title = yes
+		group = themes
+		
+		feudal_opinion = -15
+		city_opinion = -15
+		temple_opinion = -15
+		
+		potential = {
+			title = e_byzantium
+			NOT = { has_global_flag = shattered_balance }
+		}
+		allow = {
+			has_law = themes_1
+			holder_scope = {
+				prestige = 2000
+				custom_tooltip = {
+					text = pb_vassal_opinion_neg_10
+					hidden_tooltip = {
+						NOT = {
+							any_vassal = {
+								higher_tier_than = count
+								NOT = { opinion = { who = liege value = -10 } }
+								primary_title = { is_primary_type_title = no } # Mercs, the Pope, Holy Orders, etc
+								prisoner = no
+							}
+						}
+					}
+				}
+			}
+		}
+		revoke_allowed = {
+			always = no
+		}
+		ai_will_do = {
+			factor = 0
+		}
+		ai_will_revoke = {
+			factor = 0
+		}
+		pass_effect = {
+			hidden_tooltip = {
+				set_global_flag = theme_system_reformed_2
+				holder_scope = {
+					any_vassal = {
+						opinion = {
+							who = ROOT
+							modifier = opinion_increased_authority
+							months = 300
+						}
+					}
+				}
+			}
+		}
+		effect = {
+			hidden_tooltip = {
+				revoke_law = themes_0
+				revoke_law = themes_1
+				revoke_law = themes_2
+			}
+			add_law = vice_royalty_2
+		}
+		city_vassal_min_levy = 0.2
+		castle_vassal_min_levy = 0.2
+		temple_vassal_min_levy = 0.2
+	}
+	
+	# HOLY ROMAN EMPIRE
+	hre_law_0 = {
+		show_as_title = yes
+		group = hre_law
+		default = yes
+		
+		potential = {
+			title = e_hre
+			NOT = { has_global_flag = shattered_balance }
+		}
+		revoke_allowed = {
+			always = no
+		}
+		ai_will_do = {
+			factor = 0
+		}
+		ai_will_revoke = {
+			factor = 0
+		}
+		effect = {
+			hidden_tooltip = {
+				revoke_law = hre_law_0
+				revoke_law = hre_law_1
+			}
+		}
+
+		castle_vassal_max_levy = -0.15
+		castle_vassal_min_levy = -0.15
+		city_vassal_max_levy = -0.15
+		city_vassal_min_levy = -0.15
+		temple_vassal_max_levy = -0.15
+		temple_vassal_min_levy = -0.15
+		
+		castle_vassal_tax_modifier = -0.05
+		temple_vassal_tax_modifier = -0.1
+		city_vassal_tax_modifier = -0.15
+	}
+	
+	hre_law_1 = {
+		show_as_title = yes
+		group = hre_law
+		
+		feudal_opinion = -15
+		city_opinion = -10
+		temple_opinion = -10
+		
+		potential = {
+			title = e_hre
+			NOT = { has_global_flag = shattered_balance }
+		}
+		allow = {
+			holder_scope = {
+				prestige = 1000
+				custom_tooltip = {
+					text = pb_vassal_opinion_neg_25
+					hidden_tooltip = {
+						NOT = {
+							any_vassal = {
+								higher_tier_than = count
+								NOT = { opinion = { who = liege value = -25 } }
+								primary_title = { is_primary_type_title = no } # Mercs, the Pope, Holy Orders, etc
+								prisoner = no
+							}
+						}
+					}
+				}
+			}
+		}
+		revoke_allowed = {
+			always = no
+		}
+		ai_will_do = {
+			factor = 0
+		}
+		ai_will_revoke = {
+			factor = 0
+		}
+		pass_effect = {
+			hidden_tooltip = {
+				set_global_flag = hre_centralized
+				holder_scope = {
+					any_vassal = {
+						opinion = {
+							who = ROOT
+							modifier = opinion_increased_authority
+							months = 300
+						}
+					}
+				}
+			}
+		}
+		effect = {
+			hidden_tooltip = {
+				revoke_law = hre_law_0
+				revoke_law = hre_law_1
+			}
+		}
+	}
+
 EOS
 }
