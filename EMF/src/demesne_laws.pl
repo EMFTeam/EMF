@@ -6,7 +6,7 @@
 # without modification, of this program or its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "1.0.2";
+my $VERSION = "1.0.3";
 
 my $opt = {
 	min_total_levy      => -0.1,
@@ -15,7 +15,7 @@ my $opt = {
 	temple_tax_per_levy => 0.8,
 	city_tax_per_levy   => 1.0,
 	iqta_tax_per_levy   => 0.7,
-	opinion_offset => 4,
+	opinion_offset => 6,
 	opinion_slope  => -6,
 	default_laws => {
 		feudal_obligations => 0,
@@ -210,6 +210,15 @@ sub print_law {
 	if ($level > 0 && $level < 4) {
 		--$tabs;
 		$law_reqs .= ("\t" x $tabs)."}\n";
+	}
+	
+	if ($level > 0 && !$focus) {
+		$law_reqs .= <<EOS;
+			not = {
+				has_law = hre_law_0
+				has_law = themes_0
+			}
+EOS
 	}
 	
 	chop $law_reqs;
