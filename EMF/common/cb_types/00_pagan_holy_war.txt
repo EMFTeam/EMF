@@ -1,0 +1,375 @@
+## normal scopes(including posttitle scopes) ##
+# ROOT = receiver
+# FROM = giver
+# <no scope change> = attacker or receiver
+## title scopes ##
+# ROOT = receiver
+# FROM = giver
+# <no scope change> = thirdparty landed title	
+#
+# the following effects/triggers exists (example execution order: on_success->on_success_title->on_success_posttitle):
+# is_valid, is_valid_title, on_add, on_add_title, on_add_posttitle, on_success, on_success_title, on_success_posttitle, on_fail, on_fail_title, on_fail_posttitle, on_reverse_demand, on_reverse_demand_title, on_reverse_demand_posttitle
+#
+# Added on_attacker_leader_death, on_defender_leader_death and on_thirdparty_death, which all trigger when corresponding character dies
+# These three all have war scopes, which currently has the following scope changes: 
+# attacker, defender, thirdparty(only valid if thirdparty character is involved), thirdparty_title(only valid if thirdparty title is involved)
+#
+# ai_will_do: modifies value AI places on the CB compared to other CBs (default: 1)
+# can_use_gui: If otherwise valid, the CB is listed in the Diplo View, but you can't declare war unless 'can_use_gui' is also valid (also shows a trigger tooltip.)
+
+
+pagan_holy_war = {
+	name = CB_NAME_RELIGIOUS
+	war_name = WAR_NAME_RELIGIOUS
+	sprite = 9
+	truce_days = 1825
+	is_permanent = yes
+	is_holy_war = yes
+	check_de_jure_tier = DUKE # this scans all dejure duchies for the counties which are held by or vassals(or below) of selected character. Only valid if is_permanent = yes
+	
+	can_use_gui = {
+		ROOT = {
+			NOT = { has_character_modifier = emf_peace_pledge }
+			NOT = { has_character_modifier = holy_war_cooldown }
+			custom_tooltip = {
+				text = holy_war_piety_cost_ctt
+				hidden_tooltip = {
+					OR = {
+						piety = 300
+						AND = {
+							NOT = { has_character_flag = holy_warred }
+							piety = 200
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	on_add = {
+		ROOT = {
+			if = {
+				limit = { NOT = { has_character_flag = holy_warred } }
+				piety = -200
+				set_character_flag = holy_warred
+			}
+			if = {
+				limit = { has_character_flag = holy_warred }
+				piety = -300
+			}
+			custom_tooltip = {
+				text = holy_war_cooldown_ctt
+				hidden_tooltip = {
+					add_character_modifier = {
+						name = holy_war_cooldown
+						duration = 1825
+					}
+				}
+			}
+		}
+	}
+
+	can_use = {
+		ROOT = {
+			OR = {
+				religion = norse_pagan_reformed
+				religion = tengri_pagan_reformed
+				religion = baltic_pagan_reformed
+				religion = slavic_pagan_reformed
+				religion = finnish_pagan_reformed
+				religion = aztec_reformed
+				religion = aztec
+				religion = west_african_pagan_reformed
+				religion = zun_pagan_reformed
+			}
+			NOT = { same_realm = FROM }
+			NOT = { religion = FROM }
+			top_liege = {
+				religion = ROOT
+			}
+			is_patrician = no
+			is_merchant_republic = no
+			NOT = { is_reformed_religion = FROM }
+		}
+	}
+	
+	can_use_title = {
+		OR = {
+			has_global_flag = rapid_conquest
+			NOT = { 
+				any_direct_de_jure_vassal_title = {
+					location = { continent = region_sahara }
+				}
+			}
+		}
+		OR = {
+			has_global_flag = rapid_conquest
+			AND = {
+				OR = {
+					kingdom = { holder = ROOT }
+					empire = { holder = ROOT }
+					FROM = { ai = no }
+					ROOT = { ai = no }
+					ROOT = {
+						OR = {
+							NOT = {
+								trait = content
+								trait = craven
+								trait = stressed
+							}
+							trait = possessed
+							trait = lunatic
+						}
+						OR = {
+							trait = wroth
+							trait = ambitious
+							trait = brave
+							trait = lunatic
+							trait = possessed
+							trait = zealous
+						}
+					}
+				}
+			}
+		}
+		#Prevents duplicate CBs (religious reconquest)
+		OR = {
+			has_global_flag = rapid_conquest
+			NOT = {
+				AND = {
+					NOT = {
+						FROM = { has_landed_title = k_pechenegs }  #Need help surviving
+					}
+					any_direct_de_jure_vassal_title = {
+						holder_scope = {
+							OR = {
+								character = FROM
+								is_liege_or_above = FROM
+							}
+						}
+						location = {
+							ROOT = {
+								religion = PREV
+							}
+						}
+					}
+				}
+			}
+		}
+	
+		# The attacker needs at least one county in the target kingdom, or a border, or be only two sea zones away from one of your counties
+		any_direct_de_jure_vassal_title = {
+			OR = {
+				holder_scope = {
+					OR = {
+						character = ROOT
+						is_liege_or_above = ROOT
+					}
+				}
+				location = {
+					any_neighbor_province = {
+						OR = {
+							AND = {
+								has_owner = yes
+								owner = {
+									OR = {
+										character = ROOT
+										is_liege_or_above = ROOT
+									}
+								}
+							}
+							AND = {
+								is_land = no
+								OR = {
+									year = 1100
+									ROOT = { religion = norse_pagan_reformed }
+									FROM = { religion_group = muslim }
+								}
+								any_neighbor_province = {
+									OR = {
+										AND = {
+											has_owner = yes
+											owner = {
+												OR = {
+													character = ROOT
+													is_liege_or_above = ROOT
+												}
+											}
+										}
+										AND = {
+											is_land = no
+											any_neighbor_province = {
+												owner = {
+													OR = {
+														character = ROOT
+														is_liege_or_above = ROOT
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	is_valid = {
+		ROOT = {
+			OR = {
+				religion = norse_pagan_reformed
+				religion = tengri_pagan_reformed
+				religion = baltic_pagan_reformed
+				religion = slavic_pagan_reformed
+				religion = finnish_pagan_reformed
+				religion = aztec_reformed
+				religion = aztec
+				religion = west_african_pagan_reformed
+				religion = zun_pagan_reformed
+			}
+			NOT = { same_realm = FROM }
+			NOT = { religion = FROM }
+			top_liege = {
+				NOT = { religion = FROM }
+			}
+			NOT = { is_reformed_religion = FROM }
+		}
+	}
+	
+	on_success = {
+		hidden_tooltip = { ROOT = { add_character_modifier = { name = emf_victory_timer duration = 7 hidden = yes } } }
+		hidden_tooltip = { ROOT = { add_character_modifier = { name = emf_holy_victory_timer duration = 7 hidden = yes } } }
+		any_attacker = {
+			limit = { character = ROOT }
+			participation_scaled_piety = 50
+			participation_scaled_prestige = 50
+		}
+		any_attacker = {
+			limit = { NOT = { character = ROOT } }
+			hidden_tooltip = { 
+				participation_scaled_piety = 100
+				participation_scaled_prestige = 50
+			}
+		}
+		
+		ROOT = { 
+			religion_authority = {
+				modifier = won_holy_war
+				years = 20
+			}
+		}
+		FROM = { 
+			religion_authority = {
+				modifier = lost_holy_war
+				years = 20
+			}		
+		}
+		FROM = { piety = -100 }
+		FROM = { prestige = -50 }
+	}
+
+	on_success_title = {
+		custom_tooltip = {
+			text = religious_cb_succ_tip
+			hidden_tooltip = {
+				ROOT = {
+					vassalize_or_take_under_title = {
+						title = PREV
+						enemy = FROM
+						same_religion = yes # Only vassalize rulers of my religion
+						is_religious = yes
+					}
+				}
+			}
+		}
+	}
+
+	on_fail = {
+		ROOT = { piety = -50 }
+		ROOT = { prestige = -100 }
+	}
+
+	on_reverse_demand = {
+		hidden_tooltip = { FROM = { add_character_modifier = { name = emf_victory_timer duration = 7 hidden = yes } } }
+		hidden_tooltip = { FROM = { add_character_modifier = { name = emf_holy_victory_timer duration = 7 hidden = yes } } }
+		ROOT = {
+			transfer_scaled_wealth = {
+				to = FROM
+				value = 4.0
+			}
+			piety = -75
+			prestige = -150
+		}
+		any_defender = {
+			limit = { character = FROM }
+			participation_scaled_piety = 200
+			participation_scaled_prestige = 100
+		}
+		any_defender = {
+			limit = { NOT = { character = FROM } }
+			hidden_tooltip = { 
+				participation_scaled_piety = 200
+				participation_scaled_prestige = 100
+			}
+		}
+		ROOT = { 
+			religion_authority = {
+				modifier = lost_holy_war
+				years = 20
+			}
+		}
+		FROM = { 
+			religion_authority = {
+				modifier = won_holy_war
+				years = 20
+			}		
+		}
+	}
+
+	attacker_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+	
+	attacker_ai_defeat_worth = {
+		factor = 100
+	}
+
+	defender_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+	
+	defender_ai_defeat_worth = {
+		factor = 100
+	}
+	
+	ai_will_do = { 
+		factor = 1
+		
+		modifier = {
+			factor = 10
+			FROM = { ai = no }
+		}
+		modifier = {
+			factor = 0.1
+			ROOT = {
+				culture = hungarian
+				primary_title = {
+					OR = {
+						title = k_hungary
+						title = e_carpathia
+					}
+				}
+			}
+			empire = {
+				OR = {
+					title = e_tartaria
+					title = e_russia
+				}
+			}
+		}
+	}
+}
+

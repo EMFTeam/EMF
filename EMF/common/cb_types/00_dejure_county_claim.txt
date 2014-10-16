@@ -1,7 +1,7 @@
 ## normal scopes(including posttitle scopes) ##
 # ROOT = receiver
 # FROM = giver
-# <no scope change> = attacker or receiver
+# <no scope change> = attacker OR receiver
 ## title scopes ##
 # ROOT = receiver
 # FROM = giver
@@ -10,7 +10,7 @@
 # the following effects/triggers exists (example execution order: on_success->on_success_title->on_success_posttitle):
 # is_valid, is_valid_title, on_add, on_add_title, on_add_posttitle, on_success, on_success_title, on_success_posttitle, on_fail, on_fail_title, on_fail_posttitle, on_reverse_demand, on_reverse_demand_title, on_reverse_demand_posttitle
 #
-# Added on_attacker_leader_death, on_defender_leader_death and on_thirdparty_death, which all trigger when corresponding character dies
+# Added on_attacker_leader_death, on_defender_leader_death AND on_thirdparty_death, which all trigger when corresponding character dies
 # These three all have war scopes, which currently has the following scope changes: 
 # attacker, defender, thirdparty(only valid if thirdparty character is involved), thirdparty_title(only valid if thirdparty title is involved)
 #
@@ -31,13 +31,11 @@ dejure_county_claim = {
 	
 	can_use_gui = {
 		ROOT = { NOT = { has_character_modifier = emf_peace_pledge } }
-		NOT = {
-			FROM = {
-				same_realm = ROOT
-				is_merchant_republic = yes
-			}
-		}
 		FROM = {
+			OR = {
+				is_merchant_republic = no
+				NOT = { same_realm = ROOT }
+			}
 			OR = {
 				holy_order = no
 				NOT = { religion = ROOT }
@@ -49,11 +47,12 @@ dejure_county_claim = {
 	}
 	
 	can_use = {
-		NOT = {
-			AND = {
-				ROOT = { religion_group = pagan_group }
-				ROOT = { ai = yes }
-				FROM = { religion = ROOT }
+		ROOT = {
+			OR = {
+				NOT = { religion_group = pagan_group }
+				is_reformed_religion = yes
+				ai = no
+				NOT = { FROM = { religion = ROOT } }
 			}
 		}
 	}
@@ -91,6 +90,44 @@ dejure_county_claim = {
 				}
 			}
 		}
+		
+		# Disable if emf_dejure_duchy_claim would be valid for the duchy that this county is within
+		# That is, use emf_dejure_duchy_claim wherever possible instead of dejure_county_claim
+		
+		OR = {
+			NOT = {
+				empire = { holder = ROOT }
+				kingdom = { holder = ROOT }
+			}
+			dejure_liege_title = {
+				FROM = {
+					NOT = {
+						num_of_realm_counties = {
+							value = 2
+							title = PREV
+						}
+					}
+				}
+			}
+			ROOT = {
+				NOT = {
+					tier = emperor
+					AND = {
+						tier = king
+						is_merchant_republic = no
+						OR = {
+							primary_title = {
+								OR = {
+									has_law = king_peace_1
+									has_law = king_peace_2
+								}
+							}
+							ai = yes
+						}
+					}
+				}
+			}
+		}
 	}
 
 	is_valid_title = {
@@ -100,18 +137,6 @@ dejure_county_claim = {
 			}
 			holder_scope = {
 				is_liege_or_above = FROM
-			}
-		}
-		
-		OR = {
-			kingdom = {
-				holder = ROOT
-			}
-			empire = {
-				holder = ROOT
-			}
-			dejure_liege_title = {
-				holder = ROOT
 			}
 		}
 	}
@@ -145,7 +170,7 @@ dejure_county_claim = {
 				}
 			}
 
-			usurp_title_plus_barony_if_unlanded = ROOT
+			usurp_title_plus_barony_if_unlanded = { target = ROOT type = claim }
 			any_de_jure_vassal_title = { # take all baronies under the one we're fighting for
 				limit = {
 					has_holder = yes
@@ -160,7 +185,7 @@ dejure_county_claim = {
 					}
 				}
 
-				usurp_title_plus_barony_if_unlanded = ROOT
+				usurp_title_plus_barony_if_unlanded = { target = ROOT type = claim }
 			}
 		}
 		any_attacker = {
@@ -220,5 +245,15 @@ dejure_county_claim = {
 	
 	defender_ai_defeat_worth = {
 		factor = 100
+	}
+	
+	# ai importance placed on this CB: scope is the targeted title, ROOT is the attacking character, FROM is the defending character
+	ai_will_do = { 
+		factor = 1
+		
+		modifier = {
+			factor = 10
+			FROM = { ai = no }
+		}
 	}
 }

@@ -18,8 +18,7 @@
 # can_use_gui: If otherwise valid, the CB is listed in the Diplo View, but you can't declare war unless 'can_use_gui' is also valid (also shows a trigger tooltip.)
 
 
-# This CB is far more restricted in PB than in vanilla. Primarily this is achieved by adding trait requirements
-# Many of the requirements are waived base
+# General-purpose Holy War CB
 religious = {
 	name = CB_NAME_RELIGIOUS
 	war_name = WAR_NAME_RELIGIOUS
@@ -77,23 +76,19 @@ religious = {
 					}
 				}
 			}
+			is_patrician = no
+			is_merchant_republic = no
 		}
 	}
+	
 	can_use = {
 		ROOT = {
+			NOT = { religion_group = pagan_group }
 			NOT = { pacifist = yes }
 			NOT = { religion = buddhist }
 			OR = {
 				NOT = { religion = hindu }
 				FROM = { NOT = { religion_group = indian_group } }
-			}
-			is_patrician = no
-			is_merchant_republic = no
-			OR = {
-				NOT = { religion_group = pagan_group }
-				is_reformed_religion = yes
-				religion = aztec
-				has_global_flag = rapid_conquest
 			}
 			NOT = { same_realm = FROM }
 			OR = {
@@ -113,10 +108,6 @@ religious = {
 						}
 					}
 				}
-				AND = {
-					religion_group = pagan_group
-					NOT = { religion = FROM }
-				}
 			}
 			top_liege = {
 				religion_group = ROOT
@@ -128,14 +119,10 @@ religious = {
 						ROOT = { is_heretic = no }
 					}
 				}
-				OR = {
-					NOT = { religion_group = pagan_group }
-					religion = ROOT
-				}
 			}
 		}
 	}
-
+	
 	can_use_title = {
 		OR = {
 			has_global_flag = rapid_conquest
@@ -152,28 +139,24 @@ religious = {
 					kingdom = { holder = ROOT }
 					empire = { holder = ROOT }
 					FROM = { ai = no }
+					ROOT = { ai = no }
 					ROOT = {
 						OR = {
-							ai = no
-							AND = {
-								OR = {
-									NOT = {
-										trait = content
-										trait = craven
-										trait = stressed
-									}
-									trait = possessed
-									trait = lunatic
-								}
-								OR = {
-									trait = wroth
-									trait = ambitious
-									trait = brave
-									trait = lunatic
-									trait = possessed
-									trait = zealous
-								}
+							NOT = {
+								trait = content
+								trait = craven
+								trait = stressed
 							}
+							trait = possessed
+							trait = lunatic
+						}
+						OR = {
+							trait = wroth
+							trait = ambitious
+							trait = brave
+							trait = lunatic
+							trait = possessed
+							trait = zealous
 						}
 					}
 				}
@@ -262,7 +245,6 @@ religious = {
 								is_land = no
 								OR = {
 									year = 1100
-									ROOT = { religion = norse_pagan_reformed }
 									ROOT = { religion_group = muslim }
 									FROM = { religion_group = muslim }
 								}
@@ -297,26 +279,32 @@ religious = {
 			}
 		}
 	}
-	
+
 	is_valid = {
 		ROOT = {
-			NOT = { same_realm = FROM }
+			NOT = { religion_group = pagan_group }
 			NOT = { pacifist = yes }
 			NOT = { religion = buddhist }
+			NOT = { same_realm = FROM }
 			OR = {
 				NOT = { religion_group = FROM }
 				is_heresy_of = FROM
 				is_parent_religion = FROM
 				AND = {
-					OR = {
-						religion_group = muslim
-						religion_group = pagan_group
-					}
+					religion_group = muslim
 					NOT = { religion = FROM }
 				}
 			}
 			top_liege = {
+				religion_group = ROOT
 				NOT = { religion = FROM }
+				OR = {
+					religion = ROOT
+					AND = {
+						is_heretic = no
+						ROOT = { is_heretic = no }
+					}
+				}
 			}
 		}
 	}
@@ -325,7 +313,7 @@ religious = {
 		ROOT = {
 			if = {
 				limit = { NOT = { has_character_flag = holy_warred } }
-			piety = -200
+				piety = -200
 				set_character_flag = holy_warred
 			}
 			if = {
@@ -397,6 +385,7 @@ religious = {
 						title = PREV
 						enemy = FROM
 						same_religion = yes # Only vassalize rulers of my religion
+						is_religious = yes
 					}
 				}
 			}
@@ -478,25 +467,89 @@ religious = {
 	# ai importance placed on this CB: scope is the targeted title, ROOT is the attacking character, FROM is the defending character
 	ai_will_do = { 
 		factor = 2
+
 		modifier = {
 			factor = 0.05
-			NOT = { de_jure_liege_or_above = k_france }
-			NOT = { de_jure_liege_or_above = k_aquitaine }
-			ROOT = { top_liege = { has_landed_title = k_france } }
-		}
-		modifier = {
-			factor = 0.05
+			NOT = { has_global_flag = EMF }
+			FROM = { ai = yes }
 			NOT = { de_jure_liege_or_above = k_pomerania }
 			NOT = { de_jure_liege_or_above = e_hre }
 			ROOT = { top_liege = { has_landed_title = e_hre } }
 		}
 		modifier = {
 			factor = 0.05
+			NOT = { has_global_flag = EMF }
+			FROM = { ai = yes }
 			NOT = { de_jure_liege_or_above = k_armenia }
 			NOT = { de_jure_liege_or_above = k_cilicia }
 			NOT = { de_jure_liege_or_above = k_rum }
 			NOT = { de_jure_liege_or_above = e_byzantium }
 			ROOT = { top_liege = { has_landed_title = e_byzantium } }
+		}
+		modifier = {
+			factor = 10
+			FROM = { ai = no }
+		}
+		# Try to guide the Hordes in the right direction
+		modifier = {
+			factor = 0.1
+			ROOT = {
+				OR = {
+					dynasty = 613 # Seljuks
+					dynasty = 800 # Timurids
+					primary_title = { title = e_il-khanate }
+				}
+			}
+			OR = {
+				empire = {
+					NOT = {
+						OR = {
+							title = e_persia
+							title = e_byzantium
+							title = e_arabia
+						}
+					}
+				}
+				FROM = {
+					primary_title = { title = e_golden_horde }
+					NOT = { year = 1300 }
+				}
+			}
+		}
+		modifier = {
+			factor = 0.1
+			ROOT = {
+				primary_title = { title = e_golden_horde }
+			}
+			OR = {
+				empire = {
+					OR = {
+						title = e_persia
+						title = e_byzantium
+						title = e_arabia
+					}
+				}
+				FROM = {
+					primary_title = { title = e_il-khanate }
+					NOT = { year = 1300 }
+				}
+			}
+		}
+		modifier = {
+			factor = 2.0
+			OR = {
+				# Z: Assuming culture triggers off the title holder's culture here
+				culture = persian
+				culture = baloch
+				culture = afghan
+				culture = turkish
+			}
+			empire = {
+				OR = {
+					title = e_persia
+					title = e_rajastan
+				}
+			}
 		}
 	}
 }
