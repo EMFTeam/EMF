@@ -59,7 +59,7 @@ cultural_tactics = {
             "castillian":       ("raid_tactic", "horseback_raid_tactic"),
             "catalan":          ("raid_tactic", "quick_attack_tactic"),
             "andalusian_arabic":("raid_tactic", "horseback_raid_tactic"),
-            "g_arabic":         ("raid_tactic", "mameluke_raid_tactic"),
+            "g_arabic":         ("melee_charge_tactic", "mameluke_raid_tactic"),
             "aragonese":        ("raid_tactic", "horseback_raid_tactic"),
             "galician":         ("raid_tactic", "horseback_raid_tactic"),
             "leonese":          ("raid_tactic", "horseback_raid_tactic"),
@@ -281,7 +281,7 @@ good_charge_tactic = {
 	heavy_infantry_offensive = 0.75
 	pikemen_offensive = 1.0
 	light_cavalry_offensive = 0.5
-	camel_cavalry_offensive = 0.5
+	camel_cavalry_offensive = 1.5
 	knights_offensive = 1.50
 	archers_offensive = 0.25
 	horse_archers_offensive = 0.25
@@ -416,7 +416,7 @@ charge_tactic = {
 	heavy_infantry_offensive = 0.5
 	pikemen_offensive = 0.75
 	light_cavalry_offensive = 0.25
-	camel_cavalry_offensive = 0.25
+	camel_cavalry_offensive = 1.25
 	knights_offensive = 1.25
 	archers_offensive = 0
 	horse_archers_offensive = 0
@@ -551,7 +551,7 @@ bad_charge_tactic = {
 	heavy_infantry_offensive = 0
 	pikemen_offensive = 0.25
 	light_cavalry_offensive = 0.25
-	camel_cavalry_offensive = 0.25
+	camel_cavalry_offensive = 0.75
 	knights_offensive = 0.75
 	archers_offensive = 0
 	horse_archers_offensive = 0
@@ -596,7 +596,7 @@ charge_on_undefended_tactic = {
 	heavy_infantry_offensive = 0.75
 	pikemen_offensive = 1.0
 	light_cavalry_offensive = 0.5
-	camel_cavalry_offensive = 0.5
+	camel_cavalry_offensive = 1.5
 	knights_offensive = 1.50
 	archers_offensive = 0.25
 	horse_archers_offensive = 0.25
@@ -743,14 +743,7 @@ big_ol_block_of_conditionals = {
 							NOT = { horse_archers = 0.10 }
 						}
 					}
-					AND = {
-						camel_cavalry = 0.30
-						OR = {
-							knights = 0.10
-							NOT = { light_cavalry = 0.10 }
-							NOT = { horse_archers = 0.10 }
-						}
-					}
+					camel_cavalry = 0.30
 				}
 			}
 		} }""",
@@ -793,15 +786,7 @@ big_ol_block_of_conditionals = {
 						light_cavalry = 0.30
 						OR = {
 							NOT = { knights = 0.10 }
-							camel_cavalry = 0.10
-							horse_archers = 0.10
-						}
-					}
-					AND = {
-						camel_cavalry = 0.30
-						OR = {
-							NOT = { knights = 0.10 }
-							light_cavalry = 0.10
+							NOT = { camel_cavalry = 0.10 }
 							horse_archers = 0.10
 						}
 					}
