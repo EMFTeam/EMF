@@ -6,7 +6,7 @@
 # without modification, of this program or its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "1.0.3";
+my $VERSION = "1.0.4";
 
 my $opt = {
 	min_total_levy      => -0.1,
@@ -239,7 +239,10 @@ EOS
 $default$opinion_effect
 
 		potential = {
-			not = { tier = baron }$muslim_holder
+			or = {
+				not = { tier = baron }
+				holder_scope = { is_patrician = yes }
+			}$muslim_holder
 		}
 		allow = {
 			hidden_tooltip = { temporary = no }
