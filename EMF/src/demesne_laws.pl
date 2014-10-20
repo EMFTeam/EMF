@@ -6,7 +6,7 @@
 # without modification, of this program or its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "1.0.5";
+my $VERSION = "1.1.0";
 
 my $opt = {
 	min_total_levy      => -0.1,
@@ -231,6 +231,8 @@ EOS
 	
 	chop $revoke_laws;
 	
+	my %vtype_trigger = (castle => 'is_feudal = yes', city => 'is_republic = yes', temple => 'is_theocracy = yes');
+	
 	my $ai_will_do = (!$focus && $level < 3) ? 1 : 0;
 	
 	print <<EOS;
@@ -239,6 +241,17 @@ EOS
 $default$opinion_effect
 
 		potential = {
+			or = {
+				has_holder = no
+				holder_scope = {
+					or = {
+						is_tribal = no
+						any_vassal = {
+							$vtype_trigger{$vtype}
+						}
+					}
+				}
+			}
 			or = {
 				not = { tier = baron }
 				holder_scope = { is_patrician = yes }
