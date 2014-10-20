@@ -6,7 +6,7 @@
 # without modification, of this program or its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "1.0.4";
+my $VERSION = "1.0.5";
 
 my $opt = {
 	min_total_levy      => -0.1,
@@ -1757,10 +1757,6 @@ sub print_cm_laws {
 			}
 			add_law = vice_royalty_2
 		}
-		
-		city_vassal_min_levy = 0.1
-		castle_vassal_min_levy = 0.1
-		temple_vassal_min_levy = 0.1
 
 		castle_vassal_max_levy = -0.05
 		city_vassal_max_levy = -0.05
@@ -1833,9 +1829,6 @@ sub print_cm_laws {
 			}
 			add_law = vice_royalty_2
 		}
-		city_vassal_min_levy = 0.2
-		castle_vassal_min_levy = 0.2
-		temple_vassal_min_levy = 0.2
 	}
 	
 	# HOLY ROMAN EMPIRE
