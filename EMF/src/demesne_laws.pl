@@ -6,7 +6,7 @@
 # without modification, of this program or its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "1.1.1";
+my $VERSION = "1.1.2";
 
 my $opt = {
 	min_total_levy      => -0.1,
@@ -239,17 +239,6 @@ EOS
 $default$opinion_effect
 
 		potential = {
-			or = {
-				has_holder = no
-				holder_scope = {
-					or = {
-						is_tribal = no
-						any_vassal = {
-							$vtype_trigger{$vtype}
-						}
-					}
-				}
-			}
 			or = {
 				not = { tier = baron }
 				holder_scope = { is_patrician = yes }
