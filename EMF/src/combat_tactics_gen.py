@@ -31,6 +31,7 @@ cultural_tactics = {
             "g_west_african":   ("harass_tactic", "missile_harass_tactic"),
             "g_east_african":   ("harass_tactic", "missile_harass_tactic"),
             "italian":          ("melee_charge_tactic", "awesome_charge_tactic"),
+            "lombard":          ("melee_charge_tactic", "awesome_charge_tactic"),
             "sicilian":         ("melee_charge_tactic", "awesome_charge_tactic"),
             "bohemian":         ("melee_charge_tactic", "heavy_charge_tactic"),
             "polish":           ("melee_charge_tactic", "combined_charge_tactic"),
