@@ -6,7 +6,7 @@
 # without modification, of this program or its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "1.1.2";
+my $VERSION = "1.1.3";
 
 my $opt = {
 	min_total_levy      => -0.1,
@@ -172,9 +172,6 @@ sub print_law {
 	unless ($focus) {
 		$opinion_effect .= "\t\t${class}_opinion = ".get_opinion($level);
 	}
-	
-	$default = ($default) ? "\t\tdefault = yes" : '';
-	$default .= "\n" if $opinion_effect;
 
 	my $muslim_holder = '';
 
@@ -190,7 +187,7 @@ sub print_law {
 	
 	my $tabs = 3;
 	
-	if ($level > 0 && $level < 4) {
+	if ( ($level > 0 && $level < 4) || $default ) {
 		$law_reqs .= ("\t" x $tabs)."or = {\n";
 		++$tabs;
 	}
@@ -204,8 +201,34 @@ sub print_law {
 		$law_up = $law_group.'_'.($level+1);
 		$law_reqs .= ("\t" x $tabs)."has_law = $law_up\n";
 	}
+	
+	if ($default) { # Allow the default law if no other laws in this group are set
+		$law_reqs .= ("\t" x $tabs)."custom_tooltip = {\n";
+		++$tabs;
 
-	if ($level > 0 && $level < 4) {
+		$law_reqs .= ("\t" x $tabs).'text = "No other laws in this group have been passed."'."\n";
+		
+		$law_reqs .= ("\t" x $tabs)."hidden_tooltip = {\n";
+		++$tabs;
+
+		$law_reqs .= ("\t" x $tabs)."not = {\n";
+		++$tabs;
+		
+		for my $i (0..4) {
+			$law_reqs .= ("\t" x $tabs).'has_law = '.$law_group.'_'.$i."\n";
+		}
+		
+		--$tabs;
+		$law_reqs .= ("\t" x $tabs)."}\n"; # NOT
+		
+		--$tabs;
+		$law_reqs .= ("\t" x $tabs)."}\n"; # HIDDEN_TOOLTIP
+		
+		--$tabs;
+		$law_reqs .= ("\t" x $tabs)."}\n"; # CUSTOM_TOOLTIP
+	}
+
+	if ( ($level > 0 && $level < 4) || $default ) {
 		--$tabs;
 		$law_reqs .= ("\t" x $tabs)."}\n";
 	}
@@ -232,6 +255,9 @@ EOS
 	my %vtype_trigger = (castle => 'is_feudal = yes', city => 'is_republic = yes', temple => 'is_theocracy = yes');
 	
 	my $ai_will_do = (!$focus && $level < 3) ? 1 : 0;
+	
+	$default = ($default) ? "\t\tdefault = yes" : '';
+	$default .= "\n" if $opinion_effect;
 	
 	print <<EOS;
 	$law = {
