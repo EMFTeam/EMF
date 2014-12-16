@@ -6,7 +6,7 @@
 # without modification, of this program or its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "1.1.3";
+my $VERSION = "1.1.4";
 
 my $opt = {
 	min_total_levy      => -0.1,
@@ -235,10 +235,7 @@ sub print_law {
 	
 	if ($level > 0 && !$focus) {
 		$law_reqs .= <<EOS;
-			not = {
-				has_law = hre_law_0
-				has_law = themes_0
-			}
+			not = { has_law = themes_0 }
 EOS
 	}
 	
