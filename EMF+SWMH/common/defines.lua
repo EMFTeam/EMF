@@ -995,11 +995,11 @@ NMilitary = {
 	CAPITAL_DUCHY_LEVY_MULT = 1,
 	CAPITAL_DUCHY_LIEGE_LEVY_MULT = 1,
 	CAPITAL_KINGDOM_LEVY_MULT = 1,
-	CAPITAL_KINGDOM_LIEGE_LEVY_MULT = 0.85,
+	CAPITAL_KINGDOM_LIEGE_LEVY_MULT = 0.8,
 	CAPITAL_EMPIRE_LEVY_MULT = 1,
-	CAPITAL_EMPIRE_LIEGE_LEVY_MULT = 0.65,
+	CAPITAL_EMPIRE_LIEGE_LEVY_MULT = 0.5,
 	OUTSIDE_LEVY_MULT = 1,						-- Multiplier to direct levies outside all capital regions
-	OUTSIDE_LIEGE_LEVY_MULT = 0.65,				-- Multiplier to liege levies outside all capital regions
+	OUTSIDE_LIEGE_LEVY_MULT = 0.5,				-- Multiplier to liege levies outside all capital regions
 	
 	SUPPLY_CAPACITY = 31,						-- Amount of days of worth supply that a unit can hold.
 	OUT_OF_SUPPLY_ATTRITION_BASE = 0.001,		-- The attrition a unit that is out of supply takes.
