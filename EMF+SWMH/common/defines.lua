@@ -986,7 +986,7 @@ NMilitary = {
 	BOTTLENECK_CHANCE_MAX = 100,
 	BOTTLENECK_CHOKE_TROOP_CAP = 300,		-- THIS IS SPARTAAAAAAAAA!!!!
 	
-	REBEL_LEADER_MINIMUM_LIEGE_LEVY_MULT = 1.5,	-- Leader of a civil war will always get at least this multiplier of levies from fellow rebels
+	REBEL_LEADER_MINIMUM_LIEGE_LEVY_MULT = 1.0,	-- Leader of a civil war will always get at least this multiplier of levies from fellow rebels
 	CAPITAL_COUNTY_VASSAL_COUNT_LEVY_MULT = 1,	-- Used instead of CAPITAL_COUNTY_LEVY_MULT for vassal counts
 	CAPITAL_COUNTY_VASSAL_LEVY_MULT = 1.25,		-- Used instead of CAPITAL_COUNTY_LEVY_MULT for non-count vassals
 	CAPITAL_COUNTY_LEVY_MULT = 1.5,				-- Multiplier to direct levies in the capital county
