@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright (C) 2014 Matthew D. Hall <zijistark@gmail.com>
+# Copyright (C) 2014-2015 Matthew D. Hall <zijistark@gmail.com>
 #
 # Free for personal modification. Any redistribution, even
 # without modification, of this program or its output is
@@ -12,7 +12,7 @@ use warnings;
 use Carp;
 use Getopt::Long qw(:config gnu_getopt);
 
-my $VERSION = "1.0.0";
+my $VERSION = "1.1.0";
 
 my $DEFAULT_N      = 64;
 my $DEFAULT_STRIDE = 5;
@@ -23,6 +23,12 @@ sub scale_function {
 	my $i = shift;
 	return 1 / ( 1 + log(1 + $i/36.75) ) - 1;
 }
+
+my %targets = (
+	laws => \&print_laws,
+	i18n => \&print_i18n,
+	events => \&print_events,
+);
 
 ####
 
@@ -44,12 +50,6 @@ unless ($opt_target) {
 }
 
 $opt_target = "\L$opt_target"; # Case-insensitive
-
-my %targets = (
-	laws => \&print_laws,
-	i18n => \&print_i18n,
-	events => \&print_events,
-);
 
 unless (exists $targets{$opt_target}) {
 	print STDERR "Undefined codegen target '$opt_target'.  See usage info below:\n\n";
@@ -143,20 +143,25 @@ sub print_laws {
 		group = $law_group$is_default
 
 		potential = {
-			not = { tier = baron }
 EOS
 
 		if ($i == 0) {
 			print <<EOS;
+			not = { tier = baron }
 			or = {
-				tier = count
+				tier = count # Counts always use the default law
 				has_law = $law
+				holder_scope = { has_law = $law } # Even if title doesn't have the law, allow it to be copied
 			}
 EOS
 		}
 		else {
 			print <<EOS;
-			has_law = $law
+			higher_tier_than = count
+			or = {
+				has_law = $law
+				holder_scope = { has_law = $law } # Even if title doesn't have the law, allow it to be copied
+			}
 EOS
 		}
 
@@ -216,17 +221,17 @@ namespace = emf_dynlevy
 
 
 # emf_dynlevy.20
-# Scale all of a character's primary-tier titles' levy laws by realm_size
+# Scale a character's primary titles' levy laws by their realm_size
 #
 # This is event is called from many different trigger sources, mostly
-# title transfer on_action handlers (but always batch-optimized, deferred
-# by a game day in on_action cases). It is also called by a variety of CB
+# title transfer on_action handlers. It is also called by a variety of CB
 # code.
 #
 # Uses a perfect binary search of the covered realm_size range to reduce
 # the number of evaluations necessary to reach the correct law to pass.
 # Currently it takes at most log2 64 = 6 realm_size calls to reach the
-# correct effect to execute.
+# correct effect to execute. Uses the new break syntax in CKII 2.3 to
+# optimistically exit the search once the correct realm_size range is found.
 character_event = {
 	id = emf_dynlevy.20
 	desc = HIDE_EVENT
@@ -234,7 +239,7 @@ character_event = {
 	is_triggered_only = yes
 	
 	immediate = {
-		clr_character_flag = dynlevy_dirty # Clear batch-optimization flag
+#		clr_character_flag = dynlevy_dirty # Clear batch-optimization flag
 
 EOS
 
@@ -256,36 +261,41 @@ EOS
 #
 # Like emf_dynlevy.20, the approach is to use a binary search tree expansion upon
 # realm_size to determine the correct levy law to apply to the target title.
-character_event = {
-	id = emf_dynlevy.21
-	desc = HIDE_EVENT
-	hide_window = yes
-	is_triggered_only = yes
-
-	trigger = {
-		not = { FROMFROM = { always = yes } }
-		FROM = { higher_tier_than = count }
-		
-		# Only titles of primary-tier or higher
-		primary_title = {
-			not = { higher_tier_than = FROM }
-		}
-	}
-	
-	immediate = {
+#
+# NOTE: As of experimental optimizations in EMF 3.03, this event is no longer in use.
+#
+#character_event = {
+#	id = emf_dynlevy.21
+#	desc = HIDE_EVENT
+#	hide_window = yes
+#	is_triggered_only = yes
+#
+#	trigger = {
+#		not = { FROMFROM = { always = yes } }
+#		FROM = { higher_tier_than = count }
+#		
+#		# Only titles of primary-tier or higher
+#		primary_title = {
+#			not = { higher_tier_than = FROM }
+#		}
+#	}
+#	
+#	immediate = {
 EOS
 
-	print_search_tree(
-		1, # title creation trigger variant
-		0,
-		$opt_n,
-		2); # start with an indent level of 2
+	if (0) {
+		print_search_tree(
+			1, # title creation trigger variant
+			0,
+			$opt_n,
+			2); # start with an indent level of 2
+	}
 
 	print <<EOS;
-	}
-	
-	option = { name = OK }
-}
+#	}
+#	
+#	option = { name = OK }
+#}
 
 
 # emf_dynlevy.22
@@ -398,28 +408,40 @@ sub print_search_tree {
 		my $law = $lg."_0";
 		
 		if ($mode == 0) {
-		
-			# Set all titles greater than or equal to primary-tier to correct law
+
 			print "\t" x $tab, "primary_title = {\n";
 			++$tab;
-			print "\t" x $tab, "ROOT = {\n";
+			print "\t" x $tab, "if = {\n";
 			++$tab;
-			print "\t" x $tab, "any_demesne_title = {\n";
-			++$tab;
-			print "\t" x $tab, "limit = {\n";
-			++$tab;
-			print "\t" x $tab, "higher_tier_than = count\n";
-			print "\t" x $tab, "not = { lower_tier_than = PREVPREV }\n";
-			print "\t" x $tab, "not = { has_law = $law }\n";
-			--$tab;
-			print "\t" x $tab, "}\n"; # /limit
+			print "\t" x $tab, "limit = { not = { has_law = $law } }\n";
 			print "\t" x $tab, "add_law = $law\n";
+			print "\t" x $tab, "break = yes\n";
 			--$tab;
-			print "\t" x $tab, "}\n"; # /any_demesne_title
-			--$tab;
-			print "\t" x $tab, "}\n"; # /ROOT
+			print "\t" x $tab, "}\n"; # /if
 			--$tab;
 			print "\t" x $tab, "}\n"; # /primary_title
+		
+			# Set all titles greater than or equal to primary-tier to correct law
+			# print "\t" x $tab, "primary_title = {\n";
+			# ++$tab;
+			# print "\t" x $tab, "ROOT = {\n";
+			# ++$tab;
+			# print "\t" x $tab, "any_demesne_title = {\n";
+			# ++$tab;
+			# print "\t" x $tab, "limit = {\n";
+			# ++$tab;
+			# print "\t" x $tab, "higher_tier_than = count\n";
+			# print "\t" x $tab, "not = { lower_tier_than = PREVPREV }\n";
+			# print "\t" x $tab, "not = { has_law = $law }\n";
+			# --$tab;
+			# print "\t" x $tab, "}\n"; # /limit
+			# print "\t" x $tab, "add_law = $law\n";
+			# --$tab;
+			# print "\t" x $tab, "}\n"; # /any_demesne_title
+			# --$tab;
+			# print "\t" x $tab, "}\n"; # /ROOT
+			# --$tab;
+			# print "\t" x $tab, "}\n"; # /primary_title
 			
 			my $rsz_idx = $min+1;
 
