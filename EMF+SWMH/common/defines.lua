@@ -1201,7 +1201,7 @@ NEndGame =
 NRulerDesigner =
 {
 	BASE_ATTRIB = 5,
-	BASE_AGE = 25,
+	BASE_AGE = 16,
 	BASE_FERTILITY = 0.5,
 	BASE_HEALTH = 5.0,
 	COST_ATTRIB = 0.0,
@@ -1234,7 +1234,7 @@ NRulerDesigner =
 	COST_MORALE_OFFENCE = 0.0,
 	COST_MORALE_DEFENCE = 0.0,
 	COST_DEFENCE = 0.0,
-	MAX_AGE = 80
+	MAX_AGE = 99
 },
 
 NLearningScenario = 
