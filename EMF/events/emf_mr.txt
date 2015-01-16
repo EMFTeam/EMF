@@ -400,70 +400,22 @@ narrative_event = {
 				}
 			}
 			
-			# Create a dynasty member to get around situations where we have no valid republican heirs
-			# Since we assume that we're an adult, making him age 16 should always work for succession purposes
-		
-			create_random_steward = {
-				random_traits = yes
-				dynasty = ROOT
-				religion = ROOT
-				culture = ROOT
-				age = 16
-				female = no
-			}
-			new_character = {
-				set_character_flag = fallback_heir
-				if = {
-					limit = {
-						religion_group = indian_group
-					}
-					add_trait = kshatriya
-					character_event = { id = RoI.30121 }
-				}
-			}
-
-			# Try to make him our ahistorical brother
+			# Create a dynasty member to get around situations where we have no valid
+			# republican heirs (will be our brother if we have parents)
 			
-			if = {
-				limit = { father_even_if_dead = { always = yes } }
-				father_even_if_dead = {
-					ROOT = {
-						random_courtier = {
-							limit = { has_character_flag = fallback_heir }
-							set_father = PREVPREV
-						}
-					}
-				}
-			}
-			if = {
-				limit = { mother_even_if_dead = { always = yes } }
-				mother_even_if_dead = {
-					ROOT = {
-						random_courtier = {
-							limit = { has_character_flag = fallback_heir }
-							set_mother = PREVPREV
-						}
-					}
-				}
-			}
-
-			random_courtier = {
-				limit = { has_character_flag = fallback_heir }
-				clr_character_flag = fallback_heir
-			}
+			character_event = { id = emf_mr.7 }
 			
-			# Every family gets 500g to start with, including doge
+			# Every family gets 500g to start with, including Doge
 			
 			wealth = 500
 			
-			# Create 4 patrician families
+			# Give money and heirs to the 4 auto-generated patrician families
+			# after 2 game days (gives the game enough time to generate them)
 			
-			character_event = { id = emf_mr.2 }
-			character_event = { id = emf_mr.2 }
-			character_event = { id = emf_mr.2 }
-			character_event = { id = emf_mr.2 }
-
-			# Create a custom de jure kingdom title for the MR duchy if we want (avoids de jure claim CBs if want to stay independent)
+			character_event = { id = emf_mr.2 days = 2 }
+			
+			# Create a custom de jure kingdom title for the MR duchy if we want
+			# Avoids de jure claim CBs if want to stay independent
 			
 			if = {
 				limit = { FROMFROM = { is_alive = yes } }
@@ -484,103 +436,46 @@ narrative_event = {
 
 
 
+# emf_mr.2
+#
+# Triggered upon the Doge of the new merchant republic 3 game days after start.
+# Gives the auto-generated rival patricians wealth and heirs.
+#
+# Recursive for better randomization.
 character_event = {
 	id = emf_mr.2
 	desc = HIDE_EVENT
 	hide_window = yes
-	
 	is_triggered_only = yes
+	
+	trigger = {
+		any_vassal = {
+			is_patrician = yes
+			not = { has_character_flag = ai_patrician }
+		}
+	}
 	
 	option = {
 		name = OK
 		
-		random_list = {
-			10 = {
-				create_random_steward = {
-					random_traits = yes
-					dynasty = random
-					religion = ROOT
-					culture = ROOT
-					female = no
-					age = 34
-				}
+		random_vassal = {
+			limit = {
+				is_patrician = yes
+				not = { has_character_flag = ai_patrician }
 			}
-			10 = {
-				create_random_steward = {
-					random_traits = yes
-					dynasty = random
-					religion = ROOT
-					culture = ROOT
-					female = no
-					age = 35
-				}
-			}
-			10 = {
-				create_random_steward = {
-					random_traits = yes
-					dynasty = random
-					religion = ROOT
-					culture = ROOT
-					female = no
-					age = 36
-				}
-			}
-			10 = {
-				create_random_steward = {
-					random_traits = yes
-					dynasty = random
-					religion = ROOT
-					culture = ROOT
-					female = no
-					age = 37
-				}
-			}
-			10 = {
-				create_random_steward = {
-					random_traits = yes
-					dynasty = random
-					religion = ROOT
-					culture = ROOT
-					female = no
-					age = 38
-				}
-			}
-			10 = {
-				create_random_steward = {
-					random_traits = yes
-					dynasty = random
-					religion = ROOT
-					culture = ROOT
-					female = no
-					age = 39
-				}
-			}
-			10 = {
-				create_random_steward = {
-					random_traits = yes
-					dynasty = random
-					religion = ROOT
-					culture = ROOT
-					female = no
-					age = 40
-				}
-			}
-		}
-		new_character = {
-			if = {
-				limit = {
-					religion_group = indian_group
-				}
-				add_trait = kshatriya
-				character_event = { id = RoI.30121 }
-			}
+			set_character_flag = ai_patrician
 			character_event = { id = emf_mr.3 }
 		}
+		
+		character_event = { id = emf_mr.2 }
 	}
 }
 
 
-
+# emf_mr.3
+# Give wealth and create heir
+#
+# ROOT = AI patrician
 character_event = {
 	id = emf_mr.3
 	desc = AI_EVENT
@@ -608,46 +503,95 @@ character_event = {
 #			}
 #		}
 		
-		create_family_palace = yes
-		wealth = 500
+		# The engine gives auto-generated patricians 500 gold automatically,
+		# so we actually don't do it explicitly.
+
+		#wealth = 500
 		
-		# Create an adult male heir
+		if = {
+			limit = { not = { age = 32 } }
+			
+			# Can't create an adult male son, so instead just create a dynasty member (no known relation).
+			character_event = { id = emf_mr.7 }
+			
+			break = yes
+		}
+		
+		# Create have an adult heir (son)
 		
 		random_list = {
 			10 = {
 				create_random_steward = {
 					random_traits = yes
 					dynasty = ROOT
-					religion = ROOT
-					culture = ROOT
 					female = no
 					age = 16
 				}
 			}
 			10 = {
+				modifier = {
+					factor = 0
+					not = { age = 33 }
+				}
 				create_random_steward = {
 					random_traits = yes
 					dynasty = ROOT
-					religion = ROOT
-					culture = ROOT
 					female = no
 					age = 17
 				}
 			}
 			10 = {
+				modifier = {
+					factor = 0
+					not = { age = 34 }
+				}
 				create_random_steward = {
 					random_traits = yes
 					dynasty = ROOT
-					religion = ROOT
-					culture = ROOT
 					female = no
 					age = 18
+				}
+			}
+			10 = {
+				modifier = {
+					factor = 0
+					not = { age = 35 }
+				}
+				create_random_steward = {
+					random_traits = yes
+					dynasty = ROOT
+					female = no
+					age = 19
+				}
+			}
+			10 = {
+				modifier = {
+					factor = 0
+					not = { age = 36 }
+				}
+				create_random_steward = {
+					random_traits = yes
+					dynasty = ROOT
+					female = no
+					age = 20
+				}
+			}
+			10 = {
+				modifier = {
+					factor = 0
+					not = { age = 37 }
+				}
+				create_random_steward = {
+					random_traits = yes
+					dynasty = ROOT
+					female = no
+					age = 21
 				}
 			}
 		}
 		
 		new_character = {
-			set_father = ROOT
+			set_father = ROOT # Don't forget your daddy
 			if = {
 				limit = {
 					religion_group = indian_group
@@ -903,5 +847,123 @@ character_event = {
 		
 		clear_event_target = free_county
 		character_event = { id = emf_mr.6 } # Recurse
+	}
+}
+
+
+# emf_mr.7
+#
+# Create a dynasty member fit to be a patrician's successor. Try to make them brothers if possible,
+# but that can only work for the original Doge, because auto-generated patricians won't have any
+# parents.
+character_event = {
+	id = emf_mr.7
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+
+	option = {
+		name = OK
+		
+		random_list = {
+			10 = {
+				create_random_steward = {
+					random_traits = yes
+					dynasty = ROOT
+					age = 16
+					female = no
+				}
+			}
+			10 = {
+				modifier = {
+					factor = 0
+					not = { age = 19 }
+				}
+				create_random_steward = {
+					random_traits = yes
+					dynasty = ROOT
+					age = 18
+					female = no
+				}
+			}
+			10 = {
+				modifier = {
+					factor = 0
+					not = { age = 21 }
+				}
+				create_random_steward = {
+					random_traits = yes
+					dynasty = ROOT
+					age = 20
+					female = no
+				}
+			}
+			10 = {
+				modifier = {
+					factor = 0
+					not = { age = 23 }
+				}
+				create_random_steward = {
+					random_traits = yes
+					dynasty = ROOT
+					age = 22
+					female = no
+				}
+			}
+			10 = {
+				modifier = {
+					factor = 0
+					not = { age = 25 }
+				}
+				create_random_steward = {
+					random_traits = yes
+					dynasty = ROOT
+					age = 24
+					female = no
+				}
+			}
+		}
+		
+		new_character = {
+			if = {
+				limit = {
+					religion_group = indian_group
+				}
+				add_trait = kshatriya
+				character_event = { id = RoI.30121 }
+			}
+
+			character_event = { id = emf_mr.8 }			
+		}
+	}
+}
+
+
+# emf_mr.8
+#
+# Try to make a character your brother.
+character_event = {
+	id = emf_mr.8
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	option = {
+		name = OK
+		
+		FROM = { # Our would-be brother
+			if = {
+				limit = { father_even_if_dead = { always = yes } }
+				father_even_if_dead = {
+					ROOT = { set_father = PREV }
+				}
+			}
+			if = {
+				limit = { mother_even_if_dead = { always = yes } }
+				mother_even_if_dead = {
+					ROOT = { set_mother = PREV }
+				}
+			}
+		}
 	}
 }
