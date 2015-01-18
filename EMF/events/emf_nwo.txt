@@ -1,0 +1,776 @@
+
+namespace = emf_nwo
+
+
+# emf_nwo.0 [Isis]
+#
+# Put Isis in the FROM scope before interacting with player
+character_event = {
+	id = emf_nwo.0
+	desc = AI_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	option = {
+		name = OK
+		
+		FROM = { narrative_event = { id = emf_nwo.1 } }
+	}
+}
+
+
+# emf_nwo.1 [Player]
+#
+# Would you like independent counts, de jure dukes, or de jure kings?
+# Plus explain things a bit and preview the other followup options.
+narrative_event = {
+	id = emf_nwo.1
+	desc = OK #FIXME
+	picture = GFX_evt_apocalypto
+	is_triggered_only = yes
+
+	option = {
+		name = OK #FIXME: Independent Counts
+		hidden_tooltip = {
+			log = "emf_nwo: Independent Counts (emf_nwo_count)"
+			set_global_flag = emf_nwo_count
+			FROM = { character_event = { id = emf_nwo.2 } }
+		}
+	}
+	
+	option = {
+		name = OK #FIXME: De Jure Dukes
+
+		hidden_tooltip = {
+			log = "emf_nwo: De Jure Dukes (emf_nwo_duke)"
+			set_global_flag = emf_nwo_duke
+			FROM = { character_event = { id = emf_nwo.2 } }
+		}
+	}
+	
+	option = {
+		name = OK #FIXME: De Jure Kings
+		
+		hidden_tooltip = {
+			log = "emf_nwo: De Jure Kings (emf_nwo_king)"
+			set_global_flag = emf_nwo_king
+			FROM = { character_event = { id = emf_nwo.2 } }
+		}
+	}
+	
+	option = {
+		name = CANCEL
+	}
+}
+
+
+# emf_nwo.2 [Isis]
+#
+# Bounce
+character_event = {
+	id = emf_nwo.2
+	desc = AI_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+
+	option = {
+		name = OK
+		FROM = { letter_event = { id = emf_nwo.3 } }
+	}
+}
+
+
+# emf_nwo.3 [Player]
+#
+# Would you like to leave merchant republics alone?
+letter_event = {
+	id = emf_nwo.3
+	desc = OK #FIXME
+	is_triggered_only = yes
+
+	option = {
+		name = YES
+		
+		hidden_tooltip = {
+			log = "emf_nwo: Excluding merchant republics (emf_nwo_spare_mr)"
+			set_global_flag = emf_nwo_spare_mr
+			FROM = { character_event = { id = emf_nwo.4 } }
+		}
+	}
+	
+	option = {
+		name = NO
+		
+		hidden_tooltip = {
+			FROM = { character_event = { id = emf_nwo.4 } }
+		}
+	}
+}
+
+
+# emf_nwo.4 [Isis]
+#
+# Bounce
+character_event = {
+	id = emf_nwo.4
+	desc = AI_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	option = {
+		name = OK
+		FROM = { letter_event = { id = emf_nwo.5 } }
+	}
+}
+
+
+# emf_nwo.5 [Player]
+#
+# Would you like to spare the Pope's lands?
+letter_event = {
+	id = emf_nwo.5
+	desc = OK #FIXME
+	is_triggered_only = yes
+	
+	option = {
+		name = YES
+		
+		hidden_tooltip = {
+			log = "emf_nwo: Excluding Papacy (emf_nwo_spare_pope)"
+			set_global_flag = emf_nwo_spare_pope
+			FROM = { character_event = { id = emf_nwo.20 }
+		}
+	}
+	
+	option = {
+		name = NO #FIXME: No, free Rome from the Papacy.
+
+		hidden_tooltip = {
+			FROM = { character_event = { id = emf_nwo.20 }
+		}
+	}
+}
+
+
+# emf_nwo.6-7 reserved for 'Would you like to intelligently randomize the religions of the newly formed realms?'
+
+# emf_nwo.8-9 reserved for 'Would you like to enable rapid conquest CBs for quicker conglomeration of the new world order?'
+# Applies to nwo_count and nwo_duke
+
+# emf_nwo.10-11 reserved for 'Would you like to bless a random selection of independent rulers as Lucky and give them some starting event troops?'
+# Applies to nwo_count and nwo_duke
+
+# emf_nwo.12-13 reserved for 'Would you like to feudalize theocratic and republican counties where possible?'
+# Applies to nwo_count
+
+# Would also ask 'Would you like to feudalize all tribes?' but that should be a scenario customization option of its own
+
+
+# emf_nwo.20 [Isis]
+#
+# Now that we have all of our options collected from the player, get down to business.
+character_event = {
+	id = emf_nwo.20
+	desc = AI_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+
+	option = {
+		name = OK
+		
+		# Bring all but the optionally excluded realms under our thumb
+		
+		any_independent_ruler = {
+			limit = {
+				or = {
+					not = { has_global_flag = emf_nwo_spare_pope }
+					not = { has_landed_title = k_papal_state }
+				}
+			}
+			set_defacto_liege = ROOT
+		}
+		
+		# If merchant republics were excluded, set any now-dependent ones independent
+		# By not filtering them in previous step, this way we preserve MRs that were
+		# already vassals of larger realms.
+		
+		if = {
+			limit = {
+				has_global_flag = emf_nwo_spare_mr
+			}
+			any_realm_lord = {
+				limit = { is_merchant_republic = yes }
+				set_defacto_liege = THIS
+			}
+		}
+		
+		# Don't let excluded realms hold extranneous tier >= DUKE de jure titles.
+		
+		any_independent_ruler = {
+			limit = {
+				higher_tier_than = count
+				not = { tier = emperor }
+			}
+			character_event = { id = emf_nwo.21 }
+			
+			any_realm_lord = {
+				limit = { higher_tier_than = count }
+				character_event = { id = emf_nwo.21 }
+			}
+		}
+		
+		# Flatten realm hierarchy
+		
+		any_realm_lord = {
+			limit = { higher_tier_than = baron }
+			set_defacto_liege = ROOT
+		}
+		
+		# Now that there's no danger of breaking the realm hierarchy by destroying titles,
+		# destroy virtually every held title >= DUKE.
+		
+		# Keep in mind that we've got mercenaries, holy orders, religious heads, etc. in
+		# e_hip right now, so we've got to protect those titles.
+		
+		any_vassal = {
+			any_demesne_title = {
+				limit = {
+					higher_tier_than = count
+					mercenary = no
+					holy_order = no
+					controls_religion = no
+				}
+				destroy_landed_title = THIS
+			}
+		}
+		
+		# Now, we want to pick the rulers who will own each de jure title (tier dependent
+		# upon de jure tier mode) and be independent. From now on, we'll refer to these
+		# as the "princes." Note that if nwo_count is our tier mode, the princes are simply
+		# the counts of their capital county.
+		
+		# Each prince must have their capital within the de jure liege title. If the de jure
+		# liege title is owned by someone outside e_hip, they're shit out luck and can't be
+		# princes. Otherwise, the de jure liege title should, at this point, have no owner.
+		
+		# Prince selection within the de jure liege title follows this preference rule:
+		#   ai = no
+		#   feudal
+		#   tribal
+		#   republic
+		#   theocracy
+		
+		# Otherwise, prince selection is completely random. [ An alternate strategy would be
+		# to pick princes that are most likely to succeed, but that's really not even
+		# necessarily desired here. ]
+		
+		# We'd like to be able to address all the de jure titles relevant to the potential
+		# princes without working top-down on the de jure title hierarchy. Due to SWMH's
+		# lack of de jure empires in places, the 'Remove Ahistorical Empires' customization,
+		# and generally the possibility of dynamic de jure kingdom titles on the map, we cannot
+		# guarantee that we'll cover every potential prince with a top-down approach.
+
+		# Instead, we tail-recursively pick a random vassal, scope to their relevant-tier de jure
+		# liege title, and then select the correct random prince (with our character type preferences)
+		# from there. If the de jure liege title is inaccessible (owned outside of e_hip), our
+		# princelings that fall under the title will simply never be able to be princes. The end
+		# result will be that those "mixed zones" leave a few independent counts in them when
+		# we're done. This is generally desirable anyway for merchant republics' de jure capital
+		# duchies/kingdoms (dependent upon mode) and arguably the Papacy too (though the Papacy
+		# will never realistically hold anything de jure but d_latium, so it's kind of a moot case).
+		
+		if = {
+			limit = {
+				has_global_flag = emf_nwo_count
+			}
+			# WE'RE ALREADY DONE!
+		}
+		if = {
+			limit = {
+				has_global_flag = emf_nwo_duke
+			}
+			character_event = { id = emf_nwo.22 }
+		}
+		if = {
+			limit = {
+				has_global_flag = emf_nwo_king
+			}
+			character_event = { id = emf_nwo.23 }
+		}
+		
+		# Once we return here, our e_hip realm hierarchy will no longer necessarily be flat, de jure titles
+		# might be owned, and princes have been selected (marked with flag 'prince').
+		
+		# Now, we've got to sort-out the issue of princes and their vassals owning (landed) titles outside
+		# of their de jure territory.
+		
+		# If princes are counts, we need to promote barons or generate random characters to shed these.
+		# If princes are higher-tier, we additionally have the preferable option of simply transferring
+		# ownership of these titles to the other prince to whom each title's de jure liege title belongs.
+		# Either way, if the title which must be shed doesn't have an overarching prince, we may have to
+		# resort to generating a random character (though promoting existing barons is preferred) to hold
+		# the title. [ Note that another option would be to simply grant the land to whatever spared,
+		# neighboring realm(s) caused the "prince-free zone," but this is invalid for nwo_count. ]
+		
+		# TODO: Shed prince and prince-vassals' non-dejure landed titles
+		
+		if = {
+			limit = {
+				has_global_flag = emf_nwo_count
+			}
+			any_realm_lord = {
+				character_event = { id = emf_nwo.26 }
+			}
+		}
+		if = {
+			limit = {
+				has_global_flag = emf_nwo_duke
+			}
+			any_realm_lord = {
+				capital_scope = {
+					duchy = {
+						save_event_target_as = top_title
+					}
+					character_event = { id = emf_nwo.25 }
+					clear_event_target = top_title
+				}
+			}
+		}
+		if = {
+			limit = {
+				has_global_flag = emf_nwo_king
+			}
+			any_realm_lord = {
+				capital_scope = {
+					kingdom = {
+						save_event_target_as = top_title
+					}
+					character_event = { id = emf_nwo.25 }
+					clear_event_target = top_title
+				}
+			}
+		}
+		
+		# Finally, set free all princes and then any remaining vassals. Example remaining vassals would be
+		# either rulers for whom their de jure liege title was held by a spared realm (e.g., an independent
+		# count inside the capital de jure duchy of a merchant republic), holy orders, mercenaries, landless
+		# religious heads (such as the Coptic Pope), or independent barons in a corner case (it's
+		# theoretically possible, at least).
+		
+		any_vassal = {
+			clr_character_flag = prince
+			set_defacto_liege = THIS
+		}
+		
+		# Cleanup option global flags (this allows the player to re-invoke the customization decision if
+		# they want to change options)
+		clr_global_flag = emf_nwo_count
+		clr_global_flag = emf_nwo_duke
+		clr_global_flag = emf_nwo_king
+		clr_global_flag = emf_nwo_spare_mr
+		clr_global_flag = emf_nwo_spare_pope
+	}
+}
+
+
+# emf_nwo.21 [Ruler outside the temporary e_hip realm (spared realm)]
+#
+# Destroy all of a ruler's extranneous tier >= DUKE de jure titles.
+character_event = {
+	id = emf_nwo.21
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+		
+	option = {
+		name = OK
+
+		any_demesne_title = {
+			limit = {
+				higher_tier_than = count
+				is_titular = no
+				is_primary_holder_title = no
+				not = { ROOT = { completely_controls = PREV } }
+			}
+			destroy_landed_title = THIS
+		}
+	}
+}
+
+
+# emf_nwo.22 [Isis]
+#
+# Select a de jure duchy title (emf_nwo_duke)
+character_event = {
+	id = emf_nwo.22
+	desc = AI_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+
+	trigger = {
+		any_vassal = {
+			higher_tier_than = baron
+			capital_scope = {
+				duchy = {
+					has_holder = no
+				}
+			}
+		}
+	}
+	
+	option = {
+		name = OK
+		
+		random_vassal = {
+			limit = {
+				higher_tier_than = baron
+				capital_scope = {
+					duchy = {
+						has_holder = no
+					}
+				}
+			}
+			capital_scope = {
+				duchy = {
+					save_event_target_as = title
+				}
+			}
+		}
+		
+		# Select a prince
+		character_event = { id = emf_nwo.24 }
+	}
+}
+
+
+# emf_nwo.23 [Isis]
+#
+# Select a de jure kingdom title (emf_nwo_king)
+character_event = {
+	id = emf_nwo.23
+	desc = AI_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+
+	trigger = {
+		any_vassal = {
+			higher_tier_than = baron
+			capital_scope = {
+				kingdom = {
+					has_holder = no
+				}
+			}
+		}
+	}
+	
+	option = {
+		name = OK
+		
+		random_vassal = {
+			limit = {
+				higher_tier_than = baron
+				capital_scope = {
+					kingdom = {
+						has_holder = no
+					}
+				}
+			}
+			capital_scope = {
+				kingdom = {
+					save_event_target_as = title
+				}
+			}
+		}
+		
+		# Select a prince
+		character_event = { id = emf_nwo.24 }
+	}
+}
+
+
+# emf_nwo.24 [Isis]
+#
+# Select a prince for event_target:title
+# To mark them as a prince, we'll simply grant them the title.
+character_event = {
+	id = emf_nwo.24
+	desc = AI_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	option = {
+		name = OK
+				
+		random_vassal = {
+			limit = {
+				event_target:title = { has_holder = no }
+				capital_holding = { de_jure_liege_or_above = event_target:title }
+				ai = no
+			}
+			grant_title = event_target:title
+		}
+		random_vassal = {
+			limit = {
+				event_target:title = { has_holder = no }
+				capital_holding = { de_jure_liege_or_above = event_target:title }
+				higher_tier_than = baron
+				is_feudal = yes
+			}
+			grant_title = event_target:title
+		}
+		random_vassal = {
+			limit = {
+				event_target:title = { has_holder = no }
+				capital_holding = { de_jure_liege_or_above = event_target:title }
+				higher_tier_than = baron
+				is_tribal = yes
+			}
+			grant_title = event_target:title
+		}
+		random_vassal = {
+			limit = {
+				event_target:title = { has_holder = no }
+				capital_holding = { de_jure_liege_or_above = event_target:title }
+				higher_tier_than = baron
+				is_republic = yes
+			}
+			grant_title = event_target:title
+		}
+		random_vassal = {
+			limit = {
+				event_target:title = { has_holder = no }
+				capital_holding = { de_jure_liege_or_above = event_target:title }
+				higher_tier_than = baron
+			}
+			grant_title = event_target:title
+		}
+		
+		if = {
+			limit = {
+				event_target:title = { has_holder = no } # Should never happen
+			}
+			# Wish there was a GetID localisation command for titles...
+			log = "emf_nwo.23: Aborting: Unable to find suitable prince for title '[title.GetBaseName]' (should be impossible)"
+			break = yes
+		}
+		
+		# K, cool, we've now selected a prince and given them their title.
+		
+		# Give them their de jure vassals too (those that are within e_hip).
+		
+		any_vassal = {
+			limit = {
+				capital_holding = { de_jure_liege_or_above = event_target:title }
+			}
+			event_target:title = {
+				owner = {
+					set_defacto_vassal = PREVPREV
+				}
+			}
+		}
+		
+		# IF KING-TIER:
+		# Due to vassal limit restrictions, it's possible that the prince will be over
+		# his vassal limit and have such a high tax penalty that he will not be able
+		# to afford creating the kingdom's duchy titles. This would be an annoying way
+		# to start the game. We also want to preserve the ability of the prince to choose
+		# his dukes rather than randomly assigning dukes, so we just go ahead and give
+		# the prince every de jure vassal duchy right now so that he can hand them out.
+		
+		event_target:title = {
+			if = {
+				limit = {
+					tier = king
+				}
+				
+				any_direct_de_jure_vassal_title = {
+					limit = { has_holder = no }
+					
+					event_target:title = {
+						owner = {
+							grant_title = PREVPREV
+						}
+					}
+				}
+			}
+		}
+		
+		clear_event_target = title
+		set_character_flag = prince
+		
+		# Tail-recurse and select another prince, until there are no more
+		if = {
+			limit = {
+				has_global_flag = emf_nwo_duke
+			}
+			character_event = { id = emf_nwo.22 }
+		}
+		if = {
+			limit = {
+				has_global_flag = emf_nwo_king
+			}
+			character_event = { id = emf_nwo.23 }
+		}
+	}
+}
+
+
+# emf_nwo.25 [Ruler within temporary e_hip realm]
+#
+# Shed all owned land outside of our de jure principality (event_target:top_title)
+# Note that this is not recursive. We pass off any recursive
+# duties (when we need proper randomization for things like
+# generating characters to hold titles) to another event, if
+# and only when we must.
+character_event = {
+	id = emf_nwo.25
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		if = {
+			limit = { has_global_flag = emf_nwo_count }
+			capital_scope = { county = { save_event_target_as = top_title } }
+		}
+		if = {
+			limit = { has_global_flag = emf_nwo_duke }
+			capital_scope = { duchy = { save_event_target_as = top_title } }
+		}
+		if = {
+			limit = { has_global_flag = emf_nwo_king }
+			capital_scope = { kingdom = { save_event_target_as = top_title } }
+		}
+	}
+	
+	option = {
+		name = OK
+		
+		# Transfer all non-baron titles, for which it is possible, directly to the prince
+		# responsible for that title's principality.
+		any_demesne_title = {
+			limit = {
+				not = {
+					title = event_target:top_title
+					de_jure_liege_or_above = event_target:top_title
+				}
+				FROM = {
+					any_vassal = {
+						has_character_flag = prince
+						any_demesne_title = {
+							tier = event_target:top_title
+							de_jure_vassal_or_below = PREVPREVPREV
+						}
+					}
+				}
+			}
+			FROM = {
+				random_vassal = {
+					limit = {
+						has_character_flag = prince
+						any_demesne_title = {
+							tier = event_target:top_title
+							de_jure_vassal_or_below = PREVPREVPREV
+						}
+					}
+					
+					# Solve potential de jure pretension
+					random_vassal = {
+						limit = {
+							higher_tier_than = baron
+							any_demesne_title = {
+								de_jure_vassal_or_below = PREVPREVPREVPREV
+							}
+						}
+						grant_title_no_opinion = PREVPREVPREV
+						set_character_flag = to_vassal
+					}
+					
+					if = {
+						limit = { not = { has_character_flag = to_vassal } }
+						grant_title_no_opinion = PREVPREV
+					}
+
+					clr_character_flag = to_vassal
+				}
+			}
+		}
+
+		# Now, wherever possible, grant remaining non-de-jure titles to either a baron in
+		# the county or to the count of the county
+		
+		# Counties...
+		any_demesne_title = {
+			limit = {
+				tier = count
+				not = {
+					title = event_target:top_title
+					de_jure_liege_or_above = event_target:top_title
+				}
+			}
+			ROOT = { # Prefer outcomes where the county becomes or stays feudal
+				random_vassal = {
+					limit = {
+						tier = baron
+						is_feudal = yes
+						primary_title = {
+							de_jure_liege = PREVPREVPREV
+						}
+						ROOT = { not = { has_character_flag = found_baron } }
+					}
+					primary_title = {
+						province_capital = yes
+					}
+					grant_title_no_opinion = PREVPREV
+					ROOT = { set_character_flag = found_baron }
+				}
+				random_vassal = {
+					limit = {
+						tier = baron
+						primary_title = {
+							de_jure_liege = PREVPREVPREV
+						}
+						ROOT = { not = { has_character_flag = found_baron } }
+					}
+					grant_title_no_opinion = PREVPREV
+					ROOT = { set_character_flag = found_baron }
+				}
+				clr_character_flag = found_baron
+			}
+		}
+		
+		# Baronies...
+		any_demesne_title = {
+			limit = {
+				tier = baron
+				not = { de_jure_liege_or_above = event_target:top_title }
+			}
+			dejure_liege_title = {
+				owner = {
+					grant_title_no_opinion = PREVPREV
+				}
+			}
+		}
+		
+		clear_event_target = top_title
+		
+		# Generate characters for the rest of the non-de-jure titles...
+		# TODO
+	}
+}
+
+
+# emf_nwo.26
+#
+# Tail-recursive event which either grants land outside outside
+# of the de jure principality to 
+character_event = {
+	id = emf_nwo.26
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+		
+	option = {
+		name = OK
+	}
+}
