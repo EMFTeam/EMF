@@ -75,7 +75,7 @@ character_event = {
 
 	option = {
 		name = OK
-		FROM = { letter_event = { id = emf_nwo.3 } }
+		FROM = { character_event = { id = emf_nwo.3 } }
 	}
 }
 
@@ -83,7 +83,7 @@ character_event = {
 # emf_nwo.3 [Player]
 #
 # Would you like to leave merchant republics alone?
-letter_event = {
+character_event = {
 	id = emf_nwo.3
 	desc = OK #FIXME
 	is_triggered_only = yes
@@ -92,7 +92,7 @@ letter_event = {
 		name = YES
 		
 		hidden_tooltip = {
-			log = "emf_nwo: Excluding merchant republics (emf_nwo_spare_mr)"
+			log = "emf_nwo: Excluding merchant republics... (emf_nwo_spare_mr)"
 			set_global_flag = emf_nwo_spare_mr
 			FROM = { character_event = { id = emf_nwo.4 } }
 		}
@@ -119,7 +119,7 @@ character_event = {
 	
 	option = {
 		name = OK
-		FROM = { letter_event = { id = emf_nwo.5 } }
+		FROM = { character_event = { id = emf_nwo.5 } }
 	}
 }
 
@@ -127,7 +127,7 @@ character_event = {
 # emf_nwo.5 [Player]
 #
 # Would you like to spare the Pope's lands?
-letter_event = {
+character_event = {
 	id = emf_nwo.5
 	desc = OK #FIXME
 	is_triggered_only = yes
@@ -136,7 +136,7 @@ letter_event = {
 		name = YES
 		
 		hidden_tooltip = {
-			log = "emf_nwo: Excluding Papacy (emf_nwo_spare_pope)"
+			log = "emf_nwo: Excluding Papacy... (emf_nwo_spare_pope)"
 			set_global_flag = emf_nwo_spare_pope
 			FROM = { character_event = { id = emf_nwo.20 } }
 		}
@@ -146,7 +146,7 @@ letter_event = {
 		name = YES
 		
 		hidden_tooltip = {
-			log = "emf_nwo: Excluding Pope (emf_nwo_spare_pope_only)"
+			log = "emf_nwo: Excluding Pope... (emf_nwo_spare_pope_only)"
 			set_global_flag = emf_nwo_spare_pope_only
 			FROM = { character_event = { id = emf_nwo.20 } }
 		}
@@ -162,16 +162,21 @@ letter_event = {
 }
 
 
-# emf_nwo.6-7 reserved for 'Would you like to intelligently randomize the religions of the newly formed realms?'
+# 'Would you like to intelligently randomize the religions of the newly formed realms?'
+# -> Big Maybe.
 
-# emf_nwo.8-9 reserved for 'Would you like to enable rapid conquest CBs for quicker conglomeration of the new world order?'
-# Applies to nwo_count and nwo_duke
+# 'Would you like to enable rapid conquest CBs for quicker conglomeration
+#  of the new world order? They automatically stop becoming available once
+#  a ruler has reached a certain size or tier, and they will be fully disabled
+#  in 50 years.'
+# - Applies to nwo_count and nwo_duke
 
-# emf_nwo.10-11 reserved for 'Would you like to bless a random selection of independent rulers as Lucky and give them some starting event troops?'
-# Applies to nwo_count and nwo_duke
+# 'Would you like to bless a random selection of independent rulers as Lucky and give them some starting event troops?'
+# - Applies to nwo_count and nwo_duke
 
-# emf_nwo.12-13 reserved for 'Would you like to feudalize theocratic and republican counties where possible?'
-# Applies to nwo_count
+# 'Would you like to feudalize theocratic and republican counties where possible?'
+# -> Maybe. Co
+# - Applies to nwo_count 
 
 # Would also ask 'Would you like to feudalize all tribes?' but that should be a scenario customization option of its own
 
@@ -189,7 +194,7 @@ character_event = {
 		name = OK
 		
 		any_playable_ruler = {		
-			# End all their petty wars
+			# End wars from the prior era
 			any_war = {
 				end_war = invalid
 			}
@@ -200,7 +205,8 @@ character_event = {
 			}
 		}
 		
-		# Destroy all the titles that bind. Note that this step, by far, is the most time-consuming.
+		# Destroy all the titles that bind. Note that this step, by far, is the most time-consuming of
+		# everything that we do in this customization decision.
 		
 		any_independent_ruler = {
 			limit = {
@@ -217,14 +223,18 @@ character_event = {
 			}
 			
 			# Preserve holy orders, mercs, e_golden_horde, religious head titles,
-			# temporary titles (god knows what side effects that might have), etc.,
-			# but otherwise, destroy all held duke-tier or higher titles. This step
-			# takes about 30-35sec on SWMH (prior to the eastern expansion).
+			# etc., but otherwise, destroy all held duke-tier or higher titles
+			# (including temporary titles). This step takes about 2sec on SWMH
+			# on my machine at the time of this writing (that is, when it's done
+			# for the whole world).
 			
 			any_title_under = {
 				limit = {
 					tier = duke
-					is_landless_type_title = no # DOesn't protect Caliphates
+					or = {
+						is_landless_type_title = no
+						temporary = yes
+					}
 					or = {
 						owner = {
 							not = {
@@ -237,8 +247,8 @@ character_event = {
 					or = {
 						owner = {
 							not = {
-								has_landed_title = k_papal_state
-								any_liege = { has_landed_title = k_papal_state }
+								primary_title = { title = k_papal_state }
+								any_liege = { primary_title = { title = k_papal_state } }
 							}
 						}
 						not = { has_global_flag = emf_nwo_spare_pope }
@@ -249,7 +259,10 @@ character_event = {
 			any_title_under = {
 				limit = {
 					tier = king
-					is_landless_type_title = no
+					or = {
+						is_landless_type_title = no
+						temporary = yes
+					}
 					or = {
 						owner = {
 							or = {
@@ -259,13 +272,45 @@ character_event = {
 						}
 						not = { has_global_flag = emf_nwo_spare_mr }
 					}
+					or = {
+						owner = {
+							not = {
+								primary_title = { title = k_papal_state }
+								any_liege = { primary_title = { title = k_papal_state } }
+							}
+						}
+						not = { has_global_flag = emf_nwo_spare_pope }
+					}
 				}
 				destroy_landed_title = THIS
 			}
 			any_demesne_title = {
 				limit = {
-					not = { lower_tier_than = duke }
-					is_landless_type_title = no
+					tier = duke
+					or = {
+						is_landless_type_title = no
+						temporary = yes
+					}
+				}
+				destroy_landed_title = THIS
+			}
+			any_demesne_title = {
+				limit = {
+					tier = king
+					or = {
+						is_landless_type_title = no
+						temporary = yes
+					}
+				}
+				destroy_landed_title = THIS
+			}
+			any_demesne_title = {
+				limit = {
+					tier = emperor
+					or = {
+						is_landless_type_title = no
+						temporary = yes
+					}
 				}
 				destroy_landed_title = THIS
 			}
@@ -274,7 +319,7 @@ character_event = {
 		# Now that de jure duke-tier or higher titles are destroyed, make any any de jure title
 		# structure changes to the map appropriate for NWO (since the old titles will not be
 		# held any longer, if they need to be deactivated).
-		character_event = { id = emf_nwo.40 } # Common adjustments
+		character_event = { id = emf_nwo.40 } # Adjustments common to both SWMH and vanilla
 		character_event = { id = emf_nwo.41 } # Map-specific adjustments (SWMH and vanilla versions of emf_nwo_map.txt contain this event)
 		
 		# The duke-tier or higher rulers are going to be a problem. We need them to give up all their
@@ -285,6 +330,7 @@ character_event = {
 			limit = {
 				higher_tier_than = count
 				is_landed = yes
+				primary_title = { is_landless_type_title = yes }
 				or = {
 					not = { primary_title = { title = k_papal_state } }
 					not = {
@@ -313,6 +359,8 @@ character_event = {
 					}
 				}
 			}
+			
+			# If your landless title was binding any vassals, they'll be freed in next step.
 		}
 		
 		any_playable_ruler = {
@@ -370,7 +418,7 @@ character_event = {
 			# Destroy claims on titles that now have no holder or are not owned by the princeling.
 			any_courtier = {
 				any_claim = {
-					limit = { not = { owner = { character = PREVPREVPREV } }
+					limit = { not = { owner = { character = PREVPREVPREV } } }
 					remove_claim = PREV
 				}
 			}
@@ -489,27 +537,7 @@ character_event = {
 			# to prevent insurmountable vassal limit issues in very large
 			# kingdoms.
 			
-			random_vassal = {
-				limit = {
-					tier = count
-					capital_scope = { duchy = { has_holder = no } }
-				}
-				capital_scope = { duchy = { grant_title = ROOT } }
-			}
-			random_vassal = {
-				limit = {
-					tier = count
-					capital_scope = { duchy = { has_holder = no } }
-				}
-				capital_scope = { duchy = { grant_title = ROOT } }
-			}
-			random_vassal = {
-				limit = {
-					tier = count
-					capital_scope = { duchy = { has_holder = no } }
-				}
-				capital_scope = { duchy = { grant_title = ROOT } }
-			}
+			wealth = 500
 		}
 	}
 }
@@ -517,8 +545,7 @@ character_event = {
 
 # emf_nwo.30 [Ruler of a landless title that's also landed]
 #
-# Tail-recursive event which grants away all count titles to new characters,
-# grants any baronies in the county to the new character.
+# Tail-recursive event which grants away all count titles to new characters.
 character_event = {
 	id = emf_nwo.30
 	desc = HIDE_EVENT
@@ -526,6 +553,9 @@ character_event = {
 	is_triggered_only = yes
 	
 	trigger = {
+		any_demesne_title = {
+			is_landless_type_title = yes
+		}
 		num_of_count_titles = 1
 	}
 	
