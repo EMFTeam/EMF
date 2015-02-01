@@ -44,7 +44,7 @@ narrative_event = {
 		hidden_tooltip = {
 			log = "emf_nwo: De Jure Dukes (emf_nwo_duke)"
 			set_global_flag = emf_nwo_duke
-			FROM = { character_event = { id = emf_nwo.2 } }
+			FROM = { character_event = { id = emf_nwo.8 } }
 		}
 	}
 	
@@ -54,7 +54,7 @@ narrative_event = {
 		hidden_tooltip = {
 			log = "emf_nwo: De Jure Kings (emf_nwo_king)"
 			set_global_flag = emf_nwo_king
-			FROM = { character_event = { id = emf_nwo.2 } }
+			FROM = { character_event = { id = emf_nwo.8 } }
 		}
 	}
 	
@@ -199,7 +199,6 @@ character_event = {
 }
 
 
-
 # emf_nwo.7 [Player]
 #
 # Would you like to leave merchant republics alone?
@@ -227,6 +226,61 @@ character_event = {
 	}
 }
 
+
+# emf_nwo.8 [Isis]
+#
+# Bounce
+character_event = {
+	id = emf_nwo.8
+	desc = AI_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	option = {
+		name = OK
+		FROM = { character_event = { id = emf_nwo.9 } }
+	}
+}
+
+
+# emf_nwo.9 [Player]
+#
+# For those rulers which already hold de jure [duchies/kingdoms],
+# should they remain the [dukes/kings] of their capital [duchies/kingdoms]?
+character_event = {
+	id = emf_nwo.9
+	desc = OK #FIXME
+	is_triggered_only = yes
+
+	option = {
+		name = YES # Yes, but still make players de jure dukes/kings
+		
+		hidden_tooltip = {
+			log = "emf_nwo: Retaining previous rulers... (emf_nwo_retain_rulers, emf_nwo_retain_rulers_not_me)"
+			set_global_flag = emf_nwo_retain_rulers
+			set_global_flag = emf_nwo_retain_rulers_not_me
+			FROM = { character_event = { id = emf_nwo.2 } }
+		}
+	}
+	
+	option = {
+		name = YES # Yes, even if that makes me a vassal
+		
+		hidden_tooltip = {
+			log = "emf_nwo: Retaining previous rulers... (emf_nwo_retain_rulers)"
+			set_global_flag = emf_nwo_retain_rulers
+			FROM = { character_event = { id = emf_nwo.2 } }
+		}
+	}
+	
+	option = {
+		name = NO
+		
+		hidden_tooltip = {
+			FROM = { character_event = { id = emf_nwo.2 } }
+		}
+	}
+}
 
 
 # 'Would you like to intelligently randomize the religions of the newly formed realms?'
@@ -338,6 +392,18 @@ character_event = {
 						not = { has_global_flag = emf_nwo_spare_pope }
 					}
 				}
+				if = {
+					limit = {
+						has_global_flag = emf_nwo_duke
+						has_global_flag = emf_nwo_retain_rulers
+						owner = {
+							capital_holding = { de_jure_liege_or_above = PREVPREV }
+						}
+					}
+					owner = {
+						set_character_flag = prev_prince
+					}
+				}
 				destroy_landed_title = THIS
 			}
 			any_title_under = {
@@ -366,6 +432,18 @@ character_event = {
 						not = { has_global_flag = emf_nwo_spare_pope }
 					}
 				}
+				if = {
+					limit = {
+						has_global_flag = emf_nwo_king
+						has_global_flag = emf_nwo_retain_rulers
+						owner = {
+							capital_holding = { de_jure_liege_or_above = PREVPREV }
+						}
+					}
+					owner = {
+						set_character_flag = prev_prince
+					}
+				}
 				destroy_landed_title = THIS
 			}
 			any_demesne_title = {
@@ -376,6 +454,18 @@ character_event = {
 						temporary = yes
 					}
 				}
+				if = {
+					limit = {
+						has_global_flag = emf_nwo_duke
+						has_global_flag = emf_nwo_retain_rulers
+						owner = {
+							capital_holding = { de_jure_liege_or_above = PREVPREV }
+						}
+					}
+					owner = {
+						set_character_flag = prev_prince
+					}
+				}
 				destroy_landed_title = THIS
 			}
 			any_demesne_title = {
@@ -384,6 +474,18 @@ character_event = {
 					or = {
 						is_landless_type_title = no
 						temporary = yes
+					}
+				}
+				if = {
+					limit = {
+						has_global_flag = emf_nwo_king
+						has_global_flag = emf_nwo_retain_rulers
+						owner = {
+							capital_holding = { de_jure_liege_or_above = PREVPREV }
+						}
+					}
+					owner = {
+						set_character_flag = prev_prince
 					}
 				}
 				destroy_landed_title = THIS
@@ -558,7 +660,18 @@ character_event = {
 		
 		if = {
 			limit = { has_global_flag = emf_nwo_duke }
+			if = {
+				limit = {
+					has_global_flag = emf_nwo_retain_rulers
+					not = { has_global_flag = emf_nwo_retain_rulers_not_me }
+				}
+				character_event = { id = emf_nwo.55 } # Select previous princes (duke) [recursive]
+			}
 			character_event = { id = emf_nwo.50 } # Select ai = no princes (duke) [recursive]
+			if = {
+				limit = { has_global_flag = emf_nwo_retain_rulers_not_me }
+				character_event = { id = emf_nwo.55 } # Select previous princes (duke) [recursive]
+			}
 			character_event = { id = emf_nwo.51 } # Select feudal princes (duke) [recursive]
 			character_event = { id = emf_nwo.52 } # Select tribal princes (duke) [recursive]
 			character_event = { id = emf_nwo.53 } # Select republic princes (duke) [recursive]
@@ -567,11 +680,23 @@ character_event = {
 		
 		if = {
 			limit = { has_global_flag = emf_nwo_king }
-			character_event = { id = emf_nwo.55 } # Select ai = no princes (king) [recursive]
-			character_event = { id = emf_nwo.56 } # Select feudal princes (king) [recursive]
-			character_event = { id = emf_nwo.57 } # Select tribal princes (king) [recursive]
-			character_event = { id = emf_nwo.58 } # Select republic princes (king) [recursive]
-			character_event = { id = emf_nwo.59 } # Select any princes (king) [recursive]
+			if = {
+				limit = {
+					has_global_flag = emf_nwo_retain_rulers
+					not = { has_global_flag = emf_nwo_retain_rulers_not_me }
+				}
+				character_event = { id = emf_nwo.65 } # Select previous princes (king) [recursive]
+			}
+			character_event = { id = emf_nwo.60 } # Select ai = no princes (king) [recursive]
+			if = {
+				limit = { has_global_flag = emf_nwo_retain_rulers_not_me }
+				character_event = { id = emf_nwo.65 } # Select previous princes (king) [recursive]
+			}
+			character_event = { id = emf_nwo.60 } # Select ai = no princes (king) [recursive]
+			character_event = { id = emf_nwo.61 } # Select feudal princes (king) [recursive]
+			character_event = { id = emf_nwo.62 } # Select tribal princes (king) [recursive]
+			character_event = { id = emf_nwo.63 } # Select republic princes (king) [recursive]
+			character_event = { id = emf_nwo.64 } # Select any princes (king) [recursive]
 		}
 		
 		# Cleanup option global flags (this allows the player to re-invoke the customization decision if
@@ -582,6 +707,8 @@ character_event = {
 		clr_global_flag = emf_nwo_only_catholic
 		clr_global_flag = emf_nwo_only_christian
 		clr_global_flag = emf_nwo_only_muslim
+		clr_global_flag = emf_nwo_retain_rulers
+		clr_global_flag = emf_nwo_retain_rulers_not_me
 		clr_global_flag = emf_nwo_spare_mr
 		clr_global_flag = emf_nwo_spare_pope
 		clr_global_flag = emf_nwo_spare_pope_only
@@ -1155,6 +1282,18 @@ character_event = {
 			ai = no
 			tier = count
 			capital_scope = { duchy = { has_holder = no } }
+			or = {
+				religion = catholic
+				not = { has_global_flag = emf_nwo_only_catholic }
+			}
+			or = {
+				religion_group = christian
+				not = { has_global_flag = emf_nwo_only_christian }
+			}
+			or = {
+				religion_group = muslim
+				not = { has_global_flag = emf_nwo_only_muslim }
+			}
 		}
 	}
 	
@@ -1166,6 +1305,18 @@ character_event = {
 				ai = no
 				tier = count
 				capital_scope = { duchy = { has_holder = no } }
+				or = {
+					religion = catholic
+					not = { has_global_flag = emf_nwo_only_catholic }
+				}
+				or = {
+					religion_group = christian
+					not = { has_global_flag = emf_nwo_only_christian }
+				}
+				or = {
+					religion_group = muslim
+					not = { has_global_flag = emf_nwo_only_muslim }
+				}
 			}
 			capital_scope = {
 				duchy = {
@@ -1194,6 +1345,18 @@ character_event = {
 			is_feudal = yes
 			tier = count
 			capital_scope = { duchy = { has_holder = no } }
+			or = {
+				religion = catholic
+				not = { has_global_flag = emf_nwo_only_catholic }
+			}
+			or = {
+				religion_group = christian
+				not = { has_global_flag = emf_nwo_only_christian }
+			}
+			or = {
+				religion_group = muslim
+				not = { has_global_flag = emf_nwo_only_muslim }
+			}
 		}
 	}
 	
@@ -1205,6 +1368,18 @@ character_event = {
 				is_feudal = yes
 				tier = count
 				capital_scope = { duchy = { has_holder = no } }
+				or = {
+					religion = catholic
+					not = { has_global_flag = emf_nwo_only_catholic }
+				}
+				or = {
+					religion_group = christian
+					not = { has_global_flag = emf_nwo_only_christian }
+				}
+				or = {
+					religion_group = muslim
+					not = { has_global_flag = emf_nwo_only_muslim }
+				}
 			}
 			capital_scope = {
 				duchy = {
@@ -1233,6 +1408,18 @@ character_event = {
 			is_tribal = yes
 			tier = count
 			capital_scope = { duchy = { has_holder = no } }
+			or = {
+				religion = catholic
+				not = { has_global_flag = emf_nwo_only_catholic }
+			}
+			or = {
+				religion_group = christian
+				not = { has_global_flag = emf_nwo_only_christian }
+			}
+			or = {
+				religion_group = muslim
+				not = { has_global_flag = emf_nwo_only_muslim }
+			}
 		}
 	}
 	
@@ -1244,6 +1431,18 @@ character_event = {
 				is_tribal = yes
 				tier = count
 				capital_scope = { duchy = { has_holder = no } }
+				or = {
+					religion = catholic
+					not = { has_global_flag = emf_nwo_only_catholic }
+				}
+				or = {
+					religion_group = christian
+					not = { has_global_flag = emf_nwo_only_christian }
+				}
+				or = {
+					religion_group = muslim
+					not = { has_global_flag = emf_nwo_only_muslim }
+				}
 			}
 			capital_scope = {
 				duchy = {
@@ -1272,6 +1471,18 @@ character_event = {
 			is_republic = yes
 			tier = count
 			capital_scope = { duchy = { has_holder = no } }
+			or = {
+				religion = catholic
+				not = { has_global_flag = emf_nwo_only_catholic }
+			}
+			or = {
+				religion_group = christian
+				not = { has_global_flag = emf_nwo_only_christian }
+			}
+			or = {
+				religion_group = muslim
+				not = { has_global_flag = emf_nwo_only_muslim }
+			}
 		}
 	}
 	
@@ -1283,6 +1494,18 @@ character_event = {
 				is_republic = yes
 				tier = count
 				capital_scope = { duchy = { has_holder = no } }
+				or = {
+					religion = catholic
+					not = { has_global_flag = emf_nwo_only_catholic }
+				}
+				or = {
+					religion_group = christian
+					not = { has_global_flag = emf_nwo_only_christian }
+				}
+				or = {
+					religion_group = muslim
+					not = { has_global_flag = emf_nwo_only_muslim }
+				}
 			}
 			capital_scope = {
 				duchy = {
@@ -1310,6 +1533,18 @@ character_event = {
 		any_independent_ruler = {
 			tier = count
 			capital_scope = { duchy = { has_holder = no } }
+			or = {
+				religion = catholic
+				not = { has_global_flag = emf_nwo_only_catholic }
+			}
+			or = {
+				religion_group = christian
+				not = { has_global_flag = emf_nwo_only_christian }
+			}
+			or = {
+				religion_group = muslim
+				not = { has_global_flag = emf_nwo_only_muslim }
+			}
 		}
 	}
 	
@@ -1320,6 +1555,18 @@ character_event = {
 			limit = {
 				tier = count
 				capital_scope = { duchy = { has_holder = no } }
+				or = {
+					religion = catholic
+					not = { has_global_flag = emf_nwo_only_catholic }
+				}
+				or = {
+					religion_group = christian
+					not = { has_global_flag = emf_nwo_only_christian }
+				}
+				or = {
+					religion_group = muslim
+					not = { has_global_flag = emf_nwo_only_muslim }
+				}
 			}
 			capital_scope = {
 				duchy = {
@@ -1330,6 +1577,46 @@ character_event = {
 		}
 		
 		character_event = { id = emf_nwo.54 }
+	}
+}
+
+
+# emf_nwo.55 [Isis]
+#
+# Select previous prince for duchy principality. [Recursive]
+character_event = {
+	id = emf_nwo.55
+	desc = AI_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+
+	trigger = {
+		any_independent_ruler = {
+			tier = count
+			capital_scope = { duchy = { has_holder = no } }
+			has_character_flag = prev_prince
+		}
+	}
+	
+	option = {
+		name = OK
+		
+		random_independent_ruler = {
+			limit = {
+				tier = count
+				capital_scope = { duchy = { has_holder = no } }
+				has_character_flag = prev_prince
+			}
+			capital_scope = {
+				duchy = {
+					grant_title = PREVPREV
+				}
+			}
+			clr_character_flag = prev_prince
+			character_event = { id = emf_nwo.22 }
+		}
+		
+		character_event = { id = emf_nwo.55 }
 	}
 }
 
