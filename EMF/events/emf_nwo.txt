@@ -82,27 +82,48 @@ character_event = {
 
 # emf_nwo.3 [Player]
 #
-# Would you like to leave merchant republics alone?
+# What part of the world do you want to be affected by the New World Order?
+# - The Whole World
+# - Only Catholic Realms
+# - Only Christian Realms
+# - Only Muslim Realms
 character_event = {
 	id = emf_nwo.3
 	desc = OK #FIXME
 	is_triggered_only = yes
 
 	option = {
-		name = YES
+		name = OK # The Whole World
 		
 		hidden_tooltip = {
-			log = "emf_nwo: Excluding merchant republics... (emf_nwo_spare_mr)"
-			set_global_flag = emf_nwo_spare_mr
 			FROM = { character_event = { id = emf_nwo.4 } }
 		}
 	}
-	
 	option = {
-		name = NO
+		name = OK # Only Catholic Realms
 		
 		hidden_tooltip = {
+			log = "emf_nwo: Excluding non-Catholic... (emf_nwo_only_catholic)"
+			set_global_flag = emf_nwo_only_catholic
 			FROM = { character_event = { id = emf_nwo.4 } }
+		}
+	}
+	option = {
+		name = OK # Only Christian Realms
+		
+		hidden_tooltip = {
+			log = "emf_nwo: Excluding non-Christian... (emf_nwo_only_christian)"
+			set_global_flag = emf_nwo_only_christian
+			FROM = { character_event = { id = emf_nwo.4 } }
+		}
+	}
+	option = {
+		name = OK # Only Muslim Realms
+		
+		hidden_tooltip = {
+			log = "emf_nwo: Excluding non-Christian... (emf_nwo_only_muslim)"
+			set_global_flag = emf_nwo_only_muslim
+			FROM = { character_event = { id = emf_nwo.6 } } # Skip asking about the Pope
 		}
 	}
 }
@@ -138,7 +159,7 @@ character_event = {
 		hidden_tooltip = {
 			log = "emf_nwo: Excluding Papacy... (emf_nwo_spare_pope)"
 			set_global_flag = emf_nwo_spare_pope
-			FROM = { character_event = { id = emf_nwo.20 } }
+			FROM = { character_event = { id = emf_nwo.6 } }
 		}
 	}
 	
@@ -148,7 +169,7 @@ character_event = {
 		hidden_tooltip = {
 			log = "emf_nwo: Excluding Pope... (emf_nwo_spare_pope_only)"
 			set_global_flag = emf_nwo_spare_pope_only
-			FROM = { character_event = { id = emf_nwo.20 } }
+			FROM = { character_event = { id = emf_nwo.6 } }
 		}
 	}
 	
@@ -156,10 +177,56 @@ character_event = {
 		name = NO #FIXME: No, free Rome from the Papacy.
 
 		hidden_tooltip = {
+			FROM = { character_event = { id = emf_nwo.6 } }
+		}
+	}
+}
+
+
+# emf_nwo.6 [Isis]
+#
+# Bounce
+character_event = {
+	id = emf_nwo.6
+	desc = AI_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	option = {
+		name = OK
+		FROM = { character_event = { id = emf_nwo.7 } }
+	}
+}
+
+
+
+# emf_nwo.7 [Player]
+#
+# Would you like to leave merchant republics alone?
+character_event = {
+	id = emf_nwo.3
+	desc = OK #FIXME
+	is_triggered_only = yes
+
+	option = {
+		name = YES
+		
+		hidden_tooltip = {
+			log = "emf_nwo: Excluding merchant republics... (emf_nwo_spare_mr)"
+			set_global_flag = emf_nwo_spare_mr
+			FROM = { character_event = { id = emf_nwo.20 } }
+		}
+	}
+	
+	option = {
+		name = NO
+		
+		hidden_tooltip = {
 			FROM = { character_event = { id = emf_nwo.20 } }
 		}
 	}
 }
+
 
 
 # 'Would you like to intelligently randomize the religions of the newly formed realms?'
@@ -203,6 +270,11 @@ character_event = {
 			any_claim = {
 				remove_claim = PREV
 			}
+			any_courtier = {
+				any_claim = {
+					remove_claim = PREV
+				}
+			}
 		}
 		
 		# Destroy all the titles that bind. Note that this step, by far, is the most time-consuming of
@@ -213,7 +285,19 @@ character_event = {
 				higher_tier_than = count
 				is_landed = yes
 				or = {
-					not = { primary_title = { title = k_papal_state } }
+					religion = catholic
+					not = { has_global_flag = emf_nwo_only_catholic }
+				}
+				or = {
+					religion_group = christian
+					not = { has_global_flag = emf_nwo_only_christian }
+				}
+				or = {
+					religion_group = muslim
+					not = { has_global_flag = emf_nwo_only_muslim }
+				}
+				or = {
+					not = { has_landed_title = k_papal_state }
 					not = { has_global_flag = emf_nwo_spare_pope }
 				}
 				or = {
@@ -247,8 +331,8 @@ character_event = {
 					or = {
 						owner = {
 							not = {
-								primary_title = { title = k_papal_state }
-								any_liege = { primary_title = { title = k_papal_state } }
+								has_landed_title = k_papal_state
+								any_liege = { has_landed_title = k_papal_state }
 							}
 						}
 						not = { has_global_flag = emf_nwo_spare_pope }
@@ -275,8 +359,8 @@ character_event = {
 					or = {
 						owner = {
 							not = {
-								primary_title = { title = k_papal_state }
-								any_liege = { primary_title = { title = k_papal_state } }
+								has_landed_title = k_papal_state
+								any_liege = { has_landed_title = k_papal_state }
 							}
 						}
 						not = { has_global_flag = emf_nwo_spare_pope }
@@ -332,6 +416,18 @@ character_event = {
 				is_landed = yes
 				primary_title = { is_landless_type_title = yes }
 				or = {
+					top_liege = { religion = catholic }
+					not = { has_global_flag = emf_nwo_only_catholic }
+				}
+				or = {
+					top_liege = { religion_group = christian }
+					not = { has_global_flag = emf_nwo_only_christian }
+				}
+				or = {
+					top_liege = { religion_group = muslim }
+					not = { has_global_flag = emf_nwo_only_muslim }
+				}
+				or = {
 					not = { primary_title = { title = k_papal_state } }
 					not = {
 						has_global_flag = emf_nwo_spare_pope
@@ -366,6 +462,18 @@ character_event = {
 		any_playable_ruler = {
 			limit = {
 				independent = no
+				or = {
+					top_liege = { religion = catholic }
+					not = { has_global_flag = emf_nwo_only_catholic }
+				}
+				or = {
+					top_liege = { religion_group = christian }
+					not = { has_global_flag = emf_nwo_only_christian }
+				}
+				or = {
+					top_liege = { religion_group = muslim }
+					not = { has_global_flag = emf_nwo_only_muslim }
+				}
 				or = {
 					not = { k_papal_state = { owner = { is_vassal_or_below = PREVPREV } } }
 					not = { has_global_flag = emf_nwo_spare_pope }
@@ -414,14 +522,6 @@ character_event = {
 			# Seize any non-de-jure baronies under princelings (can be quite a noticeable problem on especially
 			# SWMH after reducing every princeling to one county).
 			character_event = { id = emf_nwo.21 }
-			
-			# Destroy claims on titles that now have no holder or are not owned by the princeling.
-			any_courtier = {
-				any_claim = {
-					limit = { not = { owner = { character = PREVPREVPREV } } }
-					remove_claim = PREV
-				}
-			}
 		}
 		
 		# FOR DUKE-TIER AND KING-TIER PRINCIPALITIES:
@@ -470,6 +570,9 @@ character_event = {
 		clr_global_flag = emf_nwo_count
 		clr_global_flag = emf_nwo_duke
 		clr_global_flag = emf_nwo_king
+		clr_global_flag = emf_nwo_only_catholic
+		clr_global_flag = emf_nwo_only_christian
+		clr_global_flag = emf_nwo_only_muslim
 		clr_global_flag = emf_nwo_spare_mr
 		clr_global_flag = emf_nwo_spare_pope
 		clr_global_flag = emf_nwo_spare_pope_only
@@ -495,12 +598,12 @@ character_event = {
 					limit = {
 						owner = {
 							not = {
-								character = ROOT # Prince
-								vassal_of = ROOT # Prince
+								character = ROOT # Princeling
+								vassal_of = ROOT # Princeling
 							}
 						}
 					}
-					grant_title_no_opinion = ROOT # Prince
+					grant_title_no_opinion = ROOT # Princeling
 				}
 			}
 		}
@@ -653,7 +756,7 @@ character_event = {
 											tier = baron
 											de_jure_liege = PREVPREVPREVPREV # County
 										}
-										grant_title_no_opinion = PREVPREV # New ruler
+										grant_title = PREVPREV # New ruler
 									}
 								}
 								
@@ -731,7 +834,7 @@ character_event = {
 									}
 									num_of_children = 1
 								}
-								grant_title_no_opinion = PREVPREV # County
+								grant_title = PREVPREV # County
 								set_defacto_liege = THIS
 							}
 						}
@@ -777,7 +880,7 @@ character_event = {
 										learning = 7
 									}
 								}
-								grant_title_no_opinion = PREVPREV # County
+								grant_title = PREVPREV # County
 								set_defacto_liege = THIS
 							}
 						}
@@ -989,7 +1092,7 @@ character_event = {
 									}
 								}
 								new_character = {
-									grant_title_no_opinion = PREVPREVPREV
+									grant_title = PREVPREVPREV
 									set_defacto_liege = THIS
 								}
 							}
