@@ -430,6 +430,11 @@ character_event = {
 			# on my machine at the time of this writing (that is, when it's done
 			# for the whole world).
 			
+			# For some reason, execution of this step seems to be a bit faster
+			# when we destroy all duke-tier titles before all king-tier before
+			# all empire-tier for any given realm, so there's a bit of code
+			# duplication here toward that end.
+			
 			any_title_under = {
 				limit = {
 					tier = duke
@@ -470,7 +475,7 @@ character_event = {
 				}
 				destroy_landed_title = THIS
 			}
-			any_title_under = {
+			any_title_under = { # Same as above, but for tier = king
 				limit = {
 					tier = king
 					or = {
@@ -831,7 +836,7 @@ character_event = {
 		if = {
 			limit = { tier = king }
 			
-			# Grant them their capital duchy (because that makes players feel OCD-cozy)
+			# Grant the prince his capital duchy
 			capital_scope = {
 				duchy = {
 					if = {
@@ -841,37 +846,58 @@ character_event = {
 				}
 			}
 			
-			# In order to surmount vassal limit issues (being too far over vassal limit
-			# to earn any taxes and thus create duchy titles so as to be under the limit),
-			# we grant 1/3 the duchies in the kingdom to the prince for distribution.
+			# In order to surmount vassal limit issues for large kingdoms (and be more neat),
+			# we auto-assign all the unheld de jure duchies of our kingdom to those rulers who
+			# hold the nominal capital of the duchy. [We could've just given them to the prince
+			# to distribute, but that would result in an overly friendly situation-- and not be
+			# automatic. Downside: vassal dukes will tend to be the same for a given start date
+			# and de jure kingdom-- /tend/, that is, because they may not be a historical
+			# character. ]
 			
-			# First, count the number of duchies in the kingdom...
+			any_vassal = {
+				limit = {
+					tier = count
+					capital_scope = {
+						duchy = {
+							has_holder = no # Not held by some unaffected/protected character class or prince
+							capital_scope = { # Nominal capital province of duchy title
+								province = PREVPREV # Character capital
+							}
+						}
+					}
+				}
+				
+				# Hand it over (from outer space, so they'll go independent).
+				capital_scope = {
+					duchy = {
+						grant_title = PREVPREV
+					}
+				}
+				
+				set_defacto_liege = ROOT # Need to remind them we're still their liege
+
+				# Transfer de jure vassals to the new duke
+				primary_title = {
+					any_de_jure_vassal = {
+						limit = {
+							tier = count
+							vassal_of = ROOT
+						}
+						set_defacto_liege = PREVPREV
+					}
+				}
+			}
+			
+			# Due to an SWMH issue (lack of defined and valid de jure capitals for many duchies), we
+			# need to sweep over any de jure duchy titles not assigned above and give them to the prince
+			# for immediate distribution.
 			
 			primary_title = {
 				any_direct_de_jure_vassal_title = {
 					limit = { has_holder = no }
-					ROOT = { change_variable = { which = num_duke value = 1 } }
-				}
-			}
-			
-			# Divide it by 2
-			divide_variable = { which = num_duke value = 3 }
-			
-			# Grant 1/3 the duchies (round down)...
-			
-			primary_title = {
-				any_direct_de_jure_vassal_title = {
-					limit = {
-						has_holder = no
-						ROOT = { check_variable = { which = num_duke value = 0.1 } }
-					}
 					grant_title = ROOT
-					ROOT = { change_variable = { which = num_duke value = -1 } }
 				}
 			}
-			
-			# Clear the variable
-			set_variable = { which = num_duke value = 0 }
 		}
 	}
 }
@@ -913,7 +939,7 @@ character_event = {
 			limit = {
 				or = {
 					not = { tier = count } # Allow county claims to remain
-					not = { has_global_flag = emf_nwo } # But not on the first run of the customization decision
+					not = { has_global_flag = emf_nwo } # But not on the first run of the customization decision (imprecise but OK)
 				}
 			}
 			remove_claim = PREV
@@ -924,14 +950,43 @@ character_event = {
 			}
 		}
 		
-		# Relocate capital to demesne province with highest number of settlements, but only move if it's actually
-		# an improvement (we want predictable capitals for original characters if we can't improve their lot).
+		# Move our capital around for fun and profit (exclude players) ...
 		
 		if = {
-			limit = { ai = no }
-			break = yes # Don't move player capitals. Players are choosey and can choose.
+			limit = { ai = yes }
+			
+			# First, potentially relocate based upon province settlement count.
+			character_event = { id = emf_nwo.24 }
+			
+			# Second, if we hold the nominal capital province of the duchy within
+			# which our capital is currently located, switch to there (even if it's
+			# a downgrade in settlement count).
+			capital_scope = {
+				duchy = {
+					capital_scope = { # Nominal capital, if defined
+						if = {
+							limit = { ROOT = { owns = PREV } }
+							ROOT = { capital = PREV }
+						}
+					}
+				}
+			}
 		}
-		
+	}
+}
+
+
+# emf_nwo.24 [Princeling]
+#
+# Relocate capital to demesne province with highest number of settlements, but only move if it's actually
+# an improvement.
+character_event = {
+	id = emf_nwo.24
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
 		random_demesne_title = {
 			limit = {
 				tier = count
