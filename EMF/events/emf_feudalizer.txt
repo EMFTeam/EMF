@@ -1,0 +1,419 @@
+
+namespace = emf_feudalizer
+
+
+character_event = {
+	id = emf_feudalizer.0
+	desc = AI_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+
+	option = {
+		name = OK
+		set_global_flag = emf_feudalizer
+		FROM = { narrative_event = { id = emf_feudalizer.1 } }
+	}
+}
+
+
+narrative_event = {
+	id = emf_feudalizer.1
+	title = emf_feudalizer.1.title
+	desc = emf_feudalizer.1.desc
+	picture = GFX_evt_castle_construction
+	is_triggered_only = yes
+	
+	hide_from = yes
+	
+	option = {
+		name = OK
+		hidden_tooltip = {
+			FROM = { character_event = { id = emf_feudalizer.10 } }
+		}
+	}
+	
+	option = {
+		name = CANCEL
+		clr_global_flag = emf_feudalizer
+	}
+}
+
+
+character_event = {
+	id = emf_feudalizer.10
+	desc = AI_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	option = {
+		name = OK
+		
+		any_playable_ruler = {
+			limit = {
+				is_tribal = yes
+				is_landed = yes
+			}
+			
+			# Convert tribal settlements, build holdings in tribal provinces [recursive]
+			character_event = { id = emf_feudalizer.11 }
+			
+			# Depending upon year, auto-build some basic bootstrap buildings in cities and temples [iterative]
+			character_event = { id = emf_feudalizer.15 }
+			
+			# Fill up levies of all newly-built holdings
+			any_demesne_title = {
+				refill_holding_levy = yes
+			}
+			
+			character_event = { id = emf_feudalizer.13 } # Grant all cities to new burghers [recursive]
+			character_event = { id = emf_feudalizer.14 } # Grant all temples to new priests [recursive]
+			
+			# Initialize normal crown laws if they hold a crown title
+			
+			set_character_flag = emf_no_law_penalties
+			
+			any_demesne_title = {
+				limit = { is_crown_law_title = yes }
+				
+				add_law = crown_levies_0
+				add_law = revokation_1
+				add_law = inheritance_0
+				
+				if = {
+					limit = { tier = king }
+					add_law = king_peace_0
+				}
+				if = {
+					limit = { tier = emperor }
+					add_law = emperor_peace_0
+				}
+				
+				if = {
+					limit = {
+						ROOT = {
+							OR = {
+								religion = catholic
+								religion = fraticelli
+							}
+						}
+					}
+					add_law = investiture_1
+				}
+			}
+			
+			clr_character_flag = emf_no_law_penalties
+		}
+	}
+}
+
+
+
+character_event = {
+	id = emf_feudalizer.11
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+
+	trigger = {
+		any_demesne_title = {
+			tier = count
+			is_tribal = yes
+		}
+	}
+	
+	option = {
+		name = OK
+		
+		random_demesne_title = {
+			limit = {
+				tier = count
+				is_tribal = yes
+			}
+			location = {
+				convert_to_castle = yes
+				random_list = {
+					50 = { # Build nothing
+						modifier = {
+							factor = 0
+							not = { num_of_settlements = 2 }
+						}
+						modifier = {
+							factor = 0.5
+							borders_major_river = yes
+						}
+						modifier = {
+							factor = 0
+							port = yes
+						}
+						modifier = {
+							factor = 2
+							terrain = desert
+						}
+					}
+					50 = { # Build up to 1 holding
+						province_event = { id = emf_feudalizer.12 }
+					}
+					50 = { # Build up to 2 holdings
+						modifier = {
+							factor = 1.5
+							is_capital = yes
+						}
+						modifier = {
+							factor = 1.5
+							borders_major_river = yes
+						}
+						modifier = {
+							factor = 1.5
+							port = yes
+						}
+						province_event = { id = emf_feudalizer.12 }
+						province_event = { id = emf_feudalizer.12 }
+					}
+					25 = { # Build up to 3 holdings
+						modifier = {
+							factor = 2
+							is_capital = yes
+						}
+						modifier = {
+							factor = 2
+							borders_major_river = yes
+						}
+						modifier = {
+							factor = 6
+							port = yes
+						}
+						province_event = { id = emf_feudalizer.12 }
+						province_event = { id = emf_feudalizer.12 }
+						province_event = { id = emf_feudalizer.12 }
+					}
+				}
+			}
+		}
+		
+		character_event = { id = emf_feudalizer.11 }
+	}
+}
+
+
+province_event = {
+	id = emf_feudalizer.12
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+
+	trigger = {
+		has_empty_holding = yes
+	}
+	
+	option = {
+		name = OK
+		
+		if = { # Obey the one-of-each-type rule
+			limit = { not = { num_of_settlements = 3 } }
+			if = {
+				limit = {
+					county = {
+						FROM = {
+							or = {
+								any_vassal = {
+									capital_holding = {
+										de_jure_liege = PREVPREVPREV
+										holding_type = temple
+									}
+								}
+								any_demesne_title = {
+									de_jure_liege = PREVPREV
+									holding_type = temple
+								}
+							}
+						}
+					}
+				}
+				build_holding = {
+					type = city
+					holder = FROM
+				}
+				break = yes
+			}
+			build_holding = {
+				type = temple
+				holder = FROM
+			}
+			break = yes
+		}
+		
+		random_list = {
+			100 = {
+				modifier = {
+					factor = 2
+					borders_major_river = yes
+				}
+				build_holding = {
+					type = castle
+					holder = FROM
+				}
+			}
+			50 = {
+				modifier = {
+					factor = 8
+					port = yes
+				}
+				build_holding = {
+					type = city
+					holder = FROM
+				}
+			}
+			25 = {
+				modifier = {
+					factor = 0.25
+					terrain = desert
+				}
+				modifier = {
+					factor = 0.5
+					port = yes
+				}
+				build_holding = {
+					type = temple
+					holder = FROM
+				}
+			}
+		}
+	}
+}
+
+character_event = {
+	id = emf_feudalizer.13
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+
+	trigger = {
+		any_demesne_title = {
+			tier = baron
+			holding_type = city
+		}
+	}
+	
+	option = {
+		name = OK
+		
+		random_demesne_title = {
+			limit = {
+				tier = baron
+				holding_type = city
+			}
+			ROOT = {
+				create_random_steward = {
+					random_traits = yes
+					dynasty = none
+					female = no
+				}
+				new_character = {
+					wealth = 300
+					grant_title_no_opinion = PREVPREV # The barony
+					set_defacto_liege = ROOT
+				}
+			}
+		}
+		
+		character_event = { id = emf_feudalizer.13 }
+	}
+}
+
+
+character_event = {
+	id = emf_feudalizer.14
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+
+	trigger = {
+		not = { religion_group = muslim }
+		any_demesne_title = {
+			tier = baron
+			holding_type = temple
+		}
+	}
+	
+	option = {
+		name = OK
+		
+		random_demesne_title = {
+			limit = {
+				tier = baron
+				holding_type = temple
+			}
+			ROOT = {
+				create_random_priest = {
+					random_traits = yes
+					dynasty = none
+					female = no
+				}
+				new_character = {
+					wealth = 300
+					grant_title_no_opinion = PREVPREV # The barony
+					set_defacto_liege = ROOT
+				}
+			}
+		}
+		
+		character_event = { id = emf_feudalizer.14 }
+	}
+}
+
+
+character_event = {
+	id = emf_feudalizer.15
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	option = {
+		name = OK
+		
+		any_demesne_title = {
+			limit = {
+				tier = baron
+				holding_type = city
+				year = 867
+			}
+			add_building = ct_marketplace_1
+			add_building = ct_shipyard_1
+			add_building = ct_wall_1
+			add_building = ct_wall_q_1
+		}
+		any_demesne_title = {
+			limit = {
+				tier = baron
+				holding_type = city
+				year = 1066
+			}
+			add_building = ct_marketplace_2
+			add_building = ct_marketplace_3
+			add_building = ct_wall_2
+			add_building = ct_wall_q_2
+		}
+		
+		any_demesne_title = {
+			limit = {
+				tier = baron
+				holding_type = temple
+				year = 867
+			}
+			add_building = tp_town_1
+			add_building = tp_town_2
+			add_building = tp_wall_1
+			add_building = tp_wall_q_1
+		}
+		any_demesne_title = {
+			limit = {
+				tier = baron
+				holding_type = temple
+				year = 1066
+			}
+			add_building = tp_town_3
+			add_building = tp_wall_2
+			add_building = tp_wall_q_2
+		}
+	}
+}
