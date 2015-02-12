@@ -28,7 +28,23 @@ character_event = {
 			}
 		}
 		
-		character_event = { id = emf_succ_war.2 }
+		character_event = { id = emf_succ_war.3 }
+		
+		# Cleanup
+		
+		if = {
+			limit = { has_character_flag = ai_rsz_calc }
+			any_vassal = {
+				limit = {
+					limit = {
+						ai = yes
+						higher_tier_than = baron
+						is_landed = yes
+					}
+					set_variable = { which = rsz value = 0 }
+				}
+			}
+		}
 	}
 }
 
@@ -44,24 +60,21 @@ character_event = {
 	trigger = {
 		# Are we a valid PWK (Potential Wannabe King)?
 		is_adult = yes
+		ai = yes
+		is_theocracy = no
+		is_republic = no
 		not = {
-			FROM = { is_father = ROOT }
-			FROM = { is_mother = ROOT }
+			# Not a parent of the current ruler or a child of the current ruler
+			FROM = { father = { character = ROOT } }
+			FROM = { mother = { character = ROOT } }
 			is_child_of = FROM
 			is_friend = FROM
+			trait = monk
+			trait = nun
 			trait = blinded
 			trait = eunuch
 			trait = incapable
-			opinion = { who = FROM value = 80 }
-		}
-		is_theocracy = no
-		is_republic = no
-		or = {
-			is_female = no
-			and = {
-				not = { any_spouse = { character = FROM } }
-				not = { age = 40 } # No old women
-			}
+			opinion = { who = FROM value = 75 }
 		}
 		or = {
 			is_female = no
@@ -72,6 +85,8 @@ character_event = {
 						not = { has_law = agnatic_succession }
 					}
 				}
+				not = { any_spouse = { character = FROM } }
+				not = { age = 40 } # No old women
 			}
 		}
 		event_target:target_title = {
@@ -103,7 +118,7 @@ character_event = {
 	option = {
 		name = YES
 		ai_chance = {
-			factor = 10
+			factor = 20
 			
 			modifier = {
 				factor = 4
@@ -111,10 +126,14 @@ character_event = {
 			}
 			modifier = {
 				factor = 2
+				is_landed = yes
+			}
+			modifier = {
+				factor = 2
 				trait = ambitious
 			}
 			modifier = {
-				factor = 1.5
+				factor = 1.75
 				trait = envious
 			}
 			modifier = {
@@ -200,21 +219,95 @@ character_event = {
 		}
 		
 		reverse_opinion = { who = FROM modifier = opinion_emf_succ_war_pwk }
+		
+		log = "Chose to poll for support..."
+		
+		FROM = { character_event = { id = emf_succ_war.4 } } # Calc realm size for all AI vassals
+	
+		if = {
+			limit = {
+				vassal_of = FROM
+				higher_tier_than = baron
+				is_landed = yes
+				prisoner = no
+			}
+			# We automatically count ourselves as part of the prospective succ_claimant faction
+			# if we qualify to be in the faction.
+			
+			set_variable = { which = ai_rsz_support which = rsz }
+			
+			log = "Counted self in ai_rsz_support: [This.ai_rsz_support.GetValue]"
+		}
+		
+		FROM = {
+			any_vassal = {
+				limit = {
+					not = { character = ROOT }
+					ai = yes
+					higher_tier_than = baron
+					is_landed = yes
+					prisoner = no
+				}
+				character_event = { id = emf_succ_war.2 }
+			}
+		}
+		
+		log = "ai_rsz_support: [This.ai_rsz_support.GetValue]"
+		
+		set_variable = { which = ai_rsz which = FROM }
+		divide_variable = { which = ai_rsz_support which = ai_rsz }
+		
+		log = "Ratio to total AI realm size: [This.ai_rsz.GetValue]"
+		
+		# Cleanup
+		set_variable = { which = ai_rsz_support value = 0 }
+		set_variable = { which = ai_rsz value = 0 }
 	}
 	
 	option = {
 		name = NO
+		trigger = { always = no }
 		ai_chance = {
 			factor = 100
 		}
 	}
 }
 
-# emf_succ_war.2 [Ruler]
+
+# emf_succ_war.2 [Playable, Direct Vassal of Ruler]
+#
+character_event = {
+	id = emf_succ_war.2
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+
+	option = {
+		name = YES
+		ai_chance = {
+			factor = 100
+		}
+		change_variable = { which = ai_rsz_support which = rsz }
+		FROM = {
+			change_variable = { which = ai_rsz_support which = ROOT }
+		}
+		set_variable = { which = ai_rsz_support value = 0 }
+	}
+	
+	option = {
+		name = NO
+		ai_chance = {
+			factor = 10
+		}
+	}
+}
+
+
+# emf_succ_war.3 [Ruler]
 #
 # 
 character_event = {
-	id = emf_succ_war.2
+	id = emf_succ_war.3
 	desc = HIDE_EVENT
 	hide_window = yes
 	is_triggered_only = yes
@@ -226,6 +319,7 @@ character_event = {
 	}
 	
 	option = {
+		name = OK
 		random_opinion_modifier_target = {
 			limit = {
 				reverse_has_opinion_modifier = { who = ROOT modifier = opinion_emf_succ_war_pwk }
@@ -233,6 +327,40 @@ character_event = {
 			log = "PWK: '[This.GetFullName]' from realm '[This.Realm.GetFullName]'"
 			reverse_remove_opinion = { who = ROOT modifier = opinion_emf_succ_war_pwk }
 		}
-		character_event = { id = emf_succ_war.2 }
+		character_event = { id = emf_succ_war.3 }
+	}
+}
+
+# emf_succ_war.4 [Ruler]
+#
+# 
+character_event = {
+	id = emf_succ_war.4
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		not = { has_character_flag = ai_rsz_calc }
+	}
+	
+	option = {
+		name = OK
+
+		set_character_flag = ai_rsz_calc
+		
+		log = "Calculating total AI realm size under ruler..."
+		
+		any_vassal = {
+			limit = {
+				ai = yes
+				higher_tier_than = baron
+				is_landed = yes
+			}
+			
+			character_event = { id = emf_succ_war.1000 } # Calc variable 'rsz'
+		}
+		
+		log = "Total AI realm size: [Root.ai_rsz.GetValue]"
 	}
 }

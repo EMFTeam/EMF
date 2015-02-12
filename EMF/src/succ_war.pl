@@ -107,6 +107,7 @@ namespace = emf_succ_war
 # emf_succ_war.1000
 #
 # Store the realm size class index (1-based) into the variable "rsz"
+# If rsz is already set (>0), event won't update the variable.
 character_event = {
 	id = emf_succ_war.1000
 	desc = HIDE_EVENT
@@ -141,6 +142,7 @@ sub print_search_tree {
 		
 		my $rsz = $min + 1;
 		print "\t" x $tab, "set_variable = { which = rsz value = $rsz }\n";
+		print "\t" x $tab, "FROM = { change_variable = { which = ai_rsz value = $rsz } }\n";
 		print "\t" x $tab, "break = yes\n";
 		
 		return;
