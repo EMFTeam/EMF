@@ -886,7 +886,7 @@ NMilitary = {
 	
 	TERRAIN_SPEC_BONUS = 0.2,						-- Bonus to fighting in this terrain if you have that terrain as your
 													-- terrain specialization ( gained through combat events in that terrrain )
-	MAX_LEADERSHIP_TRAITS = 3,
+	MAX_LEADERSHIP_TRAITS = 2,
 	
 	LIEGE_LEVY_REINF_RATE = 0.025,
 	LIEGE_LEVY_SIZE_MULTIPLIER = 0.5,				-- The Size of the liege levy will be the total troops in the vassal subrealm * this
