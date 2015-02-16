@@ -1,0 +1,200 @@
+
+faction_succ_war_claimant = {
+	type = liege_titles_w_claimant # 'new_character' is a Claimant, or, if the title is Elective, anyone eligible for election
+	exclusive = yes # Can only lead or be in one faction of this type
+	
+	warning_level = 0.7 # At this level of faction power we give player an alert. Set to 0 for no alerts.
+	
+	# Plotter scope
+	potential = {
+		prisoner = no
+		is_ruler = yes
+		independent = no
+		is_landed = yes
+		is_adult = yes
+		not = { trait = incapable }
+		liege = {
+			ai = no # Currently only for player lieges
+			or = {
+				is_feudal = yes
+				is_tribal = yes
+			}
+			not = {
+				any_demesne_title = {
+					temporary = yes
+				}
+			}
+		}
+		primary_title = { higher_tier_than = BARON }
+		
+		or = {
+			# Is not affected by a Crown Law title
+			not = {
+				crownlaw_title = {
+					always = yes
+				}
+			}
+			
+			# The Crown Law title holder is my liege
+			crownlaw_title = {
+				holder_scope = {
+					ROOT = {
+						liege = {
+							character = PREVPREV
+						}
+					}
+				}
+			}
+			
+			# The Crown Law title allows vassal infighting
+			crownlaw_title = {
+				not = {
+					has_law = king_peace_1
+					has_law = king_peace_2
+					has_law = emperor_peace_1
+					has_law = emperor_peace_2
+				}
+			}
+		}
+		
+		has_any_opinion_modifier = opinion_emf_succ_war_supported
+	}
+	
+	# Target scope
+	allow = {
+		is_primary_holder_title = yes
+		not = { has_law = succ_feudal_elective }
+		
+		new_character = {
+			not = { has_landed_title = PREV }
+			not = { is_vassal_or_below = FROM }
+			
+			or = {
+				same_realm = FROM
+				FROM = {
+					liege = { independent = yes }
+				}
+			}
+			ROOT = {
+				holder_scope = {
+					not = {
+						defending_against_claimant = {
+							character = PREVPREV
+							title = ROOT
+						}
+					}
+				}
+			}
+			reverse_has_opinion_modifier = { who = FROM modifier = opinion_emf_succ_war_supported }
+		}
+		
+		not = {
+			holder_scope = {
+				reverse_has_opinion_modifier = {
+					who = FROM
+					modifier = opinion_coerced_into_leaving_faction
+				}
+			}
+		}
+	}
+	
+	# Faction member scope (ROOT = joiner, FROM = target)
+	allow_join = {
+		ROOT = {
+			is_ruler = yes
+			independent = no
+			is_landed = yes
+			is_adult = yes
+			NOT = { trait = incapable }
+			prisoner = no
+		}
+	}	
+	
+	# AI creation weight
+	chance = {
+		factor = 100
+		
+		modifier = {
+			factor = 0
+			new_character = {
+				FROM = {
+					not = {
+						has_opinion_modifier = { who = PREV modifier = opinion_emf_succ_war_supported }
+					}
+				}
+			}
+		}
+		
+		modifier = {
+			factor = 0
+			FROM = {
+				or = {
+					prisoner = yes
+					trait = incapable
+					is_adult = no
+					is_landed = no
+					preparing_invasion = yes
+				}
+			}
+		}
+	}
+	
+	# AI membership weight: ROOT is the prospective member. FROM is the faction leader. FROMFROM is the target title or character.
+	membership = {
+		factor = 100
+
+		modifier = {
+			factor = 0
+			or = {
+				prisoner = yes
+				trait = incapable
+				is_adult = no
+				is_landed = no
+				preparing_invasion = yes
+			}
+		}
+
+		modifier = {
+			factor = 0
+			FROMFROM = {
+				new_character = {
+					ROOT = {
+						not = {
+							has_opinion_modifier = { who = PREV modifier = opinion_emf_succ_war_supported }
+						}
+					}
+				}
+			}
+		}
+		
+		modifier = {
+			factor = 0
+			has_opinion_modifier = {
+				who = LIEGE
+				modifier = opinion_coerced_into_leaving_faction
+			}
+		}
+		
+		modifier = { # Currently never applies
+			factor = 1000
+			has_opinion_modifier = {
+				who = FROM
+				modifier = opinion_coerced_into_joining_faction
+			}
+		}
+	}
+	
+	success = {
+		always = no
+	}
+	
+	abort = {
+		always = no		# Factions will abort if the Potential or Allow triggers are no longer valid
+	}
+	
+	abort_effect = {
+	}
+	
+	effect = {
+	}
+}
