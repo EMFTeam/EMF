@@ -28,12 +28,18 @@ character_event = {
 			}
 		}
 		
+		# Recurse through claimants that are Potential Wannabe Kings...
 		character_event = { id = emf_succ_war.3 }
 		
 		# Cleanup
 		
+		clr_character_flag = emf_succ_war
+		
 		if = {
 			limit = { has_character_flag = ai_rsz_calc }
+			
+			clr_character_flag = ai_rsz_calc
+			
 			any_vassal = {
 				limit = {
 					limit = {
@@ -44,6 +50,8 @@ character_event = {
 					set_variable = { which = rsz value = 0 }
 				}
 			}
+			
+			set_variable = { which = ai_rsz value = 0 }
 		}
 	}
 }
@@ -60,32 +68,35 @@ character_event = {
 	trigger = {
 		# Are we a valid PWK (Potential Wannabe King)?
 		is_adult = yes
-		ai = yes
+		prisoner = no
 		is_theocracy = no
 		is_republic = no
+		ai = yes # For now.
 		not = {
-			# Not a parent of the current ruler or a child of the current ruler
+			# Not a parent of the current ruler or a child of the current ruler or a friend
 			FROM = { father = { character = ROOT } }
 			FROM = { mother = { character = ROOT } }
 			is_child_of = FROM
 			is_friend = FROM
+			# None of these obviously-disqualifying traits
 			trait = monk
 			trait = nun
 			trait = blinded
 			trait = eunuch
 			trait = incapable
+			# Never if they like the current ruler a lot
 			opinion = { who = FROM value = 75 }
 		}
 		or = {
 			is_female = no
 			and = {
-				not = { religion_group = muslim }
+				not = { religion_group = muslim } # No muslim female claimants
 				event_target:target_title = {
 					succ_law_title = {
 						not = { has_law = agnatic_succession }
 					}
 				}
-				not = { any_spouse = { character = FROM } }
+				not = { any_spouse = { character = FROM } } # Keep the marital troubles behind closed doors
 				not = { age = 40 } # No old women
 			}
 		}
@@ -104,7 +115,7 @@ character_event = {
 				is_female = no
 				FROM = { is_female = yes }
 			}
-			and = {
+			and = { # For succession claims, we allow these extra weak claimants to be considered...
 				is_landed = yes
 				is_close_relative = FROM
 			}
@@ -113,200 +124,10 @@ character_event = {
 	
 	immediate = {
 		log = "PWK: '[Root.GetFullName]' from realm '[Root.Realm.GetFullName]'"
-	}
-	
-	option = {
-		name = YES
-		trigger = {
-			not = {
-				FROM = {
-					any_vassal = {
-						has_any_opinion_modifier = opinion_emf_succ_war_supported
-					}
-				}
-			}
-		}
-		ai_chance = {
-			factor = 20
-			
-			modifier = {
-				factor = 4
-				is_foe = FROM
-			}
-			modifier = {
-				factor = 2
-				is_landed = yes
-			}
-			modifier = {
-				factor = 2
-				trait = ambitious
-			}
-			modifier = {
-				factor = 1.75
-				trait = envious
-			}
-			modifier = {
-				factor = 1.5
-				trait = arbitrary
-			}
-			modifier = {
-				factor = 1.5
-				trait = deceitful
-			}
-			modifier = {
-				factor = 1.25
-				trait = proud
-			}
-			modifier = {
-				factor = 1.25
-				trait = greedy
-			}
-			modifier = {
-				factor = 1.25
-				trait = wroth
-			}
-			modifier = {
-				factor = 1.25
-				trait = brave
-			}
-			modifier = {
-				factor = 0.75
-				trait = craven
-			}
-			modifier = {
-				factor = 0.75
-				trait = honest
-			}
-			modifier = {
-				factor = 0.5
-				trait = humble
-			}
-			modifier = {
-				factor = 0.1
-				trait = just
-			}
-			modifier = {
-				factor = 0.1
-				trait = content
-			}
-			modifier = {
-				factor = 0.8
-				opinion = { who = FROM value = 0 }
-			}
-			modifier = {
-				factor = 0.8
-				opinion = { who = FROM value = 20 }
-			}
-			modifier = {
-				factor = 0.8
-				opinion = { who = FROM value = 40 }
-			}
-			modifier = {
-				factor = 0.8
-				opinion = { who = FROM value = 60 }
-			}
-			modifier = {
-				factor = 1.333
-				not = { opinion = { who = FROM value = 0 } }
-			}
-			modifier = {
-				factor = 1.333
-				not = { opinion = { who = FROM value = -20 } }
-			}
-			modifier = {
-				factor = 1.333
-				not = { opinion = { who = FROM value = -40 } }
-			}
-			modifier = {
-				factor = 1.333
-				not = { opinion = { who = FROM value = -60 } }
-			}
-			modifier = {
-				factor = 1.333
-				not = { opinion = { who = FROM value = -80 } }
-			}
-		}
-		
 		reverse_opinion = { who = FROM modifier = opinion_emf_succ_war_pwk }
-		
-		log = "Chose to poll for support..."
-		
-		FROM = { character_event = { id = emf_succ_war.4 } } # Calc realm size for all AI vassals
-	
-		if = {
-			limit = {
-				vassal_of = FROM
-				higher_tier_than = baron
-				is_landed = yes
-				prisoner = no
-			}
-			# We automatically count ourselves as part of the prospective succ_claimant faction
-			# if we qualify to be in the faction.
-			
-			set_variable = { which = ai_rsz_support which = rsz }
-			
-			log = "Counted self in ai_rsz_support: [Root.ai_rsz_support.GetValue]"
-		}
-		
-		FROM = {
-			any_vassal = {
-				limit = {
-					not = { character = ROOT }
-					ai = yes
-					higher_tier_than = baron
-					is_landed = yes
-					prisoner = no
-				}
-				character_event = { id = emf_succ_war.2 }
-			}
-		}
-		
-		log = "ai_rsz_support: [Root.ai_rsz_support.GetValue]"
-		
-		set_variable = { which = ai_rsz which = FROM }
-		divide_variable = { which = ai_rsz_support which = ai_rsz }
-		
-		log = "Ratio to total AI realm size: [Root.ai_rsz_support.GetValue]"
-		
-		if = {
-			limit = {
-				not = { check_variable = { which = ai_rsz_support value = 0.5 } }
-			}
-			
-			# Cancel the war
-			
-			log = "Insufficient support for a succession claim... Canceling..."
-			
-			FROM = {
-				any_vassal = {
-					remove_opinion = { who = ROOT modifier = opinion_emf_succ_war_supported }
-				}
-			}
-		}
-		if = {
-			limit = {
-				check_variable = { which = ai_rsz_support value = 0.5 }
-			}
-			
-			# WAR! Well, first, we've cleared the way for a jumped-up faction...
-			
-			log = "[Root.GetTitledName] has a succession claim worthy of war..."
-		}
-		
-		# Cleanup
-		set_variable = { which = ai_rsz_support value = 0 }
-		set_variable = { which = ai_rsz value = 0 }
 	}
 	
-	option = {
-		name = NO
-		ai_chance = {
-			factor = 100
-			modifier = {
-				factor = 0
-			}
-		}
-	}
+	option = { name = OK }
 }
 
 
@@ -444,11 +265,11 @@ character_event = {
 				liege = { dynasty = ROOT }
 			}
 			modifier = {
-				factor = 2
+				factor = 3
 				not = { religion = FROM }
 			}
 			modifier = {
-				factor = 1.5
+				factor = 2
 				not = { culture_group = FROM }
 			}
 			modifier = {
@@ -481,8 +302,18 @@ character_event = {
 			limit = {
 				reverse_has_opinion_modifier = { who = ROOT modifier = opinion_emf_succ_war_pwk }
 			}
-			log = "PWK: '[This.GetFullName]' from realm '[This.Realm.GetFullName]'"
+			
+			if = {
+				limit = { is_ruler = yes }
+				log = "PWK: '[This.GetFullName]' / title: '[This.PrimaryTitle.GetFullName]' (realm: '[This.Realm.GetFullName]')"
+			}
+			if = {
+				limit = { is_ruler = no }
+				log = "PWK: '[This.GetFullName]' / (realm: '[This.Realm.GetFullName]')"
+			}
+			
 			reverse_remove_opinion = { who = ROOT modifier = opinion_emf_succ_war_pwk }
+			character_event = { id = emf_succ_war.5 } # Do they want to be king?
 		}
 		character_event = { id = emf_succ_war.3 }
 	}
@@ -519,5 +350,210 @@ character_event = {
 		}
 		
 		log = "Total AI realm size: [Root.ai_rsz.GetValue]"
+	}
+}
+
+# emf_succ_war.5 [Claimant]
+#
+# Do I want to be king?
+# If so, do I have enough support?
+character_event = {
+	id = emf_succ_war.5
+	desc = AI_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+
+	trigger = {
+		FROM = { not = { has_character_flag = emf_succ_war } }
+	}
+	
+	option = {
+		name = YES
+		ai_chance = {
+			factor = 20
+			
+			modifier = {
+				factor = 4
+				is_foe = FROM
+			}
+			modifier = {
+				factor = 2
+				has_strong_claim = event_target:target_title
+			}
+			modifier = {
+				factor = 2
+				is_landed = yes
+			}
+			modifier = {
+				factor = 2
+				trait = ambitious
+			}
+			modifier = {
+				factor = 1.75
+				trait = envious
+			}
+			modifier = {
+				factor = 1.5
+				trait = arbitrary
+			}
+			modifier = {
+				factor = 1.5
+				trait = deceitful
+			}
+			modifier = {
+				factor = 1.25
+				trait = proud
+			}
+			modifier = {
+				factor = 1.25
+				trait = greedy
+			}
+			modifier = {
+				factor = 1.25
+				trait = wroth
+			}
+			modifier = {
+				factor = 1.25
+				trait = brave
+			}
+			modifier = {
+				factor = 0.75
+				trait = craven
+			}
+			modifier = {
+				factor = 0.75
+				trait = honest
+			}
+			modifier = {
+				factor = 0.5
+				trait = humble
+			}
+			modifier = {
+				factor = 0.25
+				trait = just
+			}
+			modifier = {
+				factor = 0.1
+				trait = content
+			}
+			modifier = {
+				factor = 0.8
+				opinion = { who = FROM value = 0 }
+			}
+			modifier = {
+				factor = 0.8
+				opinion = { who = FROM value = 20 }
+			}
+			modifier = {
+				factor = 0.8
+				opinion = { who = FROM value = 40 }
+			}
+			modifier = {
+				factor = 0.8
+				opinion = { who = FROM value = 60 }
+			}
+			modifier = {
+				factor = 1.5
+				not = { opinion = { who = FROM value = 0 } }
+			}
+			modifier = {
+				factor = 1.5
+				not = { opinion = { who = FROM value = -20 } }
+			}
+			modifier = {
+				factor = 1.5
+				not = { opinion = { who = FROM value = -40 } }
+			}
+			modifier = {
+				factor = 1.5
+				not = { opinion = { who = FROM value = -60 } }
+			}
+			modifier = {
+				factor = 1.5
+				not = { opinion = { who = FROM value = -80 } }
+			}
+		}
+		
+		log = "Chose to poll for support..."
+		
+		FROM = { character_event = { id = emf_succ_war.4 } } # Calc realm size for all AI vassals (once)
+	
+		set_variable = { which = ai_rsz_support value = 0 }
+	
+		if = {
+			limit = {
+				vassal_of = FROM
+				higher_tier_than = baron
+				is_landed = yes
+			}
+			# We automatically count ourselves as part of the prospective succ. claimant faction
+			# if we qualify to be in the faction.
+			
+			set_variable = { which = ai_rsz_support which = rsz }
+			
+			log = "Counted self in ai_rsz_support: [Root.ai_rsz_support.GetValue]"
+		}
+		
+		FROM = {
+			any_vassal = {
+				limit = {
+					not = { character = ROOT }
+					ai = yes
+					higher_tier_than = baron
+					is_landed = yes
+					prisoner = no
+					not = { trait = incapable }
+				}
+				character_event = { id = emf_succ_war.2 }
+			}
+		}
+		
+		log = "ai_rsz_support: [Root.ai_rsz_support.GetValue]"
+		
+		set_variable = { which = ai_rsz which = FROM }
+		divide_variable = { which = ai_rsz_support which = ai_rsz }
+		
+		log = "Ratio to total AI realm size: [Root.ai_rsz_support.GetValue]"
+		
+		if = {
+			limit = {
+				not = { check_variable = { which = ai_rsz_support value = 0.4 } }
+			}
+			
+			# Cancel the war
+			
+			log = "Insufficient support for a succession claim... Canceling..."
+			
+			FROM = {
+				any_vassal = {
+					remove_opinion = { who = ROOT modifier = opinion_emf_succ_war_supported }
+				}
+			}
+		}
+		if = {
+			limit = {
+				check_variable = { which = ai_rsz_support value = 0.4 }
+			}
+			
+			# WAR! Well, first, we've cleared the way for a jumped-up faction...
+			
+			log = "[Root.GetTitledName] has a succession claim worthy of war..."
+			
+			FROM = { set_character_flag = emf_succ_war }
+		}
+		
+		# Cleanup
+		set_variable = { which = ai_rsz_support value = 0 }
+		set_variable = { which = ai_rsz value = 0 }
+	}
+	
+	option = {
+		name = NO
+		ai_chance = {
+			factor = 80
+			modifier = {
+				factor = 0
+			}
+		}
 	}
 }
