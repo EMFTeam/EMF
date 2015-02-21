@@ -15,6 +15,7 @@ character_event = {
 	trigger = {
 		primary_title = {
 			is_landless_type_title = no
+			is_vice_royalty = no
 		}
 	}
 	
@@ -33,7 +34,7 @@ character_event = {
 		
 		# Cleanup
 		
-		clr_character_flag = emf_succ_war
+		#clr_character_flag = emf_succ_war
 		
 		if = {
 			limit = { has_character_flag = ai_rsz_calc }
@@ -88,6 +89,10 @@ character_event = {
 			opinion = { who = FROM value = 75 }
 		}
 		or = {
+			same_realm = FROM
+			FROM = { independent = yes }
+		}
+		or = {
 			is_female = no
 			and = {
 				not = { religion_group = muslim } # No muslim female claimants
@@ -123,7 +128,6 @@ character_event = {
 	}
 	
 	immediate = {
-		log = "PWK: '[Root.GetFullName]' from realm '[Root.Realm.GetFullName]'"
 		reverse_opinion = { who = FROM modifier = opinion_emf_succ_war_pwk }
 	}
 	
@@ -301,17 +305,7 @@ character_event = {
 		random_opinion_modifier_target = {
 			limit = {
 				reverse_has_opinion_modifier = { who = ROOT modifier = opinion_emf_succ_war_pwk }
-			}
-			
-			if = {
-				limit = { is_ruler = yes }
-				log = "PWK: '[This.GetFullName]' / title: '[This.PrimaryTitle.GetFullName]' (realm: '[This.Realm.GetFullName]')"
-			}
-			if = {
-				limit = { is_ruler = no }
-				log = "PWK: '[This.GetFullName]' / (realm: '[This.Realm.GetFullName]')"
-			}
-			
+			}		
 			reverse_remove_opinion = { who = ROOT modifier = opinion_emf_succ_war_pwk }
 			character_event = { id = emf_succ_war.5 } # Do they want to be king?
 		}
@@ -373,12 +367,18 @@ character_event = {
 			factor = 20
 			
 			modifier = {
-				factor = 4
+				factor = 5
 				is_foe = FROM
 			}
 			modifier = {
 				factor = 2
-				has_strong_claim = event_target:target_title
+				FROM = {
+					primary_title = {
+						ROOT = {
+							has_strong_claim = PREV
+						}
+					}
+				}
 			}
 			modifier = {
 				factor = 2
@@ -433,6 +433,14 @@ character_event = {
 				trait = just
 			}
 			modifier = {
+				factor = 0.2
+				is_female = yes
+				FROM = {
+					is_female = no
+					is_adult = yes
+				}
+			}
+			modifier = {
 				factor = 0.1
 				trait = content
 			}
@@ -453,31 +461,45 @@ character_event = {
 				opinion = { who = FROM value = 60 }
 			}
 			modifier = {
-				factor = 1.5
+				factor = 1.3
 				not = { opinion = { who = FROM value = 0 } }
 			}
 			modifier = {
-				factor = 1.5
+				factor = 1.3
 				not = { opinion = { who = FROM value = -20 } }
 			}
 			modifier = {
-				factor = 1.5
+				factor = 1.3
 				not = { opinion = { who = FROM value = -40 } }
 			}
 			modifier = {
-				factor = 1.5
+				factor = 1.3
 				not = { opinion = { who = FROM value = -60 } }
 			}
 			modifier = {
-				factor = 1.5
+				factor = 1.3
 				not = { opinion = { who = FROM value = -80 } }
 			}
+		}
+		
+		if = {
+			limit = { is_ruler = yes }
+			log = "WK: '[This.GetFullName]' / title: '[This.PrimaryTitle.GetFullName]' (realm: '[This.Realm.GetFullName]')"
+		}
+		if = {
+			limit = { is_ruler = no }
+			log = "WK: '[This.GetFullName]' / (realm: '[This.Realm.GetFullName]')"
 		}
 		
 		log = "Chose to poll for support..."
 		
 		FROM = { character_event = { id = emf_succ_war.4 } } # Calc realm size for all AI vassals (once)
-	
+
+		if = {
+			limit = { FROM = { not = { check_variable = { which = ai_rsz value = 0.1 } } } }
+			break = yes # Nobody to poll
+		}
+		
 		set_variable = { which = ai_rsz_support value = 0 }
 	
 		if = {
@@ -517,7 +539,7 @@ character_event = {
 		
 		if = {
 			limit = {
-				not = { check_variable = { which = ai_rsz_support value = 0.4 } }
+				not = { check_variable = { which = ai_rsz_support value = 0.25 } }
 			}
 			
 			# Cancel the war
@@ -532,14 +554,24 @@ character_event = {
 		}
 		if = {
 			limit = {
-				check_variable = { which = ai_rsz_support value = 0.4 }
+				check_variable = { which = ai_rsz_support value = 0.25 }
 			}
 			
 			# WAR! Well, first, we've cleared the way for a jumped-up faction...
 			
 			log = "[Root.GetTitledName] has a succession claim worthy of war..."
 			
-			FROM = { set_character_flag = emf_succ_war }
+			FROM = {
+				set_character_flag = emf_succ_war
+				
+				opinion = { who = ROOT modifier = opinion_emf_succ_war_pretender }
+				
+				# Send a notification event to the liege
+				character_event = { id = emf_succ_war.10 days = 21 random = 7 }
+			}
+			
+			# Launch the war
+			character_event = { id = emf_succ_war.6 days = 100 }
 		}
 		
 		# Cleanup
@@ -551,9 +583,149 @@ character_event = {
 		name = NO
 		ai_chance = {
 			factor = 80
-			modifier = {
-				factor = 0
+		}
+	}
+}
+
+
+# emf_succ_war.6 [Pretender]
+#
+# Time to launch the war. Find the actual faction leader, and then
+# have them take care of it.
+# 
+# FROM = Pretender, FROMFROM = Ruler
+character_event = {
+	id = emf_succ_war.6
+	desc = AI_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	option = {
+		name = OK
+		
+		if = {
+			limit = {
+				FROMFROM = {
+					or = {
+						not = { has_character_flag = emf_succ_war }
+						not = { has_opinion_modifier = { who = ROOT modifier = opinion_emf_succ_war_pretender } }
+						not = {
+							any_demesne_title = {
+								title = event_target:target_title
+							}
+						}
+					}
+				}
+			}
+			# Shit's gone wacky. Call it off.
+			log = "succ_war: Succession war state lost..."
+			FROMFROM = { clr_character_flag = emf_succ_war }
+			break = yes
+		}
+
+		if = {
+			limit = {
+				vassal_of = FROMFROM
+				leads_faction = faction_succ_war_claimant
+			}
+			log = "succ_war: Pretender was faction leader..."
+			character_event = { id = emf_succ_war.7 }
+			break = yes
+		}
+		
+		FROMFROM = {
+			random_vassal = {
+				limit = {
+					leads_faction = faction_succ_war_claimant
+					has_opinion_modifier = { who = ROOT modifier = opinion_emf_succ_war_supported }
+				}
+				log = "succ_war: Faction leader was someone else..."
+				character_event = { id = emf_succ_war.7 }
+				break = yes
 			}
 		}
+		
+		# If we get here, we couldn't locate the faction leader, so something went wacky.
+		# Call it off.
+		
+		log = "succ_war: Couldn't locate faction leader... Calling it off."
+		FROMFROM = { clr_character_flag = emf_succ_war }
+	}
+}
+
+# emf_succ_war.7 [Faction Leader]
+#
+# Launch war. Normally, we'd send a letter to our liege here too, but meh for now.
+#
+# FROM = Pretender
+character_event = {
+	id = emf_succ_war.7
+	desc = AI_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	option = {
+		name = OK
+		log = "succ_war: Faction leader is '[Root.GetTitledName]'"
+	
+		opinion = {
+			modifier = opinion_fought_for_claimant
+			who = FROM
+			years = 20
+		}
+		any_faction_backer = {
+			faction = faction_succ_war_claimant
+			opinion = {
+				modifier = opinion_fought_for_claimant
+				who = FROM
+				years = 20
+			}
+		}
+
+		set_character_flag = emf_succ_war_leader
+		
+		if = {
+			limit = { FROM = { character = ROOT } }
+			log = "succ_war: Launching emf_succ_war..."
+			
+			faction_succ_war_claimant = { # The target (title) of the faction
+				reverse_war = {
+					target = ROOT
+					casus_belli = emf_succ_war
+					faction = faction_succ_war_claimant
+				}
+			}
+		}
+
+		if = {
+			limit = { not = { FROM = { character = ROOT } } }
+			log = "succ_war: Launching emf_succ_war_other..."
+			
+			faction_succ_war_claimant = { # The target (title) of the faction
+				reverse_war = {
+					target = ROOT
+					casus_belli = emf_succ_war_other
+					faction = faction_succ_war_claimant
+				}
+			}
+		}
+		
+		clr_character_flag = emf_succ_war_leader
+		liege = { clr_character_flag = emf_succ_war }
+	}
+}
+
+# emf_succ_war.10 [Ruler]
+#
+# Pick and then show some kind of intrigue flavor to the ruler informing them that
+# something is afoot on the behalf of FROM.
+character_event = {
+	id = emf_succ_war.10
+	desc = HIDE_EVENT
+#	hide_window = yes
+	is_triggered_only = yes
+	
+	option = {
+		name = CURSES
 	}
 }
