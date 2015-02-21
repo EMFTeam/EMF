@@ -36,9 +36,9 @@ NDiplomacy = {
 	DEMESNE_MAX_SIZE_TRIBAL_BONUS = 2,			-- All rulers with tribal holdings as their capital have larger demesnes
 	
 	VASSAL_BASE_LIMIT = 1.0,					-- Base Vassal Limit
-	VASSAL_LIMIT_DUKE_MULT = 10.0, 				-- Extra Vassal Limit from the ruler's rank
-	VASSAL_LIMIT_KING_MULT = 20.0, 				-- Extra Vassal Limit from the ruler's rank
-	VASSAL_LIMIT_EMPEROR_MULT = 30.0, 			-- Extra Vassal Limit from the ruler's rank
+	VASSAL_LIMIT_DUKE_MULT = 15.0, 				-- Extra Vassal Limit from the ruler's rank
+	VASSAL_LIMIT_KING_MULT = 25.0, 				-- Extra Vassal Limit from the ruler's rank
+	VASSAL_LIMIT_EMPEROR_MULT = 40.0, 			-- Extra Vassal Limit from the ruler's rank
 	VASSAL_LIMIT_GREAT_DUKE_BONUS = 5.0, 		-- Extra Vassal Limit for Dukes with more than one Duchy
 	VASSAL_LIMIT_DIPLOMACY_MULT = 0.3,			-- Extra Vasal Limit from ruler and spouse diplomacy
 	VASSAL_LIMIT_TRIBAL_BONUS = -10,			-- All rulers with tribal holdings as their capital have smaller demesnes
