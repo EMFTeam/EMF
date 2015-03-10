@@ -57,7 +57,7 @@ cultural_tactics = {
             "arpitan":          ("melee_charge_tactic", "shock_charge_tactic"),
             "romanian":         ("raid_tactic", "horseback_raid_tactic"),
             "portuguese":       ("raid_tactic", "horseback_raid_tactic"),
-            "castillian":       ("raid_tactic", "horseback_raid_tactic"),
+            "castillan":        ("raid_tactic", "horseback_raid_tactic"),
             "visigothic":       ("raid_tactic", "horseback_raid_tactic"),
             "catalan":          ("raid_tactic", "quick_attack_tactic"),
             "andalusian_arabic":("raid_tactic", "horseback_raid_tactic"),
