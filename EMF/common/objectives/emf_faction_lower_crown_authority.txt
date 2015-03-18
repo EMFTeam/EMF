@@ -21,12 +21,12 @@ faction_lower_crown_authority = {
 	# Plotter scope
 	potential = {
 		prisoner = no
-		is_ruler = yes
+		is_playable = yes
 		independent = no
 		is_landed = yes
 		is_adult = yes
 		not = { trait = incapable }
-		higher_tier_than = baron
+		primary_title = { higher_tier_than = baron }
 		
 		liege = { 
 			is_feudal = yes
@@ -49,12 +49,19 @@ faction_lower_crown_authority = {
 	# Target scope
 	allow = {
 		is_primary_holder_title = yes
-		higher_tier_than = duke
 		
-		owner = {
+		holder_scope = {
+			# Primary title might not be tier > duke, although character would be (?!)
+			# Cookie for whoever answers: is it actually possible for the triggers to differ?
+			higher_tier_than = duke
+		
 			FROM = {
 				crownlaw_title = {
-					owner = { character = PREVPREVPREV } # The plotter's effective crown law title is owned by the owner of the target title (primary title of liege)
+				
+					# The plotter's effective crown law title is owned by the holder_scope
+					# of the target title (primary title of liege)...
+					
+					holder_scope = { character = PREVPREVPREV }
 					
 					# And it actually has authority...
 					or = {
@@ -65,15 +72,16 @@ faction_lower_crown_authority = {
 					}
 				}
 			}
-		}
-		
-		not = {
-			any_war = { # Checks wars for this contested title (better would be a character-based check, but factions disband whenever you switch primary titles anyway)
-				using_cb = emf_faction_lower_crown_authority
+			
+			# No ongoing war to lower crown authority for this target...
+			not = {
+				any_war = {
+					war_title = ROOT
+					using_cb = emf_faction_lower_crown_authority
+				}
 			}
-		}
-		
-		owner = {
+			
+			# Not coerced out of factions...
 			not = {
 				reverse_has_opinion_modifier = {
 					who = FROM
@@ -86,7 +94,7 @@ faction_lower_crown_authority = {
 	# Faction member scope (ROOT = joiner, FROM = target)
 	allow_join = {
 		ROOT = {
-			is_ruler = yes
+			is_playable = yes
 			independent = no
 			is_landed = yes
 			is_adult = yes
@@ -111,9 +119,14 @@ faction_lower_crown_authority = {
 		
 		modifier = {
 			factor = 0
-			owner = {
+			holder_scope = {
 				any_spouse = { character = FROM }
 			}
+		}
+		
+		modifier = {
+			factor = 0
+			FROM = { preparing_invasion = yes }
 		}
 		
 		modifier = {
@@ -129,7 +142,7 @@ faction_lower_crown_authority = {
 		
 		modifier = {
 			factor = 0
-			owner = {
+			holder_scope = {
 				FROM = {
 					has_opinion_modifier = { who = PREV modifier = opinion_lowered_crown_authority }
 				}
@@ -157,14 +170,27 @@ faction_lower_crown_authority = {
 					any_claimant = {
 						culture = FROM
 						religion = FROM
+						
+						# Actually check that the claimant could potentially have their claim
+						# pushed before pushing them out of this faction...  We just check for
+						# a faster approximation.
+						
+						is_female = no
+						or = {
+							has_strong_claim = PREV
+							PREV = {
+								holder_scope = {
+									or = {
+										is_female = yes
+										has_regent = yes
+									}
+								}
+							}
+							PREV = { is_contested = yes }
+						}
 					}
 				}
 			}
-		}
-		
-		modifier = {
-			factor = 0
-			FROM = { preparing_invasion = yes }
 		}
 		
 		modifier = {
@@ -186,24 +212,24 @@ faction_lower_crown_authority = {
 		}
 		
 		modifier = {
-			factor = 0.2
+			factor = 0.1
 			FROM = { crownlaw_title = { has_law = crown_authority_1 } }
 		}
 		modifier = {
-			factor = 1.25
+			factor = 0.8
 			FROM = { crownlaw_title = { has_law = crown_authority_2 } }
 		}
 		modifier = {
-			factor = 1.5
+			factor = 1.1
 			FROM = { crownlaw_title = { has_law = crown_authority_3 } }
 		}
 		modifier = {
-			factor = 2
+			factor = 1.4
 			FROM = { crownlaw_title = { has_law = crown_authority_4 } }
 		}
 		
 		modifier = {
-			factor = 1.2
+			factor = 1.1
 			FROM = {
 				crownlaw_title = {
 					or = {
@@ -214,16 +240,36 @@ faction_lower_crown_authority = {
 			}
 		}
 		
-		modifier = { # Especially dislike free infidel revocation if you're an infidel
-			factor = 2
+		modifier = { # We give the liege a break on free infidel revokation if AI
+			factor = 1.1
+			FROM = {
+				liege = { ai = no }
+				crownlaw_title = { has_law = revokation_2 }
+			}
+		}
+		
+		# But cry for mercy if we are actually infidels or heretics ourselves, even AI
+		# TODO: Wrong-religion cases for free infidel title revocation need verification
+		#       E.g., what about reformed vs. unreformed pagans? Don't they get the
+		#       Infidel -50 opinion malus?
+		modifier = {
+			factor = 1.8
 			FROM = { crownlaw_title = { has_law = revokation_2 } }
-			FROM = { liege = { not = { religion = FROM } } }
+			holder_scope = {
+				FROM = {
+					or = {
+						is_heresy_of = THIS
+						is_parent_religion = THIS
+						not = { religion_group = THIS }
+					}
+				}
+			}
 		}
 		
 		modifier = {
-			factor = 1.2
+			factor = 1.1
 			FROM = {
-				crownlaw_title = { 
+				crownlaw_title = {
 					or = {
 						has_law = king_peace_1
 						has_law = king_peace_2
@@ -233,12 +279,28 @@ faction_lower_crown_authority = {
 		}
 		
 		modifier = {
-			factor = 1.2
+			factor = 1.1
 			FROM = { crownlaw_title = { has_law = king_peace_2 } }
 		}
 		
+		# Assistance for player vassals in larger realms, whereas we're relatively fine
+		# with AI realms keeping peaceful by law (particularly internally).
 		modifier = {
-			factor = 1.2
+			factor = 1.3
+			any_playable_ruler = {
+				ai = no
+				crownlaw_title = {
+					holder_scope = { character = PREVPREVPREV }
+					or = {
+						has_law = king_peace_1
+						has_law = king_peace_2
+					}
+				}
+			}
+		}
+		
+		modifier = {
+			factor = 1.1
 			FROM = { crownlaw_title = { has_law = inheritance_1 } }
 		}
 		
@@ -364,7 +426,7 @@ faction_lower_crown_authority = {
 				ROOT = {
 					crownlaw_title = {
 						or = {
-							not = { owner = { character = PREVPREVPREV } }
+							not = { holder_scope = { character = PREVPREVPREV } }
 							not = {
 								has_law = crown_authority_1
 								has_law = crown_authority_2
@@ -409,11 +471,36 @@ faction_lower_crown_authority = {
 				trait = deceitful
 				trait = arbitrary
 			}
+			not = {
+				has_opinion_modifier = {
+					who = FROM
+					modifier = opinion_coerced_into_joining_faction
+				}
+			}
 		}
 		
 		modifier = {
 			factor = 0
 			opinion = { who = LIEGE value = 50 }
+			or = {
+				not = {
+					trait = ambitious
+					trait = envious
+					trait = deceitful
+					trait = arbitrary
+				}
+				not = {
+					has_opinion_modifier = {
+						who = FROM
+						modifier = opinion_coerced_into_joining_faction
+					}
+				}
+			}
+		}
+		
+		modifier = {
+			factor = 0
+			opinion = { who = LIEGE value = 75 }
 		}
 		
 		modifier = {
@@ -440,24 +527,24 @@ faction_lower_crown_authority = {
 		### CROWN LAW EFFECTS
 		
 		modifier = {
-			factor = 0.2
+			factor = 0.1
 			crownlaw_title = { has_law = crown_authority_1 }
 		}
 		modifier = {
-			factor = 1.25
+			factor = 0.8
 			crownlaw_title = { has_law = crown_authority_2 }
 		}
 		modifier = {
-			factor = 1.5
+			factor = 1.1
 			crownlaw_title = { has_law = crown_authority_3 }
 		}
 		modifier = {
-			factor = 2
+			factor = 1.4
 			crownlaw_title = { has_law = crown_authority_4 }
 		}
 		
 		modifier = {
-			factor = 1.2
+			factor = 1.1
 			crownlaw_title = {
 				or = {
 					has_law = revokation_1
@@ -465,15 +552,33 @@ faction_lower_crown_authority = {
 				}
 			}
 		}
-		
-		modifier = { # Especially dislike free infidel revocation if you're an infidel
-			factor = 2
+
+		modifier = { # We give the liege a break on free infidel revocation if AI
+			factor = 1.1
+			liege = { ai = no }
 			crownlaw_title = { has_law = revokation_2 }
-			liege = { not = { religion = ROOT } }
+		}
+		
+		# But cry for mercy if we are actually infidels or heretics ourselves, even AI
+		
+		# TODO: Wrong-religion cases for free title revocation need verification
+		#       E.g., what about norse_pagan_reformed vs. norse_pagan (feudal)?
+		modifier = {
+			factor = 1.8
+			crownlaw_title = { has_law = revokation_2 }
+			liege = {
+				ROOT = {
+					or = {
+						is_heresy_of = THIS
+						is_parent_religion = THIS
+						not = { religion_group = THIS }
+					}
+				}
+			}
 		}
 		
 		modifier = {
-			factor = 1.2
+			factor = 1.1
 			crownlaw_title = { 
 				or = {
 					has_law = king_peace_1
@@ -483,12 +588,30 @@ faction_lower_crown_authority = {
 		}
 		
 		modifier = {
-			factor = 1.2
+			factor = 1.1
 			crownlaw_title = { has_law = king_peace_2 }
 		}
 		
+		# Assistance for player vassals in larger realms, whereas we're relatively fine
+		# with AI realms keeping peaceful by law (particularly internally).
 		modifier = {
-			factor = 1.2
+			factor = 1.3
+			liege = {
+				any_realm_lord = {
+					ai = no
+					crownlaw_title = {
+						holder_scope = { character = PREVPREVPREV } # player's crown title owned by AI's liege
+						or = {
+							has_law = king_peace_1
+							has_law = king_peace_2
+						}
+					}
+				}
+			}
+		}
+		
+		modifier = {
+			factor = 1.1
 			crownlaw_title = { has_law = inheritance_1 }
 		}
 		
