@@ -40,7 +40,7 @@ character_event = {
 		FROM = {
 			location = {
 				remove_province_modifier = emf_mod_recently_acquired
-				add_province_modifier = { name = emf_mod_recently_acquired duration = 14 }
+				add_province_modifier = { name = emf_mod_recently_acquired duration = 90 }
 			}
 		}
 	}
@@ -48,9 +48,27 @@ character_event = {
 	option = { name = OK }
 }
 
-# Give away our recently acquired provinces
 character_event = {
 	id = emf_autolander.2
+	desc = emf_autolander.2.desc
+	picture = GFX_evt_emissary
+	is_triggered_only = yes
+	
+	option = {
+		name = emf_autolander.2.opt.a
+		character_event = { id = emf_autolander.3 }
+	}
+	option = {
+		name = emf_autolander.2.opt.b
+		set_character_flag = emf_autolander_republic
+		character_event = { id = emf_autolander.3 }
+		clr_character_flag = emf_autolander_republic
+	}
+}
+
+# Give away our recently acquired provinces
+character_event = {
+	id = emf_autolander.3
 	desc = HIDE_EVENT
 	hide_window = yes
 	is_triggered_only = yes
@@ -94,32 +112,10 @@ character_event = {
 				}
 				can_be_given_away = yes
 			}
-			location = {
-				province_event = { id = emf_autolander.3 } # Prompt to give it away
-			}
+			save_event_target_as = target_county
+			location = { save_event_target_as = target_province }
+			ROOT = { character_event = { id = emf_autolander.4 } } # Prompt to give it away
 		}
-	}
-}
-
-
-# Bounce event (want to get the province into FROM)
-province_event = {
-	id = emf_autolander.3
-	desc = HIDE_EVENT
-	hide_window = yes
-	is_triggered_only = yes
-	
-	trigger = {
-		has_province_modifier = emf_mod_recently_acquired
-	}
-	
-	immediate = {	
-		remove_province_modifier = emf_mod_recently_acquired
-		FROM = { character_event = { id = emf_autolander.4 } }
-	}
-	
-	option = {
-		name = OK
 	}
 }
 
@@ -136,46 +132,38 @@ character_event = {
 	immediate = {
 		if = {
 			limit = {
-				FROM = {
-					county = {
-						num_fitting_characters_for_title = 2
-					}
+				event_target:target_county = {
+					num_fitting_characters_for_title = 2
 				}
 			}
-			FROM = {
-				county = {
-					best_fit_character_for_title = {
-						title = PREV 			# The Title we are looking at
-						perspective = ROOT		# From whose perspective we are viewing the title
-						index = 1 				# The index of the character in the list
-						save_event_target_as = char_one
-					}
-					best_fit_character_for_title = {
-						title = PREV 			# The Title we are looking at
-						perspective = ROOT		# From whose perspective we are viewing the title
-						index = 2 				# The index of the character in the list
-						save_event_target_as = char_two
-					}
-					break = yes
+			event_target:target_county = {
+				best_fit_character_for_title = {
+					title = PREV 			# The Title we are looking at
+					perspective = ROOT		# From whose perspective we are viewing the title
+					index = 1 				# The index of the character in the list
+					save_event_target_as = char_one
 				}
+				best_fit_character_for_title = {
+					title = PREV 			# The Title we are looking at
+					perspective = ROOT		# From whose perspective we are viewing the title
+					index = 2 				# The index of the character in the list
+					save_event_target_as = char_two
+				}
+				break = yes
 			}
 		}
 		if = {
 			limit = {
-				FROM = {
-					county = {
-						num_fitting_characters_for_title = 1
-					}
+				event_target:target_county = {
+					num_fitting_characters_for_title = 1
 				}
 			}
-			FROM = {
-				county = {
-					best_fit_character_for_title = {
-						title = PREV 			# The Title we are looking at
-						perspective = ROOT		# From whose perspective we are viewing the title
-						index = 1 				# The index of the character in the list
-						save_event_target_as = char_one
-					}
+			event_target:target_county = {
+				best_fit_character_for_title = {
+					title = PREV 			# The Title we are looking at
+					perspective = ROOT		# From whose perspective we are viewing the title
+					index = 1 				# The index of the character in the list
+					save_event_target_as = char_one
 				}
 			}
 		}
@@ -203,27 +191,18 @@ character_event = {
 					character_event = { id = RoI.30121 }
 				}
 				
-				FROM = { # Province in question
-					county = {
-						grant_title = PREVPREV # County to new_character
-						ROOT = {
-							any_demesne_title = { 
-								limit = {
-									tier = baron
-									de_jure_liege = PREVPREV # The county
-								}
-								grant_title = PREVPREVPREVPREV # Barony in county to new_character
-							}
-						}
-					}
-				}
+				character_event = { id = emf_autolander.5 }
+				character_event = { id = emf_autolander.6 }
 			}
 		}
 		
 		hidden_tooltip = {
+			event_target:target_province = { remove_province_modifier = emf_mod_recently_acquired }
 			clear_event_target = char_one
 			clear_event_target = char_two
-			character_event = { id = emf_autolander.2 }
+			clear_event_target = target_province
+			clear_event_target = target_county
+			character_event = { id = emf_autolander.3 }
 		}
 	}
 	
@@ -235,28 +214,20 @@ character_event = {
 				prisoner = no
 			}
 		}
-		
-		FROM = {
-			county = {
-				event_target:char_one = {
-					grant_title = PREV
-					ROOT = {
-						any_demesne_title = { 
-							limit = {
-								tier = baron
-								de_jure_liege = PREVPREVPREV # The county
-							}
-							grant_title = PREVPREV # char_one
-						}
-					}
-				}
+		hidden_tooltip = {
+			event_target:char_one = {
+				character_event = { id = emf_autolander.5 }
+				character_event = { id = emf_autolander.6 }
 			}
 		}
 		
 		hidden_tooltip = {
+			event_target:target_province = { remove_province_modifier = emf_mod_recently_acquired }
 			clear_event_target = char_one
 			clear_event_target = char_two
-			character_event = { id = emf_autolander.2 }
+			clear_event_target = target_province
+			clear_event_target = target_county
+			character_event = { id = emf_autolander.3 }
 		}
 	}
 	
@@ -270,37 +241,108 @@ character_event = {
 			event_target:char_one = { not = { character = event_target:char_two } } # Weird case
 		}
 		
-		FROM = {
-			county = {
-				event_target:char_two = {
-					grant_title = PREV
-					ROOT = {
-						any_demesne_title = { 
-							limit = {
-								tier = baron
-								de_jure_liege = PREVPREVPREV # The county
-							}
-							grant_title = PREVPREV # char_two
-						}
-					}
-				}
+		hidden_tooltip = {
+			event_target:char_two = {
+				character_event = { id = emf_autolander.5 }
+				character_event = { id = emf_autolander.6 }
 			}
 		}
 		
 		hidden_tooltip = {
+			event_target:target_province = { remove_province_modifier = emf_mod_recently_acquired }
 			clear_event_target = char_one
 			clear_event_target = char_two
-			character_event = { id = emf_autolander.2 }
+			clear_event_target = target_province
+			clear_event_target = target_county
+			character_event = { id = emf_autolander.3 }
 		}
 	}
 	
 	option = {
 		name = emf_autolander.4.opt.d
 		
-		hidden_tooltip = {
+		hidden_tooltip = { # NOTE: Not removing the emf_mod_recently_acquired in this case to enable multiple runs
 			clear_event_target = char_one
 			clear_event_target = char_two
-			character_event = { id = emf_autolander.2 }
+			clear_event_target = target_province
+			clear_event_target = target_county
+			character_event = { id = emf_autolander.3 }
+		}
+	}
+}
+
+
+character_event = {
+	id = emf_autolander.5
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = { FROM = { has_character_flag = emf_autolander_republic } }
+	
+	immediate = {
+		# Switch capitals, if possible and needed 
+		
+		if = {
+			limit = {
+				event_target:target_province = {
+					any_province_holding = {
+						province_capital = yes
+						holding_type = city
+					}
+				}
+			}
+			break = yes # Already done
+		}
+		if = {
+			limit = {
+				event_target:target_province = {
+					or = {
+						is_tribal = yes # (can't make tribal holdings non-capitals)
+						not = {
+							any_province_holding = {
+								holding_type = city
+								holder = FROM
+							}
+						}
+					}
+				}
+			}
+			break = yes # Can't be done
+		}
+		
+		# Switch the capital to a city and grant the barony
+		
+		event_target:target_province = {
+			random_province_holding = {
+				limit = {
+					holder = FROM
+					holding_type = city
+				}
+				province_capital = yes
+				grant_title = ROOT # So that the character is surely converted to the correct character type (assuming they're not already landed)
+			}
+		}
+	}
+}
+
+
+character_event = {
+	id = emf_autolander.6
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		event_target:target_county = {
+			grant_title = ROOT
+			FROM = {
+				any_demesne_title = {
+					limit = {
+						tier = baron
+						de_jure_liege = event_target:target_county
+					}
+					grant_title = ROOT
+				}
+			}
 		}
 	}
 }
