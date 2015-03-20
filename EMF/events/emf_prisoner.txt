@@ -2,257 +2,377 @@ namespace = emf_prisoner
 
 ## Ransom All events
 ## 0-9 reserved
-# These are hideous and badly need some attention
+
+# Will they ransom?
+# Rulers will always ransom themselves if they can
+# If not a ruler, liege is asked for ransom
+# Lieges always ransom close relatives (seems to line up with is_close_relative)
+# Lieges will ransom dynasty members who aren't close relatives if they like them enough (+10 or more opinion)
+# Lieges will never ransom folks who don't fit into the previous categories, even if they're consorts or have some other "connection" to the liege
+# Unknowns:
+# Still need to test whether they will ransom folks with a claim on any of their titles
+# Also need to check if lieges will ransom courtiers who are rich enough to reimburse them (and if reimbursement happens)
+
+# What do they pay?
+# All characters are assigned a ransom value depending on their tier and their parents
+# For unlanded characters:
+# If the father is alive and landed, the character's ransom is the father's tier's Relative price
+# If the father is dead or unlanded, but mother is alive and landed, it's the mother's tier's Relative price instead
+# If both parents are dead or unlanded, and the character is unlanded, the character's ransom value is 10g
+# For landed characters:
+# Same as above, except the Ruler and Relative prices are added together
+# If both parents are dead or unlanded, it's just the Ruler price alone
+# Unknowns:
+# Does the parent Relative price still add if the character is higher tier than their parent? So far I've only confirmed it adds when they're the same tier
+
+#			Ruler	Relative
+# Emp 		385		110
+# King	 	250		74
+# Duke 		145		46
+# Count		70		26
+# Baron		25		14
+
+# Determine who pays ransom
 character_event = {
 	id = emf_prisoner.0
 	desc = emf_prisoner.0.desc
 	picture = GFX_evt_into_the_dungeon
 	is_triggered_only = yes
-
-	option = { # Will pay
+	
+	option = { # Rulers pay their own
+		trigger = { is_landed = yes }
 		name = emf_prisoner.0.a
-		
-		# Plus/Minus values
-		# Close Relative = +5
-		# Base Reluctance = -2
-		
-		# Collected values:
-		# Non-rulers:
-		# Male primary heir of duke: 46 (Norse)
-		# Female spouse of duke: 46 (Norse)
-		# Female bastard child of king: 74
-		# Female child of king: 74
-		# Dynasty member of king: 10
-		# Noble wife of emperor: 10
-		# 9 year old son of emperor: 110
-		# 13 year old daughter of emperor: 110
-		# 6 year old primary heir of emperor: 110
-		# Noble countess wife of emperor: 70
-		
-		# Rulers ransom themselves, always
-		# Non-rulers are ransomed by their lieges
-		# Non-rulers are only ransomed if they're "close relatives"
-		
-		#			Ruler	Relative	Dynasty
-		# Emp = 	385		110			10
-		# King = 	250		74
-		# Duke = 	145		46
-		# Count = 	70		21?
-		# Baron = 	25		7.5?
-		
-		# Wiki says: generally, AI rulers will accept offers to ransom themselves, spouses, close kin, or courtiers rich enough to reimburse the ransom. The AI will often refuse to grant ransom to characters who hold claims on their titles. 
-		
-		#require money for ransom
+
 		if = {
-			limit = {
-				tier = emperor
-				wealth = 385
-			}
+			limit = { tier = EMPEROR }
 			wealth = -385
 			host = { wealth = 385 }
 			prisoner = no
+			break = yes
 		}
-		
 		if = {
-			limit = {
-				tier = king
-				wealth = 250
-			}
-			
+			limit = { tier = KING }			
 			wealth = -250
 			host = { wealth = 250 }
 			prisoner = no
+			break = yes
 		}
-		
 		if = {
-			limit = {
-				tier = duke
-				wealth = 145
-			}
-			
+			limit = { tier = DUKE }
 			wealth = -145
 			host = { wealth = 145 }
 			prisoner = no
+			break = yes
 		}
-		
 		if = {
-			limit = {
-				tier = count
-				wealth = 70
-			}
-			
+			limit = { tier = COUNT }
 			wealth = -70
 			host = { wealth = 70 }
 			prisoner = no
+			break = yes
 		}
-		
 		if = {
-			limit = {
-				tier = baron
-				wealth = 25
-			}
-			
+			limit = { tier = BARON }
 			wealth = -25
 			host = { wealth = 25 }
 			prisoner = no
+			break = yes
 		}
-		
-		if = {
-			limit = {
-				is_ruler = no
-				wealth = 10
-			}
-
-			wealth = -10
-			host = { wealth = 10 }
-			prisoner = no
-		}
-		
-		if = {
-			limit = {
-				is_ruler = no
-				prisoner = yes
-				father = {
-					wealth = 26
-					current_heir = { character = ROOT }
-					ai = no
-				}
-			}
-			father = { wealth = -26 }
-			host = { wealth = 26 }
-			prisoner = no
-		}
-		
-		if = {
-			limit = {
-				is_ruler = no
-				prisoner = yes
-				mother = {
-					wealth = 26
-					current_heir = { character = ROOT }
-					ai = no
-				}
-			}
-			mother = { wealth = -26 }
-			host = { wealth = 26 }
-		}
-		
-		if = {
-			limit = {
-				is_ruler = no
-				prisoner = yes
-				NOT = { wealth = 10 }
-			} 
-			liege = { character_event = { id = emf_prisoner.1 } }
-		}
-		ai_chance = { factor = 100 }
 	}
 	
-	option = {
-		name = emf_prisoner.0.b # will not pay
-		ai_chance = {
-			factor = 0
+	option = { # Liege is responsible for others
+		trigger = { is_landed = no }
+		name = OK
+		
+		liege = {
+			character_event = { id = emf_prisoner.1 }
+		}
+	}
+	
+	option = { # Refuse
+		trigger = { ai = no }
+		name = emf_prisoner.0.b
+		
+		hidden_tooltip = {
+			FROM = {
+				character_event = { id = emf_prisoner.2 }
+			}
 		}
 	}
 }
 
-
+# Ask Liege for ransom - FROM is prisoner, FROMFROM is FROM's host
 character_event = {
 	id = emf_prisoner.1
 	desc = emf_prisoner.1.desc
 	picture = GFX_evt_into_the_dungeon
 	is_triggered_only = yes
+	
+	trigger = {
+		or = { # Liege is willing to pay
+			ai = no
+			is_close_relative = FROM
+			and = {
+				dynasty = FROM
+				opinion = { who = FROM value = 10 }
+			}
+		}
+		FROM = { # Liege has the money
+			or = {
+				father_even_if_dead = { # Father is alive and landed
+					is_alive = yes
+					is_landed = yes
+					or = {
+						and = {
+							tier = EMPEROR
+							ROOT = { wealth = 110 }
+						}
+						and = {
+							tier = KING
+							ROOT = { wealth = 74 }
+						}
+						and = {
+							tier = DUKE
+							ROOT = { wealth = 46 }
+						}
+						and = {
+							tier = COUNT
+							ROOT = { wealth = 26 }
+						}
+						and = {
+							tier = BARON
+							ROOT = { wealth = 14 }
+						}
+					}
+				}
+				and = { # Father is gone, mother is alive and landed
+					or = {
+						not = {
+							father_even_if_dead = { always = yes }
+						}
+						father_even_if_dead = {
+							or = {
+								is_alive = no
+								is_landed = no
+							}
+						}
+					}
+					mother_even_if_dead = {
+						is_alive = yes
+						is_landed = yes
+						or = {
+							and = {
+								tier = EMPEROR
+								ROOT = { wealth = 110 }
+							}
+							and = {
+								tier = KING
+								ROOT = { wealth = 74 }
+							}
+							and = {
+								tier = DUKE
+								ROOT = { wealth = 46 }
+							}
+							and = {
+								tier = COUNT
+								ROOT = { wealth = 26 }
+							}
+							and = {
+								tier = BARON
+								ROOT = { wealth = 14 }
+							}
+						}
+					}
+				}
+				and = { # Both parents are gone
+					or = {
+						not = {
+							father_even_if_dead = { always = yes }
+						}
+						father_even_if_dead = {
+							or = {
+								is_alive = no
+								is_landed = no
+							}
+						}
+					}
+					or = {
+						not = {
+							mother_even_if_dead = { always = yes }
+						}
+						mother_even_if_dead = {
+							or = {
+								is_alive = no
+								is_landed = no
+							}
+						}
+					}
+					ROOT = { wealth = 10 }
+				}
+			}
+		}
+	}
 
-	option = {
-		name = emf_prisoner.1.a # Will pay
+	option = { # Will pay
+		name = emf_prisoner.1.a
 		
-		ai_chance = { 
-			factor = 1
-			modifier = {
-				factor = 2 
-				trait = charitable
+		FROM = {
+			if = { # Father is alive and landed
+				limit = {
+					father_even_if_dead = {
+						is_alive = yes
+						is_landed = yes
+					}
+				}
+				if = {
+					limit = {
+						father_even_if_dead = { tier = EMPEROR }
+					}
+					ROOT = { wealth = -110 }
+					FROMFROM = { wealth = 110 }
+					prisoner = no
+				}
+				if = {
+					limit = {
+						father_even_if_dead = { tier = KING }
+					}
+					ROOT = { wealth = -74 }
+					FROMFROM = { wealth = 74 }
+					prisoner = no
+				}
+				if = {
+					limit = {
+						father_even_if_dead = { tier = DUKE }
+					}
+					ROOT = { wealth = -46 }
+					FROMFROM = { wealth = 46 }
+					prisoner = no
+				}
+				if = {
+					limit = {
+						father_even_if_dead = { tier = COUNT }
+					}
+					ROOT = { wealth = -26 }
+					FROMFROM = { wealth = 26 }
+					prisoner = no
+				}
+				if = {
+					limit = {
+						father_even_if_dead = { tier = BARON }
+					}
+					ROOT = { wealth = -14 }
+					FROMFROM = { wealth = 14 }
+					prisoner = no
+				}
+				break = yes
 			}
-			modifier = {
-				factor = 2 
-				trait = kind
+			if = { # Father is gone, mother is alive and landed
+				limit = {
+					or = {
+						not = {
+							father_even_if_dead = { always = yes }
+						}
+						father_even_if_dead = {
+							or = {
+								is_alive = no
+								is_landed = no
+							}
+						}
+					}
+					mother_even_if_dead = {
+						is_alive = yes
+						is_landed = yes
+					}
+				}
+				if = {
+					limit = {
+						mother_even_if_dead = { tier = EMPEROR }
+					}
+					ROOT = { wealth = -110 }
+					FROMFROM = { wealth = 110 }
+					prisoner = no
+				}
+				if = {
+					limit = {
+						mother_even_if_dead = { tier = KING }
+					}
+					ROOT = { wealth = -74 }
+					FROMFROM = { wealth = 74 }
+					prisoner = no
+				}
+				if = {
+					limit = {
+						mother_even_if_dead = { tier = DUKE }
+					}
+					ROOT = { wealth = -46 }
+					FROMFROM = { wealth = 46 }
+					prisoner = no
+				}
+				if = {
+					limit = {
+						mother_even_if_dead = { tier = COUNT }
+					}
+					ROOT = { wealth = -26 }
+					FROMFROM = { wealth = 26 }
+					prisoner = no
+				}
+				if = {
+					limit = {
+						mother_even_if_dead = { tier = BARON }
+					}
+					ROOT = { wealth = -14 }
+					FROMFROM = { wealth = 14 }
+					prisoner = no
+				}
+				break = yes
 			}
-			modifier = {
-				factor = 2 
-				trait = just
+			if = { # Both parents are gone
+				limit = {
+					or = {
+						not = {
+							father_even_if_dead = { always = yes }
+						}
+						father_even_if_dead = {
+							or = {
+								is_alive = no
+								is_landed = no
+							}
+						}
+					}
+					or = {
+						not = {
+							mother_even_if_dead = { always = yes }
+						}
+						mother_even_if_dead = {
+							or = {
+								is_alive = no
+								is_landed = no
+							}
+						}
+					}
+				}
+				ROOT = { wealth = -10 }
+				FROMFROM = { wealth = 10 }
+				prisoner = no
 			}
-			modifier = {
-				factor = 1.25 
-				wealth = 200
-			}
-			modifier = {
-				factor = 1.5 
-				wealth = 250
-			}
-			modifier = {
-				factor = 2 
-				wealth = 300
-			}
-			modifier = {
-				factor = 50 
-				wealth = 400
-			}
-			modifier = {
-				factor = 100 
-				wealth = 500
-			}
-			modifier = {
-				factor = 100 
-				FROM = { is_close_relative = ROOT } 
-			}
-			
-		}#ai
-
-		ROOT = { wealth = -10 }
-		FROMFROM = { wealth = 10 }
-		
-		FROM = { prisoner = no }
-
-	}#opt
-	option = {
-		name = emf_prisoner.1.b #will not
-
+		}
 		ai_chance = {
-			factor = 0.5
-			modifier = {
-				factor = 2 
-				trait = greedy
+			factor = 1
+		}
+	}
+	option = { # Won't pay
+		trigger = { ai = no }
+		name = emf_prisoner.1.b
+		
+		hidden_tooltip = {
+			FROMFROM = {
+				character_event = { id = emf_prisoner.2 }
 			}
-			modifier = {
-				factor = 2 
-				trait = wroth
-			}
-			modifier = {
-				factor = 1.5 
-				trait = cruel
-			}
-			modifier = {
-				factor = 2.5 
-				NOT = { wealth = 75 } 
-			}
-			modifier = {
-				factor = 5 
-				NOT = { wealth = 50 } 
-			}
-			modifier = {
-				factor = 10 
-				NOT = { wealth = 25} 
-			}
-			
+		}
+	}
+}
 
-		}#ai
-		FROMFROM = { character_event = { id = emf_prisoner.2 } }
-
-	}#opt
-
-}#evt
-
-
-
+# Notification of ransom denial
 character_event = {
 	id = emf_prisoner.2
 	desc = emf_prisoner.2.desc
@@ -260,118 +380,11 @@ character_event = {
 	is_triggered_only = yes
 
 	option = {
-		name = emf_prisoner.2.a # denied
-
-	}#opt
-}#evt
-
-
-## Prisoner Exchange events
-## 10-19 reserved
-# These also badly need to be fixed up
-#Prisoner exchange
-character_event = {
-	id = emf_prisoner.10
-	desc = meneth.213.desc
-	picture = GFX_evt_emissary
-	border = GFX_event_normal_frame_diplomacy
-	is_triggered_only = yes
-	
-	option = {
-		name = meneth.213.a
-		trigger = {
-			FROMFROM = {
-				any_courtier = {
-					dynasty = ROOT
-					prisoner = yes
-					is_landed = no
-				}
-			}
-		}
-		FROMFROM = { clr_character_flag = prisoner_exchange_attempted }
-		FROM = {
-			prisoner = no
-		}
-		FROMFROM = {
-			random_courtier = {
-				limit = {
-					is_close_relative = ROOT
-					dynasty = ROOT
-					prisoner = yes
-					is_landed = no
-				}
-				prisoner = no
-			}
-			if = {
-				limit = {
-					NOT = {
-						any_courtier = {
-							is_close_relative = ROOT
-							dynasty = ROOT
-							prisoner = yes
-							is_landed = no
-						}
-					}
-				}
-				random_courtier = {
-					limit = {
-						dynasty = ROOT
-						prisoner = yes
-						is_landed = no
-					}
-					prisoner = no
-				}
-			}
-			character_event = { id = emf_prisoner.11 } #Prisoner exchange succeeded
-		}
-	}
-	option = {
-		name = meneth.213.b
-		trigger = {
-			OR = {
-				ai = no
-				NOT = {
-					FROMFROM = {
-						any_courtier = {
-							dynasty = ROOT
-							prisoner = yes
-							is_landed = no
-						}
-					}
-				}
-			}
-		}
-		FROMFROM = { clr_character_flag = prisoner_exchange_attempted }
-		FROMFROM = { character_event = { id = emf_prisoner.12 } } #Prisoner exchange fails
+		name = emf_prisoner.2.a
 	}
 }
 
-#Prisoner exchange succeeds
-character_event = {
-	id = emf_prisoner.11
-	desc = meneth.214.desc
-	picture = GFX_evt_garden
-	border = GFX_event_normal_frame_diplomacy
-	is_triggered_only = yes
-	
-	option = {
-		name = EXCELLENT
-	}
-}
-
-#Prisoner exchange fails
-character_event = {
-	id = emf_prisoner.12
-	desc = meneth.215.desc
-	picture = GFX_evt_into_the_dungeon
-	border = GFX_event_normal_frame_diplomacy
-	is_triggered_only = yes
-	
-	option = {
-		name = CURSES
-	}
-}
-
+## 10-19 are free
 
 ## Prisoner Handling events
 ## 20-29 reserved
