@@ -1,0 +1,839 @@
+
+# Law support events (currently only concerns crown laws)
+
+namespace = emf_laws
+
+# emf_laws.0 [Isis]
+# 
+# Scenario startup event to ensure that specific CA laws are
+# at their maximum values given every crown title's historic
+# crown_authority setting. Most titles default to crown_authority_0,
+# but some default to other values (e.g., the ERE is at
+# crown_authority_2 in 1066). Ideally, far more titles would
+# have history overrides for crown authority.
+#
+# Also may eventually contain logic to dynamically adjust startup
+# laws in general based upon certain rules.
+character_event = {
+	id = emf_laws.0
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		any_playable_ruler = {
+			limit = { higher_tier_than = duke }
+			character_event = { id = emf_laws.1 }
+		}
+	}
+}
+
+
+# emf_laws.1 [Ruler, a king or emperor]
+#
+# Guts of of emf_laws.0
+character_event = {
+	id = emf_laws.1
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = { is_tribal = no }
+	
+	immediate = {
+		set_character_flag = emf_no_law_penalties
+		
+		any_demesne_title = {
+			limit = { higher_tier_than = duke }
+			
+			if = {
+				limit = { has_law = crown_authority_0 }
+				
+				if = {
+					limit = { not = { has_law = revokation_0 } }
+					add_law = revokation_0
+				}
+				if = {
+					limit = { not = { has_law = king_peace_0 } }
+					add_law = king_peace_0
+				}
+				if = {
+					limit = { not = { has_law = inheritance_0 } }
+					add_law = inheritance_0
+				}
+			} # END: Autonomous Vassals
+			
+			if = {
+				limit = { has_law = crown_authority_1 }
+				
+				if = {
+					limit = { not = { has_law = revokation_1 } }
+					add_law = revokation_1
+				}
+				if = {
+					limit = { not = { has_law = king_peace_0 } }
+					add_law = king_peace_0
+				}
+				if = {
+					limit = { not = { has_law = inheritance_0 } }
+					add_law = inheritance_0
+				}
+			} # END: Low CA
+			
+			if = {
+				limit = { has_law = crown_authority_2 }
+				
+				if = {
+					limit = {
+						not = { has_law = succ_feudal_elective }
+						not = { has_law = revokation_2 }
+					}
+					add_law = revokation_2
+				}
+				if = {
+					limit = {
+						has_law = succ_feudal_elective
+						not = { has_law = revokation_1 }
+					}
+					add_law = revokation_1
+				}
+				if = {
+					limit = { not = { has_law = king_peace_1 } }
+					add_law = king_peace_1
+				}
+				if = {
+					limit = { not = { has_law = inheritance_0 } }
+					add_law = inheritance_0
+				}
+			} # END: Medium CA
+			
+			if = {
+				limit = { has_law = crown_authority_3 }
+				
+				if = {
+					limit = {
+						not = { has_law = succ_feudal_elective }
+						not = { has_law = revokation_2 }
+					}
+					add_law = revokation_2
+				}
+				if = {
+					limit = {
+						has_law = succ_feudal_elective
+						not = { has_law = revokation_1 }
+					}
+					add_law = revokation_1
+				}
+				if = {
+					limit = { not = { has_law = king_peace_1 } }
+					add_law = king_peace_1
+				}
+				if = {
+					limit = {
+						not = { has_law = succ_feudal_elective }
+						not = { has_law = inheritance_1 }
+					}
+					add_law = inheritance_1
+				}
+				if = {
+					limit = {
+						has_law = succ_feudal_elective
+						not = { has_law = inheritance_0 }
+					}
+					add_law = inheritance_0
+				}
+			} # END: High CA
+			
+			if = {
+				limit = { has_law = crown_authority_4 }
+				if = {
+					limit = {
+						not = { has_law = succ_feudal_elective }
+						not = { has_law = revokation_2 }
+					}
+					add_law = revokation_2
+				}
+				if = {
+					limit = {
+						has_law = succ_feudal_elective
+						not = { has_law = revokation_1 }
+					}
+					add_law = revokation_1
+				}
+				if = {
+					limit = {
+						not = { has_law = succ_feudal_elective }
+						not = { has_law = king_peace_2 }
+					}
+					add_law = king_peace_2
+				}
+				if = {
+					limit = {
+						has_law = succ_feudal_elective
+						not = { has_law = king_peace_1 }
+					}
+					add_law = king_peace_1
+				}
+				if = {
+					limit = {
+						not = { has_law = succ_feudal_elective }
+						not = { has_law = inheritance_1 }
+					}
+					add_law = inheritance_1
+				}
+				if = {
+					limit = {
+						has_law = succ_feudal_elective
+						not = { has_law = inheritance_0 }
+					}
+					add_law = inheritance_0
+				}
+			} # END: Max CA
+		}
+		
+		clr_character_flag = emf_no_law_penalties
+	}
+}
+
+
+# emf_laws.2 [Holder]
+#
+# on_new_holder[_usurpation|inheritance] listener that clears the emf_ca_change
+# title flag.
+#
+# FROM = title
+character_event = {
+	id = emf_laws.2
+	hide_window = yes
+	is_triggered_only = yes
+	
+	only_playable = yes
+	
+	trigger = {
+		FROM = {
+			higher_tier_than = duke
+		}
+	}
+	
+	immediate = {
+		clr_title_flag = emf_ca_changed
+	}
+	
+	option = { name = OK }
+}
+
+
+# emf_laws.9 [Holder of crown title]
+#
+# Called from the pass_effect of crown laws.
+# Crown authority was raised, so apply appropriate temporary
+# opinions.
+#
+# FROM = title upon which law was passed
+character_event = {
+	id = emf_laws.9
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		not = { has_character_flag = emf_no_law_penalties }
+	}
+	
+	immediate = {
+		FROM = {
+			any_de_jure_vassal = {
+				limit = {
+					or = { # Cut-down on some opinion modifier overhead (vanilla always hits all tiers)
+						vassal_of = ROOT
+						higher_tier_than = baron
+					}
+					# Not _exactly_ sure why vanilla includes same-religion + different-realm
+					# but not different-religion + different-realm... But...
+					or = {
+						is_liege_or_above = ROOT
+						religion = ROOT
+					}
+				}
+				opinion = {
+					who = ROOT
+					modifier = opinion_increased_authority
+					months = 120
+				}
+			}
+		}
+	}
+}
+
+
+# emf_laws.10 [AI holder of crown title]
+#
+# Called from the pass_effect of crown_authority_0
+# Adjusts specific CA laws to those appropriate for level.
+#
+# FROM = title upon which law was passed
+character_event = {
+	id = emf_laws.10
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = { ai = yes }
+	
+	immediate = {
+		set_character_flag = emf_no_law_penalties
+		
+		FROM = {
+			if = {
+				limit = { not = { has_law = revokation_0 } }
+				add_law_w_cooldown = revokation_0
+			}
+			if = {
+				limit = { not = { has_law = king_peace_0 } }
+				add_law_w_cooldown = king_peace_0
+			}
+			if = {
+				limit = { not = { has_law = inheritance_0 } }
+				add_law_w_cooldown = inheritance_0
+			}
+		}
+		
+		clr_character_flag = emf_no_law_penalties
+	}
+}
+
+
+# emf_laws.11 [AI holder of crown title]
+#
+# Called from the pass_effect of crown_authority_1
+# Adjusts specific CA laws to those appropriate for level.
+#
+# FROM = title upon which law was passed
+character_event = {
+	id = emf_laws.11
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = { ai = yes }
+	
+	immediate = {
+		set_character_flag = emf_no_law_penalties
+		
+		FROM = {
+			if = {
+				limit = { not = { has_law = revokation_1 } }
+				add_law_w_cooldown = revokation_1
+			}
+			if = {
+				limit = { not = { has_law = king_peace_0 } }
+				add_law_w_cooldown = king_peace_0
+			}
+			if = {
+				limit = { not = { has_law = inheritance_0 } }
+				add_law_w_cooldown = inheritance_0
+			}
+		}
+		
+		clr_character_flag = emf_no_law_penalties
+	}
+}
+
+
+# emf_laws.12 [AI holder of crown title]
+#
+# Called from the pass_effect of crown_authority_2
+# Adjusts specific CA laws to those appropriate for level.
+#
+# FROM = title upon which law was passed
+character_event = {
+	id = emf_laws.12
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = { ai = yes }
+	
+	immediate = {
+		set_character_flag = emf_no_law_penalties
+		
+		FROM = {
+			if = {
+				limit = {
+					not = { has_law = succ_feudal_elective }
+					not = { has_law = revokation_2 }
+				}
+				add_law_w_cooldown = revokation_2
+			}
+			if = {
+				limit = {
+					has_law = succ_feudal_elective
+					not = { has_law = revokation_1 }
+				}
+				add_law_w_cooldown = revokation_1
+			}
+			if = {
+				limit = { not = { has_law = king_peace_1 } }
+				add_law_w_cooldown = king_peace_1
+			}
+			if = {
+				limit = { not = { has_law = inheritance_0 } }
+				add_law_w_cooldown = inheritance_0
+			}
+		}
+		
+		clr_character_flag = emf_no_law_penalties
+	}
+}
+
+
+# emf_laws.13 [AI holder of crown title]
+#
+# Called from the pass_effect of crown_authority_3
+# Adjusts specific CA laws to those appropriate for level.
+#
+# FROM = title upon which law was passed
+character_event = {
+	id = emf_laws.13
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = { ai = yes }
+	
+	immediate = {
+		set_character_flag = emf_no_law_penalties
+		
+		FROM = {
+			if = {
+				limit = {
+					not = { has_law = succ_feudal_elective }
+					not = { has_law = revokation_2 }
+				}
+				add_law_w_cooldown = revokation_2
+			}
+			if = {
+				limit = {
+					has_law = succ_feudal_elective
+					not = { has_law = revokation_1 }
+				}
+				add_law_w_cooldown = revokation_1
+			}
+			if = {
+				limit = { not = { has_law = king_peace_1 } }
+				add_law_w_cooldown = king_peace_1
+			}
+			if = {
+				limit = {
+					not = { has_law = succ_feudal_elective }
+					not = { has_law = inheritance_1 }
+				}
+				add_law_w_cooldown = inheritance_1
+			}
+			if = {
+				limit = {
+					has_law = succ_feudal_elective
+					not = { has_law = inheritance_0 }
+				}
+				add_law_w_cooldown = inheritance_0
+			}
+		}
+		
+		clr_character_flag = emf_no_law_penalties
+	}
+}
+
+
+# emf_laws.14 [AI holder of crown title]
+#
+# Called from the pass_effect of crown_authority_4
+# Adjusts specific CA laws to those appropriate for level.
+#
+# FROM = title upon which law was passed
+character_event = {
+	id = emf_laws.14
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = { ai = yes }
+	
+	immediate = {
+		set_character_flag = emf_no_law_penalties
+		
+		FROM = {
+			if = {
+				limit = {
+					not = { has_law = succ_feudal_elective }
+					not = { has_law = revokation_2 }
+				}
+				add_law_w_cooldown = revokation_2
+			}
+			if = {
+				limit = {
+					has_law = succ_feudal_elective
+					not = { has_law = revokation_1 }
+				}
+				add_law_w_cooldown = revokation_1
+			}
+			if = {
+				limit = {
+					not = { has_law = succ_feudal_elective }
+					not = { has_law = king_peace_2 }
+				}
+				add_law_w_cooldown = king_peace_2
+			}
+			if = {
+				limit = {
+					has_law = succ_feudal_elective
+					not = { has_law = king_peace_1 }
+				}
+				add_law_w_cooldown = king_peace_1
+			}
+			if = {
+				limit = {
+					not = { has_law = succ_feudal_elective }
+					not = { has_law = inheritance_1 }
+				}
+				add_law_w_cooldown = inheritance_1
+			}
+			if = {
+				limit = {
+					has_law = succ_feudal_elective
+					not = { has_law = inheritance_0 }
+				}
+				add_law_w_cooldown = inheritance_0
+			}
+		}
+		
+		clr_character_flag = emf_no_law_penalties
+	}
+}
+
+
+# emf_laws.15 [Player]
+#
+# Called from the pass_effect of crown_authority_0
+# Adjusts specific CA laws to those appropriate for level.
+#
+# FROM = title upon which law was passed
+character_event = {
+	id = emf_laws.15
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = { ai = no }
+	
+	immediate = {
+		set_character_flag = emf_no_law_penalties
+		
+		FROM = {
+			if = {
+				limit = { not = { has_law = revokation_0 } }
+				add_law = revokation_0
+			}
+			if = {
+				limit = { not = { has_law = king_peace_0 } }
+				add_law = king_peace_0
+			}
+			if = {
+				limit = { not = { has_law = inheritance_0 } }
+				add_law = inheritance_0
+			}
+		}
+		
+		clr_character_flag = emf_no_law_penalties
+	}
+}
+
+
+# emf_laws.16 [Player]
+#
+# Called from the pass_effect of crown_authority_1
+# Adjusts specific CA laws to those appropriate for level.
+#
+# FROM = title upon which law was passed
+character_event = {
+	id = emf_laws.16
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = { ai = no }
+	
+	immediate = {
+		set_character_flag = emf_no_law_penalties
+		
+		FROM = {
+			if = {
+				limit = { has_law = revokation_2 }
+				add_law = revokation_1
+			}
+			if = {
+				limit = { not = { has_law = king_peace_0 } }
+				add_law = king_peace_0
+			}
+			if = {
+				limit = { not = { has_law = inheritance_0 } }
+				add_law = inheritance_0
+			}
+		}
+		
+		clr_character_flag = emf_no_law_penalties
+	}
+}
+
+
+# emf_laws.17 [Player]
+#
+# Called from the pass_effect of crown_authority_2
+# Adjusts specific CA laws to those appropriate for level.
+#
+# FROM = title upon which law was passed
+character_event = {
+	id = emf_laws.17
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = { ai = no }
+	
+	immediate = {
+		set_character_flag = emf_no_law_penalties
+		
+		FROM = {
+			if = {
+				limit = { has_law = king_peace_2 }
+				add_law = king_peace_1
+			}
+			if = {
+				limit = { not = { has_law = inheritance_0 } }
+				add_law = inheritance_0
+			}
+		}
+		
+		clr_character_flag = emf_no_law_penalties
+	}
+}
+
+
+# emf_laws.18 [Player]
+#
+# Called from the pass_effect of crown_authority_3
+# Adjusts specific CA laws to those appropriate for level.
+#
+# FROM = title upon which law was passed
+character_event = {
+	id = emf_laws.18
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = { ai = no }
+	
+	immediate = {
+		set_character_flag = emf_no_law_penalties
+		
+		FROM = {
+			if = {
+				limit = { has_law = king_peace_2 }
+				add_law = king_peace_1
+			}
+		}
+		
+		clr_character_flag = emf_no_law_penalties
+	}
+}
+
+
+# emf_laws.19 [Player]
+#
+# Called from the pass_effect of crown_authority_4
+# Adjusts specific CA laws to those appropriate for level.
+#
+# FROM = title upon which law was passed
+character_event = {
+	id = emf_laws.19
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = { always = no }
+	
+	option = {
+		name = OK
+	}
+}
+
+
+# emf_laws.100 [Isis]
+#
+# Compatibility event (TEMPORARY!) to be invoked from console on
+# transition from savegames prior to EMF 3.08 to EMF 3.09 and
+# later.
+#
+# Assigns all crown law titles in the world reasonable settings
+# for their crown_authority law slider based upon their preexisting
+# PB-style laws (though emperor_peace group is ignored, since it
+# has been dropped altogether).
+#
+# Triggered by on_startup on_action for Isis if she has a deprecated
+# emperor_peace law on e_hip
+character_event = {
+	id = emf_laws.100
+	hide_window = yes
+	is_triggered_only = yes
+	
+	only_independent = yes
+	
+	trigger = {
+		has_landed_title = e_hip
+		e_hip = {
+			or = {
+				has_law = emperor_peace_0
+				has_law = emperor_peace_1
+				has_law = emperor_peace_2
+			}
+		}
+	}
+	
+	immediate = {
+		set_character_flag = emf_no_law_penalties
+		
+		any_demesne_title = {
+			limit = { higher_tier_than = duke }
+			
+			save_event_target_as = target_title
+			PREV = { character_event = { id = emf_laws.101 } }
+			clear_event_target = target_title
+		}
+
+		clr_character_flag = emf_no_law_penalties
+		
+		any_playable_ruler = {
+			limit = { higher_tier_than = duke }
+			
+			set_character_flag = emf_no_law_penalties
+			
+			any_demesne_title = {
+				limit = { higher_tier_than = duke }
+				
+				save_event_target_as = target_title
+				PREV = { character_event = { id = emf_laws.101 } }
+				clear_event_target = target_title
+			}
+			
+			clr_character_flag = emf_no_law_penalties
+		}
+	}
+}
+
+
+# emf_laws.101 [Title Holder]
+#
+# Per-title implementation of emf_laws.100
+# Title is event_target:target_title.
+character_event = {
+	id = emf_laws.101
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = { is_tribal = no }
+	
+	immediate = {
+	
+		event_target:target_title = {
+		
+			# If they are a republic, force Limited CA
+			if = {
+				limit = {
+					ROOT = { is_republic = yes }
+				}
+				add_law = crown_authority_1
+				break = yes
+			}
+			
+			# If they are an unreformed pagan and have any advanced CA laws, give them
+			# Limited CA
+			
+			if = {
+				limit = {
+					ROOT = {
+						religion_group = pagan_group
+						not = { is_reformed_religion = yes }
+					}
+					or = {
+						has_law = revokation_2
+						has_law = king_peace_2
+						has_law = king_peace_1
+						has_law = emperor_peace_2
+						has_law = emperor_peace_1
+						has_law = inheritance_1
+					}
+				}
+				add_law = crown_authority_1
+				break = yes
+			}					
+		
+			# If they have emperor_peace_2, king_peace_2, or imperial_administration
+			# (in primary title and aren't e_byzantium/e_roman_empire), give them Max CA
+			
+			if = {
+				limit = {
+					or = {
+						has_law = emperor_peace_2
+						has_law = king_peace_2
+						ROOT = { 
+							primary_title = {
+								not = {
+									title = e_byzantium
+								}
+								tier = emperor
+								has_law = imperial_administration
+							}
+						}
+					}
+				}
+				add_law = crown_authority_4
+				break = yes
+			}
+			
+			# If they have inheritance_1, they get High CA
+			
+			if = {
+				limit = {
+					has_law = inheritance_1
+				}
+				add_law = crown_authority_3
+				break = yes
+			}
+			
+			# If they have Free Infidel Revocation or Internal King's Peace, they get Medium CA
+			if = {
+				limit = {
+					or = {
+						has_law = revokation_2
+						has_law = king_peace_1
+						has_law = emperor_peace_1
+					}
+				}
+				add_law = crown_authority_2
+				break = yes
+			}
+			
+			# If they have Title Revocation, they get Limited CA
+			if = {
+				limit = {
+					or = {
+						has_law = revokation_1
+						ROOT = { is
+				}
+				add_law = crown_authority_1
+				break = yes
+			}
+			
+			add_law = crown_authority_0
+		}
+		
+		clr_character_flag = emf_no_law_penalties
+	}
+	
+	option = {
+		name = OK
+		
+		# Cleanup any emperor_peace laws (deprecated)
+		event_target:target_title = {
+			revoke_law = emperor_peace_0
+			revoke_law = emperor_peace_1
+			revoke_law = emperor_peace_2
+		}
+	}
+}
