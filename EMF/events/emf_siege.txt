@@ -1,0 +1,4014 @@
+namespace = emf_siege
+
+# Written by AnaxXiphos
+# Loosely based on Meneth's version of Waylit's Dungeons and Sieges
+
+# Definite future changes:
+# Special flavor for looting holy sites of other religions
+# Give looters something to do with all the lowborn scum they capture (sell them into slavery and/or, per ziji's suggestion, "upgrade" them invisibly so they're sometimes useful as councilors or generals or whatever)
+# AI will be allowed to massacre folks at the end of sieges, but will be unlikely to do so
+
+# Possible future changes: 
+# If still generating too many prisoners, escape failure odds might be reduced
+# Resurrect the escape events somehow?
+# Add new flavor for looting of own holy sites?
+# Special mechanics and/or flavor for specific religions when they loot?
+
+### WARFARE EVENTS
+# During regular warfare, capturing nobles is fairly common, but primary participants in wars are protected
+# Protected characters can still be captured, but only rarely
+# If the owner of a besieged barony isn't present, the family will still try to escape, but with reduced success
+# At the end of a successful siege, the attacker can choose how to treat characters found at the barony
+
+## Defender Events
+## 0-49 Reserved
+# Initial forwarder - from on_siege_pulse
+character_event = {
+	id = emf_siege.0
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		siege = { is_attacker = yes }
+		or = { # Unlanded folks don't have a primary title to check
+			is_ruler = no
+			primary_title = { rebel = no }
+		}
+		rebel = no
+		not = {
+			any_liege = {
+				or = {
+					primary_title = { rebel = yes }
+					rebel = yes
+				}
+			}
+		}
+		location = {
+			ROOT = { # These only work when you're in some kinds of wars
+				not = { is_looting = yes }
+				not = { is_looting_in = PREV }
+			}
+			any_province_lord = {
+				or = { # Either defending the siege or someone in court is
+					and = {
+						siege = { is_attacker = no }
+						is_abroad = no # Blocks councilors
+					}
+					any_courtier = {
+						not = { character = PREV }
+						siege = { is_attacker = no }
+					}
+				}
+				is_abroad = no # Only the actual ruler
+				capital_scope = { province = PREVPREV } # Must be capital province
+				not = { # First holding always capital for higher tiers, treated as such for barons
+					any_demesne_title = {
+						location = { province = PREVPREVPREV }
+						is_occupied = yes
+					}
+				}
+				or = { # Must be in actual war, because war_with doesn't filter raids
+					ROOT = { # Is ROOT at war with owner?
+						any_current_enemy = { character = PREVPREV }
+					}
+					any_liege = { # Is ROOT at war with any liege of owner?
+						ROOT = {
+							any_current_enemy = { character = PREVPREV }
+						}
+					}
+					ROOT = { # Is any liege of ROOT at war with owner?
+						any_liege = {
+							any_war = {
+								or = {
+									any_attacker = { character = PREVPREVPREVPREV }
+									any_defender = { character = PREVPREVPREVPREV }
+								}
+								or = {
+									any_attacker = { character = PREVPREV }
+									any_defender = { character = PREVPREV }
+								}
+							}
+						}
+					}
+					any_liege = { # Is any liege of owner at war with any liege of ROOT?
+						ROOT = {
+							any_liege = {
+								any_war = {
+									or = {
+										any_attacker = { character = PREVPREVPREVPREV }
+										any_defender = { character = PREVPREVPREVPREV }
+									}
+									or = {
+										any_attacker = { character = PREVPREV }
+										any_defender = { character = PREVPREV }
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	immediate = {
+		location = {
+			random_province_lord = {
+				limit = {
+					or = {
+						and = {
+							siege = { is_attacker = no }
+							is_abroad = no
+						}
+						any_courtier = {
+							not = { character = PREV }
+							siege = { is_attacker = no }
+						}
+					}
+					capital_scope = { province = PREVPREV }
+					not = {
+						any_demesne_title = {
+							location = { province = PREVPREVPREV }
+							is_occupied = yes
+						}
+					}
+				}
+				save_event_target_as = emf_siege_target_defender
+			}
+		}
+
+		if = {
+			limit = {
+				event_target:emf_siege_target_defender = {
+					not = { has_character_modifier = emf_siege_timer }
+				}
+			}
+			event_target:emf_siege_target_defender = {
+				if = { # If leader isn't present, let family run with worse odds
+					limit = {
+						or = {
+							not = { at_location = ROOT }
+							is_abroad = yes
+							prisoner = yes
+							trait = in_hiding
+							trait = on_hajj
+							trait = on_pilgrimage
+							trait = traveling # VIET compatibility
+							trait = on_retreat # VIET compatibility
+						}
+					}
+					# LOG
+					if = {
+						limit = {
+							or = {
+								ROOT = { ai = no }
+								ROOT = { any_liege = { ai = no } }
+							}
+						}
+						log = "emf_siege.0: Family run options sent to '[This.GetBestName]'s family'"
+					}
+					any_courtier = {
+						limit = {
+							at_location = ROOT
+							not = { character = PREV }
+							has_job_action = no
+							is_ruler = no
+							or = {
+								is_close_relative = PREV
+								is_married = PREV
+								is_consort = PREV
+								and = {
+									not = { dynasty = none }
+									dynasty = PREV
+								}
+							}
+							not = { trait = in_hiding }
+							not = { has_character_modifier = emf_siege_failed_escape }
+						}
+						set_character_flag = emf_siege_vulnerable
+						character_event = { id = emf_siege.2 }
+					}
+				}
+				if = { # If leader is present, send them options
+					limit = {
+						at_location = ROOT
+						is_abroad = no
+						prisoner = no
+						not = { trait = in_hiding }
+						not = { trait = on_hajj }
+						not = { trait = on_pilgrimage }
+						not = { trait = traveling } # VIET compatibility
+						not = { trait = on_retreat } # VIET compatibility
+					}
+					# LOG
+					if = {
+						limit = {
+							or = {
+								ROOT = { ai = no }
+								ROOT = { any_liege = { ai = no } }
+							}
+						}
+						log = "emf_siege.0: Defender options sent to '[This.GetBestName]'"
+					}
+					if = { # Save regent for consistency later
+						limit = { has_regent = yes }
+						regent = {
+							save_event_target_as = emf_siege_regent
+						}
+					}
+					character_event = { id = emf_siege.1 }
+				}
+				any_courtier = { # Send options to other present rulers
+					limit = {
+						not = { character = PREV }
+						host = { character = PREVPREV }
+						at_location = ROOT
+						is_abroad = yes
+						prisoner = no
+						has_job_action = no
+						is_ruler = yes
+						has_regent = no
+						not = { trait = in_hiding }
+					}
+					# LOG
+					if = {
+						limit = {
+							or = {
+								ROOT = { ai = no }
+								ROOT = { any_liege = { ai = no } }
+							}
+						}
+						log = "emf_siege.0: Escape options sent to '[This.GetBestName]'"
+					}
+					character_event = { id = emf_siege.8 }
+				}
+				add_character_modifier = {
+					name = emf_siege_timer
+					duration = 11	# Adjust this value to = (DAYS_BETWEEN_COMBAT_EVENTS * 2 + 1)
+					hidden = yes	# Duration may need to be increased to prevent AI from spamming players	
+				}
+			}
+			clear_event_target = emf_siege_target_defender
+			break = yes
+		}
+		if = {
+			limit = {
+				event_target:emf_siege_target_defender = {
+					has_character_modifier = emf_siege_timer
+				}
+			}
+			event_target:emf_siege_target_defender = {
+				remove_character_modifier = emf_siege_timer
+				add_character_modifier = {
+					name = emf_siege_timer
+					duration = 11 # See note above
+					hidden = yes
+				}
+				
+				# LOG
+				if = {
+					limit = {
+						or = {
+							ROOT = { ai = no }
+							ROOT = { any_liege = { ai = no } }
+						}
+					}
+					log = "emf_siege.0: Siege timer refresh for '[This.GetBestName]'"
+				}
+			}
+			clear_event_target = emf_siege_target_defender
+			break = yes
+		}
+	}
+	
+	option = {
+		name = OK
+	}
+}
+
+# Defender choice event
+character_event = {
+	id = emf_siege.1
+	# No regent
+	desc = { # Family
+		text = emf_siege.1.desc_fam
+		trigger = {
+			has_regent = no
+			has_character_flag = emf_siege_family
+		}
+	}
+	desc = { # No family
+		text = emf_siege.1.desc_nofam
+		trigger = {
+			has_regent = no
+			not = { has_character_flag = emf_siege_family }
+		}
+	}
+	# Regent present
+	desc = { # Incapable
+		text = emf_siege.1.desc_incapable_regent
+		trigger = {
+			has_regent = yes
+			or = {
+				trait = incapable
+				not = { age = 5 }
+			}
+			event_target:emf_siege_regent = {
+				at_location = ROOT
+				has_job_action = no
+			}
+		}
+	}
+	desc = { # Child
+		text = emf_siege.1.desc_child_regent
+		trigger = {
+			has_regent = yes
+			not = { trait = incapable }
+			age = 5
+			event_target:emf_siege_regent = {
+				at_location = ROOT
+				has_job_action = no
+			}
+		}
+	}
+	# Regent missing
+	desc = { # Incapable, has family
+		text = emf_siege.1.desc_incapable_noregent_fam
+		trigger = {
+			has_regent = yes
+			or = {
+				trait = incapable
+				not = { age = 5 }
+			}
+			event_target:emf_siege_regent = {
+				or = {
+					not = { at_location = ROOT }
+					has_job_action = yes
+				}
+			}
+			has_character_flag = emf_siege_family
+		}
+	}
+	desc = { # Child, has family
+		text = emf_siege.1.desc_child_noregent_fam
+		trigger = {
+			has_regent = yes
+			not = { trait = incapable }
+			age = 5
+			event_target:emf_siege_regent = {
+				or = {
+					not = { at_location = ROOT }
+					has_job_action = yes
+				}
+			}
+			has_character_flag = emf_siege_family
+		}
+	}
+	desc = { # Incapable, no family
+		text = emf_siege.1.desc_incapable_noregent_nofam
+		trigger = {
+			has_regent = yes
+			or = {
+				trait = incapable
+				not = { age = 5 }
+			}
+			event_target:emf_siege_regent = {
+				or = {
+					not = { at_location = ROOT }
+					has_job_action = yes
+				}
+			}
+			not = { has_character_flag = emf_siege_family }
+		}
+	}
+	desc = { # Child, no family
+		text = emf_siege.1.desc_child_noregent_nofam
+		trigger = {
+			has_regent = yes
+			not = { trait = incapable }
+			age = 5
+			event_target:emf_siege_regent = {
+				or = {
+					not = { at_location = ROOT }
+					has_job_action = yes
+				}
+			}
+			not = { has_character_flag = emf_siege_family }
+		}
+	}
+	picture = GFX_evt_council
+	border = GFX_event_normal_frame_war
+	is_triggered_only = yes
+	
+	immediate = {
+		# Start with a clean slate each time
+		remove_character_modifier = emf_siege_defender
+		remove_character_modifier = emf_siege_failed_escape
+		remove_character_modifier = emf_siege_left_behind
+		any_courtier = {
+			limit = {
+				at_location = ROOT
+				not = { character = ROOT }
+			}
+			remove_character_modifier = emf_siege_defender
+			remove_character_modifier = emf_siege_failed_escape
+			remove_character_modifier = emf_siege_left_behind
+		}
+		if = { # Check for family
+			limit = {
+				ai = no
+				any_courtier = {
+					at_location = ROOT
+					not = { character = ROOT }
+					has_job_action = no
+					is_ruler = no
+					or = {
+						is_close_relative = ROOT
+						is_married = ROOT
+						is_consort = ROOT
+						and = {
+							not = { dynasty = none }
+							dynasty = ROOT
+						}
+					}
+					not = { trait = in_hiding }
+				}
+			}
+			set_character_flag = emf_siege_family
+		}
+		if = { # Check for value
+			limit = {
+				ai = yes
+				FROM = {
+					liege = {
+						ROOT = {
+							any_current_enemy = {
+								or = {
+									character = PREVPREVPREV
+									character = PREVPREV
+								}
+							}
+						}
+					}
+				}
+			}
+			set_character_flag = emf_siege_valuable
+		}
+		
+		# LOG
+		if = {
+			limit = {
+				or = {
+					FROM = {
+						any_liege = { ai = no }
+					}
+					FROM = { ai = no }
+					ai = no
+				}
+			}
+			log = "emf_siege.1: Options for defender received by '[Root.GetBestName]'"
+		}
+	}
+	
+	# AI Options
+	option = { # High value AI targets always try to escape, have better chances
+		trigger = {
+			ai = yes
+			has_character_flag = emf_siege_valuable
+		}
+		name = AI_EVENT
+		
+		# LOG
+		if = {
+			limit = {
+				or = {
+					FROM = {
+						any_liege = { ai = no }
+					}
+					FROM = { ai = no }
+					ai = no
+				}
+			}
+			log = "emf_siege.1: '[Root.GetBestName]' is important, tries to escape siege"
+		}
+		
+		clr_character_flag = emf_siege_valuable
+		set_character_flag = emf_siege_protected
+		character_event = { id = emf_siege.2 }
+		any_courtier = {
+			limit = {
+				at_location = ROOT
+				not = { character = ROOT }
+				has_job_action = no
+				is_ruler = no
+				or = {
+					is_close_relative = ROOT
+					is_married = ROOT
+					is_consort = ROOT
+					and = {
+						not = { dynasty = none }
+						dynasty = ROOT
+					}
+				}
+				not = { trait = in_hiding }
+				not = { has_character_modifier = emf_siege_failed_escape }
+			}
+			character_event = { id = emf_siege.2 }
+		}
+	}
+	option = { # Most other AI try to escape
+		trigger = {
+			ai = yes
+			not = { has_character_flag = emf_siege_valuable }
+		}
+		name = AI_EVENT
+
+		# LOG
+		if = {
+			limit = {
+				or = {
+					FROM = {
+						any_liege = { ai = no }
+					}
+					FROM = { ai = no }
+					ai = no
+				}
+			}
+			log = "emf_siege.1: '[Root.GetBestName]' is a nobody, tries to escape siege"
+		}
+	
+		character_event = { id = emf_siege.2 }
+		any_courtier = {
+			limit = {
+				at_location = ROOT
+				not = { character = ROOT }
+				has_job_action = no
+				is_ruler = no
+				or = {
+					is_close_relative = ROOT
+					is_married = ROOT
+					is_consort = ROOT
+					and = {
+						not = { dynasty = none }
+						dynasty = ROOT
+					}
+				}
+				not = { trait = in_hiding }
+				not = { has_character_modifier = emf_siege_failed_escape }
+			}
+			character_event = { id = emf_siege.2 }
+		}
+		ai_chance = {
+			factor = 10
+		}
+	}
+	option = { # But some AI stay and fight
+		trigger = {
+			ai = yes
+			not = { has_character_flag = emf_siege_valuable }
+			not = { trait = craven }
+		}
+		name = AI_EVENT
+
+		# LOG
+		if = {
+			limit = {
+				or = {
+					FROM = {
+						any_liege = { ai = no }
+					}
+					FROM = { ai = no }
+					ai = no
+				}
+			}
+			log = "emf_siege.1: '[Root.GetBestName]' is a nobody, stays to defend"
+		}
+	
+		add_character_modifier = {
+			name = emf_siege_defender
+			duration = 365
+		}
+		any_courtier = {
+			limit = {
+				at_location = ROOT
+				not = { character = ROOT }
+				has_job_action = no
+				is_ruler = no
+				or = {
+					is_close_relative = ROOT
+					is_married = ROOT
+					is_consort = ROOT
+					and = {
+						not = { dynasty = none }
+						dynasty = ROOT
+					}
+				}
+				not = { trait = in_hiding }
+				not = { has_character_modifier = emf_siege_failed_escape }
+			}
+			set_character_flag = emf_siege_protected
+			character_event = { id = emf_siege.2 }
+		}
+		ai_chance = {
+			factor = 1
+			modifier = {
+				factor = 0.5
+				not = { trait = holy_warrior }
+				not = { trait = crusader }
+				not = { trait = mujahid  }
+				FROM = {
+					not = { religion_group = ROOT }
+				}
+			}
+			modifier = {
+				factor = 10
+				trait = proud
+			}
+			modifier = {
+				factor = 100
+				trait = brave
+			}
+		}
+	}
+	
+	# Player Options
+	option = { # Attempt escape alone when no family is present or they're already hiding
+		trigger = {
+			ai = no
+			has_regent = no
+			not = { has_character_flag = emf_siege_family }
+		}
+		name = emf_siege.1.a
+		
+		custom_tooltip = { text = emf_siege.1.a_tt }
+		hidden_tooltip = {
+			random_list = {
+				10 = { # Success
+					add_trait = in_hiding
+					set_character_flag = emf_siege_in_hiding
+					set_character_flag = do_not_disturb
+				}
+				1 = { # Failure
+					add_character_modifier = {
+						name = emf_siege_failed_escape
+						duration = 365
+					}
+				}
+			}
+			character_event = { id = emf_siege.3 }
+		}
+	}
+	option = { # Stay and fight when no family is present or they're already hiding
+		trigger = {
+			ai = no
+			has_regent = no
+			not = { has_character_flag = emf_siege_family }
+		}
+		name = emf_siege.1.b
+		
+		add_character_modifier = {
+			name = emf_siege_defender
+			duration = 365
+		}
+	}
+	option = { # Attempt escape alone even with family present
+		trigger = {
+			ai = no
+			has_regent = no
+			has_character_flag = emf_siege_family
+		}
+		name = emf_siege.1.c
+
+		custom_tooltip = { text = emf_siege.1.c_tt }
+		any_courtier = { # Family will be furious
+			limit = {
+				at_location = ROOT
+				not = { character = ROOT }
+				has_job_action = no
+				is_ruler = no
+				or = {
+					is_close_relative = ROOT
+					is_married = ROOT
+					is_consort = ROOT
+					and = {
+						not = { dynasty = none }
+						dynasty = ROOT
+					}
+				}
+				not = { trait = in_hiding }
+			}
+			opinion = {
+				modifier = opinion_furious
+				who = ROOT
+				months = 12
+			}
+		}
+		hidden_tooltip = {
+			random_list = {
+				10 = { # Success
+					add_trait = in_hiding
+					set_character_flag = emf_siege_in_hiding
+					set_character_flag = do_not_disturb
+					any_courtier = {
+						limit = {
+							at_location = ROOT
+							not = { character = ROOT }
+							has_job_action = no
+							is_ruler = no
+							or = {
+								is_close_relative = ROOT
+								is_married = ROOT
+								is_consort = ROOT
+								and = {
+									not = { dynasty = none }
+									dynasty = ROOT
+								}
+							}
+							not = { trait = in_hiding }
+						}
+						add_character_modifier = {
+							name = emf_siege_left_behind
+							duration = 365
+						}
+					}
+				}
+				1 = { # Failure
+					add_character_modifier = {
+						name = emf_siege_failed_escape
+						duration = 365
+					}
+				}
+			}
+			character_event = { id = emf_siege.4 }
+		}
+		clr_character_flag = emf_siege_family
+	}
+	option = { # Attempt escape with everyone
+		trigger = {
+			ai = no
+			has_regent = no
+			has_character_flag = emf_siege_family
+		}
+		name = emf_siege.1.d
+		
+		custom_tooltip = { text = emf_siege.1.d_tt }
+		hidden_tooltip = {
+			random_list = { # Harder to escape with family
+				9 = { # Success
+					add_trait = in_hiding
+					set_character_flag = emf_siege_in_hiding
+					set_character_flag = do_not_disturb
+				}
+				2 = { # Failure
+					add_character_modifier = {
+						name = emf_siege_failed_escape
+						duration = 365
+					}
+				}
+			}
+			any_courtier = {
+				limit = {
+					at_location = ROOT
+					not = { character = ROOT }
+					has_job_action = no
+					is_ruler = no
+					or = {
+						is_close_relative = ROOT
+						is_married = ROOT
+						is_consort = ROOT
+						and = {
+							not = { dynasty = none }
+							dynasty = ROOT
+						}
+					}
+					not = { trait = in_hiding }
+					not = { has_character_modifier = emf_siege_failed_escape }
+				}
+				character_event = { id = emf_siege.2 tooltip = emf_siege.2_tt }
+			}
+			character_event = { id = emf_siege.3 }
+		}
+		clr_character_flag = emf_siege_family
+	}
+	option = { # Stay and fight, but send family away
+		trigger = {
+			ai = no
+			has_regent = no
+			has_character_flag = emf_siege_family
+		}
+		name = emf_siege.1.e
+		
+		custom_tooltip = { text = emf_siege.1.e_tt }
+		add_character_modifier = {
+			name = emf_siege_defender
+			duration = 365
+		}
+		hidden_tooltip = {
+			any_courtier = {
+				limit = {
+					at_location = ROOT
+					not = { character = ROOT }
+					has_job_action = no
+					is_ruler = no
+					or = {
+						is_close_relative = ROOT
+						is_married = ROOT
+						is_consort = ROOT
+						and = {
+							not = { dynasty = none }
+							dynasty = ROOT
+						}
+					}
+					not = { trait = in_hiding }
+					not = { has_character_modifier = emf_siege_failed_escape }
+				}
+				set_character_flag = emf_siege_protected
+				character_event = { id = emf_siege.2 tooltip = emf_siege.2_tt }
+			}
+			character_event = { id = emf_siege.3 }
+		}
+		clr_character_flag = emf_siege_family
+	}
+	option = { # Keep everyone together
+		trigger = {
+			ai = no
+			has_regent = no
+			has_character_flag = emf_siege_family
+		}
+		name = emf_siege.1.f
+		
+		add_character_modifier = {
+			name = emf_siege_defender
+			duration = 365
+		}
+		hidden_tooltip = {
+			any_courtier = {
+				limit = {
+					at_location = ROOT
+					not = { character = ROOT }
+					has_job_action = no
+					is_ruler = no
+					or = {
+						is_close_relative = ROOT
+						is_married = ROOT
+						is_consort = ROOT
+						and = {
+							not = { dynasty = none }
+							dynasty = ROOT
+						}
+					}
+					not = { trait = in_hiding }
+				}
+				add_character_modifier = {
+					name = emf_siege_defender
+					duration = 365
+				}
+			}
+		}
+		clr_character_flag = emf_siege_family
+	}
+	
+	# Regent Options
+	option = { # Regent is present, makes the choices if ruler is incapable or child
+		trigger = {
+			ai = no
+			has_regent = yes
+			event_target:emf_siege_regent = {
+				at_location = ROOT
+				has_job_action = no
+			}
+		}
+		name = { # Incapable
+			text = emf_siege.1.g_incapable
+			trigger = {
+				or = {
+					trait = incapable
+					not = { age = 5 }
+				}
+			}
+		}
+		name = { # Child
+			text = emf_siege.1.g_child
+			trigger = {
+				not = { trait = incapable }
+				age = 5
+			}
+		}
+		
+		if = {
+			limit = { has_character_flag = emf_siege_family }
+			custom_tooltip = { text = emf_siege.1.g_tt_family }
+		}
+		if = {
+			limit = {
+				not = { has_character_flag = emf_siege_family }
+			}
+			custom_tooltip = { text = emf_siege.1.g_tt_alone }
+		}
+		hidden_tooltip = {
+			any_courtier = { # Family escapes
+				limit = {
+					at_location = ROOT
+					not = { character = ROOT }
+					has_job_action = no
+					is_ruler = no
+					or = {
+						is_close_relative = ROOT
+						is_married = ROOT
+						is_consort = ROOT
+						and = {
+							not = { dynasty = none }
+							dynasty = ROOT
+						}
+					}
+					not = { trait = in_hiding }
+					not = { has_character_modifier = emf_siege_failed_escape }
+				}
+				character_event = { id = emf_siege.2 tooltip = emf_siege.2_tt }
+			}
+			event_target:emf_siege_regent = {
+				character_event = { id = emf_siege.5 }
+			}
+			clr_character_flag = emf_siege_family
+		}
+	}
+	option = { # Regent is not present, family takes you along
+		trigger = {
+			ai = no
+			has_regent = yes
+			event_target:emf_siege_regent = {
+				or = {
+					not = { at_location = ROOT }
+					has_job_action = yes
+				}
+			}
+			has_character_flag = emf_siege_family
+		}
+		name = { # Incapable
+			text = emf_siege.1.h_incapable_fam
+			trigger = {
+				or = {
+					trait = incapable
+					not = { age = 5 }
+				}
+			}
+		}
+		name = { # Child
+			text = emf_siege.1.h_child_fam
+			trigger = {
+				not = { trait = incapable }
+				age = 5
+			}
+		}
+		
+		if = {
+			limit = {
+				not = { trait = incapable }
+			}
+			custom_tooltip = { text = emf_siege.1.h_tt }
+		}
+		hidden_tooltip = { # Attempt escape with family
+			random_list = {
+				9 = { # Success
+					add_trait = in_hiding
+					set_character_flag = emf_siege_in_hiding
+					set_character_flag = do_not_disturb
+				}
+				2 = { # Failure
+					add_character_modifier = {
+						name = emf_siege_failed_escape
+						duration = 365
+					}
+				}
+			}
+			any_courtier = {
+				limit = {
+					at_location = ROOT
+					not = { character = ROOT }
+					has_job_action = no
+					is_ruler = no
+					or = {
+						is_close_relative = ROOT
+						is_married = ROOT
+						is_consort = ROOT
+						and = {
+							not = { dynasty = none }
+							dynasty = ROOT
+						}
+					}
+					not = { trait = in_hiding }
+					not = { has_character_modifier = emf_siege_failed_escape }
+				}
+				character_event = { id = emf_siege.2 }
+			}
+			if = { # Send generic escape event
+				limit = {
+					not = { trait = incapable }
+					age = 5
+				}
+				character_event = { id = emf_siege.3 }
+			}
+			if = { # Send special incapable escape event
+				limit = {
+					or = {
+						trait = incapable
+						not = { age = 5 }
+					}
+				}
+				character_event = { id = emf_siege.7 }
+			}
+			clr_character_flag = emf_siege_family
+		}
+		clear_event_target = emf_siege_regent
+	}
+	option = { # Completely alone, forced to stay
+		trigger = {
+			ai = no
+			has_regent = yes
+			event_target:emf_siege_regent = {
+				or = {
+					not = { at_location = ROOT }
+					has_job_action = yes
+				}
+			}
+			not = { has_character_flag = emf_siege_family }
+		}
+		name = { # Incapable
+			text = emf_siege.1.i_incapable
+			trigger = {
+				or = {
+					trait = incapable
+					not = { age = 5 }
+				}
+			}
+		}
+		name = { # Child
+			text = emf_siege.1.i_child
+			trigger = {
+				not = { trait = incapable }
+				age = 5
+			}
+		}
+		
+		if = {
+			limit = {
+				not = { trait = incapable }
+			}
+			custom_tooltip = { text = emf_siege.1.i_tt }
+			add_character_modifier = {
+				name = emf_siege_defender
+				duration = 365
+			}
+		}
+		clear_event_target = emf_siege_regent
+	}
+}
+
+# Determine whether a character escapes a siege
+character_event = {
+	id = emf_siege.2
+	hide_window = yes
+	is_triggered_only = yes
+	
+	# For protected characters
+	option = { # Success!
+		trigger = { has_character_flag = emf_siege_protected }
+		name = OK
+		
+		clr_character_flag = emf_siege_protected
+		add_trait = in_hiding
+		set_character_flag = emf_siege_in_hiding
+		set_character_flag = do_not_disturb
+		if = { # LOG
+			limit = {
+				or = {
+					FROMFROM = {
+						any_liege = { ai = no }
+					}
+					FROMFROM = { ai = no }
+					FROM = { ai = no }
+					ai = no
+				}
+			}
+			log = "emf_siege.2_protected: '[Root.GetBestName]' escapes"
+		}
+		ai_chance = {
+			factor = 10
+		}
+	}
+	option = { # Failure
+		trigger = { has_character_flag = emf_siege_protected }
+		name = OK
+		
+		clr_character_flag = emf_siege_protected
+		add_character_modifier = {
+			name = emf_siege_failed_escape
+			duration = 365
+		}
+		if = { # LOG
+			limit = {
+				or = {
+					FROMFROM = {
+						any_liege = { ai = no }
+					}
+					FROMFROM = { ai = no }
+					FROM = { ai = no }
+					ai = no
+				}
+			}
+			log = "emf_siege.2_protected: '[Root.GetBestName]' fails to escape"
+		}
+		ai_chance = {
+			factor = 1
+		}
+	}
+	# For regular characters
+	option = { # Success!
+		trigger = {
+			not = { has_character_flag = emf_siege_protected }
+			not = { has_character_flag = emf_siege_vulnerable }
+		}
+		name = OK
+		
+		add_trait = in_hiding
+		set_character_flag = emf_siege_in_hiding
+		set_character_flag = do_not_disturb
+		if = { # LOG
+			limit = {
+				or = {
+					FROMFROM = {
+						any_liege = { ai = no }
+					}
+					FROMFROM = { ai = no }
+					FROM = { ai = no }
+					ai = no
+				}
+			}
+			log = "emf_siege.2: '[Root.GetBestName]' escapes"
+		}
+		ai_chance = {
+			factor = 9
+		}
+	}
+	option = { # Failure
+		trigger = {
+			not = { has_character_flag = emf_siege_protected }
+			not = { has_character_flag = emf_siege_vulnerable }
+		}
+		name = OK
+		
+		add_character_modifier = {
+			name = emf_siege_failed_escape
+			duration = 365
+		}
+		if = { # LOG
+			limit = {
+				or = {
+					FROMFROM = {
+						any_liege = { ai = no }
+					}
+					FROMFROM = { ai = no }
+					FROM = { ai = no }
+					ai = no
+				}
+			}
+			log = "emf_siege.2: '[Root.GetBestName]' fails to escape"
+		}
+		ai_chance = {
+			factor = 2
+		}
+	}
+	# For vulnerable characters
+	option = { # Success!
+		trigger = { has_character_flag = emf_siege_vulnerable }
+		name = OK
+		
+		clr_character_flag = emf_siege_vulnerable
+		add_trait = in_hiding
+		set_character_flag = emf_siege_in_hiding
+		set_character_flag = do_not_disturb
+		if = { # LOG
+			limit = {
+				or = {
+					FROMFROM = {
+						any_liege = { ai = no }
+					}
+					FROMFROM = { ai = no }
+					FROM = { ai = no }
+					ai = no
+				}
+			}
+			log = "emf_siege.2_vulnerable: '[Root.GetBestName]' escapes"
+		}
+		ai_chance = {
+			factor = 8
+		}
+	}
+	option = { # Failure
+		trigger = { has_character_flag = emf_siege_vulnerable }
+		name = OK
+		
+		clr_character_flag = emf_siege_vulnerable
+		add_character_modifier = {
+			name = emf_siege_failed_escape
+			duration = 365
+		}
+		if = { # LOG
+			limit = {
+				or = {
+					FROMFROM = {
+						any_liege = { ai = no }
+					}
+					FROMFROM = { ai = no }
+					FROM = { ai = no }
+					ai = no
+				}
+			}
+			log = "emf_siege.2_vulnerable: '[Root.GetBestName]' fails to escape"
+		}
+		ai_chance = {
+			factor = 3
+		}
+	}
+}
+
+# Generic escape flavor event
+character_event = {
+	id = emf_siege.3
+	# Alone
+	desc = { # Success
+		text = emf_siege.3.desc_alone_success
+		trigger = {
+			has_character_flag = emf_siege_in_hiding
+			not = { has_character_flag = emf_siege_family }
+		}
+	}
+	desc = { # Failure
+		text = emf_siege.3.desc_alone_fail
+		trigger = {
+			has_character_modifier = emf_siege_failed_escape
+			not = { has_character_flag = emf_siege_family }
+		}
+	}
+	# Root escapes
+	desc = { # No family escaped
+		text = emf_siege.3.desc_group_success_nofam
+		trigger = {
+			has_character_flag = emf_siege_in_hiding
+			has_character_flag = emf_siege_no_family
+		}
+	}
+	desc = { # Some family escaped
+		text = emf_siege.3.desc_group_success_somefam
+		trigger = {
+			has_character_flag = emf_siege_in_hiding
+			has_character_flag = emf_siege_some_family
+		}
+	}
+	desc = { # All family escaped
+		text = emf_siege.3.desc_group_success_allfam
+		trigger = {
+			has_character_flag = emf_siege_in_hiding
+			has_character_flag = emf_siege_all_family
+		}
+	}
+	# Root fails to escape
+	desc = { # Nobody escaped
+		text = emf_siege.3.desc_group_fail_nofam
+		trigger = {
+			has_character_modifier = emf_siege_failed_escape
+			has_character_flag = emf_siege_no_family
+		}
+	}
+	desc = { # Some family escaped
+		text = emf_siege.3.desc_group_fail_somefam
+		trigger = {
+			has_character_modifier = emf_siege_failed_escape
+			has_character_flag = emf_siege_some_family
+		}
+	}
+	desc = { # All family escaped
+		text = emf_siege.3.desc_group_fail_allfam
+		trigger = {
+			has_character_modifier = emf_siege_failed_escape
+			has_character_flag = emf_siege_all_family
+		}
+	}
+	# Root stayed
+	desc = { # No family escaped
+		text = emf_siege.3.desc_def_nofam
+		trigger = {
+			has_character_modifier = emf_siege_defender
+			has_character_flag = emf_siege_no_family
+		}
+	}
+	desc = { # Some family escaped
+		text = emf_siege.3.desc_def_somefam
+		trigger = {
+			has_character_modifier = emf_siege_defender
+			has_character_flag = emf_siege_some_family
+		}
+	}
+	desc = { # All family escaped
+		text = emf_siege.3.desc_def_allfam
+		trigger = {
+			has_character_modifier = emf_siege_defender
+			has_character_flag = emf_siege_all_family
+		}
+	}
+	picture = GFX_evt_large_army
+	border = GFX_event_normal_frame_war
+	hide_from = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		if = { # None escaped
+			limit = {
+				has_character_flag = emf_siege_family
+				not = {
+					any_courtier = {
+						at_location = ROOT
+						not = { character = ROOT }
+						has_job_action = no
+						is_ruler = no
+						or = {
+							is_close_relative = ROOT
+							is_married = ROOT
+							is_consort = ROOT
+							and = {
+								not = { dynasty = none }
+								dynasty = ROOT
+							}
+						}
+						has_character_flag = emf_siege_in_hiding
+					}
+				}
+			}
+			set_character_flag = emf_siege_no_family
+		}
+		if = { # Some escaped
+			limit = {
+				has_character_flag = emf_siege_family
+				any_courtier = {
+					at_location = ROOT
+					not = { character = ROOT }
+					has_job_action = no
+					is_ruler = no
+					or = {
+						is_close_relative = ROOT
+						is_married = ROOT
+						is_consort = ROOT
+						and = {
+							not = { dynasty = none }
+							dynasty = ROOT
+						}
+					}
+					has_character_flag = emf_siege_in_hiding
+				}
+				any_courtier = {
+					at_location = ROOT
+					not = { character = ROOT }
+					has_job_action = no
+					is_ruler = no
+					or = {
+						is_close_relative = ROOT
+						is_married = ROOT
+						is_consort = ROOT
+						and = {
+							not = { dynasty = none }
+							dynasty = ROOT
+						}
+					}
+					has_character_modifier = emf_siege_failed_escape
+				}
+			}
+			set_character_flag = emf_siege_some_family
+		}
+		if = { # All family escaped
+			limit = {
+				has_character_flag = emf_siege_family
+				not = {
+					any_courtier = {
+						at_location = ROOT
+						not = { character = ROOT }
+						has_job_action = no
+						is_ruler = no
+						or = {
+							is_close_relative = ROOT
+							is_married = ROOT
+							is_consort = ROOT
+							and = {
+								not = { dynasty = none }
+								dynasty = ROOT
+							}
+						}
+						has_character_modifier = emf_siege_failed_escape
+					}
+				}
+			}
+			set_character_flag = emf_siege_all_family
+		}
+	}
+	
+	option = {
+		# Alone
+		name = { # Success
+			text = emf_siege.3.a_alone_success
+			trigger = {
+				has_character_flag = emf_siege_in_hiding
+				not = { has_character_flag = emf_siege_family }
+			}
+		}
+		name = { # Failure
+			text = emf_siege.3.a_alone_fail
+			trigger = {
+				has_character_modifier = emf_siege_failed_escape
+				not = { has_character_flag = emf_siege_family }
+			}
+		}
+		# Root escapes
+		name = { # No family escaped
+			text = emf_siege.3.a_group_success_nofam
+			trigger = {
+				has_character_flag = emf_siege_in_hiding
+				has_character_flag = emf_siege_no_family
+			}
+		}
+		name = { # Some family escaped
+			text = emf_siege.3.a_group_success_somefam
+			trigger = {
+				has_character_flag = emf_siege_in_hiding
+				has_character_flag = emf_siege_some_family
+			}
+		}
+		name = { # All family escaped
+			text = emf_siege.3.a_group_success_allfam
+			trigger = {
+				has_character_flag = emf_siege_in_hiding
+				has_character_flag = emf_siege_all_family
+			}
+		}
+		# Root fails to escape
+		name = { # Nobody escaped
+			text = emf_siege.3.a_group_fail_nofam
+			trigger = {
+				has_character_modifier = emf_siege_failed_escape
+				has_character_flag = emf_siege_no_family
+			}
+		}
+		name = { # Some family escaped
+			text = emf_siege.3.a_group_fail_somefam
+			trigger = {
+				has_character_modifier = emf_siege_failed_escape
+				has_character_flag = emf_siege_some_family
+			}
+		}
+		name = { # All family escaped
+			text = emf_siege.3.a_group_fail_allfam
+			trigger = {
+				has_character_modifier = emf_siege_failed_escape
+				has_character_flag = emf_siege_all_family
+			}
+		}
+		# Root stayed
+		name = { # No family escaped
+			text = emf_siege.3.a_def_nofam
+			trigger = {
+				has_character_modifier = emf_siege_defender
+				has_character_flag = emf_siege_no_family
+			}
+		}
+		name = { # Some family escaped
+			text = emf_siege.3.a_def_somefam
+			trigger = {
+				has_character_modifier = emf_siege_defender
+				has_character_flag = emf_siege_some_family
+			}
+		}
+		name = { # All family escaped
+			text = emf_siege.3.a_def_allfam
+			trigger = {
+				has_character_modifier = emf_siege_defender
+				has_character_flag = emf_siege_all_family
+			}
+		}
+		
+		clr_character_flag = emf_siege_no_family
+		clr_character_flag = emf_siege_some_family
+		clr_character_flag = emf_siege_all_family
+	}
+}
+
+# Ditched family flavor event
+character_event = {
+	id = emf_siege.4
+	# Success
+	desc = { # Not mean
+		text = emf_siege.4.desc_success
+		trigger = {
+			has_character_flag = emf_siege_in_hiding
+			not = { trait = cruel }
+			not = { trait = envious }
+		}
+	}
+	desc = { # Mean
+		text = emf_siege.4.desc_success_cruel
+		trigger = {
+			has_character_flag = emf_siege_in_hiding
+			or = {
+				trait = cruel
+				trait = envious
+			}
+		}
+	}
+	# Failure
+	desc = { # Not mean
+		text = emf_siege.4.desc_fail
+		trigger = {
+			has_character_modifier = emf_siege_failed_escape
+			not = { trait = cruel }
+			not = { trait = envious }
+		}
+	}
+	desc = { # Mean
+		text = emf_siege.4.desc_fail_cruel
+		trigger = {
+			has_character_modifier = emf_siege_failed_escape
+			or = {
+				trait = cruel
+				trait = envious
+			}
+		}
+	}
+	picture = GFX_evt_large_army
+	border = GFX_event_normal_frame_war
+	hide_from = yes
+	is_triggered_only = yes
+	
+	option = {
+		# Success
+		name = { # Not mean
+			text = emf_siege.4.a_success
+			trigger = {
+				has_character_flag = emf_siege_in_hiding
+				not = { trait = cruel }
+				not = { trait = envious }
+			}
+		}
+		name = { # Mean
+			text = emf_siege.4.a_success_cruel
+			trigger = {
+				has_character_flag = emf_siege_in_hiding
+				or = {
+					trait = cruel
+					trait = envious
+				}
+			}
+		}
+		# Failure
+		name = { # Not mean
+			text = emf_siege.4.a_fail
+			trigger = {
+				has_character_modifier = emf_siege_failed_escape
+				not = { trait = cruel }
+				not = { trait = envious }
+			}
+		}
+		name = { # Mean
+			text = emf_siege.4.a_fail_cruel
+			trigger = {
+				has_character_modifier = emf_siege_failed_escape
+				or = {
+					trait = cruel
+					trait = envious
+				}
+			}
+		}
+		hidden_tooltip = {
+			random = { # Punishment, sometimes
+				chance = 10
+				character_event = { id = emf_siege.61 days = 21 random = 7 }
+			}
+		}
+	}
+}
+
+# Regent chooses whether to help
+character_event = {
+	id = emf_siege.5
+	# Regent likes charge
+	desc = { # Charge is incapable adult
+		text = emf_siege.5.desc_pos_incapable_adult
+		trigger = {
+			opinion = { who = FROM value = 0 }
+			FROM = {
+				is_adult = yes
+				trait = incapable
+			}
+		}
+	}
+	desc = { # Charge is incapable child
+		text = emf_siege.5.desc_pos_incapable_child
+		trigger = {
+			opinion = { who = FROM value = 0 }
+			FROM = {
+				is_adult = no
+				trait = incapable
+			}
+		}
+	}
+	desc = { # Charge is child
+		text = emf_siege.5.desc_pos_child
+		trigger = {
+			opinion = { who = FROM value = 0 }
+			FROM = {
+				age = 5
+				not = { age = 16 }
+				not = { trait = incapable }
+			}
+		}
+	}
+	desc = { # Charge is young child
+		text = emf_siege.5.desc_pos_young_child
+		trigger = {
+			opinion = { who = FROM value = 0 }
+			FROM = {
+				not = { age = 5 }
+				not = { trait = incapable }
+			}
+		}
+	}
+	# Regent hates charge
+	desc = { # Charge is incapable adult
+		text = emf_siege.5.desc_neg_incapable_adult
+		trigger = {
+			not = {
+				opinion = { who = FROM value = 0 }
+			}
+			FROM = {
+				is_adult = yes
+				trait = incapable
+			}
+		}
+	}
+	desc = { # Charge is incapable child
+		text = emf_siege.5.desc_neg_incapable_child
+		trigger = {
+			not = {
+				opinion = { who = FROM value = 0 }
+			}
+			FROM = {
+				is_adult = no
+				trait = incapable
+			}
+		}
+	}
+	desc = { # Charge is child
+		text = emf_siege.5.desc_neg_child
+		trigger = {
+			not = {
+				opinion = { who = FROM value = 0 }
+			}
+			FROM = {
+				age = 5
+				not = { age = 16 }
+				not = { trait = incapable }
+			}
+		}
+	}
+	desc = { # Charge is young child
+		text = emf_siege.5.desc_neg_young_child
+		trigger = {
+			not = {
+				opinion = { who = FROM value = 0 }
+			}
+			FROM = {
+				not = { age = 5 }
+				not = { trait = incapable }
+			}
+		}
+	}
+	picture = GFX_evt_whispers
+	border = GFX_event_normal_frame_war
+	is_triggered_only = yes
+
+	option = { # Regent helps charge to escape
+		name = { # Regent likes
+			text = emf_siege.5.a_pos
+			trigger = {
+				opinion = { who = FROM value = 0 }
+			}
+		}
+		name = { # Regent hates
+			text = emf_siege.5.a_neg
+			trigger = {
+				not = {
+					opinion = { who = FROM value = 0 }
+				}
+			}
+		}
+		
+		FROM = {
+			character_event = { id = emf_siege.6 tooltip = emf_siege.6_tt_help }
+		}
+		ai_chance = {
+			factor = 1
+		}
+	}
+	option = { # Regent refuses to help
+		name = { # Charge is incapable
+			text = emf_siege.5.b_incapable
+			trigger = {
+				FROM = { trait = incapable }
+			}
+		}
+		name = { # Charge is capable
+			text = emf_siege.5.b_capable
+			trigger = {
+				FROM = {
+					not = { trait = incapable }
+				}
+			}
+		}
+
+		FROM = {
+			set_character_flag = emf_siege_regent_ditched
+			character_event = { id = emf_siege.6 tooltip = emf_siege.6_tt_ditched }
+		}
+		ai_chance = {
+			factor = 0 # Players only
+		}
+	}
+	option = { # Regent tries to betray young charge, AI only
+		trigger = {
+			ai = yes
+			or = {
+				is_primary_heir = FROM
+				any_child = { is_primary_heir = FROM }
+			}
+			not = {
+				opinion = { who = FROM value = -5 }
+				has_character_flag = regent_schemer
+				has_minor_title = title_queen_mother
+				has_minor_title = title_ruler_consort
+			}
+			FROM = {
+				age = 5
+				not = { age = 16 }
+			}
+		}
+		name = OK
+
+		FROM = {
+			set_character_flag = emf_siege_regent_ditched
+			character_event = { id = emf_siege.6 }
+		}
+		ai_chance = {
+			factor = 128
+		}
+	}
+}
+
+# Incapable or child ruler with regent escape event
+character_event = {
+	id = emf_siege.6
+	# Regent helped
+	desc = {
+		text = emf_siege.6.desc_incapable_success
+		trigger = {
+			or = {
+				trait = incapable
+				not = { age = 5 }
+			}
+			has_character_flag = emf_siege_in_hiding
+			not = { has_character_flag = emf_siege_regent_ditched }
+		}
+	}
+	desc = {
+		text = emf_siege.6.desc_child_success
+		trigger = {
+			not = { trait = incapable }
+			age = 5
+			has_character_flag = emf_siege_in_hiding
+			not = { has_character_flag = emf_siege_regent_ditched }
+		}
+	}
+	desc = {
+		text = emf_siege.6.desc_incapable_fail
+		trigger = {
+			or = {
+				trait = incapable
+				not = { age = 5 }
+			}
+			has_character_modifier = emf_siege_failed_escape
+			not = { has_character_flag = emf_siege_regent_ditched }
+		}
+	}
+	desc = {
+		text = emf_siege.6.desc_child_fail
+		trigger = {
+			not = { trait = incapable }
+			age = 5
+			has_character_modifier = emf_siege_failed_escape
+			not = { has_character_flag = emf_siege_regent_ditched }
+		}
+	}
+	# Regent sold you out
+	desc = {
+		text = emf_siege.6.desc_incapable_success_ditched
+		trigger = {
+			or = {
+				trait = incapable
+				not = { age = 5 }
+			}
+			has_character_flag = emf_siege_in_hiding
+			has_character_flag = emf_siege_regent_ditched
+		}
+	}
+	desc = {
+		text = emf_siege.6.desc_child_success_ditched
+		trigger = {
+			not = { trait = incapable }
+			age = 5
+			has_character_flag = emf_siege_in_hiding
+			has_character_flag = emf_siege_regent_ditched
+		}
+	}
+	desc = {
+		text = emf_siege.6.desc_incapable_fail_ditched
+		trigger = {
+			or = {
+				trait = incapable
+				not = { age = 5 }
+			}
+			has_character_modifier = emf_siege_failed_escape
+			has_character_flag = emf_siege_regent_ditched
+		}
+	}
+	desc = {
+		text = emf_siege.6.desc_child_fail_ditched
+		trigger = {
+			not = { trait = incapable }
+			age = 5
+			has_character_modifier = emf_siege_failed_escape
+			has_character_flag = emf_siege_regent_ditched
+		}
+	}
+	picture = GFX_evt_child_play
+	border = GFX_event_normal_frame_war
+	is_triggered_only = yes
+	
+	immediate = {
+		if = { # Regent sells you out
+			limit = { has_character_flag = emf_siege_regent_ditched }
+			random_list = {
+				10 = { # Success
+					modifier = {
+						factor = 0.05
+						trait = incapable
+					}
+					modifier = {
+						factor = 0.1
+						not = { age = 5 }
+					}
+					modifier = {
+						factor = 2
+						age = 5
+						not = { age = 12 }
+					}
+					modifier = {
+						factor = 4
+						age = 12
+					}
+					add_trait = in_hiding
+					set_character_flag = emf_siege_in_hiding
+					set_character_flag = do_not_disturb
+				}
+				10 = { # Failure
+					add_character_modifier = {
+						name = emf_siege_failed_escape
+						duration = 365
+					}
+				}
+			}
+			break = yes
+		}
+		random_list = { # Regent helped you
+			9 = { # Success
+				add_trait = in_hiding
+				set_character_flag = emf_siege_in_hiding
+				set_character_flag = do_not_disturb
+			}
+			2 = { # Failure
+				add_character_modifier = {
+					name = emf_siege_failed_escape
+					duration = 365
+				}
+			}
+		}
+	}
+	
+	option = { # Success
+		trigger = { has_character_flag = emf_siege_in_hiding }
+		# Regent helped
+		name = {
+			text = emf_siege.6.a_incapable
+			trigger = {
+				or = {
+					trait = incapable
+					not = { age = 5 }
+				}
+				not = { has_character_flag = emf_siege_regent_ditched }
+			}
+		}
+		name = {
+			text = emf_siege.6.a_child
+			trigger = {
+				not = { trait = incapable }
+				age = 5
+				not = { has_character_flag = emf_siege_regent_ditched }
+			}
+		}
+		# Regent sold you out
+		name = {
+			text = emf_siege.6.a_incapable_ditched
+			trigger = {
+				or = {
+					trait = incapable
+					not = { age = 5 }
+				}
+				has_character_flag = emf_siege_regent_ditched
+			}
+		}
+		name = {
+			text = emf_siege.6.a_child_ditched
+			trigger = {
+				not = { trait = incapable }
+				age = 5
+				has_character_flag = emf_siege_regent_ditched
+			}
+		}
+		
+		clr_character_flag = emf_siege_regent_ditched
+		clear_event_target = emf_siege_regent
+	}
+	option = { # Failure
+		trigger = { has_character_modifier = emf_siege_failed_escape }
+		# Regent helped
+		name = {
+			text = emf_siege.6.b_incapable
+			trigger = {
+				or = {
+					trait = incapable
+					not = { age = 5 }
+				}
+				not = { has_character_flag = emf_siege_regent_ditched }
+			}
+		}
+		name = {
+			text = emf_siege.6.b_child
+			trigger = {
+				not = { trait = incapable }
+				age = 5
+				not = { has_character_flag = emf_siege_regent_ditched }
+			}
+		}
+		# Regent sold you out
+		name = {
+			text = emf_siege.6.b_incapable_ditched
+			trigger = {
+				or = {
+					trait = incapable
+					not = { age = 5 }
+				}
+				has_character_flag = emf_siege_regent_ditched
+			}
+		}
+		name = {
+			text = emf_siege.6.b_child_ditched
+			trigger = {
+				not = { trait = incapable }
+				age = 5
+				has_character_flag = emf_siege_regent_ditched
+			}
+		}
+		
+		clr_character_flag = emf_siege_regent_ditched
+		clear_event_target = emf_siege_regent
+	}
+}
+
+# Incapable ruler escape event
+character_event = {
+	id = emf_siege.7
+	desc = {
+		text = emf_siege.7.desc_success
+		trigger = { has_character_flag = emf_siege_in_hiding }
+	}
+	desc = {
+		text = emf_siege.7.desc_fail
+		trigger = { has_character_modifier = emf_siege_failed_escape }
+	}
+	picture = GFX_evt_child_play
+	border = GFX_event_normal_frame_war
+	hide_from = yes
+	is_triggered_only = yes
+	
+	option = {
+		name = emf_siege.7.a
+	}
+}
+
+# Choices for other rulers present at siege 
+# Could be child being warded at location or councilor
+character_event = {
+	id = emf_siege.8
+	desc = {
+		text = emf_siege.8.desc_adult
+		trigger = { is_adult = yes }
+	}
+	desc = {
+		text = emf_siege.8.desc_child
+		trigger = { is_adult = no }
+	}
+	picture = GFX_evt_council
+	border = GFX_event_normal_frame_war
+	hide_from = yes
+	is_triggered_only = yes
+	
+	option = { # Run for it
+		name = emf_siege.8.a
+
+		custom_tooltip = { text = emf_siege.8.a_tt }
+		hidden_tooltip = {
+			random_list = {
+				10 = { # Success
+					add_trait = in_hiding
+					set_character_flag = emf_siege_in_hiding
+					set_character_flag = do_not_disturb
+				}
+				1 = { # Failure
+					add_character_modifier = {
+						name = emf_siege_failed_escape
+						duration = 365
+					}
+				}
+			}
+			character_event = { id = emf_siege.3 }
+		}
+	}
+	option = { # Be loyal defender
+		trigger = { ai = no }
+		name = {
+			text = emf_siege.8.b_adult
+			trigger = { is_adult = yes }
+		}
+		name = {
+			text = emf_siege.8.b_child
+			trigger = {
+				is_adult = no
+				guardian = {
+					not = { trait = brave }
+				}
+			}
+		}
+		name = {
+			text = emf_siege.8.b_child_brave
+			trigger = {
+				is_adult = no
+				guardian = { trait = brave }
+			}
+		}
+		
+		if = {
+			limit = {
+				is_adult = no
+				not = { trait = craven }
+				not = { trait = brave }
+				guardian = { trait = brave }
+			}
+			add_trait = brave
+		}
+		add_character_modifier = {
+			name = emf_siege_defender
+			duration = 365
+		}
+	}
+}
+
+## Attacker Events
+## 50-59 Reserved
+# Send attacker options - from on_siege_over_leader
+character_event = {
+	id = emf_siege.50
+	hide_window = yes
+	is_triggered_only = yes
+
+	trigger = {
+		or = { # Unlanded folks don't have a primary title to check
+			is_ruler = no
+			primary_title = { rebel = no }
+		}
+		rebel = no
+		not = {
+			any_liege = {
+				or = {
+					primary_title = { rebel = yes }
+					rebel = yes
+				}
+			}
+		}
+		location = {
+			FROM = {
+				owner = {
+					not = { character = ROOT } # Absolutely no silliness allowed
+					or = { # Must be a hostile ruler
+						war_with = ROOT
+						ROOT = { # Required because unlanded generals can't pass war_with check
+							any_liege = { war_with = PREVPREV }
+						}
+					}
+					capital_scope = { province = PREVPREVPREV } # Must be capital province
+					any_demesne_title = { # Allow only one holding in the capital province to be occupied
+						count = 1
+						location = { province = PREVPREVPREVPREV }
+						is_occupied = yes
+					}
+					not = {
+						any_demesne_title = { # Same as above, prevents folks showing up at secondary holdings
+							count = 2
+							location = { province = PREVPREVPREVPREV }
+							is_occupied = yes
+						}
+					}
+				}
+				is_occupied = yes # Filters out raids
+			}
+		}
+	}
+
+	immediate = {
+		if = { # ROOT is owner
+			limit = {
+				FROM = { controlled_by = ROOT }
+			}
+			save_event_target_as = emf_siege_unit_owner
+		}
+		any_liege = { # ROOT's liege is owner
+			limit = {
+				FROM = { controlled_by = PREV }
+			}
+			save_event_target_as = emf_siege_unit_owner
+		}
+		if = { # For desc triggers
+			limit = {
+				FROM = {
+					location = {
+						event_target:emf_siege_unit_owner = { at_location = PREV }
+					}
+				}
+			}
+			event_target:emf_siege_unit_owner = { set_character_flag = emf_siege_unit_owner_present }
+		}
+		FROM = { # Send attacking owner the options
+			owner = {
+				any_courtier = { # Modifier cleanup
+					limit = {
+						at_location = ROOT
+						not = { character = PREV }
+					}
+					remove_character_modifier = emf_siege_defender
+					remove_character_modifier = emf_siege_failed_escape
+					remove_character_modifier = emf_siege_left_behind
+				}
+				if = { # Enemy leader is present
+					limit = {
+						at_location = ROOT
+						is_abroad = no
+						not = { trait = in_hiding }
+						not = { trait = on_hajj }
+						not = { trait = on_pilgrimage }
+						not = { trait = traveling } # VIET compatibility
+						not = { trait = on_retreat } # VIET compatibility
+					}
+					random = { # Bonus, sometimes
+						chance = 10
+						character_event = { id = emf_siege.60 days = 7 random = 7 }
+					}
+					remove_character_modifier = emf_siege_defender 			# Clean
+					remove_character_modifier = emf_siege_failed_escape 	# Up
+					event_target:emf_siege_unit_owner = {
+						character_event = { id = emf_siege.51 }
+					}
+				}
+				if = { # Enemy leader nowhere to be found
+					limit = {
+						or = {
+							not = { at_location = ROOT }
+							is_abroad = yes
+							trait = in_hiding
+							trait = on_hajj
+							trait = on_pilgrimage
+							trait = traveling # VIET compatibility
+							trait = on_retreat # VIET compatibility
+						}
+						any_courtier = {
+							at_location = ROOT
+							not = { character = PREV }
+							has_job_action = no
+							or = {
+								is_close_relative = PREV
+								is_married = PREV
+								is_consort = PREV
+								and = {
+									not = { dynasty = none }
+									dynasty = PREV
+								}
+								and = {
+									is_ruler = yes
+									has_regent = no
+								}
+							}
+							not = { trait = in_hiding }
+						}
+					}
+					event_target:emf_siege_unit_owner = {
+						character_event = { id = emf_siege.52 }
+					}
+				}
+				if = {
+					limit = {
+						any_courtier = {
+							at_location = ROOT
+							host = { character = PREVPREV }
+							prisoner = yes
+						}
+					}
+					event_target:emf_siege_unit_owner = {
+						character_event = { id = emf_siege.53 }
+					}
+				}
+			}
+		}
+		event_target:emf_siege_unit_owner = { clr_character_flag = emf_siege_unit_owner_present }
+		clear_event_target = emf_siege_unit_owner
+	}
+	
+	option = {
+		name = OK
+	}
+}
+
+# Option event - Leader is found
+character_event = {
+	id = emf_siege.51
+	desc = { # ROOT is personally present, courtiers
+		text = emf_siege.51.desc_owner_courtiers
+		trigger = {
+			has_character_flag = emf_siege_unit_owner_present
+			has_character_flag = emf_siege_courtiers_present
+		}
+	}
+	desc = { # ROOT is not present, courtiers
+		text = emf_siege.51.desc_noowner_courtiers
+		trigger = {
+			not = { has_character_flag = emf_siege_unit_owner_present }
+			has_character_flag = emf_siege_courtiers_present
+		}
+	}
+	desc = { # ROOT is personally present, no courtiers
+		text = emf_siege.51.desc_owner_nocourtiers
+		trigger = {
+			has_character_flag = emf_siege_unit_owner_present
+			not = { has_character_flag = emf_siege_courtiers_present }
+		}
+	}
+	desc = { # ROOT is not present, no courtiers
+		text = emf_siege.51.desc_noowner_nocourtiers
+		trigger = {
+			not = { has_character_flag = emf_siege_unit_owner_present }
+			not = { has_character_flag = emf_siege_courtiers_present }
+		}
+	}
+	picture = GFX_evt_siege
+	border = GFX_event_normal_frame_war
+	is_triggered_only = yes
+	
+	immediate = {
+		if = {
+			limit = {
+				FROMFROM = {
+					owner = {
+						any_courtier = {
+							at_location = FROMFROM
+							not = { character = PREV }
+							has_job_action = no
+							or = {
+								is_close_relative = PREV
+								is_married = PREV
+								is_consort = PREV
+								and = {
+									not = { dynasty = none }
+									dynasty = PREV
+								}
+								and = {
+									is_ruler = yes
+									has_regent = no
+								}
+							}
+							not = { trait = in_hiding }
+						}
+					}
+				}	
+			}
+			set_character_flag = emf_siege_courtiers_present
+		}
+	}
+	
+	option = { # Take only leader prisoner
+		name = { # ROOT is personally present, courtiers
+			text = emf_siege.51.a_owner_courtiers
+			trigger = {
+				has_character_flag = emf_siege_unit_owner_present
+				has_character_flag = emf_siege_courtiers_present
+			}
+		}
+		name = { # ROOT is not present, courtiers
+			text = emf_siege.51.a_noowner_courtiers
+			trigger = {
+				not = { has_character_flag = emf_siege_unit_owner_present }
+				has_character_flag = emf_siege_courtiers_present
+			}
+		}
+		name = { # ROOT is personally present, no courtiers
+			text = emf_siege.51.a_owner_nocourtiers
+			trigger = {
+				has_character_flag = emf_siege_unit_owner_present
+				not = { has_character_flag = emf_siege_courtiers_present }
+			}
+		}
+		name = { # ROOT is not present, no courtiers
+			text = emf_siege.51.a_noowner_nocourtiers
+			trigger = {
+				not = { has_character_flag = emf_siege_unit_owner_present }
+				not = { has_character_flag = emf_siege_courtiers_present }
+			}
+		}
+
+		FROMFROM = {
+			owner = {
+				hidden_tooltip = { # Clear guardians
+					if = {
+						limit = { has_guardian = yes }
+						character_event = { id = emf_siege.71 }
+					}
+				}
+				imprison = ROOT
+				hidden_tooltip = { # Notify players
+					character_event = { id = emf_siege.54 }
+				}
+			}
+		}
+		clr_character_flag = emf_siege_courtiers_present
+		ai_chance = {
+			factor = 1
+			modifier = {
+				factor = 2
+				trait = kind
+			}
+			modifier = {
+				factor = 2
+				trait = charitable
+			}
+			modifier = {
+				factor = 4
+				trait = just
+			}
+			modifier = {
+				factor = 2
+				FROMFROM = {
+					owner = { higher_tier_than = COUNT }
+				}
+			}
+			modifier = {
+				factor = 2
+				FROMFROM = {
+					owner = { higher_tier_than = DUKE }
+				}
+			}
+			modifier = {
+				factor = 2
+				FROMFROM = {
+					owner = { higher_tier_than = KING }
+				}
+			}
+			modifier = { # Owner is likely an important war target
+				factor = 128
+				FROMFROM = {
+					owner = {
+						ROOT = {
+							any_current_enemy = { character = PREVPREV }
+						}
+					}
+				}
+			}
+		}
+	}
+	option = { # Take everyone prisoner
+		trigger = { has_character_flag = emf_siege_courtiers_present }
+		name = { # ROOT is personally present
+			text = emf_siege.51.b_owner
+			trigger = { has_character_flag = emf_siege_unit_owner_present }
+		}
+		name = { # ROOT is not present
+			text = emf_siege.51.b_noowner
+			trigger = {
+				not = { has_character_flag = emf_siege_unit_owner_present }
+			}
+		}
+		
+		FROMFROM = {
+			owner = {
+				hidden_tooltip = { # Clear guardians
+					if = {
+						limit = { has_guardian = yes }
+						character_event = { id = emf_siege.71 }
+					}
+				}
+				imprison = ROOT
+				hidden_tooltip = { # Notify players
+					character_event = { id = emf_siege.54 }
+				}
+				any_courtier = {
+					limit = {
+						at_location = FROMFROM
+						not = { character = PREV }
+						has_job_action = no
+						or = {
+							is_close_relative = PREV
+							is_married = PREV
+							is_consort = PREV
+							and = {
+								not = { dynasty = none }
+								dynasty = PREV
+							}
+							and = {
+								is_ruler = yes
+								has_regent = no
+							}
+						}
+						not = { trait = in_hiding }
+					}
+					hidden_tooltip = { # Clear guardians
+						if = {
+							limit = { has_guardian = yes }
+							character_event = { id = emf_siege.71 }
+						}
+					}
+					imprison = ROOT
+					hidden_tooltip = { # Notify players
+						character_event = { id = emf_siege.54 }
+					}
+				}
+			}
+		}
+		clr_character_flag = emf_siege_courtiers_present
+		ai_chance = {
+			factor = 16
+			modifier = {
+				factor = 2
+				trait = greedy
+			}
+			modifier = {
+				factor = 2
+				FROMFROM = {
+					owner = { higher_tier_than = COUNT }
+				}
+			}
+			modifier = {
+				factor = 2
+				FROMFROM = {
+					owner = { higher_tier_than = DUKE }
+				}
+			}
+			modifier = {
+				factor = 2
+				FROMFROM = {
+					owner = { higher_tier_than = KING }
+				}
+			}
+			modifier = { # Owner is likely an important war target
+				factor = 128
+				FROMFROM = {
+					owner = {
+						ROOT = {
+							any_current_enemy = { character = PREVPREV }
+						}
+					}
+				}
+			}
+		}
+	}
+	option = { # Take leader, execute others
+		trigger = { has_character_flag = emf_siege_courtiers_present }
+		name = { # ROOT is personally present
+			text = emf_siege.51.c_owner
+			trigger = { has_character_flag = emf_siege_unit_owner_present }
+		}
+		name = { # ROOT is not present
+			text = emf_siege.51.c_noowner
+			trigger = {
+				not = { has_character_flag = emf_siege_unit_owner_present }
+			}
+		}
+		
+		custom_tooltip = { text = emf_siege.51.c_tt }
+		FROMFROM = {
+			owner = {
+				hidden_tooltip = { # Clear guardians
+					if = {
+						limit = { has_guardian = yes }
+						character_event = { id = emf_siege.71 }
+					}
+				}
+				imprison = ROOT
+				hidden_tooltip = { # Notify players
+					character_event = { id = emf_siege.54 }
+				}
+				any_courtier = {
+					limit = {
+						at_location = FROMFROM
+						not = { character = PREV }
+						has_job_action = no
+						or = {
+							is_close_relative = PREV
+							is_married = PREV
+							is_consort = PREV
+							and = {
+								not = { dynasty = none }
+								dynasty = PREV
+							}
+							and = {
+								is_ruler = yes
+								has_regent = no
+							}
+						}
+						not = { trait = in_hiding }
+					}
+					if = {
+						limit = {
+							dynasty = ROOT
+							ROOT = {
+								not = { trait = kinslayer }
+								not = { religion_group = muslim }
+							}
+						}
+						add_trait = kinslayer
+					}
+					hidden_tooltip = {
+						save_event_target_as = emf_siege_massacre_victim
+						ROOT = {
+							character_event = { id = emf_siege.70 }
+						}
+						clear_event_target = emf_siege_massacre_victim
+					}
+					death = {
+						death_reason = death_execution
+						killer = ROOT
+					}
+				}
+			}
+		}
+		if = {
+			limit = { trait = kind }
+			remove_trait = kind
+		}
+		if = {
+			limit = {
+				not = { trait = cruel }
+			}
+			add_trait = cruel
+		}
+		clr_character_flag = emf_siege_courtiers_present
+		ai_chance = {
+			factor = 0 # This option is for players
+		}
+	}
+	option = { # Leave them all alone
+		name = { # ROOT is personally present, courtiers
+			text = emf_siege.51.d_owner_courtiers
+			trigger = {
+				has_character_flag = emf_siege_unit_owner_present
+				has_character_flag = emf_siege_courtiers_present
+			}
+		}
+		name = { # ROOT is not present, courtiers
+			text = emf_siege.51.d_noowner_courtiers
+			trigger = {
+				not = { has_character_flag = emf_siege_unit_owner_present }
+				has_character_flag = emf_siege_courtiers_present
+			}
+		}
+		name = { # ROOT is personally present, no courtiers
+			text = emf_siege.51.d_owner_nocourtiers
+			trigger = {
+				has_character_flag = emf_siege_unit_owner_present
+				not = { has_character_flag = emf_siege_courtiers_present }
+			}
+		}
+		name = { # ROOT is not present, no courtiers
+			text = emf_siege.51.d_noowner_nocourtiers
+			trigger = {
+				not = { has_character_flag = emf_siege_unit_owner_present }
+				not = { has_character_flag = emf_siege_courtiers_present }
+			}
+		}
+		
+		custom_tooltip = { text = emf_siege.51.d_tt }
+		FROMFROM = {
+			owner = {
+				opinion = {
+					modifier = opinion_gained_respect
+					who = ROOT
+					months = 12
+				}
+				any_courtier = {
+					limit = {
+						at_location = FROMFROM
+						not = { character = PREV }
+						has_job_action = no
+						or = {
+							is_close_relative = PREV
+							is_married = PREV
+							is_consort = PREV
+							and = {
+								not = { dynasty = none }
+								dynasty = PREV
+							}
+							and = {
+								is_ruler = yes
+								has_regent = no
+							}
+						}
+						not = { trait = in_hiding }
+					}
+					opinion = {
+						modifier = opinion_relieved
+						who = ROOT
+						months = 12
+					}
+				}
+			}
+		}
+		clr_character_flag = emf_siege_courtiers_present
+		ai_chance = {
+			factor = 1
+			modifier = {
+				factor = 2
+				trait = kind
+			}
+			modifier = {
+				factor = 2
+				trait = charitable
+			}
+		}
+	}
+}
+
+# Option event - Leader missing, others found
+character_event = {
+	id = emf_siege.52
+	desc = { # ROOT is personally present
+		text = emf_siege.52.desc_owner
+		trigger = { has_character_flag = emf_siege_unit_owner_present }
+	}
+	desc = { # ROOT is not present
+		text = emf_siege.52.desc_noowner
+		trigger = {
+			not = { has_character_flag = emf_siege_unit_owner_present }
+		}
+	}
+	picture = GFX_evt_siege
+	border = GFX_event_normal_frame_war
+	is_triggered_only = yes
+	
+	option = { # Take everyone prisoner
+		name = { # ROOT is personally present
+			text = emf_siege.52.a_owner
+			trigger = { has_character_flag = emf_siege_unit_owner_present }
+		}
+		name = { # ROOT is not present
+			text = emf_siege.52.a_noowner
+			trigger = {
+				not = { has_character_flag = emf_siege_unit_owner_present }
+			}
+		}
+
+		FROMFROM = {
+			owner = {
+				any_courtier = {
+					limit = {
+						at_location = FROMFROM
+						not = { character = PREV }
+						has_job_action = no
+						or = {
+							is_close_relative = PREV
+							is_married = PREV
+							is_consort = PREV
+							and = {
+								not = { dynasty = none }
+								dynasty = PREV
+							}
+							and = {
+								is_ruler = yes
+								has_regent = no
+							}
+						}
+						not = { trait = in_hiding }
+					}
+					hidden_tooltip = { # Clear guardians
+						if = {
+							limit = { has_guardian = yes }
+							character_event = { id = emf_siege.71 }
+						}
+					}
+					imprison = ROOT
+					hidden_tooltip = { # Notify players
+						character_event = { id = emf_siege.54 }
+					}
+				}
+			}
+		}
+		ai_chance = {
+			factor = 16
+			modifier = {
+				factor = 2
+				trait = greedy
+			}
+			modifier = {
+				factor = 2
+				FROMFROM = {
+					owner = { higher_tier_than = COUNT }
+				}
+			}
+			modifier = {
+				factor = 2
+				FROMFROM = {
+					owner = { higher_tier_than = DUKE }
+				}
+			}
+			modifier = {
+				factor = 2
+				FROMFROM = {
+					owner = { higher_tier_than = KING }
+				}
+			}
+		}
+	}
+	option = { # Kill them all
+		name = { # ROOT is personally present
+			text = emf_siege.52.b_owner
+			trigger = { has_character_flag = emf_siege_unit_owner_present }
+		}
+		name = { # ROOT is not present
+			text = emf_siege.52.b_noowner
+			trigger = {
+				not = { has_character_flag = emf_siege_unit_owner_present }
+			}
+		}
+		
+		custom_tooltip = { text = emf_siege.52.b_tt }
+		FROMFROM = {
+			owner = {
+				any_courtier = {
+					limit = {
+						at_location = FROMFROM
+						not = { character = PREV }
+						has_job_action = no
+						or = {
+							is_close_relative = PREV
+							is_married = PREV
+							is_consort = PREV
+							and = {
+								not = { dynasty = none }
+								dynasty = PREV
+							}
+							and = {
+								is_ruler = yes
+								has_regent = no
+							}
+						}
+						not = { trait = in_hiding }
+					}
+					if = {
+						limit = {
+							dynasty = ROOT
+							ROOT = {
+								not = { trait = kinslayer }
+								not = { religion_group = muslim }
+							}
+						}
+						add_trait = kinslayer
+					}
+					hidden_tooltip = {
+						save_event_target_as = emf_siege_massacre_victim
+						ROOT = {
+							character_event = { id = emf_siege.70 }
+						}
+						clear_event_target = emf_siege_massacre_victim
+					}
+					death = {
+						death_reason = death_execution
+						killer = ROOT
+					}
+				}
+			}
+		}
+		if = {
+			limit = { trait = kind }
+			remove_trait = kind
+		}
+		if = {
+			limit = {
+				not = { trait = cruel }
+			}
+			add_trait = cruel
+		}
+		ai_chance = {
+			factor = 0 # This option is for players
+		}
+	}
+	option = { # Leave them all alone
+		name = { # ROOT is personally present
+			text = emf_siege.52.c_owner
+			trigger = { has_character_flag = emf_siege_unit_owner_present }
+		}
+		name = { # ROOT is not present
+			text = emf_siege.52.c_noowner
+			trigger = {
+				not = { has_character_flag = emf_siege_unit_owner_present }
+			}
+		}
+
+		custom_tooltip = { text = emf_siege.52.c_tt }
+		FROMFROM = {
+			owner = {
+				opinion = {
+					modifier = opinion_gained_respect
+					who = ROOT
+					months = 12
+				}
+				any_courtier = {
+					limit = {
+						at_location = FROMFROM
+						not = { character = PREV }
+						has_job_action = no
+						or = {
+							is_close_relative = PREV
+							is_married = PREV
+							is_consort = PREV
+							and = {
+								not = { dynasty = none }
+								dynasty = PREV
+							}
+							and = {
+								is_ruler = yes
+								has_regent = no
+							}
+						}
+						not = { trait = in_hiding }
+					}
+					opinion = {
+						modifier = opinion_relieved
+						who = ROOT
+						months = 12
+					}
+				}
+			}
+		}
+		ai_chance = {
+			factor = 1
+			modifier = {
+				factor = 2
+				trait = kind
+			}
+			modifier = {
+				factor = 2
+				trait = charitable
+			}
+		}
+	}
+}
+
+# Option event - Prisoners are found
+character_event = {
+	id = emf_siege.53
+	desc = { # ROOT is personally present
+		text = emf_siege.53.desc_owner
+		trigger = { has_character_flag = emf_siege_unit_owner_present }
+	}
+	desc = { # ROOT is not present
+		text = emf_siege.53.desc_noowner
+		trigger = {
+			not = { has_character_flag = emf_siege_unit_owner_present }
+		}
+	}
+	picture = GFX_evt_into_the_dungeon
+	border = GFX_event_normal_frame_war
+	is_triggered_only = yes
+	
+	option = { # Release all prisoners
+		trigger = {
+			FROMFROM = {
+				owner = {
+					any_courtier = {
+						at_location = FROMFROM
+						host = { character = PREVPREV }
+						prisoner = yes
+					}
+				}
+			}
+		}
+		name = { # ROOT is personally present
+			text = emf_siege.53.a_owner
+			trigger = { has_character_flag = emf_siege_unit_owner_present }
+		}
+		name = { # ROOT is not present
+			text = emf_siege.53.a_noowner
+			trigger = {
+				not = { has_character_flag = emf_siege_unit_owner_present }
+			}
+		}
+		
+		FROMFROM = {
+			owner = {
+				any_courtier = {	
+					limit = {
+						at_location = FROMFROM
+						host = { character = PREVPREV }
+						prisoner = yes
+					}
+					prisoner = no
+					opinion = {
+						who = ROOT
+						modifier = opinion_grateful
+						months = 120
+					}
+				}
+			}
+		}
+		ai_chance = {
+			factor = 2
+			modifier = {
+				factor = 2
+				trait = kind
+			}
+			modifier = {
+				factor = 2
+				trait = trusting
+			}
+		}
+	}
+	option = { # Release all friendlies
+		trigger = {
+			FROMFROM = {
+				owner = {
+					any_courtier = {
+						at_location = FROMFROM
+						host = { character = PREVPREV }
+						prisoner = yes
+						religion_group = ROOT
+						not = { is_heresy_of = ROOT }
+						not = { war_with = ROOT }
+						not = { is_foe = ROOT }
+					}
+				}
+			}
+		}
+		name = { # ROOT is personally present
+			text = emf_siege.53.b_owner
+			trigger = { has_character_flag = emf_siege_unit_owner_present }
+		}
+		name = { # ROOT is not present
+			text = emf_siege.53.b_noowner
+			trigger = {
+				not = { has_character_flag = emf_siege_unit_owner_present }
+			}
+		}
+		
+		FROMFROM = {
+			owner = {
+				any_courtier = {	
+					limit = {
+						at_location = FROMFROM
+						host = { character = PREVPREV }
+						prisoner = yes
+						religion_group = ROOT
+						not = { is_heresy_of = ROOT }
+						not = { war_with = ROOT }
+						not = { is_foe = ROOT }
+					}
+					prisoner = no
+					opinion = {
+						who = ROOT
+						modifier = opinion_grateful
+						months = 120
+					}
+				}
+			}
+		}
+		ai_chance = {
+			factor = 16
+		}
+	}
+	option = { # Release only my family members
+		trigger = {
+			FROMFROM = {
+				owner = {
+					any_courtier = {
+						at_location = FROMFROM
+						host = { character = PREVPREV }
+						or = {
+							is_close_relative = ROOT
+							is_married = ROOT
+							is_consort = ROOT
+							and = {
+								not = { dynasty = none }
+								dynasty = ROOT
+							}
+						}
+						prisoner = yes
+					}
+				}
+			}
+		}
+		name = { # ROOT is personally present
+			text = emf_siege.53.c_owner
+			trigger = { has_character_flag = emf_siege_unit_owner_present }
+		}
+		name = { # ROOT is not present
+			text = emf_siege.53.c_noowner
+			trigger = {
+				not = { has_character_flag = emf_siege_unit_owner_present }
+			}
+		}
+		
+		FROMFROM = {
+			owner = {
+				any_courtier = {
+					limit = {
+						at_location = FROMFROM
+						host = { character = PREVPREV }
+						or = {
+							is_close_relative = ROOT
+							is_married = ROOT
+							is_consort = ROOT
+							and = {
+								not = { dynasty = none }
+								dynasty = ROOT
+							}
+						}
+						prisoner = yes
+					}
+					prisoner = no
+					opinion = {
+						who = ROOT
+						modifier = opinion_grateful
+						months = 120
+					}
+				}
+			}
+		}
+		ai_chance = {
+			factor = 0 # This option is for players
+		}
+	}
+	option = { # Release nobody
+		trigger = {
+			FROMFROM = {
+				owner = {
+					any_courtier = {
+						at_location = FROMFROM
+						host = { character = PREVPREV }
+						prisoner = yes
+					}
+				}
+			}
+		}
+		name = { # ROOT is personally present
+			text = emf_siege.53.d_owner
+			trigger = { has_character_flag = emf_siege_unit_owner_present }
+		}
+		name = { # ROOT is not present
+			text = emf_siege.53.d_noowner
+			trigger = {
+				not = { has_character_flag = emf_siege_unit_owner_present }
+			}
+		}
+
+		FROMFROM = { # Friendlies will be angry
+			owner = {
+				any_courtier = {	
+					limit = {
+						at_location = FROMFROM
+						host = { character = PREVPREV }
+						prisoner = yes
+						religion_group = ROOT
+						not = { is_heresy_of = ROOT }
+						not = { war_with = ROOT }
+						not = { is_foe = ROOT }
+					}
+					opinion = {
+						modifier = opinion_furious
+						who = ROOT
+						months = 12
+					}
+				}
+			}
+		}
+		ai_chance = {
+			factor = 2
+			modifier = {
+				factor = 2
+				trait = cruel
+			}
+			modifier = {
+				factor = 2
+				trait = paranoid
+			}
+		}
+	}
+}
+
+# Notify players of their capture at end of siege
+character_event = {
+	id = emf_siege.54
+	desc = {
+		text = emf_siege.54.desc_capable
+		trigger = {
+			not = { trait = incapable }
+			is_adult = yes
+		}
+	}
+	desc = {
+		text = emf_siege.54.desc_incapable
+		trigger = {
+			or = {
+				trait = incapable
+				is_adult = no
+			}
+		}
+	}
+	picture = GFX_evt_into_the_dungeon
+	border = GFX_event_normal_frame_war
+	is_triggered_only = yes
+	
+	trigger = {
+		ai = no
+	}
+	
+	option = {
+		name = {
+			text = emf_siege.54.a_capable
+			trigger = {
+				not = { trait = incapable }
+				is_adult = yes
+			}
+		}
+		name = {
+			text = emf_siege.54.a_incapable_adult
+			trigger = {
+				trait = incapable
+				is_adult = yes
+			}
+		}
+		name = {
+			text = emf_siege.54.a_incapable_child
+			trigger = {
+				trait = incapable
+				is_adult = no
+			}
+		}
+		tooltip = { imprison = FROM }
+	}
+}
+
+# Notify players that no prisoners were taken at siege?
+
+# Lifting siege event?
+
+## "Reward" Events
+## 60-69 Reserved
+# Word gets around about bravery in defense - Player only
+character_event = {
+	id = emf_siege.60
+	desc = { # ROOT is in prison
+		text = emf_siege.60.desc_prison
+		trigger = { prisoner = yes }
+	}
+	desc = { # ROOT is free
+		text = emf_siege.60.desc_free
+		trigger = { prisoner = no }
+	}
+	picture = GFX_evt_courtiers_talking
+	border = GFX_event_normal_frame_diplomacy
+	hide_from = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		ai = no
+		has_character_modifier = emf_siege_defender
+		trait = craven
+	}
+	
+	option = {
+		name = { # ROOT is in prison
+			text = emf_siege.60.a_prison
+			trigger = { prisoner = yes }
+		}
+		name = { # ROOT is free
+			text = emf_siege.60.a_free
+			trigger = { prisoner = no }
+		}
+
+		if = {
+			limit = { trait = craven }
+			remove_trait = craven
+		}
+	}
+}
+
+# Word gets around about ditching family - Player only
+character_event = {
+	id = emf_siege.61
+	desc = { # ROOT is in prison
+		text = emf_siege.61.desc_prison
+		trigger = { prisoner = yes }
+	}
+	desc = { # ROOT is free
+		text = emf_siege.61.desc_free
+		trigger = { prisoner = no }
+	}
+	picture = GFX_evt_scandal
+	border = GFX_event_normal_frame_diplomacy
+	hide_from = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		ai = no
+		trait = brave
+	}
+	
+	option = {
+		name = { # ROOT is in prison
+			text = emf_siege.61.a_prison
+			trigger = { prisoner = yes }
+		}
+		name = { # ROOT is free
+			text = emf_siege.61.a_free
+			trigger = { prisoner = no }
+		}
+
+		if = {
+			limit = { trait = brave }
+			remove_trait = brave
+		}
+	}
+}
+
+## Utility Events
+## 70-79 Reserved
+# Punish war atrocities - Modified version of vanilla event 10
+character_event = {
+	id = emf_siege.70
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		if = {
+			limit = {
+				event_target:emf_siege_massacre_victim = { dynasty = ROOT }
+				not = { trait = kinslayer }
+				not = { religion_group = muslim }
+			}
+			add_trait = kinslayer
+		}
+		
+		event_target:emf_siege_massacre_victim = {
+			if = {
+				limit = {
+					not = { dynasty = ROOT }
+				}
+				any_dynasty_member = {
+					opinion = {
+						who = ROOT
+						modifier = opinion_dishonorable
+						months = 60
+					}
+					if = {
+						limit = {
+							ROOT = {
+								any_spouse = { character = PREVPREVPREV }
+							}
+						}
+						opinion = {
+							who = ROOT
+							modifier = opinion_spouse_slayer
+							months = 60
+						}
+					}
+				}
+			}
+			top_liege = {
+				opinion = {
+					who = ROOT
+					modifier = opinion_dishonorable
+					months = 60
+				}
+				any_realm_lord = {
+					opinion = {
+						who = ROOT
+						modifier = opinion_dishonorable
+						months = 60
+					}
+				}
+			}
+			religion_head = {
+				opinion = {
+					who = ROOT
+					modifier = opinion_dishonorable
+					months = 60
+				}
+			}
+			spouse = {
+				if = {
+					limit = {
+						not = { character = ROOT }
+					}
+					opinion = {
+						who = ROOT
+						modifier = opinion_killed_close_kin
+						months = 1200
+					}
+					add_rival = ROOT
+				}
+			}
+			mother = {
+				if = {
+					limit = { 
+						not = { character = ROOT }
+						not = { is_mother = ROOT }
+					}
+					opinion = {
+						who = ROOT
+						modifier = opinion_killed_close_kin
+						months = 1200
+					}
+					add_rival = ROOT
+				}
+			}
+			father = {
+				if = {
+					limit = { 
+						not = { character = ROOT }
+						not = { is_father = ROOT }
+					}
+					opinion = {
+						who = ROOT
+						modifier = opinion_killed_close_kin
+						months = 1200
+					}
+					add_rival = ROOT
+				}
+			}
+			any_child = {
+				limit = {
+					not = { character = ROOT }
+					not = { is_child_of = ROOT }
+				}
+				opinion = {
+					who = ROOT
+					modifier = opinion_killed_close_kin
+					months = 1200
+				}
+				add_rival = ROOT
+			}
+			any_sibling = {
+				limit = {
+					not = { character = ROOT }
+					not = { sibling = ROOT }
+				}
+				opinion = {
+					who = ROOT
+					modifier = opinion_killed_close_kin
+					months = 1200
+				}
+			}
+		}
+	}
+	
+	option = {
+		name = OK
+	}
+}
+
+# Remove guardians - This is a deeply silly event
+character_event = {
+	id = emf_siege.71
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		k_papal_state = { # This will eventually be Isis
+			owner = {
+				ROOT = { set_guardian = PREV }
+				add_trait = incapable
+				remove_trait = incapable
+			}
+		}
+	}
+	
+	option = {
+		name = OK
+	}
+}
+
+# Clear pointless modifiers - from on_siege_over_loc_chars
+# Siege winner unit owner in the 'new_character' scope, lost holding title in FROM, local character in ROOT.
+character_event = {
+	id = emf_siege.72
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		remove_character_modifier = emf_siege_defender
+		remove_character_modifier = emf_siege_failed_escape
+		remove_character_modifier = emf_siege_left_behind
+	}
+	
+	option = {
+		name = OK
+	}
+}
+
+# AI comes out of hiding
+character_event = {
+	id = emf_siege.73
+	hide_window = yes
+	
+	ai = yes
+	only_rulers = yes
+	prisoner = no
+
+	trigger = {
+		war = no
+		any_liege = { war = no }
+		or = {
+			and = {
+				trait = in_hiding
+				has_character_flag = emf_siege_in_hiding
+			}
+			and = {
+				any_courtier = {
+					trait = in_hiding
+					has_character_flag = emf_siege_in_hiding
+					is_ruler = no
+					or = {
+						is_close_relative = ROOT
+						is_married = ROOT
+						is_consort = ROOT
+						and = {
+							not = { dynasty = none }
+							dynasty = ROOT
+						}
+					}
+				}
+			}
+		}
+	}
+	mean_time_to_happen = {
+		days = 1
+	}
+	
+	immediate = {
+		remove_trait = in_hiding
+		clr_character_flag = emf_siege_in_hiding
+		clr_character_flag = do_not_disturb
+		any_courtier = {
+			limit = {
+				is_ruler = no
+				or = {
+					is_close_relative = ROOT
+					is_married = ROOT
+					is_consort = ROOT
+					and = {
+						not = { dynasty = none }
+						dynasty = ROOT
+					}
+				}
+			}
+			remove_trait = in_hiding
+			clr_character_flag = emf_siege_in_hiding
+			clr_character_flag = do_not_disturb
+			remove_character_modifier = emf_siege_defender
+			remove_character_modifier = emf_siege_failed_escape
+			remove_character_modifier = emf_siege_left_behind
+		}
+	}
+	
+	option = {
+		name = OK
+	}
+}
+
+### LOOTING EVENTS
+# Raiding is unlikely to capture nobles and very unlikely to get rulers
+# Lowborn folks and bishops not of the attacker's faith are more likely to be captured
+# As with vanilla, Pagans and Zoroastrians are more likely to capture women
+# Non-tribal rulers get a chance to release captured bishops of their own religion; the AI will always do so
+# There are no defender events during raiding, because defenders are automatically assumed to be protected
+# If non-tribal and non-Pagan or reformed Pagan, there are piety penalties for looting temples of your own religion
+
+## Attacker Events
+## 100-119 Reserved
+# Divvy up that shiny loot - from on_siege_over_loc_chars
+# Siege winner unit owner in the 'new_character' scope, lost holding title in FROM, local character in ROOT.
+character_event = {
+	id = emf_siege.100
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		new_character = {
+			primary_title = { rebel = no }
+			rebel = no
+		}
+		FROM = { is_occupied = no } # Looted, not occupied
+		is_ruler = no # Not for rulers, who don't show up anyway; we've got a separate event for them
+		not = { trait = in_hiding }
+	}
+	
+	option = { # I am safe
+		name = OK
+	
+		log = "emf_siege.100: '[Root.GetBestName]' avoids capture"
+		ai_chance = {
+			factor = 10
+		}
+	}
+	option = { # I am caught
+		name = OK
+
+		new_character = {
+			ROOT = { imprison = PREV }
+		}
+		log = "emf_siege.100: '[Root.GetBestName]' is captured"
+		ai_chance = {
+			factor = 1
+			modifier = {
+				factor = 0.5
+				not = { dynasty = none }
+			}
+			modifier = {
+				factor = 2
+				is_female = yes
+				new_character = {
+					or = {
+						religion_group = pagan_group
+						religion_group = zoroastrian_group
+					}
+				}
+			}
+			modifier = {
+				factor = 2
+				is_theocracy = yes
+				new_character = {
+					not = { religion = ROOT }
+				}
+			}
+			modifier = {
+				factor = 3
+				dynasty = none
+			}
+		}
+	}
+}
+
+# Divvy up that shiny loot, ruler edition - from on_siege_over_winner
+# Siege winner unit owner = ROOT, barony title = FROM
+character_event = {
+	id = emf_siege.101
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		primary_title = { rebel = no }
+		rebel = no
+		FROM = {
+			is_occupied = no # Looted, not occupied
+			location = {
+				FROM = {
+					owner = {
+						capital_holding = { title = FROM } # Only at capital
+						capital_scope = { province = PREVPREVPREV } # Must be capital province
+					}
+				}
+			}
+		}
+	}
+	
+	immediate = {
+		FROM = {
+			location = {
+				FROM = {
+					owner = {
+						if = { # Owner is present, attempt capture
+							limit = {
+								at_location = PREVPREV
+								is_abroad = no
+								not = { trait = in_hiding }
+								not = { trait = on_hajj }
+								not = { trait = on_pilgrimage }
+								not = { trait = traveling } # VIET compatibility
+								not = { trait = on_retreat } # VIET compatibility
+							}
+							character_event = { id = emf_siege.102 }
+						}
+						any_courtier = { # Attempt capture of other present rulers
+							limit = {
+								not = { character = PREV }
+								host = { character = PREVPREV }
+								at_location = PREVPREVPREV
+								is_abroad = yes
+								prisoner = no
+								has_job_action = no
+								is_ruler = yes
+								has_regent = no
+								not = { trait = in_hiding }
+							}
+							character_event = { id = emf_siege.102 }
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	option = {
+		name = OK
+	}
+}
+
+# Determine if ruler gets captured
+# Siege winner unit owner = FROM, barony title = FROMFROM
+character_event = {
+	id = emf_siege.102
+	hide_window = yes
+	is_triggered_only = yes
+	
+	option = { # Ruler evades capture
+		name = OK
+		
+		if = {
+			limit = {
+				FROM = { ai = no }
+			}
+			log = "emf_siege.102: '[This.GetBestName]' avoids capture"
+		}
+		ai_chance = {
+			factor = 10
+		}
+	}
+	option = { # Ruler is caught
+		name = OK
+
+		if = { # Players get flavor event
+			limit = { ai = no }
+			character_event = { id = emf_siege.105 }
+		}
+		if = { # AI does not
+			limit = { ai = yes }
+			imprison = FROM
+		}
+		if = { # Non-tribal rulers get a chance to release bishops of the same religion
+			limit = {
+				FROMFROM = {
+					owner = { character = ROOT }
+				}
+			}
+			FROM = {
+				character_event = { id = emf_siege.106 days = 7 random = 7 }
+			}
+		}
+		if = {
+			limit = {
+				FROM = { ai = no }
+			}
+			log = "emf_siege.102: '[This.GetBestName]' is captured"
+		}
+		ai_chance = {
+			factor = 1
+			modifier = {
+				factor = 0.5
+				is_landed = yes
+			}
+			modifier = {
+				factor = 0.5
+				not = { dynasty = none }
+			}
+			modifier = {
+				factor = 3
+				dynasty = none
+			}
+			modifier = {
+				factor = 2
+				is_theocracy = yes
+				not = { religion = FROM }
+			}
+		}
+	}
+}
+
+# 103 FREE
+
+# 104 FREE
+
+# Ruler captured by looters - Players only
+character_event = {
+	id = emf_siege.105
+	desc = {
+		text = emf_siege.105.desc_castle
+		trigger = {
+			FROMFROMFROM = { holding_type = castle }
+		}
+	}
+	desc = {
+		text = emf_siege.105.desc_city
+		trigger = {
+			FROMFROMFROM = { holding_type = city }
+		}
+	}
+	desc = {
+		text = emf_siege.105.desc_temple
+		trigger = {
+			FROMFROMFROM = { holding_type = temple }
+		}
+	}
+	picture = GFX_evt_burning_house
+	border = GFX_event_normal_frame_war
+	is_triggered_only = yes
+	
+	immediate = {
+		imprison = FROMFROM
+	}
+	
+	option = {
+		name = emf_siege.105.a
+
+		tooltip = {
+			imprison = FROMFROM
+		}
+	}
+}
+
+# Looters captured a bishop of their own religion
+character_event = {
+	id = emf_siege.106
+	desc = emf_siege.106.desc
+	picture = GFX_evt_throne_room
+	border = GFX_event_normal_frame_diplomacy
+	hide_from = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		is_tribal = no
+		FROMFROMFROM = {
+			owner = {
+				host = { character = ROOT }
+				prisoner = yes
+				is_theocracy = yes
+				religion = ROOT
+			}
+		}
+	}
+	
+	option = { # Release bishop
+		name = {
+			text = emf_siege.106.a_neutral
+			trigger = {
+				not = { trait = zealous }
+				not = { trait = cynical }
+			}
+		}
+		name = {
+			text = emf_siege.106.a_cynical
+			trigger = { trait = cynical }
+		}
+		name = {
+			text = emf_siege.106.a_zealous
+			trigger = { trait = zealous }
+		}
+		
+		FROMFROMFROM = {
+			owner = { prisoner = no }
+		}
+	}
+	option = { # Keep prisoner
+		trigger = { ai = no } # AI will always release
+		name = {
+			text = emf_siege.106.b_neutral
+			trigger = {
+				not = { trait = zealous }
+				not = { trait = cynical }
+			}
+		}
+		name = {
+			text = emf_siege.106.b_cynical
+			trigger = { trait = cynical }
+		}
+		name = {
+			text = emf_siege.106.b_zealous
+			trigger = { trait = zealous }
+		}
+		
+		piety = -10
+	}
+}
+
+## Other Looting Mechanics
+## 120-129 Reserved
+# Non-tribal raiders looted a church of their own faith - Proxy event
+character_event = {
+	id = emf_siege.120
+	hide_window = yes
+	is_triggered_only = yes
+
+	ai = no
+	
+	trigger = {
+		is_tribal = no
+		primary_title = { rebel = no }
+		rebel = no
+		or = {
+			is_reformed_religion = yes
+			not = { religion_group = pagan_group }
+		}
+		FROM = {
+			is_occupied = no # Looted, not occupied
+			holding_type = temple
+			owner = {
+				is_theocracy = yes
+				religion = ROOT
+			}
+		}
+	}
+	
+	immediate = {
+		if = { # First time
+			limit = {
+				not = { has_character_flag = emf_siege_zealous_looter }			
+			}
+			character_event = { id = emf_siege.121 }
+			break = yes
+		}
+		if = { # Second
+			limit = { has_character_flag = emf_siege_zealous_looter }
+			character_event = { id = emf_siege.122 }
+		}
+	}
+	
+	option = {
+		name = OK
+	}
+}
+
+# Flavor for looting churches of own faith - Players only, seen once per ruler
+character_event = {
+	id = emf_siege.121
+	desc = {
+		text = emf_siege.121.desc_present
+		trigger = {
+			FROMFROM = {
+				location = {
+					ROOT = { at_location = PREV }
+				}
+			}
+		}
+	}
+	desc = {
+		text = emf_siege.121.desc_distant
+		trigger = {
+			FROMFROM = {
+				location = {
+					ROOT = {
+						not = { at_location = PREV }
+					}
+				}
+			}
+		}
+	}
+	picture = GFX_evt_burning_house
+	border = GFX_event_normal_frame_war
+	is_triggered_only = yes
+	
+	option = {
+		name = {
+			text = emf_siege.121.a_neutral
+			trigger = {
+				not = { trait = zealous }
+				not = { trait = cynical }
+			}
+		}
+		name = {
+			text = emf_siege.121.a_cynical
+			trigger = { trait = cynical }
+		}
+		name = {
+			text = emf_siege.121.a_zealous
+			trigger = { trait = zealous }
+		}
+		
+		if = {
+			limit = {
+				FROMFROM = { is_holy_site = ROOT }
+			}
+			piety = -100
+		}
+		if = {
+			limit = {
+				FROMFROM = {
+					not = { is_holy_site = ROOT }
+				}
+			}
+			piety = -50
+		}
+		if = {
+			limit = { trait = zealous }
+			remove_trait = zealous
+		}
+		set_character_flag = emf_siege_zealous_looter
+		custom_tooltip = { text = emf_siege.121.a_tt }
+	}
+}
+
+# Notification of piety loss for looting churches of own faith - Players only
+character_event = {
+	id = emf_siege.122
+	desc = {
+		text = emf_siege.122.desc_reg
+		trigger = {
+			FROMFROM = {
+				not = { is_holy_site = ROOT }
+			}
+		}
+	}
+	desc = {
+		text = emf_siege.122.desc_holy
+		trigger = {
+			FROMFROM = { is_holy_site = ROOT }
+		}
+	}
+	picture = GFX_evt_burning_house
+	border = GFX_event_normal_frame_war
+	is_triggered_only = yes
+	notification = yes # Notification portraits seem to require a character in FROM, hence the proxy
+	
+	immediate = {
+		if = {
+			limit = {
+				FROMFROM = { is_holy_site = ROOT }
+			}
+			piety = -100
+		}
+		if = {
+			limit = {
+				FROMFROM = {
+					not = { is_holy_site = ROOT }
+				}
+			}
+			piety = -50
+		}
+	}
+	
+	option = {
+		name = OK
+		
+		if = {
+			limit = {
+				FROMFROM = { is_holy_site = ROOT }
+			}
+			tooltip = { piety = -100 }
+		}
+		if = {
+			limit = {
+				FROMFROM = {
+					not = { is_holy_site = ROOT }
+				}
+			}
+			tooltip = { piety = -50 }
+		}
+	}
+}
+
+## Other Looting Flavor
+## 140-149
