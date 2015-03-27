@@ -57,18 +57,23 @@ character_event = {
 			limit = {
 				FROM = { death_reason = death_sacrificed }
 			}
-			# Send event to dead pope? Or to a Christian ruler? It looks like it doesn't matter, since I can control who shows up on the narrative event
-			# This should probably have a larger delay: Gotta give time for the news to spread and all! (And don't want it interrupting folks who are holding blots and other get-togethers)
-			narrative_event = { id = emf_crier.50 days = 7 random = 7 }
+			FROM = {
+				killer = {
+					narrative_event = { id = emf_crier.50 days = 21 random = 7 } # Delay to avoid interrupting blots, etc
+				}
+			}
 			log = "Isis sent sacrificed narrative event"
 		}
 	}
 }
 
+# DEATH FLAVOR NOTES:
+# Different flavor depending on religion, might not send to parties who wouldn't care, might use distance as a factor, should have special flavor and rewards for the one who sacrificed (accessed through killer = {} scope), will have minor mechanics such as making Catholic folks hate the character who killed the Pope or reducing the authority of the religion whose leader was sacrificed, etc
+
 ## Papal Death Flavor
 ## 50-99 Reserved
 # Former Pope was sacrificed
-# Notes: Different flavor depending on religion, might not send to parties who wouldn't care, might use distance as a factor, should have special flavor and rewards for the one who sacrificed (accessed through killer = {} scope), will have minor mechanics such as making Catholic folks hate the character who killed the Pope or reducing the authority of the religion whose leader was sacrificed, etc
+# ROOT = killer, FROMFROM = Sacrificed Pope
 narrative_event = {
 	id = emf_crier.50
 	title = OK
@@ -80,10 +85,83 @@ narrative_event = {
 	show_from_from = yes
 	
 	major_trigger = {
-		ai = no
+		is_playable = yes
 	}
 	
-	option = {
+	immediate = {
+		# k_papal_state = {
+			# owner = {
+				# religion_authority = {
+					# modifier = religion_leader_sacrificed
+					# years = 50
+				# }
+			# }
+		# }
+	}
+	
+	option = { # Dummy failsafe option, will be removed later
+		trigger = { always = no }
 		name = OK
+		set_character_flag = someone_is_a_dummy
+	}
+	option = { # The Pope Killer
+		trigger = { character = ROOT }
+		name = EVTOPTALoR.869
+
+		piety = 100
+		prestige = 100
+		religion_authority = {
+			modifier = sacrificed_other_religion_leader
+			years = 50
+		}
+	}
+	option = { # The Killer's faith
+		trigger = {
+			religion = ROOT
+			not = { character = ROOT }
+		}
+		name = EXCELLENT
+	}
+	option = { # Catholics respond
+		trigger = {
+			religion = catholic
+			not = { religion = ROOT }
+		}
+		name = CURSES
+
+		if = {
+			limit = { controls_religion = yes }
+			add_rival = ROOT # Is this even necessary?
+			religion_authority = {
+				modifier = religion_leader_sacrificed
+				years = 50
+			}
+		}
+		opinion = {
+			modifier = opinion_sacrificed_pope
+			who = ROOT
+			months = 600
+		}
+		tooltip = {
+			religion_authority = {
+				modifier = religion_leader_sacrificed
+				years = 50
+			}
+		}
+	}
+	option = { # Other Christians
+		trigger = {
+			religion_group = christian
+			not = { religion = catholic }
+			not = { religion = ROOT }
+		}
+		name = OK
+	}
+	option = { # Non-Christians
+		trigger = {
+			not = { religion_group = christian }
+			not = { religion = ROOT }
+		}
+		name = EXCELLENT
 	}
 }
