@@ -23,26 +23,55 @@ character_event = {
 	
 	trigger = {
 		or = {
+			real_tier = EMPEROR
 			and = {
 				controls_religion = yes
-				religion_group = christian
+				or = {
+					religion_group = christian
+					# Insert other religion groups here
+				}
 			}
+			ai = no
 		}
 	}
 
 	immediate = {
 		log = "Event sent to Isis"
-		# Need to work out system here that prevents duplicates for situations where the character is a player, emperor, and religion head, or some combo of those
-		if = { # Religious head
-			limit = {
-				controls_religion = yes
-				# not = { real_tier = EMPEROR }
-			}
+		if = { # Handle MA changes
+			limit = { controls_religion = yes }
 			e_hip = {
 				owner = {
 					character_event = { id = emf_crier.1 days = 1 }
 				}
 			}
+		}
+		# Send narrative events
+		if = { # Emperor version gets priority
+			limit = { real_tier = EMPEROR }
+			e_hip = {
+				owner = {
+					character_event = { id = emf_crier.2 days = 1 }
+				}
+			}
+			break = yes
+		}
+		if = { # Religious heads come next
+			limit = { controls_religion = yes }
+			e_hip = {
+				owner = {
+					character_event = { id = emf_crier.3 days = 1 }
+				}
+			}
+			break = yes
+		}
+		if = { # Players are last resort
+			limit = { ai = no }
+			e_hip = {
+				owner = {
+					character_event = { id = emf_crier.4 days = 1 }
+				}
+			}
+			break = yes
 		}
 	}
 	
@@ -51,30 +80,23 @@ character_event = {
 	}
 }
 
-# Isis bounce event for religious heads
+# Isis giveth and Isis taketh away
 character_event = {
-	id = emf_crier.1
+	id = emf_crier.2
 	hide_window = yes
 	is_triggered_only = yes
 	
-	trigger = {
-		FROM = {
-			is_alive = no
-			killer = { always = yes } # Right now this only works when there's a killer, might change in future
-		}
-	}
-	
 	immediate = {
-		log = "Isis got relhead event"
-		FROM = { # Sacrifice MA changes
-			if = {
+		log = "Isis got MA event"
+		FROM = { # MA changes
+			if = { # RelHead was sacrificed
 				limit = { death_reason = death_sacrificed }
 				religion_authority = {
 					modifier = religion_head_sacrificed
 					years = 50
 				}
 				log = "Isis took MA from [This.Religion.GetName] faith"
-				if = {
+				if = { # Killer was different religion
 					limit = {
 						killer = {
 							not = { religion = FROM }
@@ -92,6 +114,43 @@ character_event = {
 		}
 	}
 	
+	option = {
+		name = OK
+	}
+}
+
+# Isis bounce event for emperors
+character_event = {
+	id = emf_crier.2
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		log = "Isis got emperor event"
+	}
+	
+	option = {
+		name = OK
+	}
+}
+
+# Isis bounce event for religious heads
+character_event = {
+	id = emf_crier.3
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		FROM = {
+			is_alive = no
+			killer = { always = yes } # Right now this only works when there's a killer, might change in future
+		}
+	}
+	
+	immediate = {
+		log = "Isis got relhead event"
+	}
+	
 	option = { # Christian religious leader
 		trigger = { religion_group = christian }
 		name = OK
@@ -107,16 +166,22 @@ character_event = {
 				killer = {
 					narrative_event = { id = emf_crier.50 } # Delay?
 				}
+				break = yes
 			}
+			# Note that any player who doesn't match one of these death_reason limits will get shunted to the appropriate player death announcement event
 		}
 	}
 }
 
-# Isis bounce event for everyone else
+# Isis bounce event for players
 character_event = {
-	id = emf_crier.2
+	id = emf_crier.4
 	hide_window = yes
 	is_triggered_only = yes
+	
+	immediate = {
+		log = "Isis got player event"
+	}
 	
 	option = {
 		name = OK
