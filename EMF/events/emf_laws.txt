@@ -197,17 +197,12 @@ character_event = {
 
 # emf_laws.2 [Holder]
 #
-# Clear the emf_ca_change title flag on a [potential] crown law title.
+# Clear the emf_ca_change title flag on a [potential] crown law title whenever
+# it changes hands.
 #
 # Listens to:
-# - on_new_holder
 # - on_new_holder_usurpation
 # - on_new_holder_inheritance
-#
-# TODO: In the future, prevent secondary title creation from giving an extra, free CA change to
-# the holder. Those titles should be locked, since they copied the CA change from the primary_title
-# upon creation. [This requires some thought due to the way people can just switch primary titles to
-# copy crown laws for free now.]
 #
 # FROM = title
 character_event = {
@@ -218,13 +213,73 @@ character_event = {
 	only_playable = yes
 	
 	trigger = {
-		FROM = {
-			higher_tier_than = duke
-		}
+		FROM = { higher_tier_than = duke }
 	}
 	
 	immediate = {
+		log = "emf_laws.2: ROOT='[Root.GetFullName]', FROM='[From.GetFullName]', FROMFROM='[FromFrom.GetFullName]'"
+
 		FROM = { clr_title_flag = emf_ca_change }
+	}
+	
+	option = { name = OK }
+}
+
+
+# emf_laws.3 [Holder]
+#
+# Upon crown title creation, copy the emf_ca_change flag from either the primary title of the
+# holder, or if this is now the primary title (e.g., due to creating an empire title as a king)
+# copy it from any of the kingdom titles of the holder.
+#
+# Listens to:
+# - on_new_holder
+#
+# FROM = title, FROMFROM = previous holder
+character_event = {
+	id = emf_laws.3
+	hide_window = yes
+	is_triggered_only = yes
+	
+	only_playable = yes
+	
+	trigger = {
+		FROM = { higher_tier_than = duke }
+	}
+	
+	immediate = {
+		log = "emf_laws.3: ROOT='[Root.GetFullName]', FROM='[From.GetFullName]', FROMFROM='[FromFrom.GetFullName]'"
+
+		FROM = { clr_title_flag = emf_ca_change }
+		if = {
+			limit = {
+				FROMFROM = { is_alive = yes } # Title grant or likewise
+			}
+			break = yes
+		}
+		
+		# Title creation
+		if = {
+			limit = {
+				FROM = { tier = emperor }
+				any_demesne_title = {
+					higher_tier_than = duke
+					has_title_flag = emf_ca_change
+				}
+			}
+			FROM = { set_title_flag = emf_ca_change }
+			break = yes
+		}
+		if = {
+			limit = {
+				FROM = { tier = king }
+				primary_title = {
+					higher_tier_than = duke
+					has_title_flag = emf_ca_change
+				}
+			}
+			FROM = { set_title_flag = emf_ca_change }
+		}
 	}
 	
 	option = { name = OK }
