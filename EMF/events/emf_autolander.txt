@@ -129,7 +129,7 @@ character_event = {
 	}
 }
 
-# emf_autolander.2 [Player]
+# emf_autolander.3 [Player]
 #
 # County selection (only for interactive/singleplayer mode)
 # Reentrant
@@ -192,6 +192,13 @@ character_event = {
 				can_be_given_away = yes
 			}
 			
+			save_event_target_as = target_county
+		}
+		
+		# Potentially flip the province capital (will change best_fit_character_for_title).
+		character_event = { id = emf_autolander.9 }
+		
+		event_target:target_county = {
 			if = {
 				limit = {
 					num_fitting_characters_for_title = 1
@@ -221,21 +228,20 @@ character_event = {
 					save_event_target_as = char_two
 				}
 			}
-			
-			save_event_target_as = target_county
 		}
 
 			
 		if = {
 			limit = { event_target:char_one = { is_alive = yes } }
 			event_target:char_one = {
-				character_event = { id = emf_autolander.4 } # Bounce them into proper FROM and FROMFROM scopes of prompt event
+			
+				# Bounce char_one (and maybe char_two) into FROMFROM/FROM scopes of prompt event
+				character_event = { id = emf_autolander.4 }
+				break = yes
 			}
 		}
-		if = {
-			limit = { not = { event_target:char_one = { is_alive = yes } } }
-			character_event = { id = emf_autolander.4 } # The show must go on
-		}
+		
+		character_event = { id = emf_autolander.4 } # The show must go on
 	}
 }
 
@@ -247,16 +253,18 @@ character_event = {
 
 	immediate = {
 		clear_event_target = char_one
+		
 		if = {
 			limit = { event_target:char_two = { is_alive = yes } }
 			event_target:char_two = {
-				character_event = { id = emf_autolander.5 } # Bounce them into proper FROM and FROMFROM scopes of prompt event
+			
+				# Bounce char_two into FROM scope of prompt event
+				character_event = { id = emf_autolander.5 }
+				break = yes
 			}
 		}
-		if = {
-			limit = { not = { event_target:char_two = { is_alive = yes } } }
-			FROM = { character_event = { id = emf_autolander.5 } } # The show must go on
-		}
+		
+		FROM = { character_event = { id = emf_autolander.5 } } # The show must go on
 	}
 }
 
@@ -317,7 +325,6 @@ character_event = {
 		name = emf_autolander.6.opt.b
 		trigger = {
 			FROMFROM = {
-				is_alive = yes
 				prisoner = no
 				not = { character = ROOT }
 			}
@@ -399,11 +406,10 @@ character_event = {
 		name = emf_autolander.6.opt.c
 		trigger = {
 			FROM = {
-				is_alive = yes
 				prisoner = no
 				not = {
 					character = ROOT
-					character = FROMFROM # Weird case... (both index = 1 and index = 2 best_fit_character_for_title were same)
+					character = FROMFROM # Weird case (both index = 1 and index = 2 of best_fit_character_for_title were same)
 				}
 			}
 			
@@ -501,6 +507,71 @@ character_event = {
 }
 
 
+
+# emf_autolander.9 [Player]
+#
+#
+# The province capital of event_target:target_county is flipped when possible
+# to match republican or feudal character types. This is done before
+# best_fit_character_for_title analysis.
+character_event = {
+	id = emf_autolander.9
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		event_target:target_county = {
+			location = {
+				not = {
+					any_province_holding = {
+						is_capital = yes
+						or = {
+							and = {
+								ROOT = { is_republic = yes }
+								holding_type = city
+							}
+							and = {
+								ROOT = { is_feudal = yes }
+								holding_type = castle
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	immediate = {
+		event_target:target_county = {
+
+			# Note that this approach _may_ theoretically make under-construction minor holdings
+			# province capitals (haven't tested any/random_province_holding for this). If this
+			# turns out to be true, then just check the barony for any succession law. A holding
+			# under construction should have no laws.
+			
+			location = {
+				random_province_holding = {
+					limit = {
+						holder = ROOT
+						or = {
+							and = {
+								ROOT = { is_republic = yes }
+								holding_type = city
+							}
+							and = {
+								ROOT = { is_feudal = yes }
+								holding_type = castle
+							}
+						}
+					}
+					province_capital = yes
+				}
+			}
+		}
+	}
+}
+
+
 # emf_autolander.10 [Grantee]
 #
 # FROM grants event_target:target_county and any minor holdings in it to ROOT
@@ -511,47 +582,7 @@ character_event = {
 	
 	immediate = {
 		event_target:target_county = {
-			FROM = {
-				# Grant the capital barony if it matches our character type
-				random_demesne_title = {
-					limit = {
-						tier = baron
-						de_jure_liege = event_target:target_county
-						is_capital = yes
-						or = {
-							and = {
-								FROM = { is_republic = yes }
-								is_republic = yes
-							}
-							and = {
-								FROM = { is_feudal = yes }
-								is_feudal = yes
-							}
-						}
-					}
-					grant_title = ROOT
-				}
-				
-				# Grant any minor holdings that match our character type
-				any_demesne_title = {
-					limit = {
-						tier = baron
-						de_jure_liege = event_target:target_county
-						or = {
-							and = {
-								FROM = { is_republic = yes }
-								is_republic = yes
-							}
-							and = {
-								FROM = { is_feudal = yes }
-								is_feudal = yes
-							}
-						}
-					}
-					grant_title = ROOT
-				}
-			}
-			
+
 			# Grant the county
 			grant_title = ROOT
 			
@@ -565,7 +596,7 @@ character_event = {
 					grant_title = ROOT
 				}
 			}
-					
+
 			location = {
 				remove_province_modifier = emf_mod_recently_acquired
 			}
