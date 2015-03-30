@@ -141,6 +141,8 @@ character_event = {
 	option = {
 		name = OK
 		
+		log = "emf_autolander.3: ROOT='[Root.GetTitledName]', FROM='[From.GetTitledName]', FROMFROM='[FromFrom.GetTitledName]'"
+		
 		if = {
 			limit = {
 				not = {
@@ -163,6 +165,8 @@ character_event = {
 					}
 				}
 			}
+			
+			log = "emf_autolander.3: Iteration DONE"
 			
 			# Cleanup. We're done prompting for this round.
 			any_demesne_title = {
@@ -195,8 +199,11 @@ character_event = {
 			save_event_target_as = target_county
 		}
 		
+		log = "emf_autolander.3: target_county='[target_county.GetFullName]'"
+		
 		# Potentially flip the province capital (will change best_fit_character_for_title).
-		character_event = { id = emf_autolander.9 }
+		# NOTE: Engine should already do it automatically for players.
+		# character_event = { id = emf_autolander.9 }
 		
 		event_target:target_county = {
 			if = {
@@ -204,43 +211,87 @@ character_event = {
 					num_fitting_characters_for_title = 1
 					not = { num_fitting_characters_for_title = 2 }
 				}
+				
+				log = "emf_autolander.3: num_fitting_characters_for_title == 1"
+			
 				best_fit_character_for_title = {
 					title = PREV 			# The Title we are looking at
 					perspective = ROOT		# From whose perspective we are viewing the title
 					index = 1 				# The index of the character in the list
-					save_event_target_as = char_one
+					
+					character_event = { id = emf_autolander.8 }
+					if = {
+						limit = { has_character_flag = grant_ok }
+						save_event_target_as = char_one
+						clr_character_flag = grant_ok
+					}
 				}
 			}
 			if = {
 				limit = {
 					num_fitting_characters_for_title = 2
 				}
+				
+				log = "emf_autolander.3: num_fitting_characters_for_title >= 2"
+				
 				best_fit_character_for_title = {
 					title = PREV 			# The Title we are looking at
 					perspective = ROOT		# From whose perspective we are viewing the title
 					index = 1 				# The index of the character in the list
-					save_event_target_as = char_one
+
+					character_event = { id = emf_autolander.8 }
+					if = {
+						limit = { has_character_flag = grant_ok }
+						save_event_target_as = char_one
+						clr_character_flag = grant_ok
+					}
 				}
 				best_fit_character_for_title = {
 					title = PREV 			# The Title we are looking at
 					perspective = ROOT		# From whose perspective we are viewing the title
 					index = 2 				# The index of the character in the list
-					save_event_target_as = char_two
+
+					character_event = { id = emf_autolander.8 }
+					if = {
+						limit = { has_character_flag = grant_ok }
+						save_event_target_as = char_two
+						clr_character_flag = grant_ok
+					}
+				}
+				
+				if = {
+					limit = { event_target:char_one = { character = event_target:char_two } }
+					log = "emf_autolander.3: Deduplicating char_one and char_two (!)"
+					clear_event_target = char_two # Fucking weird, yo.
+				}
+				
+				if = {
+					limit = { # Even more weird...
+						not = { event_target:char_one = { always = yes } }
+						event_target:char_two = { always = yes }
+					}
+					log = "emf_autolander.3: Renaming char_two to char_one (!)"
+					event_target:char_two = { save_event_target_as = char_one }
+					clear_event_target = char_two
 				}
 			}
 		}
-
-			
+		
+		log = "emf_autolander.3: char_one='[char_one.GetTitledName]'"
+		log = "emf_autolander.3: char_two='[char_two.GetTitledName]'"
+		
 		if = {
-			limit = { event_target:char_one = { is_alive = yes } }
-			event_target:char_one = {
+			limit = { event_target:char_one = { always = yes } }
+
+			log = "emf_autolander.3: Directing to char_one"
 			
-				# Bounce char_one (and maybe char_two) into FROMFROM/FROM scopes of prompt event
+			event_target:char_one = {
 				character_event = { id = emf_autolander.4 }
-				break = yes
 			}
+			break = yes
 		}
 		
+		log = "emf_autolander.3: Directing to player"
 		character_event = { id = emf_autolander.4 } # The show must go on
 	}
 }
@@ -254,17 +305,21 @@ character_event = {
 	immediate = {
 		clear_event_target = char_one
 		
+		log = "emf_autolander.4: ROOT='[Root.GetTitledName]', FROM='[From.GetTitledName]', FROMFROM='[FromFrom.GetTitledName]'"
+		
 		if = {
-			limit = { event_target:char_two = { is_alive = yes } }
-			event_target:char_two = {
-			
-				# Bounce char_two into FROM scope of prompt event
-				character_event = { id = emf_autolander.5 }
-				break = yes
+			limit = {
+				not = { event_target:char_two = { always = yes } }
 			}
+			log = "emf_autolander.4: Directing to player"
+			FROM = { character_event = { id = emf_autolander.5 } } # The show must go on
+			break = yes
 		}
 		
-		FROM = { character_event = { id = emf_autolander.5 } } # The show must go on
+		event_target:char_two = {
+			log = "emf_autolander.4: Directing to char_two"
+			character_event = { id = emf_autolander.5 }
+		}
 	}
 }
 
@@ -276,6 +331,7 @@ character_event = {
 
 	immediate = {
 		clear_event_target = char_two
+		log = "emf_autolander.5: ROOT='[Root.GetTitledName]', FROM='[From.GetTitledName]', FROMFROM='[FromFrom.GetTitledName]'"
 		FROMFROM = { character_event = { id = emf_autolander.6 } } # And on to the prompt
 	}
 }
@@ -290,6 +346,9 @@ character_event = {
 	picture = GFX_evt_small_town
 	is_triggered_only = yes
 
+	hide_from = yes
+	hide_new = yes
+	
 	option = {
 		name = emf_autolander.6.opt.a
 		
@@ -325,79 +384,61 @@ character_event = {
 		name = emf_autolander.6.opt.b
 		trigger = {
 			FROMFROM = {
-				prisoner = no
 				not = { character = ROOT }
 			}
-			
-			# Avoid accidentally putting the gavelkind primary heir within easy clicking range (can go badly)
-			primary_title = {
+		}
+		
+		if = {
+			limit = {
 				or = {
-					not = {
-						has_law = succ_gavelkind
-						has_law = succ_elective_gavelkind
-					}
-					current_heir = {
-						not = { character = FROMFROM }
-					}
+					is_close_relative = FROMFROM
+					dynasty = FROMFROM
 				}
+				FROMFROM = { is_councillor = no } }
+			}
+			custom_tooltip = {
+				text = emf_autolander_ctt_grant_family_fromfrom
 			}
 		}
-		
-		FROMFROM = {
-			if = {
-				limit = {
-					or = {
-						is_close_relative = ROOT
-						dynasty = ROOT
-					}
-					is_councillor = no
+		if = {
+			limit = {
+				not = {
+					is_close_relative = FROMFROM
+					dynasty = FROMFROM
 				}
-				custom_tooltip = {
-					text = emf_autolander_ctt_grant_family_fromfrom
-				}
+				FROMFROM = { is_councillor = yes }
 			}
-			if = {
-				limit = {
-					not = {
-						is_close_relative = ROOT
-						dynasty = ROOT
-					}
-					is_councillor = yes
-				}
-				custom_tooltip = {
-					text = emf_autolander_ctt_grant_councillor
-				}
-			}
-			if = {
-				limit = {
-					or = {
-						is_close_relative = ROOT
-						dynasty = ROOT
-					}
-					is_councillor = yes
-				}
-				custom_tooltip = {
-					text = emf_autolander_ctt_grant_family_councillor_fromfrom
-				}
-			}
-			if = {
-				limit = {
-					not = {
-						is_close_relative = ROOT
-						dynasty = ROOT
-					}
-					is_councillor = no
-				}
-				custom_tooltip = {
-					text = emf_autolander_ctt_grant_other
-				}
-			}
-			hidden_tooltip = {
-				character_event = { id = emf_autolander.10 } # Grant target_county
+			custom_tooltip = {
+				text = emf_autolander_ctt_grant_councillor_fromfrom
 			}
 		}
-		
+		if = {
+			limit = {
+				or = {
+					is_close_relative = FROMFROM
+					dynasty = FROMFROM
+				}
+				FROMFROM = { is_councillor = yes }
+			}
+			custom_tooltip = {
+				text = emf_autolander_ctt_grant_family_councillor_fromfrom
+			}
+		}
+		if = {
+			limit = {
+				not = {
+					is_close_relative = FROMFROM
+					dynasty = FROMFROM
+				}
+				FROMFROM = { is_councillor = no }
+			}
+			custom_tooltip = {
+				text = emf_autolander_ctt_grant_other_fromfrom
+			}
+		}
+			
 		hidden_tooltip = {
+			FROMFROM = { character_event = { id = emf_autolander.10 } } # Grant target_county
 			character_event = { id = emf_autolander.3 }
 		}
 	}
@@ -406,82 +447,61 @@ character_event = {
 		name = emf_autolander.6.opt.c
 		trigger = {
 			FROM = {
-				prisoner = no
-				not = {
-					character = ROOT
-					character = FROMFROM # Weird case (both index = 1 and index = 2 of best_fit_character_for_title were same)
-				}
+				not = { character = ROOT }
 			}
-			
-			# Avoid accidentally putting the gavelkind primary heir within easy clicking range (can go badly)
-			primary_title = {
+		}
+		
+		if = {
+			limit = {
 				or = {
-					not = {
-						has_law = succ_gavelkind
-						has_law = succ_elective_gavelkind
-					}
-					current_heir = {
-						not = { character = FROM }
-					}
+					is_close_relative = FROM
+					dynasty = FROM
 				}
+				FROM = { is_councillor = no } }
+			}
+			custom_tooltip = {
+				text = emf_autolander_ctt_grant_family_from
 			}
 		}
-		
-		FROM = {
-			if = {
-				limit = {
-					or = {
-						is_close_relative = ROOT
-						dynasty = ROOT
-					}
-					is_councillor = no
+		if = {
+			limit = {
+				not = {
+					is_close_relative = FROM
+					dynasty = FROM
 				}
-				custom_tooltip = {
-					text = emf_autolander_ctt_grant_family_from
-				}
+				FROM = { is_councillor = yes }
 			}
-			if = {
-				limit = {
-					not = {
-						is_close_relative = ROOT
-						dynasty = ROOT
-					}
-					is_councillor = yes
-				}
-				custom_tooltip = {
-					text = emf_autolander_ctt_grant_councillor
-				}
-			}
-			if = {
-				limit = {
-					or = {
-						is_close_relative = ROOT
-						dynasty = ROOT
-					}
-					is_councillor = yes
-				}
-				custom_tooltip = {
-					text = emf_autolander_ctt_grant_family_councillor_from
-				}
-			}
-			if = {
-				limit = {
-					not = {
-						is_close_relative = ROOT
-						dynasty = ROOT
-					}
-					is_councillor = no
-				}
-				custom_tooltip = {
-					text = emf_autolander_ctt_grant_other
-				}
-			}
-			hidden_tooltip = {
-				character_event = { id = emf_autolander.10 } # Grant target_county
+			custom_tooltip = {
+				text = emf_autolander_ctt_grant_councillor_from
 			}
 		}
-		
+		if = {
+			limit = {
+				or = {
+					is_close_relative = FROM
+					dynasty = FROM
+				}
+				FROM = { is_councillor = yes }
+			}
+			custom_tooltip = {
+				text = emf_autolander_ctt_grant_family_councillor_from
+			}
+		}
+		if = {
+			limit = {
+				not = {
+					is_close_relative = FROM
+					dynasty = FROM
+				}
+				FROM = { is_councillor = no }
+			}
+			custom_tooltip = {
+				text = emf_autolander_ctt_grant_other_from
+			}
+		}
+			
 		hidden_tooltip = {
+			FROM = { character_event = { id = emf_autolander.10 } } # Grant target_county
 			character_event = { id = emf_autolander.3 }
 		}
 	}
@@ -507,9 +527,58 @@ character_event = {
 }
 
 
+# emf_autolander.8 [Character]
+#
+# ROOT was a best_fit_character_for_title candidate for event_target:target_county.
+# If he is worthy of appearing on the land-grant prompt, then we will mark him with
+# a character flag 'grant_ok'.
+
+character_event = {
+	id = emf_autolander.8
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		is_alive = yes
+		prisoner = no
+		FROM = {
+			primary_title = {
+				or = {
+					not = {
+						has_law = succ_gavelkind
+						has_law = succ_elective_gavelkind
+					}
+					current_heir = {
+						not = { character = ROOT }
+					}
+				}
+				or = {
+					not = { has_law = succ_patrician_elective }
+					not = {
+						and = {
+							current_heir = {
+								character = ROOT
+								dynasty = FROM
+								is_landed = no
+							}
+							event_target:target_county = {
+								is_republic = no
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	immediate = {
+		log = "emf_autolander.8: cleared for grant: '[Root.GetTitledName]'"
+		set_character_flag = grant_ok
+	}
+}
+
 
 # emf_autolander.9 [Player]
-#
 #
 # The province capital of event_target:target_county is flipped when possible
 # to match republican or feudal character types. This is done before
