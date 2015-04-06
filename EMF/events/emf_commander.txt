@@ -1,0 +1,166 @@
+
+namespace = emf_commander
+
+
+# emf_commander.0
+#
+# on_major_battle_won
+#
+# ROOT is any liege levy subunit commander on victorious
+# side of major battle, including flank commanders.
+character_event = {
+	id = emf_commander.0
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	option = {
+		name = OK
+		
+		# Find which of our lieges is at war and responsible for this battle
+		
+		any_liege = {
+			limit = {
+				real_tier = emperor
+				war_with = FROM
+			}
+			save_event_target_as = emf_war_liege
+		}
+		any_liege = {
+			limit = {
+				real_tier = king
+#				in_revolt = no
+				war_with = FROM
+				not = { event_target:emf_war_liege = { always = yes } }
+			}
+			save_event_target_as = emf_war_liege
+		}
+		any_liege = {
+			limit = {
+				real_tier = duke
+#				in_revolt = no
+				war_with = FROM
+				not = { event_target:emf_war_liege = { always = yes } }
+			}
+			save_event_target_as = emf_war_liege
+		}
+		any_liege = {
+			limit = {
+				real_tier = count
+#				in_revolt = no
+				war_with = FROM
+				not = { event_target:emf_war_liege = { always = yes } }
+			}
+			save_event_target_as = emf_war_liege
+		}
+		
+		if = {
+			limit = {
+				not = {
+					event_target:emf_war_liege = { always = yes }
+				}
+			}
+			log = "emf_commander.0: '[Root.GetTitledName]' ([Root.GetID]): failed to find liege at war with '[From.GetTitledName]' ([From.GetID]) of the '[From.Realm.GetFullName]'"
+		}
+
+		event_target:emf_war_liege = {
+			if = {
+				limit = {
+					any_war = {
+						any_defender = { character = event_target:emf_war_liege }
+					}
+					not = {
+						any_war = {
+							any_attacker = { character = event_target:emf_war_liege }
+						}
+					}
+				}
+				log = "emf_commander.0: major victory for the '[This.PrimaryTitle.GetFullName]' (liege: '[This.GetBestName]', war_type: defensive)"
+			}
+			if = {
+				limit = {
+					any_war = {
+						any_attacker = { character = event_target:emf_war_liege }
+					}
+					not = {
+						any_war = {
+							any_defender = { character = event_target:emf_war_liege }
+						}
+					}
+				}
+				log = "emf_commander.0: major victory for the '[This.PrimaryTitle.GetFullName]' (liege: '[This.GetBestName]', war_type: offensive)"
+			}
+			if = {
+				limit = {
+					any_war = {
+						any_attacker = { character = event_target:emf_war_liege }
+					}
+					any_war = {
+						any_defender = { character = event_target:emf_war_liege }
+					}
+				}
+				log = "emf_commander.0: major victory for the '[This.PrimaryTitle.GetFullName]' (liege: '[This.GetBestName]', war_type: ambiguous)"
+			}
+			if = {
+				limit = {
+					not = {
+						any_war = {
+							any_attacker = { character = event_target:emf_war_liege }
+						}
+						any_war = {
+							any_defender = { character = event_target:emf_war_liege }
+						}
+					}
+				}
+				log = "emf_commander.0: major victory for the '[This.PrimaryTitle.GetFullName]' (liege: '[This.GetBestName]', war_type: NEITHER)"
+			}
+		}
+		
+		random_list = {
+			30 = { }
+			970 = { break = yes }
+		}
+		
+		if = {
+			limit = { trait = commander4 }
+			# TODO: Chance to generate claim.
+
+			# For now, simply flag the character as having received a weak claim (assuming same chance for that too).
+			set_character_flag = emf_commander_claim
+			
+			event_target:emf_war_liege = {
+				primary_title = {
+					if = {
+						limit = {
+							not = { ROOT = { has_claim = PREV } }
+						}
+						add_weak_claim = ROOT
+					}
+				}
+			}
+			
+			break = yes
+		}
+		
+		if = {
+			limit = { trait = commander3 }
+			add_trait = commander4
+			break = yes
+		}
+		
+		if = {
+			limit = { trait = commander2 }
+			add_trait = commander3
+			break = yes
+		}
+		
+		if = {
+			limit = { trait = commander1 }
+			add_trait = commander2
+			break = yes
+		}
+		
+		add_trait = commander1
+	}
+	
+}
