@@ -33,7 +33,7 @@ NDiplomacy = {
 	DEMESNE_MAX_SIZE_PATRICIAN_DOGE = 1.0,		-- Extra Max Demesne Size for a Patrician Doge (Tier effects do no not apply to Patricians!)
 	GAVELKIND_MAX_SIZE_BONUS = 0.5,				-- Max demesne size bonus from Gavelkind
 	DEMESNE_MAX_SIZE_JAIN_BONUS = 3,			-- Followers of the Jain religion have extra demesne
-	DEMESNE_MAX_SIZE_TRIBAL_BONUS = 2,			-- All rulers with tribal holdings as their capital have larger demesnes
+	DEMESNE_MAX_SIZE_TRIBAL_BONUS = 3,			-- All rulers with tribal holdings as their capital have larger demesnes
 	
 	VASSAL_BASE_LIMIT = 1.0,					-- Base Vassal Limit
 	VASSAL_LIMIT_DUKE_MULT = 15.0, 				-- Extra Vassal Limit from the ruler's rank
