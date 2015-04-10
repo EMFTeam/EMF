@@ -1,0 +1,71 @@
+
+namespace = emf_cb
+
+# emf_cb.0 [Attacker]
+#
+# A smarter version of occupy_minor_holdings_of_occupied_settlements + gain_all_occupied_titles
+# that, among other things, limits the occupied title gain to only those titles within certain
+# de jure territory.
+#
+# Relevant scopes:
+#  emf_title: King-tier title within which title gains will be constrained (target title in invasion CBs)
+#  ROOT: attacker
+#  FROMFROM: defender
+character_event = {
+	id = emf_cb.0
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		event_target:emf_title = { # Kingdom title
+			any_direct_de_jure_vassal_title = { # Duchies
+				any_direct_de_jure_vassal_title = { # Counties
+					limit = {
+						# Only those counties in which we've occupied the capital. Note that 'is_occupied' does not work
+						# properly on county titles, hence our usage of any_province_holding.
+						location = {
+							any_province_holding = {
+								is_capital = yes # County capital is occupied
+								is_occupied = yes
+								holder_scope = { # ... and is defender's
+									or = {
+										character = FROMFROM
+										is_liege_or_above = FROMFROM
+									}
+								}
+								controller = { # ... and the controller is a participant on the attacking side of this war
+									any_war = {
+										attacker = { character = ROOT }
+										defender = { character = FROMFROM }
+										any_attacker = { character = PREVPREV }
+									}
+								}
+							}
+						}
+					}
+					
+					# Gain the county
+					gain_title = ROOT
+					
+					# Gain all holdings from FROMFROM's realm (and apply recently_conquered holding modifiers and such)
+					ROOT = {
+						gain_settlements_under_title = {
+							title = PREV
+							enemy = FROMFROM
+							is_crusade = yes
+							type = invasion
+						}
+					}
+					
+					# Set conquest_culture for the gained county (affects culture conversion, mainly)
+					if = {
+						limit = {
+							not = { culture = ROOT }
+						}
+						conquest_culture = ROOT
+					}
+				}
+			}
+		}
+	}
+}

@@ -60,8 +60,6 @@ tribal_invasion = {
 		FROM = {
 			OR = {
 				AND = { # Eliminate silly targets
-					NOT = { religion = catholic }
-					NOT = { is_heresy_of = catholic }
 					NOT = { culture = finnish }
 					NOT = { culture = lappish }
 				}
@@ -139,35 +137,34 @@ tribal_invasion = {
 	
 	can_use_title = {
 		ROOT = {
-			OR = {
-				has_character_flag = tribal_inv_requirements_bypass
-				NOT = { num_of_titles = 2 }
-				NOT = { demesne_size = 1 }
-				primary_title = { title = e_mexikha }
-				
-				# Z: Vanilla no longer requires ROOT to border the target kingdom.
-				# Insane, I know.
+			or = {				
+				# Vanilla no longer requires ROOT to border the target kingdom.
+				# For the AI, we will allow this, because they don't target non-neighbors
+				# unless they truly must (perhaps the mongols?). For players, we
+				# will not.
+			
+				ai = yes
 			
 				PREV = {
 					any_direct_de_jure_vassal_title = {
 						any_direct_de_jure_vassal_title = {
-							OR = {
+							or = {
 								holder_scope = {
-									OR = {
+									or = {
 										character = ROOT
 										is_liege_or_above = ROOT
 									}
 								}
 								location = {
 									owner = {
-										OR = {
+										or = {
 											character = FROM
 											is_liege_or_above = FROM
 										}
 									}
 									any_neighbor_province = {
 										owner = {
-											OR = {
+											or = {
 												character = ROOT
 												is_liege_or_above = ROOT
 											}
@@ -178,19 +175,6 @@ tribal_invasion = {
 						}
 					}
 				}
-			}
-		}
-		OR = {
-			# AI il-Khan shall not expand too far North into the Golden Horde's conquest path
-			ROOT = { ai = no }
-			ROOT = {
-				primary_title = {
-					NOT = { title = e_il-khanate }
-				}
-			}
-			NOT = { # "Border" titles
-				title = k_khazaria
-				title = k_georgia
 			}
 		}
 	}
@@ -238,9 +222,6 @@ tribal_invasion = {
 		}
 		hidden_tooltip = {
 			ROOT = {
-				occupy_minors_of_occupied_settlements = FROM
-				gain_all_occupied_titles = { who = FROM type = invasion }
-				
 				if = {
 					limit = {
 						has_nickname = no
@@ -260,101 +241,31 @@ tribal_invasion = {
 	
 	on_success_title = {
 		custom_tooltip = {
-			text = tribal_invasion_succ_tip
+			text = emf_cb_ctt_tribal_invasion_success
 			hidden_tooltip = {
-				if = {
-					limit = {
-						OR = {
-							NOT = { has_holder = yes }
-							ROOT = { NOT = { tier = emperor } }
-							FROM = { religion_group = muslim }
-							FROM = { religion_group = pagan_group }
-							FROM = { tier = emperor }
-						}
-					}
-					ROOT = {
-						vassalize_or_take_under_title_destroy_duchies = {
-							title = PREV
-							enemy = FROM
-							is_crusade = yes # Even if the title holder is not participating in the war, gain holdings occupied by all Crusade participants
-							type = invasion
-						}
+			
+				# Smarter version of gain_all_occupied_titles limited to target title
+				save_event_target_as = emf_title
+				ROOT = { character_event = { id = emf_cb.0 } }
+				clear_event_target = emf_title
+			
+				ROOT = {
+					vassalize_or_take_under_title_destroy_duchies = {
+						title = PREV
+						enemy = FROM
+						is_crusade = yes # Even if the title holder is not participating in the war, gain holdings occupied by all Crusade participants
+						type = invasion
 					}
 				}
-				if = {
-					limit = {
-						has_holder = yes
-						ROOT = { tier = emperor }
-						NOT = { FROM = { religion_group = muslim } }
-						NOT = { FROM = { religion_group = pagan_group } }
-						NOT = { FROM = { tier = emperor } }
-					}
-					holder_scope = {
-						if = {
-							limit = { religion = ROOT }
-							opinion = { who = ROOT modifier = opinion_subjugated }
-						}
-						if = {
-							limit = { NOT = { religion = ROOT } }
-							opinion = { who = ROOT modifier = opinion_subjugated_other_rel }
-						}
-						set_defacto_liege = ROOT
-					}
-				}
-				any_de_jure_vassal_title = {
-					limit = {
-						holder_scope = {
-							independent = no
-							liege = {
-								character = PREV
-							}
-							any_war = {
-								defender = {
-									character = FROM
-								}
-							}
-						}
-					}
-					holder_scope = {
-						if = {
-							limit = { religion = ROOT }
-							opinion = { who = ROOT modifier = opinion_subjugated }
-						}
-						if = {
-							limit = { NOT = { religion = ROOT } }
-							opinion = { who = ROOT modifier = opinion_subjugated_other_rel }
-						}
-						set_defacto_liege = ROOT
-					}
-				}
+				
 				# Scripted case where this war is invoked by meneth.400
 				if = {
 					limit = {
 						title = k_anatolia
-						ROOT = {
-							has_landed_title = e_persia
-						}
-						FROM = {
-							has_landed_title = e_byzantium
-						}
+						ROOT = { has_landed_title = e_persia }
+						FROM = { has_landed_title = e_byzantium }
 					}
-					ROOT = {
-						character_event = { id = meneth.401 }
-					}
-				}
-				if = {
-					limit = {
-						title = k_nikaea
-						ROOT = {
-							has_landed_title = k_rum
-						}
-						FROM = {
-							has_landed_title = e_byzantium
-						}
-					}
-					ROOT = {
-						character_event = { id = meneth.408 }
-					}
+					ROOT = { character_event = { id = meneth.401 } }
 				}
 			}
 		}
@@ -477,13 +388,20 @@ tribal_invasion = {
 				}
 			}
 			OR = {
-				empire = {
-					NOT = {
-						OR = {
+				and = {
+					empire = {
+						not = {
 							title = e_persia
 							title = e_byzantium
 							title = e_arabia
 						}
+					}
+					not = { # SWMH kingdom titles that have no empire but should be conquered
+						title = k_aljazira
+						title = k_armenia
+						title = k_syria
+						title = k_antioch
+						title = k_jerusalem
 					}
 				}
 				FROM = {
@@ -505,6 +423,11 @@ tribal_invasion = {
 						title = e_arabia
 					}
 				}
+				title = k_aljazira
+				title = k_armenia
+				title = k_syria
+				title = k_antioch
+				title = k_jerusalem
 				FROM = {
 					primary_title = { title = e_il-khanate }
 					NOT = { year = 1300 }
@@ -528,6 +451,10 @@ tribal_invasion = {
 					title = e_russia
 				}
 			}
+			title = k_crimea
+			title = k_taurica
+			title = k_galicia
+			title = k_poland
 		}
 	}
 }
