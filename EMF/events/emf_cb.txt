@@ -8,7 +8,7 @@ namespace = emf_cb
 # de jure territory.
 #
 # Relevant scopes:
-#  emf_title: King-tier title within which title gains will be constrained (target title in invasion CBs)
+#  emf_cb_title: De jure count- to empire-tier title with which to constrain occupation gains (target title in invasion CBs)
 #  ROOT: attacker
 #  FROMFROM: defender
 character_event = {
@@ -17,35 +17,29 @@ character_event = {
 	is_triggered_only = yes
 	
 	immediate = {
-		event_target:emf_title = { # Kingdom title
-			any_direct_de_jure_vassal_title = { # Duchies
-				any_direct_de_jure_vassal_title = { # Counties
-					limit = {
-						# Only those counties in which we've occupied the capital. Note that 'is_occupied' does not work
-						# properly on county titles, hence our usage of any_province_holding.
-						location = {
-							any_province_holding = {
-								is_capital = yes # County capital is occupied
-								is_occupied = yes
-								holder_scope = { # ... and is defender's
-									or = {
-										character = FROMFROM
-										is_liege_or_above = FROMFROM
-									}
-								}
-								controller = { # ... and the controller is a participant on the attacking side of this war
-									any_war = {
-										attacker = { character = ROOT }
-										defender = { character = FROMFROM }
-										any_attacker = { character = PREVPREV }
-									}
-								}
-							}
+		event_target:emf_cb_title = {
+			any_de_jure_vassal_title = {
+				limit = {
+					tier = baron
+					is_capital = yes # County capital is occupied
+					is_occupied = yes
+					holder_scope = { # ... and is defender's
+						or = {
+							character = FROMFROM
+							is_liege_or_above = FROMFROM
 						}
 					}
-					
-					# Gain the county
-					gain_title = ROOT
+					controller = { # ... and the controller is a participant on the attacking side of this war
+						any_war = {
+							attacker = { character = ROOT }
+							defender = { character = FROMFROM }
+							any_attacker = { character = PREVPREV }
+						}
+					}
+				}
+
+				dejure_liege_title = {
+					gain_title = ROOT # Gain the county
 					
 					# Gain all holdings from FROMFROM's realm (and apply recently_conquered holding modifiers and such)
 					ROOT = {
@@ -66,6 +60,28 @@ character_event = {
 					}
 				}
 			}
+		}
+	}
+}
+
+
+# emf_cb.10
+#
+# Remove 'recently_conquered' modifiers and refill demesne levies
+# within event_target:emf_cb_title
+character_event = {
+	id = emf_cb.10
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		any_demesne_title = {
+			limit = {
+				tier = baron
+				de_jure_liege_or_above = event_target:emf_cb_title
+			}
+			remove_holding_modifier = recently_conquered
+			refill_holding_levy = yes
 		}
 	}
 }
