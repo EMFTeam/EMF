@@ -31,7 +31,7 @@ NDiplomacy = {
 	DEMESNE_MAX_SIZE_STEWARDSHIP_MULT = 0.15,	-- Extra Max Demesne Size from ruler and spouse stewardship
 	DEMESNE_MAX_SIZE_PATRICIAN = 1.0,			-- Extra Max Demesne Size for Patricians (Tier effects do no not apply to Patricians!)
 	DEMESNE_MAX_SIZE_PATRICIAN_DOGE = 1.0,		-- Extra Max Demesne Size for a Patrician Doge (Tier effects do no not apply to Patricians!)
-	GAVELKIND_MAX_SIZE_BONUS = 0.45,			-- Max demesne size bonus from Gavelkind
+	GAVELKIND_MAX_SIZE_BONUS = 0.5,			-- Max demesne size bonus from Gavelkind
 	DEMESNE_MAX_SIZE_JAIN_BONUS = 3,			-- Followers of the Jain religion have extra demesne
 	DEMESNE_MAX_SIZE_TRIBAL_BONUS = 2,			-- All rulers with tribal holdings as their capital have larger demesnes
 	
@@ -748,7 +748,7 @@ NEconomy = {
 	FORT_LOOT_DEFENCE_MULTIPLIER = 4.0,				-- Loot protected gold per fortlevel
 	LOOTABLE_GOLD_REGROWTH = 0.015,					-- Percent of max lootable gold that regrows every month
 	LOOT_PERCENT_PER_LOOTTICK = 0.04,				-- Percent of max lootable gold that is looted each loot tick
-	TPC_TO_LOOT_MULTIPLIER = 0.05,					-- Max loot in a navy is max troops * this
+	TPC_TO_LOOT_MULTIPLIER = 0.1,					-- Max loot in a navy is max troops * this
 	LOOTER_SHIP_MAINT_MULT = 0.1,					-- Religions that have looting have lower ship maintenance costs
 	LOOT_PRESTIGE_MULT = 1.0,						-- Whenever you gain loot you also get prestige related to the loot
 	LOOT_EVERY_X_DAYS = 4,							-- Loot every this many days
