@@ -1008,7 +1008,7 @@ NMilitary = {
 	FORAGING_PILLAGE_MODIFIER = 0.15,			-- Modifies how much loot the army takes when re-supplying itself in enemy territory},
 	
 	MONTHS_OF_UNDECIDED_WAR = 36,				-- Number of months before a war can be won by an attacker unless a major battle is won
-	MAJOR_BATTLE_WARSCORE = 7					-- The minium warscore gain needed for a battle to be considered major
+	MAJOR_BATTLE_WARSCORE = 5					-- The minium warscore gain needed for a battle to be considered major
 },
 
 NTechnology = {
@@ -1017,7 +1017,7 @@ NTechnology = {
 
 	BASE_NEIGHBOUR_SPREAD_BONUS = 0.075, 		-- bonus for each neighbour with the tech
 	NEIGHBOUR_SAME_RELIGON_GROUP_MULT = 2.0, 	-- multiplier to the above bonus if neighbour is of your religious group
-	BASE_DEMESNE_SPREAD_BONUS = 0.25, 			-- bonus for each other province in demesne with the tech
+	BASE_DEMESNE_SPREAD_BONUS = 0.15, 			-- bonus for each other province in demesne with the tech
 	MAX_DEMESNE_BONUS = 1.5, 					-- maximum bonus from demesne
 	FOCUS_BONUS = 2.0, 							-- bonus for the tech in each group set as the focus
 	TRADEPOST_SPREAD_BONUS = 0.006, 			-- Spread from trade posts
