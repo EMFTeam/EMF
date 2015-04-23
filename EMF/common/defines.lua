@@ -770,7 +770,7 @@ NDecadence = {
 
 NMilitary = {
 	CONTROLLER_MONTHS_BEFORE_OWNER_CHANGE = 120,	-- Number of months before ownership change of province, for certain cb:s that have contested titles
-	MORALE_COLLAPSE_THRESHOLD = 0.35,				-- Threshold before unit runs away
+	MORALE_COLLAPSE_THRESHOLD = 0.3,				-- Threshold before unit runs away
 	TROOP_KILL_FACTOR = 0.015,						-- Affects the death rate in combats(higher gives bigger losses)
 	MORALELOSS_FACTOR = 6,							-- Affects the morale loss rate in combats(higher gives bigger losses)
 	MIN_COMBAT_DAYS = 8,							-- Minimum number of days in combat
