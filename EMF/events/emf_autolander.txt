@@ -1,21 +1,7 @@
 namespace = emf_autolander
-	
-# TODO:
-# - Support gender_equality and succ_enatic_cognatic and succ_enatic: pick females too
-#   when appropriate.
-# - Support automatic distribution of recently-built titles baron-tier titles that cannot
-#   be legally held by the liege (e.g., if you build a couple new cities in your demesne
-#   and aren't a patrician, then autolander should be able to automate grants of those
-#   titles with characters specifically suited for the holding_type (e.g., priests holding
-#   new temples for non-muslims).
-# - Potentially support the option of converting a feudal county into a republican county
-#   or vice versa if both a castle and a city are newly-acquired within the county. Could
-#   do the same for promoting prince-bishropics or feudalizing them. It would simply be a
-#   matter of being sure to grant the new noble the proper type of holding first, then making
-#   that holding the province_capital.
 
 
-# emf_autolander.1
+# emf_autolander.0
 # Title transfer listener for applying Recently Acquired
 #
 # Taps: on_new_holder (grants + territory gained through gain_all_occupied_titles, gain_title, etc.)
@@ -23,7 +9,7 @@ namespace = emf_autolander
 #       on_new_holder_inheritance (inheritance)
 #
 character_event = {
-	id = emf_autolander.1
+	id = emf_autolander.0
 	desc = HIDE_EVENT
 	hide_window = yes
 	is_triggered_only = yes
@@ -48,10 +34,69 @@ character_event = {
 	option = { name = OK }
 }
 
+# emf_autolander.1 [Player]
+#
+# Recursive event for non-interactive land distribution (multiplayer)
+# This version halts when no longer over demesne limit.
+character_event = {
+	id = emf_autolander.1
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		over_max_demesne_size = 1
+		any_demesne_title = {
+			tier = count
+			location = {
+				has_province_modifier = emf_mod_recently_acquired
+			}
+			not = {
+				ROOT = {
+					capital_scope = {
+						duchy = {
+							de_jure_vassal_or_below = PREVPREVPREV
+						}
+					}
+				}
+			}
+			can_be_given_away = yes
+		}
+	}
+	
+	option = {
+		name = OK
+		
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = {
+					has_province_modifier = emf_mod_recently_acquired
+				}
+				not = {
+					ROOT = {
+						capital_scope = {
+							duchy = {
+								de_jure_vassal_or_below = PREVPREVPREV
+							}
+						}
+					}
+				}
+				can_be_given_away = yes
+			}
+
+			save_event_target_as = target_county
+		}
+		
+		character_event = { id = emf_autolander.11 } # Create random character & grant
+		character_event = { id = emf_autolander.1 } # Tail-recurse
+	}
+}
+
 
 # emf_autolander.2 [Player]
 #
 # Recursive event for non-interactive land distribution (multiplayer)
+# This version doesn't care about preserving excess demesne capacity.
 character_event = {
 	id = emf_autolander.2
 	hide_window = yes
@@ -98,31 +143,9 @@ character_event = {
 			}
 
 			save_event_target_as = target_county
-
-			create_random_steward = {
-				random_traits = yes
-				religion = ROOT
-				culture = ROOT
-				dynasty = random
-				female = no
-				fertility = 0.5
-				health = 5
-			}
-			new_character = {
-				hidden_tooltip = {
-					if = {
-						limit = {
-							religion_group = indian_group
-						}
-						add_trait = kshatriya
-						character_event = { id = RoI.30121 }
-					}
-					
-					character_event = { id = emf_autolander.10 } # Grant target_county
-				}
-			}
 		}
 		
+		character_event = { id = emf_autolander.11 } # Create random character & grant
 		character_event = { id = emf_autolander.2 } # Tail-recurse
 	}
 }
@@ -260,11 +283,11 @@ character_event = {
 				if = {
 					limit = { event_target:char_one = { character = event_target:char_two } }
 					#log = "emf_autolander.3: Deduplicating char_one and char_two (!)"
-					clear_event_target = char_two # Fucking weird, yo.
+					clear_event_target = char_two
 				}
 				
 				if = {
-					limit = { # Even more weird...
+					limit = {
 						not = { event_target:char_one = { always = yes } }
 						event_target:char_two = { always = yes }
 					}
@@ -361,36 +384,9 @@ character_event = {
 	option = {
 		name = emf_autolander.6.opt.a
 		
-		create_random_steward = {
-			random_traits = yes
-			religion = ROOT
-			culture = ROOT
-			dynasty = random
-			female = no
-			fertility = 0.5
-			health = 5
-		}
-		new_character = {
-			hidden_tooltip = {
-				if = {
-					limit = {
-						religion_group = indian_group
-					}
-					add_trait = kshatriya
-					character_event = { id = RoI.30121 }
-				}
-				
-				random_list = {
-					10 = { change_stewardship = 5 }
-					10 = { change_martial = 5 }
-				}
-				
-				character_event = { id = emf_autolander.10 } # Grant target_county
-			}
-		}
-		
 		hidden_tooltip = {
-			character_event = { id = emf_autolander.3 }
+			character_event = { id = emf_autolander.11 } # Create random character & grant
+			character_event = { id = emf_autolander.3 } # Repeat
 		}
 	}
 	
@@ -453,11 +449,12 @@ character_event = {
 			}
 			hidden_tooltip = {
 				character_event = { id = emf_autolander.10 } # Grant target_county
+				character_event = { id = emf_autolander.12 } # Generate decent starting court
 			}
 		}
 		
 		hidden_tooltip = {
-			character_event = { id = emf_autolander.3 }
+			character_event = { id = emf_autolander.3 } # Repeat
 		}
 	}
 	
@@ -521,11 +518,12 @@ character_event = {
 			
 			hidden_tooltip = {
 				character_event = { id = emf_autolander.10 } # Grant target_county
+				character_event = { id = emf_autolander.12 } # Generate decent starting court
 			}
 		}
 		
 		hidden_tooltip = {
-			character_event = { id = emf_autolander.3 }
+			character_event = { id = emf_autolander.3 } # Repeat
 		}
 	}
 	
@@ -544,7 +542,7 @@ character_event = {
 			}
 
 			clear_event_target = target_county
-			character_event = { id = emf_autolander.3 }
+			character_event = { id = emf_autolander.3 } # Repeat
 		}
 	}
 }
@@ -606,15 +604,20 @@ character_event = {
 # The province capital of event_target:target_county is flipped when possible
 # to match republican or feudal character types. This is done before
 # best_fit_character_for_title analysis.
+#
+# NOTE: This code is currently unused, because the game should actually switch
+# capitals automatically before we reach this point.
 character_event = {
 	id = emf_autolander.9
 	hide_window = yes
 	is_triggered_only = yes
 	
 	trigger = {
+		is_tribal = no
 		event_target:target_county = {
 			location = {
 				not = {
+					is_tribal = yes
 					any_province_holding = {
 						is_capital = yes
 						or = {
@@ -695,5 +698,203 @@ character_event = {
 		}
 		
 		clear_event_target = target_county
+	}
+}
+
+
+# emf_autolander.11 [Player]
+#
+# Create a random new character and grant them event_target:target_county
+character_event = {
+	id = emf_autolander.11
+	hide_window = yes
+	is_triggered_only = yes
+	
+	option = {
+		name = OK
+		
+
+		random_list = {
+			50 = {
+				create_random_steward = {
+					random_traits = yes
+					religion = ROOT
+					culture = ROOT
+					dynasty = random
+					female = no
+					fertility = 0.5
+					health = 5
+				}
+			}
+			50 = {
+				modifier = {
+					factor = 0
+					or = {
+						event_target:target_county = {
+							is_feudal = no
+						}
+						primary_title = { # NOTE: It is no oversight that gender_equality is not considered here, unlike for councillors.
+							succ_law_title = {
+								not = {
+									has_law = true_cognatic_succession
+									has_law = enatic_cognatic_succession
+									has_law = enatic_succession
+								}
+							}
+						}
+					}
+				}
+				create_random_steward = {
+					random_traits = yes
+					religion = ROOT
+					culture = ROOT
+					dynasty = random
+					female = yes
+					fertility = 0.5
+					health = 5
+				}
+			}
+		}
+		new_character = {
+
+			# Boost the stats of one of the steward's other attributes
+			random_list = {
+				10 = { change_martial = 5 }
+				10 = { change_diplomacy = 5 }
+				10 = { change_intrigue = 5 }
+				10 = { change_learning = 5 }
+			}
+
+			hidden_tooltip = {
+				if = {
+					limit = {
+						religion_group = indian_group
+					}
+					add_trait = kshatriya
+					character_event = { id = RoI.30121 }
+				}
+				
+				character_event = { id = emf_autolander.10 } # Grant target_county
+			}
+			
+			character_event = { id = emf_autolander.12 } # Generate decent starting court
+		}
+	}
+}
+
+# emf_autolander.12 [Grantee]
+#
+# Now that ROOT is definitely landed, create a decent starting court for them
+# if they were not already landed before the grant.
+character_event = {
+	id = emf_autolander.12
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		not = { num_of_count_titles = 2 }
+	}
+	
+	option = {
+		name = OK
+		
+		# Always male
+		create_random_priest = {
+			random_traits = yes
+			female = no
+		}
+		
+		# 50/50 male/female if law/customization allows
+		if = {
+			limit = {
+				or = {
+					has_global_flag = gender_equality
+					primary_title = { # FIXME: Test how this works when granting counties taken from Muslims (in general, this needs to be addressed, possibly)
+						or = {
+							has_law = true_cognatic_succession
+							has_law = enatic_cognatic_succession
+							has_law = enatic_succession
+						}
+					}
+				}
+			}
+			
+			random_list = {
+				50 = {
+					create_random_diplomat = {
+						random_traits = yes
+						female = no
+					}
+				}
+				50 = {
+					create_random_diplomat = {
+						random_traits = yes
+						female = yes
+					}
+				}
+			}
+			random_list = {
+				50 = {
+					create_random_soldier = {
+						random_traits = yes
+						female = no
+					}
+				}
+				50 = {
+					create_random_soldier = {
+						random_traits = yes
+						female = yes
+					}
+				}
+			}
+			random_list = {
+				50 = {
+					create_random_steward = {
+						random_traits = yes
+						female = no
+					}
+				}
+				50 = {
+					create_random_steward = {
+						random_traits = yes
+						female = yes
+					}
+				}
+			}
+			random_list = {
+				50 = {
+					create_random_intriguer = {
+						random_traits = yes
+						female = no
+					}
+				}
+				50 = {
+					create_random_intriguer = {
+						random_traits = yes
+						female = yes
+					}
+				}
+			}
+			
+			break = yes
+		}
+		
+		# Regular male-only
+		create_random_diplomat = {
+			random_traits = yes
+			female = no
+		}
+		create_random_soldier = {
+			random_traits = yes
+			female = no
+		}
+		create_random_steward = {
+			random_traits = yes
+			female = no
+		}
+		create_random_intriguer = {
+			random_traits = yes
+			female = no
+		}
 	}
 }

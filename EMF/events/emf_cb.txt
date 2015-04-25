@@ -1,0 +1,92 @@
+
+namespace = emf_cb
+
+# emf_cb.0 [Attacker]
+#
+# A smarter version of occupy_minor_holdings_of_occupied_settlements + gain_all_occupied_titles
+# that, among other things, limits the occupied title gain to only those titles within certain
+# de jure territory.
+#
+# NOTE: Removed due to broken scripting interface for tribal vassals that are called to war by their liege, making this
+# problem intractable for tribals.  Could still be used for special CBs that definitely won't encounter tribals or when,
+# if ever, the fundamentally broken scripting interface for reflecting vassal/liege/realm/hostility/war-participants/etc.
+# status of such tribal vassals is fixed.
+#
+# Relevant scopes:
+#  emf_cb_title: De jure count- to empire-tier title with which to constrain occupation gains (target title in invasion CBs)
+#  ROOT: attacker
+#  FROMFROM: defender
+# character_event = {
+	# id = emf_cb.0
+	# hide_window = yes
+	# is_triggered_only = yes
+	
+	# immediate = {
+		# event_target:emf_cb_title = {
+			# any_de_jure_vassal_title = {
+				# limit = {
+					# tier = baron
+					# is_capital = yes # County capital is occupied
+					# is_occupied = yes
+					# holder_scope = { # ... and is defender's
+						# or = {
+							# character = FROMFROM
+							# is_liege_or_above = FROMFROM
+						# }
+					# }
+					# controller = { # ... and the controller is a participant on the attacking side of this war
+						# any_war = {
+							# attacker = { character = ROOT }
+							# defender = { character = FROMFROM }
+							# any_attacker = { character = PREVPREV }
+						# }
+					# }
+				# }
+
+				# dejure_liege_title = {
+					# gain_title = ROOT # Gain the county
+					
+					# # Gain all holdings from FROMFROM's realm (and apply recently_conquered holding modifiers and such)
+					# ROOT = {
+						# gain_settlements_under_title = {
+							# title = PREV
+							# enemy = FROMFROM
+							# is_crusade = yes
+							# type = invasion
+						# }
+					# }
+					
+					# # Set conquest_culture for the gained county (affects culture conversion, mainly)
+					# if = {
+						# limit = {
+							# not = { culture = ROOT }
+						# }
+						# conquest_culture = ROOT
+					# }
+				# }
+			# }
+		# }
+	# }
+# }
+
+
+# emf_cb.10
+#
+# Remove 'recently_conquered' modifiers and refill demesne levies
+# within event_target:emf_cb_title
+character_event = {
+	id = emf_cb.10
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		any_demesne_title = {
+			limit = {
+				tier = baron
+				de_jure_liege_or_above = event_target:emf_cb_title
+			}
+			remove_holding_modifier = recently_conquered
+			refill_holding_levy = yes
+		}
+	}
+}

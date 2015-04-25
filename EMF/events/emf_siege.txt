@@ -212,9 +212,9 @@ character_event = {
 					character_event = { id = emf_siege.8 }
 				}
 				add_character_modifier = {
-					name = emf_siege_timer
-					duration = 11	# Adjust this value to = (DAYS_BETWEEN_COMBAT_EVENTS * 2 + 1)
-					hidden = yes	# Duration may need to be increased to prevent AI from spamming players	
+					name = emf_siege_timer	# May need to be increased to prevent AI from spamming players
+					duration = 21			# Adjust this value to = (DAYS_BETWEEN_COMBAT_EVENTS * 2) + 1
+					hidden = yes			# REMEMBER TO CHANGE BELOW ALSO
 				}
 			}
 			clear_event_target = emf_siege_target_defender
@@ -228,7 +228,7 @@ character_event = {
 				remove_character_modifier = emf_siege_timer
 				add_character_modifier = {
 					name = emf_siege_timer
-					duration = 11 # See note above
+					duration = 21 # See note above
 					hidden = yes
 				}
 			}
@@ -2299,7 +2299,10 @@ character_event = {
 			factor = 16
 			modifier = {
 				factor = 2
-				trait = greedy
+				or = {
+					trait = greedy
+					not = { scaled_wealth = 1.0 }
+				}
 			}
 			modifier = {
 				factor = 2
@@ -2355,6 +2358,7 @@ character_event = {
 				}
 				imprison = ROOT
 				hidden_tooltip = { # Notify players
+					set_character_flag = emf_siege_massacre
 					character_event = { id = emf_siege.54 }
 				}
 				any_courtier = {
@@ -2413,7 +2417,35 @@ character_event = {
 		}
 		clr_character_flag = emf_siege_courtiers_present
 		ai_chance = {
-			factor = 0 # This option is for players
+			factor = 1
+			modifier = { # Won't do it if good or lawful
+				factor = 0
+				or = {
+					trait = kind
+					trait = just
+				}
+			}
+			modifier = { # More likely if mean
+				factor = 2
+				or = {
+					trait = cruel
+					trait = impaler
+				}
+			}
+			modifier = { # More likely if religious enemies
+				factor = 2
+				FROMFROM = {
+					owner = {
+						not = { religion_group = ROOT }
+					}
+				}
+				or = {
+					trait = zealous
+					trait = crusader
+					trait = mujahid
+					trait = holy_warrior
+				}
+			}
 		}
 	}
 	option = { # Leave them all alone
@@ -2565,7 +2597,10 @@ character_event = {
 			factor = 16
 			modifier = {
 				factor = 2
-				trait = greedy
+				or = {
+					trait = greedy
+					not = { scaled_wealth = 1.0 }
+				}
 			}
 			modifier = {
 				factor = 2
@@ -2602,6 +2637,9 @@ character_event = {
 		custom_tooltip = { text = emf_siege.52.b_tt }
 		FROMFROM = {
 			owner = {
+				hidden_tooltip = { # Notify players of massacre
+					character_event = { id = emf_siege.55 }
+				}
 				any_courtier = {
 					limit = {
 						at_location = FROMFROM
@@ -2657,7 +2695,35 @@ character_event = {
 			add_trait = cruel
 		}
 		ai_chance = {
-			factor = 0 # This option is for players
+			factor = 1
+			modifier = { # Won't do it if good or lawful
+				factor = 0
+				or = {
+					trait = kind
+					trait = just
+				}
+			}
+			modifier = { # More likely if mean
+				factor = 2
+				or = {
+					trait = cruel
+					trait = impaler
+				}
+			}
+			modifier = { # More likely if religious enemies
+				factor = 2
+				FROMFROM = {
+					owner = {
+						not = { religion_group = ROOT }
+					}
+				}
+				or = {
+					trait = zealous
+					trait = crusader
+					trait = mujahid
+					trait = holy_warrior
+				}
+			}
 		}
 	}
 	option = { # Leave them all alone
@@ -2965,9 +3031,11 @@ character_event = {
 # Notify players of their capture at end of siege
 character_event = {
 	id = emf_siege.54
+	# Just captured
 	desc = {
 		text = emf_siege.54.desc_capable
 		trigger = {
+			not = { has_character_flag = emf_siege_massacre }
 			not = { trait = incapable }
 			is_adult = yes
 		}
@@ -2975,6 +3043,26 @@ character_event = {
 	desc = {
 		text = emf_siege.54.desc_incapable
 		trigger = {
+			not = { has_character_flag = emf_siege_massacre }
+			or = {
+				trait = incapable
+				is_adult = no
+			}
+		}
+	}
+	# Family massacred
+	desc = {
+		text = emf_siege.54.desc_massacre_capable
+		trigger = {
+			has_character_flag = emf_siege_massacre
+			not = { trait = incapable }
+			is_adult = yes
+		}
+	}
+	desc = {
+		text = emf_siege.54.desc_massacre_incapable
+		trigger = {
+			has_character_flag = emf_siege_massacre
 			or = {
 				trait = incapable
 				is_adult = no
@@ -2993,6 +3081,15 @@ character_event = {
 		name = {
 			text = emf_siege.54.a_capable
 			trigger = {
+				not = { has_character_flag = emf_siege_massacre }
+				not = { trait = incapable }
+				is_adult = yes
+			}
+		}
+		name = {
+			text = emf_siege.54.a_massacre_capable
+			trigger = {
+				has_character_flag = emf_siege_massacre
 				not = { trait = incapable }
 				is_adult = yes
 			}
@@ -3011,7 +3108,61 @@ character_event = {
 				is_adult = no
 			}
 		}
-		tooltip = { imprison = FROM }
+		
+		custom_tooltip = { text = emf_siege.54.a_tt }
+		clr_character_flag = emf_siege_massacre
+	}
+}
+
+# Notify players of massacre
+character_event = {
+	id = emf_siege.55
+	desc = {
+		text = emf_siege.55.desc_capable
+		trigger = {
+			not = { trait = incapable }
+			is_adult = yes
+		}
+	}
+	desc = {
+		text = emf_siege.55.desc_incapable
+		trigger = {
+			or = {
+				trait = incapable
+				is_adult = no
+			}
+		}
+	}
+	picture = GFX_evt_death
+	border = GFX_event_normal_frame_war
+	is_triggered_only = yes
+	
+	trigger = {
+		ai = no
+	}
+	
+	option = {
+		name = {
+			text = emf_siege.55.a_capable
+			trigger = {
+				not = { trait = incapable }
+				is_adult = yes
+			}
+		}
+		name = {
+			text = emf_siege.55.a_incapable_adult
+			trigger = {
+				trait = incapable
+				is_adult = yes
+			}
+		}
+		name = {
+			text = emf_siege.55.a_incapable_child
+			trigger = {
+				trait = incapable
+				is_adult = no
+			}
+		}
 	}
 }
 
@@ -3296,15 +3447,6 @@ character_event = {
 				trait = in_hiding
 				has_character_flag = emf_siege_in_hiding
 				is_ruler = no
-				or = {
-					is_close_relative = ROOT
-					is_married = ROOT
-					is_consort = ROOT
-					and = {
-						not = { dynasty = none }
-						dynasty = ROOT
-					}
-				}
 			}
 		}
 	}
@@ -3313,21 +3455,20 @@ character_event = {
 	}
 	
 	immediate = {
-		remove_trait = in_hiding
-		clr_character_flag = emf_siege_in_hiding
-		clr_character_flag = do_not_disturb
+		if = {
+			limit = {
+				trait = in_hiding
+				has_character_flag = emf_siege_in_hiding
+			}
+			remove_trait = in_hiding
+			clr_character_flag = emf_siege_in_hiding
+			clr_character_flag = do_not_disturb
+		}
 		any_courtier = {
 			limit = {
+				trait = in_hiding
+				has_character_flag = emf_siege_in_hiding
 				is_ruler = no
-				or = {
-					is_close_relative = ROOT
-					is_married = ROOT
-					is_consort = ROOT
-					and = {
-						not = { dynasty = none }
-						dynasty = ROOT
-					}
-				}
 			}
 			remove_trait = in_hiding
 			clr_character_flag = emf_siege_in_hiding
