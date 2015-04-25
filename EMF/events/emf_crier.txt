@@ -1,0 +1,610 @@
+namespace = emf_crier
+
+# Hear ye, hear ye...
+# "A lie can run round the world before the truth has got its boots on."
+
+### DEATH EVENTS
+
+## Death Listener Mechanic
+## 0-49 Reserved
+# Death Proxy - from on_death
+character_event = {
+	id = emf_crier.0
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		or = {
+			# real_tier = EMPEROR
+			controls_religion = yes
+			and = {
+				ai = no
+				multiplayer = yes
+			}
+		}
+	}
+
+	immediate = {
+		# Player death mechanic
+		if = {
+			limit = {
+				ai = no
+				multiplayer = yes
+			}
+			character_event = { id = emf_crier.200 }
+		}
+		# Handle MA changes
+		if = {
+			limit = { controls_religion = yes }
+			e_hip = {
+				owner = {
+					character_event = { id = emf_crier.1 days = 1 }
+				}
+			}
+		}
+		# Send Isis bounce events
+		if = { # Religious heads
+			limit = { controls_religion = yes }
+			e_hip = {
+				owner = {
+					character_event = { id = emf_crier.4 days = 1 }
+				}
+			}
+			break = yes
+		}
+	}
+	
+	option = {
+		name = OK
+	}
+}
+
+# Isis giveth and Isis taketh away
+character_event = {
+	id = emf_crier.1
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		FROM = { # MA changes
+			if = { # RelHead was sacrificed
+				limit = { death_reason = death_sacrificed }
+				religion_authority = {
+					modifier = religion_head_sacrificed
+					years = 50
+				}
+				if = { # Killer was different religion
+					limit = {
+						killer = {
+							not = { religion = FROM }
+						}
+					}
+					killer = {
+						religion_authority = {
+							modifier = sacrificed_other_religion_head
+							years = 50
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	option = {
+		name = OK
+	}
+}
+
+# Isis bounce event for religious heads
+character_event = {
+	id = emf_crier.4
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		FROM = {
+			is_alive = no
+			killer = { always = yes } # Right now this only works when there's a killer, might change in future
+		}
+	}
+	
+	immediate = {
+		FROM = {
+			if = { # Leader was sacrificed by other faith
+				limit = {
+					death_reason = death_sacrificed
+					killer = {
+						not = { religion = FROM }
+					}
+				}
+				killer = {
+					narrative_event = { id = emf_crier.50 } # Delay?
+				}
+				break = yes
+			}
+		}
+	}
+	
+	option = {
+		name = OK
+	}
+}
+
+# DEATH FLAVOR NOTES:
+# Localization might be changed for specific peculiarities of FROMFROM's religion. For example, some folks might have different ideas about what it means for their religious leader to die in battle
+# If so, that will be built into the desc and option triggers rather than doing unique events
+
+## Religion Head Death Flavor
+## 50-99 Reserved
+# Former religion head was sacrificed by other faith
+# ROOT = killer, FROMFROM = Sacrificed leader
+narrative_event = {
+	id = emf_crier.50
+	title = emf_crier.50.title
+	# Killer = Norse
+	desc = { # Killer
+		text = emf_crier.50.desc_norse_killer
+		trigger = {
+			character = ROOT
+			or = {
+				religion = norse_pagan
+				religion = norse_pagan_reformed
+			}
+		}
+	}
+	desc = { # Killer's Faith
+		text = emf_crier.50.desc_norse_faith
+		trigger = {
+			not = { character = ROOT }
+			religion = ROOT
+			or = {
+				religion = norse_pagan
+				religion = norse_pagan_reformed
+			}
+		}
+	}
+	# Killer = Hindu
+	desc = { # Killer
+		text = emf_crier.50.desc_hindu_killer
+		trigger = {
+			character = ROOT
+			religion = hindu
+		}
+	}
+	desc = { # Killer's Faith
+		text = emf_crier.50.desc_hindu_faith
+		trigger = {
+			not = { character = ROOT }
+			religion = ROOT
+			religion = hindu
+		}
+	}
+	# Killer = Zun
+	desc = { # Killer
+		text = emf_crier.50.desc_zun_killer
+		trigger = {
+			character = ROOT
+			or = {
+				religion = zun_pagan
+				religion = zun_pagan_reformed
+			}
+		}
+	}
+	desc = { # Killer's Faith
+		text = emf_crier.50.desc_zun_faith
+		trigger = {
+			not = { character = ROOT }
+			religion = ROOT
+			or = {
+				religion = zun_pagan
+				religion = zun_pagan_reformed
+			}
+		}
+	}
+	# Killer = Aztec
+	desc = { # Killer
+		text = emf_crier.50.desc_aztec_killer
+		trigger = {
+			character = ROOT
+			or = {
+				religion = aztec
+				religion = aztec_reformed
+			}
+		}
+	}
+	desc = { # Killer's Faith
+		text = emf_crier.50.desc_aztec_faith
+		trigger = {
+			not = { character = ROOT }
+			religion = ROOT
+			or = {
+				religion = aztec
+				religion = aztec_reformed
+			}
+		}
+	}
+	# Other reactions
+	desc = { # Sacrifice's religion
+		text = emf_crier.50.desc_sacrifice
+		trigger = {
+			religion = FROMFROM
+			not = { religion = ROOT }
+		}
+	}
+	desc = { # Others in FROMFROM's group
+		text = emf_crier.50.desc_group
+		trigger = {
+			religion_group = FROMFROM
+			not = { religion = FROMFROM }
+			not = { religion = ROOT }
+		}
+	}
+	desc = { # Other religions
+		text = emf_crier.50.desc_other
+		trigger = {
+			not = { religion_group = FROMFROM }
+			not = { religion = ROOT }
+		}
+	}
+	picture = GFX_evt_cathedral
+	is_triggered_only = yes
+	major = yes
+	show_ROOT = yes
+	show_from_from = yes
+	
+	major_trigger = {
+		is_playable = yes
+	}
+	
+	option = { # Dummy failsafe option, will be removed later
+		trigger = { always = no }
+		name = OK
+		set_character_flag = someone_is_a_dummy
+	}
+	option = { # The RelHead Killer
+		trigger = { character = ROOT }
+		name = emf_crier.50.a
+
+		piety = 100
+		prestige = 100
+		tooltip = {
+			religion_authority = {
+				modifier = sacrificed_other_religion_head
+				years = 50
+			}
+		}
+	}
+	option = { # The Killer's faith
+		trigger = {
+			not = { character = ROOT }
+			religion = ROOT
+		}
+		name = emf_crier.50.b
+	}
+	option = { # The sacrifice's faith responds
+		trigger = {
+			religion = FROMFROM
+			not = { religion = ROOT }
+		}
+		name = emf_crier.50.c
+
+		if = {
+			limit = { controls_religion = yes }
+			add_rival = ROOT # Is this even necessary?
+		}
+		opinion = {
+			modifier = opinion_sacrificed_religion_head
+			who = ROOT
+			months = 600
+		}
+		tooltip = {
+			religion_authority = {
+				modifier = religion_head_sacrificed
+				years = 50
+			}
+		}
+	}
+	option = { # Others in FROMFROM's group
+		trigger = {
+			religion_group = FROMFROM
+			not = { religion = FROMFROM }
+			not = { religion = ROOT }
+		}
+		name = emf_crier.50.d
+	}
+	option = { # Other religions
+		trigger = {
+			not = { religion_group = FROMFROM }
+			not = { religion = ROOT }
+		}
+		name = emf_crier.50.e
+	}
+}
+
+# Former religion head was sacrificed by own faith?
+# Former religion head was executed
+# Former religion head was murdered
+# Former religion head died in battle
+# Former religion head died in a duel
+
+## 100-149 Reserved for potential expansion
+
+## Emperor Death Flavor
+## 150-199 Reserved
+
+## Player Death Flavor
+## 200-249 Reserved
+# Notification handler
+# Eventually might put flavorful chronicle entries into other player's chronicles?
+character_event = {
+	id = emf_crier.200
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		any_playable_ruler = {
+			limit = {
+				ai = no
+				not = { character = ROOT }
+			}
+			character_event = { id = emf_crier.201 }
+		}
+	}
+	
+	option = {
+		name = OK
+	}
+}
+
+# Notify other players of a fellow player's death
+character_event = {
+	id = emf_crier.201
+	desc = emf_crier.201.desc
+	picture = GFX_evt_death
+	is_triggered_only = yes
+	notification = yes
+	
+	option = {
+		name = OK
+	}
+}
+
+### TITLE EVENTS
+
+## New Titles
+## 250-299 Reserved
+# New title listener - from on_new_holder
+# ROOT is the character, FROM is the title, FROMFROM is the old holder
+character_event = {
+	id = emf_crier.250
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		FROM = {
+			title = FROMFROM # Because if there was no previous holder FROMFROM is the title
+			rebel = no
+			temporary = no
+			is_primary_holder_title = yes
+			or = {
+				and = {
+					tier = EMPEROR
+					not = {
+						title = e_hre
+						title = e_roman_empire
+						title = e_golden_horde
+						title = e_il-khanate
+						title = e_timurids
+						title = e_mexikha
+					}
+				}
+				# and = {
+					# tier = KING
+					# not = {
+						# title = k_israel
+						# title = k_leon
+						# title = k_hungary
+					# }
+				# }
+			}
+		}
+	}
+	
+	option = { # New empire
+		trigger = {
+			FROM = { tier = EMPEROR }
+		}
+		name = OK
+		
+		narrative_event = { id = emf_crier.251 }
+	}
+	
+	option = { # New kingdom
+		trigger = {
+			FROM = { tier = KING }
+		}
+		name = OK
+	}
+}
+
+# Announce new empire
+# ROOT = owner, FROMFROM = title
+narrative_event = {
+	id = emf_crier.251
+	title = emf_crier.251.title
+	desc = {
+		text = emf_crier.251.desc_owner
+		trigger = {
+			has_landed_title = FROMFROM
+			not = { religion = catholic }
+		}
+	}
+	desc = {
+		text = emf_crier.251.desc_owner_catholic
+		trigger = {
+			has_landed_title = FROMFROM
+			religion = catholic
+		}
+	}
+	desc = {
+		text = emf_crier.251.desc_other_catholic
+		trigger = {
+			not = { has_landed_title = FROMFROM }
+			religion = catholic
+			religion = ROOT
+		}
+	}
+	desc = {
+		text = emf_crier.251.desc_other_samerel
+		trigger = {
+			not = { has_landed_title = FROMFROM }
+			not = { religion = catholic }
+			religion = ROOT
+		}
+	}
+	desc = {
+		text = emf_crier.251.desc_other_samegroup
+		trigger = {
+			not = { has_landed_title = FROMFROM }
+			not = { religion = ROOT }
+			religion_group = ROOT
+		}
+	}
+	desc = {
+		text = emf_crier.251.desc_other_difgroup
+		trigger = {
+			not = { has_landed_title = FROMFROM }
+			not = { religion_group = ROOT }
+		}
+	}
+	picture = GFX_evt_coronation
+	is_triggered_only = yes
+	major = yes
+	# show_ROOT = yes
+	# show_from_from = yes
+	
+	major_trigger = {
+		is_playable = yes
+	}
+	
+	option = { # Dummy failsafe option, will be removed later
+		trigger = { always = no }
+		name = OK
+		set_character_flag = someone_is_a_dummy
+	}
+	option = { # Owner is not Catholic
+		trigger = {
+			has_landed_title = FROMFROM
+			not = { religion = catholic }
+		}
+		name = emf_crier.251.a
+	}
+	option = { # Owner is Catholic
+		trigger = {
+			has_landed_title = FROMFROM
+			religion = catholic
+		}
+		name = emf_crier.251.b
+	}
+	option = { # Fellow Catholics
+		trigger = {
+			not = { has_landed_title = FROMFROM }
+			religion = catholic
+			religion = ROOT
+		}
+		name = emf_crier.251.c
+	}
+	option = { # Same religion, not Catholic
+		trigger = {
+			not = { has_landed_title = FROMFROM }
+			not = { religion = catholic }
+			religion = ROOT
+		}
+		name = emf_crier.251.d
+	}
+	option = { # Same religion group
+		trigger = {
+			not = { has_landed_title = FROMFROM }
+			not = { religion = ROOT }
+			religion_group = ROOT
+		}
+		name = emf_crier.251.e
+	}
+	option = { # Other religion group
+		trigger = {
+			not = { has_landed_title = FROMFROM }
+			not = { religion_group = ROOT }
+		}
+		name = emf_crier.251.f
+	}
+}
+
+# Announce new kingdom
+# ROOT = owner, FROMFROM = title
+# 252 reserved
+
+# Announce empire destruction
+# FROM = former holder, event_target:emf_crier_dead_title = title
+narrative_event = {
+	id = emf_crier.253
+	title = emf_crier.253.title
+	desc = { # Not HRE, ERE
+		text = emf_crier.253.desc
+		trigger = {
+			event_target:emf_crier_dead_title = {
+				not = {
+					title = e_hre
+					title = e_byzantium
+				}
+			}
+		}
+	}
+	desc = { # HRE
+		text = emf_crier.253.desc_hre
+		trigger = {
+			event_target:emf_crier_dead_title = { title = e_hre }
+		}
+	}
+	desc = { # ERE
+		text = emf_crier.253.desc_byz
+		trigger = {
+			event_target:emf_crier_dead_title = { title = e_byzantium }
+		}
+	}
+	picture = GFX_evt_shadowy_cabal
+	is_triggered_only = yes
+
+	option = { # Send sympathy
+		trigger = { religion = FROM }
+		name = emf_crier.253.a
+	}
+	option = { # Alas...
+		trigger = {
+			not = { religion = FROM }
+		}
+		name = emf_crier.253.b
+	}
+	option = { # I'm glad its dead
+		trigger = {
+			not = {
+				primary_title = {
+					lower_tier_than = EMPEROR
+					empire = { title = event_target:emf_crier_dead_title }
+				}
+			}
+		}
+		name = emf_crier.253.c
+	}
+	option = { # Perhaps a new emperor will rise...
+		trigger = {
+			primary_title = {
+				lower_tier_than = EMPEROR
+				empire = { title = event_target:emf_crier_dead_title }
+			}
+		}
+		name = emf_crier.253.d
+	}
+}
+
+## Holy Site Control
+## 300-319 Reserved
