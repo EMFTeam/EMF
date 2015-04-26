@@ -943,8 +943,6 @@ character_event = {
 	hide_window = yes
 	is_triggered_only = yes
 	
-	trigger = { capital_scope = { county = { is_republic = no } } }
-	
 	immediate = {
 		capital_scope = { save_event_target_as = emf_capital }
 		
@@ -953,16 +951,6 @@ character_event = {
 			limit = {
 				holding_type = city
 				location = { province = event_target:emf_capital }
-			}
-			province_capital = yes
-			ROOT = { capital = PREV }
-			break = yes
-		}
-		
-		# Or somewhere...
-		random_demesne_title = {
-			limit = {
-				holding_type = city
 			}
 			province_capital = yes
 			ROOT = { capital = PREV }
@@ -1038,10 +1026,10 @@ character_event = {
 								}
 							}
 							grant_title_no_opinion = ROOT
-							
+							dejure_liege_title = {
+								grant_title_no_opinion = ROOT
+							}
 							province_capital = yes
-							dejure_liege_title = { grant_title_no_opinion = ROOT }
-							
 							set_defacto_liege = event_target:emf_liege
 							break = yes
 						}
@@ -1091,17 +1079,17 @@ character_event = {
 							limit = {
 								holding_type = city
 								owner = {
-									not = {
+									or = {
 										character = event_target:emf_liege
-										is_patrician = yes
+										is_patrician = no
 									}
 								}
 							}
 							grant_title_no_opinion = ROOT
-							
+							dejure_liege_title = {
+								grant_title_no_opinion = ROOT
+							}
 							province_capital = yes
-							dejure_liege_title = { grant_title_no_opinion = ROOT }
-							
 							set_defacto_liege = event_target:emf_liege
 							break = yes
 						}
@@ -1119,11 +1107,37 @@ character_event = {
 						location = {
 							port = yes
 							not = { province = event_target:emf_capital }
-							any_province_holding = {
-								is_capital = yes
+						}
+					}
+					location = {
+						random_province_holding = {
+							limit = {
 								holding_type = city
-								owner = { is_patrician = yes }
+								owner = {
+									or = {
+										character = event_target:emf_liege
+										is_patrician = no
+									}
+								}
 							}
+							grant_title_no_opinion = ROOT
+							set_defacto_liege = event_target:emf_liege
+							break = yes
+						}
+					}
+				}
+			}
+		}
+		
+		# Look for an existing non-coastal city somewhere within the capital duchy (not owned by another patrician)
+		# Settle for provinces in which we won't be able to take the county and make our city capital
+		event_target:emf_capital = {
+			duchy = {
+				any_direct_de_jure_vassal_title = {
+					limit = {
+						location = {
+							port = no
+							not = { province = event_target:emf_capital }
 						}
 					}
 					location = {
@@ -1169,6 +1183,7 @@ character_event = {
 					add_building = ct_shipyard_1
 					add_building = ct_shipyard_2
 				}
+				refill_holding_levy = yes
 			}
 			set_defacto_liege = event_target:emf_liege
 			break = yes
@@ -1176,6 +1191,363 @@ character_event = {
 	}
 }
 
+
+# emf_mr.20 [Patrician]
+#
+# on_death listener for patrician families that are about
+# to go extinct. Tries to replace the patrician with an
+# existing non-patrician AI vassal (i.e., somebody that
+# already holds land within the republic and is established).
+character_event = {
+	id = emf_mr.20
+	hide_window = yes
+	is_triggered_only = yes
+	
+	is_patrician = yes # Not too often we get to use this event filter!
+	
+	trigger = {
+		family_palace = {
+			not = { current_heir = { always = yes } } # Going extinct...
+		}
+	}
+	
+	immediate = {
+		liege = {
+			# Duke+, coastal, same culture_group, same religion...
+			random_vassal = {
+				limit = {
+					is_female = no
+					is_theocracy = no
+					is_patrician = no
+					not = { dynasty = 0 }
+					ai = yes
+					not = {
+						any_dynasty_member = {
+							is_patrician = yes
+						}
+					}
+					higher_tier_than = count
+					culture_group = PREV
+					religion = PREV
+					any_realm_province = {
+						port = yes
+					}
+				}
+				save_event_target_as = emf_patrician
+				break = yes
+			}
+			
+			# Count, coastal, same culture_group, same religion...
+			random_vassal = {
+				limit = {
+					is_female = no
+					is_theocracy = no
+					is_patrician = no
+					not = { dynasty = 0 }
+					ai = yes
+					not = {
+						any_dynasty_member = {
+							is_patrician = yes
+						}
+					}
+					tier = count
+					culture_group = PREV
+					religion = PREV
+					any_demesne_province = {
+						port = yes
+					}
+				}
+				save_event_target_as = emf_patrician
+				break = yes
+			}
+		
+			# Duke+, coastal, same religion...
+			random_vassal = {
+				limit = {
+					is_female = no
+					is_theocracy = no
+					is_patrician = no
+					not = { dynasty = 0 }
+					ai = yes
+					not = {
+						any_dynasty_member = {
+							is_patrician = yes
+						}
+					}
+					higher_tier_than = count
+					religion = PREV
+					any_realm_province = {
+						port = yes
+					}
+				}
+				save_event_target_as = emf_patrician
+				break = yes
+			}
+			
+			# Count, coastal, same religion...
+			random_vassal = {
+				limit = {
+					is_female = no
+					is_theocracy = no
+					is_patrician = no
+					not = { dynasty = 0 }
+					ai = yes
+					not = {
+						any_dynasty_member = {
+							is_patrician = yes
+						}
+					}
+					tier = count
+					religion = PREV
+					any_demesne_province = {
+						port = yes
+					}
+				}
+				save_event_target_as = emf_patrician
+				break = yes
+			}
+			
+			# Now another take without the coastal restriction...
+
+			# Duke+, same culture_group, same religion...
+			random_vassal = {
+				limit = {
+					is_female = no
+					is_theocracy = no
+					is_patrician = no
+					not = { dynasty = 0 }
+					ai = yes
+					not = {
+						any_dynasty_member = {
+							is_patrician = yes
+						}
+					}
+					higher_tier_than = count
+					culture_group = PREV
+					religion = PREV
+				}
+				save_event_target_as = emf_patrician
+				break = yes
+			}
+			
+			# Count, same culture_group, same religion...
+			random_vassal = {
+				limit = {
+					is_female = no
+					is_theocracy = no
+					is_patrician = no
+					not = { dynasty = 0 }
+					ai = yes
+					not = {
+						any_dynasty_member = {
+							is_patrician = yes
+						}
+					}
+					tier = count
+					culture_group = PREV
+					religion = PREV
+				}
+				save_event_target_as = emf_patrician
+				break = yes
+			}
+		
+			# Duke+, same religion...
+			random_vassal = {
+				limit = {
+					is_female = no
+					is_theocracy = no
+					is_patrician = no
+					not = { dynasty = 0 }
+					ai = yes
+					not = {
+						any_dynasty_member = {
+							is_patrician = yes
+						}
+					}
+					higher_tier_than = count
+					religion = PREV
+				}
+				save_event_target_as = emf_patrician
+				break = yes
+			}
+			
+			# Count, same religion...
+			random_vassal = {
+				limit = {
+					is_female = no
+					is_theocracy = no
+					is_patrician = no
+					not = { dynasty = 0 }
+					ai = yes
+					not = {
+						any_dynasty_member = {
+							is_patrician = yes
+						}
+					}
+					tier = count
+					religion = PREV
+				}
+				save_event_target_as = emf_patrician
+				break = yes
+			}
+			
+			# Now a pass at the barons that are coastal...
+			
+			# Coastal, same culture_group, same religion...
+			random_vassal = {
+				limit = {
+					is_female = no
+					is_theocracy = no
+					is_patrician = no
+					not = { dynasty = 0 }
+					ai = yes
+					not = {
+						any_dynasty_member = {
+							is_patrician = yes
+						}
+					}
+					culture_group = PREV
+					religion = PREV
+					capital_scope = {
+						port = yes
+					}
+				}
+				save_event_target_as = emf_patrician
+				break = yes
+			}
+			
+			# Coastal, same religion...
+			random_vassal = {
+				limit = {
+					is_female = no
+					is_theocracy = no
+					is_patrician = no
+					not = { dynasty = 0 }
+					ai = yes
+					not = {
+						any_dynasty_member = {
+							is_patrician = yes
+						}
+					}
+					religion = PREV
+					capital_scope = {
+						port = yes
+					}
+				}
+				save_event_target_as = emf_patrician
+				break = yes
+			}
+		
+			# Coastal, same religion_group...
+			random_vassal = {
+				limit = {
+					is_female = no
+					is_theocracy = no
+					is_patrician = no
+					not = { dynasty = 0 }
+					ai = yes
+					not = {
+						any_dynasty_member = {
+							is_patrician = yes
+						}
+					}
+					religion_group = PREV
+					capital_scope = {
+						port = yes
+					}
+				}
+				save_event_target_as = emf_patrician
+				break = yes
+			}
+			
+			# Now non-coastal barons (within religion_group)...
+			
+			# Same culture_group, same religion...
+			random_vassal = {
+				limit = {
+					is_female = no
+					is_theocracy = no
+					is_patrician = no
+					not = { dynasty = 0 }
+					ai = yes
+					not = {
+						any_dynasty_member = {
+							is_patrician = yes
+						}
+					}
+					culture_group = PREV
+					religion = PREV
+				}
+				save_event_target_as = emf_patrician
+				break = yes
+			}
+			
+			# Same religion...
+			random_vassal = {
+				limit = {
+					is_female = no
+					is_theocracy = no
+					is_patrician = no
+					not = { dynasty = 0 }
+					ai = yes
+					not = {
+						any_dynasty_member = {
+							is_patrician = yes
+						}
+					}
+					religion = PREV
+				}
+				save_event_target_as = emf_patrician
+				break = yes
+			}
+		
+			# Same religion_group...
+			random_vassal = {
+				limit = {
+					is_female = no
+					is_theocracy = no
+					is_patrician = no
+					not = { dynasty = 0 }
+					ai = yes
+					not = {
+						any_dynasty_member = {
+							is_patrician = yes
+						}
+					}
+					religion_group = PREV
+				}
+				save_event_target_as = emf_patrician
+				break = yes
+			}
+			
+			# Damnit, man, who wants to rise to the forefront of this republic's politics?!
+			random_vassal = {
+				limit = {
+					is_female = no
+					is_theocracy = no
+					is_patrician = no
+					not = { dynasty = 0 }
+					ai = yes
+					not = {
+						any_dynasty_member = {
+							is_patrician = yes
+						}
+					}
+				}
+				save_event_target_as = emf_patrician
+				break = yes
+			}
+		}
+	}
+	
+	option = {
+		name = OK
+		event_target:emf_patrician = {
+			create_family_palace = yes
+			# TODO: notify any players in realm
+		}
+	}
+}
 
 # emf_mr.100
 #
