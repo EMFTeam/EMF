@@ -23,10 +23,10 @@ NDiplomacy = {
 	
 	DEMESNE_BASE_MAX_SIZE = 1.0,				-- Base Max Demesne Size
 	DEMESNE_MAX_SIZE_BARON_MULT = 1.0, 			-- Extra Max Demesne Size from the ruler's rank
-	DEMESNE_MAX_SIZE_COUNT_MULT = 1.0, 			-- Extra Max Demesne Size from the ruler's rank
-	DEMESNE_MAX_SIZE_DUKE_MULT = 1.0,			-- Extra Max Demesne Size from the ruler's rank
-	DEMESNE_MAX_SIZE_KING_MULT = 3.0,			-- Extra Max Demesne Size from the ruler's rank
-	DEMESNE_MAX_SIZE_EMPEROR_MULT = 4.0,		-- Extra Max Demesne Size from the ruler's rank
+	DEMESNE_MAX_SIZE_COUNT_MULT = 2.0, 			-- Extra Max Demesne Size from the ruler's rank
+	DEMESNE_MAX_SIZE_DUKE_MULT = 2.0,			-- Extra Max Demesne Size from the ruler's rank
+	DEMESNE_MAX_SIZE_KING_MULT = 4.0,			-- Extra Max Demesne Size from the ruler's rank
+	DEMESNE_MAX_SIZE_EMPEROR_MULT = 5.0,		-- Extra Max Demesne Size from the ruler's rank
 	DEMESNE_MAX_SIZE_GREAT_DUKE_BONUS = 1.0,	-- Extra Max Demesne Size for Dukes with more than one Duchy
 	DEMESNE_MAX_SIZE_STEWARDSHIP_MULT = 0.15,	-- Extra Max Demesne Size from ruler and spouse stewardship
 	DEMESNE_MAX_SIZE_PATRICIAN = 1.0,			-- Extra Max Demesne Size for Patricians (Tier effects do no not apply to Patricians!)
