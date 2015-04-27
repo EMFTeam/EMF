@@ -59,6 +59,11 @@ character_event = {
 		character_event = { id = emf_startup.4 }
 		narrative_event = { id = meneth.600 } # CoTs (hidden)
 		
+		# Initialize playable ruler demesne (limit random vassal barons)
+		any_playable_ruler = {
+			character_event = { id = emf_startup.10 }
+		}
+		
 		# Initialize crown laws
 		character_event = { id = emf_laws.0 }
 		
@@ -432,3 +437,238 @@ character_event = {
 	}
 }
 
+
+# emf_startup.10 [Playable Ruler]
+#
+# If the ruler has vassal feudal baronies in their capital county or in their
+# capital duchy or in their general demesne (in that order of preference), seize
+# them from ahistorical (randomly-generated) feudal barons until the ruler no
+# longer has free demesne capacity (or runs out of such potential baronies to seize).
+character_event = {
+	id = emf_startup.10
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		is_feudal = yes
+		is_landed = yes
+		not = { over_max_demesne_size = 0 } # has free capacity
+	}
+	
+	immediate = {
+		# Recursively attempt to seize capital county baronies
+		character_event = { id = emf_startup.11 }
+		
+		# Recursively attempt to seize capital duchy baronies
+		character_event = { id = emf_startup.12 }
+		
+		# Recursively attempt to seize demesne baronies
+		character_event = { id = emf_startup.13 }
+	}
+}
+
+
+# emf_startup.11 [Playable Ruler]
+#
+# Recursively seize baronies in capital county.
+character_event = {
+	id = emf_startup.11
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		not = { over_max_demesne_size = 0 } # still has free capacity
+		capital_scope = {
+			any_province_holding = {
+				is_feudal = yes
+				holder_scope = {
+					tier = baron
+					vassal_of = ROOT
+					not = { historical = yes }
+				}
+			}
+		}
+	}
+	
+	option = {
+		name = OK
+		
+		capital_scope = {
+			random_province_holding = {
+				limit = {
+					is_feudal = yes
+					holder_scope = {
+						tier = baron
+						vassal_of = ROOT
+						not = { historical = yes }
+					}
+				}
+				holder_scope = {
+					PREV = { grant_title_no_opinion = ROOT }
+					if = {
+						limit = {
+							not = {
+								num_of_titles = 1
+								is_councillor = yes
+							}
+						}
+						death = yes
+					}
+				}
+			}
+		}
+		
+		# Tail-recurse
+		character_event = { id = emf_startup.11 }
+	}
+}
+
+
+# emf_startup.12 [Playable Ruler]
+#
+# Recursively seize baronies in capital duchy.
+character_event = {
+	id = emf_startup.12
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		not = { over_max_demesne_size = 0 } # still has free capacity
+		capital_scope = {
+			duchy = {
+				ROOT = {
+					any_demesne_province = { # only owned, capital duchy provinces
+						duchy = {
+							title = PREVPREVPREV
+						}
+						any_province_holding = {
+							is_feudal = yes
+							holder_scope = {
+								tier = baron
+								vassal_of = ROOT
+								not = { historical = yes }
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	option = {
+		name = OK
+		
+		capital_scope = {
+			duchy = {
+				ROOT = {
+					random_demesne_province = {
+						limit = {
+							duchy = {
+								title = PREVPREVPREV
+							}
+							any_province_holding = {
+								is_feudal = yes
+								holder_scope = {
+									tier = baron
+									vassal_of = ROOT
+									not = { historical = yes }
+								}
+							}
+						}
+						random_province_holding = {
+							limit = {
+								is_feudal = yes
+								holder_scope = {
+									tier = baron
+									vassal_of = ROOT
+									not = { historical = yes }
+								}
+							}
+							holder_scope = {
+								PREV = { grant_title_no_opinion = ROOT }
+								if = {
+									limit = {
+										not = {
+											num_of_titles = 1
+											is_councillor = yes
+										}
+									}
+									death = yes
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		# Tail-recurse
+		character_event = { id = emf_startup.12 }
+	}
+}
+
+
+# emf_startup.13 [Playable Ruler]
+#
+# Recursively seize baronies in demesne.
+character_event = {
+	id = emf_startup.13
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		not = { over_max_demesne_size = 0 } # still has free capacity
+		any_demesne_province = {
+			any_province_holding = {
+				is_feudal = yes
+				holder_scope = {
+					tier = baron
+					vassal_of = ROOT
+					not = { historical = yes }
+				}
+			}
+		}
+	}
+	
+	option = {
+		name = OK
+		
+		random_demesne_province = {
+			limit = {
+				any_province_holding = {
+					is_feudal = yes
+					holder_scope = {
+						tier = baron
+						vassal_of = ROOT
+						not = { historical = yes }
+					}
+				}
+			}
+			random_province_holding = {
+				limit = {
+					is_feudal = yes
+					holder_scope = {
+						tier = baron
+						vassal_of = ROOT
+						not = { historical = yes }
+					}
+				}
+				holder_scope = {
+					PREV = { grant_title_no_opinion = ROOT }
+					if = {
+						limit = {
+							not = {
+								num_of_titles = 1
+								is_councillor = yes
+							}
+						}
+						death = yes
+					}
+				}
+			}
+		}
+		
+		# Tail-recurse
+		character_event = { id = emf_startup.13 }
+	}
+}
