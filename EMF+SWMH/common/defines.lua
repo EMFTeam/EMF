@@ -1012,8 +1012,8 @@ NMilitary = {
 },
 
 NTechnology = {
-	DONT_EXECUTE_TECH_BEFORE = 769,				-- Set this to your earliest starting year
-	POINTS_PER_ATTRIBUTE = 0.015,
+	DONT_EXECUTE_TECH_BEFORE = 867,				-- Set this to your earliest starting year
+	POINTS_PER_ATTRIBUTE = 0.03,
 
 	BASE_NEIGHBOUR_SPREAD_BONUS = 0.075, 		-- bonus for each neighbour with the tech
 	NEIGHBOUR_SAME_RELIGON_GROUP_MULT = 2.0, 	-- multiplier to the above bonus if neighbour is of your religious group
