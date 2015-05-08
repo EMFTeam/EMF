@@ -61,10 +61,6 @@ character_event = {
 		}
 	}
 	
-	mean_time_to_happen = {
-		days = 1
-	}
-	
 	immediate = {
 		if = { # If we don't have another empire or king title to fallback upon...
 			limit = {
@@ -85,46 +81,20 @@ character_event = {
 					capital_scope = {
 						kingdom = {
 							has_holder = no
-							is_titular = no
 						}
 					}
 				}
 				
 				# Good. Now determine whether we'd qualify to form it by the 50% rule.
 				
-				capital_scope = {
-					kingdom = {
-						any_direct_de_jure_vassal_title = { # Duchies...
-							any_direct_de_jure_vassal_title = { # Counties...
-								
-								if = {
-									limit = { owner = { same_realm = ROOT } }
-									ROOT = { change_variable = { which = king_counties value = 1 } }
-								}
-								
-								if = {
-									limit = { owner = { not = { same_realm = ROOT } } }
-									ROOT = { change_variable = { which = king_counties value = -1 } }
-								}
-								
-							}
-						}
-					}
-				}
+				capital_scope = { kingdom = { save_event_target_as = emf_king_title } }
+				character_event = { id = emf_empires.4 } # Check 50% rule
 				
 				if = {
-					limit = { check_variable = { which = king_counties value = -0.1 } } # 50% rule passes
-					
-					capital_scope = {
-						kingdom = {
-							gain_title = ROOT
-						}
-					}
-					
-					set_character_flag = found_kingdom
+					limit = { check_variable = { which = king_county value = 0 } } # 50% rule passes
+					event_target:emf_king_title = { save_event_target_as = emf_new_title }
+					break = yes
 				}
-				
-				set_variable = { which = king_counties value = 0 } # Toss it
 			}
 			
 			# If not found, check all the de jure kingdoms of any empire titles that ROOT has, if the empire is de jure
@@ -137,45 +107,31 @@ character_event = {
 				
 				any_direct_de_jure_vassal_title = { # For all the kingdoms...
 					limit = {
-						not = { ROOT = { has_character_flag = found_kingdom } }
 						has_holder = no
 						is_titular = no
 					}
 					
-					any_direct_de_jure_vassal_title = { # Duchies...
-						any_direct_de_jure_vassal_title = { # Counties...
-							
-							if = {
-								limit = { owner = { same_realm = ROOT } }
-								ROOT = { change_variable = { which = king_counties value = 1 } }
-							}
-							
-							if = {
-								limit = { owner = { not = { same_realm = ROOT } } }
-								ROOT = { change_variable = { which = king_counties value = -1 } }
-							}
-							
-						}
-					}
+					save_event_target_as = emf_king_title
+					ROOT = { character_event = { id = emf_empires.4 } } # Check 50% rule
 					
 					if = {
-						limit = { ROOT = { check_variable = { which = king_counties value = -0.1 } } } # 50% rule passes
-						
-						gain_title = ROOT
-						ROOT = { set_character_flag = found_kingdom }
+						limit = { ROOT = { check_variable = { which = king_county value = 0 } } } # 50% rule passes
+						event_target:emf_king_title = { save_event_target_as = emf_new_title }
+						break = yes
 					}
-					
-					ROOT = { set_variable = { which = king_counties value = 0 } } # Toss it
 				}
 			}
-			
-			clr_character_flag = found_kingdom
 		}
 	}
 	
 	option = {
 		name = emf_empires.0.opt.a
 
+		if = {
+			limit = { event_target:emf_new_title = { always = yes } } # We'll be creating a king title
+			event_target:emf_new_title = { grant_title = ROOT }
+		}
+		
 		random_demesne_title = {
 			limit = {
 				tier = emperor
@@ -217,6 +173,7 @@ character_event = {
 			}
 			
 			unsafe_destroy_landed_title = THIS
+			
 			hidden_tooltip = {
 				save_event_target_as = emf_crier_dead_title
 				any_playable_ruler = {
@@ -325,4 +282,35 @@ character_event = {
 	}
 
 	option = { name = OK }
+}
+
+
+# emf_empires.4
+#
+# Check the 50% rule for kingdom event_target:emf_king_title
+character_event = {
+	id = emf_empires.4
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		set_variable = { which = king_county value = 0 }
+
+		event_target:emf_king_title = {
+			any_direct_de_jure_vassal_title = { # Duchies...
+				any_direct_de_jure_vassal_title = { # Counties...
+				
+					if = {
+						limit = { owner = { same_realm = ROOT } }
+						ROOT = { change_variable = { which = king_county value = 1 } }
+					}
+					if = {
+						limit = { owner = { not = { same_realm = ROOT } } }
+						ROOT = { change_variable = { which = king_county value = -1 } }
+					}
+					
+				}
+			}
+		}
+	}
 }
