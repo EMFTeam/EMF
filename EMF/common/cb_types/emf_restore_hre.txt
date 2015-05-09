@@ -18,10 +18,10 @@
 # can_use_gui: If otherwise valid, the CB is listed in the Diplo View, but you can't declare war unless 'can_use_gui' is also valid (also shows a trigger tooltip.)
 
 
-claim = {
-	name = CB_NAME_CLAIM
-	war_name = WAR_NAME_CLAIM
-	sprite = 1
+emf_restore_hre = {
+	name = CB_NAME_EMF_RESTORE_HRE
+	war_name = WAR_NAME_EMF_RESTORE_HRE
+	sprite = 17
 	truce_days = 1825
 	hostile_against_others = yes
 	can_ask_to_join_war = no
@@ -39,32 +39,46 @@ claim = {
 		ROOT = {
 			prestige = -300
 			piety = -100
-			clr_character_flag = emf_cb_restore_hre_cooldown
-			set_character_flag = emf_cb_restore_hre_cooldown
 		}
 	}
 	
 	can_use = {
-		not = { year = 980 } # Notion of the Holy Roman Emperor and the 'Frankish Realm' has not faded into history
-		e_hre = { has_holder = no } # HRE doesn't exist
-		not = { has_global_flag = emf_hre_formed } # Nor has it been formed and then destroyed somehow
+		# Notion of the Holy Roman Emperor and the 'Frankish Realm' has
+		# not yet faded into history, while the HRE is yet to be formed
+		# via decision and also doesn't exist, and finally, in this campaign,
+		# Charlemagne did indeed actually become the HRE and traditional
+		# Carolingien Empire (i.e., we didn't start in 769)...
+		
+		not = { year = 980 }
+		e_hre = { has_holder = no }
+		not = { has_global_flag = emf_hre_formed } # Actually not implemented ATM
+		has_global_flag = charlemagne_hre
+		
 		ROOT = {
-			independent = yes # Must be independent!
+			independent = yes # Must be independent, crimony!
+			
+			# These guys are allowed to be reunification aggressors:
 			or = {
 				has_landed_title = k_italy
-				has_landed_title = k_bavaria
 				has_landed_title = k_germany
 				has_landed_title = k_lotharingia
 				has_landed_title = k_france
+				has_landed_title = k_bavaria
+				has_landed_title = k_burgundy
+				has_landed_title = k_aquitaine
 			}
-			or = { # Must be the right religion for the HRE
+			
+			# Must be the right religion for the HRE
+			or = {
 				religion = catholic
 				and = {
 					religion = fraticelli
 					is_title_active = d_fraticelli
 				}
 			}
-			or = { # Must be one of the HRE cultures (players get a free pass)
+			
+			# Must be one of the HRE cultures (players get a free pass)
+			or = {
 				ai = no
 				culture = frankish
 				culture = german
@@ -72,12 +86,21 @@ claim = {
 				culture = italian
 				culture_group = italian_group
 			}
-			has_regent = no # May not have a regent
-			or = {
-				not = { has_character_flag = emf_cb_restore_hre_cooldown }
-				and = {
-					ai = yes
-					had_character_flag = { flag = emf_cb_restore_hre_cooldown days = 5475 }
+			
+			# Basics, yo...
+			has_regent = no
+			
+			# Cooldown (lifetime for players, 15-year for AI)
+			custom_tooltip = {
+				text = emf_cb_debug_restore_hre_cooldown
+				hidden_tooltip = {
+					or = {
+						not = { has_character_flag = emf_cb_restore_hre_timer }
+						and = {
+							ai = yes
+							had_character_flag = { flag = emf_cb_restore_hre_timer days = 5475 }
+						}
+					}
 				}
 			}
 		}
@@ -88,12 +111,14 @@ claim = {
 			has_landed_title = PREV
 		}
 		
-		or = { # Valid Carolingien Empire restoration target titles
+		or = { # Valid "Frankish Realm" restoration target titles
 			title = k_italy
-			title = k_bavaria
-			title = k_germany
 			title = k_lotharingia
+			title = k_germany
+			title = k_bavaria
+			title = k_burgundy
 			title = k_france
+			title = k_aquitaine
 		}
 		
 		not = { current_heir = { character = ROOT } } # Not if we're heir to this title
@@ -137,7 +162,7 @@ claim = {
 					}
 				}
 			}
-			and = { # Target title has zero CA, attacker primary title is one of HRE-4 core and has CA >= medium
+			and = { # Target title has zero CA, attacker primary title has CA >= medium
 				has_law = crown_authority_0 # (rulers that can maintain decent CA are more fit to hold the title)
 				ROOT = {
 					primary_title = {
@@ -146,6 +171,9 @@ claim = {
 							title = k_lotharingia
 							title = k_france
 							title = k_italy
+							title = k_bavaria
+							title = k_burgundy
+							title = k_aquitaine
 						}
 						or = {
 							has_law = crown_authority_2
@@ -185,6 +213,49 @@ claim = {
 				}
 			}
 		}
+		
+		# And, finally, do not try to take target titles whose
+		# de jure borders are not "roughly" adjacent to your
+		# de facto realm borders. Adjacency test is "fuzzy" to
+		# allow for cases where some mild border gore is merely
+		# temporarily in the way of a direct/perfect adjacency.
+		#
+		# (More compute-intensive but impact is negligible and
+		# the fuzzy match is far, far more flexible while promoting
+		# more plausible reunification checkpoints than not checking
+		# for adjacency at all-- avoiding what happens with the claim
+		# CBs, e.g.)
+		#
+		# We require at least 1 attacker realm province to be within
+		# 65 map distance of a de jure target province.
+		
+		custom_tooltip = {
+			text = emf_cb_debug_fuzzy_de_jure_adjacent_to_realm
+			hidden_tooltip = {
+				any_direct_de_jure_vassal_title = { # Duchies of target...
+					any_direct_de_jure_vassal_title = { # Counties of target...
+						location = {
+							ROOT = {
+								any_realm_title = {
+									tier = count
+									location = { # Any realm province of the attacker (excluding provinces in which only a barony is held)...
+										or = {
+											province = PREVPREVPREV
+											not = {
+												distance = {
+													where = PREVPREVPREV # That other target province
+													distance = 65
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 
 	is_valid_title = {
@@ -194,7 +265,7 @@ claim = {
 	}
 
 	on_success_title = {
-		hidden_tooltip = { ROOT = { add_character_modifier = { name = emf_victory_timer duration = 3 hidden = yes } } }
+		hidden_tooltip = { ROOT = { add_character_modifier = { name = emf_victory_timer duration = 1 hidden = yes } } }
 		
 		usurp_title_plus_barony_if_unlanded = { target = ROOT type = claim }
 		
@@ -209,17 +280,27 @@ claim = {
 		}
 		any_attacker = {
 			limit = { NOT = { character = ROOT } }
-			hidden_tooltip = { participation_scaled_prestige = 200 }
+			hidden_tooltip = {
+				participation_scaled_prestige = 200
+				add_character_modifier = { name = emf_victory_timer duration = 1 hidden = yes } }
+			}
 		}
 		
 		FROM = {
 			prestige = -200
+		}
+		
+		ROOT = {
+			clr_character_flag = emf_cb_restore_hre_timer
+			set_character_flag = emf_cb_restore_hre_timer
 		}
 	}
 
 	on_fail_title = {
 		ROOT = {
 			prestige = -100
+			clr_character_flag = emf_cb_restore_hre_timer
+			set_character_flag = emf_cb_restore_hre_timer
 		}
 		any_defender = {
 			limit = { character = FROM }
@@ -232,13 +313,15 @@ claim = {
 	}
 
 	on_reverse_demand = {
-		hidden_tooltip = { FROM = { add_character_modifier = { name = emf_victory_timer duration = 3 hidden = yes } } }
+		hidden_tooltip = { FROM = { add_character_modifier = { name = emf_victory_timer duration = 1 hidden = yes } } }
 		ROOT = {
 			prestige = -200
 			transfer_scaled_wealth = {
 				to = FROM
 				value = 4.0
 			}
+			clr_character_flag = emf_cb_restore_hre_timer
+			set_character_flag = emf_cb_restore_hre_timer
 		}
 		any_defender = {
 			limit = { character = FROM }
@@ -246,13 +329,19 @@ claim = {
 		}
 		any_defender = {
 			limit = { NOT = { character = FROM } }
-			hidden_tooltip = { participation_scaled_prestige = 200 }
+			hidden_tooltip = {
+				participation_scaled_prestige = 200
+				add_character_modifier = { name = emf_victory_timer duration = 1 hidden = yes }
+			}
 		}
 	}
 
 	on_reverse_demand_title = {
 		ROOT = {
-			remove_claim = PREV
+			if = {
+				limit = { has_weak_claim = PREV }
+				remove_claim = PREV
+			}
 		}
 	}
 
@@ -276,7 +365,23 @@ claim = {
 	ai_will_do = { 
 		factor = 1
 		
-		modifier = {
+		modifier = { # Prefer this to other CBs when it's available (make unification a priority)
+			factor = 1.5
+			always = yes
+		}
+		modifier = { # Focus on the most core kingdom titles for traditional HRE formation
+			factor = 1.5
+			or = {
+				title = k_italy
+				title = k_lotharingia
+				title = k_germany
+			}
+		}
+		modifier = { # Intra-dynastic feuding requires less pretext, encourage that
+			factor = 1.5
+			FROM = { dynasty = ROOT }
+		}
+		modifier = { # As always, always prefer to use this CB against players rather than other AI
 			factor = 10
 			FROM = { ai = no }
 		}
