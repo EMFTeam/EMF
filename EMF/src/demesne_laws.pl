@@ -6,7 +6,7 @@
 # without modification, of this program or its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "1.1.4";
+my $VERSION = "1.1.5";
 
 my $opt = {
 	min_total_levy      => -0.1,
@@ -262,6 +262,7 @@ EOS
 $default$opinion_effect
 
 		potential = {
+			temporary = no
 			or = {
 				not = { tier = baron }
 				holder_scope = { is_patrician = yes }
