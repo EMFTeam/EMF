@@ -32,67 +32,13 @@ other_claim = {
 		NOT = { has_character_modifier = emf_peace_pledge }
 	}
 	
-	can_use = {
-		OR = {
-			FROM = { ai = no }
-			FROMFROM = { ai = no }
-			FROMFROM = { trait = lucky_ruler }
-			FROMFROM = {
-				OR = {
-					trait = ambitious
-					trait = wroth
-					trait = envious
-					trait = arbitrary
-				}
-				OR = {
-					trait = possessed
-					trait = lunatic
-					NOT = {
-						trait = craven
-						trait = content
-						trait = just
-						trait = kind
-					}
-				}
-			}
-			custom_tooltip = {
-				text = is_not_allied
-				hidden_tooltip = {
-					FROMFROM = {
-						NOT = { dynasty = FROM }
-						NOT = { is_close_relative = FROM }
-						NOT = { any_spouse = { character = FROM } }
-						NOT = { any_spouse = { is_close_relative = FROM } }
-						NOT = { FROM = { any_spouse = { is_close_relative = FROMFROM } } }
-					}
-				}
-			}
-			custom_tooltip = {
-				text = religious_enemy
-				hidden_tooltip = {
-					FROMFROM = {
-						OR = {
-							NOT = { religion_group = FROM }
-							is_heresy_of = FROM
-							is_parent_religion = FROM
-							FROM = { excommunicated_for = FROMFROM }
-						}
-					}
-				}
-			}
-			hidden_tooltip = { # You can't change dynasty, so no point showing it
-				FROMFROM = { dynasty = 25061 } #Karlings
-			}
-		}
-	}
-	
 	can_use_title = {
-		FROMFROM = {
-			OR = {
-				NOT = { tier = emperor }
-				is_close_relative = ROOT
-				any_spouse = { character = ROOT }
-				ai = no
+		OR = {
+			FROM = {
+				has_landed_title = PREV
+			}
+			holder_scope = {
+				is_liege_or_above = FROM
 			}
 		}
 		OR = {
@@ -102,12 +48,54 @@ other_claim = {
 				NOT = { succ_law_title = { has_law = agnatic_succession } }
 			}
 		}
-		OR = {
-			FROM = {
-				has_landed_title = PREV
+		
+		FROMFROM = {
+			religion_group = ROOT
+			or = {
+				ai = no
+				lower_tier_than = emperor
+				is_close_relative = ROOT
+				is_friend = ROOT
+				dynasty = ROOT
+				any_spouse = { character = ROOT }
 			}
-			holder_scope = {
-				is_liege_or_above = FROM
+		}
+		
+		or = { # AI will only press something that will gain it territory, unless target is player
+			FROMFROM = { ai = no } # Player pressers can do whatever they want
+			and = {
+				FROMFROM = {
+					primary_title = { higher_tier_than = PREVPREV } # Presser can bind target title
+				}
+				or = {
+					ROOT = { # Claimant is vassal ruler of presser
+						is_ruler = yes
+						is_liege_or_above = FROMFROM
+					}
+					FROMFROM = {
+						or = {
+							any_demesne_title = { # Presser is de jure liege of target title, or...
+								de_jure_vassal_or_below = PREVPREV
+							}
+							dynasty = ROOT # Presser is same dynasty as claimant
+						}
+					}
+				}
+			}
+			# Don't care if we'll gain territory if the target is a player
+			FROM = { ai = no }
+			holder_scope = { ai = no }
+			any_playable_ruler = { # Player is an ally that can be called into the war
+				ai = no
+				not = { character = FROM }
+				or = {
+					and = {
+						independent = yes
+						FROM = { independent = yes }
+					}
+					same_liege = FROM
+				}
+				is_allied_with = FROM
 			}
 		}
 
@@ -152,7 +140,7 @@ other_claim = {
 	}
 
 	on_success = {
-		hidden_tooltip = { add_character_modifier = { name = emf_victory_timer duration = 7 hidden = yes } }
+		hidden_tooltip = { add_character_modifier = { name = emf_victory_timer duration = 1 hidden = yes } }
 		hidden_tooltip = {
 			ROOT = {
 				opinion = {
@@ -230,113 +218,193 @@ other_claim = {
 			
 			if = {
 				limit = {
-					holder_scope = {
-						same_realm = FROMFROM # The current holder and the one pressing my claim are in the same larger realm
+					FROMFROM = {
+						primary_title = { higher_tier_than = PREVPREV } # Presser can bind target title
 					}
-				}
-				ROOT = {
-					set_character_flag = other_claim_tmp_flag
-				}
-			}
-			
-			if = {
-				limit = {
-					ROOT = {
-						is_ruler = yes
-						is_liege_or_above = FROMFROM # The claimant is a vassal ruler of the presser
-					}
-				}
-				ROOT = {
-					set_character_flag = claimant_is_vassal_ruler_flag
-				}
-			}
-
-			usurp_title_plus_barony_if_unlanded = { target = ROOT type = claim }
-			
-			hidden_tooltip = {
-			
-				# If we were erroneously vassalized, break free
-				if = {
-					limit = {
-						NOT = { ROOT = { has_character_flag = claimant_is_vassal_ruler_flag } }
-						holder_scope = {
+					or = {
+						ROOT = { # Claimant is vassal ruler of presser
+							is_ruler = yes
 							is_liege_or_above = FROMFROM
 						}
-						NOT = { de_jure_liege_or_above = FROMFROM }
-						ROOT = {
-							NOT = { dynasty = FROMFROM }
+						FROMFROM = {
+							or = {
+								any_demesne_title = { # Presser is de jure liege of target title, or...
+									de_jure_vassal_or_below = PREVPREV
+								}
+								dynasty = ROOT # Presser is same dynasty as claimant
+							}
 						}
 					}
-					ROOT = { set_defacto_liege = ROOT }
 				}
-			
-				# try and vassalize, but only conditionally
+				# Claimant will stay in presser's realm
+				ROOT = { set_character_flag = emf_presser_vassal }
+				
 				if = {
 					limit = {
-						NOT = {
-							holder_scope = {
+						ROOT = { # Claimant is vassal ruler of presser
+							is_ruler = yes
+							is_liege_or_above = FROMFROM
+						}
+					}
+					custom_tooltip = { text = emf_cb_ctt_other_claim_remain_presser_vassal }
+				}
+				if = {
+					limit = {
+						not = { # Claimant is not yet a vassal ruler of presser
+							ROOT = {
+								is_ruler = yes
 								is_liege_or_above = FROMFROM
 							}
 						}
-						OR = {
-							de_jure_liege_or_above = FROMFROM
-							ROOT = { has_character_flag = claimant_is_vassal_ruler_flag }
-							ROOT = {
-								dynasty = FROMFROM
-							}
-						}
 					}
-					ROOT = {
-						set_defacto_liege = FROMFROM
-					}
+					custom_tooltip = { text = emf_cb_ctt_other_claim_become_presser_vassal }
 				}
-
-				# check if the previous effect managed to make us part of the same realm
-				# if not, we'll break the other realm
-				if = {
-					limit = {
-						NOT = { ROOT = { has_character_flag = other_claim_tmp_flag } }
-						FROM = {
-							FROM = {
-								top_liege = {
-									ROOT = {
-										top_liege = {
-											NOT = {
-												character = PREVPREV
-											}
+				
+				ROOT = {
+					if = {
+						limit = {
+							is_ruler = yes
+							is_landed = yes
+							is_liege_or_above = FROMFROM
+							tier = baron
+							PREV = { higher_tier_than = baron }
+						}
+						any_demesne_title = {
+							limit = {
+								tier = baron
+								dejure_liege_title = {
+									holder_scope = {
+										or = {
+											character = FROMFROM
+											is_liege_or_above = FROMFROM
 										}
+									}
+								}
+							}
+							set_title_flag = emf_old_barony
+							tooltip = {
+								dejure_liege_title = {
+									holder_scope = {
+										grant_title = PREVPREV
 									}
 								}
 							}
 						}
 					}
-					ROOT = {
-						set_defacto_liege = ROOT
-					}
 				}
-				
-				# If we have become independent from our mutual liege, restore that vassal tie
-				if = {
-					limit = {
-						ROOT = { 
-							has_character_flag = other_claim_tmp_flag 
-							de_facto_liege = ROOT
-						}
-					}
-					FROM = {
-						FROM = {
-							top_liege = {
-								ROOT = { 
-									set_defacto_liege = PREV
+			}
+			
+			if = {
+				limit = {
+					not = {
+						and = {
+							FROMFROM = {
+								primary_title = { higher_tier_than = PREVPREV } # Presser can bind target title
+							}
+							or = {
+								ROOT = { # Claimant is vassal ruler of presser
+									is_ruler = yes
+									is_liege_or_above = FROMFROM
+								}
+								FROMFROM = {
+									or = {
+										any_demesne_title = { # Presser is de jure liege of target title, or...
+											de_jure_vassal_or_below = PREVPREV
+										}
+										dynasty = ROOT # Presser is same dynasty as claimant
+									}
 								}
 							}
 						}
 					}
 				}
 				
-				ROOT = { 
-					clr_character_flag = other_claim_tmp_flag 
-					clr_character_flag = claimant_is_vassal_ruler_flag 
+				custom_tooltip = { text = emf_cb_ctt_other_claim_not_presser_vassal }
+
+				if = {
+					limit = {
+						holder_scope = {
+							liege = {
+								not = { character = PREV }
+								higher_tier_than = ROOT
+							}
+						}
+					}
+					holder_scope = {
+						liege = {
+							save_event_target_as = emf_cb_new_liege
+							custom_tooltip = { text = emf_cb_ctt_other_claim_new_liege }
+						}
+					}
+				}
+				
+				if = {
+					limit = {
+						not = {
+							holder_scope = {
+								liege = {
+									not = { character = PREV }
+									higher_tier_than = ROOT
+								}
+							}
+						}
+						FROM = {
+							liege = {
+								not = { character = PREV }
+							}
+						}
+					}
+					FROM = {
+						liege = {
+							save_event_target_as = emf_cb_new_liege
+							custom_tooltip = { text = emf_cb_ctt_other_claim_new_liege }
+						}
+					}
+				}
+			}
+			
+			usurp_title_plus_barony_if_unlanded = { target = ROOT type = claim }
+			
+			hidden_tooltip = {
+				ROOT = {
+					if = {
+						limit = {
+							has_character_flag = emf_presser_vassal
+						}
+						if = {
+							limit = {
+								not = { is_liege_or_above = FROMFROM }
+							}
+							set_defacto_liege = FROMFROM
+						}
+						any_demesne_title = {
+							limit = {
+								tier = baron
+								has_title_flag = emf_old_barony
+							}
+							clr_title_flag = emf_old_barony
+							dejure_liege_title = {
+								holder_scope = {
+									grant_title = PREVPREV
+								}
+							}
+						}
+					}
+					if = {
+						limit = {
+							not = { has_character_flag = emf_presser_vassal }
+						}
+						if = {
+							limit = { event_target:emf_cb_new_liege = { always = yes } }
+							set_defacto_liege = event_target:emf_cb_new_liege
+						}
+						if = {
+							limit = { not = { event_target:emf_cb_new_liege = { always = yes } } }
+							set_defacto_liege = ROOT
+						}
+					}
+					clr_character_flag = emf_presser_vassal
+					clear_event_target = emf_cb_new_liege
 				}
 			}
 		}
