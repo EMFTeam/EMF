@@ -1,0 +1,271 @@
+## normal scopes(including posttitle scopes) ##
+# ROOT = receiver
+# FROM = giver
+# <no scope change> = attacker or receiver
+## title scopes ##
+# ROOT = receiver
+# FROM = giver
+# <no scope change> = thirdparty landed title	
+#
+# the following effects/triggers exists (example execution order: on_success->on_success_title->on_success_posttitle):
+# is_valid, is_valid_title, on_add, on_add_title, on_add_posttitle, on_success, on_success_title, on_success_posttitle, on_fail, on_fail_title, on_fail_posttitle, on_reverse_demand, on_reverse_demand_title, on_reverse_demand_posttitle
+#
+# Added on_attacker_leader_death, on_defender_leader_death and on_thirdparty_death, which all trigger when corresponding character dies
+# These three all have war scopes, which currently has the following scope changes: 
+# attacker, defender, thirdparty(only valid if thirdparty character is involved), thirdparty_title(only valid if thirdparty title is involved)
+#
+# ai_will_do: modifies value AI places on the CB compared to other CBs (default: 1)
+# can_use_gui: If otherwise valid, the CB is listed in the Diplo View, but you can't declare war unless 'can_use_gui' is also valid (also shows a trigger tooltip.)
+#
+
+# Nomads can grab entire duchies, if they have the Prestige
+nomad_expansion = {
+	name = CB_NAME_NOMAD_EXPANSION
+	war_name = WAR_NAME_NOMAD_EXPANSION
+	sprite = 8
+	truce_days = 3650
+	is_permanent = yes
+	is_holy_war = yes
+	check_de_jure_tier = DUKE # this scans all de jure duchies for the counties which are held by or vassals(or below) of selected character. Only valid if is_permanent = yes
+
+	can_use_gui = {
+		ROOT = {
+			not = { has_character_modifier = emf_peace_pledge }
+			prestige = 300
+		}
+	}
+	
+	on_add = {
+		ROOT = { prestige = -300 }
+	}
+
+	can_use = {
+		ROOT = {
+			emf_cb_has_tribute_block = no
+			is_nomadic = yes
+			NOT = { same_realm = FROM }
+			mercenary = no
+		}
+	}
+	
+	can_use_title = {
+		# The attacker needs at least one county in the target duchy, or a border
+		any_direct_de_jure_vassal_title = {
+			OR = {
+				holder_scope = {
+					OR = {
+						character = ROOT
+						is_liege_or_above = ROOT
+					}
+				}
+				location = {
+					any_neighbor_province = {
+						AND = {
+							has_owner = yes
+							owner = {
+								OR = {
+									character = ROOT
+									is_liege_or_above = ROOT
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	is_valid = {
+		ROOT = {
+			emf_cb_has_tribute_block = no
+			is_nomadic = yes
+			NOT = { same_realm = FROM }
+		}
+	}
+	
+	on_success = {
+		hidden_tooltip = {
+			any_attacker = {
+				add_character_modifier = { name = emf_victory_timer duration = 1 hidden = yes }
+			}
+		}
+		any_attacker = {
+			limit = { character = ROOT }
+			participation_scaled_prestige = 100
+			if = {
+				limit = {
+					uses_decadence = yes
+				}
+				participation_scaled_decadence = -10
+			}
+		}
+		any_attacker = {
+			limit = { NOT = { character = ROOT } }
+			hidden_tooltip = { 
+				participation_scaled_prestige = 200
+				if = {
+					limit = {
+						uses_decadence = yes
+					}
+					participation_scaled_decadence = -10
+				}
+			}
+		}
+		FROM = { prestige = -200 }
+	}
+
+	on_success_title = {
+		custom_tooltip = {
+			text = pagan_subjugation_tip
+			hidden_tooltip = {
+				ROOT = {
+					subjugate_or_take_under_title = {
+						title = PREV
+						enemy = FROM
+#						same_religion = yes # Only vassalize rulers of my religion
+					}
+				}
+			}
+		}
+	}
+
+	on_fail = {
+		ROOT = { 
+			prestige = -200
+		}
+	}
+
+	on_reverse_demand = {
+		hidden_tooltip = {
+			any_defender = {
+				add_character_modifier = { name = emf_victory_timer duration = 1 hidden = yes }
+			}
+		}
+		ROOT = {
+			transfer_scaled_wealth = {
+				to = FROM
+				value = 4.0
+			}
+			prestige = -200
+		}
+		any_defender = {
+			limit = { character = FROM }
+			participation_scaled_prestige = 300
+			if = {
+				limit = {
+					uses_decadence = yes
+				}
+				participation_scaled_decadence = -10
+			}
+		}
+		any_defender = {
+			limit = { NOT = { character = FROM } }
+			hidden_tooltip = { 
+				participation_scaled_prestige = 300
+				if = {
+					limit = {
+						uses_decadence = yes
+					}
+					participation_scaled_decadence = -10
+				}
+			}
+		}
+	}
+
+	attacker_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+	
+	attacker_ai_defeat_worth = {
+		factor = 100
+	}
+
+	defender_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+	
+	defender_ai_defeat_worth = {
+		factor = 100
+	}
+	
+	ai_will_do = { 
+		factor = 2
+		
+		# Try to guide the Hordes in the right direction
+		modifier = {
+			factor = 0.1
+			ROOT = {
+				OR = {
+					dynasty = 613 # Seljuks
+					dynasty = 800 # Timurids
+					primary_title = { title = e_il-khanate }
+				}
+			}
+			OR = {
+				and = {
+					empire = {
+						not = {
+							title = e_persia
+							title = e_byzantium
+							title = e_arabia
+						}
+					}
+					not = { # SWMH kingdom titles that have no empire but should be conquered
+						title = k_aljazira
+						title = k_armenia
+						title = k_syria
+						title = k_antioch
+						title = k_jerusalem
+					}
+				}
+				FROM = {
+					primary_title = { title = e_golden_horde }
+					NOT = { year = 1300 }
+				}
+			}
+		}
+		modifier = {
+			factor = 0.1
+			ROOT = {
+				primary_title = { title = e_golden_horde }
+			}
+			OR = {
+				empire = {
+					OR = {
+						title = e_persia
+						title = e_byzantium
+						title = e_arabia
+					}
+				}
+				title = k_aljazira
+				title = k_armenia
+				title = k_syria
+				title = k_antioch
+				title = k_jerusalem
+				FROM = {
+					primary_title = { title = e_il-khanate }
+					NOT = { year = 1300 }
+				}
+			}
+		}
+		modifier = {
+			factor = 2.0
+			OR = {
+				culture = persian
+				culture = baloch
+				culture = afghan
+				culture = turkish
+			}
+			empire = {
+				OR = {
+					title = e_persia
+					title = e_rajastan
+				}
+			}
+		}
+		modifier = {
+			factor = 10
+			FROM = { ai = no }
+		}
+	}
+}
