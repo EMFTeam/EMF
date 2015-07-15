@@ -6,15 +6,16 @@
 # without modification, of this program or its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "1.1.5";
+my $VERSION = "1.2.0";
 
 my $opt = {
-	min_total_levy      => -0.1,
-	max_total_levy      => 0.4,
+	min_total_levy      => -0.2,
+	max_total_levy      => 0.3,
+	tribal_tax_per_levy => 0.5,
 	castle_tax_per_levy => 0.6,
+	iqta_tax_per_levy   => 0.7,
 	temple_tax_per_levy => 0.8,
 	city_tax_per_levy   => 1.0,
-	iqta_tax_per_levy   => 0.7,
 	opinion_offset => 6,
 	opinion_slope  => -6,
 	default_laws => {
@@ -26,6 +27,8 @@ my $opt = {
 		city_slider        => 3,
 		iqta_obligations   => 1,
 		iqta_slider        => 2,
+		tribal_obligations => 0,
+		tribal_slider        => 0,
 	},
 };
 
@@ -71,7 +74,7 @@ sub print_params {
 	print "# Code generation parameters:\n";
 	print "#   min_total_levy=$opt->{min_total_levy}\n";
 	print "#   max_total_levy=$opt->{max_total_levy}\n";
-	for my $t ( qw( castle temple city iqta ) ) {
+	for my $t ( qw( castle temple city iqta tribal ) ) {
 		print "#   ${t}_tax_per_levy=".$opt->{"${t}_tax_per_levy"}."\n";
 	}
 	print "#   opinion_offset=$opt->{opinion_offset}\n";
@@ -93,7 +96,7 @@ EOS
 	
 	print "laws = {";
 
-	for my $type ( qw( castle temple city iqta ) ) {
+	for my $type ( qw( castle temple city iqta tribal ) ) {
 
 		my $tax_per_levy = $opt->{ "${type}_tax_per_levy" };
 		
@@ -125,7 +128,7 @@ sub print_summary {
 
 	print "# Law modifier summary (max_levy/tax):\n#\n";
 
-	for my $type ( qw( castle temple city iqta ) ) {
+	for my $type ( qw( castle temple city iqta tribal ) ) {
 
 		my $tax_per_levy = $opt->{ "${type}_tax_per_levy" };
 		
@@ -162,7 +165,7 @@ sub print_law {
 	my $levy    = shift;
 	my $tax     = shift;
 	
-	my ($vtype, $class, $law_group, $law, $default, $muslim) = get_law_info($type, $level, $focus);
+	my ($vtype, $class, $law_group, $law, $default, $muslim, $tribal) = get_law_info($type, $level, $focus);
 	
 	$levy = sprintf("%-5.3f", $levy);
 	$tax  = sprintf("%-5.3f", $tax);
@@ -173,9 +176,28 @@ sub print_law {
 		$opinion_effect .= "\t\t${class}_opinion = ".get_opinion($level);
 	}
 
+	my $tribal_holder = '';
+	
+	if ($tribal) {
+		$tribal_holder = <<EOS;
+
+			or = {
+				holder_scope = {
+					is_tribal = no
+				}
+				or = {
+					has_law = tribal_organization_3
+					has_law = tribal_organization_4
+				}
+			}
+EOS
+
+		chop $tribal_holder;
+	}
+	
 	my $muslim_holder = '';
 
-	if ($type ne 'city') {
+	if ($type ne 'city' && $type ne 'temple' && $type ne 'tribal') {
 		$muslim_holder = "holder_scope = { religion_group = muslim }";
 		$muslim_holder = "not = { $muslim_holder }" unless $muslim;
 		$muslim_holder = "\n\t\t\t$muslim_holder";
@@ -249,8 +271,6 @@ EOS
 	
 	chop $revoke_laws;
 	
-	my %vtype_trigger = (castle => 'is_feudal = yes', city => 'is_republic = yes', temple => 'is_theocracy = yes');
-	
 	my $ai_will_do = (!$focus && $level < 3) ? 1 : 0;
 	
 	$default = ($default) ? "\t\tdefault = yes" : '';
@@ -266,7 +286,7 @@ $default$opinion_effect
 			or = {
 				not = { tier = baron }
 				holder_scope = { is_patrician = yes }
-			}$muslim_holder
+			}$muslim_holder$tribal_holder
 		}
 		allow = {
 			hidden_tooltip = { temporary = no }
@@ -355,7 +375,8 @@ sub get_law_info {
 	my $law = $law_group.'_'.$level;
 	my $default = ($opt->{default_laws}{$law_group} == $level);
 	my $muslim = ($type eq 'iqta');
-	return (get_real_type($type), $class, $law_group, $law, $default, $muslim);
+	my $tribal = ($type eq 'tribal');
+	return (get_real_type($type), $class, $law_group, $law, $default, $muslim, $tribal);
 }
 
 
