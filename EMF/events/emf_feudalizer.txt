@@ -28,7 +28,7 @@ narrative_event = {
 	option = {
 		name = OK
 		hidden_tooltip = {
-			FROM = { character_event = { id = emf_feudalizer.10 } }
+			FROM = { character_event = { id = emf_feudalizer.2 } }
 		}
 	}
 	
@@ -38,62 +38,98 @@ narrative_event = {
 	}
 }
 
-
 character_event = {
-	id = emf_feudalizer.10
-	desc = AI_EVENT
+	id = emf_feudalizer.2
 	hide_window = yes
 	is_triggered_only = yes
 	
 	option = {
 		name = OK
 		
-		any_playable_ruler = {
-			limit = {
-				is_tribal = yes
-				is_landed = yes
+		any_independent_ruler = {
+			character_event = { id = emf_feudalizer.10 }
+			any_realm_lord = {
+				character_event = { id = emf_feudalizer.10 }
 			}
-			
-			# Convert tribal settlements, build holdings in tribal provinces [recursive]
-			character_event = { id = emf_feudalizer.11 }
-			
-			# Depending upon year, auto-build some basic bootstrap buildings in cities and temples [iterative]
-			character_event = { id = emf_feudalizer.15 }
-			
-			# Fill up levies of all newly-built holdings
-			any_demesne_title = {
-				refill_holding_levy = yes
-			}
-			
-			character_event = { id = emf_feudalizer.13 } # Grant all cities to new burghers [recursive]
-			character_event = { id = emf_feudalizer.14 } # Grant all temples to new priests [recursive]
-			
-			# Initialize normal crown laws if they hold a crown title
-			
-			set_character_flag = emf_no_law_penalties
-			
-			any_demesne_title = {
-				limit = {
-					higher_tier_than = duke
-				}
-				
-				add_law = crown_authority_0
-				
-				if = {
-					limit = {
-						ROOT = {
-							OR = {
-								religion = catholic
-								religion = fraticelli
-							}
-						}
-					}
-					add_law = investiture_law_1
-				}
-			}
-			
-			clr_character_flag = emf_no_law_penalties
 		}
+	}
+}
+
+
+character_event = {
+	id = emf_feudalizer.10
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		any_demesne_title = {
+			tier = baron
+			holding_type = tribal
+		}
+	}
+	
+	option = {
+		name = OK
+		
+		# Convert tribal settlements, build holdings in tribal provinces
+		character_event = { id = emf_feudalizer.11 }
+		
+		# Depending upon year, auto-build some basic bootstrap buildings in cities and temples
+		character_event = { id = emf_feudalizer.15 }
+		
+		# Fill up levies of all newly-built holdings
+		any_demesne_title = {
+			refill_holding_levy = yes
+		}
+		
+		character_event = { id = emf_feudalizer.13 } # Grant all cities to new burghers [recursive]
+		character_event = { id = emf_feudalizer.14 } # Grant all temples to new priests [recursive]
+		
+		# Set new government type for tribal
+		
+		if = {
+			limit = { not = { religion_group = muslim } }
+			set_government_type = feudal_government
+		}
+		if = {
+			limit = { religion_group = muslim }
+			set_government_type = muslim_government
+		}
+		
+		# Initialize normal crown laws if they hold a crown title
+		
+		set_character_flag = emf_no_law_penalties
+		
+		any_demesne_title = {
+			limit = { higher_tier_than = duke }
+			
+			if = {
+				limit = { is_law_potential = crown_authority_0 }
+				add_law = crown_authority_0
+			}
+			
+			if = {
+				limit = {
+					is_law_potential = investiture_law_1
+					is_law_allowed = investiture_law_1
+					nand = {
+						is_law_potential = investiture_law_0
+						is_law_allowed = investiture_law_0
+					}
+				}
+				add_law = investiture_law_1
+			}
+			
+			if = {
+				limit = {
+					is_law_potential = investiture_law_0
+					is_law_allowed = investiture_law_0
+				}
+				add_law = investiture_law_0
+			}
+		}
+		
+		clr_character_flag = emf_no_law_penalties
 	}
 }
 
@@ -104,258 +140,68 @@ character_event = {
 	desc = HIDE_EVENT
 	hide_window = yes
 	is_triggered_only = yes
-
-	trigger = {
+	
+	option = {
+		name = OK
+		
 		any_demesne_title = {
-			tier = count
-			is_tribal = yes
-		}
-	}
-	
-	option = {
-		name = OK
-		
-		random_demesne_title = {
 			limit = {
-				tier = count
-				is_tribal = yes
+				tier = baron
+				holding_type = tribal
 			}
-			location = {
-				convert_to_castle = yes
-				random_list = {
-					50 = { # Build nothing
-						modifier = {
-							factor = 0
-							not = { num_of_settlements = 2 }
-						}
-						modifier = {
-							factor = 0.5
-							borders_major_river = yes
-						}
-						modifier = {
-							factor = 0
-							port = yes
-						}
-						modifier = {
-							factor = 2
-							terrain = desert
-						}
-					}
-					50 = { # Build up to 1 holding
-						province_event = { id = emf_feudalizer.12 }
-					}
-					50 = { # Build up to 2 holdings
-						modifier = {
-							factor = 1.5
-							is_capital = yes
-						}
-						modifier = {
-							factor = 1.5
-							borders_major_river = yes
-						}
-						modifier = {
-							factor = 1.5
-							port = yes
-						}
-						province_event = { id = emf_feudalizer.12 }
-						province_event = { id = emf_feudalizer.12 }
-					}
-					25 = { # Build up to 3 holdings
-						modifier = {
-							factor = 2
-							is_capital = yes
-						}
-						modifier = {
-							factor = 2
-							borders_major_river = yes
-						}
-						modifier = {
-							factor = 6
-							port = yes
-						}
-						province_event = { id = emf_feudalizer.12 }
-						province_event = { id = emf_feudalizer.12 }
-						province_event = { id = emf_feudalizer.12 }
-					}
-				}
-			}
-		}
-		
-		character_event = { id = emf_feudalizer.11 }
-	}
-}
-
-
-province_event = {
-	id = emf_feudalizer.12
-	desc = HIDE_EVENT
-	hide_window = yes
-	is_triggered_only = yes
-
-	trigger = {
-		has_empty_holding = yes
-	}
-	
-	option = {
-		name = OK
-		
-		if = { # Obey the one-of-each-type rule
-			limit = { not = { num_of_settlements = 3 } }
+			
+			convert_to = CASTLE
+			refill_holding_levy = yes
+			
 			if = {
 				limit = {
-					county = {
-						FROM = {
-							or = {
-								any_vassal = {
-									capital_holding = {
-										de_jure_liege = PREVPREVPREV
-										holding_type = temple
-									}
-								}
-								any_demesne_title = {
-									de_jure_liege = PREVPREV
-									holding_type = temple
-								}
+					dejure_liege_title = {
+						holder = ROOT
+						location = {
+							num_of_empty_holdings = 2
+						}
+						NOT = {
+							any_direct_de_jure_vassal_title = {
+								holding_type = city
 							}
 						}
 					}
 				}
-				build_holding = {
-					type = city
-					holder = FROM
-				}
-				break = yes
-			}
-			build_holding = {
-				type = temple
-				holder = FROM
-			}
-			break = yes
-		}
-		
-		random_list = {
-			100 = {
-				modifier = {
-					factor = 2
-					borders_major_river = yes
-				}
-				build_holding = {
-					type = castle
-					holder = FROM
+				location = {
+					build_holding = {
+						type = city
+						holder = ROOT
+					}
 				}
 			}
-			50 = {
-				modifier = {
-					factor = 8
-					port = yes
+			if = {
+				limit = {
+					dejure_liege_title = {
+						holder = ROOT
+						location = {
+							num_of_empty_holdings = 2
+						}
+						NOT = {
+							any_direct_de_jure_vassal_title = {
+								holding_type = temple
+							}
+						}
+					}
 				}
-				build_holding = {
-					type = city
-					holder = FROM
-				}
-			}
-			25 = {
-				modifier = {
-					factor = 0.25
-					terrain = desert
-				}
-				modifier = {
-					factor = 0.5
-					port = yes
-				}
-				build_holding = {
-					type = temple
-					holder = FROM
+				location = {
+					build_holding = {
+						type = temple
+						holder = ROOT
+					}
 				}
 			}
 		}
 	}
 }
 
-character_event = {
-	id = emf_feudalizer.13
-	desc = HIDE_EVENT
-	hide_window = yes
-	is_triggered_only = yes
-
-	trigger = {
-		any_demesne_title = {
-			tier = baron
-			holding_type = city
-		}
-	}
-	
-	option = {
-		name = OK
-		
-		random_demesne_title = {
-			limit = {
-				tier = baron
-				holding_type = city
-			}
-			ROOT = {
-				create_random_steward = {
-					random_traits = yes
-					dynasty = none
-					female = no
-				}
-				new_character = {
-					wealth = 300
-					grant_title_no_opinion = PREVPREV # The barony
-					set_defacto_liege = ROOT
-				}
-			}
-		}
-		
-		character_event = { id = emf_feudalizer.13 }
-	}
-}
-
 
 character_event = {
-	id = emf_feudalizer.14
-	desc = HIDE_EVENT
-	hide_window = yes
-	is_triggered_only = yes
-
-	trigger = {
-		not = { religion_group = muslim }
-		any_demesne_title = {
-			tier = baron
-			holding_type = temple
-		}
-	}
-	
-	option = {
-		name = OK
-		
-		random_demesne_title = {
-			limit = {
-				tier = baron
-				holding_type = temple
-			}
-			ROOT = {
-				create_random_priest = {
-					random_traits = yes
-					dynasty = none
-					female = no
-				}
-				new_character = {
-					wealth = 300
-					grant_title_no_opinion = PREVPREV # The barony
-					set_defacto_liege = ROOT
-				}
-			}
-		}
-		
-		character_event = { id = emf_feudalizer.14 }
-	}
-}
-
-
-character_event = {
-	id = emf_feudalizer.15
-	desc = HIDE_EVENT
+	id = emf_feudalizer.12
 	hide_window = yes
 	is_triggered_only = yes
 	
@@ -408,3 +254,100 @@ character_event = {
 		}
 	}
 }
+
+
+character_event = {
+	id = emf_feudalizer.13
+	hide_window = yes
+	is_triggered_only = yes
+
+	trigger = {
+		any_demesne_title = {
+			tier = baron
+			holding_type = city
+		}
+	}
+	
+	option = {
+		name = OK
+		
+		random_demesne_title = {
+			limit = {
+				tier = baron
+				holding_type = city
+			}
+			ROOT = {
+				create_random_steward = {
+					random_traits = yes
+					dynasty = none
+					female = no
+				}
+				new_character = {
+					wealth = 300
+					grant_title_no_opinion = PREVPREV # The barony
+					set_government_type = republic_government
+					set_defacto_liege = ROOT
+				}
+			}
+		}
+		
+		character_event = { id = emf_feudalizer.13 }
+	}
+}
+
+
+character_event = {
+	id = emf_feudalizer.14
+	hide_window = yes
+	is_triggered_only = yes
+
+	trigger = {
+		not = { religion_group = muslim }
+		any_demesne_title = {
+			tier = baron
+			holding_type = temple
+		}
+	}
+	
+	option = {
+		name = OK
+		
+		random_demesne_title = {
+			limit = {
+				tier = baron
+				holding_type = temple
+			}
+			ROOT = {
+				random_list = {
+					50 = { # Male priest
+						create_random_priest = {
+							random_traits = yes
+							dynasty = none
+							female = no
+						}
+					}
+					50 = { # Female priest
+						modifier = {
+							factor = 0
+							not = { religion_allows_female_temple_holders = yes }
+						}
+						create_random_priest = {
+							random_traits = yes
+							dynasty = none
+							female = yes
+						}
+					}
+				}
+				new_character = {
+					wealth = 300
+					grant_title_no_opinion = PREVPREV # The barony
+					set_government_type = theocracy_government
+					set_defacto_liege = ROOT
+				}
+			}
+		}
+		
+		character_event = { id = emf_feudalizer.14 }
+	}
+}
+
