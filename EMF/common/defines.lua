@@ -1161,7 +1161,7 @@ NDisease = {
 	SMALL_TOWN_INCOME = 11.0, -- A coastal town with this income has no chance of starting an outbreak
 	BIG_TOWN_INCOME = 30.0, -- A coastal town with this income is always a candidate for starting an outbreak
 	MIN_OUTBREAK_CHANCE = 0.1, -- Min chance that an outbreak will happen in a particular town
-	CROWDED_THRESHOLD_MODIFIER = 30, -- How many courtiers in a court to make it crowded and increase chance for disease.
+	CROWDED_THRESHOLD_MODIFIER = 50, -- How many courtiers in a court to make it crowded and increase chance for disease.
 },
 
 NGraphics = {
@@ -1406,6 +1406,7 @@ NLearningScenario =
 	TOG_REVOLT_EVENT = 107200,
 	COMBAT_EVENT = 107202,
 	AFTER_REVOLT_EVENT = 107250,
+	FABRICATE_CLAIM_PROVINCE = 849,
 	FABRICATE_CLAIM_EVENT = 913,
 	HAS_CLAIM_EVENT = 107300,
 	WAR_EVENT = 107301,
