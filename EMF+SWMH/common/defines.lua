@@ -876,6 +876,8 @@ NNomad = {
 	
 	GARRISON_UNUSED_MANPOWER_MULTIPLIER = 0.05,		-- How much of the unused manpower that is used for the garrison
 	GARRISON_MAX_UNUSED_MANPOWER_MODIFIER = 500,	-- The max value for how much unused manpower can modifiy the garrison
+	
+	MAX_HOLDINGS_IN_NOMADIC_PROVINCE = 1,			-- Counties with this number of holdings or less are counted as a nomadic province that clans can demand
 }, 
 
 NMilitary = {
