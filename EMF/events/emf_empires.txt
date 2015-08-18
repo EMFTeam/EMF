@@ -327,3 +327,172 @@ character_event = {
 		}
 	}
 }
+
+
+# emf_empires.10
+#
+# Fired from on_fail or on_reverse_demand of emf_horde_invasion CB.
+# ROOT is the attacker, FROMFROM is the defender.
+character_event = {
+	id = emf_empires.10
+	hide_window = yes
+	is_triggered_only = yes
+
+	immediate = {
+		if = {
+			limit = { has_landed_title = e_mongol_empire }
+			set_global_flag = emf_mongols_defeated
+		}
+	}
+}
+
+
+# emf_empires.11
+#
+# emf_horde_invasion war tick for e_mongol_empire
+character_event = {
+	id = emf_empires.11
+	desc = AI_EVENT
+	picture = GFX_evt_battle
+#	hide_window = yes
+	
+	only_independent = yes
+	only_capable = yes
+	only_men = yes
+	culture = mongol
+	min_age = 16
+#	ai = yes # FIXME: ai = no allowed for debugging
+
+	trigger = {
+		has_landed_title = e_mongol_empire
+		war = no
+		is_landed = yes
+		has_regent = no
+
+		# We haven't yet failed in an emf_horde_invasion
+		not = { has_global_flag = emf_mongols_defeated }
+
+		# Don't consider invasion until it's been at least 180d since last successful invasion ended ...
+		or = {
+			not = { has_character_flag = emf_horde_invasion }
+			had_character_flag = { flag = emf_horde_invasion days = 180 }
+		}
+
+		# Only if we still have event troops
+		has_earmarked_regiments = horde_invasion
+
+		# If there's a valid target ...
+		any_realm_province = {
+			any_neighbor_province = {
+				
+
+				owner = {
+					not = { same_realm = ROOT }
+					top_liege = {
+						nor = {
+							# Respect truces
+							reverse_has_truce = ROOT
+
+							# Respect tributary relationships
+							pays_tribute_to = ROOT
+							ROOT = { pays_tribute_to = PREV }
+
+							# Don't DoW revolters
+							independent = no
+						}
+					}
+				}
+			}
+		}
+	}
+
+	immediate = {
+		# Pick a random available target ...
+
+		# TODO: try to pick targets that have higher counts of realm provinces
+		#       within the potential target kingdom title before those with lower.
+
+		random_realm_province = {
+			limit = {
+				any_neighbor_province = {
+					# TODO: conquest region requirements ...
+					owner = {
+						not = { same_realm = ROOT }
+						top_liege = {
+							nor = {
+								# Respect truces
+								reverse_has_truce = ROOT
+
+								# Respect tributary relationships
+								pays_tribute_to = ROOT
+								ROOT = { pays_tribute_to = THIS }
+
+								# Don't DoW revolters
+								independent = no
+							}
+						}
+					}
+				}
+			}
+			random_neighbor_province = {
+				limit = {
+					# TODO: conquest region requirements ...
+					owner = {
+						not = { same_realm = ROOT }
+						top_liege = {
+							nor = {
+								# Respect truces
+								reverse_has_truce = ROOT
+
+								# Respect tributary relationships
+								pays_tribute_to = ROOT
+								ROOT = { pays_tribute_to = THIS }
+
+								# Don't DoW revolters
+								independent = no
+							}
+						}
+					}
+				}
+				kingdom = {
+					save_event_target_as = emf_king_title
+				}
+				owner = {
+					top_liege = {
+						save_event_target_as = emf_target_ruler
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = { not = { wealth = 50 } }
+			wealth = 333
+		}
+	}
+
+	option = {
+		name = OK
+
+		if = {
+			limit = { not = { wealth = 50 } }
+			break = yes # Don't want to go bankrupt in the middle of the war
+		}
+
+		set_character_flag = emf_horde_invasion_pass
+
+		war = {
+			casus_belli = emf_horde_invasion
+			target = event_target:emf_target_ruler
+			thirdparty_title = event_target:emf_king_title
+		}
+	}
+
+	option = {
+		name = CANCEL
+		trigger = {
+			ai = no
+		}
+	}
+}
+
