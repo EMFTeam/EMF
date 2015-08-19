@@ -24,18 +24,38 @@ emf_horde_invasion = {
 	name = CB_NAME_INVASION
 	war_name = WAR_NAME_INVASION
 	sprite = 8
-	truce_days = 1825
+	truce_days = 1095
 	hostile_against_others = yes
 	is_permanent = yes
 	can_ask_to_join_war = yes
 	check_de_jure_tier = KING # this scans all de jure kingdoms for the counties which are held by or vassals(or below) of selected character. Only valid if is_permanent = yes
 
-	battle_warscore_mult = 0.75
+	# Raise effective BATTLE_WARSCORE_WORTH to 150 (vanilla base is 75, EMF base is 100)
+	# This encourages faster resolution of these wars with fewer characters actually
+	# unlanded by the horde invaders, due to the gain_all_occupied_titles in the CB.
+	battle_warscore_mult = 1.5
+	apply_short_occ_mod = no
 
 	can_use = {
 		ROOT = {
 			not = { same_realm = FROM }
-			has_character_flag = emf_horde_invasion_pass
+			or = {
+				# AI Mongol Empire can use this like a normal CB ...
+				and = {
+					has_landed_title = e_mongol_empire
+					ai = yes
+					emf_cb_tribute_block_trigger = no
+				}
+
+				# Or, a scripted requirements pass is required
+				has_character_flag = emf_horde_invasion_pass
+			}
+		}
+	}
+
+	is_valid = {
+		ROOT = {
+			not = { same_realm = FROM }
 		}
 	}
 
@@ -54,10 +74,14 @@ emf_horde_invasion = {
 	}
 
 	on_add_title = {
-		log = "emf_horde_invasion: [Root.GetBestName] ([Root.GetID]) invades [This.GetFullBaseName] against [From.GetFullName] ([From.GetID]) of [From.PrimaryTitle.GetFullBaseName]!"
+		log = "emf_horde_invasion: [Root.GetBestName] ([Root.GetID]) invades [This.GetFullBaseName] against [From.GetBestName] ([From.GetID]) of [From.PrimaryTitle.GetFullBaseName]!"
 	}
 
 	on_success = {
+		ROOT = {
+			clr_character_flag = emf_horde_invasion
+			set_character_flag = emf_horde_invasion
+		}
 		hidden_tooltip = {
 			any_attacker = {
 				add_character_modifier = { name = emf_victory_timer duration = 1 hidden = yes }
@@ -100,7 +124,7 @@ emf_horde_invasion = {
 	}
 	
 	on_success_title = {
-		log = "emf_horde_invasion: [Root.GetBestName] ([Root.GetID]) of [Root.PrimaryTitle.GetFullBaseName] WON a war for [This.GetFullBaseName] against [From.GetFullName] ([From.GetID]) of [From.PrimaryTitle.GetFullBaseName]."
+		log = "emf_horde_invasion: [Root.GetBestName] ([Root.GetID]) of the [Root.PrimaryTitle.GetFullBaseName] WON a war for the [This.GetFullBaseName] against [From.GetBestName] ([From.GetID]) of the [From.PrimaryTitle.GetFullBaseName]."
 		custom_tooltip = {
 			text = tribal_invasion_succ_tip
 			hidden_tooltip = {
@@ -112,6 +136,50 @@ emf_horde_invasion = {
 						type = invasion
 					}
 				}
+			}
+		}
+
+		hidden_tooltip = {
+
+			# Small independents fully-contained within the de jure target kingdom simply swear
+			# fealty rather than face the destructive wrath that their neighbors did.
+
+			any_independent_ruler = {
+				limit = {
+					lower_tier_than = ROOT
+					is_landed = yes
+					mercenary = no
+					holy_order = no
+					controls_religion = no
+					primary_title = { is_primary_type_title = no }
+					ai = yes
+					not = {
+						any_realm_title = {
+							is_titular = no
+							nor = {
+								title = PREVPREV
+								de_jure_liege_or_above = PREVPREV
+							}
+						}
+					}
+				}
+
+				if = {
+					limit = { religion = ROOT }
+					opinion = {
+						who = ROOT
+						modifier = opinion_subjugated
+					}
+				}
+				if = {
+					limit = { not = { religion = ROOT } }
+					opinion = {
+						who = ROOT
+						modifier = opinion_subjugated_other_rel
+					}
+				}
+
+				set_defacto_liege = ROOT
 			}
 		}
 	}
@@ -152,7 +220,7 @@ emf_horde_invasion = {
 	}
 
 	on_fail_title = {
-		log = "emf_horde_invasion: [Root.GetBestName] ([Root.GetID]) of [Root.PrimaryTitle.GetFullBaseName] WHITE-PEACED a war for [This.GetFullBaseName] against [From.GetFullName] ([From.GetID]) of [From.PrimaryTitle.GetFullBaseName]."
+		log = "emf_horde_invasion: [Root.GetBestName] ([Root.GetID]) of the [Root.PrimaryTitle.GetFullBaseName] WHITE-PEACED a war for the [This.GetFullBaseName] against [From.GetBestName] ([From.GetID]) of the [From.PrimaryTitle.GetFullBaseName]."
 	}
 
 	on_reverse_demand = {
@@ -211,11 +279,11 @@ emf_horde_invasion = {
 	}
 
 	on_reverse_demand_title = {
-		log = "emf_horde_invasion: [Root.GetBestName] ([Root.GetID]) of [Root.PrimaryTitle.GetFullBaseName] LOST a war for [This.GetFullBaseName] against [From.GetFullName] ([From.GetID]) of [From.PrimaryTitle.GetFullBaseName]."
+		log = "emf_horde_invasion: [Root.GetBestName] ([Root.GetID]) of the [Root.PrimaryTitle.GetFullBaseName] LOST a war for the [This.GetFullBaseName] against [From.GetBestName] ([From.GetID]) of the [From.PrimaryTitle.GetFullBaseName]."
 	}
 
 	attacker_ai_victory_worth = {
-		factor = 200
+		factor = -1 # always accept (note that this differs from the 200 of most invasion CBs)
 	}
 	
 	attacker_ai_defeat_worth = {
@@ -230,7 +298,7 @@ emf_horde_invasion = {
 		factor = 100
 	}
 	
-	ai_will_do = { 
-		factor = 0
+	ai_will_do = {
+		factor = 4
 	}
 }

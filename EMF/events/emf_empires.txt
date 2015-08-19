@@ -327,3 +327,209 @@ character_event = {
 		}
 	}
 }
+
+
+# emf_empires.10
+#
+# Fired from on_fail or on_reverse_demand of emf_horde_invasion CB.
+# ROOT is the attacker, FROMFROM is the defender.
+character_event = {
+	id = emf_empires.10
+	hide_window = yes
+	is_triggered_only = yes
+
+	immediate = {
+		if = {
+			limit = { has_landed_title = e_mongol_empire }
+			set_global_flag = emf_mongols_defeated
+		}
+	}
+}
+
+
+# emf_empires.11
+#
+# emf_horde_invasion war tick for e_mongol_empire
+character_event = {
+	id = emf_empires.11
+	desc = AI_EVENT
+	picture = GFX_evt_battle
+#	hide_window = yes
+	
+	only_independent = yes
+	culture = mongol
+	only_capable = yes
+	min_age = 16
+#	ai = yes # FIXME: ai = no allowed for debugging
+
+	trigger = {
+		has_landed_title = e_mongol_empire
+		war = no
+		is_landed = yes
+		has_regent = no
+
+		# We haven't yet failed in an emf_horde_invasion
+		not = { has_global_flag = emf_mongols_defeated }
+
+		# Don't consider invasion until it's been awhile since last successful invasion ended
+		or = {
+			not = { # No cooldown during first 30yr
+				had_global_flag = {
+					flag = mongol_empire_arrival
+					days = 10950
+				}
+			}
+			not = { has_character_flag = emf_horde_invasion }
+			had_character_flag = {
+				flag = emf_horde_invasion
+				days = 365
+			}
+		}
+
+		# Only if we still have our initial event troops
+		has_earmarked_regiments = horde_invasion
+
+		# Minimum gold to fire a scripted invasion
+		or = {
+			wealth = 100
+			not = {
+				had_global_flag = {
+					flag = mongol_empire_arrival
+					days = 10950
+				}
+			}
+		}
+
+		# Not if we're over our vassal limit
+		not = { over_vassal_limit = 0 }
+	}
+
+	mean_time_to_happen = {
+		days = 1
+	}
+
+	immediate = {
+		# If they're particularly low on cash, give them a little, but only support them
+		# in this way for awhile after their arrival (duration enforced by event trigger).
+		if = {
+			limit = { not = { wealth = 100 } }
+			wealth = 256
+		}
+
+		# Pick a random available target from the core conquest region...
+
+		random_realm_province = {
+			limit = {
+				any_neighbor_province = {
+					emf_empires_mongol_core_prov_trigger = yes
+				}
+			}
+			random_neighbor_province = {
+				limit = {
+					emf_empires_mongol_core_prov_trigger = yes
+				}
+				kingdom = {
+					save_event_target_as = emf_king_title
+					break = yes
+				}
+			}
+		}
+
+		if = {
+			limit = { not = { has_global_flag = emf_mongols_in_persia } }
+			break = yes
+		}
+
+		random_realm_province = {
+			limit = {
+				any_neighbor_province = {
+					emf_empires_mongol_extended_prov_trigger = yes
+				}
+			}
+			random_neighbor_province = {
+				limit = {
+					emf_empires_mongol_extended_prov_trigger = yes
+				}
+				kingdom = {
+					save_event_target_as = emf_king_title
+					break = yes
+				}
+			}
+		}
+	}
+
+	option = {
+		name = OK
+		trigger = {
+			wealth = 100
+			event_target:emf_king_title = { always = yes }
+		}
+
+		# Declare war on everybody we can within the target kingdom at once (more risky,
+		# but it allows the Mongols to take advantage of locality of their event troops).
+		# Of course, it's also consistent with the pillage-burn philosophy.
+
+		any_independent_ruler = {
+			limit = {
+				nor = {
+					character = ROOT # For completeness (any_independent_ruler excludes ROOT)
+					reverse_has_truce = ROOT
+					ROOT = { pays_tribute_to = PREV }
+				}
+				any_realm_province = {
+					kingdom = {
+						title = event_target:emf_king_title
+					}
+				}
+			}
+
+			ROOT = {
+				set_character_flag = emf_horde_invasion_pass
+
+				war = {
+					casus_belli = emf_horde_invasion
+					target = PREV
+					thirdparty_title = event_target:emf_king_title
+				}
+			}
+		}
+	}
+
+	option = {
+		name = CANCEL
+		trigger = {
+			or = {
+				nand = {
+					wealth = 100
+					event_target:emf_king_title = { always = yes }
+				}
+				ai = no
+			}
+		}
+	}
+}
+
+# emf_empires.12
+#
+# Set a global flag when e_mongol_empire can unlock their full conquest zone.
+character_event = {
+	id = emf_empires.12
+	hide_window = yes
+	
+	only_independent = yes
+	culture = mongol
+
+	trigger = {
+		has_landed_title = e_mongol_empire
+		not = { has_global_flag = emf_mongols_in_persia }
+
+		any_realm_province = {
+			region = emf_region_mongol_core_fringe
+		}
+	}
+
+	immediate = {
+		set_global_flag = emf_mongols_in_persia
+	}
+}
+
