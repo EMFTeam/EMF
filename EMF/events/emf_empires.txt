@@ -372,87 +372,60 @@ character_event = {
 		# We haven't yet failed in an emf_horde_invasion
 		not = { has_global_flag = emf_mongols_defeated }
 
-		# Don't consider invasion until it's been at least 180d since last successful invasion ended ...
+		# Don't consider invasion until it's been awhile since last successful invasion ended
 		or = {
+			not = { # No cooldown during first 20yr
+				had_global_flag = {
+					flag = mongol_empire_arrival
+					days = 7300
+				}
+			}
 			not = { has_character_flag = emf_horde_invasion }
-			had_character_flag = { flag = emf_horde_invasion days = 180 }
+			had_character_flag = {
+				flag = emf_horde_invasion
+				days = 365
+			}
 		}
 
-		# Only if we still have event troops
+		# Only if we still have our initial event troops
 		has_earmarked_regiments = horde_invasion
 
-		# If there's a valid target ...
-		any_realm_province = {
-			any_neighbor_province = {
-				
-
-				owner = {
-					not = { same_realm = ROOT }
-					top_liege = {
-						nor = {
-							# Respect truces
-							reverse_has_truce = ROOT
-
-							# Respect tributary relationships
-							pays_tribute_to = ROOT
-							ROOT = { pays_tribute_to = PREV }
-
-							# Don't DoW revolters
-							independent = no
-						}
-					}
+		# Minimum gold to fire a scripted invasion
+		or = {
+			wealth = 50
+			not = {
+				had_global_flag = {
+					flag = mongol_empire_arrival
+					days = 10950
 				}
 			}
 		}
+
+		# If there's a valid target ...
+
+		any_realm_province = {
+			any_neighbor_province = {
+				emf_empires_mongol_target_prov_trigger = yes
+			}
+		}
+	}
+
+	mean_time_to_happen = {
+		days = 1
 	}
 
 	immediate = {
 		# Pick a random available target ...
 
-		# TODO: try to pick targets that have higher counts of realm provinces
-		#       within the potential target kingdom title before those with lower.
-
 		random_realm_province = {
 			limit = {
 				any_neighbor_province = {
-					# TODO: conquest region requirements ...
-					owner = {
-						not = { same_realm = ROOT }
-						top_liege = {
-							nor = {
-								# Respect truces
-								reverse_has_truce = ROOT
-
-								# Respect tributary relationships
-								pays_tribute_to = ROOT
-								ROOT = { pays_tribute_to = THIS }
-
-								# Don't DoW revolters
-								independent = no
-							}
-						}
-					}
+					emf_empires_mongol_target_prov_trigger = yes
 				}
 			}
 			random_neighbor_province = {
 				limit = {
-					# TODO: conquest region requirements ...
-					owner = {
-						not = { same_realm = ROOT }
-						top_liege = {
-							nor = {
-								# Respect truces
-								reverse_has_truce = ROOT
-
-								# Respect tributary relationships
-								pays_tribute_to = ROOT
-								ROOT = { pays_tribute_to = THIS }
-
-								# Don't DoW revolters
-								independent = no
-							}
-						}
-					}
+					emf_empires_mongol_target_prov_trigger = yes
 				}
 				kingdom = {
 					save_event_target_as = emf_king_title
@@ -465,9 +438,11 @@ character_event = {
 			}
 		}
 
+		# If they're particularly low on cash, give them a little, but only support them
+		# in this way for awhile after their arrival (duration enforced by event trigger).
 		if = {
 			limit = { not = { wealth = 50 } }
-			wealth = 333
+			wealth = 256
 		}
 	}
 
@@ -476,7 +451,7 @@ character_event = {
 
 		if = {
 			limit = { not = { wealth = 50 } }
-			break = yes # Don't want to go bankrupt in the middle of the war
+			break = yes # If our donation wasn't enough, so be it.
 		}
 
 		set_character_flag = emf_horde_invasion_pass
@@ -493,6 +468,30 @@ character_event = {
 		trigger = {
 			ai = no
 		}
+	}
+}
+
+# emf_empires.12
+#
+# Set a global flag when e_mongol_empire can unlock their full conquest zone.
+character_event = {
+	id = emf_empires.12
+	hide_window = yes
+	
+	only_independent = yes
+	culture = mongol
+
+	trigger = {
+		has_landed_title = e_mongol_empire
+		not = { has_global_flag = emf_mongols_in_persia }
+
+		any_realm_province = {
+			region = emf_region_mongol_persian_fringe
+		}
+	}
+
+	immediate = {
+		set_global_flag = emf_mongols_in_persia
 	}
 }
 
