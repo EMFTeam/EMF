@@ -391,7 +391,7 @@ character_event = {
 
 		# Minimum gold to fire a scripted invasion
 		or = {
-			wealth = 50
+			wealth = 100
 			not = {
 				had_global_flag = {
 					flag = mongol_empire_arrival
@@ -400,13 +400,8 @@ character_event = {
 			}
 		}
 
-		# If there's a valid target ...
-
-		any_realm_province = {
-			any_neighbor_province = {
-				emf_empires_mongol_target_prov_trigger = yes
-			}
-		}
+		# Not if we're over our vassal limit
+		not = { over_vassal_limit = 0 }
 	}
 
 	mean_time_to_happen = {
@@ -414,38 +409,60 @@ character_event = {
 	}
 
 	immediate = {
-		# Pick a random available target ...
+		# If they're particularly low on cash, give them a little, but only support them
+		# in this way for awhile after their arrival (duration enforced by event trigger).
+		if = {
+			limit = { not = { wealth = 100 } }
+			wealth = 256
+		}
+
+		# Pick a random available target from the core conquest region...
 
 		random_realm_province = {
 			limit = {
 				any_neighbor_province = {
-					emf_empires_mongol_target_prov_trigger = yes
+					emf_empires_mongol_core_prov_trigger = yes
 				}
 			}
 			random_neighbor_province = {
 				limit = {
-					emf_empires_mongol_target_prov_trigger = yes
+					emf_empires_mongol_core_prov_trigger = yes
 				}
 				kingdom = {
 					save_event_target_as = emf_king_title
+					break = yes
 				}
 			}
 		}
 
-		# If they're particularly low on cash, give them a little, but only support them
-		# in this way for awhile after their arrival (duration enforced by event trigger).
 		if = {
-			limit = { not = { wealth = 50 } }
-			wealth = 256
+			limit = { not = { has_global_flag = emf_mongols_in_persia } }
+			break = yes
+		}
+
+		random_realm_province = {
+			limit = {
+				any_neighbor_province = {
+					emf_empires_mongol_extended_prov_trigger = yes
+				}
+			}
+			random_neighbor_province = {
+				limit = {
+					emf_empires_mongol_extended_prov_trigger = yes
+				}
+				kingdom = {
+					save_event_target_as = emf_king_title
+					break = yes
+				}
+			}
 		}
 	}
 
 	option = {
 		name = OK
-
-		if = {
-			limit = { not = { wealth = 50 } }
-			break = yes # If our donation wasn't enough, so be it.
+		trigger = {
+			wealth = 100
+			event_target:emf_king_title = { always = yes }
 		}
 
 		# Declare war on everybody we can within the target kingdom at once (more risky,
@@ -481,7 +498,13 @@ character_event = {
 	option = {
 		name = CANCEL
 		trigger = {
-			ai = no
+			or = {
+				nand = {
+					wealth = 100
+					event_target:emf_king_title = { always = yes }
+				}
+				ai = no
+			}
 		}
 	}
 }
