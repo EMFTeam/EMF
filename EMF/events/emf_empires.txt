@@ -327,3 +327,327 @@ character_event = {
 		}
 	}
 }
+
+
+# emf_empires.10
+#
+# Fired from on_fail or on_reverse_demand of emf_horde_invasion CB.
+# ROOT is the attacker, FROMFROM is the defender.
+character_event = {
+	id = emf_empires.10
+	hide_window = yes
+	is_triggered_only = yes
+
+	trigger = {
+		has_landed_title = e_mongol_empire
+	}
+
+	immediate = {
+		set_global_flag = emf_mongols_defeated
+	}
+}
+
+
+# emf_empires.11
+#
+# emf_horde_invasion war tick for e_mongol_empire
+character_event = {
+	id = emf_empires.11
+	desc = AI_EVENT
+	picture = GFX_evt_battle
+#	hide_window = yes
+	
+	only_independent = yes
+	culture = mongol
+	only_capable = yes
+	min_age = 16
+	ai = yes
+
+	trigger = {
+		has_landed_title = e_mongol_empire
+		war = no
+		is_landed = yes
+		has_regent = no
+
+		# We haven't yet failed in an emf_horde_invasion
+		not = { has_global_flag = emf_mongols_defeated }
+
+		# Not if we're over our vassal limit
+		not = { over_vassal_limit = 0 }
+
+		# Don't consider invasion until it's been awhile since last successful invasion ended
+		or = {
+			not = { has_character_flag = emf_horde_invasion }
+			not = { # No cooldown during first 30yr
+				had_global_flag = {
+					flag = mongol_empire_arrival
+					days = 10950
+				}
+			}
+			and = {
+				not = { # Minimal cooldown during first 30-60yrs
+					had_global_flag = {
+						flag = mongol_empire_arrival
+						days = 21900
+					}
+				}
+				had_character_flag = {
+					flag = emf_horde_invasion
+					days = 180
+				}
+			}
+			had_character_flag = { # Larger cooldown thereafter
+				flag = emf_horde_invasion
+				days = 730
+			}
+		}
+
+		# Only if we still have our initial event troops
+		has_earmarked_regiments = horde_invasion
+
+		# Minimum gold to fire a scripted invasion
+		or = {
+			wealth = 50
+			not = {
+				had_global_flag = {
+					flag = mongol_empire_arrival
+					days = 14600 # 40yr
+				}
+			}
+		}
+	}
+
+	mean_time_to_happen = {
+		days = 1
+	}
+
+	immediate = {
+		# If they're particularly low on cash, give them a little, but only support them
+		# in this way for awhile after their arrival (duration enforced by event trigger).
+		if = {
+			limit = { not = { wealth = 50 } }
+			wealth = 256
+		}
+
+		# Pick a random available target from the core conquest region...
+
+		random_realm_province = {
+			limit = {
+
+				or = { # Not an isolated county, unless it's our capital
+					ROOT = {
+						capital_scope = {
+							province = PREVPREV
+						}
+					}
+					any_neighbor_province = {
+						owner = { same_realm = ROOT }
+					}
+				}
+
+				any_neighbor_province = {
+					emf_empires_mongol_core_prov_trigger = yes
+				}
+			}
+			random_neighbor_province = {
+				limit = {
+					emf_empires_mongol_core_prov_trigger = yes
+				}
+				kingdom = {
+					save_event_target_as = emf_king_title
+					break = yes
+				}
+			}
+		}
+
+		# If we're still here, there were no available targets in core conquest region
+
+		if = {
+			limit = { not = { has_global_flag = emf_mongols_in_persia } }
+			break = yes
+		}
+
+		# If we're still here, we're allowed to look for a target in the extended region
+
+		random_realm_province = {
+			limit = {
+				any_neighbor_province = { # Not an isolated county
+					owner = { same_realm = ROOT }
+				}
+
+				any_neighbor_province = {
+					emf_empires_mongol_extended_prov_trigger = yes
+				}
+			}
+			random_neighbor_province = {
+				limit = {
+					emf_empires_mongol_extended_prov_trigger = yes
+				}
+				kingdom = {
+					save_event_target_as = emf_king_title
+					break = yes
+				}
+			}
+		}
+	}
+
+	option = {
+		name = OK
+		trigger = {
+			wealth = 50
+			event_target:emf_king_title = { always = yes }
+		}
+
+		# Declare war on everybody we can within the target kingdom at once (more risky,
+		# but it allows the Mongols to take advantage of locality of their event troops).
+		# Of course, it's also consistent with the pillage-burn philosophy.
+
+		any_independent_ruler = {
+			limit = {
+				nor = {
+					character = ROOT # For completeness (any_independent_ruler excludes ROOT)
+					reverse_has_truce = ROOT
+					ROOT = { pays_tribute_to = PREV }
+				}
+				any_realm_province = {
+					kingdom = {
+						title = event_target:emf_king_title
+					}
+				}
+			}
+
+			ROOT = {
+				set_character_flag = emf_horde_invasion_pass
+
+				war = {
+					casus_belli = emf_horde_invasion
+					target = PREV
+					thirdparty_title = event_target:emf_king_title
+				}
+			}
+		}
+	}
+
+	option = {
+		name = CANCEL
+		trigger = {
+			or = {
+				nand = {
+					wealth = 50
+					event_target:emf_king_title = { always = yes }
+				}
+				ai = no
+			}
+		}
+	}
+}
+
+# emf_empires.12
+#
+# Set a global flag when e_mongol_empire can unlock their full conquest zone.
+character_event = {
+	id = emf_empires.12
+	hide_window = yes
+	
+	only_independent = yes
+	culture = mongol
+
+	trigger = {
+		has_landed_title = e_mongol_empire
+		not = { has_global_flag = emf_mongols_in_persia }
+
+		any_realm_province = {
+			region = emf_region_mongol_core_fringe
+
+			# That isn't an isolated county
+			any_neighbor_province = {
+				owner = { same_realm = ROOT }
+			}
+		}
+	}
+
+	mean_time_to_happen = {
+		days = 1
+	}
+
+	immediate = {
+		set_global_flag = emf_mongols_in_persia
+	}
+}
+
+
+
+# emf_empires.13
+#
+# Called from on_success_title of emf_horde_invasion CB
+#
+# ROOT is the attacker, event_target:emf_defender is the defending character,
+# and event_target:emf_king_title is the CB's de jure target kingdom.
+character_event = {
+	id = emf_empires.13
+	hide_window = yes
+	is_triggered_only = yes
+
+	trigger = {
+		has_landed_title = e_mongol_empire
+	}
+
+	immediate = {
+		# Small independents fully-contained within the de jure target kingdom simply swear
+		# fealty rather than face the destructive wrath that their neighbors did. They're
+		# already at war with the Mongols.
+
+		any_independent_ruler = {
+			limit = {
+				war_with = ROOT
+				lower_tier_than = ROOT
+
+				not = { character = event_target:emf_defender }
+
+				mercenary = no
+				holy_order = no
+				controls_religion = no
+				primary_title = { is_primary_type_title = no }
+				ai = yes
+
+				# Share a border presently
+				any_realm_province = {
+					any_neighbor_province = {
+						owner = {
+							same_realm = ROOT
+						}
+					}
+				}
+
+				# Realm is completely within the de jure target kingdom
+				not = {
+					any_realm_title = {
+						is_titular = no
+						nor = {
+							title = event_target:emf_king_title
+							de_jure_liege_or_above = event_target:emf_king_title
+						}
+					}
+				}
+			}
+
+			set_defacto_liege = ROOT
+
+			if = {
+				limit = { religion = ROOT }
+				opinion = {
+					who = ROOT
+					modifier = opinion_subjugated
+				}
+			}
+			if = {
+				limit = { not = { religion = ROOT } }
+				opinion = {
+					who = ROOT
+					modifier = opinion_subjugated_other_rel
+				}
+			}
+		}
+	}
+}
+
