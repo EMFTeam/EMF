@@ -18,9 +18,6 @@ character_event = {
 				}
 			}
 			set_global_flag = SWMH
-			
-			# Destroy de jure k_ireland title if SWMH
-			k_ireland = { destroy_landed_title = THIS }
 		}
 
 		# Prevent early mending of the Catholic Schism
@@ -54,6 +51,9 @@ character_event = {
 		
 		# Map-specific dynamic de jure changes (see emf_startup_map.txt)
 		character_event = { id = emf_startup.30 }
+
+		# Ensure every defined king-tier title has a de jure empire (or e_null)
+		character_event = { id = emf_startup.40 }
 		
 		# PB compatibility tweaks and setup
 		character_event = { id = emf_startup.4 }
@@ -108,10 +108,6 @@ narrative_event = {
 	major = yes
 	hide_from = yes
 	is_triggered_only = yes
-	
-	major_trigger = {
-		ai = no
-	}
 	
 	option = {
 		name = emf_startup.1.opt.a
@@ -176,24 +172,6 @@ character_event = {
 					de_jure_liege = k_rum
 				}
 			}
-		}
-		if = {
-			limit = {
-				year = 1098
-			}
-			set_global_flag = retake_the_coast
-			set_global_flag = retake_the_coast_attempted
-			d_cibyrrhaeot = {
-				de_jure_liege = k_nikaea
-			}
-		}
-		if = {
-			limit = {
-				year = 1185
-			}
-			set_global_flag = bulgarian_unrest
-			set_global_flag = bulgarian_unrest_ends
-			set_global_flag = bulgarian_uprising
 		}
 		
 		# No direct vassals of the Byzantine Empire are content after 1066
@@ -481,10 +459,10 @@ character_event = {
 						}
 						any_province_holding = {
 							or = {
-								is_feudal = yes
+								holding_type = castle
 								and = {
 									ROOT = { religion_group = muslim }
-									is_theocracy = yes
+									holding_type = temple
 								}
 							}
 							holder_scope = {
@@ -512,10 +490,10 @@ character_event = {
 							}
 							any_province_holding = {
 								or = {
-									is_feudal = yes
+									holding_type = castle
 									and = {
 										ROOT = { religion_group = muslim }
-										is_theocracy = yes
+										holding_type = temple
 									}
 								}
 								holder_scope = {
@@ -528,10 +506,10 @@ character_event = {
 						random_province_holding = {
 							limit = {
 								or = {
-									is_feudal = yes
+									holding_type = castle
 									and = {
 										ROOT = { religion_group = muslim }
-										is_theocracy = yes
+										holding_type = temple
 									}
 								}
 								holder_scope = {
@@ -544,7 +522,7 @@ character_event = {
 								PREV = { grant_title_no_opinion = ROOT }
 								if = {
 									limit = {
-										not = {
+										nor = {
 											num_of_titles = 1
 											is_councillor = yes
 										}
@@ -577,10 +555,10 @@ character_event = {
 		any_demesne_province = {
 			any_province_holding = {
 				or = {
-					is_feudal = yes
+					holding_type = castle
 					and = {
 						ROOT = { religion_group = muslim }
-						is_theocracy = yes
+						holding_type = temple
 					}
 				}
 				holder_scope = {
@@ -599,10 +577,10 @@ character_event = {
 			limit = {
 				any_province_holding = {
 					or = {
-						is_feudal = yes
+						holding_type = castle
 						and = {
 							ROOT = { religion_group = muslim }
-							is_theocracy = yes
+							holding_type = temple
 						}
 					}
 					holder_scope = {
@@ -615,10 +593,10 @@ character_event = {
 			random_province_holding = {
 				limit = {
 					or = {
-						is_feudal = yes
+						holding_type = castle
 						and = {
 							ROOT = { religion_group = muslim }
-							is_theocracy = yes
+							holding_type = temple
 						}
 					}
 					holder_scope = {
@@ -676,5 +654,58 @@ character_event = {
 		remove_trait = age_8
 		remove_trait = age_16
 		remove_trait = age_32
+	}
+}
+
+
+# emf_startup.30-39 reserved for map-specific de jure adjustments and such
+
+
+# emf_startup.40
+#
+# Place all kingdoms with no de jure empire nominally under e_null. This is due
+# to various bugs with lack of de jure empires (memory leaks, issues with titles,
+# crashing, etc.), as identified by the CK2Plus team (notably Rylock, in the
+# "Captain Gars to the Rescue" thread in CK2/Modding forum) in at least patch 2.4.
+#
+# We also bother with active, titular kingdoms that lack an empire, because it's
+# possible that they will either drift into the game or be swapped with other de
+# jure title(s) by event.
+character_event = {
+	id = emf_startup.40
+	hide_window = yes
+	is_triggered_only = yes
+
+	immediate = {
+		any_title = {
+			limit = {
+				tier = king
+				temporary = no
+				not = { # No de jure empire ...
+					empire = {
+						always = yes
+					}
+				}
+				or = { # Not a clan/nomad title (unless somehow de jure) ...
+					is_titular = no
+					nor = {
+						clan = yes
+						is_nomadic = yes
+					}
+				}
+				nor = {
+					# Not these, because they are CoA-only titles ...
+					# (exclusion not strictly necessary)
+					title = k_emf_saxon_england
+					title = k_emf_norman_england
+					title = k_emf_english_england
+					title = k_emf_barcelona_aragon
+					title = k_avaria
+					title = k_lombardy
+				}
+			}
+
+			de_jure_liege = e_null
+		}
 	}
 }
