@@ -1,48 +1,54 @@
 
 namespace = emf_historical
 
-# emf_historical.0 [Isis]
+# emf_historical.0 [Leader of Magyars]
 #
-# Called from create_hungary decision.
+# Called from on_success_title of scripted emf_magyar867_invasion CB.
+#
+# If the player has Horse Lords, mimick feudal settlement in k_hungary in that fashion.
+# If not, use the old mechanism for tribals (similar to old create_hungary decision).
 #
 # Give away russian Magyar holdings to russians. Then, find a suitable ruler
 # whom to give the remainder of the Magyar holdings outside of k_hungary,
-# and then settle them there.
+# and then settle them there. Spare player vassals outside k_hungary.
 character_event = {
 	id = emf_historical.0
-	desc = AI_EVENT
 	hide_window = yes
 	is_triggered_only = yes
 	
 	immediate = {
 	
-		FROM = {
-			any_realm_province = {
-				limit = {
-					culture = russian
-					owner = { culture = russian }
-				}
-				owner = { set_defacto_liege = THIS }
+		any_realm_province = {
+			limit = {
+				culture = russian
+				owner = { culture = russian }
 			}
-			any_realm_province = {
-				limit = {
-					culture = russian
+			owner = { set_defacto_liege = THIS }
+		}
+		any_realm_province = {
+			limit = {
+				culture = russian
+				owner = {
+					or = {
+						character = ROOT
+						ai = yes
+					}
 				}
-				county = {
-					location = {
-						random_neighbor_province = {
-							limit = {
-								owner = { culture = russian }
-							}
-							owner = {
-								usurp_title_plus_barony_if_unlanded_and_vassals = PREVPREVPREV
-							}
+			}
+			county = {
+				location = {
+					random_neighbor_province = {
+						limit = {
+							owner = { culture = russian }
+						}
+						owner = {
+							grant_title_no_opinion = PREVPREVPREV
 						}
 					}
 				}
 			}
 		}
-	
+
 		k_pechenegs = {
 			if = {
 				limit = { has_holder = yes }
@@ -53,52 +59,67 @@ character_event = {
 		random_independent_ruler = {
 			limit = {
 				culture = pecheneg
-				religion = tengri_pagan
-				primary_title = { is_primary_type_title = no }
-			}
-			save_event_target_as = new_owner
-			break = yes
-		}
-		random_playable_ruler = {
-			limit = {
-				culture = pecheneg
-				religion = tengri_pagan
-				higher_tier_than = count
-				primary_title = { is_primary_type_title = no }
-			}
-			save_event_target_as = new_owner
-			break = yes
-		}
-		random_playable_ruler = {
-			limit = {
-				culture = pecheneg
-				religion = tengri_pagan
-				primary_title = { is_primary_type_title = no }
+				is_nomadic = yes
+				mercenary = no
 			}
 			save_event_target_as = new_owner
 			break = yes
 		}
 		random_independent_ruler = {
 			limit = {
-				religion = tengri_pagan
-				primary_title = { is_primary_type_title = no }
+				culture = pecheneg
+				mercenary = no
 			}
 			save_event_target_as = new_owner
 			break = yes
 		}
 		random_playable_ruler = {
 			limit = {
-				religion = tengri_pagan
+				culture = pecheneg
 				higher_tier_than = count
-				primary_title = { is_primary_type_title = no }
+				mercenary = no
 			}
 			save_event_target_as = new_owner
 			break = yes
 		}
 		random_playable_ruler = {
 			limit = {
-				religion = tengri_pagan
-				primary_title = { is_primary_type_title = no }
+				culture = pecheneg
+				mercenary = no
+			}
+			save_event_target_as = new_owner
+			break = yes
+		}
+		random_independent_ruler = {
+			limit = {
+				culture = khazar
+				is_nomadic = yes
+				mercenary = no
+			}
+			save_event_target_as = new_owner
+			break = yes
+		}
+		random_independent_ruler = {
+			limit = {
+				culture = khazar
+				mercenary = no
+			}
+			save_event_target_as = new_owner
+			break = yes
+		}
+		random_playable_ruler = {
+			limit = {
+				culture = khazar
+				higher_tier_than = count
+				mercenary = no
+			}
+			save_event_target_as = new_owner
+			break = yes
+		}
+		random_playable_ruler = {
+			limit = {
+				culture = khazar
+				mercenary = no
 			}
 			save_event_target_as = new_owner
 			break = yes
@@ -116,29 +137,146 @@ character_event = {
 		name = OK
 		trigger = { event_target:new_owner = { is_alive = yes } }
 
-		FROM = {
-			any_realm_province = {
-				limit = {
-					not = { kingdom = { title = k_hungary } }
+		any_realm_province = {
+			limit = {
+				not = {
+					kingdom = { title = k_hungary }
 				}
-				culture = event_target:new_owner
-				religion = event_target:new_owner
-				county = {
-					any_direct_de_jure_vassal_title = {
-						limit = { has_holder = yes }
-						grant_title_no_opinion = event_target:new_owner
+				owner = {
+					or = {
+						character = ROOT
+						ai = yes
 					}
-					grant_title_no_opinion = event_target:new_owner
 				}
 			}
+			county = {
+				grant_title_no_opinion = event_target:new_owner
+			}
+			culture = event_target:new_owner
+			religion = event_target:new_owner
 		}
 		
 		event_target:new_owner = {
 			set_defacto_liege = THIS
 		}
+
+		character_event = { id = emf_historical.1 }
+
 	}
 	option = {
 		name = CANCEL
 		trigger = { not = { event_target:new_owner = { is_alive = yes } } }
+
+		character_event = { id = emf_historical.1 }
+	}
+}
+
+
+# emf_historical.1 [Magyar Leader]
+#
+# Continuation of emf_historical.0 [Horse Lords ONLY]
+character_event = {
+	id = emf_historical.1
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		has_dlc = "Horse Lords"
+	}
+
+	immediate = {
+		primary_title = { # We might need this marker later
+			set_title_flag = emf_magyar_khaganate
+		}
+
+		wealth = 1000
+
+		set_global_flag = avar_khaganate_renamed
+		k_hungary = {
+			reset_coa = THIS
+			set_name=""
+			adjective=""
+			grant_title = ROOT
+		}
+
+		random_demesne_title = {
+			limit = {
+				tier = baron
+				holding_type = castle
+				de_jure_liege_or_above = k_hungary
+			}
+			if = {
+				limit = { is_capital = no }
+				make_capital_holding = yes
+			}
+			location = {
+				ROOT = {
+					capital = PREV
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				not = { religion_group = muslim }
+			}
+			if = {
+				limit = { ai = no }
+				chronicle = {
+					entry = CHRONICLE_NOMAD_ADOPTED_FEUDALISM
+					picture = GFX_evt_castle_construction
+				}
+			}
+			set_government_type = feudal_government
+		}
+		if = {
+			limit = {
+				religion_group = muslim
+			}
+			if = {
+				limit = { ai = no }
+				chronicle = {
+					entry = CHRONICLE_NOMAD_ADOPTED_IQTA
+					picture = GFX_evt_castle_construction
+				}
+			}
+			set_government_type = muslim_government
+		}
+		
+		# Law initialization
+		set_character_flag = emf_no_law_penalties
+		k_hungary = {
+			add_law = centralization_0
+			add_law = crown_authority_0
+		}
+		clr_character_flag = emf_no_law_penalties
+
+		# Convert what few provinces we managed to get in the Bulgarian war...
+		any_realm_province = {
+			religion = ROOT
+			culture = ROOT
+		}
+
+		# Try to destroy any possible remaining AI magyar khaganate
+		# Hopefully this basically never happens...
+
+		any_title = {
+			limit = {
+				has_title_flag = emf_magyar_khaganate
+				holder_scope = {
+					ai = yes
+				}
+			}
+			holder_scope = {
+				any_realm_province = {
+					limit = {
+						owner = { ai = yes }
+					}
+					county = {
+						grant_title_no_opinion = ROOT
+					}
+				}
+			}
+		}
 	}
 }
