@@ -32,6 +32,7 @@ character_event = {
 						title = e_hip
 						title = e_rebels
 						title = e_pirates
+						title = e_hre
 						title = e_byzantium
 						title = e_roman_empire
 						title = e_latin_empire
@@ -42,13 +43,14 @@ character_event = {
 							or = {
 								title = e_golden_horde
 								title = e_il-khanate
+								title = e_chagatai
+								title = e_mongol_empire
 							}
-							ROOT = { religion = tengri_pagan }
+							ROOT = { religion = tengri_pagan } # Hack to simulate time-delayed title destruction
 						}
 					}
 				}
 				and = {
-					year = 1100
 					ROOT = { not = { realm_size = 150 } }
 					title = e_hre
 				}
@@ -70,6 +72,9 @@ character_event = {
 	immediate = {
 		if = { # If we don't have another empire or king title to fallback upon...
 			limit = {
+				any_vassal = {
+					tier = duke # And it matters
+				}
 				not = {
 					num_of_emperor_titles = 2
 					any_demesne_title = {
@@ -111,7 +116,7 @@ character_event = {
 					is_titular = no
 				}
 				
-				any_direct_de_jure_vassal_title = { # For all the kingdoms...
+				any_direct_de_jure_vassal_title = { # For all the de jure vassal kingdoms...
 					limit = {
 						has_holder = no
 						is_titular = no
@@ -127,6 +132,57 @@ character_event = {
 					}
 				}
 			}
+
+			# If still not found (empire was probably titular), check every de jure kingdom title in the game...
+
+			any_title = {
+				limit = {
+					tier = king
+					is_titular = no
+				}
+
+				save_event_target_as = emf_king_title
+				ROOT = { character_event = { id = emf_empires.4 } } # Check 50% rule
+				
+				if = {
+					limit = { ROOT = { check_variable = { which = king_county value = 0 } } } # 50% rule passes
+					event_target:emf_king_title = { save_event_target_as = emf_new_title }
+					break = yes
+				}
+
+				clear_event_target = emf_king_title
+			}
+
+			# If STILL not found, create a titular kingdom title (might want to make this optional in the future,
+			# because some people might prefer not to have a silly titular king-tier title that they cannot destroy
+			# until they have another king- or higher-tier title to make primary). Title will have the name and CoA
+			# of the ruler's capital county (and some color offset).
+
+			capital_scope = {
+				county = {
+					create_title = {
+						tier = KING
+						landless = no
+						temporary = no
+						custom_created = yes
+						culture = ROOT
+						holder = ROOT
+						base_title = THIS
+					}
+				}
+			}
+
+			new_title = {
+				log = "AED created custom titular title '[This.GetFullName]'"
+				save_event_target_as = emf_new_title
+
+				set_title_flag = emf_autodestroy # TODO: Wishful thinking currently...
+
+				de_jure_liege = e_null
+			}
+
+			# TODO: In the future, I'd like to also ensure that they have a duchy title INSTEAD to bind count-tier
+			# vassals, if they don't have any vassals higher than count-tier.
 		}
 	}
 	
@@ -145,8 +201,11 @@ character_event = {
 					copy_title_laws = PREV
 				}
 			}
+			set_character_flag = emf_aed_gave_me_kingdom
 		}
 		
+		set_character_flag = emf_aed_took_my_empire
+
 		random_demesne_title = {
 			limit = {
 				tier = emperor
@@ -159,18 +218,21 @@ character_event = {
 							title = e_hip
 							title = e_rebels
 							title = e_pirates
+							title = e_hre
 							title = e_byzantium
 							title = e_roman_empire
 							title = e_latin_empire
 							title = e_timurids
 							title = e_mexikha
-							title = e_seljuk_turks
+							title = e_seljuk_turks # Only until we convert title destruction to be time-delayed after fulfilling AED conditions
 							and = {
 								or = {
 									title = e_golden_horde
 									title = e_il-khanate
+									title = e_chagatai
+									title = e_mongol_empire
 								}
-								ROOT = { religion = tengri_pagan }
+								ROOT = { religion = tengri_pagan } # Hack to simulate time-delayed title destruction (holders of these titles can't convert away for 30yr)
 							}
 						}
 					}
@@ -188,8 +250,7 @@ character_event = {
 				}
 			}
 			
-			#unsafe_destroy_landed_title = THIS
-			destroy_landed_title = THIS
+			unsafe_destroy_landed_title = THIS
 			
 			hidden_tooltip = {
 				save_event_target_as = emf_crier_dead_title
