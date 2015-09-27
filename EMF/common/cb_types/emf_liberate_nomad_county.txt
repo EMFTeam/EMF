@@ -18,17 +18,60 @@
 # can_use_gui: If otherwise valid, the CB is listed in the Diplo View, but you can't declare war unless 'can_use_gui' is also valid (also shows a trigger tooltip.)
 #
 
-# CB for non-nomads to seize a duchy off a nomad horde
-cb_liberate_nomad_duchy = {
-	name = CB_NAME_LIBERATE_NOMAD
-	war_name = WAR_NAME_LIBERATE_NOMAD
+# CB for non-nomads to seize a province from a nomad horde
+emf_liberate_nomad_county = {
+	name = CB_NAME_LIBERATE_NOMAD # FIXME: check these for county-relevancy
+	war_name = WAR_NAME_LIBERATE_NOMAD # FIXME: check these for county-relevancy
 	sprite = 8
-	truce_days = 1825
+	truce_days = 1095
 	is_permanent = yes
-	check_de_jure_tier = DUKE # this scans all dejure duchies for the counties which are held by or vassals(or below) of selected character. Only valid if is_permanent = yes
+	check_all_titles = yes
+	press_claim = yes
+	battle_warscore_mult = 1.25
+
+	can_use_gui = {
+		not = { has_character_modifier = emf_peace_pledge }
+	}
 
 	can_use = {
-		always = no # Use emf_liberate_nomad_county instead
+		FROM = {
+			is_nomadic = yes
+		}
+		ROOT = {
+			is_nomadic = no
+			not = { pacifist = yes }
+			mercenary = no
+			not = { is_liege_or_above = FROM }
+			emf_cb_tribute_block_trigger = no
+		}
+	}
+
+	can_use_title = {
+		tier = count
+
+		or = {
+			FROM = {
+				has_landed_title = PREV
+			}
+			holder_scope = {
+				is_liege_or_above = FROM
+			}
+		}
+
+		location = {
+			# No liberation of the Sahara
+			not = { region = emf_region_sahara }
+
+			# The attacker needs a direct border
+			any_neighbor_province = {
+				owner = {
+					or = {
+						character = ROOT
+						is_liege_or_above = ROOT
+					}
+				}
+			}
+		}
 	}
 
 	is_valid = {
@@ -37,9 +80,30 @@ cb_liberate_nomad_duchy = {
 		}
 		ROOT = {
 			is_nomadic = no
-			NOT = { pacifist = yes }
-			NOT = { same_realm = FROM }
+			not = { pacifist = yes }
+			not = { is_liege_or_above = FROM }
 			mercenary = no
+		}
+	}
+
+	is_valid_title = {
+		or = {
+			FROM = {
+				has_landed_title = PREV
+			}
+			holder_scope = {
+				is_liege_or_above = FROM
+			}
+		}
+		location = {
+			any_neighbor_province = {
+				owner = {
+					or = {
+						character = ROOT
+						is_liege_or_above = ROOT
+					}
+				}
+			}
 		}
 	}
 
@@ -52,23 +116,23 @@ cb_liberate_nomad_duchy = {
 
 		any_attacker = {
 			limit = { character = ROOT }
-			participation_scaled_prestige = 200
+			participation_scaled_prestige = 100
 			if = {
 				limit = {
 					uses_decadence = yes
 				}
-				participation_scaled_decadence = -10
+				participation_scaled_decadence = -5
 			}
 		}
 		any_attacker = {
-			limit = { NOT = { character = ROOT } }
+			limit = { not = { character = ROOT } }
 			hidden_tooltip = {
-				participation_scaled_prestige = 200
+				participation_scaled_prestige = 100
 				if = {
 					limit = {
 						uses_decadence = yes
 					}
-					participation_scaled_decadence = -10
+					participation_scaled_decadence = -5
 				}
 			}
 		}
@@ -77,24 +141,21 @@ cb_liberate_nomad_duchy = {
 	}
 
 	on_success_title = {
-		custom_tooltip = {
-			text = liberate_nomad_cb_succ_tip
-			hidden_tooltip = {
-				ROOT = {
-					vassalize_or_take_under_title = {
-						title = PREV
-						enemy = FROM
-						anti_nomad = yes # Vassalize non-nomadic rulers
-						type = invasion
-					}
-				}
+		ROOT = {
+			vassalize_or_take_under_title = {
+				title = PREV
+				enemy = FROM
+				anti_nomad = yes # Vassalize non-nomadic rulers
+				type = invasion
 			}
 		}
+
+		usurp_title = { target = ROOT type = invasion }
 	}
 
 	on_fail = {
 		ROOT = {
-			prestige = -200
+			prestige = -100
 		}
 	}
 
@@ -107,29 +168,29 @@ cb_liberate_nomad_duchy = {
 		ROOT = {
 			transfer_scaled_wealth = {
 				to = FROM
-				value = 4.0
+				value = 2.0
 			}
 			prestige = -200
 		}
 		any_defender = {
 			limit = { character = FROM }
-			participation_scaled_prestige = 300
+			participation_scaled_prestige = 200
 			if = {
 				limit = {
 					uses_decadence = yes
 				}
-				participation_scaled_decadence = -10
+				participation_scaled_decadence = -5
 			}
 		}
 		any_defender = {
-			limit = { NOT = { character = FROM } }
+			limit = { not = { character = FROM } }
 			hidden_tooltip = {
-				participation_scaled_prestige = 300
+				participation_scaled_prestige = 200
 				if = {
 					limit = {
 						uses_decadence = yes
 					}
-					participation_scaled_decadence = -10
+					participation_scaled_decadence = -5
 				}
 			}
 		}
@@ -154,19 +215,19 @@ cb_liberate_nomad_duchy = {
 	ai_will_do = {
 		factor = 1
 
-        modifier = {
-            factor = 0.1
-            NOT = {
-                any_direct_de_jure_vassal_title = {
-                    any_direct_de_jure_vassal_title = {
-                        OR = {
-                            holding_type = castle
-                            holding_type = city
-                        }
-                    }
-                }
-            }
-        }
+		modifier = {
+			factor = 0.1
+			ROOT = { is_tribal = no }
+			not = {
+				any_direct_de_jure_vassal_title = {
+					has_holder = yes
+					or = {
+						holding_type = castle
+						holding_type = city
+					}
+				}
+			}
+		}
 		modifier = {
 			factor = 10
 			FROM = { ai = no }
