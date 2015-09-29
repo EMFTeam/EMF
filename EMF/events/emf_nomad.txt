@@ -396,3 +396,77 @@ character_event = {
 		repeat_event = { id = emf_nomad.5 }
 	}
 }
+
+# emf_nomad.20 [New Empty County Holder]
+#
+# on_new_holder_usurpation listener for empty/nomadic provinces that enforces
+# the equivalent of the scripted effect emf_cb_nomadic_province_effect upon
+# all usurped empty counties.
+#
+# The scripted effect is still used throughout CBs, because this method needs to
+# convert culture/religion _back_ to what it was before the title transfer, and
+# if our CB code didn't try to minimize usage of this fall-back method, then
+# it's possible that SoA heresy-takeover mechanics could be triggered by some
+# conquests when they should not be.
+#
+# This should be considered the general, catch-all case for ensuring the invariant
+# that non-nomadic rulers conquering (or event-usurping) empty counties or nomadic
+# rulers of different culture than such a conquered county will always receive a
+# county with a new tribal settlement in it (and the province should be the prior
+# culture). NOTE: We don't listen to regular on_new_holder, because we don't
+# want this behavior for title grants/gains, which should be exempt. Some CBs use
+# such methods, so again, a mixed approach is necessary.
+#
+# If the logic here is updated, then the aforementioned scripted effect should
+# also be updated.
+#
+# As always:
+#   ROOT = new holder
+#   FROM = title
+#   FROMFROM = previous holder
+character_event = {
+	id = emf_nomad.20
+	hide_window = yes
+	is_triggered_only = yes
+
+	trigger = {
+		FROM = { tier = count } # Filter only county titles ...
+		FROM = { # ... that correspond to empty/nomadic provinces.
+			location = {
+				not = {
+					any_province_holding = {
+						not = { holding_type = nomad }
+					}
+				}
+			}
+		}
+		# And the new holder isn't a nomad, or the culture of the new & prior
+		# holders is not the same.
+		ROOT = {
+			or = {
+				is_nomadic = no
+				not = { culture = FROMFROM }
+			}
+		}
+		# We depend upon being able to query character religion/culture, so this
+		# is here as a sort of assertion:
+		FROMFROM = { is_alive = yes }
+	}
+
+	immediate = {
+		FROM = {
+			location = {
+				build_holding = { type = tribal }
+				random_province_holding = {
+					limit = {
+						holding_type = tribal
+						ROOT = { is_nomadic = no }
+					}
+					make_capital_holding = yes
+				}
+				religion = FROMFROM
+				culture = FROMFROM
+			}
+		}
+	}
+}
