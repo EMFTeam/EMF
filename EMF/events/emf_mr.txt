@@ -200,7 +200,7 @@ narrative_event = {
 			
 			set_government_type = merchant_republic_government
 			
-			# Make sure we own a city and that it's our capital (we assume our capital county has a city)
+			# Make sure we own a city and that it's our capital (we assume our capital county has a city or empty holding slot)
 			
 			character_event = { id = emf_mr.10 }
 			
@@ -960,7 +960,10 @@ character_event = {
 				holding_type = city
 				location = { province = event_target:emf_capital }
 			}
-			province_capital = yes
+			if = {
+				limit = { is_capital = no }
+				make_capital_holding = yes
+			}
 			ROOT = { capital = PREV }
 			break = yes
 		}
@@ -972,9 +975,57 @@ character_event = {
 					holding_type = city
 				}
 				grant_title_no_opinion = ROOT
-				province_capital = yes
+				if = {
+					limit = { is_capital = no }
+					make_capital_holding = yes
+				}
 				ROOT = { capital = PREV }
 				break = yes
+			}
+
+			if = {
+				limit = { not = { has_empty_holding = yes } }
+				log = "emf_mr.10: SERIOUS: expected empty holding slot in capital province of [This.GetName]"
+
+				# Do something drastic
+				random_province_holding = {
+					limit = { holding_type = temple }
+					destroy_settlement = THIS
+				}
+
+				if = {
+					limit = { not = { has_empty_holding = yes } }
+					random_province_holding = {
+						limit = { holding_type = castle is_capital = no }
+						destroy_settlement = THIS
+					}
+				}
+				if = {
+					limit = { not = { has_empty_holding = yes } }
+					random_province_holding = {
+						limit = { holding_type = castle }
+						destroy_settlement = THIS
+					}
+				}
+			}
+
+			if = {
+				limit = { not = { has_empty_holding = yes } }
+				log = "emf_mr.10: FATAL: could not make empty holding slot in capital province of [This.GetName]"
+				break = yes
+			}
+
+			build_holding = {
+				type = city
+				holder = ROOT
+			}
+
+			random_province_holding = {
+				limit = {
+					holding_type = city
+				}
+				make_capital_holding = yes
+				ROOT = { capital = PREV }
 			}
 		}
 	}
