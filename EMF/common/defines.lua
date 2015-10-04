@@ -60,7 +60,7 @@ NDiplomacy = {
 	CROWN_LAW_CHANGE_PIETY_COST = 100,			-- Piety cost for Iqta government when changing Crown laws
 	LAW_CHANGE_PRESTIGE_COST = 100,				-- Prestige cost for Nomadic government when changing normal demesne laws
 	CROWN_LAW_CHANGE_PRESTIGE_COST = 200,		-- Prestige cost for Nomadic government when changing Crown laws
-	INTER_MUSLIM_WAR_MONTHLY_PIETY_COST = 2,  	-- Monthly Piety cost for Muslims who are primary attackers against a ruler of the same religion (not civil wars)
+	INTER_MUSLIM_WAR_MONTHLY_PIETY_COST = 1,  	-- Monthly Piety cost for Muslims who are primary attackers against a ruler of the same religion (not civil wars)
 	MUSLIM_TEMPLE_HOLDING_MONTHLY_PIETY = 0.2, 	-- Monthly Piety for Muslims for each Temple holding in the demesne
 	DOWRY_MULTIPLIER = 1.0,						-- The Dowry cost for a Patrician is prestige gain from marriage * this
 	PAGAN_PEACE_MONTHS = 24,					-- Months before the Peace Prestige loss kicks in for certain Pagan religions
@@ -769,7 +769,7 @@ NReligion = {
 	ELECTOR_TITLE_PIETY_FACTOR = 0.1,
 	ELECTOR_TITLE_AGE_FACTOR = 2,
 	ELECTOR_TITLE_AT_CAPITAL_FACTOR = 100,
-	ELECTOR_FAMOUS_DYNASTY_FACTOR = 0.025,
+	ELECTOR_FAMOUS_DYNASTY_FACTOR = 0.01,
 	ELECTOR_TRAITS_FACTOR = 1.0,					-- Effect of personality traits that the church likes
 	HERESY_TAKEOVER_PROVINCES = 5,					-- The number of provinces a heresy needs MORE than the current norm for it to become the new Orthodoxy
 	PAPAL_SUCCESSION_PASS_ON_HOLDINGS = 1,			-- Set to zero if holdings shouldn't be passed on
@@ -836,7 +836,7 @@ NDecadence = {
 	REALM_SIZE_MULTIPLIER = 0.005,
 	DEMESNE_FRACTION_MULT_POS = 0.5,
 	DEMESNE_FRACTION_MULT_NEG = -0.8,
-	SAFETY_VALUE = 60								-- The limit at where your decadence will give you a risk of decadence revolts
+	SAFETY_VALUE = 75								-- The limit at where your decadence will give you a risk of decadence revolts
 }, 
 
 NNomad = {
@@ -1179,7 +1179,7 @@ NGraphics = {
 },
 
 NEngine = {
-	EVENT_PROCESS_OFFSET = 20, 	 -- Events are checked every X day per character or province (1 is ideal, but CPU heavy)
+	EVENT_PROCESS_OFFSET = 30, 	 -- Events are checked every X day per character or province (1 is ideal, but CPU heavy)
 	POPULATION_BASELINE = 20000, -- The baseline of what would be considered normal amount of population
 	COURTIERS_MTTTH_EVENTS = 1,  -- Toggles if courtiers are allowed to run MTTH events or not
 	MISSING_SCRIPTED_SUCCESSOR_ERROR_CUTOFF_YEAR = 1066, -- The missing scripted successor error will not be shown before this date
