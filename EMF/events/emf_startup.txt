@@ -1,10 +1,10 @@
 
 namespace = emf_startup
 
-# basic startup [Isis]
-# invoked through character history effect
+
 character_event = {
 	id = emf_startup.0
+	desc = AI_EVENT
 	hide_window = yes
 	is_triggered_only = yes
 
@@ -19,56 +19,6 @@ character_event = {
 			}
 			set_global_flag = SWMH
 		}
-
-		# Map-specific dynamic de jure changes (see emf_startup_map.txt)
-		character_event = { id = emf_startup.30 }
-	}
-
-	option = {
-		name = OK
-	}
-}
-
-
-# emf_startup.1
-# Initial welcome event
-narrative_event = {
-	id    = emf_startup.1
-	desc  = emf_startup.1.desc
-	title = emf_startup.1.title
-
-	picture = GFX_evt_rainy_lanterns
-	border  = GFX_event_narrative_frame_diplomacy
-
-	major = yes
-	is_triggered_only = yes
-
-	option = {
-		name = emf_startup.1.opt.a
-	}
-}
-
-
-# on_startup [Isis]
-#
-# We don't trust startup via character history effect (emf_startup.0)
-# as much as we do on_startup to give us valid game state with which
-# to work, post-2.4/HL, so now we do most of our campaign setup here.
-character_event = {
-	id = emf_startup.2
-	hide_window = yes
-	is_triggered_only = yes
-
-	only_independent = yes
-	culture = hip_culture
-
-	trigger = {
-		has_landed_title = e_hip
-		not = { has_global_flag = EMF }
-	}
-
-	immediate = {
-		set_global_flag = EMF
 
 		# Prevent early mending of the Catholic Schism
 		if = {
@@ -99,35 +49,50 @@ character_event = {
 			set_global_flag = muslim_jihads_unlocked
 		}
 
+		# Map-specific dynamic de jure changes (see emf_startup_map.txt)
+		character_event = { id = emf_startup.30 }
+
 		# PB compatibility tweaks and setup
 		character_event = { id = emf_startup.4 }
 		narrative_event = { id = meneth.600 } # CoTs (hidden)
-
-		# Initialize crown laws
-		character_event = { id = emf_laws.0 }
 
 		# Initialize playable ruler demesne (limit random vassal barons)
 		any_playable_ruler = {
 			character_event = { id = emf_startup.10 }
 		}
 
-		# Antinomad setup (preserve province history culture & religion)
-		character_event = { id = emf_nomad.1000 }
+		# Initialize crown laws
+		character_event = { id = emf_laws.0 }
 
 		# Combat trait distribution
 		any_playable_ruler = {
+			limit = {
+				not = {
+					trait = poor_warrior
+					trait = trained_warrior
+					trait = skilled_warrior
+					trait = master_warrior
+				}
+			}
 			character_event = { id = emf_startup.5 }
 		}
 
+		# Initialize dynamic CoAs
+		character_event = { id = emf_coa.1 }
+
 		# Initialize dynlevy
 		character_event = { id = emf_dynlevy.0 }
+	}
+
+	option = {
+		name = OK
 
 		# Baqt Treaty
 		any_independent_ruler = {
 			limit = {
 				or = {
 					culture_group = east_african
-					has_landed_title = c_cairo
+					has_landed_title = k_shiite
 				}
 			}
 			narrative_event = { id = meneth.602 }
@@ -136,6 +101,27 @@ character_event = {
 		narrative_event = { id = emf_startup.1 }
 	}
 }
+
+
+# emf_startup.1
+# Initial welcome event
+narrative_event = {
+	id    = emf_startup.1
+	desc  = emf_startup.1.desc
+	title = emf_startup.1.title
+
+	picture = GFX_evt_rainy_lanterns
+	border  = GFX_event_narrative_frame_diplomacy
+
+	major = yes
+	hide_from = yes
+	is_triggered_only = yes
+
+	option = {
+		name = emf_startup.1.opt.a
+	}
+}
+
 
 # emf_startup.4
 #
@@ -147,6 +133,7 @@ character_event = {
 	is_triggered_only = yes
 
 	immediate = {
+		set_global_flag = project_balance
 		set_global_flag = theme_system_reformed
 		if = {
 			limit = {
@@ -156,9 +143,34 @@ character_event = {
 		}
 		if = {
 			limit = {
+				year = 1066
+				not = { year = 1075 }
+			}
+			d_burgundy = {
+				owner = {
+					any_courtier = {
+						d_barcelona = {
+							remove_claim = PREV
+						}
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				year = 1071
+				month = 8
+#				day = 26
+			}
+			set_global_flag = independence_from_byz
+			set_global_flag = independence_from_byz_achieved
+		}
+		if = {
+			limit = {
 				year = 1077
 			}
 			set_global_flag = rum_formed
+			set_global_flag = rum_invaded_nikaea
 			k_anatolia = {
 				any_direct_de_jure_vassal_title = {
 					de_jure_liege = k_rum
@@ -221,7 +233,7 @@ character_event = {
 	is_triggered_only = yes
 
 	trigger = {
-		nor = {
+		not = {
 			trait = poor_warrior
 			trait = trained_warrior
 			trait = skilled_warrior
@@ -377,10 +389,10 @@ character_event = {
 		capital_scope = {
 			any_province_holding = {
 				or = {
-					holding_type = castle
+					is_feudal = yes
 					and = {
 						ROOT = { religion_group = muslim }
-						holding_type = temple
+						is_theocracy = yes
 					}
 				}
 				holder_scope = {
@@ -399,10 +411,10 @@ character_event = {
 			random_province_holding = {
 				limit = {
 					or = {
-						holding_type = castle
+						is_feudal = yes
 						and = {
 							ROOT = { religion_group = muslim }
-							holding_type = temple
+							is_theocracy = yes
 						}
 					}
 					holder_scope = {
@@ -415,7 +427,7 @@ character_event = {
 					PREV = { grant_title_no_opinion = ROOT }
 					if = {
 						limit = {
-							nor = {
+							not = {
 								num_of_titles = 1
 								is_councillor = yes
 							}
@@ -427,7 +439,7 @@ character_event = {
 		}
 
 		# Tail-recurse
-		repeat_event = { id = emf_startup.11 }
+		character_event = { id = emf_startup.11 }
 	}
 }
 
@@ -529,7 +541,7 @@ character_event = {
 		}
 
 		# Tail-recurse
-		repeat_event = { id = emf_startup.12 }
+		character_event = { id = emf_startup.12 }
 	}
 }
 
@@ -613,7 +625,7 @@ character_event = {
 		}
 
 		# Tail-recurse
-		repeat_event = { id = emf_startup.13 }
+		character_event = { id = emf_startup.13 }
 	}
 }
 
