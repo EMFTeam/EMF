@@ -16,17 +16,11 @@ character_event = {
 	is_triggered_only = yes
 	
 	trigger = {
+		is_landed = yes
+		higher_real_tier_than = COUNT
 		is_nomadic = no
-		higher_tier_than = COUNT
 		num_of_vassals = 1
-		any_vassal = {
-			OR = {
-				leads_faction = faction_court
-				leads_faction = faction_prosperity
-				leads_faction = faction_glory
-				leads_faction = faction_tradition
-			}
-		}
+		any_vassal = { pf_leader_trigger = yes }
 	}
 
 	immediate = {
@@ -2711,8 +2705,11 @@ character_event = {
 	hide_window = yes
 	is_triggered_only = yes
 	
+	only_playable = yes
+
 	trigger = {
-		is_ruler = yes
+		is_playable = yes
+		current_heir = { is_alive = yes }
 	}
 
 	immediate = {
@@ -2779,16 +2776,24 @@ character_event = {
 					opinion = { who = PREVPREV modifier = revolting_against years = 100 }
 					remove_opinion = { who = ROOT modifier = revolting_against }
 				}
-				any_independent_ruler = {
-					if = {
-						limit = { has_opinion_modifier = { who = ROOT modifier = revolting_against } }
-						opinion = { who = PREVPREV modifier = revolting_against years = 100 }
-						remove_opinion = { who = ROOT modifier = revolting_against }
+				any_title = {
+					limit = {
+						has_holder = yes
+						is_primary_holder_title = yes
+						rebel = no
+						holder_scope = { liege = { character = PREV } }
 					}
-					any_realm_character = {
-						limit = { has_opinion_modifier = { who = ROOT modifier = revolting_against } }
-						opinion = { who = PREVPREVPREV modifier = revolting_against years = 100 }
-						remove_opinion = { who = ROOT modifier = revolting_against }
+					holder_scope = {
+						if = {
+							limit = { has_opinion_modifier = { who = ROOT modifier = revolting_against } }
+							opinion = { who = PREVPREVPREV modifier = revolting_against years = 100 }
+							remove_opinion = { who = ROOT modifier = revolting_against }
+						}
+						any_realm_character = {
+							limit = { has_opinion_modifier = { who = ROOT modifier = revolting_against } }
+							opinion = { who = PREVPREVPREVPREV modifier = revolting_against years = 100 }
+							remove_opinion = { who = ROOT modifier = revolting_against }
+						}
 					}
 				}
 			}
@@ -2869,6 +2874,9 @@ character_event = {
 }
 
 # GRANT_LANDED_TITLE_INTERACTION_ACCEPT_EVENT - updates faction response to a granted title
+#
+# ROOT = Granted Title
+# FROM = Granter
 character_event = {
 	id = PlusFaction.211
 
@@ -2880,7 +2888,9 @@ character_event = {
 	}
 }
 
-# Faction pleased due to title granted to one of their members
+# Faction pleased due to title granted to one of their members [Granter of Title]
+#
+# FROM = Granted Title
 character_event = {
 	id = PlusFaction.212
 	
@@ -2890,35 +2900,23 @@ character_event = {
 	immediate = {
 		#save the title and new holder as event targets
 		FROM = {
-			save_event_target_as = new_title
-			holder_scope = { save_event_target_as = new_owner }
+			save_event_target_as = pf_new_title
+			holder_scope = { save_event_target_as = pf_new_owner }
 		}
 		#claimants to the granted title who aren't close relatives of the new owner are displeased
-		event_target:new_title = {
+		event_target:pf_new_title = {
 			any_claimant = {
 				limit = {
 					NOR = {
 						character = ROOT
-						character = event_target:new_owner
-						is_close_relative = event_target:new_owner
+						character = event_target:pf_new_owner
+						is_close_relative = event_target:pf_new_owner
 					}
 					OR = {
-						AND = {
-							is_female = no
-							ROOT = {
-								NOR = {
-									has_law = enatic_succession
-									has_law = enatic_cognatic_succession
-								}
-							}
-						}
-						AND = {
-							is_female = yes
-							ROOT = {
-								NOR = {
-									has_law = agnatic_succession
-									has_law = cognatic_succession
-								}
+						is_female = no
+						ROOT = {
+							succ_law_title = {
+								has_law = true_cognatic_succession
 							}
 						}
 					}
@@ -2937,7 +2935,7 @@ character_event = {
 		#members of the same faction as the new holder are pleased, based on the tier of the title
 		if = {
 			limit = {
-				event_target:new_owner = {
+				event_target:pf_new_owner = {
 					OR = {
 						leads_faction = faction_court
 						in_faction = faction_court
@@ -2947,22 +2945,26 @@ character_event = {
 			ROOT = {
 				any_vassal = {
 					limit = {
-						NOT = { character = event_target:new_owner }
+						NOT = { character = event_target:pf_new_owner }
 						OR = {
 							leads_faction = faction_court
 							in_faction = faction_court
 						}
 					}
 					if = {
-						limit = { event_target:new_title = { tier = COUNT } }
+						limit = { event_target:pf_new_title = { tier = BARON } }
+						opinion = { who = ROOT modifier = faction_approve_title_grant years = 3 }
+					}
+					if = {
+						limit = { event_target:pf_new_title = { tier = COUNT } }
 						opinion = { who = ROOT modifier = faction_approve_title_grant multiplier = 2 years = 3 }
 					}
 					if = {
-						limit = { event_target:new_title = { tier = DUKE } }
+						limit = { event_target:pf_new_title = { tier = DUKE } }
 						opinion = { who = ROOT modifier = faction_approve_title_grant multiplier = 4 years = 3 }
 					}
 					if = {
-						limit = { event_target:new_title = { tier = KING } }
+						limit = { event_target:pf_new_title = { tier = KING } }
 						opinion = { who = ROOT modifier = faction_approve_title_grant multiplier = 6 years = 3 }
 					}
 				}
@@ -2971,7 +2973,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:new_owner = {
+				event_target:pf_new_owner = {
 					OR = {
 						leads_faction = faction_prosperity
 						in_faction = faction_prosperity
@@ -2981,22 +2983,26 @@ character_event = {
 			ROOT = {
 				any_vassal = {
 					limit = {
-						NOT = { character = event_target:new_owner }
+						NOT = { character = event_target:pf_new_owner }
 						OR = {
 							leads_faction = faction_prosperity
 							in_faction = faction_prosperity
 						}
 					}
 					if = {
-						limit = { event_target:new_title = { tier = COUNT } }
+						limit = { event_target:pf_new_title = { tier = BARON } }
+						opinion = { who = ROOT modifier = faction_approve_title_grant years = 3 }
+					}
+					if = {
+						limit = { event_target:pf_new_title = { tier = COUNT } }
 						opinion = { who = ROOT modifier = faction_approve_title_grant multiplier = 2 years = 3 }
 					}
 					if = {
-						limit = { event_target:new_title = { tier = DUKE } }
+						limit = { event_target:pf_new_title = { tier = DUKE } }
 						opinion = { who = ROOT modifier = faction_approve_title_grant multiplier = 4 years = 3 }
 					}
 					if = {
-						limit = { event_target:new_title = { tier = KING } }
+						limit = { event_target:pf_new_title = { tier = KING } }
 						opinion = { who = ROOT modifier = faction_approve_title_grant multiplier = 6 years = 3 }
 					}
 				}
@@ -3005,7 +3011,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:new_owner = {
+				event_target:pf_new_owner = {
 					OR = {
 						leads_faction = faction_glory
 						in_faction = faction_glory
@@ -3015,23 +3021,27 @@ character_event = {
 			ROOT = {
 				any_vassal = {
 					limit = {
-						NOT = { character = event_target:new_owner }
+						NOT = { character = event_target:pf_new_owner }
 						OR = {
 							leads_faction = faction_glory
 							in_faction = faction_glory
 						}
 					}
 					if = {
-						limit = { event_target:new_title = { tier = COUNT } }
-						opinion = { who = ROOT modifier = faction_approve_title_grant multiplier = 2 years = 5 }
+						limit = { event_target:pf_new_title = { tier = BARON } }
+						opinion = { who = ROOT modifier = faction_approve_title_grant years = 3 }
 					}
 					if = {
-						limit = { event_target:new_title = { tier = DUKE } }
-						opinion = { who = ROOT modifier = faction_approve_title_grant multiplier = 4 years = 5 }
+						limit = { event_target:pf_new_title = { tier = COUNT } }
+						opinion = { who = ROOT modifier = faction_approve_title_grant multiplier = 2 years = 3 }
 					}
 					if = {
-						limit = { event_target:new_title = { tier = KING } }
-						opinion = { who = ROOT modifier = faction_approve_title_grant multiplier = 6 years = 5 }
+						limit = { event_target:pf_new_title = { tier = DUKE } }
+						opinion = { who = ROOT modifier = faction_approve_title_grant multiplier = 4 years = 3 }
+					}
+					if = {
+						limit = { event_target:pf_new_title = { tier = KING } }
+						opinion = { who = ROOT modifier = faction_approve_title_grant multiplier = 6 years = 3 }
 					}
 				}
 				character_event = { id = PlusFaction.200 days = 1 } #fire maintenance event to recalculate moods
@@ -3039,7 +3049,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:new_owner = {
+				event_target:pf_new_owner = {
 					OR = {
 						leads_faction = faction_tradition
 						in_faction = faction_tradition
@@ -3049,23 +3059,27 @@ character_event = {
 			ROOT = {
 				any_vassal = {
 					limit = {
-						NOT = { character = event_target:new_owner }
+						NOT = { character = event_target:pf_new_owner }
 						OR = {
 							leads_faction = faction_tradition
 							in_faction = faction_tradition
 						}
 					}
 					if = {
-						limit = { event_target:new_title = { tier = COUNT } }
-						opinion = { who = ROOT modifier = faction_approve_title_grant multiplier = 2 years = 5 }
+						limit = { event_target:pf_new_title = { tier = BARON } }
+						opinion = { who = ROOT modifier = faction_approve_title_grant years = 3 }
 					}
 					if = {
-						limit = { event_target:new_title = { tier = DUKE } }
-						opinion = { who = ROOT modifier = faction_approve_title_grant multiplier = 4 years = 5 }
+						limit = { event_target:pf_new_title = { tier = COUNT } }
+						opinion = { who = ROOT modifier = faction_approve_title_grant multiplier = 2 years = 3 }
 					}
 					if = {
-						limit = { event_target:new_title = { tier = KING } }
-						opinion = { who = ROOT modifier = faction_approve_title_grant multiplier = 6 years = 5 }
+						limit = { event_target:pf_new_title = { tier = DUKE } }
+						opinion = { who = ROOT modifier = faction_approve_title_grant multiplier = 4 years = 3 }
+					}
+					if = {
+						limit = { event_target:pf_new_title = { tier = KING } }
+						opinion = { who = ROOT modifier = faction_approve_title_grant multiplier = 6 years = 3 }
 					}
 				}
 				character_event = { id = PlusFaction.200 days = 1 } #fire maintenance event to recalculate moods
