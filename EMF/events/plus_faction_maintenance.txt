@@ -9,7 +9,7 @@ namespace = PlusFaction
 ##################################
 
 # PlusFaction.200 [Liege]
-# On-demand / mood-swing faction maintenance event
+# On-demand faction maintenance event
 character_event = {
 	id = PlusFaction.200
 	
@@ -17,9 +17,9 @@ character_event = {
 	is_triggered_only = yes
 	
 	trigger = {
-		is_landed = yes
-		higher_real_tier_than = COUNT
+		higher_tier_than = COUNT
 		is_nomadic = no
+		is_landed = yes
 		num_of_vassals = 1
 		any_vassal = { pf_leader_trigger = yes }
 	}
@@ -31,6 +31,7 @@ character_event = {
 	}
 }
 
+# PlusFaction.201 [Liege & His Court Faction Members]
 # Notification of court faction mood change
 character_event = {
 	id = PlusFaction.201
@@ -76,6 +77,7 @@ character_event = {
 	}
 }
 
+# PlusFaction.202 [Liege & His Prosperity Faction Members]
 # Notification of prosperity faction mood change
 character_event = {
 	id = PlusFaction.202
@@ -121,6 +123,7 @@ character_event = {
 	}
 }
 
+# PlusFaction.203 [Liege & His Glory Faction Members]
 # Notification of glory faction mood change
 character_event = {
 	id = PlusFaction.203
@@ -166,6 +169,7 @@ character_event = {
 	}
 }
 
+# PlusFaction.204 [Liege & His Tradition Faction Members]
 # Notification of tradition faction mood change
 character_event = {
 	id = PlusFaction.204
@@ -385,6 +389,7 @@ character_event = {
 	}
 }
 
+# PlusFaction.211 [Granted Title]
 # GRANT_LANDED_TITLE_INTERACTION_ACCEPT_EVENT - updates faction response to a granted title
 #
 # ROOT = Granted Title
@@ -400,7 +405,8 @@ character_event = {
 	}
 }
 
-# Faction pleased due to title granted to one of their members [Granter of Title]
+# PlusFaction.211 [Granter of Title]
+# Faction pleased due to title granted to one of their members
 #
 # FROM = Granted Title
 character_event = {
@@ -600,7 +606,6 @@ character_event = {
 	}
 }
 
-
 # PlusFaction.220 [Liege]
 # Annual faction maintenance event <MTTH>
 character_event = {
@@ -611,11 +616,19 @@ character_event = {
 	has_character_modifier = pf_maintenance_timer
 	
 	trigger = {
-		higher_real_tier_than = COUNT
+		higher_tier_than = COUNT
 		is_nomadic = no
 		is_landed = yes
-		num_of_vassals = 1
 		any_vassal = { pf_leader_trigger = yes }
+	}
+
+	mean_time_to_happen = {
+		days = 1
+
+		modifier = {
+			factor = 0.01
+			always = yes
+		}
 	}
 
 	immediate = {
@@ -732,7 +745,7 @@ character_event = {
 			}
 		}
 
-		#remove any [invalid] faction_mood increase/decrease on non-faction leaders
+		#remove any [invalid] faction_mood increase/decrease on non-faction-leaders
 		if = {
 			limit = {
 				pf_leader_trigger = no
@@ -768,15 +781,16 @@ character_event = {
 	is_triggered_only = yes
 
 	immediate = {
+
+		# Optimization notes for the future: At least for AI lieges, first subtract
+		# faction_mood_decrease from faction_mood_increase to reduce the number of
+		# opinion modifiers in play. [Only matters if AI on-demand effects are
+		# queued for processing in batch manually.]
+
 		#make any one-time adjustments to faction opinions (fired from events & decisions)
 		any_vassal = {
 			limit = {
-				OR = {
-					leads_faction = faction_court
-					leads_faction = faction_prosperity
-					leads_faction = faction_glory
-					leads_faction = faction_tradition
-				}
+				pf_leader_trigger = yes
 				OR = {
 					check_variable = { which = "faction_mood_increase" value = 0.5 }
 					check_variable = { which = "faction_mood_decrease" value = 0.5 }
@@ -863,26 +877,7 @@ character_event = {
 				opinion = { who = ROOT modifier = faction_displeased multiplier = 10 years = 6 }
 			}
 			any_faction_backer = {
-				limit = {
-					OR = {
-						AND = {
-							PREV = { leads_faction = faction_court }
-							in_faction = faction_court
-						}
-						AND = {
-							PREV = { leads_faction = faction_prosperity }
-							in_faction = faction_prosperity
-						}
-						AND = {
-							PREV = { leads_faction = faction_glory }
-							in_faction = faction_glory
-						}
-						AND = {
-							PREV = { leads_faction = faction_tradition }
-							in_faction = faction_tradition
-						}
-					}
-				}
+				limit = { pf_my_faction_backer_trigger = yes }
 				if = {
 					limit = { PREV = { is_variable_equal = { which = "faction_mood_increase" value = 1 } } }
 					opinion = { who = ROOT modifier = faction_pleased years = 3 }
