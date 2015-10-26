@@ -12,7 +12,6 @@ namespace = PlusFaction
 # On-demand faction maintenance event
 character_event = {
 	id = PlusFaction.200
-	
 	hide_window = yes
 	is_triggered_only = yes
 	
@@ -20,8 +19,7 @@ character_event = {
 		higher_tier_than = COUNT
 		is_nomadic = no
 		is_landed = yes
-		num_of_vassals = 1
-		any_vassal = { pf_leader_trigger = yes }
+		any_vassal = { pf_member_trigger = yes }
 	}
 
 	immediate = {
@@ -215,7 +213,7 @@ character_event = {
 	}
 }
 
-# PlusFaction.205 [Dying Liege]
+# PlusFaction.205 [Dying Liege and/or Revolter]
 # Faction maintenance on character death
 character_event = {
 	id = PlusFaction.205
@@ -259,7 +257,7 @@ character_event = {
 			current_heir = { set_character_flag = faction_religious_war }
 		}
 
-		#if currently in a civil war against our liege...
+		# pass on any civil war state we may versus *OUR* liege
 		if = {
 			limit = {
 				trait = rebel
@@ -269,11 +267,22 @@ character_event = {
 				}
 			}
 			current_heir = { add_trait = rebel }
+			remove_trait = rebel
 			any_opinion_modifier_target = {
 				limit = {
 					reverse_has_opinion_modifier = {
 						who = ROOT
 						modifier = revolting_against
+					}
+					NOT = { # Be extra defensive about not stacking these TOMs
+						ROOT = {
+							current_heir = {
+								has_opinion_modifier = {
+									who = PREVPREV
+									modifier = revolting_against
+								}
+							}
+						}
 					}
 				}
 				ROOT = {
@@ -284,19 +293,24 @@ character_event = {
 							years = 100
 						}
 					}
-					remove_opinion = { who = PREV modifier = revolting_against }
 				}
-			}			
+			}
 		}
 		
-		#update opinions of rebels who are now rebelling against the heir
+		# update opinions of rebels who will now be rebelling against our heir
+		# (i.e., those who are currently rebelling against *US*)
 		any_current_enemy = {
 			limit = { has_opinion_modifier = { who = ROOT modifier = revolting_against } }
 			ROOT = {
 				current_heir = {
 					if = {
-						limit = { # Ensure that we don't stack these TOMs
-							not = { reverse_has_opinion_modifier = { who = PREVPREV modifier = revolting_against } }
+						limit = {
+							NOT = { # Again, never stack these TOMs
+								reverse_has_opinion_modifier = {
+									who = PREVPREV
+									modifier = revolting_against
+								}
+							}
 						}
 						reverse_opinion = {
 							who = PREVPREV
@@ -312,7 +326,12 @@ character_event = {
 					current_heir = {
 						if = {
 							limit = {
-								not = { reverse_has_opinion_modifier = { who = PREVPREV modifier = revolting_against } }
+								NOT = { # /me cues recording about never stacking TOMs
+									reverse_has_opinion_modifier = {
+										who = PREVPREV
+										modifier = revolting_against
+									}
+								}
 							}
 							reverse_opinion = {
 								who = PREVPREV
@@ -408,24 +427,22 @@ character_event = {
 # FROM = Granter
 character_event = {
 	id = PlusFaction.211
-
-	is_triggered_only = yes
 	hide_window = yes
+	is_triggered_only = yes
 
 	immediate = {
 		FROM = { character_event = { id = PlusFaction.212 days = 1 } }
 	}
 }
 
-# PlusFaction.211 [Granter of Title]
+# PlusFaction.212 [Granter of Title]
 # Faction pleased due to title granted to one of their members
 #
 # FROM = Granted Title
 character_event = {
 	id = PlusFaction.212
-	
-	is_triggered_only = yes
 	hide_window = yes
+	is_triggered_only = yes
 	
 	immediate = {
 		#save the title and new holder as event targets
@@ -631,17 +648,10 @@ character_event = {
 		higher_tier_than = COUNT
 		is_nomadic = no
 		is_landed = yes
-		any_vassal = { pf_leader_trigger = yes }
+		any_vassal = { pf_member_trigger = yes }
 	}
 
-	mean_time_to_happen = {
-		days = 1
-
-		modifier = {
-			factor = 0.01
-			always = yes
-		}
-	}
+	# NOTE: Intentionally no MTTH clause, should deterministically always trigger
 
 	immediate = {
 		# Clear the maintenance timer (just a handy MTTH event pre-trigger optimization)
@@ -681,7 +691,7 @@ character_event = {
 		#count the number of votes in each faction
 
 		any_vassal = {
-			limit = { pf_member_court_trigger = yes }
+			limit = { in_faction = faction_court }
 			if = {
 				limit = { real_tier = BARON }
 				ROOT = { change_variable = { which = "faction_votes_court" value = 1 } }
@@ -700,7 +710,7 @@ character_event = {
 			}
 		}
 		any_vassal = {
-			limit = { pf_member_prosperity_trigger = yes }
+			limit = { in_faction = faction_prosperity }
 			if = {
 				limit = { real_tier = BARON }
 				ROOT = { change_variable = { which = "faction_votes_prosperity" value = 1 } }
@@ -719,7 +729,7 @@ character_event = {
 			}
 		}
 		any_vassal = {
-			limit = { pf_member_glory_trigger = yes }
+			limit = { in_faction = faction_glory }
 			if = {
 				limit = { real_tier = BARON }
 				ROOT = { change_variable = { which = "faction_votes_glory" value = 1 } }
@@ -738,7 +748,7 @@ character_event = {
 			}
 		}
 		any_vassal = {
-			limit = { pf_member_tradition_trigger = yes }
+			limit = { in_faction = faction_tradition }
 			if = {
 				limit = { real_tier = BARON }
 				ROOT = { change_variable = { which = "faction_votes_tradition" value = 1 } }
@@ -1104,12 +1114,12 @@ character_event = {
 			limit = { has_law = tribal_organization_0 }
 			#court factions approve
 			any_vassal = {
-				limit = { pf_member_court_trigger = yes }
+				limit = { in_faction = faction_court }
 				opinion = { who = ROOT modifier = faction_approve_TO months = 14 }
 			}
 			#prosperity factions disapprove
 			any_vassal = {
-				limit = { pf_member_prosperity_trigger = yes }
+				limit = { in_faction = faction_prosperity }
 				opinion = { who = ROOT modifier = faction_disapprove_TO months = 14 }
 			}
 		}
@@ -1118,7 +1128,7 @@ character_event = {
 			limit = { has_law = tribal_organization_1 }
 			#court factions disapprove
 			any_vassal = {
-				limit = { pf_member_court_trigger = yes }
+				limit = { in_faction = faction_court }
 				opinion = { who = ROOT modifier = faction_disapprove_TO months = 14 }
 			}
 		}
@@ -1127,7 +1137,7 @@ character_event = {
 			limit = { has_law = tribal_organization_2 }
 			# court factions disapprove
 			any_vassal = {
-				limit = { pf_member_court_trigger = yes }
+				limit = { in_faction = faction_court }
 				opinion = { who = ROOT modifier = faction_disapprove_TO months = 14 }
 			}
 		}
@@ -1136,17 +1146,17 @@ character_event = {
 			limit = { has_law = tribal_organization_3 }
 			# court factions really disapprove
 			any_vassal = {
-				limit = { pf_member_court_trigger = yes }
+				limit = { in_faction = faction_court }
 				opinion = { who = ROOT modifier = faction_disapprove_TO multiplier = 2 months = 14 }
 			}
 			# tradition factions disapprove
 			any_vassal = {
-				limit = { pf_member_tradition_trigger = yes }
+				limit = { in_faction = faction_tradition }
 				opinion = { who = ROOT modifier = faction_disapprove_TO months = 14 }
 			}
 			# prosperity factions approve
 			any_vassal = {
-				limit = { pf_member_prosperity_trigger = yes }
+				limit = { in_faction = faction_prosperity }
 				opinion = { who = ROOT modifier = faction_approve_TO months = 14 }
 			}
 		}
@@ -1155,17 +1165,17 @@ character_event = {
 			limit = { has_law = tribal_organization_4 }
 			#court factions really disapprove
 			any_vassal = {
-				limit = { pf_member_court_trigger = yes }
+				limit = { in_faction = faction_court }
 				opinion = { who = ROOT modifier = faction_disapprove_TO multiplier = 3 months = 14 }
 			}
 			#tradition factions disapprove
 			any_vassal = {
-				limit = { pf_member_tradition_trigger = yes }
+				limit = { in_faction = faction_tradition }
 				opinion = { who = ROOT modifier = faction_disapprove_TO months = 14 }
 			}
 			#prosperity factions really approve
 			any_vassal = {
-				limit = { pf_member_prosperity_trigger = yes }
+				limit = { in_faction = faction_prosperity }
 				opinion = { who = ROOT modifier = faction_approve_TO multiplier = 2 months = 14 }
 			}
 		}							
@@ -1181,8 +1191,8 @@ character_event = {
 			any_vassal = {
 				limit = {
 					OR = {
-						pf_member_court_trigger = yes
-						pf_member_glory_trigger = yes
+						in_faction = faction_court
+						in_faction = faction_glory
 					}
 				}
 				opinion = { who = ROOT modifier = faction_approve_obligations months = 14 }
@@ -1192,7 +1202,7 @@ character_event = {
 		if = {
 			limit = { has_law = feudal_obligations_2 }
 			any_vassal = {
-				limit = { pf_member_court_trigger = yes }
+				limit = { in_faction = faction_court }
 				opinion = { who = ROOT modifier = faction_disapprove_obligations months = 14 }
 			}
 		}
@@ -1200,11 +1210,11 @@ character_event = {
 		if = {
 			limit = { has_law = feudal_obligations_3 }
 			any_vassal = {
-				limit = { pf_member_court_trigger = yes }
+				limit = { in_faction = faction_court }
 				opinion = { who = ROOT modifier = faction_disapprove_obligations multiplier = 2 months = 14 }
 			}
 			any_vassal = {
-				limit = { pf_member_glory_trigger = yes }
+				limit = { in_faction = faction_glory }
 				opinion = { who = ROOT modifier = faction_disapprove_obligations months = 14 }
 			}
 		}
@@ -1212,15 +1222,15 @@ character_event = {
 		if = {
 			limit = { has_law = feudal_obligations_4 }
 			any_vassal = {
-				limit = { pf_member_court_trigger = yes }
+				limit = { in_faction = faction_court }
 				opinion = { who = ROOT modifier = faction_disapprove_obligations multiplier = 3 months = 14 }
 			}
 			any_vassal = {
-				limit = { pf_member_glory_trigger = yes }
+				limit = { in_faction = faction_glory }
 				opinion = { who = ROOT modifier = faction_disapprove_obligations multiplier = 2 months = 14 }
 			}
 			any_vassal = {
-				limit = { pf_member_prosperity_trigger = yes }
+				limit = { in_faction = faction_prosperity }
 				opinion = { who = ROOT modifier = faction_disapprove_obligations months = 14 }
 			}
 		}			
@@ -1228,7 +1238,7 @@ character_event = {
 		if = {
 			limit = { has_law = temple_obligations_0 }
 			any_vassal = {
-				limit = { pf_member_tradition_trigger = yes }
+				limit = { in_faction = faction_tradition }
 				opinion = { who = ROOT modifier = faction_approve_obligations months = 14 }
 			}
 		}
@@ -1236,7 +1246,7 @@ character_event = {
 		if = {
 			limit = { has_law = temple_obligations_2 }
 			any_vassal = {
-				limit = { pf_member_tradition_trigger = yes }
+				limit = { in_faction = faction_tradition }
 				opinion = { who = ROOT modifier = faction_disapprove_obligations months = 14 }
 			}
 		}
@@ -1244,7 +1254,7 @@ character_event = {
 		if = {
 			limit = { has_law = temple_obligations_3 }
 			any_vassal = {
-				limit = { pf_member_tradition_trigger = yes }
+				limit = { in_faction = faction_tradition }
 				opinion = { who = ROOT modifier = faction_disapprove_obligations multiplier = 2 months = 14 }
 			}
 		}
@@ -1252,11 +1262,11 @@ character_event = {
 		if = {
 			limit = { has_law = temple_obligations_4 }
 			any_vassal = {
-				limit = { pf_member_tradition_trigger = yes }
+				limit = { in_faction = faction_tradition }
 				opinion = { who = ROOT modifier = faction_disapprove_obligations multiplier = 3 months = 14 }
 			}
 			any_vassal = {
-				limit = { pf_member_prosperity_trigger = yes }
+				limit = { in_faction = faction_prosperity }
 				opinion = { who = ROOT modifier = faction_disapprove_obligations months = 14 }
 			}
 		}
@@ -1264,7 +1274,7 @@ character_event = {
 		if = {
 			limit = { has_law = city_obligations_0 }
 			any_vassal = {
-				limit = { pf_member_prosperity_trigger = yes }
+				limit = { in_faction = faction_prosperity }
 				opinion = { who = ROOT modifier = faction_approve_obligations months = 14 }
 			}
 		}
@@ -1272,7 +1282,7 @@ character_event = {
 		if = {
 			limit = { has_law = city_obligations_2 }
 			any_vassal = {
-				limit = { pf_member_prosperity_trigger = yes }
+				limit = { in_faction = faction_prosperity }
 				opinion = { who = ROOT modifier = faction_disapprove_obligations months = 14 }
 			}
 		}
@@ -1280,7 +1290,7 @@ character_event = {
 		if = {
 			limit = { has_law = city_obligations_3 }
 			any_vassal = {
-				limit = { pf_member_prosperity_trigger = yes }
+				limit = { in_faction = faction_prosperity }
 				opinion = { who = ROOT modifier = faction_disapprove_obligations multiplier = 2 months = 14 }
 			}
 		}
@@ -1288,7 +1298,7 @@ character_event = {
 		if = {
 			limit = { has_law = city_obligations_4 }
 			any_vassal = {
-				limit = { pf_member_prosperity_trigger = yes }
+				limit = { in_faction = faction_prosperity }
 				opinion = { who = ROOT modifier = faction_disapprove_obligations multiplier = 3 months = 14 }
 			}
 		}
@@ -1298,8 +1308,8 @@ character_event = {
 			any_vassal = {
 				limit = {
 					OR = {
-						pf_member_court_trigger = yes
-						pf_member_glory_trigger = yes
+						in_faction = faction_court
+						in_faction = faction_glory
 					}
 				}
 				opinion = { who = ROOT modifier = faction_approve_obligations months = 14 }
@@ -1309,7 +1319,7 @@ character_event = {
 		if = {
 			limit = { has_law = iqta_obligations_2 }
 			any_vassal = {
-				limit = { pf_member_court_trigger = yes }
+				limit = { in_faction = faction_court }
 				opinion = { who = ROOT modifier = faction_disapprove_obligations months = 14 }
 			}
 		}
@@ -1317,11 +1327,11 @@ character_event = {
 		if = {
 			limit = { has_law = iqta_obligations_3 }
 			any_vassal = {
-				limit = { pf_member_court_trigger = yes }
+				limit = { in_faction = faction_court }
 				opinion = { who = ROOT modifier = faction_disapprove_obligations multiplier = 2 months = 14 }
 			}
 			any_vassal = {
-				limit = { pf_member_glory_trigger = yes }
+				limit = { in_faction = faction_glory }
 				opinion = { who = ROOT modifier = faction_disapprove_obligations months = 14 }
 			}
 		}
@@ -1329,15 +1339,15 @@ character_event = {
 		if = {
 			limit = { has_law = iqta_obligations_4 }
 			any_vassal = {
-				limit = { pf_member_court_trigger = yes }
+				limit = { in_faction = faction_court }
 				opinion = { who = ROOT modifier = faction_disapprove_obligations multiplier = 3 months = 14 }
 			}
 			any_vassal = {
-				limit = { pf_member_glory_trigger = yes }
+				limit = { in_faction = faction_glory }
 				opinion = { who = ROOT modifier = faction_disapprove_obligations multiplier = 2 months = 14 }
 			}
 			any_vassal = {
-				limit = { pf_member_prosperity_trigger = yes }
+				limit = { in_faction = faction_prosperity }
 				opinion = { who = ROOT modifier = faction_disapprove_obligations months = 14 }
 			}
 		}
@@ -1348,8 +1358,8 @@ character_event = {
 				limit = {
 					is_tribal = yes
 					OR = {
-						pf_member_court_trigger = yes
-						pf_member_glory_trigger = yes
+						in_faction = faction_court
+						in_faction = faction_glory
 					}
 				}
 				opinion = { who = ROOT modifier = faction_approve_obligations months = 14 }
@@ -1361,7 +1371,7 @@ character_event = {
 			any_vassal = {
 				limit = {
 					is_tribal = yes
-					pf_member_court_trigger = yes
+					in_faction = faction_court
 				}
 				opinion = { who = ROOT modifier = faction_disapprove_obligations months = 14 }
 			}
@@ -1372,14 +1382,14 @@ character_event = {
 			any_vassal = {
 				limit = {
 					is_tribal = yes
-					pf_member_court_trigger = yes
+					in_faction = faction_court
 				}
 				opinion = { who = ROOT modifier = faction_disapprove_obligations multiplier = 2 months = 14 }
 			}
 			any_vassal = {
 				limit = {
 					is_tribal = yes
-					pf_member_glory_trigger = yes
+					in_faction = faction_glory
 				}
 				opinion = { who = ROOT modifier = faction_disapprove_obligations months = 14 }
 			}
@@ -1390,21 +1400,21 @@ character_event = {
 			any_vassal = {
 				limit = {
 					is_tribal = yes
-					pf_member_court_trigger = yes
+					in_faction = faction_court
 				}
 				opinion = { who = ROOT modifier = faction_disapprove_obligations multiplier = 3 months = 14 }
 			}
 			any_vassal = {
 				limit = {
 					is_tribal = yes
-					pf_member_glory_trigger = yes
+					in_faction = faction_glory
 				}
 				opinion = { who = ROOT modifier = faction_disapprove_obligations multiplier = 2 months = 14 }
 			}
 			any_vassal = {
 				limit = {
 					is_tribal = yes
-					pf_member_prosperity_trigger = yes
+					in_faction = faction_prosperity
 				}
 				opinion = { who = ROOT modifier = faction_disapprove_obligations months = 14 }
 			}
@@ -1421,7 +1431,7 @@ character_event = {
 			any_vassal = {
 				limit = {
 					is_councillor = no
-					pf_member_court_trigger = yes
+					in_faction = faction_court
 				}
 				opinion = { who = ROOT modifier = faction_disapprove_council months = 14 }
 			}
@@ -1430,7 +1440,7 @@ character_event = {
 		if = {
 			limit = { pf_councillor_court_trigger = yes }
 			any_vassal = {
-				limit = { pf_member_court_trigger = yes }
+				limit = { in_faction = faction_court }
 				opinion = { who = ROOT modifier = faction_approve_council months = 14 }
 			}
 		}
@@ -1440,7 +1450,7 @@ character_event = {
 			any_vassal = {
 				limit = {
 					is_councillor = no
-					pf_member_prosperity_trigger = yes
+					in_faction = faction_prosperity
 				}
 				opinion = { who = ROOT modifier = faction_disapprove_council months = 14 }
 			}
@@ -1449,7 +1459,7 @@ character_event = {
 		if = {
 			limit = { pf_councillor_prosperity_trigger = yes }
 			any_vassal = {
-				limit = { pf_member_prosperity_trigger = yes }
+				limit = { in_faction = faction_prosperity }
 				opinion = { who = ROOT modifier = faction_approve_council months = 14 }
 			}
 		}
@@ -1459,7 +1469,7 @@ character_event = {
 			any_vassal = {
 				limit = {
 					is_councillor = no
-					pf_member_glory_trigger = yes
+					in_faction = faction_glory
 				}
 				opinion = { who = ROOT modifier = faction_disapprove_council months = 14 }
 			}
@@ -1468,7 +1478,7 @@ character_event = {
 		if = {
 			limit = { pf_councillor_glory_trigger = yes }
 			any_vassal = {
-				limit = { pf_member_glory_trigger = yes }
+				limit = { in_faction = faction_glory }
 				opinion = { who = ROOT modifier = faction_approve_council months = 14 }
 			}
 		}
@@ -1478,7 +1488,7 @@ character_event = {
 			any_vassal = {
 				limit = {
 					is_councillor = no
-					pf_member_tradition_trigger = yes
+					in_faction = faction_tradition
 				}
 				opinion = { who = ROOT modifier = faction_disapprove_council months = 14 }
 			}
@@ -1487,7 +1497,7 @@ character_event = {
 		if = {
 			limit = { pf_councillor_tradition_trigger = yes }
 			any_vassal = {
-				limit = { pf_member_tradition_trigger = yes }
+				limit = { in_faction = faction_tradition }
 				opinion = { who = ROOT modifier = faction_approve_council months = 14 }
 			}
 		}
@@ -1509,7 +1519,7 @@ character_event = {
 			any_vassal = {
 				limit = {
 					NOT = { religion_group = muslim }
-					pf_member_tradition_trigger = yes
+					in_faction = faction_tradition
 				}
 				opinion = { who = ROOT modifier = faction_disapprove_piety multiplier = 2 months = 14 }
 			}
@@ -1517,7 +1527,7 @@ character_event = {
 			any_vassal = {
 				limit = {
 					religion_group = muslim
-					pf_member_tradition_trigger = yes
+					in_faction = faction_tradition
 				}
 				opinion = { who = ROOT modifier = faction_disapprove_piety multiplier = 4 months = 14 }
 			}
@@ -1525,7 +1535,7 @@ character_event = {
 			any_vassal = {
 				limit = {
 					religion_group = muslim
-					pf_member_court_trigger = yes
+					in_faction = faction_court
 				}
 				opinion = { who = ROOT modifier = faction_disapprove_piety multiplier = 2 months = 14 }
 			}
@@ -1533,7 +1543,7 @@ character_event = {
 			any_vassal = {
 				limit = {
 					religion_group = muslim
-					pf_member_glory_trigger = yes
+					in_faction = faction_glory
 				}
 				opinion = { who = ROOT modifier = faction_disapprove_piety months = 14 }
 			}
@@ -1546,7 +1556,7 @@ character_event = {
 			}
 			#Tradition Faction approves
 			any_vassal = {
-				limit = { pf_member_tradition_trigger = yes }
+				limit = { in_faction = faction_tradition }
 				opinion = { who = ROOT modifier = faction_approve_piety months = 14 }
 			}
 		}
@@ -1555,7 +1565,7 @@ character_event = {
 			limit = { piety = 1000 }
 			#Tradition Faction approves more
 			any_vassal = {
-				limit = { pf_member_tradition_trigger = yes }
+				limit = { in_faction = faction_tradition }
 				opinion = { who = ROOT modifier = faction_approve_piety multiplier = 2 months = 14 }
 			}
 		}
@@ -1564,7 +1574,7 @@ character_event = {
 			limit = { pf_tradition_approved_war_trigger = yes }
 			#Tradition Faction approves more
 			any_vassal = {
-				limit = { pf_member_tradition_trigger = yes }
+				limit = { in_faction = faction_tradition }
 				opinion = { who = ROOT modifier = faction_approve_piety multiplier = 2 months = 14 }
 			}
 		}
@@ -1587,7 +1597,7 @@ character_event = {
 			}
 			#Prosperity faction disapproves
 			any_vassal = {
-				limit = { pf_member_prosperity_trigger = yes }
+				limit = { in_faction = faction_prosperity }
 				opinion = { who = ROOT modifier = faction_disapprove_debt multiplier = 2 months = 14 }
 			}
 		}
@@ -1599,7 +1609,7 @@ character_event = {
 			}
 			#Prosperity faction disapproves
 			any_vassal = {
-				limit = { pf_member_prosperity_trigger = yes }
+				limit = { in_faction = faction_prosperity }
 				opinion = { who = ROOT modifier = faction_disapprove_debt months = 14 }
 			}
 		}
@@ -1610,7 +1620,7 @@ character_event = {
 			}
 			#Prosperity faction disapproves
 			any_vassal = {
-				limit = { pf_member_prosperity_trigger = yes }
+				limit = { in_faction = faction_prosperity }
 				opinion = { who = ROOT modifier = faction_disapprove_debt months = 14 }
 			}
 		}
@@ -1621,7 +1631,7 @@ character_event = {
 			}
 			#Prosperity faction disapproves
 			any_vassal = {
-				limit = { pf_member_prosperity_trigger = yes }
+				limit = { in_faction = faction_prosperity }
 				opinion = { who = ROOT modifier = faction_disapprove_debt months = 14 }
 			}
 		}
@@ -1632,7 +1642,7 @@ character_event = {
 			}
 			#Prosperity faction disapproves
 			any_vassal = {
-				limit = { pf_member_prosperity_trigger = yes }
+				limit = { in_faction = faction_prosperity }
 				opinion = { who = ROOT modifier = faction_disapprove_debt months = 14 }
 			}
 		}
@@ -1654,7 +1664,7 @@ character_event = {
 			}
 			#Prosperity faction approves
 			any_vassal = {
-				limit = { pf_member_prosperity_trigger = yes }
+				limit = { in_faction = faction_prosperity }
 				opinion = { who = ROOT modifier = faction_approve_wealth months = 14 }
 			}
 		}
@@ -1675,7 +1685,7 @@ character_event = {
 			}
 			#Prosperity faction approves more
 			any_vassal = {
-				limit = { pf_member_prosperity_trigger = yes }
+				limit = { in_faction = faction_prosperity }
 				opinion = { who = ROOT modifier = faction_approve_wealth multiplier = 2 months = 14 }
 			}
 		}
@@ -1690,7 +1700,7 @@ character_event = {
 			limit = { NOT = { prestige = 0 } }
 			#Glory Faction disapproves
 			any_vassal = {
-				limit = { pf_member_glory_trigger = yes }
+				limit = { in_faction = faction_glory }
 				opinion = { who = ROOT modifier = faction_disapprove_prestige multiplier = 2 months = 14 }
 			}
 		}
@@ -1702,7 +1712,7 @@ character_event = {
 			}
 			#Glory Faction approves
 			any_vassal = {
-				limit = { pf_member_glory_trigger = yes }
+				limit = { in_faction = faction_glory }
 				opinion = { who = ROOT modifier = faction_approve_prestige months = 14 }
 			}
 		}
@@ -1713,7 +1723,7 @@ character_event = {
 			}
 			#Glory Faction approves more
 			any_vassal = {
-				limit = { pf_member_glory_trigger = yes }
+				limit = { in_faction = faction_glory }
 				opinion = { who = ROOT modifier = faction_approve_prestige multiplier = 2 months = 14 }
 			}
 		}
@@ -2102,7 +2112,7 @@ character_event = {
 			limit = {
 				OR = {
 					pf_leader_trigger = yes
-					pf_backer_trigger = yes
+					pf_member_trigger = yes
 				}
 			}
 
@@ -2186,28 +2196,28 @@ character_event = {
 
 			#then divide by the total number of votes in the faction and add that to the liege's mood variable
 			if = {
-				limit = { pf_member_court_trigger = yes }
+				limit = { in_faction = faction_court }
 				ROOT = {
 					divide_variable = { which = "faction_member_approval" which = "faction_votes_court" }
 					change_variable = { which = "faction_mood_court" which = "faction_member_approval" }
 				}
 			}
 			if = {
-				limit = { pf_member_prosperity_trigger = yes }
+				limit = { in_faction = faction_prosperity }
 				ROOT = {
 					divide_variable = { which = "faction_member_approval" which = "faction_votes_prosperity" }
 					change_variable = { which = "faction_mood_prosperity" which = "faction_member_approval" }
 				}
 			}
 			if = {
-				limit = { pf_member_glory_trigger = yes }
+				limit = { in_faction = faction_glory }
 				ROOT = {
 					divide_variable = { which = "faction_member_approval" which = "faction_votes_glory" }
 					change_variable = { which = "faction_mood_glory" which = "faction_member_approval" }
 				}
 			}
 			if = {
-				limit = { pf_member_tradition_trigger = yes }
+				limit = { in_faction = faction_tradition }
 				ROOT = {
 					divide_variable = { which = "faction_member_approval" which = "faction_votes_tradition" }
 					change_variable = { which = "faction_mood_tradition" which = "faction_member_approval" }
@@ -2218,7 +2228,7 @@ character_event = {
 		#Now determine the overall mood category of the faction and set the flag if it's different than before
 		#and notify the liege if it's actually changed (and only then, to avoid spam)
 		if = {
-			limit = { any_vassal = { pf_member_court_trigger = yes } }
+			limit = { any_vassal = { in_faction = faction_court } }
 			if = {
 				limit = {
 					check_variable = { which = "faction_mood_court" value = 75 }
@@ -2229,7 +2239,7 @@ character_event = {
 				clr_character_flag = faction_court_angry
 				character_event = { id = PlusFaction.201 days = 1 }
 				any_vassal = {
-					limit = { pf_member_court_trigger = yes }
+					limit = { in_faction = faction_court }
 					character_event = { id = PlusFaction.201 days = 1 }
 				}
 			}
@@ -2248,7 +2258,7 @@ character_event = {
 				clr_character_flag = faction_court_angry
 				character_event = { id = PlusFaction.201 days = 1 }
 				any_vassal = {
-					limit = { pf_member_court_trigger = yes }
+					limit = { in_faction = faction_court }
 					character_event = { id = PlusFaction.201 days = 1 }
 				}
 			}				
@@ -2263,7 +2273,7 @@ character_event = {
 				clr_character_flag = faction_court_angry
 				character_event = { id = PlusFaction.201 days = 1 }
 				any_vassal = {
-					limit = { pf_member_court_trigger = yes }
+					limit = { in_faction = faction_court }
 					character_event = { id = PlusFaction.201 days = 1 }
 				}
 			}
@@ -2277,13 +2287,13 @@ character_event = {
 				clr_character_flag = faction_court_happy
 				character_event = { id = PlusFaction.201 days = 1 }
 				any_vassal = {
-					limit = { pf_member_court_trigger = yes }
+					limit = { in_faction = faction_court }
 					character_event = { id = PlusFaction.201 days = 1 }
 				}
 			}
 		}
 		if = {
-			limit = { any_vassal = { pf_member_prosperity_trigger = yes } }
+			limit = { any_vassal = { in_faction = faction_prosperity } }
 			if = {
 				limit = {
 					check_variable = { which = "faction_mood_prosperity" value = 75 }
@@ -2294,7 +2304,7 @@ character_event = {
 				clr_character_flag = faction_prosperity_angry
 				character_event = { id = PlusFaction.202 days = 1 }
 				any_vassal = {
-					limit = { pf_member_prosperity_trigger = yes }
+					limit = { in_faction = faction_prosperity }
 					character_event = { id = PlusFaction.202 days = 1 }
 				}
 			}
@@ -2313,7 +2323,7 @@ character_event = {
 				clr_character_flag = faction_prosperity_angry
 				character_event = { id = PlusFaction.202 days = 1 }
 				any_vassal = {
-					limit = { pf_member_prosperity_trigger = yes }
+					limit = { in_faction = faction_prosperity }
 					character_event = { id = PlusFaction.202 days = 1 }
 				}
 			}
@@ -2328,7 +2338,7 @@ character_event = {
 				clr_character_flag = faction_prosperity_angry
 				character_event = { id = PlusFaction.202 days = 1 }
 				any_vassal = {
-					limit = { pf_member_prosperity_trigger = yes }
+					limit = { in_faction = faction_prosperity }
 					character_event = { id = PlusFaction.202 days = 1 }
 				}
 			}
@@ -2342,13 +2352,13 @@ character_event = {
 				clr_character_flag = faction_prosperity_happy
 				character_event = { id = PlusFaction.202 days = 1 }
 				any_vassal = {
-					limit = { pf_member_prosperity_trigger = yes }
+					limit = { in_faction = faction_prosperity }
 					character_event = { id = PlusFaction.202 days = 1 }
 				}
 			}
 		}
 		if = {
-			limit = { any_vassal = { pf_member_glory_trigger = yes } }
+			limit = { any_vassal = { in_faction = faction_glory } }
 			if = {
 				limit = {
 					check_variable = { which = "faction_mood_glory" value = 75 }
@@ -2359,7 +2369,7 @@ character_event = {
 				clr_character_flag = faction_glory_angry
 				character_event = { id = PlusFaction.203 days = 1 }
 				any_vassal = {
-					limit = { pf_member_glory_trigger = yes }
+					limit = { in_faction = faction_glory }
 					character_event = { id = PlusFaction.203 days = 1 }
 				}
 			}
@@ -2378,7 +2388,7 @@ character_event = {
 				clr_character_flag = faction_glory_angry
 				character_event = { id = PlusFaction.203 days = 1 }
 				any_vassal = {
-					limit = { pf_member_glory_trigger = yes }
+					limit = { in_faction = faction_glory }
 					character_event = { id = PlusFaction.203 days = 1 }
 				}
 			}
@@ -2393,7 +2403,7 @@ character_event = {
 				clr_character_flag = faction_glory_angry
 				character_event = { id = PlusFaction.203 days = 1 }
 				any_vassal = {
-					limit = { pf_member_glory_trigger = yes }
+					limit = { in_faction = faction_glory }
 					character_event = { id = PlusFaction.203 days = 1 }
 				}
 			}
@@ -2407,13 +2417,13 @@ character_event = {
 				clr_character_flag = faction_glory_happy
 				character_event = { id = PlusFaction.203 days = 1 }
 				any_vassal = {
-					limit = { pf_member_glory_trigger = yes }
+					limit = { in_faction = faction_glory }
 					character_event = { id = PlusFaction.203 days = 1 }
 				}
 			}
 		}
 		if = {
-			limit = { any_vassal = { pf_member_tradition_trigger = yes } }
+			limit = { any_vassal = { in_faction = faction_tradition } }
 			if = {
 				limit = {
 					check_variable = { which = "faction_mood_tradition" value = 75 }
@@ -2424,7 +2434,7 @@ character_event = {
 				clr_character_flag = faction_tradition_angry
 				character_event = { id = PlusFaction.204 days = 1 }
 				any_vassal = {
-					limit = { pf_member_tradition_trigger = yes }
+					limit = { in_faction = faction_tradition }
 					character_event = { id = PlusFaction.204 days = 1 }
 				}
 			}
@@ -2443,7 +2453,7 @@ character_event = {
 				clr_character_flag = faction_tradition_angry
 				character_event = { id = PlusFaction.204 days = 1 }
 				any_vassal = {
-					limit = { pf_member_tradition_trigger = yes }
+					limit = { in_faction = faction_tradition }
 					character_event = { id = PlusFaction.204 days = 1 }
 				}
 			}
@@ -2458,7 +2468,7 @@ character_event = {
 				clr_character_flag = faction_tradition_angry
 				character_event = { id = PlusFaction.204 days = 1 }
 				any_vassal = {
-					limit = { pf_member_tradition_trigger = yes }
+					limit = { in_faction = faction_tradition }
 					character_event = { id = PlusFaction.204 days = 1 }
 				}
 			}
@@ -2472,7 +2482,7 @@ character_event = {
 				clr_character_flag = faction_tradition_happy
 				character_event = { id = PlusFaction.204 days = 1 }
 				any_vassal = {
-					limit = { pf_member_tradition_trigger = yes }
+					limit = { in_faction = faction_tradition }
 					character_event = { id = PlusFaction.204 days = 1 }
 				}
 			}

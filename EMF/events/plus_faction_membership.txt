@@ -8,7 +8,8 @@ namespace = PlusFaction
 # Re-Written by Rylock
 ##################################
 
-# Joining a faction
+# PlusFaction.100 [AI Plotter]
+# Joining a faction <MTTH>
 character_event = {
 	id = PlusFaction.100
 	
@@ -20,9 +21,9 @@ character_event = {
 	prisoner = no
 	
 	trigger = {
-		ai = yes
 		independent = no
-		any_demesne_title = { lower_tier_than = DUKE }
+		is_landed = yes
+		ai = yes
 		NOR = {
 			trait = in_hiding
 			liege = { current_heir = { character = ROOT } }
@@ -579,10 +580,10 @@ character_event = {
 	}
 }
 
-# The ruler leaves their faction
+# PlusFaction.104 [Ruler]
+# The ruler leaves their faction <MTTH>
 character_event = {
 	id = PlusFaction.104
-	
 	hide_window = yes
 	
 	min_age = 16
@@ -597,21 +598,12 @@ character_event = {
 		}
 		OR = {
 			ai = no
-			is_playable = no
-			trait = incapable
 			independent = yes
+			is_playable = no
+			is_landed = no
+			trait = incapable
 			liege = { current_heir = { character = ROOT } }
-			NOT = { any_demesne_title = { lower_tier_than = DUKE } }
-			NOR = {
-				leads_faction = faction_court
-				leads_faction = faction_prosperity
-				leads_faction = faction_glory
-				leads_faction = faction_tradition
-				in_faction = faction_court
-				in_faction = faction_prosperity
-				in_faction = faction_glory
-				in_faction = faction_tradition
-			}
+			pf_member_trigger = no
 			AND = {
 				has_character_flag = faction_tradition_supporter
 				OR = {
@@ -627,23 +619,13 @@ character_event = {
 		days = 30
 		modifier = {
 			factor = 6
-			is_ruler = yes
 			is_landed = yes
 			independent = no
 			NOR = {
 				trait = incapable
 				liege = { current_heir = { character = ROOT } }
 			}
-			NOR = {
-				leads_faction = faction_court
-				leads_faction = faction_prosperity
-				leads_faction = faction_glory
-				leads_faction = faction_tradition
-				in_faction = faction_court
-				in_faction = faction_prosperity
-				in_faction = faction_glory
-				in_faction = faction_tradition
-			}
+			pf_member_trigger = no
 		}
 		modifier = {
 			factor = 0.1
@@ -658,16 +640,16 @@ character_event = {
 	
 	immediate = {
 		clr_character_flag = has_picked_faction
-		clr_character_flag = faction_court_supporter
-		clr_character_flag = faction_prosperity_supporter
-		clr_character_flag = faction_glory_supporter
-		clr_character_flag = faction_tradition_supporter
+		pf_clear_supporter_flags_effect = yes
 	}
 }
 
 ### FACTION RECRUITMENT EVENTS
 
+# PlusFaction.110 [Faction Leader]
 # Faction leader sets out to recruit a fellow vassal
+#
+# Called from decision `recruit_faction_member`
 character_event = {
 	id = PlusFaction.110
 	desc = EVTDESC_PlusFaction_110
@@ -682,11 +664,12 @@ character_event = {
 	}
 }
 
-# Clear flag
+# Clear do_not_disturb flag
+# FIXME: probably want to make sure the character isn't in_hiding due to emf_siege
 character_event = {
 	id = PlusFaction.1100
-	
 	hide_window = yes
+
 	is_triggered_only = yes
 	
 	immediate = {
@@ -694,9 +677,10 @@ character_event = {
 	}
 }
 
+# PlusFaction.111 [Potential Faction Recruit]
 # Faction leader tries to recruit fellow vassal
 #
-# Fired from decision recruit_faction_member
+# Fired from decision `recruit_faction_member` (delayed)
 #
 # ROOT = FROM = Recruitment target
 # FROMFROM = Recruiter
@@ -732,20 +716,8 @@ character_event = {
 	}
 	
 	trigger = {
-		NOR = {
-			leads_faction = faction_court
-			leads_faction = faction_prosperity
-			leads_faction = faction_glory
-			leads_faction = faction_tradition
-		}
-		FROMFROM = {
-			OR = {
-				leads_faction = faction_court
-				leads_faction = faction_prosperity
-				leads_faction = faction_glory
-				leads_faction = faction_tradition
-			}
-		}
+		pf_leader_trigger = no
+		FROMFROM = { pf_leader_trigger = yes }
 	}
 	
 	immediate = {
@@ -791,12 +763,7 @@ character_event = {
 		name = EVTOPTA_PlusFaction_111 #Agree to join his faction
 		trigger = {
 			ai = yes
-			OR = {
-				in_faction = faction_court
-				in_faction = faction_prosperity
-				in_faction = faction_glory
-				in_faction = faction_tradition
-			}
+			pf_member_trigger = yes
 			FROMFROM = {
 				OR = {
 					AND = {
@@ -1044,32 +1011,21 @@ character_event = {
 				likes_better_than = { who = event_target:target_faction_leader than = FROMFROM }
 			}
 		}
+		pf_clear_supporter_flags_effect = yes
 		if = {
 			limit = { FROMFROM = { leads_faction = faction_court } }
 			set_character_flag = faction_court_supporter
-			clr_character_flag = faction_prosperity_supporter
-			clr_character_flag = faction_glory_supporter
-			clr_character_flag = faction_tradition_supporter
 		}
 		if = {
 			limit = { FROMFROM = { leads_faction = faction_prosperity } }
-			clr_character_flag = faction_court_supporter
 			set_character_flag = faction_prosperity_supporter
-			clr_character_flag = faction_glory_supporter
-			clr_character_flag = faction_tradition_supporter
 		}
 		if = {
 			limit = { FROMFROM = { leads_faction = faction_glory } }
-			clr_character_flag = faction_court_supporter
-			clr_character_flag = faction_prosperity_supporter
 			set_character_flag = faction_glory_supporter
-			clr_character_flag = faction_tradition_supporter
 		}
 		if = {
 			limit = { FROMFROM = { leads_faction = faction_tradition } }
-			clr_character_flag = faction_court_supporter
-			clr_character_flag = faction_prosperity_supporter
-			clr_character_flag = faction_glory_supporter
 			set_character_flag = faction_tradition_supporter
 		}
 		opinion = { who = FROMFROM modifier = pleasant_meeting multiplier = 2 months = 60 }
@@ -1099,12 +1055,7 @@ character_event = {
 		name = EVTOPTA_PlusFaction_111 #Agree to join his faction
 		trigger = {
 			ai = yes
-			NOR = {
-				in_faction = faction_court
-				in_faction = faction_prosperity
-				in_faction = faction_glory
-				in_faction = faction_tradition
-			}
+			pf_member_trigger = no
 			FROMFROM = {
 				OR = {
 					AND = {
@@ -1324,32 +1275,21 @@ character_event = {
 				opinion = { who = FROMFROM value = 75 }
 			}
 		}
+		pf_clear_supporter_flags_effect = yes
 		if = {
 			limit = { FROMFROM = { leads_faction = faction_court } }
 			set_character_flag = faction_court_supporter
-			clr_character_flag = faction_prosperity_supporter
-			clr_character_flag = faction_glory_supporter
-			clr_character_flag = faction_tradition_supporter
 		}
 		if = {
 			limit = { FROMFROM = { leads_faction = faction_prosperity } }
-			clr_character_flag = faction_court_supporter
 			set_character_flag = faction_prosperity_supporter
-			clr_character_flag = faction_glory_supporter
-			clr_character_flag = faction_tradition_supporter
 		}
 		if = {
 			limit = { FROMFROM = { leads_faction = faction_glory } }
-			clr_character_flag = faction_court_supporter
-			clr_character_flag = faction_prosperity_supporter
 			set_character_flag = faction_glory_supporter
-			clr_character_flag = faction_tradition_supporter
 		}
 		if = {
 			limit = { FROMFROM = { leads_faction = faction_tradition } }
-			clr_character_flag = faction_court_supporter
-			clr_character_flag = faction_prosperity_supporter
-			clr_character_flag = faction_glory_supporter
 			set_character_flag = faction_tradition_supporter
 		}
 		opinion = { who = FROMFROM modifier = pleasant_meeting multiplier = 2 months = 60 }
@@ -1496,25 +1436,11 @@ character_event = {
 	option = {
 		name = {
 			text = EVTOPTC_PlusFaction_111 #Send him away, but tell no-one
-			trigger = {
-				OR = {
-					in_faction = faction_court
-					in_faction = faction_prosperity
-					in_faction = faction_glory
-					in_faction = faction_tradition
-				}
-			}
+			trigger = { pf_member_trigger = yes }
 		}
 		name = {
 			text = EVTOPTD_PlusFaction_111 #Send him on his way
-			trigger = {
-				NOR = {
-					in_faction = faction_court
-					in_faction = faction_prosperity
-					in_faction = faction_glory
-					in_faction = faction_tradition
-				}
-			}
+			trigger = { pf_member_trigger = no }
 		}
 		ai_chance = {
 			factor = 100
@@ -1564,12 +1490,7 @@ character_event = {
 			}
 			modifier = {
 				factor = 0.5
-				NOR = {
-					in_faction = faction_court
-					in_faction = faction_prosperity
-					in_faction = faction_glory
-					in_faction = faction_tradition
-				}
+				pf_member_trigger = no
 			}
 		}
 		opinion = { who = FROMFROM modifier = unpleasant_meeting months = 60 }
@@ -1579,14 +1500,7 @@ character_event = {
 	}
 	option = {
 		name = EVTOPTE_PlusFaction_111 #Send him away and tell faction leader
-		trigger = {
-			OR = {
-				in_faction = faction_court
-				in_faction = faction_prosperity
-				in_faction = faction_glory
-				in_faction = faction_tradition
-			}
-		}
+		trigger = { pf_member_trigger = yes }
 		ai_chance = {
 			factor = 50
 			modifier = {
@@ -1755,7 +1669,7 @@ character_event = {
 	desc = EVTDESC_PlusFaction_120
 	picture = GFX_evt_rival_rulers
 	
-	only_rulers = yes
+	only_playable = yes
 	min_age = 16
 	capable_only = yes
 	prisoner = no
@@ -1763,12 +1677,7 @@ character_event = {
 	trigger = {
 		war = no
 		is_ill = no
-		OR = {
-			leads_faction = faction_court
-			leads_faction = faction_prosperity
-			leads_faction = faction_glory
-			leads_faction = faction_tradition
-		}
+		pf_leader_trigger = yes
 		liege = {
 			any_vassal = {
 				ai = yes
@@ -1777,29 +1686,13 @@ character_event = {
 				prisoner = no
 				is_ill = no
 				NOR = {
-					opinion = { who = ROOT value = 0 }
+					character = ROOT
 					trait = incapable
 					trait = in_hiding
 					has_character_flag = do_not_disturb
+					opinion = { who = ROOT value = 0 }
 				}
-				OR = {
-					AND = {
-						in_faction = faction_court
-						ROOT = { leads_faction = faction_court }
-					}
-					AND = {
-						in_faction = faction_prosperity
-						ROOT = { leads_faction = faction_prosperity }
-					}
-					AND = {
-						in_faction = faction_glory
-						ROOT = { leads_faction = faction_glory }
-					}
-					AND = {
-						in_faction = faction_tradition
-						ROOT = { leads_faction = faction_tradition }
-					}
-				}
+				pf_root_faction_backer = yes
 			}
 		}
 		NOR = {
@@ -1824,29 +1717,13 @@ character_event = {
 					prisoner = no
 					is_ill = no
 					NOR = {
-						opinion = { who = ROOT value = -50 }
+						character = ROOT
 						trait = incapable
 						trait = in_hiding
 						has_character_flag = do_not_disturb
+						opinion = { who = ROOT value = -50 } # Where we diverge
 					}
-					OR = {
-						AND = {
-							in_faction = faction_court
-							ROOT = { leads_faction = faction_court }
-						}
-						AND = {
-							in_faction = faction_prosperity
-							ROOT = { leads_faction = faction_prosperity }
-						}
-						AND = {
-							in_faction = faction_glory
-							ROOT = { leads_faction = faction_glory }
-						}
-						AND = {
-							in_faction = faction_tradition
-							ROOT = { leads_faction = faction_tradition }
-						}
-					}
+					pf_root_faction_backer = yes
 				}
 			}
 		}
@@ -1863,29 +1740,13 @@ character_event = {
 					prisoner = no
 					is_ill = no
 					NOR = {
-						opinion = { who = ROOT value = -50 }
+						character = ROOT
 						trait = incapable
 						trait = in_hiding
 						has_character_flag = do_not_disturb
+						opinion = { who = ROOT value = -50 }
 					}
-					OR = {
-						AND = {
-							in_faction = faction_court
-							ROOT = { leads_faction = faction_court }
-						}
-						AND = {
-							in_faction = faction_prosperity
-							ROOT = { leads_faction = faction_prosperity }
-						}
-						AND = {
-							in_faction = faction_glory
-							ROOT = { leads_faction = faction_glory }
-						}
-						AND = {
-							in_faction = faction_tradition
-							ROOT = { leads_faction = faction_tradition }
-						}
-					}
+					pf_root_faction_backer = yes
 				}
 				save_event_target_as = target_faction_dispute
 				break = yes
@@ -1898,29 +1759,13 @@ character_event = {
 					prisoner = no
 					is_ill = no
 					NOR = {
-						opinion = { who = ROOT value = 0 }
+						character = ROOT
 						trait = incapable
 						trait = in_hiding
 						has_character_flag = do_not_disturb
+						opinion = { who = ROOT value = 0 }
 					}
-					OR = {
-						AND = {
-							in_faction = faction_court
-							ROOT = { leads_faction = faction_court }
-						}
-						AND = {
-							in_faction = faction_prosperity
-							ROOT = { leads_faction = faction_prosperity }
-						}
-						AND = {
-							in_faction = faction_glory
-							ROOT = { leads_faction = faction_glory }
-						}
-						AND = {
-							in_faction = faction_tradition
-							ROOT = { leads_faction = faction_tradition }
-						}
-					}
+					pf_root_faction_backer = yes
 				}
 				save_event_target_as = target_faction_dispute
 				break = yes
@@ -1936,10 +1781,7 @@ character_event = {
 			event_target:target_faction_dispute = {
 				if = {
 					limit = { is_rival = ROOT }
-					clr_character_flag = faction_court_supporter
-					clr_character_flag = faction_prosperity_supporter
-					clr_character_flag = faction_glory_supporter
-					clr_character_flag = faction_tradition_supporter
+					pf_clear_supporter_flags_effect = yes
 				}
 				if = {
 					limit = {
@@ -1948,12 +1790,7 @@ character_event = {
 					}
 					random_list = {
 						50 = { add_rival = ROOT }
-						50 = {
-							clr_character_flag = faction_court_supporter
-							clr_character_flag = faction_prosperity_supporter
-							clr_character_flag = faction_glory_supporter
-							clr_character_flag = faction_tradition_supporter
-						}
+						50 = { pf_clear_supporter_flags_effect = yes }
 					}
 				}
 			}
@@ -1999,10 +1836,7 @@ character_event = {
 			event_target:target_faction_dispute = {
 				if = {
 					limit = { is_rival = ROOT }
-					clr_character_flag = faction_court_supporter
-					clr_character_flag = faction_prosperity_supporter
-					clr_character_flag = faction_glory_supporter
-					clr_character_flag = faction_tradition_supporter
+					pf_clear_supporter_flags_effect = yes
 				}
 				if = {
 					limit = {
@@ -2011,12 +1845,7 @@ character_event = {
 					}
 					random_list = {
 						50 = { add_rival = ROOT }
-						50 = {
-							clr_character_flag = faction_court_supporter
-							clr_character_flag = faction_prosperity_supporter
-							clr_character_flag = faction_glory_supporter
-							clr_character_flag = faction_tradition_supporter
-						}
+						50 = { pf_clear_supporter_flags_effect = yes }
 					}
 				}
 			}
@@ -2065,10 +1894,7 @@ character_event = {
 			event_target:target_faction_dispute = {
 				if = {
 					limit = { is_rival = ROOT }
-					clr_character_flag = faction_court_supporter
-					clr_character_flag = faction_prosperity_supporter
-					clr_character_flag = faction_glory_supporter
-					clr_character_flag = faction_tradition_supporter
+					pf_clear_supporter_flags_effect = yes
 				}
 				if = {
 					limit = {
@@ -2077,12 +1903,7 @@ character_event = {
 					}
 					random_list = {
 						50 = { add_rival = ROOT }
-						50 = {
-							clr_character_flag = faction_court_supporter
-							clr_character_flag = faction_prosperity_supporter
-							clr_character_flag = faction_glory_supporter
-							clr_character_flag = faction_tradition_supporter
-						}
+						50 = { pf_clear_supporter_flags_effect = yes }
 					}
 				}
 			}
@@ -2094,7 +1915,7 @@ character_event = {
 
 # Faction member begins to court another faction member
 #
-# Fired from decision court_faction_member
+# Fired from decision `court_faction_member`
 #
 # ROOT = FROMFROM = Courter
 # FROM = Courting Target
@@ -2104,39 +1925,19 @@ character_event = {
 	
 	desc = {
 		text = EVTDESC_PlusFaction_125A
-		trigger = {
-			OR = {
-				in_faction = faction_court
-				leads_faction = faction_court
-			}
-		}
+		trigger = { in_faction = faction_court }
 	}
 	desc = {
 		text = EVTDESC_PlusFaction_125B
-		trigger = {
-			OR = {
-				in_faction = faction_prosperity
-				leads_faction = faction_prosperity
-			}
-		}
+		trigger = { in_faction = faction_prosperity }
 	}
 	desc = {
 		text = EVTDESC_PlusFaction_125C
-		trigger = {
-			OR = {
-				in_faction = faction_glory
-				leads_faction = faction_glory
-			}
-		}
+		trigger = { in_faction = faction_glory }
 	}
 	desc = {
 		text = EVTDESC_PlusFaction_125D
-		trigger = {
-			OR = {
-				in_faction = faction_tradition
-				leads_faction = faction_tradition
-			}
-		}
+		trigger = { in_faction = faction_tradition }
 	}
 	
 	show_from = yes
@@ -2468,38 +2269,30 @@ character_event = {
 	desc = {
 		text = EVTDESC_PlusFaction_134_COURT
 		trigger = {
-			event_target:faction_member = { OR = { leads_faction = faction_court in_faction = faction_court } }
+			event_target:faction_member = { in_faction = faction_court }
 		}
 	}
 	desc = {
 		text = EVTDESC_PlusFaction_134_PROSPERITY
 		trigger = {
-			event_target:faction_member = { OR = { leads_faction = faction_prosperity in_faction = faction_prosperity } }
+			event_target:faction_member = { in_faction = faction_prosperity }
 		}
 	}
 	desc = {
 		text = EVTDESC_PlusFaction_134_GLORY
 		trigger = {
-			event_target:faction_member = { OR = { leads_faction = faction_glory in_faction = faction_glory } }
+			event_target:faction_member = { in_faction = faction_glory }
 		}
 	}
 	desc = {
 		text = EVTDESC_PlusFaction_134_TRADITION
 		trigger = {
-			event_target:faction_member = { OR = { leads_faction = faction_tradition in_faction = faction_tradition } }
+			event_target:faction_member = { in_faction = faction_tradition }
 		}
 	}
 
 	capable_only = yes
 	prisoner = no
-	
-	immediate = {
-		location = {
-			owner = {
-				save_event_target_as = faction_member
-			}
-		}
-	}
 	
 	trigger = {
 		has_job_action = action_uncover_plots
@@ -2507,7 +2300,7 @@ character_event = {
 			owner = {
 				same_liege = ROOT
 				independent = no
-				primary_title = { higher_tier_than = BARON }
+				is_playable = yes
 				OR = {
 					NOT = { has_character_flag = faction_undermine }
 					had_character_flag = { flag = faction_undermine days = 1825 }
@@ -2519,66 +2312,38 @@ character_event = {
 				}
 				OR = {
 					AND = {
-						OR = {
-							leads_faction = faction_court
-							in_faction = faction_court
-						}
+						in_faction = faction_court
 						liege = {
 							any_vassal = {
 								NOT = { character = PREVPREV }
-								higher_tier_than = BARON
-								OR = {
-									leads_faction = faction_court
-									in_faction = faction_court
-								}
+								in_faction = faction_court
 							}
 						}
 					}
 					AND = {
-						OR = {
-							leads_faction = faction_prosperity
-							in_faction = faction_prosperity
-						}
+						in_faction = faction_prosperity
 						liege = {
 							any_vassal = {
 								NOT = { character = PREVPREV }
-								higher_tier_than = BARON
-								OR = {
-									leads_faction = faction_prosperity
-									in_faction = faction_prosperity
-								}
+								in_faction = faction_prosperity
 							}
 						}
 					}
 					AND = {
-						OR = {
-							leads_faction = faction_glory
-							in_faction = faction_glory
-						}
+						in_faction = faction_glory
 						liege = {
 							any_vassal = {
 								NOT = { character = PREVPREV }
-								higher_tier_than = BARON
-								OR = {
-									leads_faction = faction_glory
-									in_faction = faction_glory
-								}
+								in_faction = faction_glory
 							}
 						}
 					}
 					AND = {
-						OR = {
-							leads_faction = faction_tradition
-							in_faction = faction_tradition
-						}
+						in_faction = faction_tradition
 						liege = {
 							any_vassal = {
 								NOT = { character = PREVPREV }
-								higher_tier_than = BARON
-								OR = {
-									leads_faction = faction_tradition
-									in_faction = faction_tradition
-								}
+								in_faction = faction_tradition
 							}
 						}
 					}
@@ -2586,15 +2351,7 @@ character_event = {
 			}
 		}
 		liege = {
-			NOR = {
-				has_character_flag = faction_court_war
-				has_character_flag = faction_prosperity_war
-				has_character_flag = faction_glory_war
-				has_character_flag = faction_tradition_war
-				has_character_flag = faction_pretender_war
-				has_character_flag = faction_separatist_war
-				has_character_flag = faction_religious_war
-			}
+			pf_war_trigger = no
 		}
 	}
 	
@@ -2654,6 +2411,14 @@ character_event = {
 		}
 	}
 
+	immediate = {
+		location = {
+			owner = {
+				save_event_target_as = faction_member
+			}
+		}
+	}
+
 	option = {
 		name = EVTOPTA_PlusFaction_134 #Report it to the liege
 		hidden_tooltip = {
@@ -2694,25 +2459,25 @@ letter_event = {
 	desc = {
 		text = EVTDESC_PlusFaction_135_COURT
 		trigger = {
-			event_target:faction_member = { OR = { leads_faction = faction_court in_faction = faction_court } }
+			event_target:faction_member = { in_faction = faction_court }
 		}
 	}
 	desc = {
 		text = EVTDESC_PlusFaction_135_PROSPERITY
 		trigger = {
-			event_target:faction_member = { OR = { leads_faction = faction_prosperity in_faction = faction_prosperity } }
+			event_target:faction_member = { in_faction = faction_prosperity }
 		}
 	}
 	desc = {
 		text = EVTDESC_PlusFaction_135_GLORY
 		trigger = {
-			event_target:faction_member = { OR = { leads_faction = faction_glory in_faction = faction_glory } }
+			event_target:faction_member = { in_faction = faction_glory }
 		}
 	}
 	desc = {
 		text = EVTDESC_PlusFaction_135_TRADITION
 		trigger = {
-			event_target:faction_member = { OR = { leads_faction = faction_tradition in_faction = faction_tradition } }
+			event_target:faction_member = { in_faction = faction_tradition }
 		}
 	}	
 
@@ -3001,16 +2766,7 @@ letter_event = {
 	
 	trigger = {
 		vassal_of = FROM
-		OR = {
-			leads_faction = faction_court
-			leads_faction = faction_prosperity
-			leads_faction = faction_glory
-			leads_faction = faction_tradition
-			in_faction = faction_court
-			in_faction = faction_prosperity
-			in_faction = faction_glory
-			in_faction = faction_tradition
-		}
+		pf_member_trigger = yes
 	}
 	
 	option = {
@@ -3275,52 +3031,20 @@ character_event = {
 				limit = {
 					OR = {
 						AND = {
-							OR = {
-								in_faction = faction_court
-								leads_faction = faction_court
-							}
-							event_target:faction_member = {
-								OR = {
-									in_faction = faction_court
-									leads_faction = faction_court
-								}
-							}
+							in_faction = faction_court
+							event_target:faction_member = { in_faction = faction_court }
 						}
 						AND = {
-							OR = {
-								in_faction = faction_prosperity
-								leads_faction = faction_prosperity
-							}
-							event_target:faction_member = {
-								OR = {
-									in_faction = faction_prosperity
-									leads_faction = faction_prosperity
-								}
-							}
+							in_faction = faction_prosperity
+							event_target:faction_member = { in_faction = faction_prosperity }
 						}
 						AND = {
-							OR = {
-								in_faction = faction_glory
-								leads_faction = faction_glory
-							}
-							event_target:faction_member = {
-								OR = {
-									in_faction = faction_glory
-									leads_faction = faction_glory
-								}
-							}
+							in_faction = faction_glory
+							event_target:faction_member = { in_faction = faction_glory }
 						}
 						AND = {
-							OR = {
-								in_faction = faction_tradition
-								leads_faction = faction_tradition
-							}
-							event_target:faction_member = {
-								OR = {
-									in_faction = faction_tradition
-									leads_faction = faction_tradition
-								}
-							}
+							in_faction = faction_tradition
+							event_target:faction_member = { in_faction = faction_tradition }
 						}
 					}
 				}
@@ -3349,52 +3073,20 @@ character_event = {
 					NOT = { character = event_target:faction_member }
 					OR = {
 						AND = {
-							OR = {
-								in_faction = faction_court
-								leads_faction = faction_court
-							}
-							event_target:faction_member = {
-								OR = {
-									in_faction = faction_court
-									leads_faction = faction_court
-								}
-							}
+							in_faction = faction_court
+							event_target:faction_member = { in_faction = faction_court }
 						}
 						AND = {
-							OR = {
-								in_faction = faction_prosperity
-								leads_faction = faction_prosperity
-							}
-							event_target:faction_member = {
-								OR = {
-									in_faction = faction_prosperity
-									leads_faction = faction_prosperity
-								}
-							}
+							in_faction = faction_prosperity
+							event_target:faction_member = { in_faction = faction_prosperity }
 						}
 						AND = {
-							OR = {
-								in_faction = faction_glory
-								leads_faction = faction_glory
-							}
-							event_target:faction_member = {
-								OR = {
-									in_faction = faction_glory
-									leads_faction = faction_glory
-								}
-							}
+							in_faction = faction_glory
+							event_target:faction_member = { in_faction = faction_glory }
 						}
 						AND = {
-							OR = {
-								in_faction = faction_tradition
-								leads_faction = faction_tradition
-							}
-							event_target:faction_member = {
-								OR = {
-									in_faction = faction_tradition
-									leads_faction = faction_tradition
-								}
-							}
+							in_faction = faction_tradition
+							event_target:faction_member = { in_faction = faction_tradition }
 						}
 					}
 				}
@@ -3470,80 +3162,44 @@ character_event = {
 			}
 			OR = {
 				AND = {
-					OR = {
-						leads_faction = faction_court
-						in_faction = faction_court
-					}
-					ROOT = {
+					in_faction = faction_court
+					liege = {
 						any_vassal = {
 							NOT = { character = PREVPREV }
-							higher_tier_than = BARON
-							OR = {
-								leads_faction = faction_court
-								in_faction = faction_court
-							}
+							in_faction = faction_court
 						}
 					}
 				}
 				AND = {
-					OR = {
-						leads_faction = faction_prosperity
-						in_faction = faction_prosperity
-					}
-					ROOT = {
+					in_faction = faction_prosperity
+					liege = {
 						any_vassal = {
 							NOT = { character = PREVPREV }
-							higher_tier_than = BARON
-							OR = {
-								leads_faction = faction_prosperity
-								in_faction = faction_prosperity
-							}
+							in_faction = faction_prosperity
 						}
 					}
 				}
 				AND = {
-					OR = {
-						leads_faction = faction_glory
-						in_faction = faction_glory
-					}
-					ROOT = {
+					in_faction = faction_glory
+					liege = {
 						any_vassal = {
 							NOT = { character = PREVPREV }
-							higher_tier_than = BARON
-							OR = {
-								leads_faction = faction_glory
-								in_faction = faction_glory
-							}
+							in_faction = faction_glory
 						}
 					}
 				}
 				AND = {
-					OR = {
-						leads_faction = faction_tradition
-						in_faction = faction_tradition
-					}
-					ROOT = {
+					in_faction = faction_tradition
+					liege = {
 						any_vassal = {
 							NOT = { character = PREVPREV }
-							higher_tier_than = BARON
-							OR = {
-								leads_faction = faction_tradition
-								in_faction = faction_tradition
-							}
+							in_faction = faction_tradition
 						}
 					}
 				}
 			}
 		}
-		NOR = {
-			has_character_flag = faction_court_war
-			has_character_flag = faction_prosperity_war
-			has_character_flag = faction_glory_war
-			has_character_flag = faction_tradition_war
-			has_character_flag = faction_pretender_war
-			has_character_flag = faction_separatist_war
-			has_character_flag = faction_religious_war
-		}
+		pf_war_trigger = no
 	}
 
 	mean_time_to_happen = {
@@ -3616,66 +3272,38 @@ character_event = {
 				}
 				OR = {
 					AND = {
-						OR = {
-							leads_faction = faction_court
-							in_faction = faction_court
-						}
-						ROOT = {
+						in_faction = faction_court
+						liege = {
 							any_vassal = {
 								NOT = { character = PREVPREV }
-								higher_tier_than = BARON
-								OR = {
-									leads_faction = faction_court
-									in_faction = faction_court
-								}
+								in_faction = faction_court
 							}
 						}
 					}
 					AND = {
-						OR = {
-							leads_faction = faction_prosperity
-							in_faction = faction_prosperity
-						}
-						ROOT = {
+						in_faction = faction_prosperity
+						liege = {
 							any_vassal = {
 								NOT = { character = PREVPREV }
-								higher_tier_than = BARON
-								OR = {
-									leads_faction = faction_prosperity
-									in_faction = faction_prosperity
-								}
+								in_faction = faction_prosperity
 							}
 						}
 					}
 					AND = {
-						OR = {
-							leads_faction = faction_glory
-							in_faction = faction_glory
-						}
-						ROOT = {
+						in_faction = faction_glory
+						liege = {
 							any_vassal = {
 								NOT = { character = PREVPREV }
-								higher_tier_than = BARON
-								OR = {
-									leads_faction = faction_glory
-									in_faction = faction_glory
-								}
+								in_faction = faction_glory
 							}
 						}
 					}
 					AND = {
-						OR = {
-							leads_faction = faction_tradition
-							in_faction = faction_tradition
-						}
-						ROOT = {
+						in_faction = faction_tradition
+						liege = {
 							any_vassal = {
 								NOT = { character = PREVPREV }
-								higher_tier_than = BARON
-								OR = {
-									leads_faction = faction_tradition
-									in_faction = faction_tradition
-								}
+								in_faction = faction_tradition
 							}
 						}
 					}
@@ -3712,12 +3340,7 @@ character_event = {
 				independent = no
 				in_command = no
 				primary_title = { higher_tier_than = BARON }
-				OR = {
-					leads_faction = faction_court
-					leads_faction = faction_prosperity
-					leads_faction = faction_glory
-					leads_faction = faction_tradition
-				}
+				pf_leader_trigger = yes
 				OR = {
 					NOT = { has_character_flag = faction_negotiate }
 					had_character_flag = { flag = faction_negotiate days = 1825 }
@@ -3730,15 +3353,7 @@ character_event = {
 			}
 		}
 		liege = {
-			NOR = {
-				has_character_flag = faction_court_war
-				has_character_flag = faction_prosperity_war
-				has_character_flag = faction_glory_war
-				has_character_flag = faction_tradition_war
-				has_character_flag = faction_pretender_war
-				has_character_flag = faction_separatist_war
-				has_character_flag = faction_religious_war
-			}
+			pf_war_trigger = no
 		}
 	}
 	
@@ -4072,12 +3687,7 @@ letter_event = {
 	trigger = {
 		event_target:faction_leader = {
 			vassal_of = ROOT
-			OR = {
-				leads_faction = faction_court
-				leads_faction = faction_prosperity
-				leads_faction = faction_glory
-				leads_faction = faction_tradition
-			}
+			pf_leader_trigger = yes
 		}
 	}
 	
@@ -4091,10 +3701,7 @@ letter_event = {
 				any_vassal = {
 					limit = {
 						ai = no
-						OR = {
-							leads_faction = faction_court
-							in_faction = faction_court
-						}
+						in_faction = faction_court
 					}
 					character_event = { id = PlusFaction.149 }
 				}
@@ -4107,10 +3714,7 @@ letter_event = {
 				any_vassal = {
 					limit = {
 						ai = no
-						OR = {
-							leads_faction = faction_prosperity
-							in_faction = faction_prosperity
-						}
+						in_faction = faction_prosperity
 					}
 					character_event = { id = PlusFaction.149 }
 				}
@@ -4123,10 +3727,7 @@ letter_event = {
 				any_vassal = {
 					limit = {
 						ai = no
-						OR = {
-							leads_faction = faction_glory
-							in_faction = faction_glory
-						}
+						in_faction = faction_glory
 					}
 					character_event = { id = PlusFaction.149 }
 				}
@@ -4139,10 +3740,7 @@ letter_event = {
 				any_vassal = {
 					limit = {
 						ai = no
-						OR = {
-							leads_faction = faction_tradition
-							in_faction = faction_tradition
-						}
+						in_faction = faction_tradition
 					}
 					character_event = { id = PlusFaction.149 }
 				}
@@ -4167,12 +3765,7 @@ letter_event = {
 	trigger = {
 		event_target:faction_leader = {
 			vassal_of = ROOT
-			OR = {
-				leads_faction = faction_court
-				leads_faction = faction_prosperity
-				leads_faction = faction_glory
-				leads_faction = faction_tradition
-			}
+			pf_leader_trigger = yes
 		}
 	}
 	
@@ -4185,10 +3778,7 @@ letter_event = {
 				any_vassal = {
 					limit = {
 						ai = no
-						OR = {
-							leads_faction = faction_court
-							in_faction = faction_court
-						}
+						in_faction = faction_court
 					}
 					character_event = { id = PlusFaction.150 }
 				}
@@ -4200,10 +3790,7 @@ letter_event = {
 				any_vassal = {
 					limit = {
 						ai = no
-						OR = {
-							leads_faction = faction_prosperity
-							in_faction = faction_prosperity
-						}
+						in_faction = faction_prosperity
 					}
 					character_event = { id = PlusFaction.150 }
 				}
@@ -4215,10 +3802,7 @@ letter_event = {
 				any_vassal = {
 					limit = {
 						ai = no
-						OR = {
-							leads_faction = faction_glory
-							in_faction = faction_glory
-						}
+						in_faction = faction_glory
 					}
 					character_event = { id = PlusFaction.150 }
 				}
@@ -4230,10 +3814,7 @@ letter_event = {
 				any_vassal = {
 					limit = {
 						ai = no
-						OR = {
-							leads_faction = faction_tradition
-							in_faction = faction_tradition
-						}
+						in_faction = faction_tradition
 					}
 					character_event = { id = PlusFaction.150 }
 				}
@@ -4254,12 +3835,7 @@ letter_event = {
 	trigger = {
 		event_target:faction_leader = {
 			vassal_of = ROOT
-			OR = {
-				leads_faction = faction_court
-				leads_faction = faction_prosperity
-				leads_faction = faction_glory
-				leads_faction = faction_tradition
-			}
+			pf_leader_trigger = yes
 		}
 	}
 	
@@ -4273,10 +3849,7 @@ letter_event = {
 				any_vassal = {
 					limit = {
 						ai = no
-						OR = {
-							leads_faction = faction_court
-							in_faction = faction_court
-						}
+						in_faction = faction_court
 					}
 					character_event = { id = PlusFaction.151 }
 				}
@@ -4289,10 +3862,7 @@ letter_event = {
 				any_vassal = {
 					limit = {
 						ai = no
-						OR = {
-							leads_faction = faction_prosperity
-							in_faction = faction_prosperity
-						}
+						in_faction = faction_prosperity
 					}
 					character_event = { id = PlusFaction.151 }
 				}
@@ -4305,10 +3875,7 @@ letter_event = {
 				any_vassal = {
 					limit = {
 						ai = no
-						OR = {
-							leads_faction = faction_glory
-							in_faction = faction_glory
-						}
+						in_faction = faction_glory
 					}
 					character_event = { id = PlusFaction.151 }
 				}
@@ -4321,10 +3888,7 @@ letter_event = {
 				any_vassal = {
 					limit = {
 						ai = no
-						OR = {
-							leads_faction = faction_tradition
-							in_faction = faction_tradition
-						}
+						in_faction = faction_tradition
 					}
 					character_event = { id = PlusFaction.151 }
 				}
@@ -4465,19 +4029,11 @@ character_event = {
 	
 	trigger = {
 		higher_real_tier_than = COUNT
-		any_courtier = {
-			has_job_title = job_chancellor
-			in_command = no
-		}
+		job_chancellor = { in_command = no }
 		any_vassal = {
 			in_command = no
 			primary_title = { higher_tier_than = BARON }
-			OR = {
-				leads_faction = faction_court
-				leads_faction = faction_prosperity
-				leads_faction = faction_glory
-				leads_faction = faction_tradition
-			}
+			pf_leader_trigger = yes
 			OR = {
 				NOT = { has_character_flag = faction_negotiate }
 				had_character_flag = { flag = faction_negotiate days = 1825 }
@@ -4487,15 +4043,7 @@ character_event = {
 				has_character_flag = do_not_disturb
 			}
 		}
-		NOR = {
-			has_character_flag = faction_court_war
-			has_character_flag = faction_prosperity_war
-			has_character_flag = faction_glory_war
-			has_character_flag = faction_tradition_war
-			has_character_flag = faction_pretender_war
-			has_character_flag = faction_separatist_war
-			has_character_flag = faction_religious_war
-		}
+		pf_war_trigger = no
 	}
 
 	mean_time_to_happen = {
@@ -4563,12 +4111,7 @@ character_event = {
 			limit = {
 				in_command = no
 				primary_title = { higher_tier_than = BARON }
-				OR = {
-					leads_faction = faction_court
-					leads_faction = faction_prosperity
-					leads_faction = faction_glory
-					leads_faction = faction_tradition
-				}
+				pf_leader_trigger = yes
 				OR = {
 					NOT = { has_character_flag = faction_negotiate }
 					had_character_flag = { flag = faction_negotiate days = 1825 }
