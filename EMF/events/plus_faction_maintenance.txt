@@ -32,7 +32,7 @@ character_event = {
 				pf_leader_trigger = yes
 				check_variable = { which = "faction_mood_increase" value = 0.1 }
 			}
-			character_event = { id = PlusFaction.224 }
+			character_event = { id = PlusFaction.223 }
 			set_variable = { which = "faction_mood_increase" value = 0 }
 		}
 		any_vassal = {
@@ -40,7 +40,7 @@ character_event = {
 				pf_leader_trigger = yes
 				check_variable = { which = "faction_mood_decrease" value = 0.1 }
 			}
-			character_event = { id = PlusFaction.225 }
+			character_event = { id = PlusFaction.224 }
 			set_variable = { which = "faction_mood_decrease" value = 0 }
 		}
 
@@ -670,46 +670,35 @@ character_event = {
 		character_event = { id = PlusFaction.221 } # setup effects
 
 		#remove any [invalid] faction_mood increase/decrease on non-faction-leaders
+
 		if = {
-			limit = {
-				pf_leader_trigger = no
-				OR = {
-					check_variable = { which = "faction_mood_increase" value = 0.1 }
-					check_variable = { which = "faction_mood_decrease" value = 0.1 }
+			limit = { not = { has_global_flag = EMF } }
+			if = {
+				limit = {
+					pf_leader_trigger = no
+					OR = {
+						check_variable = { which = "faction_mood_increase" value = 0.1 }
+						check_variable = { which = "faction_mood_decrease" value = 0.1 }
+					}
 				}
+				set_variable = { which = "faction_mood_increase" value = 0 }
+				set_variable = { which = "faction_mood_decrease" value = 0 }
 			}
-			set_variable = { which = "faction_mood_increase" value = 0 }
-			set_variable = { which = "faction_mood_decrease" value = 0 }
-		}
-		any_vassal = {
-			limit = {
-				pf_leader_trigger = no
-				OR = {
-					check_variable = { which = "faction_mood_increase" value = 0.1 }
-					check_variable = { which = "faction_mood_decrease" value = 0.1 }
+			any_vassal = {
+				limit = {
+					pf_leader_trigger = no
+					OR = {
+						check_variable = { which = "faction_mood_increase" value = 0.1 }
+						check_variable = { which = "faction_mood_decrease" value = 0.1 }
+					}
 				}
+				set_variable = { which = "faction_mood_increase" value = 0 }
+				set_variable = { which = "faction_mood_decrease" value = 0 }
 			}
-			set_variable = { which = "faction_mood_increase" value = 0 }
-			set_variable = { which = "faction_mood_decrease" value = 0 }
 		}
 
-		# We *could* still do on-demand maintenance here, because it may be a worthy
-		# optimization to defer on-demand mood increase/decrease for AI / player-unrelated
-		# lieges until this mandatory annual maintenance event executes all at once.
-		#
-		# We'd likely then make PlusFaction.200 basically a no-op for
-		# AI / player-unrelated PF lieges and then, here, subtract any accumulated
-		# faction_mood_decrease from faction_mood_increase (to cut-down on total
-		# opinion modifiers necessary) and then do a slightly-modified form of
-		# the on-demand maintenance all at once right before executing the annual
-		# code.
-		# 
-		# PlusFaction.200 for a player or a player's liege, OTOH, would
-		# immediately do full recalculation and not allow faction_mood_increase
-		# or faction_mood_decrease to accumulate into this yearly pulse event,
-		# rendering that component a no-op *here*. Currently, all PF lieges are
-		# treated this way (unoptimized), so we don't even execute any on-demand
-		# code at all here.
+		# In the future, we will support execution of deferred faction mood impulse
+		# maintenance here: ---->   <------
 
 		## ANNUAL MAINTENANCE CORE ##
 
@@ -1876,12 +1865,7 @@ character_event = {
 		#Now calculate each faction's mood, which is the  average of each faction member's
 		#overall opinion of the liege, weighted by the number of votes they have in the faction
 		any_vassal = {
-			limit = {
-				OR = {
-					pf_leader_trigger = yes
-					pf_member_trigger = yes
-				}
-			}
+			limit = { pf_member_trigger = yes }
 
 			# set a number based on their opinion of the liege (from 1 to 100, 100 being the best)
 			if = {
@@ -2257,47 +2241,10 @@ character_event = {
 	}
 }
 
-
-# PlusFaction.223 [Liege]
-# On-demand faction maintenance event [trigger filter proxy to PlusFaction.200]
-#
-# Alternate scheduling method which immediately recalculates faction mood due to
-# an impulse for players and player lieges but otherwise defers faction mood
-# recalculation to the next full faction maintenance pulse.
-#
-# For code to use this PlusFaction.223 directly, it needs to use change_variable
-# rather than set_variable upon "faction_mood_increase" and "faction_mood_decrease"
-#
-# Note that this optimization can merely lead to a few months before the 3 or 6 year
-# bonuses/maluses kick-in for player-unrelated PF lieges. Since they're usually
-# relatively small offsets, this should be very effective most of the time.
-# One may use PlusFaction.223 for lower-priority mood impulses while using
-# PlusFaction.200 for high-priority impulses, or any mixture thereof. I assume
-# CK2Plus will simply always use PlusFaction.200 whereas EMF will not, so that's
-# why the code is structured this way: to keep the EMF and Plus PF internal code
-# common.
-character_event = {
-	id = PlusFaction.223
-
-	is_triggered_only = yes
-	hide_window = yes
-
-	trigger = {
-		or = {
-			ai = no
-			any_vassal = { ai = no }
-		}
-	}
-
-	immediate = {
-		character_event = { id = PlusFaction.200 }
-	}
-}
-
-# PlusFaction.224 [Faction Leader w/ Mood Increase]
+# PlusFaction.223 [Faction Leader w/ Mood Increase]
 # Helper to PlusFaction.200 in order to take advantage of `break = yes` (and more)
 character_event = {
-	id = PlusFaction.224
+	id = PlusFaction.223
 
 	is_triggered_only = yes
 	hide_window = yes
@@ -2396,10 +2343,10 @@ character_event = {
 	}
 }
 
-# PlusFaction.225 [Faction Leader w/ Mood Decrease]
+# PlusFaction.224 [Faction Leader w/ Mood Decrease]
 # Helper to PlusFaction.200 in order to take advantage of `break = yes` (and more)
 character_event = {
-	id = PlusFaction.225
+	id = PlusFaction.224
 
 	is_triggered_only = yes
 	hide_window = yes
@@ -2497,3 +2444,7 @@ character_event = {
 		}
 	}
 }
+
+# PlusFaction.230-239 intended for handling alternate implementation of
+# conditionally-deferred faction mood maintenance due to active mood
+# impulses (an optimization, not a feature).
