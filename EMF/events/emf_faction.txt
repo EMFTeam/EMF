@@ -56,6 +56,10 @@ character_event = {
 		num_of_baron_titles = 1
 		pf_war_trait_trigger = no
 	}
+	
+	immediate = {
+		FROM = { save_event_target_as = pf_attacker }
+	}
 
 	option = {
 		name = EVTOPTA_PlusFaction_421 #join the rebellion
@@ -168,10 +172,8 @@ character_event = {
 		log = "emf_faction.1: Lower CA: Non-faction vassal [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) attempting to join revolt against liege (ID: [Root.Liege.GetID])"
 
 		pf_setup_rebel_effect = yes
-		pf_rebel_independence_effect = yes
-		join_attacker_wars = FROM
-
-		character_event = { id = emf_faction.2 }
+		hidden_tooltip = { character_event = { id = PlusFaction.440 } } # Actually join
+		tooltip = { join_attacker_wars = event_target:pf_attacker }
 	}
 	option = {
 		name = EVTOPTB_PlusFaction_421 #remain loyal
@@ -235,7 +237,7 @@ character_event = {
 		}
 		add_trait = loyalist
 		hidden_tooltip = {
-			liege = { opinion = { who = ROOT modifier = supported_civil_war multiplier = 4 years = 100 } }
+			liege = { opinion = { who = ROOT modifier = supported_civil_war years = 100 } }
 		}
 	}
 	option = {
@@ -256,6 +258,9 @@ character_event = {
 			}
 		}
 		add_trait = neutral
+		hidden_tooltip = {
+			liege = { opinion = { who = ROOT modifier = neutral_civil_war years = 100 } }
+		}
 	}
 	option = {
 		name = EVTOPTD_PlusFaction_421 #I am imprisoned
@@ -273,59 +278,25 @@ character_event = {
 }
 
 
-character_event = {
-	id = emf_faction.2
-
-	is_triggered_only = yes
-	hide_window = yes
-
-	trigger = {
-		NOT = {
-			any_war = {
-				defender = { character = FROMFROMFROM }
-				attacker = { character = FROMFROM }
-				any_attacker = { character = ROOT }
-				using_cb = cb_faction_overthrow_ruler
-			}
-		}
-	}
-
-	immediate = {
-		if = {
-			limit = {
-				any_war = {
-					attacker = { character = FROMFROM }
-					any_attacker = { character = ROOT }
-				}
-			}
-			log = "emf_faction.2: SERIOUS: Non-faction vassal [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) failed to join revolt BUT is a secondary participant attacker in one of the revolt leader's wars! (Leader ID: [FromFrom.GetID])"
-		}
-		pf_teardown_rebel_effect = yes
-		set_defacto_liege = FROMFROMFROM
-	}
-}
-
-
-
 character_event = { # Check for stray war traits/TOMs <Debug MTTH on ALL characters>
 	id = emf_faction.3
 	
 	hide_window = yes
 
 	trigger = {
-		war = no
-		AND = {
-			OR = {
-				pf_war_trait_trigger = yes
-				has_any_opinion_modifier = revolting_against
-				has_any_opinion_modifier = revolting_against_me
-			}
-			OR = {
-				independent = yes
-				liege = { war = no }
-			}
+		OR = {
+			pf_war_trait_trigger = yes
+			has_any_opinion_modifier = revolting_against
+			has_any_opinion_modifier = revolting_against_me
+			has_any_opinion_modifier = supported_civil_war
+			has_any_opinion_modifier = neutral_civil_war
 		}
-		not = { has_character_flag = pf_warned }
+		war = no
+		OR = {
+			independent = yes
+			liege = { war = no }
+		}
+		NOT = { has_character_flag = pf_logged_error }
 	}
 
 	mean_time_to_happen = {
@@ -333,7 +304,7 @@ character_event = { # Check for stray war traits/TOMs <Debug MTTH on ALL charact
 	}
 
 	immediate = {
-		set_character_flag = pf_warned
+		set_character_flag = pf_logged_error
 		if = {
 			limit = { trait = rebel }
 			log = "ERROR: [Root.GetTitledFirstName] of the [Root.PrimaryTitle.GetFullBaseName] ([Root.GetID]) has a Rebel trait but is not in a war"
