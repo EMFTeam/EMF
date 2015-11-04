@@ -245,9 +245,6 @@ character_event = {
 	trigger = { current_heir = { is_alive = yes } }
 
 	immediate = {
-		#pass on proper flags to the heir if currently in a faction revolt
-		pf_inherit_war_flags_effect = yes
-		
 		#pass down laws if the heir is inheriting a new primary title
 		if = {
 			limit = {
@@ -285,14 +282,17 @@ character_event = {
 				NOR = {
 					any_war = { # Secondary participant revolter
 						any_attacker = { character = ROOT } # Non-faction participant in this war or revolt leader
-						using_cb = cb_faction_overthrow_ruler
+						pf_cb_trigger = yes
 					}
-					AND = { # Faction member revolter (also works for revolt leaders, as does above)
+					AND = { # Faction member revolter (also works for revolt leaders)
 						in_revolt = yes
-						liege = {
+						liege = { # Liege is a PF-style revolt leader
 							any_war = {
-								attacker = { character = PREVPREV } # Liege is a revolt leader
-								using_cb = cb_faction_overthrow_ruler
+								attacker = {
+									character = PREVPREV
+									in_revolt = yes
+								}
+								pf_cb_trigger = yes
 							}
 						}
 					}
@@ -302,43 +302,36 @@ character_event = {
 			remove_trait = rebel
 		}
 
-		# Are we a revolt leader?
 		if = {
 			limit = {
-				in_revolt = yes
-				independent = no
-				liege = { character = PREV }
-			}
-			set_character_flag = is_revolt_leader_temp
-		}
-
-		if = {
-			limit = {
-				NOT = { has_character_flag = is_revolt_leader_temp }
+				NAND = { # Not a revolt leader
+					in_revolt = yes
+					liege = { character = PREV }
+				}
 				has_character_flag = original_war_liege
 			}
 			log = "PlusFaction.205: SERIOUS: dying ruler had original_war_liege flag but wasn't a revolt leader: [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID])"
 			clr_character_flag = original_war_liege
 		}
 
+		# Pass on proper flags to the heir if currently in a faction revolt
+		pf_inherit_war_flags_effect = yes
+
 		# Handle the case where we're a revolt leader and need to potentially
 		# pass on an original_war_liege flag
 		liege_before_war = {
 			any_war = {
 				limit = {
-					ROOT = { has_character_flag = is_revolt_leader_temp }
 					defender = { character = PREVPREV }
 					attacker = {
 						character = ROOT
-						has_opinion_modifier = { who = PREVPREV modifier = revolting_against }
 						has_character_flag = original_war_liege
 					}
+					pf_cb_trigger = yes
 				}
 				ROOT = { current_heir = { set_character_flag = original_war_liege } }
 			}
 		}
-
-		clr_character_flag = is_revolt_leader_temp
 
 		if = {
 			limit = { trait = rebel } # Are we a PF-style rebel?
@@ -391,10 +384,8 @@ character_event = {
 					any_war = {
 						limit = {
 							defender = { character = PREVPREV }
-							attacker = {
-								character = ROOT
-								has_opinion_modifier = { who = PREVPREV modifier = revolting_against }
-							}
+							attacker = { character = ROOT }
+							pf_cb_trigger = yes
 						}
 						defender = {
 							log = "PlusFaction.205: INFO: dying ruler [Root.GetTitledFirstName] of the [Root.PrimaryTitle.GetFullBaseName] (ID: [Root.GetID]) is a revolt leader against [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID]), but their heir cannot inherit the war, so the revolt must be invalidated"
@@ -431,10 +422,11 @@ character_event = {
 					
 					if = {
 						limit = {
-							any_war = { # Has to be a PF-style revolt by definition of revolting_against
+							any_war = {
 								defender = { character = PREVPREV }
 								any_attacker = { character = ROOT }
 								attacker = { NOT = { character = ROOT } } # Should never happen due to war invalidation cleanup implied above
+								pf_cb_trigger = yes
 							}
 						}
 
@@ -452,6 +444,7 @@ character_event = {
 											reverse_has_opinion_modifier = { who = PREVPREV modifier = revolting_against }
 											reverse_has_opinion_modifier = { who = ROOT modifier = revolting_against }
 										}
+										pf_cb_trigger = yes
 									}
 								}
 							}
@@ -542,7 +535,7 @@ character_event = {
 		any_war = {
 			limit = {
 				defender = { character = ROOT }
-				attacker = { has_opinion_modifier = { who = ROOT modifier = revolting_against } }
+				pf_cb_trigger = yes
 			}
 			attacker = { clr_character_flag = original_war_liege }
 		}
