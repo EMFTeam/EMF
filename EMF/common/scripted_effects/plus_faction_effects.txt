@@ -865,6 +865,120 @@ pf_civil_war_cleanup_effect = {
 }
 
 
+# companion effect for set_defacto_liege, should be called before liege change
+pf_liege_change_begin_effect = {
+	hidden_tooltip = {
+		liege = { save_event_target_as = pf_lc_liege }
+	}
+}
+
+pf_liege_change_end_effect = {
+	hidden_tooltip = {
+		if = {
+			limit = {
+				NOT = { liege = { character = event_target:pf_lc_liege } }
+			}
+			pf_teardown_rebel_effect = yes
+			reverse_remove_opinion = { who = event_target:pf_lc_liege modifier = supported_civil_war }
+			reverse_remove_opinion = { who = event_target:pf_lc_liege modifier = neutral_civil_war }
+			remove_trait = loyalist
+			remove_trait = neutral
+		}
+		clear_event_target = pf_lc_liege
+	}
+}
+
+pf_liege_change_under_title_begin_effect = {
+	hidden_tooltip = {
+		any_de_jure_vassal = { # All rulers with land under this de jure title
+			limit = {
+				# That have civil war state
+				is_playable = yes
+				pf_war_trait_trigger = yes
+
+				# That are in FROM's subrealm under the title PREV
+				OR = {
+					character = FROM
+					is_liege_or_above = FROM
+				}
+			}
+			# Add temporary TOM from Isis to tracked ruler
+			e_hip = {
+				holder_scope = {
+					if = {
+						limit = { NOT = { has_opinion_modifier = { who = PREVPREV modifier = pf_lcut_ruler } } }
+						opinion = { who = PREVPREV modifier = pf_lcut_ruler }
+					}
+				}
+			}
+			liege = { # Add temporary TOM from tracked ruler to current liege
+				if = {
+					limit = {
+						NOR = { # Neither if the ruler is effectively independent nor if they already have a TOM
+							character = PREV
+							reverse_has_opinion_modifier = { who = PREV modifier = pf_lcut_liege }
+						}
+					}
+					reverse_opinion = { who = PREV modifier = pf_lcut_liege }
+				}
+			}
+		}
+	}
+}
+
+
+pf_liege_change_under_title_end_effect = {
+	hidden_tooltip = {
+		e_hip = {
+			holder_scope = {
+				any_opinion_modifier_target = { # Tracked rulers
+					limit = {
+						reverse_has_opinion_modifier = { who = PREV modifier = pf_lcut_ruler }
+						OR = {
+							has_opinion_modifier = { who = LIEGE modifier = pf_lcut_liege } # Still the same liege
+							AND = { # Or...
+								liege = { character = PREV } # Independent now
+								NOT = { # And not any prior liege
+									any_opinion_modifier_target = {
+										reverse_has_opinion_modifier = { who = PREV modifier = pf_lcut_liege }
+									}
+								}
+							}
+						}
+					}
+					# Liege didn't change, so remove them from the tracked set
+					reverse_remove_opinion = { who = PREV modifier = pf_lcut_ruler }
+					liege = {
+						reverse_remove_opinion = { who = PREV modifier = pf_lcut_liege }
+					}
+				}
+
+				# All that's left now in Isis's tracked LCUT set are characters
+				# whose liege changed under the title.
+
+				any_opinion_modifier_target = { # Tracked rulers w/ liege change
+					limit = { reverse_has_opinion_modifier = { who = PREV modifier = pf_lcut_ruler } }
+					
+					random_opinion_modifier_target = { # Prior liege (if applicable, i.e., weren't independent)
+						limit = { reverse_has_opinion_modifier = { who = PREV modifier = pf_lcut_liege } }
+						
+						remove_opinion = { who = PREV modifier = supported_civil_war }
+						remove_opinion = { who = PREV modifier = neutral_civil_war }
+						remove_trait = loyalist
+						remove_trait = neutral
+
+						reverse_remove_opinion = { who = PREV modifier = pf_lcut_liege }
+					}
+
+					pf_teardown_rebel_effect = yes
+					reverse_remove_opinion = { who = PREV modifier = pf_lcut_ruler }
+				}
+			}
+		}
+	}
+}
+
+
 pf_log_civil_war_state_effect = {
 	log = "DEBUG: civil war state for [Root.GetTitledFirstName] of the [Root.PrimaryTitle.GetFullBaseName] ([Root.GetID]):"
 	if = {
