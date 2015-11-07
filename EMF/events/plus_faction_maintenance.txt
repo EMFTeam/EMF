@@ -392,8 +392,7 @@ character_event = {
 				# Note that war invalidation will cleanup any revolting_against, etc. TOM state and such
 				# by this point in the code if we were a revolt leader.
 
-				# If we're not a revolt leader and we're a secondary revolt participant
-				# (i.e., answered dynamic call-to-arms) in a PF revolt, revassalize
+				# If we're not a revolt leader in a PF revolt, revassalize
 				# ourselves to the liege now, since our heir can't/shouldn't take our place.
 
 				random_opinion_modifier_target = {
@@ -401,6 +400,7 @@ character_event = {
 
 					log = "PlusFaction.205: INFO: dying ruler [Root.GetTitledFirstName] of the [Root.PrimaryTitle.GetFullBaseName] (ID: [Root.GetID]) is a revolter against [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID]), but their heir cannot inherit the war, so they will be revassalized"
 
+					# FIXME: some recent testing suggests that this method may not work on proper faction members, so...
 					set_defacto_vassal = ROOT
 
 					if = {
@@ -409,6 +409,7 @@ character_event = {
 					}
 
 					reverse_remove_opinion = { who = PREV modifier = revolting_against }
+					remove_opinion = { who = PREV modifier = revolting_against_me }
 					save_event_target_as = pf_was_revolting_against
 				}
 
@@ -438,6 +439,44 @@ character_event = {
 
 				current_heir = { add_trait = rebel }
 
+				if = {
+					limit = {
+						liege = { character = PREV } # Revolt leader
+					}
+					any_vassal = {
+						limit = {
+							pf_in_revolt_trigger = yes
+						}
+						ROOT = {
+							current_heir = {
+								if = {
+									limit = {
+										NOT = {
+											reverse_has_opinion_modifier = { who = PREVPREV modifier = revolting_for }
+										}
+									}
+									reverse_opinion = { who = PREVPREV modifier = revolting_for }
+								}
+							}
+						}
+						if = {
+							limit = { in_revolt = no } # Only for those who were secondary participants
+							ROOT = {
+								current_heir = {
+									if = {
+										limit = {
+											NOT = {
+												reverse_has_opinion_modifier = { who = PREVPREV modifier = opinion_rebel_leader }
+											}
+										}
+										reverse_opinion = { who = PREVPREV modifier = opinion_rebel_leader years = 100 }
+									}
+								}
+							}
+						}
+					}
+				}
+
 				random_opinion_modifier_target = { # Should only be one
 					limit = { reverse_has_opinion_modifier = { who = PREV modifier = revolting_against } }
 					ROOT = {
@@ -445,6 +484,10 @@ character_event = {
 							if = {
 								limit = { NOT = { has_opinion_modifier = { who = PREVPREV modifier = revolting_against } } }
 								opinion = { who = PREVPREV modifier = revolting_against years = 100 }
+							}
+							if = {
+								limit = { NOT = { reverse_has_opinion_modifier = { who = PREVPREV modifier = revolting_against_me } } }
+								reverse_opinion = { who = PREVPREV modifier = revolting_against_me years = 100 }
 							}
 						}
 					}
