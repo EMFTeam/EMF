@@ -1,0 +1,302 @@
+
+namespace = emf_faction
+
+
+character_event = { # Check for stray war traits/TOMs <Debug MTTH on ALL characters>
+	id = emf_faction.1000
+	
+	hide_window = yes
+
+	trigger = {
+		OR = {
+			AND = { # Stray rebel state
+				OR = {
+					trait = rebel
+					has_any_opinion_modifier = revolting_against
+					has_any_opinion_modifier = revolting_for
+				}
+				OR = {
+					is_ruler = no
+					pf_in_revolt_trigger = no
+				}
+			}
+			AND = { # Stray neutral/loyalist state
+				OR = {
+					trait = loyalist
+					trait = neutral
+				}
+				liege = {
+					OR = {
+						character = PREV
+						any_war = {
+							defender = { character = PREVPREV }
+							pf_cb_trigger = yes
+						}
+					}
+				}
+			}
+			AND = { # Stray liege state
+				OR = {
+					has_any_opinion_modifier = revolting_against_me
+					has_any_opinion_modifier = supported_civil_war
+					has_any_opinion_modifier = neutral_civil_war
+				}
+				NAND = {
+					is_ruler = yes
+					any_war = {
+						defender = { character = ROOT }
+						pf_cb_trigger = yes
+					}
+				}
+			}
+		}
+		NOT = { has_character_flag = pf_error }
+	}
+
+	mean_time_to_happen = {
+		days = 1
+	}
+
+	immediate = {
+		set_character_flag = pf_error
+
+		log = "emf_faction.1000: ERROR: character not revolting in a PF civil war yet has revolter state: civil war state dump follows:"
+
+		pf_log_civil_war_state_effect = yes
+	}
+}
+
+
+letter_event = {
+	id = emf_faction.1010
+	desc = emf_faction.1010.desc
+
+	is_triggered_only = yes
+
+	option = {
+		name = emf_faction.1010.opt.a # Standard revolt
+		if = {
+			limit = { has_character_flag = start_c_war }
+			clr_character_flag = start_c_war
+			FROM = {
+				random_vassal = {
+					limit = { leads_faction = faction_court }
+					hidden_tooltip = { set_variable = { which = faction_votes value = 1 } }
+					character_event = { id = PlusFaction.344 }
+				}
+			}
+		}
+		if = {
+			limit = { has_character_flag = start_p_war }
+			clr_character_flag = start_p_war
+			FROM = {
+				random_vassal = {
+					limit = { leads_faction = faction_prosperity }
+					hidden_tooltip = { set_variable = { which = faction_votes value = 1 } }
+					character_event = { id = PlusFaction.344 }
+				}
+			}
+		}
+		if = {
+			limit = { has_character_flag = start_g_war }
+			clr_character_flag = start_g_war
+			FROM = {
+				random_vassal = {
+					limit = { leads_faction = faction_glory }
+					hidden_tooltip = { set_variable = { which = faction_votes value = 1 } }
+					character_event = { id = PlusFaction.344 }
+				}
+			}
+		}
+		if = {
+			limit = { has_character_flag = start_t_war }
+			clr_character_flag = start_t_war
+			FROM = {
+				random_vassal = {
+					limit = { leads_faction = faction_tradition }
+					hidden_tooltip = { set_variable = { which = faction_votes value = 1 } }
+					character_event = { id = PlusFaction.344 }
+				}
+			}
+		}
+	}
+
+	option = {
+		name = emf_faction.1010.opt.b # All-vassals revolt
+
+		if = {
+			limit = { has_character_flag = start_c_war }
+			clr_character_flag = start_c_war
+			FROM = {
+				random_vassal = {
+					limit = { leads_faction = faction_court }
+					character_event = { id = emf_faction.1011 }
+				}
+			}
+		}
+		if = {
+			limit = { has_character_flag = start_p_war }
+			clr_character_flag = start_p_war
+			FROM = {
+				random_vassal = {
+					limit = { leads_faction = faction_prosperity }
+					character_event = { id = emf_faction.1011 }
+				}
+			}
+		}
+		if = {
+			limit = { has_character_flag = start_g_war }
+			clr_character_flag = start_g_war
+			FROM = {
+				random_vassal = {
+					limit = { leads_faction = faction_glory }
+					character_event = { id = emf_faction.1011 }
+				}
+			}
+		}
+		if = {
+			limit = { has_character_flag = start_t_war }
+			clr_character_flag = start_t_war
+			FROM = {
+				random_vassal = {
+					limit = { leads_faction = faction_tradition }
+					character_event = { id = emf_faction.1011 }
+				}
+			}
+		}
+	}
+
+	option = {
+		name = CANCEL
+		clr_character_flag = start_c_war
+		clr_character_flag = start_p_war
+		clr_character_flag = start_g_war
+		clr_character_flag = start_t_war
+	}
+}
+
+
+character_event = {
+	id = emf_faction.1011
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+
+		hidden_tooltip = {
+			any_faction_backer = {
+				limit = { pf_my_faction_backer_trigger = yes }
+				character_event = { id = PlusFaction.345 } #notify
+			}
+		}
+
+		#start the war
+		liege = {
+			if = {
+				limit = {
+					ROOT = { leads_faction = faction_court }
+				}
+				hidden_tooltip = {
+					set_character_flag = faction_court_war
+					ROOT = {
+						set_character_flag = original_war_liege
+						pf_setup_rebel_effect = yes
+						any_faction_backer = {
+							faction = faction_court
+							pf_setup_rebel_effect = yes
+						}
+					}
+				}
+				reverse_war = {
+					target = ROOT
+					casus_belli = cb_faction_overthrow_ruler
+					faction = faction_court
+				}
+			}
+			if = {
+				limit = {
+					ROOT = { leads_faction = faction_prosperity }
+				}
+				hidden_tooltip = {
+					set_character_flag = faction_prosperity_war
+					ROOT = {
+						set_character_flag = original_war_liege
+						pf_setup_rebel_effect = yes
+						any_faction_backer = {
+							faction = faction_prosperity
+							pf_setup_rebel_effect = yes
+						}
+					}
+				}
+				reverse_war = {
+					target = ROOT
+					casus_belli = cb_faction_overthrow_ruler
+					faction = faction_prosperity
+				}
+			}
+			if = {
+				limit = {
+					ROOT = { leads_faction = faction_glory }
+				}
+				hidden_tooltip = {
+					set_character_flag = faction_glory_war
+					ROOT = {
+						set_character_flag = original_war_liege
+						pf_setup_rebel_effect = yes
+						any_faction_backer = {
+							faction = faction_glory
+							pf_setup_rebel_effect = yes
+						}
+					}
+				}
+				reverse_war = {
+					target = ROOT
+					casus_belli = cb_faction_overthrow_ruler
+					faction = faction_glory
+				}
+			}
+			if = {
+				limit = {
+					ROOT = { leads_faction = faction_tradition }
+				}
+				hidden_tooltip = {
+					set_character_flag = faction_tradition_war
+					ROOT = {
+						set_character_flag = original_war_liege
+						pf_setup_rebel_effect = yes
+						any_faction_backer = {
+							faction = faction_tradition
+							pf_setup_rebel_effect = yes
+						}
+					}
+				}
+				reverse_war = {
+					target = ROOT
+					casus_belli = cb_faction_overthrow_ruler
+					faction = faction_tradition
+				}
+			}
+
+			save_event_target_as = pf_attacker
+
+			any_vassal = {
+				limit = {
+					pf_root_faction_backer_trigger = no
+					is_playable = yes
+					num_of_baron_titles = 1
+					war = no
+					NOT = { character = ROOT }
+				}
+				character_event = { id = PlusFaction.440 tooltip = TT_PlusFaction_440 }
+			}
+		}
+		hidden_tooltip = {
+			character_event = { id = PlusFaction.399 days = 1 } #clear flags
+		}
+	}
+}
+
+
+##### ONE-OFF TESTING ######
+

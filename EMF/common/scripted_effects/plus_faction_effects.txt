@@ -198,6 +198,18 @@ pf_clear_succession_flags_effect = {
 	}
 }
 
+pf_clear_war_flags_effect = {
+	clr_character_flag = faction_court_war
+	clr_character_flag = faction_prosperity_war
+	clr_character_flag = faction_glory_war
+	clr_character_flag = faction_tradition_war
+	clr_character_flag = faction_pretender_war
+	clr_character_flag = faction_separatist_war
+	clr_character_flag = faction_religious_war
+	clr_character_flag = faction_succession_war
+	clr_character_flag = faction_authority_war
+}
+
 pf_clear_demands_flags_effect = {
 	clr_character_flag = demands_lower_CA
 	clr_character_flag = demands_lower_TO
@@ -758,13 +770,24 @@ pf_setup_rebel_effect = {
 				limit = {
 					NOT = { has_opinion_modifier = { who = PREV modifier = revolting_against_me } }
 				}
-				opinion = { who = PREV modifier = revolting_against_me years = 100 }
+				opinion = { who = PREV modifier = revolting_against_me }
 			}
 			if = {
 				limit = {
 					NOT = { reverse_has_opinion_modifier = { who = PREV modifier = revolting_against } }
 				}
-				reverse_opinion = { who = PREV modifier = revolting_against years = 100 }
+				reverse_opinion = { who = PREV modifier = revolting_against }
+			}
+		}
+		event_target:pf_attacker = {
+			if = {
+				limit = {
+					NOR = {
+						character = PREV
+						reverse_has_opinion_modifier = { who = PREV modifier = revolting_for }
+					}
+				}
+				reverse_opinion = { who = PREV modifier = revolting_for }
 			}
 		}
 	}
@@ -777,6 +800,10 @@ pf_teardown_rebel_effect = {
 			limit = { reverse_has_opinion_modifier = { who = PREV modifier = revolting_against } }
 			reverse_remove_opinion = { who = PREV modifier = revolting_against }
 			remove_opinion = { who = PREV modifier = revolting_against_me }
+		}
+		random_opinion_modifier_target = { # Revolt leader
+			limit = { reverse_has_opinion_modifier = { who = PREV modifier = revolting_for } }
+			reverse_remove_opinion = { who = PREV modifier = revolting_for }
 		}
 	}
 }
@@ -807,6 +834,13 @@ pf_civil_war_cleanup_effect = {
 			any_opinion_modifier_target = {
 				limit = { pf_part_of_this_revolt_trigger = yes }
 				remove_trait = rebel
+
+				random_opinion_modifier_target = {
+					limit = { reverse_has_opinion_modifier = { who = PREV modifier = revolting_for } }
+					reverse_remove_opinion = { who = PREV modifier = revolting_for }
+					reverse_remove_opinion = { who = PREV modifier = opinion_rebel_leader } # When it's not already gone
+				}
+
 				random_opinion_modifier_target = {
 					limit = { reverse_has_opinion_modifier = { who = PREV modifier = revolting_against } }
 					
@@ -815,11 +849,6 @@ pf_civil_war_cleanup_effect = {
 
 					save_event_target_as = pf_was_revolting_against
 				}
-
-				# Fail early, fail often... better to fix the system if it's broken than to
-				# simply cleanup after it sometimes. (why I chose to NOT clear all
-				# revolting_against TOMs and instead log the failure, for now-- while we
-				# work on the CB code)
 
 				if = {
 					limit = { has_any_opinion_modifier = revolting_against }
@@ -992,50 +1021,105 @@ pf_log_civil_war_state_effect = {
 	log = "DEBUG: civil war state for [Root.GetTitledFirstName] of the [Root.PrimaryTitle.GetFullBaseName] ([Root.GetID]):"
 	if = {
 		limit = {
+			pf_war_trait_trigger = no
+		}
+		log = "DEBUG: no civil war trait"
+	}
+	if = {
+		limit = {
+			is_ruler = no
+			trait = rebel
+		}
+		log = "SERIOUS: trait = rebel but not a ruler!"
+	}
+	if = {
+		limit = {
+			is_ruler = yes
 			trait = rebel
 			has_any_opinion_modifier = revolting_against
 			OR = {
-				war = yes
-				in_revolt = yes
+				liege = { character = PREV }
+				has_any_opinion_modifier = revolting_for
 			}
+			pf_in_revolt_trigger = yes
 		}
 		log = "DEBUG: trait = rebel"
 	}
 	if = {
 		limit = {
+			is_ruler = yes
 			trait = rebel
 			NOT = { has_any_opinion_modifier = revolting_against }
 			OR = {
-				war = yes
-				in_revolt = yes
+				liege = { character = PREV }
+				has_any_opinion_modifier = revolting_for
 			}
+			pf_in_revolt_trigger = yes
 		}
 		log = "SERIOUS: trait = rebel w/o any revolting_against"
 	}
 	if = {
 		limit = {
+			is_ruler = yes
 			trait = rebel
 			has_any_opinion_modifier = revolting_against
-			NOR = {
-				war = yes
-				in_revolt = yes
+			OR = {
+				liege = { character = PREV }
+				has_any_opinion_modifier = revolting_for
 			}
+			pf_in_revolt_trigger = no
 		}
 		log = "SERIOUS: trait = rebel w/o a war"
 	}
 	if = {
 		limit = {
+			is_ruler = yes
 			trait = rebel
 			NOT = { has_any_opinion_modifier = revolting_against }
 			NOR = {
-				war = yes
-				in_revolt = yes
+				liege = { character = PREV }
+				has_any_opinion_modifier = revolting_for
 			}
+			pf_in_revolt_trigger = yes
 		}
-		log = "SERIOUS: trait = rebel w/o a war NOR any revolting_against"
+		log = "SERIOUS: trait = rebel w/o any revolting_against NOR any revolting_for"
 	}
 	if = {
 		limit = {
+			is_ruler = yes
+			trait = rebel
+			has_any_opinion_modifier = revolting_against
+			NOR = {
+				liege = { character = PREV }
+				has_any_opinion_modifier = revolting_for
+			}
+			pf_in_revolt_trigger = no
+		}
+		log = "SERIOUS: trait = rebel w/o a war NOR any revolting_for"
+	}
+	if = {
+		limit = {
+			is_ruler = yes
+			trait = rebel
+			NOT = { has_any_opinion_modifier = revolting_against }
+			NOR = {
+				liege = { character = PREV }
+				has_any_opinion_modifier = revolting_for
+			}
+			pf_in_revolt_trigger = no
+		}
+		log = "SERIOUS: trait = rebel w/o a war NOR any revolting_against NOR any revolting_for"
+	}
+	if = {
+		limit = {
+			is_ruler = no
+			trait = loyalist
+		}
+		log = "SERIOUS: trait = loyalist but not a ruler!"
+	}
+	if = {
+		limit = {
+			is_ruler = yes
 			trait = loyalist
 			liege = {
 				NOT = { character = PREV }
@@ -1046,6 +1130,7 @@ pf_log_civil_war_state_effect = {
 	}
 	if = {
 		limit = {
+			is_ruler = yes
 			trait = loyalist
 			liege = {
 				NOT = { character = PREV }
@@ -1056,6 +1141,7 @@ pf_log_civil_war_state_effect = {
 	}
 	if = {
 		limit = {
+			is_ruler = yes
 			trait = loyalist
 			liege = { character = PREV }
 		}
@@ -1063,6 +1149,14 @@ pf_log_civil_war_state_effect = {
 	}
 	if = {
 		limit = {
+			is_ruler = no
+			trait = neutral
+		}
+		log = "SERIOUS: trait = neutral but not a ruler!"
+	}
+	if = {
+		limit = {
+			is_ruler = yes
 			trait = neutral
 			liege = {
 				NOT = { character = PREV }
@@ -1073,6 +1167,7 @@ pf_log_civil_war_state_effect = {
 	}
 	if = {
 		limit = {
+			is_ruler = yes
 			trait = neutral
 			liege = {
 				NOT = { character = PREV }
@@ -1083,14 +1178,11 @@ pf_log_civil_war_state_effect = {
 	}
 	if = {
 		limit = {
+			is_ruler = yes
 			trait = neutral
 			liege = { character = PREV }
 		}
 		log = "SERIOUS: trait = neutral w/o a liege"
-	}
-	if = {
-		limit = { pf_war_trait_trigger = no }
-		log = "DEBUG: no civil war trait"
 	}
 	if = {
 		limit = {
@@ -1100,6 +1192,15 @@ pf_log_civil_war_state_effect = {
 			}
 		}
 		log = "SERIOUS: revolting_against more than 1 character!"
+	}
+	if = {
+		limit = {
+			any_opinion_modifier_target = {
+				count = 2
+				reverse_has_opinion_modifier = { who = PREV modifier = revolting_for }
+			}
+		}
+		log = "SERIOUS: revolting_for more than 1 character!"
 	}
 	any_opinion_modifier_target = {
 		limit = {
@@ -1128,6 +1229,10 @@ pf_log_civil_war_state_effect = {
 			NOT = { has_opinion_modifier = { who = PREV modifier = revolting_against } }
 		}
 		log = "SERIOUS: revolting_against_me w/o [reverse] revolting_against -> [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] ([This.GetID])"
+	}
+	any_opinion_modifier_target = {
+		limit = { reverse_has_opinion_modifier = { who = PREV modifier = revolting_for } }
+		log = "DEBUG: revolting_for -> [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] ([This.GetID])"
 	}
 	any_opinion_modifier_target = {
 		limit = { reverse_has_opinion_modifier = { who = PREV modifier = supported_civil_war } }

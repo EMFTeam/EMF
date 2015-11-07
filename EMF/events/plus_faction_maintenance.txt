@@ -248,7 +248,7 @@ character_event = {
 		#pass down laws if the heir is inheriting a new primary title
 		if = {
 			limit = {
-				current_heir = { lower_tier_than = ROOT }
+				current_heir = { lower_real_tier_than = ROOT }
 			}
 			current_heir = {
 				clr_character_flag = lifetime_appointments
@@ -279,34 +279,17 @@ character_event = {
 		if = { # Sanity check, first.
 			limit = {
 				trait = rebel
-				NOR = {
-					any_war = { # Secondary participant revolter
-						any_attacker = { character = ROOT } # Non-faction participant in this war or revolt leader
-						pf_cb_trigger = yes
-					}
-					AND = { # Faction member revolter (also works for revolt leaders)
-						in_revolt = yes
-						liege = { # Liege is a PF-style revolt leader
-							any_war = {
-								attacker = {
-									character = PREVPREV
-									in_revolt = yes
-								}
-								pf_cb_trigger = yes
-							}
-						}
-					}
-				}
+				pf_in_revolt_trigger = no
 			}
-			log = "PlusFaction.205: SERIOUS: dying ruler had `rebel` trait but isn't involved in a PF revolt: [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID])"
+			log = "PlusFaction.205: ERROR: dying ruler had Rebel trait but isn't involved in a PF revolt: [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID])"
 			remove_trait = rebel
 		}
 
 		if = {
 			limit = {
 				NAND = { # Not a revolt leader
-					in_revolt = yes
 					liege = { character = PREV }
+					pf_in_revolt_trigger = yes
 				}
 				has_character_flag = original_war_liege
 			}
@@ -360,15 +343,15 @@ character_event = {
 
 						if = {
 							limit = { trait = rebel }
-							log = "PlusFaction.205: they have the `rebel` trait"
+							log = "PlusFaction.205: they have the Rebel trait"
 						}
 						if = {
 							limit = { trait = loyalist }
-							log = "PlusFaction.205: they have the `loyalist` trait"
+							log = "PlusFaction.205: they have the Loyalist trait"
 						}
 						if = {
 							limit = { trait = neutral }
-							log = "PlusFaction.205: they have the `neutral` trait"
+							log = "PlusFaction.205: they have the Neutral trait"
 						}
 						if = {
 							limit = { pf_real_war_with_ROOT_trigger = yes }
@@ -412,53 +395,17 @@ character_event = {
 				# If we're not a revolt leader and we're a secondary revolt participant
 				# (i.e., answered dynamic call-to-arms) in a PF revolt, revassalize
 				# ourselves to the liege now, since our heir can't/shouldn't take our place.
-				#
-				# Likewise, if we're an ex-faction-member (not leader), part of the revolt
-				# realm, also simply revassalize to the liege at this point, since our
-				# heir shouldn't become a revolter.
 
 				random_opinion_modifier_target = {
 					limit = { reverse_has_opinion_modifier = { who = PREV modifier = revolting_against } }
-					
-					if = {
-						limit = {
-							any_war = {
-								defender = { character = PREVPREV }
-								any_attacker = { character = ROOT }
-								attacker = { NOT = { character = ROOT } } # Should never happen due to war invalidation cleanup implied above
-								pf_cb_trigger = yes
-							}
-						}
 
-						log = "PlusFaction.205: INFO: dying ruler [Root.GetTitledFirstName] of the [Root.PrimaryTitle.GetFullBaseName] (ID: [Root.GetID]) is a 3rd-party revolter against [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID]), but their heir cannot inherit the war, so they will be revassalized"
-					}
-
-					if = { # Note that this also catches revolt leaders if they somehow weren't handled previously
-						limit = { # ... but they won't actually be able to be vassalized due to their revolt title's tier
-							ROOT = {
-								in_revolt = yes
-								liege = {
-									any_war = {
-										attacker = { character = PREVPREV } # revolt leader
-										defender = {
-											reverse_has_opinion_modifier = { who = PREVPREV modifier = revolting_against }
-											reverse_has_opinion_modifier = { who = ROOT modifier = revolting_against }
-										}
-										pf_cb_trigger = yes
-									}
-								}
-							}
-						}
-
-						log = "PlusFaction.205: INFO: dying ruler [Root.GetTitledFirstName] of the [Root.PrimaryTitle.GetFullBaseName] (ID: [Root.GetID]) is a faction revolter against [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID]), but their heir cannot inherit the war, so they will be revassalized"
-					}
+					log = "PlusFaction.205: INFO: dying ruler [Root.GetTitledFirstName] of the [Root.PrimaryTitle.GetFullBaseName] (ID: [Root.GetID]) is a revolter against [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID]), but their heir cannot inherit the war, so they will be revassalized"
 
 					set_defacto_vassal = ROOT
 
 					if = {
-						limit = { NOT = { is_vassal_or_below = ROOT } }
-
-						log = "PlusFaction.205: SERIOUS: dying ruler [Root.GetTitledFirstName] of the [Root.PrimaryTitle.GetFullBaseName] (ID: [Root.GetID]) has an heir that cannot inherit their revolt, but revassalization somehow failed!"
+						limit = { NOT = { is_liege_of = ROOT } }
+						log = "PlusFaction.205: ASSERT: dying ruler [Root.GetTitledFirstName] of the [Root.PrimaryTitle.GetFullBaseName] (ID: [Root.GetID]) has an heir that cannot inherit their revolt, but revassalization somehow failed!"
 					}
 
 					reverse_remove_opinion = { who = PREV modifier = revolting_against }
@@ -468,11 +415,11 @@ character_event = {
 				if = {
 					limit = { has_any_opinion_modifier = revolting_against }
 
-					log = "PlusFaction.205: SERIOUS: multiple revolting_against TOMs for [Root.GetTitledFirstName] of the [Root.PrimaryTitle.GetFullBaseName] (ID: [Root.GetID])! remaining targets after removing TOM against [pf_was_revolting_against.GetTitledFirstName] of the [pf_was_revolting_against.PrimaryTitle.GetFullBaseName] (ID: [pf_was_revolting_against.GetID]):"
+					log = "PlusFaction.205: ERROR: multiple revolting_against TOMs for [Root.GetTitledFirstName] of the [Root.PrimaryTitle.GetFullBaseName] (ID: [Root.GetID])! remaining targets after removing TOM against [pf_was_revolting_against.GetTitledFirstName] of the [pf_was_revolting_against.PrimaryTitle.GetFullBaseName] (ID: [pf_was_revolting_against.GetID]):"
 					
 					any_opinion_modifier_target = {
 						limit = { reverse_has_opinion_modifier = { who = PREV modifier = revolting_against } }
-						log = "PlusFaction.205: --> [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID])"
+						log = " --> [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID])"
 					}
 				}
 
@@ -512,7 +459,7 @@ character_event = {
 					
 					any_opinion_modifier_target = {
 						limit = { reverse_has_opinion_modifier = { who = PREV modifier = revolting_against } }
-						log = "PlusFaction.205: --> [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID])"
+						log = " --> [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID])"
 						ROOT = {
 							current_heir = {
 								if = {
@@ -525,6 +472,46 @@ character_event = {
 				}
 
 				clear_event_target = pf_was_revolting_against
+
+				if = {
+					limit = {
+						NOR = {
+							liege = { character = PREV }
+							reverse_has_opinion_modifier = { who = LIEGE modifier = revolting_for }
+						}
+					}
+					log = "PlusFaction.205: ASSERT: dying revolter lacks revolting_for TOM toward his liege"
+				}
+
+				liege = {
+					ROOT = {
+						current_heir = {
+							if = {
+								limit = {
+									NOR = {
+										character = PREVPREV
+										has_opinion_modifier = { who = PREVPREV modifier = revolting_for }
+									}
+								}
+								opinion = { who = PREVPREV modifier = revolting_for }
+							}
+						}
+					}
+				}
+
+				if = {
+					limit = { in_revolt = no } # Only for those not considered by the hard-code to be part of the revolt
+					liege = {
+						ROOT = {
+							current_heir = {
+								if = {
+									limit = { NOT = { has_opinion_modifier = { who = PREVPREV modifier = opinion_rebel_leader } } }
+									opinion = { who = PREVPREV modifier = revolting_for }
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 		
