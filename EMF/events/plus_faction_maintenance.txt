@@ -242,11 +242,35 @@ character_event = {
 	
 	only_playable = yes
 
-	trigger = { capital_holding = { current_heir = { is_alive = yes } } }
-
 	immediate = {
-		# purely convenience
-		capital_holding = { current_heir = { save_event_target_as = heir } }
+		if = {
+			limit = {
+				primary_title = {
+					is_vice_royalty = yes
+				}
+			}
+			capital_scope = {
+				county = {
+					current_heir = {
+						save_event_target_as = heir
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				NOT = {
+					primary_title = {
+						is_vice_royalty = yes
+					}
+				}
+			}
+			primary_title = {
+				current_heir = {
+					save_event_target_as = heir
+				}
+			}
+		}
 
 		log = "DEBUG: processing death for [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID]) ..."
 
@@ -552,11 +576,52 @@ character_event = {
 			event_target:heir = { set_character_flag = original_war_liege }
 		}
 
+		random_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = PREV modifier = revolting_against } }
+			save_event_target_as = pf_war_liege
+		}
+
 		if = {
 			limit = {
 				event_target:heir = {
-					pf_war_trait_trigger = no
-					pf_real_war_with_ROOT_trigger = no
+					NOR = {
+						character = event_target:pf_war_liege # Defender shouldn't inherit revolter status
+						is_nomadic = yes # Don't want nomads involved in the civil war
+						AND = { # Rebels NOT revolting against the same defender are excluded
+							trait = rebel
+							NOT = { has_opinion_modifier = { who = event_target:pf_war_liege modifier = revolting_against } }
+						}
+						AND = { # Loyalists/neutrals that are vassals of the defender are excluded
+							OR = {
+								trait = loyalist
+								trait = neutral
+							}
+							is_ruler = yes
+							liege = { character = event_target:pf_war_liege }
+						}
+						pf_leads_revolt_trigger = yes
+						# And, for some reason, heirs on the wrong side of ANY war with us are excluded
+						# FIXME: ... (?! could this be refined ?!)
+						pf_real_war_with_ROOT_trigger = yes
+					}
+				}
+			}
+
+			event_target:heir = {
+				if = {
+					limit = {
+						OR = {
+							trait = loyalist
+							trait = neutral
+						}
+					}
+					log = "DEBUG: cleaning-up heir's unrelated loyalist/neutral state"
+					remove_trait = loyalist
+					remove_trait = neutral
+					liege = {
+						remove_opinion = { who = PREV modifier = supported_civil_war }
+						remove_opinion = { who = PREV modifier = neutral_civil_war }
+					}
 				}
 			}
 
@@ -582,9 +647,9 @@ character_event = {
 			}
 
 			if = { # If we're a revolt leader
-				limit = { liege = { character = PREV } }
+				limit = { pf_leads_revolt_trigger = yes }
 
-				log = "DEBUG: dying revolter is a revolt leader; transferring revolting_for TOMs..."
+				log = "DEBUG: dying revolter is a revolt leader; transferring revolting_for TOMs and secondary revolt title..."
 
 				# Transfer revolting_for TOMs to heir ...
 
@@ -601,6 +666,56 @@ character_event = {
 						NOT = { has_opinion_modifier = { who = event_target:heir modifier = opinion_dyn_rebel_leader } }
 					}
 					opinion = { who = event_target:heir modifier = opinion_dyn_rebel_leader }
+				}
+
+				# Pass on secondary revolt title; lock its succession to that of the official revolt title's
+
+				random_demesne_title = {
+					limit = { has_title_flag = pf_revolt_title }
+					save_event_target_as = pf_revolt_title
+				}
+
+				if = {
+					limit = { NOT = { event_target:pf_revolt_title = { always = yes } } }
+					log = "ASSERT: dying revolt leader lacks a secondary revolt title; aborting!"
+					break = yes
+				}
+
+				if = {
+					limit = {
+						primary_title = { # Official revolt title
+							current_heir = {
+								event_target:pf_revolt_title = { # Secondary temp. title to bind dynamic revolters
+									current_heir = {
+										NOT = { character = PREVPREV }
+									}
+								}
+							}
+						}
+					}
+
+					# We can't let these titles go to different characters. There are indeed a lot of potential hacks
+					# that could be used to ensure that they do, but I've already tried various permutations of the
+					# obvious stuff, and none of it works due to complications with [hard-coded] revolt title inheritance.
+					#
+					# Ergo, the solution for the moment in this case where the titles' heirs differ, if it does indeed
+					# ever happen due to the temporary-type nature of them (unconfirmed), is to invalidate the war now.
+					# However, if there are no actual dynamic revolters (purely static faction members), we _could_
+					# potentially just destroy the secondary revolt title here too.
+					#
+					# It became a higher priority to move-on from this problem and just let the experimentation happen
+					# later, so that's where we are right now.
+
+					any_war = {
+						limit = {
+							attacker = { character = ROOT }
+							defender = { event_target:pf_war_liege }
+							pf_cb_trigger = yes
+						}
+						end_war = invalid
+					}
+					
+					break = yes
 				}
 
 				break = yes
@@ -650,32 +765,30 @@ character_event = {
 		# If we're a revolt leader, then we can't pass down the revolt
 		# to anyone in this case, so invalidate our PF-style revolts.
 
-		liege_before_war = {
-			any_war = {
-				limit = {
-					defender = { character = PREVPREV }
-					attacker = { character = ROOT }
-					pf_cb_trigger = yes
-				}
-				defender = {
-					log = "INFO: dying ruler [Root.GetTitledFirstName] of the [Root.PrimaryTitle.GetFullBaseName] (ID: [Root.GetID]) is a revolt leader against [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID]), but their heir cannot inherit the war, so the revolt must be invalidated"
-				}
-				end_war = invalid
-				break = yes # Nothing further for us to do, as CB invalidation
-				            # should cleanup everything for us
+		any_war = {
+			limit = {
+				defender = { character = event_target:pf_war_liege }
+				attacker = { character = ROOT }
+				pf_cb_trigger = yes
 			}
+			defender = {
+				log = "INFO: dying ruler [Root.GetTitledFirstName] of the [Root.PrimaryTitle.GetFullBaseName] (ID: [Root.GetID]) is a revolt leader against [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID]), but their heir cannot inherit the war, so the revolt must be invalidated"
+			}
+			end_war = invalid
+			break = yes # Nothing further for us to do, as CB invalidation
+			            # should cleanup everything for us
 		}
 
 		# We're not a revolt leader, if we've made it here.
 
 		log = "DEBUG: dying revolter is NOT the revolt leader"
 
-		random_opinion_modifier_target = {
-			limit = { reverse_has_opinion_modifier = { who = PREV modifier = revolting_against } }
-
+		event_target:pf_war_liege = {
 			log = "INFO: dying ruler [Root.GetTitledFirstName] of the [Root.PrimaryTitle.GetFullBaseName] (ID: [Root.GetID]) is a revolter against [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID]), but their heir cannot inherit the war, so they will be revassalized"
 
-			# FIXME: some recent testing suggests that this method may not work on proper faction members, so...
+			# FIXME: some recent testing suggests that this method may not work
+			# on proper faction members, so it seems we will have to force them
+			# to be able to inherit the revolt...
 			set_defacto_vassal = ROOT
 
 			if = {
