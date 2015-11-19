@@ -120,6 +120,19 @@ pf_glory_minus2_effect = {
 }
 
 # Traditon
+pf_tradition_plus2_effect = {
+	if = {
+		limit = { any_vassal = { leads_faction = faction_tradition } }
+		custom_tooltip = { text = TRADITIONFACTIONMOODPLUS }
+		hidden_tooltip = {
+			random_vassal = {
+				limit = { leads_faction = faction_tradition }
+				change_variable = { which = "faction_mood_increase" value = 2 }
+			}
+			character_event = { id = PlusFaction.200 days = 1 }
+		}
+	}
+}
 pf_tradition_plus4_effect = {
 	if = {
 		limit = { any_vassal = { leads_faction = faction_tradition } }
@@ -128,6 +141,19 @@ pf_tradition_plus4_effect = {
 			random_vassal = {
 				limit = { leads_faction = faction_tradition }
 				change_variable = { which = "faction_mood_increase" value = 4 }
+			}
+			character_event = { id = PlusFaction.200 days = 1 }
+		}
+	}
+}
+pf_tradition_minus2_effect = {
+	if = {
+		limit = { any_vassal = { leads_faction = faction_tradition } }
+		custom_tooltip = { text = TRADITIONFACTIONMOODMINUS }
+		hidden_tooltip = {
+			random_vassal = {
+				limit = { leads_faction = faction_tradition }
+				change_variable = { which = "faction_mood_decrease" value = 2 }
 			}
 			character_event = { id = PlusFaction.200 days = 1 }
 		}
@@ -647,6 +673,9 @@ pf_lower_CA_effect = {
 
 pf_setup_rebel_effect = {
 	add_trait = rebel
+	clr_character_flag = civil_war_faction_leader
+	clr_character_flag = civil_war_faction_member
+	clr_character_flag = will_join_civil_war
 	hidden_tooltip = {
 		liege = {
 			if = {
@@ -674,17 +703,6 @@ pf_setup_rebel_effect = {
 				reverse_opinion = { who = PREV modifier = revolting_against }
 			}
 		}
-		event_target:pf_attacker = {
-			if = {
-				limit = {
-					NOR = {
-						character = PREV
-						reverse_has_opinion_modifier = { who = PREV modifier = revolting_for }
-					}
-				}
-				reverse_opinion = { who = PREV modifier = revolting_for }
-			}
-		}
 	}
 }
 
@@ -696,13 +714,110 @@ pf_teardown_rebel_effect = {
 			reverse_remove_opinion = { who = PREV modifier = revolting_against }
 			remove_opinion = { who = PREV modifier = revolting_against_me }
 		}
-		random_opinion_modifier_target = { # Revolt leader
-			limit = { reverse_has_opinion_modifier = { who = PREV modifier = revolting_for } }
-			reverse_remove_opinion = { who = PREV modifier = revolting_for }
-		}
 	}
 }
 
+# Should be used in the scope of the faction leader
+pf_punish_deceitful_player_effect = {
+	hidden_tooltip = {
+		liege = {
+			any_vassal = {
+				limit = {
+					ai = no
+					#not part of my faction
+					NOR = {
+						AND = {
+							ROOT = {
+								leads_faction = faction_court
+								pf_not_regular_faction_war_trigger = no
+							}
+							in_faction = faction_court
+						}
+						AND = {
+							ROOT = {
+								leads_faction = faction_prosperity
+								pf_not_regular_faction_war_trigger = no
+							}
+							in_faction = faction_prosperity
+						}
+						AND = {
+							ROOT = {
+								leads_faction = faction_glory
+								pf_not_regular_faction_war_trigger = no
+							}
+							in_faction = faction_glory
+						}
+						AND = {
+							ROOT = {
+								leads_faction = faction_tradition
+								pf_not_regular_faction_war_trigger = no
+							}
+							in_faction = faction_tradition
+						}
+						AND = {
+							ROOT = {
+								leads_faction = faction_succ_seniority
+								has_character_flag = demands_seniority
+							}
+							in_faction = faction_succ_seniority
+						}
+						AND = {
+							ROOT = {
+								leads_faction = faction_succ_primogeniture
+								has_character_flag = demands_primogeniture
+							}
+							in_faction = faction_succ_primogeniture
+						}
+						AND = {
+							ROOT = {
+								leads_faction = faction_succ_gavelkind
+								has_character_flag = demands_gavelkind
+							}
+							in_faction = faction_succ_gavelkind
+						}
+						AND = {
+							ROOT = {
+								leads_faction = faction_succ_feudal_elective
+								has_character_flag = demands_feudal_elective
+							}
+							in_faction = faction_succ_feudal_elective
+						}
+#						AND = {
+#							ROOT = {
+#								leads_faction = faction_pretender
+#								has_character_flag = preparing_claimant_faction_war
+#							}
+#							in_faction = faction_pretender
+#						}
+#						AND = {
+#							ROOT = {
+#								leads_faction = faction_religious
+#								has_character_flag = preparing_religious_faction_war
+#							}
+#							religion = ROOT
+#							in_faction = faction_religious
+#						}
+					}
+					#either promised to join the war or dropped out of faction
+					OR = {
+						has_character_flag = will_join_civil_war
+						has_character_flag = civil_war_faction_member
+					}
+					#capable of joining the faction
+					is_adult = yes
+					prisoner = no
+					NOR = {
+						trait = incapable
+						has_opinion_modifier = { who = PREV modifier = opinion_coerced_into_leaving_faction }
+						has_opinion_modifier = { who = PREV modifier = opinion_subjugated }
+						has_opinion_modifier = { who = PREV modifier = opinion_subjugated_other_rel }
+					}
+				}
+				letter_event = { id = PlusFaction.416 }
+			}
+		}
+	}
+}
 
 pf_clear_previous_civil_war_opinions_effect = {
 	hidden_tooltip = {
@@ -721,18 +836,13 @@ pf_clear_previous_civil_war_opinions_effect = {
 	}
 }
 
-
 # ROOT=THIS is the victorious side after a civil war
 pf_civil_war_cleanup_effect = {
 	hidden_tooltip = {
 		FROM = {
 			any_opinion_modifier_target = {
 				limit = { pf_part_of_this_revolt_trigger = yes }
-				remove_trait = rebel
-				reverse_remove_opinion = { who = PREV modifier = revolting_against_me }
-				remove_opinion = { who = PREV modifier = revolting_against }
-				remove_opinion = { who = ROOT modifier = revolting_for }
-				remove_opinion = { who = ROOT modifier = opinion_dyn_rebel_leader } # If it's there
+				teardown_rebel_effect = yes
 			}
 
 			# Clear neutral/loyalist TOM's
@@ -903,10 +1013,7 @@ pf_log_state_effect = {
 		limit = {
 			trait = rebel
 			has_any_opinion_modifier = revolting_against
-			OR = {
-				pf_leads_revolt_trigger = yes
-				has_any_opinion_modifier = revolting_for
-			}
+			pf_leads_revolt_trigger = yes
 			pf_in_revolt_trigger = yes
 		}
 		log = "DEBUG: trait = rebel"
@@ -915,10 +1022,7 @@ pf_log_state_effect = {
 		limit = {
 			trait = rebel
 			NOT = { has_any_opinion_modifier = revolting_against }
-			OR = {
-				pf_leads_revolt_trigger = yes
-				has_any_opinion_modifier = revolting_for
-			}
+			pf_leads_revolt_trigger = yes
 			pf_in_revolt_trigger = yes
 		}
 		log = "SERIOUS: trait = rebel w/o any revolting_against"
@@ -928,10 +1032,7 @@ pf_log_state_effect = {
 			is_ruler = yes
 			trait = rebel
 			has_any_opinion_modifier = revolting_against
-			OR = {
-				pf_leads_revolt_trigger = yes
-				has_any_opinion_modifier = revolting_for
-			}
+			pf_leads_revolt_trigger = yes
 			pf_in_revolt_trigger = no
 		}
 		log = "SERIOUS: trait = rebel w/o a revolt"
@@ -941,10 +1042,7 @@ pf_log_state_effect = {
 			is_ruler = yes
 			trait = rebel
 			NOT = { has_any_opinion_modifier = revolting_against }
-			NOR = {
-				pf_leads_revolt_trigger = yes
-				has_any_opinion_modifier = revolting_for
-			}
+			pf_leads_revolt_trigger = yes
 			pf_in_revolt_trigger = yes
 		}
 		log = "SERIOUS: trait = rebel w/o any revolting_against NOR any revolting_for"
@@ -954,10 +1052,7 @@ pf_log_state_effect = {
 			is_ruler = yes
 			trait = rebel
 			has_any_opinion_modifier = revolting_against
-			NOR = {
-				pf_leads_revolt_trigger = yes
-				has_any_opinion_modifier = revolting_for
-			}
+			pf_leads_revolt_trigger = yes
 			pf_in_revolt_trigger = no
 		}
 		log = "SERIOUS: trait = rebel w/o a revolt NOR any revolting_for"
@@ -967,10 +1062,7 @@ pf_log_state_effect = {
 			is_ruler = yes
 			trait = rebel
 			NOT = { has_any_opinion_modifier = revolting_against }
-			NOR = {
-				pf_leads_revolt_trigger = yes
-				has_any_opinion_modifier = revolting_for
-			}
+			pf_leads_revolt_trigger = yes
 			pf_in_revolt_trigger = no
 		}
 		log = "SERIOUS: trait = rebel w/o a revolt NOR any revolting_against NOR any revolting_for"
@@ -1101,54 +1193,6 @@ pf_log_state_effect = {
 		}
 		log = "SERIOUS: revolting_against_me w/o [reverse] revolting_against -> [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] ([This.GetID])"
 	}
-	if = {
-		limit = {
-			any_opinion_modifier_target = {
-				count = 2
-				reverse_has_opinion_modifier = { who = PREV modifier = revolting_for }
-			}
-		}
-		log = "SERIOUS: revolting_for more than 1 character!"
-	}
-	liege = { save_event_target_as = pf_log_liege }
-	any_opinion_modifier_target = {
-		limit = {
-			reverse_has_opinion_modifier = { who = PREV modifier = revolting_for }
-			character = event_target:pf_log_liege
-		}
-		log = "DEBUG: revolting_for -> [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] ([This.GetID])"
-	}
-	any_opinion_modifier_target = {
-		limit = {
-			reverse_has_opinion_modifier = { who = PREV modifier = revolting_for }
-			NOT = { character = event_target:pf_log_liege }
-		}
-		log = "SERIOUS: not liege: revolting_for -> [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] ([This.GetID])"
-	}
-	if = {
-		limit = {
-			any_opinion_modifier_target = {
-				count = 2
-				reverse_has_opinion_modifier = { who = PREV modifier = opinion_dyn_rebel_leader }
-			}
-		}
-		log = "SERIOUS: opinion_dyn_rebel_leader directed at more than 1 character!"
-	}
-	any_opinion_modifier_target = {
-		limit = {
-			reverse_has_opinion_modifier = { who = PREV modifier = opinion_dyn_rebel_leader }
-			character = event_target:pf_log_liege
-		}
-		log = "DEBUG: opinion_dyn_rebel_leader -> [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] ([This.GetID])"
-	}
-	any_opinion_modifier_target = {
-		limit = {
-			reverse_has_opinion_modifier = { who = PREV modifier = opinion_dyn_rebel_leader }
-			NOT = { character = event_target:pf_log_liege }
-		}
-		log = "SERIOUS: not liege: opinion_dyn_rebel_leader -> [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] ([This.GetID])"
-	}
-	clear_event_target = pf_log_liege
 	any_opinion_modifier_target = {
 		limit = { reverse_has_opinion_modifier = { who = PREV modifier = supported_civil_war } }
 		log = "DEBUG: supported_civil_war -> [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] ([This.GetID])"
@@ -1157,71 +1201,5 @@ pf_log_state_effect = {
 		limit = { reverse_has_opinion_modifier = { who = PREV modifier = neutral_civil_war } }
 		log = "DEBUG: neutral_civil_war -> [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] ([This.GetID])"
 	}
-	if = {
-		limit = {
-			pf_leads_revolt_trigger = no
-			any_demesne_title = {
-				count = 2
-				has_title_flag = pf_revolt_title
-			}
-		}
-		any_demesne_title = {
-			limit = { has_title_flag = pf_revolt_title }
-			log = "SERIOUS: more than 1 secondary revolt title w/o leading a revolt: [This.GetFullName]"
-		}
-	}
-	if = {
-		limit = {
-			pf_leads_revolt_trigger = no
-			any_demesne_title = { has_title_flag = pf_revolt_title }
-			NOT = {
-				any_demesne_title = {
-					count = 2
-					has_title_flag = pf_revolt_title
-				}
-			}
-		}
-		any_demesne_title = {
-			limit = { has_title_flag = pf_revolt_title }
-			log = "SERIOUS: secondary revolt title w/o leading a revolt: [This.GetFullName]"
-		}
-	}
-	if = {
-		limit = {
-			pf_leads_revolt_trigger = yes
-			any_demesne_title = {
-				count = 2
-				has_title_flag = pf_revolt_title
-			}
-		}
-		any_demesne_title = {
-			limit = { has_title_flag = pf_revolt_title }
-			log = "SERIOUS: more than 1 secondary revolt title: [This.GetFullName]"
-		}
-	}
-	if = {
-		limit = {
-			pf_leads_revolt_trigger = yes
-			NOT = {
-				any_demesne_title = { has_title_flag = pf_revolt_title }
-			}
-		}
-		log = "SERIOUS: leading a revolt w/o a secondary revolt title!"
-	}
-	if = {
-		limit = {
-			pf_leads_revolt_trigger = yes
-			any_demesne_title = { has_title_flag = pf_revolt_title }
-			NOT = {
-				any_demesne_title = {
-					count = 2
-					has_title_flag = pf_revolt_title
-				}
-			}
-		}
-		any_demesne_title = {
-			limit = { has_title_flag = pf_revolt_title }
-			log = "DEBUG: secondary revolt title: [This.GetFullName]"
-		}
-	}
 }
+

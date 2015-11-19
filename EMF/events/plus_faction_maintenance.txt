@@ -318,10 +318,6 @@ character_event = {
 #					}
 #				}
 #			}
-#			if = {
-#				limit = { has_character_flag = max_levies }
-#				event_target:heir = { set_character_flag = max_levies }
-#			}
 #		}
 
 		#reset heir's faction variables
@@ -437,14 +433,6 @@ character_event = {
 			if = {
 				limit = { ROOT = { has_character_flag = demands_lower_TO } }
 				set_character_flag = demands_lower_TO
-			}
-			if = {
-				limit = { ROOT = { has_character_flag = demands_tax_privilege } }
-				set_character_flag = demands_tax_privilege
-			}
-			if = {
-				limit = { ROOT = { has_character_flag = demands_levy_privilege } }
-				set_character_flag = demands_levy_privilege
 			}
 			if = {
 				limit = { ROOT = { has_character_flag = demands_surrender_title } }
@@ -646,115 +634,6 @@ character_event = {
 				opinion = { who = event_target:heir modifier = revolting_against_me }
 			}
 
-			if = { # If we're a revolt leader
-				limit = { pf_leads_revolt_trigger = yes }
-
-				log = "DEBUG: dying revolter is a revolt leader; transferring revolting_for TOMs and secondary revolt title..."
-
-				# Transfer revolting_for TOMs to heir ...
-
-				any_vassal = {
-					limit = {
-						has_opinion_modifier = { who = ROOT modifier = revolting_for }
-						NOT = { has_opinion_modifier = { who = event_target:heir modifier = revolting_for } }
-					}
-					opinion = { who = event_target:heir modifier = revolting_for }
-				}
-				any_vassal = {
-					limit = {
-						has_opinion_modifier = { who = ROOT modifier = opinion_dyn_rebel_leader }
-						NOT = { has_opinion_modifier = { who = event_target:heir modifier = opinion_dyn_rebel_leader } }
-					}
-					opinion = { who = event_target:heir modifier = opinion_dyn_rebel_leader }
-				}
-
-				# Pass on secondary revolt title; lock its succession to that of the official revolt title's
-
-				random_demesne_title = {
-					limit = { has_title_flag = pf_revolt_title }
-					save_event_target_as = pf_revolt_title
-				}
-
-				if = {
-					limit = { NOT = { event_target:pf_revolt_title = { always = yes } } }
-					log = "ASSERT: dying revolt leader lacks a secondary revolt title; aborting!"
-					break = yes
-				}
-
-				if = {
-					limit = {
-						primary_title = { # Official revolt title
-							current_heir = {
-								event_target:pf_revolt_title = { # Secondary temp. title to bind dynamic revolters
-									current_heir = {
-										NOT = { character = PREVPREV }
-									}
-								}
-							}
-						}
-					}
-
-					# We can't let these titles go to different characters. There are indeed a lot of potential hacks
-					# that could be used to ensure that they do, but I've already tried various permutations of the
-					# obvious stuff, and none of it works due to complications with [hard-coded] revolt title inheritance.
-					#
-					# Ergo, the solution for the moment in this case where the titles' heirs differ, if it does indeed
-					# ever happen due to the temporary-type nature of them (unconfirmed), is to invalidate the war now.
-					# However, if there are no actual dynamic revolters (purely static faction members), we _could_
-					# potentially just destroy the secondary revolt title here too.
-					#
-					# It became a higher priority to move-on from this problem and just let the experimentation happen
-					# later, so that's where we are right now.
-
-					any_war = {
-						limit = {
-							attacker = { character = ROOT }
-							defender = { event_target:pf_war_liege }
-							pf_cb_trigger = yes
-						}
-						end_war = invalid
-					}
-					
-					break = yes
-				}
-
-				break = yes
-			}
-
-			# We are not the revolt leader (but are still passing down a revolt), if we made it here.
-
-			log = "DEBUG: dying revolter is NOT the revolt leader; transferring revolting_for TOMs directed at liege..."
-
-			liege = { # Our revolt leader
-				if = {
-					limit = { NOT = { reverse_has_opinion_modifier = { who = ROOT modifier = revolting_for } } }
-					log = "ASSERT: dying secondary revolter lacks revolting_for TOM toward his liege: aborting!"
-					break = yes
-				}
-				if = {
-					limit = { character = event_target:heir }
-					log = "DEBUG: dying secondary revolter's liege is their heir: aborting!"
-					break = yes # Nothing left to do if our revolt leader is our heir
-				}
-
-				if = {
-					limit = {
-						NOT = { reverse_has_opinion_modifier = { who = event_target:heir modifier = revolting_for } }
-					}
-					reverse_opinion = { who = event_target:heir modifier = revolting_for }
-				}
-				if = {
-					limit = {
-						reverse_has_opinion_modifier = { who = ROOT modifier = opinion_dyn_rebel_leader }
-						NOR = {
-							reverse_has_opinion_modifier = { who = event_target:heir modifier = opinion_dyn_rebel_leader }
-							reverse_has_opinion_modifier = { who = event_target:heir modifier = opinion_rebel_leader }
-						}
-					}
-					reverse_opinion = { who = event_target:heir modifier = opinion_dyn_rebel_leader }
-				}
-			}
-
 			break = yes
 		}
 
@@ -798,7 +677,6 @@ character_event = {
 		}
 	}
 }
-
 
 # PlusFaction.206 [New Holder]
 #
@@ -969,16 +847,16 @@ character_event = {
 
 # PlusFaction.211 [Granted Title]
 # GRANT_LANDED_TITLE_INTERACTION_ACCEPT_EVENT - updates faction response to a granted title
-character_event = {
-	id = PlusFaction.211
-
-	is_triggered_only = yes
-	hide_window = yes
-
-	immediate = {
-		FROM = { character_event = { id = PlusFaction.212 days = 1 } }
-	}
-}
+#character_event = {
+#	id = PlusFaction.211
+#
+#	is_triggered_only = yes
+#	hide_window = yes
+#
+#	immediate = {
+#		FROM = { character_event = { id = PlusFaction.212 days = 1 } }
+#	}
+#}
 
 # PlusFaction.212 [Granter of Title]
 # Faction pleased due to title granted to one of their members
@@ -1711,6 +1589,37 @@ character_event = {
 			}
 		}
 
+#		#COUNCIL TERMS
+#		any_vassal = {
+#			remove_opinion = { who = ROOT modifier = faction_approve_council_term }
+#		}
+#		if = {
+#			limit = { has_law = council_privileges_1 }
+#			job_chancellor = {
+#				remove_opinion = { who = ROOT modifier = grateful_council_term }
+#				opinion = { who = ROOT modifier = grateful_council_term months = 14 }
+#			}
+#			job_marshal = {
+#				remove_opinion = { who = ROOT modifier = grateful_council_term }
+#				opinion = { who = ROOT modifier = grateful_council_term months = 14 }
+#			}
+#			job_treasurer = {
+#				remove_opinion = { who = ROOT modifier = grateful_council_term }
+#				opinion = { who = ROOT modifier = grateful_council_term months = 14 }
+#			}
+#			job_spymaster = {
+#				remove_opinion = { who = ROOT modifier = grateful_council_term }
+#				opinion = { who = ROOT modifier = grateful_council_term months = 14 }
+#			}
+#			job_spiritual = {
+#				remove_opinion = { who = ROOT modifier = grateful_council_term }
+#				opinion = { who = ROOT modifier = grateful_council_term months = 14 }
+#			}
+#			any_vassal = {
+#				limit = { in_faction = faction_tradition }
+#				opinion = { who = ROOT modifier = faction_approve_council_term months = 14 }
+#			}
+#		}
 		#COUNCILLORS
 		any_vassal = {
 			remove_opinion = { who = ROOT modifier = faction_approve_council }
@@ -2978,3 +2887,4 @@ character_event = {
 		}
 	}
 }
+
