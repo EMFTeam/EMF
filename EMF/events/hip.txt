@@ -1,0 +1,441 @@
+
+namespace = hip
+
+# hip.0
+# Perform annual maintenance on Isis (on_actions hook is up to main mod)
+character_event = {
+	id = hip.0
+	desc = AI_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	only_independent = yes
+	
+	trigger = {
+		has_landed_title = e_hip
+	}
+	
+	immediate = {
+	
+		# Don't let Isis somehow change culture or religion.
+		if = {
+			limit = { not = { culture = hip_culture } }
+			culture = hip_culture
+		}
+		if = {
+			limit = { not = { religion = hip_religion } }
+			religion = hip_religion
+		}
+	
+		# Generally "Enlighten" and then send any [player] wards back "home"
+		# HINT: Don't even try getting Isis to educate your children. Well,
+		# maybe kids in your court that you don't like.
+		any_ward = {
+			character_event = { id = hip.1 }
+		}
+		
+		# No lovers, consorts, spouses, or children (would be due to some event)
+		any_lover = {
+			death = { killer = ROOT death_reason = death_sacrificed }
+		}
+		any_consort = {
+			death = { killer = ROOT death_reason = death_sacrificed }
+		}
+		any_spouse = {
+			death = { killer = ROOT death_reason = death_sacrificed }
+		}
+		any_child = {
+			limit = {
+				real_father = { always = yes }
+			}
+			real_father = {
+				long_character_event = { id = hip.4 }
+			}
+		}
+		any_child = {
+			limit = {
+				not = {
+					real_father = { always = yes }
+				}
+			}
+			father = {
+				long_character_event = { id = hip.4 }
+			}
+		}
+		
+		# Just in case someone accidentally gives a title to Isis and then locks
+		# vassals into her untouchable realm. [Again, console or event.]
+		any_vassal = {
+			set_defacto_liege = THIS
+		}
+		
+		# Isis is not your friend. Isis sees all.
+		# Even the way you look at her portrait.
+		any_friend = { remove_friend = ROOT }
+		any_rival = { remove_rival = ROOT }
+		
+		# She can't inherit, but don't let her keep any extra titles anyway.
+		any_demesne_title = {
+			limit = {
+				temporary = no
+				not = { title = e_hip }
+			}
+			destroy_landed_title = THIS
+		}
+		
+		# Nor should she have claims on titles.
+		any_claim = {
+			remove_claim = ROOT
+		}
+		
+		# In theory, most vanilla mechanisms by which Isis can gain a trait
+		# have been disabled (in EMF), but we'll cover them here in any case:
+		
+		character_event = { id = hip.2 } # Ed. traits
+		character_event = { id = hip.3 } # Leadership traits
+
+		remove_trait = stressed
+		remove_trait = depressed
+		remove_trait = lunatic
+		remove_trait = possessed
+		remove_trait = ill
+		remove_trait = pneumonic
+		remove_trait = syphilitic
+		remove_trait = leper
+		remove_trait = wounded
+		remove_trait = maimed
+		remove_trait = infirm
+		remove_trait = incapable
+		remove_trait = drunkard
+		remove_trait = has_tuberculosis
+		remove_trait = has_typhoid_fever
+		remove_trait = has_typhus
+		remove_trait = has_bubonic_plague
+		remove_trait = has_measles
+		remove_trait = has_small_pox
+		remove_trait = kinslayer
+		remove_trait = homosexual
+		remove_trait = celibate
+		remove_trait = hedonist
+		remove_trait = scholar
+		remove_trait = gardener
+		remove_trait = mystic
+		remove_trait = impaler
+		remove_trait = duelist
+		remove_trait = hunter
+		remove_trait = poet
+		remove_trait = falconer
+		remove_trait = lustful
+		remove_trait = chaste
+		remove_trait = gluttonous
+		remove_trait = temperate
+		remove_trait = greedy
+		remove_trait = charitable
+		remove_trait = slothful
+		remove_trait = diligent
+		remove_trait = envious
+		remove_trait = kind
+		remove_trait = wroth
+		remove_trait = patient
+		remove_trait = proud
+		remove_trait = humble
+		remove_trait = deceitful
+		remove_trait = honest
+		remove_trait = craven
+		remove_trait = brave
+		remove_trait = shy
+		remove_trait = gregarious
+		remove_trait = ambitious
+		remove_trait = content
+		remove_trait = arbitrary
+		remove_trait = just
+		remove_trait = cynical
+		remove_trait = zealous
+		remove_trait = paranoid
+		remove_trait = trusting
+		remove_trait = cruel
+		remove_trait = scarred
+		remove_trait = eunuch
+		remove_trait = blinded
+		remove_trait = has_aztec_disease
+	}
+	
+	option = { name = OK }
+}
+
+
+# hip.1
+# Get rid of wards.
+#
+# ROOT = ward
+# FROM = isis
+character_event = {
+	id = hip.1
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+
+	option = {
+		name = OK
+		
+		# Told you guys she was persuasive, particularly to young, fresh minds
+		# that are ready to see the Truth of Ma'at.
+		culture = FROM
+		religion = FROM
+		
+		# Since this can still be exploited to get unlimited wards at once,
+		# we do need to give a "minor" malus that lasts.
+		
+		remove_trait = genius
+		remove_trait = quick
+		remove_trait = slow
+		
+		random_list = {
+			50 = { add_trait = imbecile }
+			50 = { add_trait = lunatic }
+		}
+		
+		random_playable_ruler = {
+			limit = {
+				ai = no
+				or = {
+					dynasty = ROOT
+					is_close_relative = ROOT
+				}
+			}
+			
+			reverse_opinion = { who = ROOT modifier = opinion_angry years = 20 multiplier = 4 }
+			ROOT = { set_guardian = PREV }
+			reverse_banish = ROOT
+			break = yes
+		}
+		
+		random_playable_ruler = {
+			limit = {
+				ai = yes
+			}
+			ROOT = { set_guardian = PREV }
+			reverse_banish = ROOT
+			ROOT = { imprison = PREV }
+			break = yes
+		}
+	}
+}
+
+
+# hip.2
+# Remove all education traits. Useful for character generation.
+character_event = {
+	id = hip.2
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		remove_trait = amateurish_plotter
+		remove_trait = flamboyant_schemer
+		remove_trait = intricate_webweaver
+		remove_trait = elusive_shadow
+		remove_trait = naive_appeaser
+		remove_trait = underhanded_rogue
+		remove_trait = charismatic_negotiator
+		remove_trait = grey_eminence
+		remove_trait = indulgent_wastrel
+		remove_trait = thrifty_clerk
+		remove_trait = fortune_builder
+		remove_trait = midas_touched
+		remove_trait = misguided_warrior
+		remove_trait = tough_soldier
+		remove_trait = skilled_tactician
+		remove_trait = brilliant_strategist
+		remove_trait = detached_priest
+		remove_trait = martial_cleric
+		remove_trait = scholarly_theologian
+		remove_trait = mastermind_theologian
+	}
+	
+	option = { name = OK }
+}
+
+
+# hip.3
+# Remove all leadership traits. Useful for character generation.
+character_event = {
+	id = hip.3
+	desc = HIDE_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		remove_trait = light_foot_leader
+		remove_trait = heavy_infantry_leader
+		remove_trait = cavalry_leader
+		remove_trait = inspiring_leader
+		remove_trait = trickster
+		remove_trait = organizer
+		remove_trait = defensive_leader
+		remove_trait = experimenter
+		remove_trait = flanker
+		remove_trait = aggressive_leader
+		remove_trait = siege_leader
+		remove_trait = flat_terrain_leader
+		remove_trait = rough_terrain_leader
+		remove_trait = mountain_terrain_leader
+		remove_trait = desert_terrain_leader
+		remove_trait = holy_warrior
+		remove_trait = unyielding_leader
+		remove_trait = narrow_flank_leader
+		remove_trait = war_elephant_leader
+		remove_trait = jungle_terrain_leader
+		remove_trait = winter_soldier
+	}
+	
+	option = { name = OK }
+}
+
+# hip.4
+# Don't impregnate The Great Goddess Isis
+long_character_event = {
+	id = hip.4
+	desc = hip.4.desc
+	picture = GFX_evt_ancient_egypt
+	is_triggered_only = yes
+	
+	option = {
+		trigger = {
+			FROM = {
+				any_child = {
+					is_alive = yes
+					real_father = { character = ROOT }
+				}
+			}
+		}
+		name = hip.4.a
+		FROM = {
+			any_child = {
+				limit = {
+					real_father = { character = ROOT }
+				}
+				death = { killer = FROM death_reason = death_sacrificed }
+			}
+		}
+		add_trait = eunuch
+		add_trait = blinded
+		add_trait = lunatic
+		add_trait = incapable
+	}
+	option = {
+		trigger = {
+			FROM = {
+				any_child = {
+					is_alive = yes
+					not = {
+						real_father = { always = yes }
+					}
+					father = { character = ROOT }
+				}
+			}
+		}
+		name = hip.4.a
+		FROM = {
+			any_child = {
+				limit = {
+					not = {
+						real_father = { always = yes }
+					}
+					father = { character = ROOT }
+				}
+				death = { killer = FROM death_reason = death_sacrificed }
+			}
+		}
+		add_trait = eunuch
+		add_trait = blinded
+		add_trait = lunatic
+		add_trait = incapable
+	}
+}
+
+
+# hip.5
+# Handle the "death" of Isis (on_death on_action)
+character_event = {
+	id = hip.5
+	hide_window = yes
+	is_triggered_only = yes
+
+	only_independent = yes
+
+	trigger = {
+		has_landed_title = e_hip
+	}
+	
+	immediate = {
+		# Get rid of our temporary title (was just for locking-up diplomacy)
+		any_demesne_title = {
+			limit = {
+				not = { title = e_hip }
+			}
+			unsafe_destroy_landed_title = THIS
+		}
+
+		create_character = {
+			random_traits = no
+			name = "Isis"
+			female = yes
+			age = 28
+			culture = hip_culture
+			religion = hip_religion
+			dynasty = 2606060 # HIP dynasty
+			fertility = 0
+			health = 7
+
+			attributes = {
+				diplomacy = 64
+				martial = 64
+				stewardship = 64
+				intrigue = 64
+				learning = 64
+			}
+		}
+		new_character = {
+			set_mother = ROOT
+			recalc_succession = yes
+
+			character_event = { id = hip.2 } # Remove education traits
+			character_event = { id = hip.3 } # Remove leadership traits
+
+			add_trait = isis
+
+			ROOT = { abdicate_to = PREV } # Abdicate e_hip (sounds cooler in title history than 'Inherited')
+
+			character_event = { id = hip.6 } # Create temporary title and give nickname
+		}
+	}
+}
+
+
+# hip.6
+# Helper for hip.5 (ROOT = Isis v2.0, FROM = Isis v1.0), also used
+# by character history effect initially (ROOT = Isis v1.0).
+character_event = {
+	id = hip.6
+	hide_window = yes
+	is_triggered_only = yes
+
+	immediate = {
+
+		# Create a new temporary title to lock-out most diplomatic actions
+
+		create_title = {
+			tier = EMPEROR
+			landless = yes
+			temporary = yes
+			culture = ROOT
+			name = "ISIS_DIVINE_VISION" # "Goddess Isis's Divine Vision"
+			holder = ROOT
+		}
+
+		# Isis gets her own nickname, mostly to prevent her from getting random nicknames
+		give_nickname = nick_the_divine_lady
+	}
+}
