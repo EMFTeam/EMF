@@ -33,6 +33,7 @@ cb_faction_overthrow_ruler = {
 	can_use = {
 		ROOT = {
 			vassal_of = FROM
+			has_opinion_modifier = { who = FROM modifier = revolting_against }
 		}
 	}
 
@@ -56,6 +57,50 @@ cb_faction_overthrow_ruler = {
 				temporary = no
 			}
 		}
+		# Invalidate succession law revolts if the liege no longer holds the succession title
+		# and is not the original war liege
+		OR = {
+			ROOT = { has_character_flag = original_war_liege }
+			FROM = { NOT = { has_character_flag = faction_succession_war } }
+			AND = {
+				OR = {
+					ROOT = { NOT = { has_character_flag = demands_seniority } }
+					FROM = {
+						any_demesne_title = {
+							higher_tier_than = COUNT
+							has_title_flag = change_seniority
+						}
+					}
+				}
+				OR = {
+					ROOT = { NOT = { has_character_flag = demands_primogeniture } }
+					FROM = {
+						any_demesne_title = {
+							higher_tier_than = COUNT
+							has_title_flag = change_primogeniture
+						}
+					}
+				}
+				OR = {
+					ROOT = { NOT = { has_character_flag = demands_gavelkind } }
+					FROM = {
+						any_demesne_title = {
+							higher_tier_than = COUNT
+							has_title_flag = change_gavelkind
+						}
+					}
+				}
+				OR = {
+					ROOT = { NOT = { has_character_flag = demands_feudal_elective } }
+					FROM = {
+						any_demesne_title = {
+							higher_tier_than = COUNT
+							has_title_flag = change_feudal_elective
+						}
+					}
+				}
+			}
+		}
 	}
 
 	on_add = {
@@ -72,7 +117,7 @@ cb_faction_overthrow_ruler = {
 			# error-check for attackers without revolting_against TOM
 			any_attacker = {
 				limit = { NOT = { has_opinion_modifier = { who = FROM modifier = revolting_against } } }
-				log = "cb_faction_overthrow_ruler: any_attacker w/o a revolting_against TOM: [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] ([This.GetID])"
+				log = "cb_faction_overthrow_ruler: WARNING: attacker w/o a revolting_against TOM: [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] ([This.GetID])"
 			}
 			
 			any_attacker = {
@@ -92,8 +137,6 @@ cb_faction_overthrow_ruler = {
 						reverse_opinion = { modifier = opinion_very_grateful who = PREVPREV years = 10 }
 					}
 				}
-				# re-vassalize to the former liege
-				set_defacto_liege = FROM
 			}
 		}
 		
