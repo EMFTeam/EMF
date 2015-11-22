@@ -698,158 +698,6 @@ character_event = {
 	}
 }
 
-# PlusFaction.206 [New Holder]
-#
-# Civil war state passes to a new liege <on_action>
-character_event = {
-	id = PlusFaction.206
-
-	is_triggered_only = yes
-	hide_window = yes
-
-	only_playable = yes
-
-	trigger = {
-		FROM = { higher_tier_than = count }
-		any_war = { # We've inherited at least one of FROMFROM's civil wars
-			defender = { character = ROOT }
-			attacker = {
-				has_opinion_modifier = { who = FROMFROM modifier = revolting_against }
-			}
-			pf_cb_trigger = yes
-		}
-	}
-
-	immediate = {
-
-		# Note the liege change for our PF civil wars
-		any_war = {
-			limit = {
-				defender = { character = ROOT }
-				attacker = {
-					has_opinion_modifier = { who = FROMFROM modifier = revolting_against }
-				}
-				pf_cb_trigger = yes
-			}
-			attacker = {
-				clr_character_flag = original_war_liege
-			}
-		}
-
-		FROMFROM = {
-			log = "DEBUG: civil war liege changed due to title transfer. old war-liege's PF state pre-transfer:"
-			pf_log_state_effect = yes
-
-			any_opinion_modifier_target = { # Those that were revolting against FROMFROM
-				limit = {
-					reverse_has_opinion_modifier = {
-						who = PREV
-						modifier = revolting_against_me
-					}
-				}
-				reverse_remove_opinion = { who = PREV modifier = revolting_against_me }
-				remove_opinion = { who = PREV modifier = revolting_against }
-				if = {
-					limit = {
-						NOT = {
-							reverse_has_opinion_modifier = {
-								who = ROOT
-								modifier = revolting_against_me
-							}
-						}
-					}
-					reverse_opinion = { who = ROOT modifier = revolting_against_me }
-				}
-				if = {
-					limit = {
-						NOT = {
-							has_opinion_modifier = {
-								who = ROOT
-								modifier = revolting_against
-							}
-						}
-					}
-					opinion = { who = ROOT modifier = revolting_against }
-				}
-			}
-
-			# NOTE: We intentionally do not transfer neutral/loyalist to new liege
-
-			any_opinion_modifier_target = { # Those that were loyal to FROMFROM
-				limit = {
-					reverse_has_opinion_modifier = {
-						who = PREV
-						modifier = pf_loyal_to_me
-					}
-				}
-				reverse_remove_opinion = { who = PREV modifier = pf_loyal_to_me }
-				remove_opinion = { who = PREV modifier = pf_loyal_toward }
-				remove_trait = loyalist
-			}
-			any_opinion_modifier_target = { # Those that were neutral in FROMFROM's civil war
-				limit = {
-					reverse_has_opinion_modifier = {
-						who = PREV
-						modifier = pf_neutral_to_me
-					}
-				}
-				reverse_remove_opinion = { who = PREV modifier = pf_neutral_to_me }
-				remove_opinion = { who = PREV modifier = pf_neutral_toward }
-				remove_trait = neutral
-			}
-
-			if = {
-				limit = { has_character_flag = faction_court_war }
-				ROOT = { set_character_flag = faction_court_war }
-			}
-			if = {
-				limit = { has_character_flag = faction_prosperity_war }
-				ROOT = { set_character_flag = faction_prosperity_war }
-			}
-			if = {
-				limit = { has_character_flag = faction_glory_war }
-				ROOT = { set_character_flag = faction_glory_war }
-			}
-			if = {
-				limit = { has_character_flag = faction_tradition_war }
-				ROOT = { set_character_flag = faction_tradition_war }
-			}
-			if = {
-				limit = { has_character_flag = faction_pretender_war }
-				ROOT = { set_character_flag = faction_pretender_war }
-			}
-			if = {
-				limit = { has_character_flag = faction_separatist_war }
-				ROOT = { set_character_flag = faction_separatist_war }
-			}
-			if = {
-				limit = { has_character_flag = faction_religious_war }
-				ROOT = { set_character_flag = faction_religious_war }
-			}
-			if = {
-				limit = { has_character_flag = faction_succession_war }
-				ROOT = { set_character_flag = faction_succession_war }
-			}
-			if = {
-				limit = { has_character_flag = faction_authority_war }
-				ROOT = { set_character_flag = faction_authority_war }
-			}
-
-			# NOTE: Only valid to clear all war flags due to the fact that loss
-			# of a title leading to a new civil war liege altogether implies
-			# that all of FROMFROM's civil wars were transferred to ROOT
-			pf_clear_war_flags_effect = yes
-
-			log = "DEBUG: old war-liege's PF state post-transfer:"
-			pf_log_state_effect = yes
-		}
-
-		log = "DEBUG: PF state dump of new war-liege post-state-transfer follows:"
-		pf_log_state_effect = yes
-	}
-}
-
-
 # PlusFaction.211 [Granted Title]
 # GRANT_LANDED_TITLE_INTERACTION_ACCEPT_EVENT - updates faction response to a granted title
 character_event = {
@@ -1037,18 +885,8 @@ character_event = {
 }
 
 # PlusFaction.220 [Liege]
+#
 # Annual faction maintenance event <MTTH>
-#
-# This needs to be a separate event from PlusFaction.200 so that it may use an
-# optimized pre-trigger. If we tried making one event double as both, we'd either
-# have to use no such pre-trigger, or we'd always have to set the `pf_pulse` flag
-# for each triggered invocation of PlusFaction.200 or else we'd drop those events
-# on the floor due to failing the common pre-trigger.
-#
-# Hence, we've separate events that use the same common code (setup + tear-down)
-# to avoid duplication, factored-out into the minimum 2 common possible "stages"
-# (setup --> <non-common stuff> --> completion).
-
 character_event = {
 	id = PlusFaction.220
 
@@ -1063,34 +901,6 @@ character_event = {
 		is_landed = yes
 		any_vassal = { pf_member_trigger = yes }
 	}
-
-	# NOTE: Intentionally no MTTH clause, should deterministically always trigger
-	# upon this character's EVENT_PROCESS_OFFSET slot (a game day since start
-	# that is the sum of a randomized-per-character static "offset",
-	# between 1 and EVENT_PROCESS_OFFSET and an EVENT_PROCESS_OFFSET multiple):
-	#
-	# Game day since scenario start that I run on without the pf_pulse pre-trigger[*]:
-	# DAY = <static per-character slot offset> + EVENT_PROCESS_OFFSET * N,
-	# where N is the Nth MTTH eval/exec period. Since we only trigger when `pf_pulse`
-	# is set here and then clear `pf_pulse` immediately, we skip
-	# (365/EVENT_PROCESS_OFFSET)-1 MTTH eval/exec periods between annual maintenance
-	# invocations on average (17.25 skips/year if E_P_O == 20 and 1 invocation/year).
-	#
-	# [*] This is an ideal model; the per-character slot-offset can change IRL
-	# as the engine trys to rebalance characters uniformly over [1, EVENT_PROCESS_OFFSET].
-	# This can periodically introduce minor jitter bounded by EVENT_PROCESS_OFFSET
-	# as that "constant day slot offset" is changed for a character, IF the engine
-	# ever even tries to rebalance its living characters over [1, EVENT_PROCESS_OFFSET],
-	# which is a big IF. Otherwise, it is actually the ideal model. IF the engine
-	# does do this, it'd only be once every several game years, from my experience.
-	#
-	# ^-- All of the above applies to any MTTH scheduling when the "probability"
-	# component is removed by not having an MTTH factor clause. These are effectively
-	# EVENT_PROCESS_OFFSET-pulse events, except more accurate than any type of
-	# on_action pulse.
-	#
-	# TL;DR: This is a nitty-gritty way to get an on_yearly_pulse on_action that
-	# is highly-accurate with a worst-case error of EVENT_PROCESS_OFFSET-1 days.
 
 	immediate = {
 		clr_character_flag = pf_pulse
@@ -1593,38 +1403,37 @@ character_event = {
 				opinion = { who = ROOT modifier = faction_disapprove_obligations months = 14 }
 			}
 		}
-
-#		#COUNCIL TERMS
-#		any_vassal = {
-#			remove_opinion = { who = ROOT modifier = faction_approve_council_term }
-#		}
-#		if = {
-#			limit = { has_law = council_privileges_1 }
-#			job_chancellor = {
-#				remove_opinion = { who = ROOT modifier = grateful_council_term }
-#				opinion = { who = ROOT modifier = grateful_council_term months = 14 }
-#			}
-#			job_marshal = {
-#				remove_opinion = { who = ROOT modifier = grateful_council_term }
-#				opinion = { who = ROOT modifier = grateful_council_term months = 14 }
-#			}
-#			job_treasurer = {
-#				remove_opinion = { who = ROOT modifier = grateful_council_term }
-#				opinion = { who = ROOT modifier = grateful_council_term months = 14 }
-#			}
-#			job_spymaster = {
-#				remove_opinion = { who = ROOT modifier = grateful_council_term }
-#				opinion = { who = ROOT modifier = grateful_council_term months = 14 }
-#			}
-#			job_spiritual = {
-#				remove_opinion = { who = ROOT modifier = grateful_council_term }
-#				opinion = { who = ROOT modifier = grateful_council_term months = 14 }
-#			}
-#			any_vassal = {
-#				limit = { in_faction = faction_tradition }
-#				opinion = { who = ROOT modifier = faction_approve_council_term months = 14 }
-#			}
-#		}
+		# #COUNCIL TERMS
+		# any_vassal = {
+		# 	remove_opinion = { who = ROOT modifier = faction_approve_council_term }
+		# }
+		# if = {
+		# 	limit = { has_law = council_privileges_1 }
+		# 	job_chancellor = {
+		# 		remove_opinion = { who = ROOT modifier = grateful_council_term }
+		# 		opinion = { who = ROOT modifier = grateful_council_term months = 14 }
+		# 	}
+		# 	job_marshal = {
+		# 		remove_opinion = { who = ROOT modifier = grateful_council_term }
+		# 		opinion = { who = ROOT modifier = grateful_council_term months = 14 }
+		# 	}
+		# 	job_treasurer = {
+		# 		remove_opinion = { who = ROOT modifier = grateful_council_term }
+		# 		opinion = { who = ROOT modifier = grateful_council_term months = 14 }
+		# 	}
+		# 	job_spymaster = {
+		# 		remove_opinion = { who = ROOT modifier = grateful_council_term }
+		# 		opinion = { who = ROOT modifier = grateful_council_term months = 14 }
+		# 	}
+		# 	job_spiritual = {
+		# 		remove_opinion = { who = ROOT modifier = grateful_council_term }
+		# 		opinion = { who = ROOT modifier = grateful_council_term months = 14 }
+		# 	}
+		# 	any_vassal = {
+		# 		limit = { in_faction = faction_tradition }
+		# 		opinion = { who = ROOT modifier = faction_approve_council_term months = 14 }
+		# 	}
+		# }
 		#COUNCILLORS
 		any_vassal = {
 			remove_opinion = { who = ROOT modifier = faction_approve_council }
@@ -2895,38 +2704,9 @@ character_event = {
 
 # PlusFaction.230 [New Holder]
 #
-# Civil war state cleanup when revolter drops out of war due to losing title
+# Civil war transfers to a new liege due to title gain
 character_event = {
 	id = PlusFaction.230
-
-	is_triggered_only = yes
-	hide_window = yes
-
-	trigger = {
-		FROMFROM = {
-			trait = rebel
-			in_revolt = no
-		}
-	}
-
-	immediate = {
-		FROMFROM = {
-			log = "DEBUG: revolter no longer in civil war after losing title. PF state dump pre-cleanup:"
-			pf_log_state_effect = yes
-
-			pf_teardown_rebel_effect = yes
-
-			log = "DEBUG: ex-revolter's PF state dump post-cleanup:"
-			pf_log_state_effect = yes
-		}
-	}
-}
-
-# PlusFaction.231 [New Holder]
-#
-# Civil war state cleanup when revolter drops out of civil war due to gaining a [higher-tier] title
-character_event = {
-	id = PlusFaction.231
 
 	is_triggered_only = yes
 	hide_window = yes
@@ -2934,39 +2714,268 @@ character_event = {
 	only_playable = yes
 
 	trigger = {
-		trait = rebel
-		in_revolt = no
+		FROM = { higher_tier_than = count }
+		any_war = { # We've inherited at least one of FROMFROM's civil wars
+			defender = { character = ROOT }
+			attacker = {
+				has_opinion_modifier = { who = FROMFROM modifier = revolting_against }
+			}
+			pf_cb_trigger = yes
+		}
 	}
 
 	immediate = {
-		log = "DEBUG: revolter no longer in civil war after gaining title. PF state dump pre-cleanup:"
-		pf_log_state_effect = yes
-
-		pf_teardown_rebel_effect = yes
-
-		log = "DEBUG: ex-revolter's PF state dump post-cleanup:"
+		# Note the liege change for transferred civil wars
+		any_war = {
+			limit = {
+				defender = { character = ROOT }
+				attacker = {
+					has_opinion_modifier = { who = FROMFROM modifier = revolting_against }
+				}
+				pf_cb_trigger = yes
+			}
+			attacker = {
+				clr_character_flag = original_war_liege
+			}
+		}
+		FROMFROM = {
+			log = "DEBUG: civil war liege changed due to title transfer. old war-liege's PF state pre-transfer:"
+			pf_log_state_effect = yes
+			
+			# Transfer revolt TOMs
+			any_opinion_modifier_target = { # Those that were revolting against FROMFROM
+				limit = { reverse_has_opinion_modifier = { who = PREV modifier = revolting_against_me } }
+				reverse_remove_opinion = { who = PREV modifier = revolting_against_me }
+				remove_opinion = { who = PREV modifier = revolting_against }
+				if = {
+					limit = {
+						NOR = {
+							reverse_has_opinion_modifier = {
+								who = ROOT
+								modifier = revolting_against_me
+							}
+							has_opinion_modifier = {
+								who = ROOT
+								modifier = revolting_against
+							}
+						}
+					}
+					reverse_opinion = { who = ROOT modifier = revolting_against_me }
+					opinion = { who = ROOT modifier = revolting_against }
+				}
+			}
+			
+			# Tear-down loyalist/neutral state; we've got a new liege altogether now.
+			# NOTE: We intentionally do not transfer neutral/loyalist to new liege
+			
+			any_opinion_modifier_target = { # Those that were loyal to FROMFROM
+				limit = { reverse_has_opinion_modifier = { who = PREV modifier = pf_loyal_to_me } }
+				reverse_remove_opinion = { who = PREV modifier = pf_loyal_to_me }
+				remove_opinion = { who = PREV modifier = pf_loyal_toward }
+				remove_trait = loyalist
+			}
+			any_opinion_modifier_target = { # Those that were neutral in FROMFROM's civil war
+				limit = { reverse_has_opinion_modifier = { who = PREV modifier = pf_neutral_to_me } }
+				reverse_remove_opinion = { who = PREV modifier = pf_neutral_to_me }
+				remove_opinion = { who = PREV modifier = pf_neutral_toward }
+				remove_trait = neutral
+			}
+			
+			# Transfer war flags
+			if = {
+				limit = { has_character_flag = faction_court_war }
+				ROOT = { set_character_flag = faction_court_war }
+			}
+			if = {
+				limit = { has_character_flag = faction_prosperity_war }
+				ROOT = { set_character_flag = faction_prosperity_war }
+			}
+			if = {
+				limit = { has_character_flag = faction_glory_war }
+				ROOT = { set_character_flag = faction_glory_war }
+			}
+			if = {
+				limit = { has_character_flag = faction_tradition_war }
+				ROOT = { set_character_flag = faction_tradition_war }
+			}
+			if = {
+				limit = { has_character_flag = faction_pretender_war }
+				ROOT = { set_character_flag = faction_pretender_war }
+			}
+			if = {
+				limit = { has_character_flag = faction_separatist_war }
+				ROOT = { set_character_flag = faction_separatist_war }
+			}
+			if = {
+				limit = { has_character_flag = faction_religious_war }
+				ROOT = { set_character_flag = faction_religious_war }
+			}
+			if = {
+				limit = { has_character_flag = faction_succession_war }
+				ROOT = { set_character_flag = faction_succession_war }
+			}
+			if = {
+				limit = { has_character_flag = faction_authority_war }
+				ROOT = { set_character_flag = faction_authority_war }
+			}
+			
+			# NOTE: Only valid to clear all war flags due to the fact that loss
+			# of a title leading to a new civil war liege altogether implies
+			# that all of FROMFROM's civil wars were transferred to ROOT
+			pf_clear_war_flags_effect = yes
+			
+			log = "DEBUG: old war-liege's PF state post-transfer:"
+			pf_log_state_effect = yes
+		}
+		
+		log = "DEBUG: PF state dump of new war-liege post-state-transfer follows:"
 		pf_log_state_effect = yes
 	}
 }
 
-
-# PlusFaction.232 [Unlanded Character]
+# PlusFaction.231 [New Holder]
 #
-# Civil war state cleanup when neutral/loyalist is unlanded
+# State cleanup when rebel drops-out of a civil war due to losing a title
+character_event = {
+	id = PlusFaction.231
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		FROMFROM = {
+			trait = rebel
+			OR = {
+				in_revolt = no
+				liege_before_war = { # Or we've dropped into a different civil war
+					NOT = { has_opinion_modifier = { who = PREV modifier = revolting_against_me } }
+				}
+			}
+		}
+	}
+
+	immediate = {
+		FROMFROM = {
+			log = "DEBUG: rebel dropped-out of a civil war after losing a title. PF state dump pre-cleanup:"
+			pf_log_state_effect = yes
+			pf_teardown_rebel_effect = yes
+			log = "DEBUG: ex-rebel's PF state dump post-cleanup:"
+			pf_log_state_effect = yes
+		}
+	}
+}
+
+# PlusFaction.232 [New Holder]
+#
+# State cleanup when rebel drops-out of a civil war due to gaining a title (e.g., a title of higher tier than our revolt
+# leader)
 character_event = {
 	id = PlusFaction.232
 
 	is_triggered_only = yes
 	hide_window = yes
 
+	only_playable = yes # Due to nature of title gain and preexisting rebel state
+
 	trigger = {
+		trait = rebel
 		OR = {
-			trait = neutral
-			trait = loyalist
+			in_revolt = no
+			liege_before_war = { # Or we've dropped into a different civil war
+				NOT = { has_opinion_modifier = { who = PREV modifier = revolting_against_me } }
+			}
 		}
 	}
 
 	immediate = {
-		# TBD
+		log = "DEBUG: rebel dropped-out of a civil war after gaining title. PF state dump pre-cleanup:"
+		pf_log_state_effect = yes
+		pf_teardown_rebel_effect = yes
+		log = "DEBUG: ex-rebel's PF state dump post-cleanup:"
+		pf_log_state_effect = yes
+	}
+}
+
+# PlusFaction.233 [New Holder]
+#
+# Civil war state cleanup when loyalist/neutral's liege changes due to gaining a title
+character_event = {
+	id = PlusFaction.233
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	only_playable = yes # Due to nature of title gain and preexisting loyalist/neutral state
+
+	trigger = {
+		FROM = { higher_tier_than = COUNT }
+		OR = {
+			AND = {
+				trait = loyalist
+				NOT = { has_opinion_modifier = { who = LIEGE modifier = pf_loyal_toward } }
+			}
+			AND = {
+				trait = neutral
+				NOT = { has_opinion_modifier = { who = LIEGE modifier = pf_neutral_toward } }
+			}
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = { trait = loyalist }
+			log = "DEBUG: loyalist's liege changed due to gaining a title. PF state dump pre-cleanup:"
+			pf_log_state_effect = yes
+			pf_teardown_loyalist_effect = yes
+			log = "DEBUG: ex-loyalist's PF state dump post-cleanup:"
+			pf_log_state_effect = yes
+		}
+		if = {
+			limit = { trait = neutral }
+			log = "DEBUG: neutral's liege changed due to gaining a title. PF state dump pre-cleanup:"
+			pf_log_state_effect = yes
+			pf_teardown_neutral_effect = yes
+			log = "DEBUG: ex-neutral's PF state dump post-cleanup:"
+			pf_log_state_effect = yes
+		}
+	}
+}
+
+# PlusFaction.234 [Unlanded Character]
+#
+# Civil war state cleanup when loyalist/neutral is unlanded
+# NOTE: Unlanded rebels are already handled by PlusFaction.231
+character_event = {
+	id = PlusFaction.234
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		has_game_started = yes
+		is_dying = no # This is handled directly on_death by PlusFaction.205
+		OR = {
+			trait = loyalist
+			trait = neutral
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = { trait = loyalist }
+			log = "DEBUG: loyalist unlanded. PF state dump pre-cleanup:"
+			pf_log_state_effect = yes
+			pf_teardown_loyalist_effect = yes
+			log = "DEBUG: ex-loyalist's PF state dump post-cleanup:"
+			pf_log_state_effect = yes
+		}
+		if = {
+			limit = { trait = neutral }
+			log = "DEBUG: neutral unlanded. PF state dump pre-cleanup:"
+			pf_log_state_effect = yes
+			pf_teardown_neutral_effect = yes
+			log = "DEBUG: ex-neutral's PF state dump post-cleanup:"
+			pf_log_state_effect = yes
+		}
 	}
 }
