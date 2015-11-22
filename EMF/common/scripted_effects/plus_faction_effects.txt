@@ -677,31 +677,42 @@ pf_setup_rebel_effect = {
 	clr_character_flag = civil_war_faction_member
 	clr_character_flag = will_join_civil_war
 	hidden_tooltip = {
-		liege = {
-			if = {
-				limit = {
-					has_opinion_modifier = { who = PREV modifier = neutral_civil_war }
-				}
-				remove_opinion = { who = PREV modifier = neutral_civil_war }
+		# Remove prior loyalist/neutral TOMs, if any
+		if = {
+			limit = {
+				has_opinion_modifier = { who = LIEGE modifier = pf_loyal_toward }
 			}
-			if = {
-				limit = {
-					has_opinion_modifier = { who = PREV modifier = supported_civil_war }
-				}
-				remove_opinion = { who = PREV modifier = supported_civil_war }
+			remove_opinion = { who = LIEGE modifier = pf_loyal_toward }
+			reverse_remove_opinion = { who = LIEGE modifier = pf_loyal_to_me }
+		}
+		if = {
+			limit = {
+				has_opinion_modifier = { who = LIEGE modifier = pf_neutral_toward }
 			}
-			if = {
-				limit = {
-					NOT = { has_opinion_modifier = { who = PREV modifier = revolting_against_me } }
+			remove_opinion = { who = LIEGE modifier = pf_neutral_toward }
+			reverse_remove_opinion = { who = LIEGE modifier = pf_neutral_to_me }
+		}
+		if = {
+			limit = {
+				NOT = {
+					has_opinion_modifier = {
+						who = LIEGE
+						modifier = revolting_against
+					}
 				}
-				opinion = { who = PREV modifier = revolting_against_me }
 			}
-			if = {
-				limit = {
-					NOT = { reverse_has_opinion_modifier = { who = PREV modifier = revolting_against } }
+			opinion = { who = LIEGE modifier = revolting_against }
+		}
+		if = {
+			limit = {
+				NOT = {
+					reverse_has_opinion_modifier = {
+						who = LIEGE
+						modifier = revolting_against_me
+					}
 				}
-				reverse_opinion = { who = PREV modifier = revolting_against }
 			}
+			reverse_opinion = { who = LIEGE modifier = revolting_against_me }
 		}
 	}
 }
@@ -713,6 +724,28 @@ pf_teardown_rebel_effect = {
 			limit = { reverse_has_opinion_modifier = { who = PREV modifier = revolting_against } }
 			reverse_remove_opinion = { who = PREV modifier = revolting_against }
 			remove_opinion = { who = PREV modifier = revolting_against_me }
+		}
+	}
+}
+
+pf_teardown_loyalist_effect = {
+	remove_trait = loyalist
+	hidden_tooltip = {
+		random_opinion_modifier_target = { # Liege or previous liege
+			limit = { reverse_has_opinion_modifier = { who = PREV modifier = pf_loyal_toward } }
+			reverse_remove_opinion = { who = PREV modifier = pf_loyal_toward }
+			remove_opinion = { who = PREV modifier = pf_loyal_to_me }
+		}
+	}
+}
+
+pf_teardown_neutral_effect = {
+	remove_trait = neutral
+	hidden_tooltip = {
+		random_opinion_modifier_target = { # Liege or previous liege
+			limit = { reverse_has_opinion_modifier = { who = PREV modifier = pf_neutral_toward } }
+			reverse_remove_opinion = { who = PREV modifier = pf_neutral_toward }
+			remove_opinion = { who = PREV modifier = pf_neutral_to_me }
 		}
 	}
 }
@@ -819,42 +852,33 @@ pf_punish_deceitful_player_effect = {
 	}
 }
 
-pf_clear_previous_civil_war_opinions_effect = {
-	hidden_tooltip = {
-		any_opinion_modifier_target = {
-			limit = { reverse_has_opinion_modifier = { who = PREV modifier = opinion_civil_war_loser } }
-			reverse_remove_opinion = { who = PREV modifier = opinion_civil_war_loser }
-		}
-		any_opinion_modifier_target = {
-			limit = { reverse_has_opinion_modifier = { who = PREV modifier = supported_civil_war } }
-			reverse_remove_opinion = { who = PREV modifier = supported_civil_war }
-		}
-		any_opinion_modifier_target = {
-			limit = { reverse_has_opinion_modifier = { who = PREV modifier = neutral_civil_war } }
-			reverse_remove_opinion = { who = PREV modifier = neutral_civil_war }
-		}
-	}
-}
-
 # ROOT=THIS is the victorious side after a civil war
 pf_civil_war_cleanup_effect = {
 	hidden_tooltip = {
 		FROM = {
 			any_opinion_modifier_target = {
 				limit = { pf_part_of_this_revolt_trigger = yes }
-				teardown_rebel_effect = yes
+				remove_trait = rebel
+				reverse_remove_opinion = { who = PREV modifier = revolting_against_me }
+				remove_opinion = { who = PREV modifier = revolting_against }
 			}
 
 			# Clear neutral/loyalist TOM's
 			any_opinion_modifier_target = {
-				limit = { reverse_has_opinion_modifier = { who = PREV modifier = supported_civil_war } }
+				limit = {
+					reverse_has_opinion_modifier = { who = PREV modifier = pf_loyal_to_me }
+				}
 				remove_trait = loyalist
-				reverse_remove_opinion = { who = PREV modifier = supported_civil_war }
+				reverse_remove_opinion = { who = PREV modifier = pf_loyal_to_me }
+				remove_opinion = { who = PREV modifier = pf_loyal_toward }
 			}
 			any_opinion_modifier_target = {
-				limit = { reverse_has_opinion_modifier = { who = PREV modifier = neutral_civil_war } }
+				limit = {
+					reverse_has_opinion_modifier = { who = PREV modifier = pf_neutral_to_me }
+				}
 				remove_trait = neutral
-				reverse_remove_opinion = { who = PREV modifier = neutral_civil_war }
+				reverse_remove_opinion = { who = PREV modifier = pf_neutral_to_me }
+				remove_opinion = { who = PREV modifier = pf_neutral_toward }
 			}
 		}
 		ROOT = {
@@ -868,38 +892,38 @@ pf_civil_war_cleanup_effect = {
 	}
 }
 
-
-# companion effect for set_defacto_liege, should be called before liege change
-pf_liege_change_begin_effect = {
-	hidden_tooltip = {
-		liege = { save_event_target_as = pf_lc_liege }
-	}
-}
-
-pf_liege_change_end_effect = {
+pf_liege_change_effect = {
 	hidden_tooltip = {
 		if = {
 			limit = {
-				NOT = { liege = { character = event_target:pf_lc_liege } }
+				trait = rebel
+				NOT = { has_opinion_modifier = { who = LIEGE modifier = revolting_against } }
 			}
 			pf_teardown_rebel_effect = yes
-			reverse_remove_opinion = { who = event_target:pf_lc_liege modifier = supported_civil_war }
-			reverse_remove_opinion = { who = event_target:pf_lc_liege modifier = neutral_civil_war }
-			remove_trait = loyalist
-			remove_trait = neutral
 		}
-		clear_event_target = pf_lc_liege
+		if = {
+			limit = {
+				trait = loyalist
+				NOT = { has_opinion_modifier = { who = LIEGE modifier = pf_loyal_toward } }
+			}
+			pf_teardown_loyalist_effect = yes
+		}
+		if = {
+			limit = {
+				trait = neutral
+				NOT = { has_opinion_modifier = { who = LIEGE modifier = pf_neutral_toward } }
+			}
+			pf_teardown_neutral_effect = yes
+		}
 	}
 }
 
-
-# Careful! Don't put this under a nested FROM!
+# Careful! Don't put this convenience wrapper under a nested FROM!
 pf_liege_change_under_title_begin_effect = {
 	FROM = { save_event_target_as = pf_lc_enemy }
 	pf_liege_change_under_title_ext_begin_effect = yes
 	clear_event_target = pf_lc_enemy
 }
-
 
 pf_liege_change_under_title_ext_begin_effect = {
 	hidden_tooltip = {
@@ -919,26 +943,21 @@ pf_liege_change_under_title_ext_begin_effect = {
 			e_hip = {
 				holder_scope = {
 					if = {
-						limit = { NOT = { has_opinion_modifier = { who = PREVPREV modifier = pf_lcut_ruler } } }
+						limit = {
+							NOT = {
+								has_opinion_modifier = {
+									who = PREVPREV
+									modifier = pf_lcut_ruler
+								}
+							}
+						}
 						opinion = { who = PREVPREV modifier = pf_lcut_ruler }
 					}
-				}
-			}
-			liege = { # Add temporary TOM from tracked ruler to current liege
-				if = {
-					limit = {
-						NOR = { # Neither if the ruler is effectively independent nor if they already have a TOM
-							character = PREV
-							reverse_has_opinion_modifier = { who = PREV modifier = pf_lcut_liege }
-						}
-					}
-					reverse_opinion = { who = PREV modifier = pf_lcut_liege }
 				}
 			}
 		}
 	}
 }
-
 
 pf_liege_change_under_title_end_effect = {
 	hidden_tooltip = {
@@ -946,53 +965,18 @@ pf_liege_change_under_title_end_effect = {
 			holder_scope = {
 				any_opinion_modifier_target = { # Tracked rulers
 					limit = {
-						reverse_has_opinion_modifier = { who = PREV modifier = pf_lcut_ruler }
-						OR = {
-							has_opinion_modifier = { who = LIEGE modifier = pf_lcut_liege } # Still the same liege
-							AND = { # Or...
-								liege = { character = PREV } # Independent now
-								NOT = { # And not any prior liege
-									any_opinion_modifier_target = {
-										reverse_has_opinion_modifier = { who = PREV modifier = pf_lcut_liege }
-									}
-								}
-							}
+						reverse_has_opinion_modifier = {
+							who = PREV
+							modifier = pf_lcut_ruler
 						}
 					}
-					# Liege didn't change, so remove them from the tracked set
 					reverse_remove_opinion = { who = PREV modifier = pf_lcut_ruler }
-					liege = {
-						reverse_remove_opinion = { who = PREV modifier = pf_lcut_liege }
-					}
-				}
-
-				# All that's left now in Isis's tracked LCUT set are characters
-				# whose liege changed under the title.
-
-				any_opinion_modifier_target = { # Tracked rulers w/ liege change
-					limit = { reverse_has_opinion_modifier = { who = PREV modifier = pf_lcut_ruler } }
-
-					random_opinion_modifier_target = { # Prior liege (if applicable, i.e., weren't independent)
-						limit = { reverse_has_opinion_modifier = { who = PREV modifier = pf_lcut_liege } }
-						
-						remove_opinion = { who = PREV modifier = supported_civil_war }
-						remove_opinion = { who = PREV modifier = neutral_civil_war }
-						PREV = {
-							remove_trait = loyalist
-							remove_trait = neutral
-						}
-
-						reverse_remove_opinion = { who = PREV modifier = pf_lcut_liege }
-					}
-
-					pf_teardown_rebel_effect = yes
-					reverse_remove_opinion = { who = PREV modifier = pf_lcut_ruler }
+					pf_liege_change_effect = yes
 				}
 			}
 		}
 	}
 }
-
 
 pf_log_state_effect = {
 	log = "DEBUG: civil war state for [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] ([This.GetID]):"
@@ -1194,12 +1178,12 @@ pf_log_state_effect = {
 		log = "SERIOUS: revolting_against_me w/o [reverse] revolting_against -> [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] ([This.GetID])"
 	}
 	any_opinion_modifier_target = {
-		limit = { reverse_has_opinion_modifier = { who = PREV modifier = supported_civil_war } }
-		log = "DEBUG: supported_civil_war -> [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] ([This.GetID])"
+		limit = { reverse_has_opinion_modifier = { who = PREV modifier = pf_loyal_to_me } }
+		log = "DEBUG: pf_loyal_to_me -> [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] ([This.GetID])"
 	}
 	any_opinion_modifier_target = {
-		limit = { reverse_has_opinion_modifier = { who = PREV modifier = neutral_civil_war } }
-		log = "DEBUG: neutral_civil_war -> [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] ([This.GetID])"
+		limit = { reverse_has_opinion_modifier = { who = PREV modifier = pf_neutral_to_me } }
+		log = "DEBUG: pf_neutral_to_me -> [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] ([This.GetID])"
 	}
 }
 
