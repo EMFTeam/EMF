@@ -1,3 +1,4 @@
+
 namespace = PlusFaction
 
 #reserved: PlusFaction.200 to PlusFaction.299
@@ -254,18 +255,15 @@ character_event = {
 			pf_war_trait_trigger = yes
 			any_war = {
 				defender = { character = ROOT }
-				pf_cb_trigger = yes
+				using_cb = cb_faction_overthrow_ruler
 			}
 			any_vassal = { pf_member_trigger = yes }
 		}
 	}
 
 	immediate = {
-		log = "DEBUG: processing death for [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID])..."
-		
 		if = {
 			limit = { primary_title = { is_vice_royalty = yes } }
-			log = "DEBUG: primary title is a viceroyalty, so selecting heir to capital county as effective heir"
 			capital_scope = {
 				county = {
 					current_heir = {
@@ -280,17 +278,6 @@ character_event = {
 				current_heir = {
 					save_event_target_as = heir
 				}
-			}
-		}
-		
-		event_target:heir = {
-			if = {
-				limit = { is_ruler = yes }
-				log = "DEBUG: heir is already a ruler: [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID])"
-			}
-			if = {
-				limit = { is_ruler = no }
-				log = "DEBUG: heir is not yet a ruler: [This.GetTitledName] (ID: [This.GetID])"
 			}
 		}
 		
@@ -387,15 +374,63 @@ character_event = {
 			}
 		}
 		
+		# If we have these, we don't want them to persist after death
+		remove_trait = loyalist
+		remove_trait = neutral
+		
+		if = {
+			limit = {
+				NOR = {
+					any_war = {
+						defender = { character = ROOT }
+						using_cb = cb_faction_overthrow_ruler
+					}
+					trait = rebel
+				}
+			}
+			break = yes			
+		}
+		
+		log = "REVOLT-RELATED DEATH: [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID]):"
+		log = "<<<<<"
+		
+		if = {
+			limit = { primary_title = { is_vice_royalty = yes } }
+			log = "dying ruler is a viceroy, so selecting heir to capital county as effective heir"
+		}
+		event_target:heir = {
+			if = {
+				limit = { is_ruler = yes }
+				log = "heir is already a ruler: [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID])"
+			}
+			if = {
+				limit = { is_ruler = no }
+				log = "heir is not yet a ruler: [This.GetTitledName] (ID: [This.GetID])"
+			}
+		}
+		
 		if = { # Are we a civil war liege (defender)?
 			limit = {
 				any_war = {
 					defender = { character = ROOT }
-					pf_cb_trigger = yes
+					using_cb = cb_faction_overthrow_ruler
 				}
 			}
 			
-			log = "DEBUG: dying ruler is a civil war liege"
+			log = "dying ruler is a civil war liege"
+			
+			if = {
+				limit = {
+					has_opinion_modifier = { who = event_target:heir modifier = revolting_against_me }
+				}
+				event_target:heir = {
+					log = "heir was revolting against [Root.GetHerHim]; resetting [heir.GetTitledFirstName]'s status"
+					reverse_remove_opinion = { who = ROOT modifier = revolting_against_me }
+					remove_opinion = { who = ROOT modifier = revolting_against }
+					remove_trait = rebel
+					set_defacto_liege = ROOT
+				}
+			}
 			
 			event_target:heir = {
 				if = {
@@ -440,9 +475,13 @@ character_event = {
 			any_war = {
 				limit = {
 					defender = { character = ROOT }
-					pf_cb_trigger = yes
+					using_cb = cb_faction_overthrow_ruler
 				}
 				attacker = {
+					if = {
+						limit = { has_character_flag = original_war_liege }
+						log = "clearing original liege status for civil war (rebel success will be less dangerous)"
+					}
 					clr_character_flag = original_war_liege
 				}
 			}
@@ -452,6 +491,7 @@ character_event = {
 				limit = {
 					reverse_has_opinion_modifier = { who = PREV modifier = revolting_against_me }
 					NOR = {
+						character = event_target:heir
 						reverse_has_opinion_modifier = {
 							who = event_target:heir
 							modifier = revolting_against_me
@@ -471,6 +511,7 @@ character_event = {
 				limit = {
 					trait = loyalist
 					NOR = {
+						character = event_target:heir
 						reverse_has_opinion_modifier = {
 							who = event_target:heir
 							modifier = pf_loyal_to_me
@@ -488,6 +529,7 @@ character_event = {
 				limit = {
 					trait = neutral
 					NOR = {
+						character = event_target:heir
 						reverse_has_opinion_modifier = {
 							who = event_target:heir
 							modifier = pf_neutral_to_me
@@ -503,12 +545,9 @@ character_event = {
 			}
 		}
 		
-		# If we have these, we don't want them to persist after death
-		remove_trait = loyalist
-		remove_trait = neutral
-		
 		if = {
 			limit = { NOT = { trait = rebel } }
+			log = ">>>>>"
 			break = yes
 		}
 		
@@ -517,12 +556,13 @@ character_event = {
 		if = { # Sanity check, first.
 			limit = { pf_in_revolt_trigger = no }
 			log = "ERROR: dying ruler had Rebel trait but isn't involved in a PF revolt: [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID]): aborting!"
+			log = ">>>>>"
 			break = yes
 		}
 		
 		# We are involved in a PF revolt (as a revolter), if we made it here.
 		
-		log = "DEBUG: dying ruler is a rebel"
+		log = "dying ruler is a revolter"
 		
 		if = {
 			limit = {
@@ -548,18 +588,18 @@ character_event = {
 				}
 			}
 			
-			log = "DEBUG: dying revolter's heir SHOULD inherit their revolt"
+			log = "dying revolter's heir SHOULD inherit [Root.GetHerHis] revolt"
 			
 			event_target:heir = {
 				if = {
 					limit = { trait = loyalist }
-					log = "DEBUG: clearing heir's unrelated loyalist status"
+					log = "clearing heir's unrelated loyalist status"
 					remove_opinion = { who = LIEGE modifier = pf_loyal_toward }
 					reverse_remove_opinion = { who = LIEGE modifier = pf_loyal_to_me }
 				}
 				if = {
 					limit = { trait = neutral }
-					log = "DEBUG: clearing heir's unrelated neutral status"
+					log = "clearing heir's unrelated neutral status"
 					remove_opinion = { who = LIEGE modifier = pf_neutral_toward }
 					reverse_remove_opinion = { who = LIEGE modifier = pf_neutral_to_me }
 				}
@@ -570,11 +610,11 @@ character_event = {
 				limit = {
 					any_war = {
 						attacker = { character = ROOT }
-						pf_cb_trigger = yes
+						using_cb = cb_faction_overthrow_ruler
 					}
 				}
 				
-				log = "DEBUG: dying revolter is rebel leader"
+				log = "dying revolter is a rebel leader"
 				
 				# Inherit original_war_liege if we have it.
 				if = {
@@ -662,12 +702,13 @@ character_event = {
 				}
 			}
 			
+			log = ">>>>>"
 			break = yes
 		}
 		
 		# We should NOT pass-down the revolt, if we made it here.
 		
-		log = "DEBUG: dying revolter's heir should NOT inherit their revolt"
+		log = "dying revolter's heir should NOT inherit their revolt"
 		
 		# If we're a revolt leader, then we can't pass down the revolt to anyone in this case, so invalidate our
 		# rebellion.
@@ -677,7 +718,7 @@ character_event = {
 				limit = {
 					attacker = { character = ROOT }
 					defender = { character = PREVPREV }
-					pf_cb_trigger = yes
+					using_cb = cb_faction_overthrow_ruler
 				}
 				defender = {
 					log = "INFO: dying ruler [Root.GetTitledFirstName] of the [Root.PrimaryTitle.GetFullBaseName] (ID: [Root.GetID]) is a revolt leader against [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID]), but their heir cannot inherit the war, so the revolt must be invalidated"
@@ -686,15 +727,18 @@ character_event = {
 				end_war = invalid
 				
 				# Nothing further for us to do, as CB invalidation should cleanup everything for us.
+				log = ">>>>>"
 				break = yes
 			}
 		}
 		
 		# We're not a revolt leader, if we've made it here.
 		
-		log = "DEBUG: dying revolter is NOT the revolt leader"
+		log = "dying revolter is NOT the revolt leader"
 		
 		# Nothing for us to actually do in this case...
+		
+		log = ">>>>>"
 	}
 }
 
@@ -2712,14 +2756,16 @@ character_event = {
 	only_playable = yes
 
 	trigger = {
-		FROM = { higher_tier_than = count }
+		FROM = { higher_tier_than = COUNT }
+		FROMFROM = { is_dying = no }
 		any_war = { # We've inherited at least one of FROMFROM's civil wars
 			defender = { character = ROOT }
 			attacker = {
 				has_opinion_modifier = { who = FROMFROM modifier = revolting_against }
 			}
-			pf_cb_trigger = yes
+			using_cb = cb_faction_overthrow_ruler
 		}
+		NOT = { has_global_flag = pf_teardown_lock }
 	}
 
 	immediate = {
@@ -2730,7 +2776,7 @@ character_event = {
 				attacker = {
 					has_opinion_modifier = { who = FROMFROM modifier = revolting_against }
 				}
-				pf_cb_trigger = yes
+				using_cb = cb_faction_overthrow_ruler
 			}
 			attacker = {
 				clr_character_flag = original_war_liege
@@ -2844,12 +2890,16 @@ character_event = {
 		FROMFROM = {
 			trait = rebel
 			OR = {
+				is_ruler = no
 				in_revolt = no
-				liege_before_war = { # Or we've dropped into a different civil war
-					NOT = { has_opinion_modifier = { who = PREV modifier = revolting_against_me } }
+				NOT = {
+					liege_before_war = {
+						has_opinion_modifier = { who = PREV modifier = revolting_against_me }
+					}
 				}
 			}
 		}
+		NOT = { has_global_flag = pf_teardown_lock }
 	}
 
 	immediate = {
@@ -2865,8 +2915,7 @@ character_event = {
 
 # PlusFaction.232 [New Holder]
 #
-# State cleanup when rebel drops-out of a civil war due to gaining a title (e.g., a title of higher tier than our revolt
-# leader)
+# State cleanup when rebel drops-out of a civil war due to gaining a title
 character_event = {
 	id = PlusFaction.232
 
@@ -2877,12 +2926,21 @@ character_event = {
 
 	trigger = {
 		trait = rebel
-		OR = {
-			in_revolt = no
-			liege_before_war = { # Or we've dropped into a different civil war
-				NOT = { has_opinion_modifier = { who = PREV modifier = revolting_against_me } }
+		primary_title = { title = FROM }
+		any_opinion_modifier_target = { # Old civil war liege
+			reverse_has_opinion_modifier = { who = PREV modifier = revolting_against }
+			any_war = {
+				defender = { character = PREVPREV }
+				attacker = { # Old revolt leader
+					NOR = {
+						character = ROOT
+						character = FROMFROM
+						higher_tier_than = ROOT # Leader Tier <= ROOT's Tier
+					}
+				}
 			}
 		}
+		NOT = { has_global_flag = pf_teardown_lock }
 	}
 
 	immediate = {
@@ -2906,17 +2964,18 @@ character_event = {
 	only_playable = yes # Due to nature of title gain and preexisting loyalist/neutral state
 
 	trigger = {
-		FROM = { higher_tier_than = COUNT }
+		primary_title = { title = FROM }
 		OR = {
-			AND = {
-				trait = loyalist
-				NOT = { has_opinion_modifier = { who = LIEGE modifier = pf_loyal_toward } }
-			}
 			AND = {
 				trait = neutral
 				NOT = { has_opinion_modifier = { who = LIEGE modifier = pf_neutral_toward } }
 			}
+			AND = {
+				trait = loyalist
+				NOT = { has_opinion_modifier = { who = LIEGE modifier = pf_loyal_toward } }
+			}
 		}
+		NOT = { has_global_flag = pf_teardown_lock }
 	}
 
 	immediate = {
@@ -2956,6 +3015,7 @@ character_event = {
 			trait = loyalist
 			trait = neutral
 		}
+		NOT = { has_global_flag = pf_teardown_lock }
 	}
 
 	immediate = {
