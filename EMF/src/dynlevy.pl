@@ -12,7 +12,7 @@ use warnings;
 use Carp;
 use Getopt::Long qw(:config gnu_getopt);
 
-my $VERSION = "1.1.0";
+my $VERSION = "1.2.0";
 
 my $DEFAULT_N      = 64;
 my $DEFAULT_STRIDE = 5;
@@ -28,6 +28,7 @@ my %targets = (
 	laws => \&print_laws,
 	i18n => \&print_i18n,
 	events => \&print_events,
+	effects => \&print_effects,
 );
 
 ####
@@ -117,6 +118,35 @@ sub print_params {
 
 
 ####
+
+
+sub print_effects {
+	print "# emf_dynlevy_effects\n";
+	print "# Dynamic levy law scaling with realm_size (demesne laws): internal support effects\n";
+	print "# Also, see emf_cb_effects.txt for some CB helpers related to major revolts.\n\n";
+	
+	print <<EOS;
+emf_dynlevy_update_effect = {
+	hidden_tooltip = { character_event = { id = emf_dynlevy.20 } }
+}
+
+# Used in [primary] title scope
+emf_dynlevy_remove_effect = {
+	hidden_tooltip = {
+EOS
+
+	for my $i (0..$opt_n-1) {
+		print "\t\trevoke_law = dynlevy${i}_0\n"
+	}
+
+	print <<EOS;
+	}
+}
+EOS
+}
+
+
+####
 	
 sub print_laws {
 	print "# emf_dynlevy_laws\n";
@@ -148,6 +178,7 @@ EOS
 		if ($i == 0) {
 			print <<EOS;
 			not = { tier = baron }
+			temporary = no
 			or = {
 				tier = count # Counts always use the default law
 				has_law = $law
@@ -158,6 +189,7 @@ EOS
 		else {
 			print <<EOS;
 			higher_tier_than = count
+			temporary = no
 			or = {
 				has_law = $law
 				holder_scope = { has_law = $law } # Even if title doesn't have the law, allow it to be copied
@@ -179,22 +211,8 @@ EOS
 			factor = 0
 		}
 		effect = {
-			hidden_tooltip = {
-EOS
-
-		if ($i == 0) {
-			print "\t\t\t\t# Turns out, due to Paradox script's severe overhead, it's faster (and simpler)\n";
-			print "\t\t\t\t# to just revoke all the other ",$opt_n-1, " laws directly than use a binary search\n";
-			print "\t\t\t\t# to precisely locate the correct, single law to revoke in O(lg N) time. revoke_law\n";
-			print "\t\t\t\t# should be just as fast clr_character_flag anyhow.\n\n";
+			emf_dynlevy_remove_effect = yes
 		}
-		
-		for my $j (0..$opt_n-1) {
-			print "\t\t\t\trevoke_law = dynlevy${j}_0\n"
-		}
-
-		print "\t\t\t}\n\t\t}\n";
-		print <<EOS;
 
 		castle_vassal_max_levy = $mod_str
 		castle_vassal_min_levy = $mod_str
@@ -202,6 +220,8 @@ EOS
 		city_vassal_min_levy = $mod_str
 		temple_vassal_max_levy = $mod_str
 		temple_vassal_min_levy = $mod_str
+		tribal_vassal_max_levy = $mod_str
+		tribal_vassal_min_levy = $mod_str
 EOS
 
 		print "\t}\n";
@@ -234,13 +254,33 @@ namespace = emf_dynlevy
 # optimistically exit the search once the correct realm_size range is found.
 character_event = {
 	id = emf_dynlevy.20
-	desc = HIDE_EVENT
-	hide_window = yes
+	
 	is_triggered_only = yes
+	hide_window = yes
+	
+	only_rulers = yes
 	
 	immediate = {
-#		clr_character_flag = dynlevy_dirty # Clear batch-optimization flag
-
+		primary_title = {
+			if = {
+				limit = {
+					OR = {
+						tier = BARON
+						temporary = yes # E.g., rebel leader
+					}
+				}
+				emf_dynlevy_remove_effect = yes
+				break = yes
+			}
+			if = {
+				limit = {
+					tier = COUNT
+					not = { has_law = dynlevy0_0 }
+				}
+				add_law = dynlevy0_0
+				break = yes
+			}
+		}
 EOS
 
 	print_search_tree(
@@ -248,78 +288,6 @@ EOS
 		0,
 		$opt_n,
 		2); # start with an indent level of 2
-
-	print <<EOS;
-	}
-	
-	option = { name = OK }
-}
-
-
-# emf_dynlevy.21
-# on_new_holder event for immediate levy law application upon title creation
-#
-# Like emf_dynlevy.20, the approach is to use a binary search tree expansion upon
-# realm_size to determine the correct levy law to apply to the target title.
-#
-# NOTE: As of experimental optimizations in EMF 3.03, this event is no longer in use.
-#
-#character_event = {
-#	id = emf_dynlevy.21
-#	desc = HIDE_EVENT
-#	hide_window = yes
-#	is_triggered_only = yes
-#
-#	trigger = {
-#		not = { FROMFROM = { always = yes } }
-#		FROM = { higher_tier_than = count }
-#		
-#		# Only titles of primary-tier or higher
-#		primary_title = {
-#			not = { higher_tier_than = FROM }
-#		}
-#	}
-#	
-#	immediate = {
-EOS
-
-	if (0) {
-		print_search_tree(
-			1, # title creation trigger variant
-			0,
-			$opt_n,
-			2); # start with an indent level of 2
-	}
-
-	print <<EOS;
-#	}
-#	
-#	option = { name = OK }
-#}
-
-
-# emf_dynlevy.22
-# Debug event for identifying the dynlevy law(s) applied to a character
-character_event = {
-	id = emf_dynlevy.22
-	desc = emf_dynlevy.22.desc
-	picture = GFX_evt_battle
-	is_triggered_only = yes
-	
-	option = {
-		name = OK
-
-EOS
-
-	for my $i (0..$opt_n-1) {
-		my $law = "dynlevy${i}_0";
-		print <<EOS;
-		if = {
-			limit = { has_law = $law }
-			custom_tooltip = { text = emf_ctt_dbg_$law }
-		}
-EOS
-	}
 
 	print <<EOS;
 	}
@@ -330,14 +298,15 @@ EOS
 # Maintenance version of emf_dynlevy.20, called on annual pulse
 character_event = {
 	id = emf_dynlevy.23
-	desc = HIDE_EVENT
-	hide_window = yes
+	
 	is_triggered_only = yes
+	hide_window = yes
 	
 	only_playable = yes
 	
 	trigger = {
-		higher_tier_than = count # For maintenance, we only care about tier >= DUKE.
+		higher_tier_than = COUNT # For maintenance, we only care about tier >= DUKE.
+		primary_title = { temporary = no }
 	}
 	
 	immediate = {
@@ -351,41 +320,6 @@ EOS
 
 	print <<EOS;
 	}
-	
-	option = { name = OK }
-}
-
-
-# emf_dynlevy.24
-# Debug / fix event in case somebody should run into the mysterious, once-sighted
-# cosmetic bug of multiple dynlevy laws appearing to be activated at the same
-# time. [Not even sure it works, as I haven't been able to repeat this mystery.]
-character_event = {
-	id = emf_dynlevy.24
-	desc = HIDE_EVENT
-	hide_window = yes
-	is_triggered_only = yes
-	
-	immediate = {
-	
-		# Clear  all dynlevy laws from all tier >= DUKE titles
-		any_demesne_title = {
-			limit = { higher_tier_than = count }
-			
-EOS
-
-	for my $i (0..$opt_n-1) {
-		print "\t" x 3, "revoke_law = dynlevy${i}_0\n";
-	}
-
-	print <<EOS;
-		}
-		
-		# Reset appropriate law
-		character_event = { id = emf_dynlevy.20 }
-	}
-	
-	option = { name = OK }
 }
 EOS
 }
@@ -504,7 +438,6 @@ sub print_search_tree {
 sub print_i18n {
 	print "#CODE;ENGLISH;FRENCH;GERMAN;;SPANISH;;;;;;;;;x\n";
 	my $eol = ";;;;;;;;;;;;;x\n";
-	print "emf_dynlevy.22.desc;Hover over the event option for my levy efficiency law. If no tooltip appears, I have no dynlevy law applied.$eol";
 	
 	for my $i (0..$opt_n-1) {
 		my $mod = scale_function($i) + 1;
@@ -518,7 +451,6 @@ sub print_i18n {
 		my $min_rs = ($i == 0) ? 1 : ($opt_offset + $opt_stride*$i);
 		my $max_rs = ($i == $opt_n-1) ? "INF" : ($opt_offset + $opt_stride*($i+1)-1);
 		
-		print "emf_ctt_dbg_$law;Dynamic Levy Law: §Y$law§!\\nLevy Efficiency: §Y$mod_str§!\\nRealm Size: §Y$min_rs§! through §Y$max_rs§!\\n$eol";
 		print "${law_group};Levy Efficiency$eol";
 		print "${law_group}_desc;As your realm grows, your liege levy will grow with it. But by how much?$eol";
 		print "${law};$mod_str Realm Levy-Raising Efficiency$eol";
