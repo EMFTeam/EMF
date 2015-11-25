@@ -786,14 +786,21 @@ character_event = {
 		log = "dying rebel is NOT a rebel leader; who knows what wonders will happen next? trying to pull [Root.GetHerHim] out of revolt preemptively..."
 		
 		liege_before_war = {
-			set_defacto_vassal = ROOT
 			if = {
-				limit = { NOT = { is_liege_of = ROOT } }
-				log = "-> doh! failed to revassalize him to liege preemptively. giving up."
+				limit = { ROOT = { liege = { character = PREVPREV } } }
+				log = "-> dying rebel's liege_before_war is actually [Root.GetHerHis] liege for some reason, so re-vassalization wasn't an option."
 			}
 			if = {
-				limit = { is_liege_of = ROOT }
-				log = "-> successfully pulled revolt participant whose heir shouldn't inherit the revolt out of the war."
+				limit = { NOT = { ROOT = { liege = { character = PREVPREV } } } }
+				set_defacto_vassal = ROOT
+				if = {
+					limit = { NOT = { is_liege_of = ROOT } }
+					log = "-> doh! failed to revassalize [Root.GetHerHim] to their proper liege preemptively. hard-code hates us?"
+				}
+				if = {
+					limit = { is_liege_of = ROOT }
+					log = "-> successfully revassalized revolter whose heir shouldn't inherit the revolt to proper liege."
+				}
 			}
 		}
 		
@@ -2989,10 +2996,15 @@ character_event = {
 	only_playable = yes # Due to nature of title gain and preexisting rebel state
 
 	trigger = {
+		FROM = {
+			higher_tier_than = COUNT
+			is_primary_holder_title = yes
+			temporary = no
+		}
 		trait = rebel
-		primary_title = { title = FROM }
 		any_opinion_modifier_target = { # Old civil war liege
 			reverse_has_opinion_modifier = { who = PREV modifier = revolting_against }
+			in_revolt = yes
 			any_war = {
 				defender = { character = PREVPREV }
 				attacker = { # Old revolt leader
@@ -3001,6 +3013,7 @@ character_event = {
 						is_vassal_or_below = ROOT
 					}
 				}
+				using_cb = cb_faction_overthrow_ruler
 			}
 		}
 		NOT = { has_global_flag = pf_teardown_lock }
