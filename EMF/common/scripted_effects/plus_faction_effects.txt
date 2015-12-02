@@ -708,7 +708,7 @@ pf_setup_rebel_effect = {
 pf_teardown_rebel_effect = {
 	remove_trait = rebel
 	hidden_tooltip = {
-		random_opinion_modifier_target = { # Pre-revolt liege
+		any_opinion_modifier_target = { # Pre-revolt liege
 			limit = { reverse_has_opinion_modifier = { who = PREV modifier = revolting_against } }
 			reverse_remove_opinion = { who = PREV modifier = revolting_against }
 			remove_opinion = { who = PREV modifier = revolting_against_me }
@@ -719,7 +719,7 @@ pf_teardown_rebel_effect = {
 pf_teardown_loyalist_effect = {
 	remove_trait = loyalist
 	hidden_tooltip = {
-		random_opinion_modifier_target = { # Liege or previous liege
+		any_opinion_modifier_target = { # Liege or previous liege
 			limit = { reverse_has_opinion_modifier = { who = PREV modifier = pf_loyal_toward } }
 			reverse_remove_opinion = { who = PREV modifier = pf_loyal_toward }
 			remove_opinion = { who = PREV modifier = pf_loyal_to_me }
@@ -730,7 +730,7 @@ pf_teardown_loyalist_effect = {
 pf_teardown_neutral_effect = {
 	remove_trait = neutral
 	hidden_tooltip = {
-		random_opinion_modifier_target = { # Liege or previous liege
+		any_opinion_modifier_target = { # Liege or previous liege
 			limit = { reverse_has_opinion_modifier = { who = PREV modifier = pf_neutral_toward } }
 			reverse_remove_opinion = { who = PREV modifier = pf_neutral_toward }
 			remove_opinion = { who = PREV modifier = pf_neutral_to_me }
@@ -839,6 +839,23 @@ pf_punish_deceitful_player_effect = {
 				}
 				letter_event = { id = PlusFaction.416 }
 			}
+		}
+	}
+}
+
+pf_civil_war_clear_old_opinions_effect = {
+	hidden_tooltip = {
+		any_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = PREV modifier = opinion_civil_war_loser } }
+			reverse_remove_opinion = { who = PREV modifier = opinion_civil_war_loser }
+		}
+		any_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = PREV modifier = opinion_civil_war_supporter } }
+			reverse_remove_opinion = { who = PREV modifier = opinion_civil_war_supporter }
+		}
+		any_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = PREV modifier = opinion_civil_war_neutral } }
+			reverse_remove_opinion = { who = PREV modifier = opinion_civil_war_neutral }
 		}
 	}
 }
@@ -982,6 +999,13 @@ pf_log_state_effect = {
 	if = {
 		limit = {
 			pf_war_trait_trigger = no
+			pf_in_revolt_trigger = no
+		}
+		log = "no civil war trait (and not in revolt)"
+	}
+	if = {
+		limit = {
+			pf_war_trait_trigger = no
 			pf_in_revolt_trigger = yes
 		}
 		log = "no civil war trait but nevertheless in a civil war (likely WAD)"
@@ -1025,11 +1049,11 @@ pf_log_state_effect = {
 		}
 		if = {
 			limit = { in_revolt = no }
-			log = "in_revolt = no (according to base API only)"
+			log = "in_revolt = no (base API)"
 		}
 		if = {
 			limit = { in_revolt = yes }
-			log = "in_revolt = yes (according to base API only)"
+			log = "in_revolt = yes (base API)"
 		}
 		liege_before_war = {
 			log = "liege_before_war: [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] ([This.GetID])"
@@ -1052,8 +1076,36 @@ pf_log_state_effect = {
 	if = {
 		limit = {
 			trait = loyalist
-			NOT = {
-				liege = {
+			liege = {
+				NOT = { has_opinion_modifier = { who = PREV modifier = pf_loyal_to_me } }
+				any_war = {
+					defender = { character = PREVPREV }
+					using_cb = cb_faction_overthrow_ruler
+				}
+			}
+		}
+		log = "WARNING: trait = loyalist w/ liege defending against civil war BUT w/o pf_loyal_to_me TOM!"
+	}
+	if = {
+		limit = {
+			trait = loyalist
+			liege = {
+				has_opinion_modifier = { who = PREV modifier = pf_loyal_to_me }
+				NOT = {
+					any_war = {
+						defender = { character = PREVPREV }
+						using_cb = cb_faction_overthrow_ruler
+					}
+				}
+			}
+		}
+		log = "WARNING: trait = loyalist w/ pf_loyal_to_me TOM, BUT liege isn't defending against a civil war!"
+	}
+	if = {
+		limit = {
+			trait = loyalist
+			liege = {
+				NOR = {
 					has_opinion_modifier = { who = PREV modifier = pf_loyal_to_me }
 					any_war = {
 						defender = { character = PREVPREV }
@@ -1062,7 +1114,7 @@ pf_log_state_effect = {
 				}
 			}
 		}
-		log = "WARNING: trait = loyalist w/o tracked liege defending against civil war!"
+		log = "WARNING: trait = loyalist w/o liege defending against civil war AND w/o pf_loyal_to_me TOM!"
 	}
 	if = {
 		limit = {
@@ -1088,8 +1140,36 @@ pf_log_state_effect = {
 	if = {
 		limit = {
 			trait = neutral
-			NOT = {
-				liege = {
+			liege = {
+				NOT = { has_opinion_modifier = { who = PREV modifier = pf_neutral_to_me } }
+				any_war = {
+					defender = { character = PREVPREV }
+					using_cb = cb_faction_overthrow_ruler
+				}
+			}
+		}
+		log = "WARNING: trait = neutral w/ liege defending against civil war BUT w/o pf_neutral_to_me TOM!"
+	}
+	if = {
+		limit = {
+			trait = neutral
+			liege = {
+				has_opinion_modifier = { who = PREV modifier = pf_neutral_to_me }
+				NOT = {
+					any_war = {
+						defender = { character = PREVPREV }
+						using_cb = cb_faction_overthrow_ruler
+					}
+				}
+			}
+		}
+		log = "WARNING: trait = neutral w/ pf_neutral_to_me TOM, BUT liege isn't defending against a civil war!"
+	}
+	if = {
+		limit = {
+			trait = neutral
+			liege = {
+				NOR = {
 					has_opinion_modifier = { who = PREV modifier = pf_neutral_to_me }
 					any_war = {
 						defender = { character = PREVPREV }
@@ -1098,7 +1178,7 @@ pf_log_state_effect = {
 				}
 			}
 		}
-		log = "WARNING: trait = neutral w/o tracked liege defending against civil war!"
+		log = "WARNING: trait = neutral w/o liege defending against civil war AND w/o pf_neutral_to_me TOM!"
 	}
 	if = {
 		limit = {
@@ -1107,11 +1187,8 @@ pf_log_state_effect = {
 		}
 		log = "WARNING: trait = neutral but not a ruler!"
 	}
-	if = {
-		limit = { pf_war_trait_trigger = yes }
-		liege = {
-			log = "liege: [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] ([This.GetID])"
-		}
+	liege = {
+		log = "liege: [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] ([This.GetID])"
 	}
 	if = {
 		limit = {
