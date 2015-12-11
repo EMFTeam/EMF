@@ -3,6 +3,8 @@ namespace = emf_faction
 
 # emf_faction.0
 # Ultimatum - crown authority [Liege]
+#
+# FROM = Faction Leader
 letter_event = {
 	id = emf_faction.0
 	desc = EVTDESC8025
@@ -235,30 +237,70 @@ letter_event = {
 
 # emf_faction.1
 # Demand rejected - crown authority [Faction Leader]
+#
+# FROM = Liege
+# FROMFROM = ROOT = Faction Leader
 letter_event = {
 	id = emf_faction.1
-	desc = "EVTDESC8100"
+	desc = EVTDESC8100
 	border = GFX_event_letter_frame_war
 	
 	is_triggered_only = yes
 	
 	option = {
-		name = "EVTOPTA8100"
+		name = EVTOPTA8100
 		
 		clr_character_flag = faction_lower_CA_ultimatum_taken
+		
 		set_character_flag = original_war_liege
-		liege = { set_character_flag = faction_authority_war }
-
 		pf_setup_rebel_effect = yes
 		any_faction_backer = {
 			faction = faction_lower_crown_authority
 			pf_setup_rebel_effect = yes
 		}
+		
+		liege = {
+			set_character_flag = faction_authority_war
+			reverse_war = {
+				target = ROOT
+				casus_belli = cb_faction_overthrow_ruler
+				faction = faction_lower_crown_authority
+			}
+			hidden_tooltip = {
+				any_opinion_modifier_target = {
+					limit = {
+						reverse_has_opinion_modifier = { who = PREV modifier = revolting_against_me }
+						NAND = {
+							in_revolt = yes
+							liege = { character = ROOT }
+							liege_before_war = { character = FROM }
+						}
+					}
+					log = "ASSERT: just declared civil war but expected rebel is seemingly not in the revolt. PF state dump pre-cleanup:"
+					pf_log_state_effect = yes
+					pf_teardown_rebel_effect = yes
+				}
+				character_event = { id = emf_faction.2 } # Let remaining vassals choose sides
+			}
+		}
+	}
+}
 
-		war = {
-			target = FROM
-			casus_belli = cb_faction_overthrow_ruler
-			faction = faction_lower_crown_authority
+# emf_faction.2
+# Bounce to loyalist/neutral chooser [Liege]
+#
+# FROM = Faction Leader
+# FROMFROM = ROOT = Liege
+character_event = {
+	id = emf_faction.2
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	immediate = {
+		any_vassal = {
+			limit = { is_playable = yes }
+			letter_event = { id = PlusFaction.403 }
 		}
 	}
 }
