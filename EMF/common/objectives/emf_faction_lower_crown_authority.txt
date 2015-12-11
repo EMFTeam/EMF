@@ -20,54 +20,36 @@ faction_lower_crown_authority = {
 	
 	# Plotter scope
 	potential = {
-		prisoner = no
 		is_playable = yes
-		independent = no
-		is_landed = yes
 		is_adult = yes
+		independent = no
+		prisoner = no
+		is_nomadic = no
 		not = { trait = incapable }
+		is_landed = yes
 		primary_title = { higher_tier_than = baron }
-		
 		liege = {
 			higher_tier_than = duke
-			or = {
-				is_feudal = yes
-				and = {
-					is_republic = yes
-					has_global_flag = emf_mr_unlocked_laws
-				}
-			}
-			or = {
-				year = 1350
-				primary_title = { is_tribal_type_title = no }
-				not = { culture = ROOT }
-				not = { religion = ROOT }
-			}
-			not = {
-				any_demesne_title = {
-					temporary = yes
-				}
+			is_feudal = yes # TODO: allow again for Merchant Republics (when CA-unlock active) once CB is cleared
+			nor = {
+				has_character_flag = faction_authority_war
+				reverse_has_opinion_modifier = { who = ROOT modifier = opinion_coerced_into_leaving_faction }
+				reverse_has_opinion_modifier = { who = ROOT modifier = opinion_subjugated }
+				reverse_has_opinion_modifier = { who = ROOT modifier = opinion_subjugated_other_rel }
+				any_demesne_title = { temporary = yes }
 			}
 		}
-		
-		not = { has_character_modifier = faction_lower_CA_ultimatum_timer }
+		not = { has_character_modifier = faction_lower_CA_ultimatum_timer } # NOTE: Not presently applied by CB
 	}
 	
 	# Target scope
 	allow = {
 		is_primary_holder_title = yes
-		
-		holder_scope = {
-			# Primary title might not be tier > duke, although character would be (?!)
-			# Cookie for whoever answers: is it actually possible for the triggers to differ?
-			higher_tier_than = duke
-		
+		holder_scope = {		
 			FROM = {
 				crownlaw_title = {
-				
 					# The plotter's effective crown law title is owned by the holder_scope
 					# of the target title (primary title of liege)...
-					
 					holder_scope = { character = PREVPREVPREV }
 					
 					# And it actually has authority...
@@ -79,24 +61,6 @@ faction_lower_crown_authority = {
 					}
 				}
 			}
-			
-			# Not coerced out of factions...
-			not = {
-				reverse_has_opinion_modifier = {
-					who = FROM
-					modifier = opinion_coerced_into_leaving_faction
-				}
-			}
-
-			liege = {	
-				# No ongoing PF civil war...
-				not = {
-					any_war = {
-						defender = { character = PREVPREV }
-						using_cb = cb_faction_overthrow_ruler
-					}
-				}
-			}
 		}
 	}
 	
@@ -104,11 +68,20 @@ faction_lower_crown_authority = {
 	allow_join = {
 		ROOT = {
 			is_playable = yes
-			independent = no
-			is_landed = yes
 			is_adult = yes
-			not = { trait = incapable }
+			independent = no
 			prisoner = no
+			is_nomadic = no
+			is_landed = yes
+			nor = {
+				trait = incapable
+				trait = in_hiding
+			}
+			nor = {
+				has_opinion_modifier = { who = LIEGE modifier = opinion_coerced_into_leaving_faction }
+				has_opinion_modifier = { who = LIEGE modifier = opinion_subjugated }
+				has_opinion_modifier = { who = LIEGE modifier = opinion_subjugated_other_rel }
+			}
 		}
 	}		
 	
@@ -140,8 +113,9 @@ faction_lower_crown_authority = {
 		
 		modifier = {
 			factor = 0
-			FROM = {
-				crownlaw_title = {
+			holder_scope = {
+				any_demesne_title = {
+					higher_tier_than = duke
 					current_heir = {
 						character = FROM
 					}
@@ -162,9 +136,9 @@ faction_lower_crown_authority = {
 		modifier = {
 			factor = 0
 			holder_scope = {
-				or = {
-					not = { culture = FROM }
-					not = { religion = FROM }
+				nand = {
+					culture = FROM
+					religion = FROM
 				}
 				any_demesne_title = {
 					or = {
@@ -195,7 +169,6 @@ faction_lower_crown_authority = {
 									}
 								}
 							}
-							PREV = { is_contested = yes }
 						}
 					}
 				}
@@ -271,9 +244,9 @@ faction_lower_crown_authority = {
 			holder_scope = {
 				FROM = {
 					or = {
-						is_heresy_of = THIS
-						is_parent_religion = THIS
-						not = { religion_group = THIS }
+						is_heresy_of = PREV
+						is_parent_religion = PREV
+						not = { religion_group = PREV }
 					}
 				}
 			}
@@ -414,7 +387,7 @@ faction_lower_crown_authority = {
 		modifier = {
 			factor = 0.2
 			pacifist = yes
-		}			
+		}
 		
 		modifier = {
 			factor = 0
@@ -429,9 +402,12 @@ faction_lower_crown_authority = {
 		
 		modifier = {
 			factor = 0
-			crownlaw_title = {
-				current_heir = {
-					character = ROOT
+			liege = {
+				any_demesne_title = {
+					higher_tier_than = duke
+					current_heir = {
+						character = ROOT
+					}
 				}
 			}
 		}
@@ -443,7 +419,7 @@ faction_lower_crown_authority = {
 					crownlaw_title = {
 						or = {
 							not = { holder_scope = { character = PREVPREVPREV } }
-							not = {
+							nor = {
 								has_law = crown_authority_1
 								has_law = crown_authority_2
 								has_law = crown_authority_3
@@ -462,26 +438,56 @@ faction_lower_crown_authority = {
 		
 		modifier = {
 			factor = 0
-			liege = { 
-				not = { year = 1350 }
-				primary_title = { is_tribal_type_title = yes }
-				culture = ROOT
-				religion = ROOT
-			}
+			has_opinion_modifier = { who = LIEGE modifier = opinion_coerced_into_leaving_faction }
 		}
 		
+		# Try to exclude people who should rather support a claimant
 		modifier = {
 			factor = 0
-			has_opinion_modifier = {
-				who = LIEGE
-				modifier = opinion_coerced_into_leaving_faction
+			liege = {
+				nand = {
+					culture = ROOT
+					religion = ROOT
+				}
+				any_demesne_title = {
+					or = {
+						is_primary_holder_title = yes
+						higher_tier_than = DUKE
+					}
+					ROOT = {
+						primary_title = {
+							de_jure_liege_or_above = PREVPREV
+						}
+					}
+					any_claimant = {
+						culture = ROOT
+						religion = ROOT
+						
+						# Actually check that the claimant could potentially have their claim
+						# pushed before pushing them out of this faction...  We just check for
+						# a faster approximation.
+						
+						is_female = no
+						or = {
+							has_strong_claim = PREV
+							PREV = {
+								holder_scope = {
+									or = {
+										is_female = yes
+										has_regent = yes
+									}
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 		
 		modifier = {
 			factor = 0
 			opinion = { who = LIEGE value = 25 }
-			not = {
+			nor = {
 				trait = ambitious
 				trait = envious
 				trait = deceitful
@@ -499,7 +505,7 @@ faction_lower_crown_authority = {
 			factor = 0
 			opinion = { who = LIEGE value = 50 }
 			or = {
-				not = {
+				nor = {
 					trait = ambitious
 					trait = envious
 					trait = deceitful
@@ -585,9 +591,9 @@ faction_lower_crown_authority = {
 			liege = {
 				ROOT = {
 					or = {
-						is_heresy_of = THIS
-						is_parent_religion = THIS
-						not = { religion_group = THIS }
+						is_heresy_of = PREV
+						is_parent_religion = PREV
+						not = { religion_group = PREV }
 					}
 				}
 			}
