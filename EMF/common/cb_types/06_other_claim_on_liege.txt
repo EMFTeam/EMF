@@ -32,7 +32,11 @@ other_claim_on_liege = {
 	major_revolt = yes
 
 	can_use_title = {
-		ROOT = { emf_cb_tribute_block_trigger = no }
+
+		FROM = {
+			has_landed_title = PREV
+		}
+
 		OR = {
 			ROOT = { is_female = no }
 			NOT = { has_law = agnatic_succession }
@@ -41,12 +45,6 @@ other_claim_on_liege = {
 				is_primary_holder_title = no
 			}
 			FROMFROM = { has_character_flag = faction_claimant_ultimatum_taken } # Faction war. Ignore claim strength.
-		}
-
-		OR = {
-			FROM = {
-				has_landed_title = PREV
-			}
 		}
 		
 		OR = { 
@@ -65,6 +63,7 @@ other_claim_on_liege = {
 				}
 			}
 		}
+
 		is_vice_royalty = no
 	}
 	
@@ -121,15 +120,13 @@ other_claim_on_liege = {
 	}
 
 	on_add = {
-		# EMF: Adjust dynlevy laws due to realm fracture
-		hidden_tooltip = { character_event = { id = emf_dynlevy.4 } }
+		log = "CB(other_claim_on_liege): START: full_title=[FromFrom.GetFullBaseName]: [This.GetTitledFirstName] of [This.PrimaryTitle.GetBaseName] (ID: [This.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID]) on behalf of [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID])"
+		emf_cb_dynlevy_other_begin_effect = yes
 	}
 	
 	on_success = {
-		hidden_tooltip = { add_character_modifier = { name = emf_victory_timer duration = 7 hidden = yes } }
-		
-		# EMF: Adjust dynlevy laws due to realm fracture
-		hidden_tooltip = { character_event = { id = emf_dynlevy.4 } }
+		log = "CB(other_claim_on_liege): VICTORY: full_title=[FromFrom.GetFullBaseName]: [This.GetTitledFirstName] of [This.PrimaryTitle.GetBaseName] (ID: [This.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID]) on behalf of [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID])"
+		emf_cb_victory_other_effect = yes
 		
 		any_attacker = {
 			limit = { 
@@ -160,6 +157,30 @@ other_claim_on_liege = {
 	}
 	
 	on_success_title = {
+		if = {
+			limit = { tier = count }
+			emf_cb_nomadic_province_effect = yes
+		}
+		
+		# In EMF, all title usurpations drop CA, so just show a tooltip and
+		# don't really do it here (or else we'd drop it twice).
+		if = {
+			limit = { has_law = crown_authority_1 }
+			tooltip = { add_law = crown_authority_0 }
+		}
+		if = {
+			limit = { has_law = crown_authority_2 }
+			tooltip = { add_law = crown_authority_1 }
+		}
+		if = {
+			limit = { has_law = crown_authority_3 }
+			tooltip = { add_law = crown_authority_2 }
+		}
+		if = {
+			limit = { has_law = crown_authority_4 }
+			tooltip = { add_law = crown_authority_3 }
+		}
+
 		FROM = {
 			hidden_tooltip = { disband_event_forces = faction_loyalists }
 			
@@ -185,25 +206,6 @@ other_claim_on_liege = {
 					add_law = crown_authority_3
 				}
 			}
-		}
-		
-		# In EMF, all title usurpations drop CA, so just show a tooltip and
-		# don't really do it here (or else we'd drop it twice).
-		if = {
-			limit = { has_law = crown_authority_1 }
-			tooltip = { add_law = crown_authority_0 }
-		}
-		if = {
-			limit = { has_law = crown_authority_2 }
-			tooltip = { add_law = crown_authority_1 }
-		}
-		if = {
-			limit = { has_law = crown_authority_3 }
-			tooltip = { add_law = crown_authority_2 }
-		}
-		if = {
-			limit = { has_law = crown_authority_4 }
-			tooltip = { add_law = crown_authority_3 }
 		}
 		
 		if = {
@@ -259,6 +261,7 @@ other_claim_on_liege = {
 		}
 		
 		usurp_title_plus_barony_if_unlanded_and_vassals_no_adj = { target = ROOT type = claim }
+		ROOT = { emf_dynlevy_update_effect = yes }
 		
 		if = {
 			limit = {
@@ -286,6 +289,7 @@ other_claim_on_liege = {
 
 				ROOT = {
 					set_defacto_liege = PREV
+					pf_liege_change_effect = yes
 				}
 			}
 
@@ -304,6 +308,7 @@ other_claim_on_liege = {
 
 				ROOT = {
 					set_defacto_liege = ROOT
+					pf_liege_change_effect = yes
 				}
 			}
 			
@@ -320,11 +325,14 @@ other_claim_on_liege = {
 			}
 			FROM = { clr_character_flag = temp_other_claim_on_liege_prison }
 		}
+		
+		emf_cb_dynlevy_other_end_effect = yes
 	}
 
 	on_fail = {
-		# EMF: Adjust dynlevy laws due to realm fracture
-		hidden_tooltip = { character_event = { id = emf_dynlevy.4 } }
+		log = "CB(other_claim_on_liege): WHITEPEACE: full_title=[FromFrom.GetFullBaseName]: [This.GetTitledFirstName] of [This.PrimaryTitle.GetBaseName] (ID: [This.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID]) on behalf of [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID])"
+		
+		emf_cb_dynlevy_other_end_effect = yes
 		
 		prestige = -100
 		
@@ -360,10 +368,9 @@ other_claim_on_liege = {
 	}
 
 	on_reverse_demand = {
-		# EMF: Adjust dynlevy laws due to realm fracture
-		hidden_tooltip = { character_event = { id = emf_dynlevy.4 } }
-		
-		hidden_tooltip = { FROM = { add_character_modifier = { name = emf_victory_timer duration = 7 hidden = yes } } }
+		log = "CB(other_claim_on_liege): DEFEAT: full_title=[FromFrom.GetFullBaseName]: [This.GetTitledFirstName] of [This.PrimaryTitle.GetBaseName] (ID: [This.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID]) on behalf of [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID])"
+		emf_cb_defeat_other_effect = yes
+		emf_cb_dynlevy_other_end_effect = yes
 		
 		prestige = -200
 		
@@ -398,6 +405,12 @@ other_claim_on_liege = {
 		}
 		
 		FROM = { hidden_tooltip = { disband_event_forces = faction_loyalists } }
+	}
+
+	on_invalidation = {
+		log = "CB(other_claim_on_liege): INVALIDATED: full_title=[FromFrom.GetFullBaseName]: [This.GetTitledFirstName] of [This.PrimaryTitle.GetBaseName] (ID: [This.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID]) on behalf of [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID])"
+
+		emf_cb_dynlevy_other_end_effect = yes
 	}
 	
 	attacker_ai_victory_worth = {

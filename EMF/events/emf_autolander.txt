@@ -21,10 +21,7 @@ character_event = {
 			tier = count
 			location = {
 				any_province_holding = {
-					nor = {
-						holding_type = fort
-						holding_type = trade_post
-					}
+					not = { holding_type = nomad }
 				}
 			}
 		}
@@ -96,7 +93,7 @@ character_event = {
 		}
 		
 		character_event = { id = emf_autolander.11 } # Create random character & grant
-		character_event = { id = emf_autolander.1 } # Tail-recurse
+		repeat_event = { id = emf_autolander.1 } # Tail-recurse
 	}
 }
 
@@ -154,7 +151,7 @@ character_event = {
 		}
 		
 		character_event = { id = emf_autolander.11 } # Create random character & grant
-		character_event = { id = emf_autolander.2 } # Tail-recurse
+		repeat_event = { id = emf_autolander.2 } # Tail-recurse
 	}
 }
 
@@ -607,74 +604,6 @@ character_event = {
 }
 
 
-# emf_autolander.9 [Player]
-#
-# The province capital of event_target:target_county is flipped when possible
-# to match republican or feudal character types. This is done before
-# best_fit_character_for_title analysis.
-#
-# NOTE: This code is currently unused, because the game should actually switch
-# capitals automatically before we reach this point.
-character_event = {
-	id = emf_autolander.9
-	hide_window = yes
-	is_triggered_only = yes
-	
-	trigger = {
-		is_tribal = no
-		event_target:target_county = {
-			location = {
-				not = {
-					is_tribal = yes
-					any_province_holding = {
-						is_capital = yes
-						or = {
-							and = {
-								ROOT = { is_republic = yes }
-								holding_type = city
-							}
-							and = {
-								ROOT = { is_feudal = yes }
-								holding_type = castle
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	
-	immediate = {
-		event_target:target_county = {
-
-			# Note that this approach _may_ theoretically make under-construction minor holdings
-			# province capitals (haven't tested any/random_province_holding for this). If this
-			# turns out to be true, then just check the barony for any succession law. A holding
-			# under construction should have no laws.
-			
-			location = {
-				random_province_holding = {
-					limit = {
-						holder = ROOT
-						or = {
-							and = {
-								ROOT = { is_republic = yes }
-								holding_type = city
-							}
-							and = {
-								ROOT = { is_feudal = yes }
-								holding_type = castle
-							}
-						}
-					}
-					province_capital = yes
-				}
-			}
-		}
-	}
-}
-
-
 # emf_autolander.10 [Grantee]
 #
 # FROM grants event_target:target_county and any minor holdings in it to ROOT
@@ -685,6 +614,17 @@ character_event = {
 	
 	immediate = {
 		event_target:target_county = {
+
+			# Grant the capital barony
+			location = {
+				random_province_holding = {
+					limit = {
+						owner = { character = FROM }
+						is_capital = yes
+					}
+					grant_title = ROOT
+				}
+			}
 
 			# Grant the county
 			grant_title = ROOT
@@ -699,6 +639,9 @@ character_event = {
 					grant_title = ROOT
 				}
 			}
+
+			set_defacto_liege = FROM
+			pf_liege_change_effect = yes
 
 			location = {
 				remove_province_modifier = emf_mod_recently_acquired
@@ -720,48 +663,15 @@ character_event = {
 	
 	option = {
 		name = OK
-		
 
-		random_list = {
-			50 = {
-				create_random_steward = {
-					random_traits = yes
-					religion = ROOT
-					culture = ROOT
-					dynasty = random
-					female = no
-					fertility = 0.5
-					health = 5
-				}
-			}
-			50 = {
-				modifier = {
-					factor = 0
-					or = {
-						event_target:target_county = {
-							is_feudal = no
-						}
-						primary_title = { # NOTE: It is no oversight that gender_equality is not considered here, unlike for councillors.
-							succ_law_title = {
-								not = {
-									has_law = true_cognatic_succession
-									has_law = enatic_cognatic_succession
-									has_law = enatic_succession
-								}
-							}
-						}
-					}
-				}
-				create_random_steward = {
-					random_traits = yes
-					religion = ROOT
-					culture = ROOT
-					dynasty = random
-					female = yes
-					fertility = 0.5
-					health = 5
-				}
-			}
+		create_random_steward = {
+			random_traits = yes
+			religion = ROOT
+			culture = ROOT
+			dynasty = random
+			female = no
+			fertility = 0.5
+			health = 5
 		}
 		new_character = {
 
@@ -773,18 +683,15 @@ character_event = {
 				10 = { change_learning = 5 }
 			}
 
-			hidden_tooltip = {
-				if = {
-					limit = {
-						religion_group = indian_group
-					}
-					add_trait = kshatriya
-					character_event = { id = RoI.30121 }
+			if = {
+				limit = {
+					religion_group = indian_group
 				}
-				
-				character_event = { id = emf_autolander.10 } # Grant target_county
+				add_trait = kshatriya
+				character_event = { id = RoI.30121 }
 			}
 			
+			character_event = { id = emf_autolander.10 } # Grant target_county
 			character_event = { id = emf_autolander.12 } # Generate decent starting court
 		}
 	}
@@ -811,22 +718,21 @@ character_event = {
 			random_traits = yes
 			female = no
 		}
+		create_random_soldier = {
+			random_traits = yes
+			female = no
+		}
 		
 		# 50/50 male/female if law/customization allows
 		if = {
 			limit = {
 				or = {
-					has_global_flag = gender_equality
-					primary_title = { # FIXME: Test how this works when granting counties taken from Muslims (in general, this needs to be addressed, possibly)
-						or = {
-							has_law = true_cognatic_succession
-							has_law = enatic_cognatic_succession
-							has_law = enatic_succession
-						}
+					has_global_flag = emf_gender_eq_council
+					succ_law_title = {
+						has_law = true_cognatic_succession
 					}
 				}
 			}
-			
 			random_list = {
 				50 = {
 					create_random_diplomat = {
@@ -836,20 +742,6 @@ character_event = {
 				}
 				50 = {
 					create_random_diplomat = {
-						random_traits = yes
-						female = yes
-					}
-				}
-			}
-			random_list = {
-				50 = {
-					create_random_soldier = {
-						random_traits = yes
-						female = no
-					}
-				}
-				50 = {
-					create_random_soldier = {
 						random_traits = yes
 						female = yes
 					}
@@ -889,10 +781,6 @@ character_event = {
 		
 		# Regular male-only
 		create_random_diplomat = {
-			random_traits = yes
-			female = no
-		}
-		create_random_soldier = {
 			random_traits = yes
 			female = no
 		}

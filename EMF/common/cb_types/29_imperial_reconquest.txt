@@ -57,7 +57,7 @@ imperial_reconquest = {
 			religion_group = christian
 			not = { same_realm = FROM }
 			mercenary = no
-			emf_cb_tribute_block_trigger = no
+			emf_cb_tribute_block_trigger = yes
 		}
 	}
 
@@ -130,9 +130,15 @@ imperial_reconquest = {
 			not = { same_realm = FROM }
 		}
 	}
+
+	on_add = {
+		log = "CB(imperial_reconquest): START: title=[FromFrom.GetBaseName]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+	}
 	
 	on_success = {
-		hidden_tooltip = { ROOT = { add_character_modifier = { name = emf_victory_timer duration = 7 hidden = yes } } }
+		log = "CB(imperial_reconquest): VICTORY: title=[FromFrom.GetBaseName]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+
+		emf_cb_victory_effect = yes
 		any_attacker = {
 			limit = { character = ROOT }
 			participation_scaled_prestige = 100
@@ -146,9 +152,29 @@ imperial_reconquest = {
 	}
 
 	on_success_title = {
+		emf_cb_nomadic_province_effect = yes
+		
+		if = {
+			limit = {
+				has_dlc = "Charlemagne"
+				ROOT = {
+					primary_title = {
+						has_law = imperial_administration
+					}
+				}
+				holder_scope = {
+					is_liege_or_above = FROM
+				}
+			}
+			holder_scope = {
+				save_event_target_as = emf_duchy_holder
+			}
+		}
+
 		custom_tooltip = {
 			text = other_invasion_succ_tip
 			hidden_tooltip = {
+				pf_liege_change_under_title_begin_effect = yes
 				ROOT = {
 					vassalize_or_take_under_title = {
 						title = PREV
@@ -156,6 +182,7 @@ imperial_reconquest = {
 						type = invasion
 					}
 				}
+				pf_liege_change_under_title_end_effect = yes
 				
 				# Special case effect to counteract the new patch 2.0 event in which the Pope [frequently] asks
 				# rulers to prove their loyalty to the Catholic Church by transferring a random vassal bishop
@@ -175,41 +202,70 @@ imperial_reconquest = {
 				# the Papacy is overlord of a castle or a city in the de jure target duchy (not a bishropic), those
 				# titles would be vassalized too.  However, this essentially cannot happen unless FROM is actually
 				# the Pope himself, in which case we already did the right thing, and this step will have no effect. 
-			
+					
 				k_papal_state = {
-					holder_scope = {
-						if = {
-							limit = { not = { is_liege_or_above = ROOT } }
-							ROOT = {
-								vassalize_or_take_under_title = {
-									title = PREVPREVPREV # Target duchy
-									enemy = PREV # Pope
-									is_crusade = yes # Even if the title holder is not participating in the war...
-									type = invasion
+					holder_scope = { save_event_target_as = pf_lc_enemy }
+				}
+
+				if = {
+					limit = { event_target:pf_lc_enemy = { not = { vassal_of = ROOT } } }
+
+					any_direct_de_jure_vassal_title = {
+						limit = {
+							holder_scope = {
+								nor = {
+									character = event_target:pf_lc_enemy
+									is_liege_or_above = event_target:pf_lc_enemy
 								}
 							}
 						}
+
+						pf_liege_change_under_title_ext_begin_effect = yes
+						ROOT = {
+							vassalize_or_take_under_title = {
+								title = PREV # Non-papal county
+								enemy = event_target:pf_lc_enemy
+								is_crusade = yes # Even if the title holder is not participating in the war...
+								type = invasion
+							}
+						}
+						pf_liege_change_under_title_end_effect = yes
 					}
 				}
 			}
 		}
 		if = {
 			limit = {
-				holder_scope = { character = FROM }
+				holder_scope = {
+					or = {
+						character = FROM
+						and = {
+							event_target:emf_duchy_holder = {
+								is_liege_or_above = ROOT
+							}
+							character = event_target:emf_duchy_holder
+						}
+					}
+				}
 			}
 			usurp_title_only = {
 				target = ROOT
 				type = invasion
 			}
 		}
+		clear_event_target = emf_duchy_holder
 	}
 
 	on_fail = {
+		log = "CB(imperial_reconquest): WHITEPEACE: title=[FromFrom.GetBaseName]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+
 		ROOT = { prestige = -150 }
 	}
 
 	on_reverse_demand = {
-		hidden_tooltip = { FROM = { add_character_modifier = { name = emf_victory_timer duration = 7 hidden = yes } } }
+		log = "CB(imperial_reconquest): DEFEAT: title=[FromFrom.GetBaseName]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+
+		emf_cb_defeat_effect = yes
 		ROOT = {
 			transfer_scaled_wealth = {
 				to = FROM
@@ -237,6 +293,10 @@ imperial_reconquest = {
 				}
 			}
 		}
+	}
+
+	on_invalidation = {
+		log = "CB(imperial_reconquest): INVALIDATED: title=[ThirdPartyTitle.GetBaseName]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
 	}
 
 	attacker_ai_victory_worth = {

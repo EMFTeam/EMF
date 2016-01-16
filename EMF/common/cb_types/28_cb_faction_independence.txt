@@ -55,7 +55,6 @@ cb_faction_independence = {
 				NOT = { lower_tier_than = ROOT }
 				temporary = no
 			}
-			independent = yes
 			in_revolt = no
 			liege_before_war = {
 				in_revolt = no
@@ -67,12 +66,16 @@ cb_faction_independence = {
 	}
 	
 	on_add = {
-		# EMF: Adjust dynlevy laws due to realm fracture
-		hidden_tooltip = { ROOT = { character_event = { id = emf_dynlevy.4 } } }
+		log = "CB(cb_faction_independence): START: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+
+		emf_cb_dynlevy_begin_effect = yes
 	}
 
 	on_success = {
-		hidden_tooltip = { ROOT = { add_character_modifier = { name = emf_victory_timer duration = 7 hidden = yes } } }
+		log = "CB(cb_faction_independence): VICTORY: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+
+		emf_cb_victory_effect = yes
+		FROM = { pf_prosperity_minus2_effect = yes }
 
 		if = {
 			limit = {
@@ -89,18 +92,18 @@ cb_faction_independence = {
 						}
 					}
 				}
+
 				set_defacto_liege = THIS
+				pf_liege_change_effect = yes
+
 				hidden_tooltip = {
 					prestige = 100
 					any_demesne_title = {
 						limit = {
 							controls_religion = no
 							higher_tier_than = BARON
-							FROM = {
-								OR = { # If the old liege can use the subjugation CB, give no claims
-									NOT = { religion_group = pagan_group }
-									NOT = { culture_group = PREVPREV }
-								}
+							FROM = { # If the old liege can use the subjugation CB, give no claims
+								NOT = { religion_group = pagan_group }
 							}
 						}
 						add_weak_pressed_claim = FROM
@@ -108,9 +111,41 @@ cb_faction_independence = {
 				}
 			}		
 		}
-		
-		# Adjust dynlevy laws due to realm fracture
-		hidden_tooltip = { ROOT = { character_event = { id = emf_dynlevy.4 } } }
+
+		if = {
+			limit = {
+				FROM = {
+					independent = no
+				}
+			}
+			any_attacker = {
+				limit = {
+					OR = {
+						vassal_of = FROM
+						liege_before_war = {
+							character = FROM
+						}
+					}
+				}
+				FROM = {
+					liege = {
+						set_defacto_vassal = PREVPREV
+					}
+				}
+				pf_liege_change_effect = yes
+
+				hidden_tooltip = {
+					prestige = 100
+					any_demesne_title = {
+						limit = {
+							controls_religion = no
+							higher_tier_than = BARON
+						}
+						add_weak_pressed_claim = FROM
+					}
+				}
+			}		
+		}
 		
 		any_attacker = {
 			limit = { character = ROOT }
@@ -129,32 +164,14 @@ cb_faction_independence = {
 			
 		FROM = {
 			hidden_tooltip = { disband_event_forces = faction_loyalists }
-			
-			any_demesne_title = {
-				limit = { higher_tier_than = duke }
-				if = {
-					limit = { has_law = crown_authority_1 }
-					add_law = crown_authority_0
-				}
-				if = {
-					limit = { has_law = crown_authority_2 }
-					add_law = crown_authority_1
-				}
-				if = {
-					limit = { has_law = crown_authority_3 }
-					add_law = crown_authority_2
-				}
-				if = {
-					limit = { has_law = crown_authority_4 }
-					add_law = crown_authority_3
-				}
-			}
+			pf_lower_CA_effect = yes
+			pf_lower_TO_effect = yes
 		}
+		emf_cb_dynlevy_end_effect = yes
 	}
 
 	on_fail = {
-		# EMF: Adjust dynlevy laws due to realm fracture
-		hidden_tooltip = { ROOT = { character_event = { id = emf_dynlevy.4 } } }
+		log = "CB(cb_faction_independence): WHITEPEACE: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
 
 		ROOT = {
 			prestige = -50
@@ -185,13 +202,12 @@ cb_faction_independence = {
 			}
 		}
 		FROM = { hidden_tooltip = { disband_event_forces = faction_loyalists } }
+		emf_cb_dynlevy_end_effect = yes
 	}
 
 	on_reverse_demand = {
-		hidden_tooltip = { FROM = { add_character_modifier = { name = emf_victory_timer duration = 7 hidden = yes } } }
-		
-		# EMF: Adjust dynlevy laws due to realm fracture
-		hidden_tooltip = { ROOT = { character_event = { id = emf_dynlevy.4 } } }
+		log = "CB(cb_faction_independence): DEFEAT: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+		emf_cb_defeat_effect = yes
 
 		ROOT = {
 			prestige = -100
@@ -232,6 +248,8 @@ cb_faction_independence = {
 			prestige = 50
 			hidden_tooltip = { disband_event_forces = faction_loyalists }
 		}
+		
+		emf_cb_dynlevy_end_effect = yes
 	}
 
 	on_attacker_leader_death = {
@@ -244,12 +262,11 @@ cb_faction_independence = {
 		}
 
 		end_war = invalid
-		
-		# EMF: Adjust dynlevy laws according to new de facto realms
-		hidden_tooltip = {
-			ROOT = { character_event = { id = emf_dynlevy.20 } }
-			FROM = { character_event = { id = emf_dynlevy.20 } }
-		}
+	}
+
+	on_invalidation = {
+		log = "CB(cb_faction_independence): INVALIDATED: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+		emf_cb_dynlevy_end_effect = yes
 	}
 
 	attacker_ai_victory_worth = {

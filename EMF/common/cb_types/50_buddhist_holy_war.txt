@@ -34,15 +34,6 @@ buddhist_holy_war = {
 	can_use_gui = {
 		ROOT = {
 			NOT = { has_character_modifier = emf_peace_pledge }
-			custom_tooltip = {
-				text = emf_ctt_no_holy_war_cooldown
-				hidden_tooltip = {				
-					or = {
-						has_global_flag = emf_no_cooldowns
-						not = { has_character_modifier = emf_cb_mod_holy_war_cooldown }
-					}
-				}
-			}
 			piety = 100
 		}
 	}
@@ -58,12 +49,17 @@ buddhist_holy_war = {
 			}
 			mercenary = no
 			is_nomadic = no
-			emf_cb_tribute_block_trigger = no
+			emf_cb_tribute_block_trigger = yes
 		}
 	}
 	
 	can_use_title = {
 		tier = count
+
+		or = {
+			FROM = { has_landed_title = PREV }
+			holder_scope = { is_liege_or_above = FROM }
+		}
 
 		#Prevents duplicate CBs (religious reconquest)
 		OR = {
@@ -149,26 +145,20 @@ buddhist_holy_war = {
 	}
 
 	on_add = {
+		log = "CB(buddhist_holy_war): START: title=[FromFrom.GetBaseName]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+
 		ROOT = { piety = -100 }
-		if = {
-			limit = { not = { has_global_flag = emf_no_cooldowns } }
-			ROOT = {
-				custom_tooltip = {
-					text = emf_cb_ctt_holy_war_cooldown
-					hidden_tooltip = {
-						add_character_modifier = {
-							name = emf_cb_mod_holy_war_cooldown
-							duration = 1825
-						}
-					}
-				}
-			}
-		}
 	}
 	
+	on_success = {
+		log = "CB(buddhist_holy_war): VICTORY: title=[FromFrom.GetBaseName]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+
+		emf_cb_holy_victory_effect = yes
+	}
+
 	on_success_title = {
-		hidden_tooltip = { ROOT = { add_character_modifier = { name = emf_victory_timer duration = 7 hidden = yes } } }
-		hidden_tooltip = { ROOT = { add_character_modifier = { name = emf_holy_victory_timer duration = 7 hidden = yes } } }
+		emf_cb_nomadic_province_effect = yes
+		
 		if = {
 			limit = {
 				holder_scope = {
@@ -180,6 +170,7 @@ buddhist_holy_war = {
 
 			holder_scope = {
 				set_defacto_liege = ROOT
+				pf_liege_change_effect = yes
 			}
 		}
 
@@ -222,7 +213,9 @@ buddhist_holy_war = {
 		}
 	}
 
-	on_fail_title = {
+	on_fail = {
+		log = "CB(buddhist_holy_war): WHITEPEACE: title=[FromFrom.GetBaseName]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+
 		ROOT = {
 			prestige = -100
 		}
@@ -237,8 +230,9 @@ buddhist_holy_war = {
 	}
 
 	on_reverse_demand = {
-		hidden_tooltip = { FROM = { add_character_modifier = { name = emf_victory_timer duration = 7 hidden = yes } } }
-		hidden_tooltip = { FROM = { add_character_modifier = { name = emf_holy_victory_timer duration = 7 hidden = yes } } }
+		log = "CB(buddhist_holy_war): DEFEAT: title=[FromFrom.GetBaseName]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+
+		emf_cb_holy_defeat_effect = yes
 		ROOT = {
 			prestige = -200
 			transfer_scaled_wealth = {
@@ -254,6 +248,10 @@ buddhist_holy_war = {
 			limit = { NOT = { character = FROM } }
 			hidden_tooltip = { participation_scaled_prestige = 100 }
 		}
+	}
+
+	on_invalidation = {
+		log = "CB(buddhist_holy_war): INVALIDATED: title=[ThirdPartyTitle.GetBaseName]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
 	}
 	
 	attacker_ai_victory_worth = {

@@ -30,6 +30,8 @@ emf_subjugation = {
 	# Cannot seem to get even a ROOT = { always = no }
 	# can_use_gui to prevent war declaration, even though
 	# tooltip shows that the conditions are not met.
+
+	# FIXME: Retry this. Above note was from patch 2.3. Stuff gets fixed.
 	
 	#can_use_gui = {
 	#}
@@ -37,13 +39,11 @@ emf_subjugation = {
 	can_use = {
 		# BEGIN: what should ideally go in can_use_gui
 		ROOT = {
-			AND = {
-				custom_tooltip = {
-					text = emf_cb_ctt_no_peace_pledge_raw
-					hidden_tooltip = { not = { has_character_modifier = emf_peace_pledge } }
-				}
-				religion = FROM
+			custom_tooltip = {
+				text = emf_cb_ctt_no_peace_pledge_raw
+				hidden_tooltip = { not = { has_character_modifier = emf_peace_pledge } }
 			}
+			religion = FROM
 		}
 		FROM = {
 			or = {
@@ -94,10 +94,7 @@ emf_subjugation = {
 		FROM = {
 			or = {
 				independent = yes
-				and = {
-					same_realm = ROOT
-					not = { is_liege_or_above = ROOT }
-				}
+				same_liege = ROOT
 			}
 			lower_tier_than = ROOT
 			primary_title = { is_primary_type_title = no }
@@ -107,6 +104,11 @@ emf_subjugation = {
 			or = {
 				not = { is_patrician = yes }
 				ROOT = { ai = no }
+			}
+			not = {
+				any_demesne_title = {
+					temporary = yes
+				}
 			}
 		}
 		ROOT = {
@@ -124,7 +126,7 @@ emf_subjugation = {
 					}
 				}
 			}
-			emf_cb_tribute_block_trigger = no
+			emf_cb_tribute_block_trigger = yes
 		}
 		FROM = {
 			not = { # All of FROM's demesne titles with de jure vassal titles...
@@ -147,37 +149,32 @@ emf_subjugation = {
 		FROM = {
 			or = {
 				independent = yes
-				and = {
-					same_realm = ROOT
-					not = { is_liege_or_above = ROOT }
-				}
+				same_liege = ROOT
 			}
 			lower_tier_than = ROOT
 			religion = ROOT
 			higher_tier_than = baron
 			is_landed = yes
 			primary_title = { is_primary_type_title = no }
-			not = { # All of FROM's demesne titles with de jure vassal titles...
+			not = {
 				any_demesne_title = {
-					higher_tier_than = baron
-					is_titular = no
-					not = { # ... must ...
-						ROOT = {
-							any_realm_title = { # ... have at least one title in ROOT's subrealm ...
-								de_jure_vassal_or_below = PREVPREV # ... that is its de jure liege (at any tier)
-							}
-						}
-					}
+					temporary = yes
 				}
 			}
 		}
 	}
-	
+
+	on_add = {
+		log = "CB(emf_subjugation): START: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+	}
+
 	on_success = {
-		hidden_tooltip = { ROOT = { add_character_modifier = { name = emf_victory_timer duration = 3 } } }
+		log = "CB(emf_subjugation): VICTORY: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+
+		emf_cb_victory_effect = yes
 		
 		if = {
-			limit = { FROM = { tier = count } }
+			limit = { FROM = { real_tier = count } }
 			any_attacker = {
 				limit = { character = ROOT }
 				participation_scaled_prestige = 100
@@ -188,7 +185,7 @@ emf_subjugation = {
 			}
 		}
 		if = {
-			limit = { FROM = { tier = duke } }
+			limit = { FROM = { real_tier = duke } }
 			any_attacker = {
 				limit = { character = ROOT }
 				participation_scaled_prestige = 150
@@ -199,7 +196,7 @@ emf_subjugation = {
 			}
 		}
 		if = {
-			limit = { FROM = { tier = king } }
+			limit = { FROM = { real_tier = king } }
 			any_attacker = {
 				limit = { character = ROOT }
 				participation_scaled_prestige = 200
@@ -211,46 +208,55 @@ emf_subjugation = {
 		}
 		
 		FROM = {
+			remove_opinion = {
+				who = ROOT
+				modifier = declared_war
+			}
 			opinion = {
 				who = ROOT
 				modifier = opinion_emf_cb_subjugated
 				months = 120
 			}
 			set_defacto_liege = ROOT
+			pf_liege_change_effect = yes
 		}
 	}
 	
 	on_fail = {
+		log = "CB(emf_subjugation): WHITEPEACE: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+
 		ROOT = {
 			if = {
-				limit = { FROM = { tier = count } }
+				limit = { FROM = { real_tier = count } }
 				prestige = -100
 			}
 			if = {
-				limit = { FROM = { tier = duke } }
+				limit = { FROM = { real_tier = duke } }
 				prestige = -150
 			}
 			if = {
-				limit = { FROM = { tier = king } }
+				limit = { FROM = { real_tier = king } }
 				prestige = -200
 			}
 		}
 	}
 	
 	on_reverse_demand = {
-		hidden_tooltip = { FROM = { add_character_modifier = { name = emf_victory_timer duration = 3 } } }
+		log = "CB(emf_subjugation): DEFEAT: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+
+		emf_cb_defeat_effect = yes
 		
 		ROOT = {
 			if = {
-				limit = { FROM = { tier = count } }
+				limit = { FROM = { real_tier = count } }
 				prestige = -200
 			}
 			if = {
-				limit = { FROM = { tier = duke } }
+				limit = { FROM = { real_tier = duke } }
 				prestige = -300
 			}
 			if = {
-				limit = { FROM = { tier = king } }
+				limit = { FROM = { real_tier = king } }
 				prestige = -400
 			}
 			transfer_scaled_wealth = {
@@ -260,7 +266,7 @@ emf_subjugation = {
 		}
 		
 		if = {
-			limit = { FROM = { tier = count } }
+			limit = { FROM = { real_tier = count } }
 			any_defender = {
 				limit = { character = FROM }
 				participation_scaled_prestige = 100
@@ -271,7 +277,7 @@ emf_subjugation = {
 			}
 		}
 		if = {
-			limit = { FROM = { tier = duke } }
+			limit = { FROM = { real_tier = duke } }
 			any_defender = {
 				limit = { character = FROM }
 				participation_scaled_prestige = 150
@@ -282,7 +288,7 @@ emf_subjugation = {
 			}
 		}
 		if = {
-			limit = { FROM = { tier = king } }
+			limit = { FROM = { real_tier = king } }
 			any_defender = {
 				limit = { character = FROM }
 				participation_scaled_prestige = 200
@@ -292,6 +298,10 @@ emf_subjugation = {
 				hidden_tooltip = { participation_scaled_prestige = 200 }
 			}
 		}
+	}
+
+	on_invalidation = {
+		log = "CB(emf_subjugation): INVALIDATED: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
 	}
 	
 	attacker_ai_victory_worth = {
@@ -320,7 +330,6 @@ emf_subjugation = {
 			factor = 1.5
 			FROM = { opinion = { who = ROOT value = 0 } }
 			ROOT = { opinion = { who = FROM value = 0 } }
-			FROM = { ai = yes }
 		}
 		modifier = {
 			factor = 10

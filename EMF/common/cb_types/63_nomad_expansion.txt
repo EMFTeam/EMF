@@ -35,13 +35,9 @@ nomad_expansion = {
 		}
 	}
 	
-	on_add = {
-		ROOT = { prestige = -300 }
-	}
-
 	can_use = {
 		ROOT = {
-			emf_cb_tribute_block_trigger = no
+			emf_cb_tribute_block_trigger = yes
 			is_nomadic = yes
 			NOT = { same_realm = FROM }
 			mercenary = no
@@ -49,7 +45,7 @@ nomad_expansion = {
 	}
 	
 	can_use_title = {
-		# EMF: only if ROOT has a border with one of FROM's provinces within the kingdom
+		# EMF: only if ROOT has a border with one of FROM's provinces within the duchy
 		or = {
 			ROOT = { ai = yes }
 			any_direct_de_jure_vassal_title = {
@@ -75,24 +71,22 @@ nomad_expansion = {
 
 	is_valid = {
 		ROOT = {
-			emf_cb_tribute_block_trigger = no
+			emf_cb_tribute_block_trigger = yes
 			is_nomadic = yes
 			NOT = { same_realm = FROM }
 		}
 	}
 	
+	on_add = {
+		log = "CB(nomad_expansion): START: title=[FromFrom.GetBaseName]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+
+		ROOT = { prestige = -300 }
+	}
+	
 	on_success = {
-		hidden_tooltip = {
-			any_attacker = {
-				add_character_modifier = { name = emf_victory_timer duration = 1 hidden = yes }
-			}
-			any_attacker = {
-				limit = {
-					not = { religion = FROM }
-				}
-				add_character_modifier = { name = emf_holy_victory_timer duration = 1 hidden = yes }
-			}
-		}
+		log = "CB(nomad_expansion): VICTORY: title=[FromFrom.GetBaseName]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+
+		emf_cb_victory_effect = yes
 		any_attacker = {
 			limit = { character = ROOT }
 			participation_scaled_prestige = 100
@@ -119,7 +113,10 @@ nomad_expansion = {
 	}
 
 	on_success_title = {
-		log = "nomad_expansion: [Root.GetBestName] of the [Root.PrimaryTitle.GetFullName] WON a war for the [This.GetFullName] against [From.GetBestName] of the [From.PrimaryTitle.GetFullName]."
+		emf_cb_nomadic_province_effect = yes
+		
+		pf_liege_change_under_title_begin_effect = yes
+
 		custom_tooltip = {
 			text = pagan_subjugation_tip
 			hidden_tooltip = {
@@ -132,30 +129,22 @@ nomad_expansion = {
 				}
 			}
 		}
+		
+		pf_liege_change_under_title_end_effect = yes
 	}
 
 	on_fail = {
+		log = "CB(nomad_expansion): WHITEPEACE: title=[FromFrom.GetBaseName]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+
 		ROOT = { 
 			prestige = -200
 		}
 	}
 
-	on_fail_title = {
-		log = "nomad_expansion: [Root.GetBestName] of the [Root.PrimaryTitle.GetFullName] WHITE-PEACED a war for the [This.GetFullName] against [From.GetBestName] of the [From.PrimaryTitle.GetFullName]."
-	}
-
 	on_reverse_demand = {
-		hidden_tooltip = {
-			any_defender = {
-				add_character_modifier = { name = emf_victory_timer duration = 1 hidden = yes }
-			}
-			any_defender = {
-				limit = {
-					not = { religion = ROOT }
-				}
-				add_character_modifier = { name = emf_holy_victory_timer duration = 1 hidden = yes }
-			}
-		}
+		log = "CB(nomad_expansion): DEFEAT: title=[FromFrom.GetBaseName]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+
+		emf_cb_defeat_effect = yes
 		ROOT = {
 			transfer_scaled_wealth = {
 				to = FROM
@@ -187,10 +176,10 @@ nomad_expansion = {
 		}
 	}
 
-	on_reverse_demand_title = {
-		log = "nomad_expansion: [Root.GetBestName] of the [Root.PrimaryTitle.GetFullName] LOST a war for the [This.GetFullName] against [From.GetBestName] of the [From.PrimaryTitle.GetFullName]."
+	on_invalidation = {
+		log = "CB(nomad_expansion): INVALIDATED: title=[ThirdPartyTitle.GetBaseName]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
 	}
-
+	
 	attacker_ai_victory_worth = {
 		factor = -1 # always accept
 	}
@@ -210,78 +199,6 @@ nomad_expansion = {
 	ai_will_do = { 
 		factor = 2
 		
-		# Try to guide the Hordes in the right direction
-		modifier = {
-			factor = 0.1
-			ROOT = {
-				OR = {
-					dynasty = 613 # Seljuks
-					dynasty = 800 # Timurids
-					primary_title = { title = e_il-khanate }
-				}
-			}
-			OR = {
-				and = {
-					empire = {
-						not = {
-							title = e_persia
-							title = e_byzantium
-							title = e_arabia
-						}
-					}
-					not = { # SWMH kingdom titles that have no empire but should be conquered
-						title = k_aljazira
-						title = k_armenia
-						title = k_syria
-						title = k_antioch
-						title = k_jerusalem
-					}
-				}
-				FROM = {
-					primary_title = { title = e_golden_horde }
-					NOT = { year = 1300 }
-				}
-			}
-		}
-		modifier = {
-			factor = 0.1
-			ROOT = {
-				primary_title = { title = e_golden_horde }
-			}
-			OR = {
-				empire = {
-					OR = {
-						title = e_persia
-						title = e_byzantium
-						title = e_arabia
-					}
-				}
-				title = k_aljazira
-				title = k_armenia
-				title = k_syria
-				title = k_antioch
-				title = k_jerusalem
-				FROM = {
-					primary_title = { title = e_il-khanate }
-					NOT = { year = 1300 }
-				}
-			}
-		}
-		modifier = {
-			factor = 2.0
-			OR = {
-				culture = persian
-				culture = baloch
-				culture = afghan
-				culture = turkish
-			}
-			empire = {
-				OR = {
-					title = e_persia
-					title = e_rajastan
-				}
-			}
-		}
 		modifier = {
 			factor = 10
 			FROM = { ai = no }

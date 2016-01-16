@@ -37,13 +37,16 @@ bid_for_independence = {
 			higher_tier_than = BARON
 			
 			OR = {
-				ai = yes
 				is_feudal = yes
 				is_tribal = yes
 				higher_tier_than = COUNT
 			}
 			
 			mercenary = no
+			NAND = {
+				FROM = { is_merchant_republic = yes }
+				is_patrician = yes
+			}
 			
 			OR = {
 				is_nomadic = no
@@ -54,17 +57,17 @@ bid_for_independence = {
 		}
 		
 		FROM = {
-			NOT = {
-				any_war = {
-					attacker = {
-						character = PREVPREV
-					}
-					OR = {
-						using_cb = bid_for_independence
-						using_cb = depose_liege
-					}
-				}
-			}
+			# NOT = {
+			# 	any_war = {
+			# 		attacker = {
+			# 			character = PREVPREV
+			# 		}
+			# 		OR = {
+			# 			using_cb = bid_for_independence
+			# 			using_cb = depose_liege
+			# 		}
+			# 	}
+			# }
 			
 			any_demesne_title = {
 				NOT = { lower_tier_than = ROOT }
@@ -80,15 +83,13 @@ bid_for_independence = {
 			}
 			
 			# No independence factions in merchant republics
-			NOT = {
-				AND = {
-					is_merchant_republic = yes
-					liege = {
-						is_merchant_republic = yes
-					}
-				}
+			OR = {
+				is_merchant_republic = no
+				ROOT = { is_patrician = no }
 			}
 		}
+		
+	
 	}
 
 	is_valid = {
@@ -128,8 +129,13 @@ bid_for_independence = {
 		}
 	}
 
+	on_add = {
+		log = "CB(bid_for_independence): START: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+	}
+
 	on_success = {
-		hidden_tooltip = { ROOT = { add_character_modifier = { name = emf_victory_timer duration = 7 hidden = yes } } }
+		log = "CB(bid_for_independence): VICTORY: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+		emf_cb_victory_effect = yes
 	
 		if = {
 			limit = {
@@ -145,6 +151,7 @@ bid_for_independence = {
 					liege_before_war = {
 						ROOT = {
 							set_defacto_liege = PREV
+							pf_liege_change_effect = yes
 						}
 					}
 				}
@@ -155,6 +162,7 @@ bid_for_independence = {
 					liege = {
 						ROOT = {
 							set_defacto_liege = PREV
+							pf_liege_change_effect = yes
 						}
 					}
 				}
@@ -169,16 +177,15 @@ bid_for_independence = {
 			}
 			ROOT = {
 				set_defacto_liege = ROOT
+				pf_liege_change_effect = yes
 			}
 		}
 		
 		hidden_tooltip = {
-			# EMF: Adjust dynlevy law of prior liege due to lost realm_size
-			FROM = { character_event = { id = emf_dynlevy.20 } }
-			
 			ROOT = {
 				prestige = 100
 				any_demesne_title = {
+					limit = { controls_religion = no }
 					add_pressed_claim = FROM
 				}
 			}
@@ -194,29 +201,14 @@ bid_for_independence = {
 		}
 
 		FROM = {
-			any_demesne_title = {
-				limit = { higher_tier_than = duke }
-				if = {
-					limit = { has_law = crown_authority_1 }
-					add_law = crown_authority_0
-				}
-				if = {
-					limit = { has_law = crown_authority_2 }
-					add_law = crown_authority_1
-				}
-				if = {
-					limit = { has_law = crown_authority_3 }
-					add_law = crown_authority_2
-				}
-				if = {
-					limit = { has_law = crown_authority_4 }
-					add_law = crown_authority_3
-				}
-			}
+			pf_lower_CA_effect = yes
+			pf_lower_TO_effect = yes
 		}
+		FROM = { emf_dynlevy_update_effect = yes }
 	}
 
 	on_fail = {
+		log = "CB(bid_for_independence): WHITEPEACE: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
 		ROOT = {
 			prestige = -50
 		}
@@ -231,8 +223,8 @@ bid_for_independence = {
 	}
 
 	on_reverse_demand = {
-		hidden_tooltip = { FROM = { add_character_modifier = { name = emf_victory_timer duration = 7 hidden = yes } } }
-		
+		log = "CB(bid_for_independence): DEFEAT: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+		emf_cb_defeat_effect = yes
 		ROOT = {
 			prestige = -100
 			prisoner = FROM
@@ -260,6 +252,10 @@ bid_for_independence = {
 		}
 
 		end_war = invalid
+	}
+
+	on_invalidation = {
+		log = "CB(bid_for_independence): INVALIDATED: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
 	}
 
 	attacker_ai_victory_worth = {

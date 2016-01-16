@@ -76,6 +76,13 @@ character_event = {
 
 	option = {
 		name = OK
+
+		if = {
+			limit = { has_dlc = "Horse Lords" }
+			FROM = { letter_event = { id = emf_nwo.13 } }
+			break = yes
+		}
+
 		FROM = { letter_event = { id = emf_nwo.3 } }
 	}
 }
@@ -338,7 +345,7 @@ letter_event = {
 		name = YES
 		
 		hidden_tooltip = {
-			set_global_flag = rapid_conquest
+			set_global_flag = emf_rapid_conquest
 			FROM = { character_event = { id = emf_nwo.20 } }
 		}
 	}
@@ -347,8 +354,62 @@ letter_event = {
 		name = NO
 		
 		hidden_tooltip = {
-			clr_global_flag = rapid_conquest
+			clr_global_flag = emf_rapid_conquest
 			FROM = { character_event = { id = emf_nwo.20 } }
+		}
+	}
+}
+
+
+# emf_nwo.12 [Isis]
+#
+# Bounce [from emf_nwo.13]
+character_event = {
+	id = emf_nwo.12
+	desc = AI_EVENT
+	hide_window = yes
+	is_triggered_only = yes
+	
+	option = {
+		name = OK
+		FROM = { letter_event = { id = emf_nwo.3 } } # Which parts of the world?
+	}
+}
+
+
+# emf_nwo.13 [Player]
+#
+# How do you want to handle nomads? [from emf_nwo.2 if HL DLC active]
+letter_event = {
+	id = emf_nwo.13
+	desc = emf_nwo.13.desc
+	is_triggered_only = yes
+	
+	option = {
+		name = emf_nwo.13.opt.a # Make every clan independent
+		
+		hidden_tooltip = {
+			FROM = { character_event = { id = emf_nwo.12 } }
+		}
+	}
+
+	option = {
+		name = emf_nwo.13.opt.b # Each clan gets a single province
+		
+		hidden_tooltip = {
+			log = "emf_nwo: Giving each nomadic clan a single province... (emf_nwo_tiny_nomad)"
+			set_global_flag = emf_nwo_tiny_nomad
+			FROM = { character_event = { id = emf_nwo.12 } }
+		}
+	}
+
+	option = {
+		name = emf_nwo.13.opt.c # Leave them alone
+		
+		hidden_tooltip = {
+			log = "emf_nwo: Excluding nomads... (emf_nwo_spare_nomad)"
+			set_global_flag = emf_nwo_spare_nomad
+			FROM = { character_event = { id = emf_nwo.12 } }
 		}
 	}
 }
@@ -391,6 +452,10 @@ character_event = {
 					top_liege = { religion_group = muslim }
 					not = { has_global_flag = emf_nwo_only_muslim }
 				}
+				or = {
+					top_liege = { is_nomadic = no }
+					not = { has_global_flag = emf_nwo_spare_nomad }
+				}
 			}
 			character_event = { id = emf_nwo.23 } # Cleanup state from prior era
 		}
@@ -422,6 +487,10 @@ character_event = {
 					is_merchant_republic = no
 					not = { has_global_flag = emf_nwo_spare_mr }
 				}
+				or = {
+					is_nomadic = no
+					not = { has_global_flag = emf_nwo_spare_nomad }
+				}
 			}
 			
 			# Preserve holy orders, mercs, e_golden_horde, religious head titles,
@@ -444,7 +513,7 @@ character_event = {
 					}
 					or = {
 						owner = {
-							not = {
+							nor = {
 								is_merchant_republic = yes
 								any_liege = { is_merchant_republic = yes }
 							}
@@ -453,7 +522,7 @@ character_event = {
 					}
 					or = {
 						owner = {
-							not = {
+							nor = {
 								has_landed_title = k_papal_state
 								any_liege = { has_landed_title = k_papal_state }
 							}
@@ -473,13 +542,16 @@ character_event = {
 						set_character_flag = prev_prince
 					}
 				}
-				destroy_landed_title = THIS
+				unsafe_destroy_landed_title = THIS
 			}
 			any_title_under = { # Same as above, but for tier = king
 				limit = {
 					tier = king
 					or = {
-						is_landless_type_title = no
+						and = {
+							is_landless_type_title = no
+							not = { clan = yes }
+						}
 						temporary = yes
 					}
 					or = {
@@ -513,21 +585,24 @@ character_event = {
 						set_character_flag = prev_prince
 					}
 				}
-				destroy_landed_title = THIS
+				unsafe_destroy_landed_title = THIS
 			}
 			any_demesne_title = {
 				limit = {
 					tier = emperor
 					or = {
-						is_landless_type_title = no
+						and = {
+							is_landless_type_title = no
+							is_nomadic = no
+						}
 						temporary = yes
 					}
 				}
-				destroy_landed_title = THIS
+				unsafe_destroy_landed_title = THIS
 			}
 		}
 		
-		# Now that de jure duke-tier or higher titles are destroyed, make any any de jure title
+		# Now that de jure duke-tier or higher titles are destroyed, make any de jure title
 		# structure changes to the map appropriate for NWO (since the old titles will not be
 		# held any longer, if they need to be deactivated).
 		character_event = { id = emf_nwo.40 } # Adjustments common to both SWMH and vanilla
@@ -535,12 +610,13 @@ character_event = {
 		
 		# The duke-tier or higher rulers are going to be a problem. We need them to give up all their
 		# land and return to floating around in CKII outer space as independents without earthly
-		# connections.
+		# connections. Exempt nomads.
 		
 		any_playable_ruler = {
 			limit = {
 				higher_tier_than = count
 				is_landed = yes
+				is_nomadic = no
 				primary_title = { is_landless_type_title = yes }
 				or = {
 					top_liege = { religion = catholic }
@@ -556,7 +632,7 @@ character_event = {
 				}
 				or = {
 					not = { has_landed_title = k_papal_state }
-					not = {
+					nor = {
 						has_global_flag = emf_nwo_spare_pope
 						has_global_flag = emf_nwo_spare_pope_only
 					}
@@ -609,10 +685,14 @@ character_event = {
 					not = { any_liege = { is_merchant_republic = yes } }
 					not = { has_global_flag = emf_nwo_spare_mr }
 				}
+				or = {
+					top_liege = { is_nomadic = no }
+					not = { has_global_flag = emf_nwo_spare_nomad }
+				}
 			}
 			set_defacto_liege = THIS
 		}
-		
+	
 		# Now, there are only count-tier playable rulers (besides anybody excluded by customization
 		# options). If nwo_spare_mr, merchant republics are all independent, and if nwo_spare_pope,
 		# the Papacy is independent, and if nwo_spare_pope_only, the Papacy is independent but only
@@ -625,6 +705,34 @@ character_event = {
 		# character to hold it. In general, all playable rulers in the New World Order "zone"
 		# will have only 1 demesne county.
 		
+		if = {
+			limit = { has_global_flag = emf_nwo_tiny_nomad }
+
+			any_independent_ruler = {
+				limit = {
+					is_nomadic = yes
+					or = {
+						religion = catholic
+						not = { has_global_flag = emf_nwo_only_catholic }
+					}
+					or = {
+						religion_group = christian
+						not = { has_global_flag = emf_nwo_only_christian }
+					}
+					or = {
+						religion_group = muslim
+						not = { has_global_flag = emf_nwo_only_muslim }
+					}
+				}
+				
+				character_event = { id = emf_nwo.32 } # Grant excess counties to new, random characters (nomadic, recursive)
+				character_event = { id = emf_nwo.31 } # Grant excess counties to new, random characters (recursive)
+				
+				# Seize/vassalize any non-de-jure baronies.
+				character_event = { id = emf_nwo.21 }
+			}
+		}
+
 		any_independent_ruler = {
 			limit = {
 				tier = count
@@ -642,9 +750,7 @@ character_event = {
 				}
 			}
 			
-			character_event = { id = emf_nwo.31 } # Grant excess counties to barons w/i counties (iterative)
-			character_event = { id = emf_nwo.32 } # Grant excess counties to unrelated, non-councillor courtiers (iterative)
-			character_event = { id = emf_nwo.33 } # Grant excess counties to new, random characters (recursive)
+			character_event = { id = emf_nwo.31 } # Grant excess counties to new, random characters (recursive)
 			
 			# Seize/vassalize any non-de-jure baronies.
 			character_event = { id = emf_nwo.21 }
@@ -741,9 +847,13 @@ character_event = {
 		clr_global_flag = emf_nwo_spare_mr
 		clr_global_flag = emf_nwo_spare_pope
 		clr_global_flag = emf_nwo_spare_pope_only
+		clr_global_flag = emf_nwo_spare_nomad
+		clr_global_flag = emf_nwo_tiny_nomad
 		
 		# Do mark that this was an NWO game, however.
 		set_global_flag = emf_nwo
+
+		character_event = { id = emf_gender_eq.6 }
 	}
 }
 
@@ -785,9 +895,9 @@ character_event = {
 				any_direct_de_jure_vassal_title = {
 					limit = {
 						owner = {
-							not = {
+							nor = {
 								character = ROOT
-								vassal_of = ROOT
+								is_liege_or_above = ROOT
 							}
 						}
 					}
@@ -926,6 +1036,10 @@ character_event = {
 			end_war = invalid
 		}
 		
+		any_suzerain = {
+			remove_tributary = ROOT
+		}
+
 		# Disband any event troops (all spawns have been overridden in character history to
 		# be marked with the earmark start_troops if they weren't earmarked)
 		disband_event_forces = start_troops
@@ -953,7 +1067,10 @@ character_event = {
 		# Move our capital around for fun and profit (exclude players) ...
 		
 		if = {
-			limit = { ai = yes }
+			limit = {
+				ai = yes
+				is_nomadic = no
+			}
 			
 			# First, potentially relocate based upon province settlement count.
 			character_event = { id = emf_nwo.24 }
@@ -1055,7 +1172,7 @@ character_event = {
 	is_triggered_only = yes
 	
 	trigger = {
-		any_demesne_title = {
+		primary_title = {
 			is_landless_type_title = yes
 		}
 		num_of_count_titles = 1
@@ -1070,13 +1187,7 @@ character_event = {
 			}
 			location = {
 				ROOT = {
-					create_character = {
-						random_traits = yes
-						religion = PREV # Province
-						culture = PREV # Province
-						dynasty = random
-						female = no
-					}
+					emf_nwo_create_male_ruler_effect = yes
 					new_character = {
 						grant_title_no_opinion = PREVPREVPREV # County
 						set_defacto_liege = THIS
@@ -1085,20 +1196,19 @@ character_event = {
 			}
 		}
 		
-		character_event = { id = emf_nwo.30 }
+		repeat_event = { id = emf_nwo.30 }
 	}
 }
 
-
 # emf_nwo.31 [COUNT+ Ruler]
 #
-# Grant excess demesne counties to existing province barons.
+# Grant excess demesne counties to new characters. [Recursive]
 character_event = {
 	id = emf_nwo.31
 	desc = HIDE_EVENT
 	hide_window = yes
 	is_triggered_only = yes
-	
+
 	trigger = {
 		num_of_count_titles = 2
 	}
@@ -1106,423 +1216,101 @@ character_event = {
 	option = {
 		name = OK
 		
-		capital_scope = {
-			county = {
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = {
+					is_capital = no
+				}
+			}
+			location = {
 				ROOT = {
-					any_demesne_title = {
-						limit = {
-							tier = count
-							not = { title = PREVPREV } # Not capital county
-							ROOT = {
-								any_vassal = {
-									tier = baron
-									any_demesne_title = {
-										de_jure_liege = PREVPREVPREV # County
+					random_list = {
+						50 = { emf_nwo_create_male_ruler_effect = yes }
+						50 = {
+							modifier = {
+								factor = 0
+								or = {
+									not = { has_global_flag = emf_gender_eq_law }
+									PREV = { religion_group = muslim }
+									PREV = {
+										capital_holding = {
+											or = {
+												is_theocracy = yes
+												is_republic = yes
+											}
+										}
 									}
 								}
 							}
+							emf_nwo_create_female_ruler_effect = yes
 						}
-						ROOT = {
-							random_vassal = {
-								limit = {
-									tier = baron
-									any_demesne_title = {
-										de_jure_liege = PREVPREVPREV # County
-									}
-								}
-								
-								# Take away their baronies in county temporarily
-								# so that they don't automatically switch their
-								# previous barony to the county capital (as, 99%
-								# of the time, it wasn't feudal)
-								any_demesne_title = {
-									limit = { de_jure_liege = PREVPREVPREV } # County
-									grant_title_no_opinion = ROOT
-								}
-								
-								# Give them the county
-								grant_title_no_opinion = PREVPREV
-								
-								# Ensure their character type switches to that of the
-								# province capital barony
-								capital = PREVPREV
-								
-								# Give them any of our baronies within the county,
-								# including at least one that we took from them temporarily
-								ROOT = {
-									any_demesne_title = {
-										limit = {
-											tier = baron
-											de_jure_liege = PREVPREVPREVPREV # County
-										}
-										grant_title = PREVPREV # New ruler
-									}
-								}
-								
-								# Make sure they're independent
-								set_defacto_liege = THIS
-							} #END: random_vassal
-						} #END: ROOT
-						
-						if = {
-							limit = { not = { has_global_flag = emf_nwo_count } }
-							add_pressed_claim = ROOT # Strong, inheritable claim on county
-						}
-					} #END: any_demesne_title
+					}
+					new_character = {
+						grant_title_no_opinion = PREVPREVPREV
+						set_defacto_liege = THIS
+					}
 				} # END: ROOT
-			} #END: county
-		} #END: capital_scope
+			} # END: location
+
+			if = {
+				limit = {
+					not = { has_global_flag = emf_nwo_count }
+				}
+				add_pressed_claim = ROOT # Strong, inheritable claim on county
+			}
+			
+		}
+		
+		repeat_event = { id = emf_nwo.31 }
 	}
 }
 
-
-# emf_nwo.32 [COUNT+ Ruler]
+# emf_nwo.32 [Nomadic Ruler]
 #
-# Grant excess demesne counties to courtiers.
+# Grant excess demesne counties to new clans, where possible. [Recursive]
 character_event = {
 	id = emf_nwo.32
 	desc = HIDE_EVENT
 	hide_window = yes
 	is_triggered_only = yes
-	
+
 	trigger = {
-		num_of_count_titles = 2
-	}
-	
-	option = {
-		name = OK
-		
-		capital_scope = {
-			county = {
-				ROOT = {
-					any_demesne_title = {
-						limit = {
-							tier = count
-							not = { title = PREVPREV } # Not capital county
-							ROOT = {
-								any_courtier = {
-									prisoner = no
-									is_female = no
-									is_adult = yes
-									not = { dynasty = ROOT }
-									not = { any_spouse = { character = ROOT } }
-									not = { is_child_of = ROOT }
-									not = { is_councillor = yes }
-									or = {
-										diplomacy = 7
-										martial = 7
-										stewardship = 7
-										intrigue = 7
-										learning = 7
-									}
-									num_of_children = 1
-								}
-							}
-						}
-						ROOT = {
-							random_courtier = {
-								limit = {
-									prisoner = no
-									is_female = no
-									is_adult = yes
-									not = { dynasty = ROOT }
-									not = { any_spouse = { character = ROOT } }
-									not = { is_child_of = ROOT }
-									not = { is_councillor = yes }
-									or = {
-										diplomacy = 7
-										martial = 7
-										stewardship = 7
-										intrigue = 7
-										learning = 7
-									}
-									num_of_children = 1
-								}
-								grant_title = PREVPREV # County
-								set_defacto_liege = THIS
-							}
-						}
-						if = {
-							limit = { not = { has_global_flag = emf_nwo_count } }
-							add_pressed_claim = ROOT # Strong, inheritable claim on county
-						}
-					}
-					any_demesne_title = {
-						limit = {
-							tier = count
-							not = { title = PREVPREV } # Not capital county
-							ROOT = {
-								any_courtier = {
-									prisoner = no
-									is_female = no
-									is_adult = yes
-									not = { dynasty = ROOT }
-									not = { any_spouse = { character = ROOT } }
-									not = { is_child_of = ROOT }
-									not = { is_councillor = yes }
-									or = {
-										diplomacy = 7
-										martial = 7
-										stewardship = 7
-										intrigue = 7
-										learning = 7
-									}
-								}
-							}
-						}
-						ROOT = {
-							random_courtier = {
-								limit = {
-									prisoner = no
-									is_female = no
-									is_adult = yes
-									not = { dynasty = ROOT }
-									not = { any_spouse = { character = ROOT } }
-									not = { is_child_of = ROOT }
-									not = { is_councillor = yes }
-									or = {
-										diplomacy = 7
-										martial = 7
-										stewardship = 7
-										intrigue = 7
-										learning = 7
-									}
-								}
-								grant_title = PREVPREV # County
-								set_defacto_liege = THIS
-							}
-						}
-						if = {
-							limit = { not = { has_global_flag = emf_nwo_count } }
-							add_pressed_claim = ROOT # Strong, inheritable claim on county
-						}
-					}
-				}
+		any_demesne_title = {
+			tier = count
+			location = {
+				is_capital = no
+				has_empty_holding = yes
 			}
 		}
 	}
-}
-
-# emf_nwo.33 [COUNT+ Ruler]
-#
-# Grant excess demesne counties to new characters. [Recursive]
-character_event = {
-	id = emf_nwo.33
-	desc = HIDE_EVENT
-	hide_window = yes
-	is_triggered_only = yes
-
-	trigger = {
-		num_of_count_titles = 2
-	}
 	
 	option = {
 		name = OK
 		
-		capital_scope = {
-			county = {
+		random_demesne_title = {
+			limit = {
+				tier = count
+				location = {
+					is_capital = no
+					has_empty_holding = yes
+				}
+			}
+			location = {
 				ROOT = {
-					random_demesne_title = {
-						limit = {
-							tier = count
-							not = { title = PREVPREV }
-						}
-						location = {
-							ROOT = {
-								# Vary the age (but keep them young) and try to make the
-								# game less of a sausage fest by creating male and female
-								# rulers at a ratio of 2:1. Give them fixed base health and
-								# fertility of 50%. We don't want them dying w/o heirs.
-								random_list = {
-									10 = {
-										create_character = {
-											random_traits = yes
-											religion = PREV # Province
-											culture = PREV # Province
-											dynasty = random
-											health = 0.5
-											fertility = 0.5
-											female = no
-											age = 16
-										}
-									}
-									5 = {
-										create_character = {
-											random_traits = yes
-											religion = PREV # Province
-											culture = PREV # Province
-											dynasty = random
-											health = 0.5
-											fertility = 0.5
-											female = yes
-											age = 16
-										}
-									}
-									10 = {
-										create_character = {
-											random_traits = yes
-											religion = PREV # Province
-											culture = PREV # Province
-											dynasty = random
-											health = 0.5
-											fertility = 0.5
-											female = no
-											age = 17
-										}
-									}
-									5 = {
-										create_character = {
-											random_traits = yes
-											religion = PREV # Province
-											culture = PREV # Province
-											dynasty = random
-											health = 0.5
-											fertility = 0.5
-											female = yes
-											age = 17
-										}
-									}
-									10 = {
-										create_character = {
-											random_traits = yes
-											religion = PREV # Province
-											culture = PREV # Province
-											dynasty = random
-											health = 0.5
-											fertility = 0.5
-											female = no
-											age = 20
-										}
-									}
-									5 = {
-										create_character = {
-											random_traits = yes
-											religion = PREV # Province
-											culture = PREV # Province
-											dynasty = random
-											health = 0.5
-											fertility = 0.5
-											female = yes
-											age = 19
-										}
-									}
-									10 = {
-										create_character = {
-											random_traits = yes
-											religion = PREV # Province
-											culture = PREV # Province
-											dynasty = random
-											health = 0.5
-											fertility = 0.5
-											female = no
-											age = 21
-										}
-									}
-									5 = {
-										create_character = {
-											random_traits = yes
-											religion = PREV # Province
-											culture = PREV # Province
-											dynasty = random
-											health = 0.5
-											fertility = 0.5
-											female = yes
-											age = 21
-										}
-									}
-									10 = {
-										create_character = {
-											random_traits = yes
-											religion = PREV # Province
-											culture = PREV # Province
-											dynasty = random
-											health = 0.5
-											fertility = 0.5
-											female = no
-											age = 22
-										}
-									}
-									5 = {
-										create_character = {
-											random_traits = yes
-											religion = PREV # Province
-											culture = PREV # Province
-											dynasty = random
-											health = 0.5
-											fertility = 0.5
-											female = yes
-											age = 22
-										}
-									}
-									10 = {
-										create_character = {
-											random_traits = yes
-											religion = PREV # Province
-											culture = PREV # Province
-											dynasty = random
-											health = 0.5
-											fertility = 0.5
-											female = no
-											age = 25
-										}
-									}
-									5 = {
-										create_character = {
-											random_traits = yes
-											religion = PREV # Province
-											culture = PREV # Province
-											dynasty = random
-											health = 0.5
-											fertility = 0.5
-											female = yes
-											age = 24
-										}
-									}
-									10 = {
-										create_character = {
-											random_traits = yes
-											religion = PREV # Province
-											culture = PREV # Province
-											dynasty = random
-											health = 0.5
-											fertility = 0.5
-											female = no
-											age = 27
-										}
-									}
-									5 = {
-										create_character = {
-											random_traits = yes
-											religion = PREV # Province
-											culture = PREV # Province
-											dynasty = random
-											health = 0.5
-											fertility = 0.5
-											female = yes
-											age = 26
-										}
-									}
-								}
-								new_character = {
-									grant_title = PREVPREVPREV
-									set_defacto_liege = THIS
-								}
-							} # END: ROOT
-						} # END: location
-						
-						if = {
-							limit = { not = { has_global_flag = emf_nwo_count } }
-							add_pressed_claim = ROOT # Strong, inheritable claim on county
-						}
-					} # END: any_demesne_title
+					emf_nwo_create_male_ruler_effect = yes
+					new_character = {
+						grant_title_no_opinion = PREVPREVPREV
+						set_government_type = nomadic_government
+						set_defacto_liege = THIS
+					}
 				} # END: ROOT
-			} # END: county
-		} # END: capital_scope
+			} # END: location
+		}
 		
-		character_event = { id = emf_nwo.33 }
+		repeat_event = { id = emf_nwo.32 }
 	}
 }
-
 
 
 # emf_nwo.40 [Isis]
@@ -1603,7 +1391,7 @@ character_event = {
 			character_event = { id = emf_nwo.22 }
 		}
 		
-		character_event = { id = emf_nwo.50 }
+		repeat_event = { id = emf_nwo.50 }
 	}
 }
 
@@ -1620,7 +1408,7 @@ character_event = {
 	trigger = {
 		any_independent_ruler = {
 			is_feudal = yes
-			capital_holding = { is_republic = no } # Weird patrician bug
+			capital_holding = { not = { holding_type = city } } # Weird patrician bug
 			tier = count
 			capital_scope = { duchy = { has_holder = no } }
 			or = {
@@ -1645,7 +1433,7 @@ character_event = {
 			limit = {
 				is_feudal = yes
 				tier = count
-				capital_holding = { is_republic = no } # Weird patrician bug
+				capital_holding = { not = { holding_type = city } } # Weird patrician bug
 				capital_scope = { duchy = { has_holder = no } }
 				or = {
 					religion = catholic
@@ -1668,7 +1456,7 @@ character_event = {
 			character_event = { id = emf_nwo.22 }
 		}
 		
-		character_event = { id = emf_nwo.51 }
+		repeat_event = { id = emf_nwo.51 }
 	}
 }
 
@@ -1686,7 +1474,7 @@ character_event = {
 		any_independent_ruler = {
 			is_tribal = yes
 			tier = count
-			capital_holding = { is_republic = no } # Weird patrician bug
+			capital_holding = { not = { holding_type = city } } # Weird patrician bug
 			capital_scope = { duchy = { has_holder = no } }
 			or = {
 				religion = catholic
@@ -1710,7 +1498,7 @@ character_event = {
 			limit = {
 				is_tribal = yes
 				tier = count
-				capital_holding = { is_republic = no } # Weird patrician bug
+				capital_holding = { not = { holding_type = city } } # Weird patrician bug
 				capital_scope = { duchy = { has_holder = no } }
 				or = {
 					religion = catholic
@@ -1733,7 +1521,7 @@ character_event = {
 			character_event = { id = emf_nwo.22 }
 		}
 		
-		character_event = { id = emf_nwo.52 }
+		repeat_event = { id = emf_nwo.52 }
 	}
 }
 
@@ -1796,7 +1584,7 @@ character_event = {
 			character_event = { id = emf_nwo.22 }
 		}
 		
-		character_event = { id = emf_nwo.53 }
+		repeat_event = { id = emf_nwo.53 }
 	}
 }
 
@@ -1857,7 +1645,7 @@ character_event = {
 			character_event = { id = emf_nwo.22 }
 		}
 		
-		character_event = { id = emf_nwo.54 }
+		repeat_event = { id = emf_nwo.54 }
 	}
 }
 
@@ -1897,7 +1685,7 @@ character_event = {
 			character_event = { id = emf_nwo.22 }
 		}
 		
-		character_event = { id = emf_nwo.55 }
+		repeat_event = { id = emf_nwo.55 }
 	}
 }
 
@@ -1960,7 +1748,7 @@ character_event = {
 			character_event = { id = emf_nwo.22 }
 		}
 		
-		character_event = { id = emf_nwo.60 }
+		repeat_event = { id = emf_nwo.60 }
 	}
 }
 
@@ -1978,7 +1766,7 @@ character_event = {
 		any_independent_ruler = {
 			is_feudal = yes
 			tier = count
-			capital_holding = { is_republic = no } # Weird patrician bug
+			capital_holding = { not = { holding_type = city } } # Weird patrician bug
 			capital_scope = { kingdom = { has_holder = no } }
 			or = {
 				religion = catholic
@@ -2002,7 +1790,7 @@ character_event = {
 			limit = {
 				is_feudal = yes
 				tier = count
-				capital_holding = { is_republic = no } # Weird patrician bug
+				capital_holding = { not = { holding_type = city } } # Weird patrician bug
 				capital_scope = { kingdom = { has_holder = no } }
 				or = {
 					religion = catholic
@@ -2025,7 +1813,7 @@ character_event = {
 			character_event = { id = emf_nwo.22 }
 		}
 		
-		character_event = { id = emf_nwo.61 }
+		repeat_event = { id = emf_nwo.61 }
 	}
 }
 
@@ -2043,7 +1831,7 @@ character_event = {
 		any_independent_ruler = {
 			is_tribal = yes
 			tier = count
-			capital_holding = { is_republic = no } # Weird patrician bug
+			capital_holding = { not = { holding_type = city } } # Weird patrician bug
 			capital_scope = { kingdom = { has_holder = no } }
 			or = {
 				religion = catholic
@@ -2067,7 +1855,7 @@ character_event = {
 			limit = {
 				is_tribal = yes
 				tier = count
-				capital_holding = { is_republic = no } # Weird patrician bug
+				capital_holding = { not = { holding_type = city } } # Weird patrician bug
 				capital_scope = { kingdom = { has_holder = no } }
 				or = {
 					religion = catholic
@@ -2090,7 +1878,7 @@ character_event = {
 			character_event = { id = emf_nwo.22 }
 		}
 		
-		character_event = { id = emf_nwo.62 }
+		repeat_event = { id = emf_nwo.62 }
 	}
 }
 
@@ -2153,7 +1941,7 @@ character_event = {
 			character_event = { id = emf_nwo.22 }
 		}
 		
-		character_event = { id = emf_nwo.63 }
+		repeat_event = { id = emf_nwo.63 }
 	}
 }
 
@@ -2214,7 +2002,7 @@ character_event = {
 			character_event = { id = emf_nwo.22 }
 		}
 		
-		character_event = { id = emf_nwo.64 }
+		repeat_event = { id = emf_nwo.64 }
 	}
 }
 
@@ -2254,23 +2042,6 @@ character_event = {
 			character_event = { id = emf_nwo.22 }
 		}
 		
-		character_event = { id = emf_nwo.65 }
-	}
-}
-
-
-character_event = {
-	id = emf_nwo.100
-	desc = HIDE_EVENT
-	hide_window = yes
-	is_triggered_only = yes
-	
-	option = {
-		name = OK
-		k_emf_lower_lorraine = { de_jure_liege = e_hre }
-		k_emf_saxony = { de_jure_liege = e_hre }
-		k_emf_franconia = { de_jure_liege = e_hre }
-		k_emf_bavaria = { de_jure_liege = e_hre }
-		k_emf_schwaben = { de_jure_liege = e_hre }
+		repeat_event = { id = emf_nwo.65 }
 	}
 }

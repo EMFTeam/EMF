@@ -20,12 +20,8 @@ character_event = {
 				set_character_flag = emf_toggle_customization_off
 			}
 			if = {
-				limit = { ROOT = { has_character_flag = toggle_employment } }
-				set_character_flag = toggle_employment
-			}
-			if = {
-				limit = { ROOT = { has_character_flag = holy_war_check } }
-				set_character_flag = holy_war_check
+				limit = { ROOT = { has_character_flag = emf_toggle_employment } }
+				set_character_flag = emf_toggle_employment
 			}
 			if = {
 				limit = { ROOT = { has_character_flag = enable_marriage_decisions } }
@@ -42,28 +38,254 @@ character_event = {
 }
 
 
-# emf_core.10 [Player]
+# emf_core.10 [Male That's Reached Adulthood]
 #
-# do_not_disturb cleanup (allowed for at least 2 years) for players,
-# called on_yearly_pulse.
+# Pre-inherit any strong claims that mother may have on_adulthood as weak, uninheritable claims.
 character_event = {
 	id = emf_core.10
-	hide_window = yes
-	is_triggered_only = yes
 	
-	ai = no
-
+	is_triggered_only = yes
+	hide_window = yes
+	
+	only_men = yes
+	
 	trigger = {
-		not = { trait = in_hiding }
-		had_character_flag = { flag = do_not_disturb days = 730 }
+		mother = {
+			any_claim = {
+				higher_tier_than = BARON
+				holder_scope = {
+					NOT = { character = ROOT }
+				}
+				ROOT = {
+					NOT = { has_claim = PREV }
+					mother = {
+						has_strong_claim = PREVPREV
+					}
+				}
+				NOT = {
+					succ_law_title = {
+						has_law = true_cognatic_succession
+					}
+				}
+			}
+		}
 	}
 	
 	immediate = {
-		clr_character_flag = do_not_disturb
+		mother = {
+			any_claim = {
+				limit = {
+					higher_tier_than = BARON
+					holder_scope = {
+						NOT = { character = ROOT }
+					}
+					ROOT = {
+						NOT = { has_claim = PREV }
+						mother = {
+							has_strong_claim = PREVPREV
+						}
+					}
+					NOT = {
+						succ_law_title = {
+							has_law = true_cognatic_succession
+						}
+					}
+				}
+				add_weak_claim = ROOT
+			}
+		}
 	}
 }
 
 
-# For emf_core.20-emf_core.21, see emf_nae*.txt
+# emf_core.11 [Duke+ Ruler]
+#
+# Reset years_of_peace variable when in qualifying wars <MTTH>
+character_event = {
+	id = emf_core.11
+
+	hide_window = yes
+
+	only_playable = yes
+
+	trigger = {
+		higher_real_tier_than = count
+		emf_core_peace_trigger = no
+		check_variable = { which = years_of_peace value = 0.1 }
+	}
+
+	mean_time_to_happen = {
+		days = 1
+	}
+
+	immediate = {
+		set_variable = { which = years_of_peace value = 0 }
+	}
+}
+
+# emf_core.20
+#
+# Remove ahistorical empires
+character_event = {
+	id = emf_core.20
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		any_title = {
+			limit = {
+				tier = emperor
+				is_titular = no
+				nor = {
+					title = e_hre
+					title = e_byzantium
+					title = e_persia
+					title = e_null # Might already be de jure
+				}
+			}
+
+			# Transfer de jure vassal kingdoms to e_null
+			any_direct_de_jure_vassal_title = {
+				de_jure_liege = e_null
+			}
+
+			# If we can deactivate the empire title without side effects, do so
+			if = {
+				limit = { has_holder = no }
+				activate_title = { title = THIS status = no }
+			}
+		}
+	}
+}
+
+
+# emf_core.21
+# 
+# Prevent the ERE from gaining the k_orthodox title-- or rather, when
+# they do, fix the situation.
+character_event = {
+	id = emf_core.21
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	trigger = {
+		FROM = { title = k_orthodox }
+		OR = {
+			has_landed_title = e_byzantium
+			has_landed_title = e_roman_empire
+		}
+	}
+	
+	immediate = {
+		log = "INFO: ERE gained k_orthodox somehow, granting to random priest..."
+		
+		create_random_priest = {
+			random_traits = yes
+			female = no
+			dynasty = none
+			culture = ROOT
+			religion = orthodox
+		}
+		new_character = {
+			k_orthodox = { grant_title = PREV }
+			b_hagiasophia = {
+				if = {
+					limit = {
+						holder_scope = {
+							OR = {
+								character = ROOT
+								is_liege_or_above = ROOT
+							}
+						}
+					}
+					grant_title = PREV
+				}
+			}
+			set_defacto_liege = ROOT
+		}
+		set_government_type = feudal_government
+	}
+}
+
 
 # For emf_core.30-emf_core.31, see emf_hre_map.txt
+
+
+# emf_core.40 [Ruler]
+#
+# Refill levies of held barony titles marked or targeted for refill.
+# Useful as a hack to properly refill holding levies when
+# we'd normally be inclined to just use `refill_holding_levy = yes`
+# immediately somewhere (such as converting a tribal settlement to
+# a non-tribal). Instead, invoke this at least 3 days after the fact
+# to achieve the desired effect.
+#
+# The caller can either set the title flag emf_refill_levy on those
+# titles that require refilling, or they can use an event target with
+# emf_core.41 instead.
+character_event = {
+	id = emf_core.40
+	hide_window = yes
+	is_triggered_only = yes
+
+	immediate = {
+		any_title_under = {
+			limit = {
+				tier = baron
+				had_title_flag = {
+					flag = emf_refill_levy
+					days = 3
+				}
+			}
+			clr_title_flag = emf_refill_levy
+			refill_holding_levy = yes
+		}
+	}
+}
+
+
+# emf_core.41 [Character]
+# 
+# Alternate version of emf_core.40 in which the title which needs its
+# levies refilled is saved in event_target:emf_refill_levy_title. If
+# the given title is higher tier than a single barony, it will refill
+# all the levies under it de jure.
+character_event = {
+	id = emf_core.41
+	hide_window = yes
+	is_triggered_only = yes
+
+	immediate = {
+		event_target:emf_refill_levy_title = {
+			if = {
+				limit = { tier = baron }
+				refill_holding_levy = yes
+				break = yes
+			}
+			any_de_jure_vassal_title = {
+				limit = { tier = baron }
+				refill_holding_levy = yes
+			}
+		}
+	}
+}
+
+
+# emf_core.1000
+# Toggle global EMF debug flag
+character_event = {
+	id = emf_core.1000
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		if = {
+			limit = { has_global_flag = emf_debug }
+			clr_global_flag = emf_debug
+			break = yes
+		}
+		set_global_flag = emf_debug
+	}
+}
