@@ -241,13 +241,6 @@ character_event = {
 	is_triggered_only = yes
 	hide_window = yes
 
-	# NOTE: CK2+ will probably want a different trigger due to their additional
-	# lifetime_appointments handling in here. If there's already another generic
-	# on_death handler which could handle that, though, it ought to be moved
-	# there, as it has nothing at all to do with PF, and it would unnecessarily
-	# force this event to be executed pointlessly for the vast majority of deaths
-	# w/o trigger modification.
-
 	only_playable = yes
 
 	trigger = {
@@ -263,7 +256,7 @@ character_event = {
 
 	immediate = {
 		if = {
-			limit = { primary_title = { is_vice_royalty = yes } }
+			limit = { is_vice_royalty = yes }
 			capital_scope = {
 				county = {
 					current_heir = {
@@ -273,37 +266,21 @@ character_event = {
 			}
 		}
 		if = {
-			limit = { primary_title = { is_vice_royalty = no } }
-			primary_title = {
-				current_heir = {
-					save_event_target_as = heir
-				}
+			limit = {
+				is_vice_royalty = no
+				current_heir = { is_alive = yes }
+			}
+			current_heir = {
+				save_event_target_as = heir
 			}
 		}
-		
-		#pass down laws if the heir is inheriting a new primary title
-		# if = {
-		# 	limit = {
-		# 		event_target:heir = { lower_real_tier_than = ROOT }
-		# 	}
-		# 	event_target:heir = {
-		# 		clr_character_flag = lifetime_appointments
-		# 	}
-		# 	if = {
-		# 		limit = { has_character_flag = lifetime_appointments }
-		# 		event_target:heir = {
-		# 			set_character_flag = lifetime_appointments
-		# 			if = {
-		# 				limit = { is_ruler = yes }
-		# 				job_spymaster = { remove_title = job_spymaster remove_opinion = { who = PREV modifier = opinion_fired_from_council } }
-		# 				job_marshal = { remove_title = job_marshal remove_opinion = { who = PREV modifier = opinion_fired_from_council } }
-		# 				job_chancellor = { remove_title = job_chancellor remove_opinion = { who = PREV modifier = opinion_fired_from_council } }
-		# 				job_treasurer = { remove_title = job_treasurer remove_opinion = { who = PREV modifier = opinion_fired_from_council } }
-		# 				job_spiritual = { remove_title = job_spiritual remove_opinion = { who = PREV modifier = opinion_fired_from_council } }
-		# 			}
-		# 		}
-		# 	}
-		# }
+		if = {
+			limit = {
+				is_vice_royalty = no
+				NOT = { current_heir = { is_alive = yes } }
+			}
+			save_event_target_as = heir
+		}
 		
 		if = {
 			limit = {
@@ -396,33 +373,46 @@ character_event = {
 					trait = rebel
 				}
 			}
-			break = yes			
+			break = yes
 		}
 		
 		log = "REVOLT-RELATED DEATH: [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID]):"
 		log = "<<<<<"
 		
-		if = {
-			limit = { primary_title = { is_vice_royalty = yes } }
-			log = "dying ruler is a viceroy, so selecting heir to capital county as effective heir"
-		}
-		
 		event_target:heir = {
 			if = {
-				limit = { is_ruler = yes }
-				log = "heir is already a ruler: [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID])"
+				limit = { NOT = { character = ROOT } }
+				if = {
+					limit = { is_ruler = yes }
+					log = "heir is already a ruler: [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (ID: [This.GetID])"
+				}
+				if = {
+					limit = { is_ruler = no }
+					log = "heir is NOT yet a ruler: [This.GetTitledName] (ID: [This.GetID])"
+				}
 			}
 			if = {
-				limit = { is_ruler = no }
-				log = "heir is not yet a ruler: [This.GetTitledName] (ID: [This.GetID])"
+				limit = { character = ROOT }
+				log = "dying ruler has no known heir"
 			}
 		}
 		
-		if = { # Are we a civil war liege (defender)?
+		if = { # Are we a civil war liege (defender) that is allowed to pass on our revolt to someone?
 			limit = {
 				any_war = {
 					defender = { character = ROOT }
 					using_cb = cb_faction_overthrow_ruler
+				}
+				# Our liege cannot also be our heir if the revolt is to continue, because the revolt leader's
+				# temporary liege (i.e., NOT the liege_before_war) for the revolt cannot also be the target
+				# of the revolt. This would otherwise violate the premises of the hard-coded revolt title
+				# system, although if Paradox wanted, they could handle this more gracefully by elevating the
+				# revolt title to a yet higher tier and revassalizing the revolt title to the liege
+				# of the dying ruler's liege/heir (or independent if no such liege).
+				NOR = {
+					liege = { character = event_target:heir } # aforementioned case
+					character = event_target:heir # unknown heir
+					is_vice_royalty = yes # viceroys suck at everything
 				}
 			}
 			
@@ -433,7 +423,7 @@ character_event = {
 					has_opinion_modifier = { who = event_target:heir modifier = revolting_against_me }
 				}
 				event_target:heir = {
-					log = "heir was revolting against [Root.GetHerHim]... resetting [heir.GetTitledFirstName] and will try vassalizing [heir.GetHerHim]"
+					log = "heir was revolting against [Root.GetHerHim]... resetting [heir.GetTitledFirstName] AND will try vassalizing [heir.GetHerHim]"
 					pf_teardown_rebel_effect = yes
 					set_defacto_liege = ROOT
 				}
@@ -552,6 +542,44 @@ character_event = {
 			}
 		}
 		
+		if = { # Are we a civil war liege (defender) that is NOT allowed to pass on our revolt to someone?
+			limit = {
+				any_war = {
+					defender = { character = ROOT }
+					using_cb = cb_faction_overthrow_ruler
+				}
+				OR = {
+					liege = { character = event_target:heir }
+					character = event_target:heir
+					is_vice_royalty = yes
+				}
+			}
+			if = {
+				limit = {
+					liege = {
+						character = event_target:heir
+						NOT = { character = ROOT }
+					}
+				}
+				log = "dying ruler is a civil war liege, but [Root.GetHerHis] heir is also [Root.GetHerHis] liege, so the revolt should invalidate."
+			}
+			if = {
+				limit = { character = event_target:heir }
+				log = "dying ruler is a civil war liege, but [Root.GetSheHe] has no known successor, so the revolt should invalidate."
+			}
+			if = {
+				limit = { is_vice_royalty = yes }
+				log = "dying ruler is a civil war liege, but [Root.GetSheHe] is also a viceroy, so the revolt should invalidate."
+			}
+			any_war = {
+				limit = {
+					defender = { character = ROOT }
+					using_cb = cb_faction_overthrow_ruler
+				}
+				end_war = invalid # civil war state will be cleaned-up gracefully, because the war defender is [barely] still alive.
+			}
+		}
+			
 		if = {
 			limit = { NOT = { trait = rebel } }
 			log = ">>>>>"
@@ -560,28 +588,7 @@ character_event = {
 		
 		remove_trait = rebel
 		
-		# Sanity check, first.
-		if = {
-			limit = { pf_in_revolt_trigger = no }
-			log = "ERROR: dying ruler had rebel trait but isn't involved in a PF revolt. dump follows:"
-			pf_log_state_effect = yes
-			
-			if = {
-				limit = {
-					has_global_flag = emf_debug
-					multiplayer = no
-				}
-				random_playable_ruler = {
-					limit = { ai = no }
-					character_event = { id = emf_faction.1003 }
-				}
-			}
-			
-			log = ">>>>>"
-			break = yes
-		}
-		
-		# We are involved in a PF revolt (as a revolter), if we made it here.
+		# We're supposed to be involved in a PF revolt (as a revolter), if we made it here.
 		
 		log = "dying ruler is a revolter"
 		
@@ -591,6 +598,9 @@ character_event = {
 					event_target:heir = {
 						NOR = {
 							character = PREV
+							character = ROOT
+							is_liege_of = ROOT
+							ROOT = { is_vice_royalty = yes }
 							AND = {
 								trait = rebel
 								liege_before_war = {
@@ -734,7 +744,19 @@ character_event = {
 		
 		if = {
 			limit = { liege_before_war = { character = event_target:heir } }
-			log = "-> the dying rebel's proper liege is also his heir, FFS!"
+			log = "-> the dying rebel's proper liege is also his heir"
+		}
+		if = {
+			limit = { character = event_target:heir }
+			log = "-> the dying rebel's successor is unknown"
+		}
+		if = {
+			limit = { liege = { character = event_target:heir } }
+			log = "-> the dying rebel's current liege is also his heir"
+		}
+		if = {
+			limit = { is_vice_royalty = yes }
+			log = "-> the dying rebel is a viceroy, and viceroys can do nothing but drool incessantly"
 		}
 		if = {
 			limit = {
@@ -747,7 +769,7 @@ character_event = {
 					}
 				}
 			}
-			log = "-> heir is already a rebel and [heir.GetHerHis] proper liege is not the same as the dying rebel's"
+			log = "-> heir is already a rebel and [heir.GetHerHis] proper liege is NOT the same as the dying rebel's"
 		}
 		if = {
 			limit = {
@@ -761,7 +783,7 @@ character_event = {
 					}
 				}
 			}
-			log = "-> heir is already a loyalist/neutral and [heir.GetHerHis] liege is the dying rebel's proper liege"
+			log = "-> heir is already a loyalist/neutral AND [heir.GetHerHis] liege is the dying rebel's proper liege"
 		}
 		
 		# If we're a revolt leader, then we can't pass down the revolt to anyone in this case, so invalidate our
@@ -788,7 +810,7 @@ character_event = {
 		
 		# We're not a revolt leader, if we've made it here.
 		
-		log = "dying rebel is NOT a rebel leader; who knows what wonders will happen next? but really now."
+		log = "dying rebel is NOT a rebel leader"
 		log = ">>>>>"
 	}
 }
@@ -822,6 +844,14 @@ character_event = {
 			save_event_target_as = pf_new_title
 			holder_scope = { save_event_target_as = pf_new_owner }
 		}
+		
+		# Title grant may have transferred de jure vassals under the new owner implicitly, so check the new owner's
+		# vassals for PF state invalidation.
+		any_vassal = {
+			limit = { is_playable = yes }
+			pf_liege_change_effect = yes
+		}
+		
 		#claimants to the granted title who aren't close relatives of the new owner are displeased
 		event_target:pf_new_title = {
 			any_claimant = {

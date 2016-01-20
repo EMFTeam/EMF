@@ -10,3 +10,6 @@ NDefines.NDiplomacy.MAX_PREP_INV_ATTACKER_HOLDINGS = 60 -- up from 40
 
 -- Character
 NDefines.NCharacter.TRIBAL_EMPTY_HOLDING_TAX_MULTIPLIER = 0.7   -- up from 0.5
+
+-- Nomad
+NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 1750 -- from 1250
