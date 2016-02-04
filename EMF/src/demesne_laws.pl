@@ -3,7 +3,7 @@
 # Copyright (C) 2014 Matthew D. Hall <zijistark@gmail.com>
 #
 # Free for personal modification. Any redistribution, even
-# without modification, of this program or its output is
+# without modification, of this program OR its output is
 # expressly forbidden without the consent of the author.
 
 my $VERSION = "1.3.0";
@@ -197,11 +197,11 @@ sub print_law {
 	if ($tribal) {
 		$tribal_holder = <<EOS;
 
-			or = {
+			OR = {
 				holder_scope = {
 					is_tribal = no
 				}
-				or = {
+				OR = {
 					has_law = tribal_organization_3
 					has_law = tribal_organization_4
 				}
@@ -215,7 +215,7 @@ EOS
 
 	if ($type ne 'city' && $type ne 'temple' && $type ne 'tribal') {
 		$muslim_holder = "holder_scope = { religion_group = muslim }";
-		$muslim_holder = "not = { $muslim_holder }" unless $muslim;
+		$muslim_holder = "NOT = { $muslim_holder }" unless $muslim;
 		$muslim_holder = "\n\t\t\t$muslim_holder";
 	}
 	
@@ -226,7 +226,7 @@ EOS
 	my $tabs = 3;
 	
 	if ( ($level > 0 && $level < 4) || $default ) {
-		$law_reqs .= ("\t" x $tabs)."or = {\n";
+		$law_reqs .= ("\t" x $tabs)."OR = {\n";
 		++$tabs;
 	}
 	
@@ -244,12 +244,12 @@ EOS
 		$law_reqs .= ("\t" x $tabs)."custom_tooltip = {\n";
 		++$tabs;
 
-		$law_reqs .= ("\t" x $tabs).'text = "No other laws in this group have been passed."'."\n";
+		$law_reqs .= ("\t" x $tabs).'text = "No other laws in this group have been passed"'."\n";
 		
 		$law_reqs .= ("\t" x $tabs)."hidden_tooltip = {\n";
 		++$tabs;
 
-		$law_reqs .= ("\t" x $tabs)."not = {\n";
+		$law_reqs .= ("\t" x $tabs)."NOT = {\n";
 		++$tabs;
 		
 		for my $i (0..4) {
@@ -273,7 +273,7 @@ EOS
 	
 	if ($level > 0 && !$focus) {
 		$law_reqs .= <<EOS;
-			not = { has_law = themes_0 }
+			NOT = { has_law = themes_0 }
 EOS
 	}
 	
@@ -299,8 +299,8 @@ $default$opinion_effect
 
 		potential = {
 			temporary = no
-			or = {
-				not = { tier = baron }
+			OR = {
+				NOT = { tier = baron }
 				holder_scope = { is_patrician = yes }
 			}$muslim_holder$tribal_holder
 		}
@@ -319,7 +319,7 @@ EOS
 			print <<EOS;
 			modifier = {
 				factor = 0
-				not = { holder_scope = { trait = charitable } }
+				NOT = { holder_scope = { trait = charitable } }
 			}
 EOS
 		}
@@ -327,7 +327,7 @@ EOS
 		print <<EOS;
 			modifier = {
 				factor = 0
-				not = { holder_scope = { trait = charitable } }
+				NOT = { holder_scope = { trait = charitable } }
 				has_law = $law_up
 			}
 			modifier = {
@@ -341,7 +341,7 @@ EOS
 		print <<EOS;
 			modifier = {
 				factor = 0
-				not = { holder_scope = { trait = greedy } }
+				NOT = { holder_scope = { trait = greedy } }
 				has_law = $law_down
 			}
 			modifier = {
