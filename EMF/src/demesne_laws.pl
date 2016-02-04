@@ -6,7 +6,7 @@
 # without modification, of this program or its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "1.2.0";
+my $VERSION = "1.3.0";
 
 my $opt = {
 	min_total_levy      => -0.2,
@@ -28,7 +28,7 @@ my $opt = {
 		iqta_obligations   => 1,
 		iqta_slider        => 2,
 		tribal_obligations => 0,
-		tribal_slider        => 0,
+		tribal_slider      => 0,
 	},
 };
 
@@ -93,6 +93,22 @@ EOS
 
 	print_params();
 	print_summary();
+	
+	print "law_groups = {\n";
+	
+	for my $type ( qw( castle temple city iqta tribal ) ) {
+		my $lg_focus = (($type eq 'castle') ? 'feudal' : $type).'_slider';
+		my $lg_ob = (($type eq 'castle') ? 'feudal' : $type).'_obligations';
+		print "\t$lg_focus = {\n";
+		print "\t\tlaw_type = realm\n";
+		print "\t}\n";
+		print "\t$lg_ob = {\n";
+		print "\t\tlaw_type = realm\n";
+		print "\t\tallowed_for_councillors = yes\n";
+		print "\t}\n";
+	}
+	
+	print "}\n\n";
 	
 	print "laws = {";
 
