@@ -12,7 +12,7 @@ use warnings;
 use Carp;
 use Getopt::Long qw(:config gnu_getopt);
 
-my $VERSION = "1.2.0";
+my $VERSION = "1.3.0";
 
 my $DEFAULT_N      = 64;
 my $DEFAULT_STRIDE = 5;
@@ -152,6 +152,14 @@ sub print_laws {
 	print "# emf_dynlevy_laws\n";
 	print "# Dynamic levy law scaling with realm_size (demesne laws)\n\n";
 	print_params();
+
+	print "law_groups = {\n";
+	
+	for my $i (0..$opt_n-1) {
+		print "\tdynlevy$i = { law_type = realm }\n";
+	}
+		
+	print "}\n\n";
 
 	print "laws = {\n";
 
