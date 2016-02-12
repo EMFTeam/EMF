@@ -100,10 +100,15 @@ EOS
 		my $lg_focus = (($type eq 'castle') ? 'feudal' : $type).'_slider';
 		my $lg_ob = (($type eq 'castle') ? 'feudal' : $type).'_obligations';
 		print "\t$lg_focus = {\n";
-		print "\t\tlaw_type = realm\n";
+		print "\t\tlaw_type = obligations\n";
+		print "\t\tleft_value = LEVY\n";
+		print "\t\tright_value = TAX\n";
+		print "\t\tslider_sprite = GFX_focus_slider\n";
+		print "\t\tallowed_for_councillors = no\n";
 		print "\t}\n";
 		print "\t$lg_ob = {\n";
-		print "\t\tlaw_type = realm\n";
+		print "\t\tlaw_type = obligations\n";
+		print "\t\tslider_sprite = GFX_oblig_slider\n";
 		print "\t\tallowed_for_councillors = yes\n";
 		print "\t}\n";
 	}
@@ -244,7 +249,7 @@ EOS
 		$law_reqs .= ("\t" x $tabs)."custom_tooltip = {\n";
 		++$tabs;
 
-		$law_reqs .= ("\t" x $tabs).'text = "No other laws in this group have been passed"'."\n";
+		$law_reqs .= ("\t" x $tabs).'text = emf_laws_ctt_no_other_laws_passed'."\n";
 		
 		$law_reqs .= ("\t" x $tabs)."hidden_tooltip = {\n";
 		++$tabs;
