@@ -28,6 +28,8 @@ character_event = {
 		independent = no
 		war = no
 		liege = {
+			in_revolt = no
+			pf_war_flag_trigger = no
 			NOT = { character = ROOT }
 			NOT = { holds_favor_on = ROOT }
 			war = no
@@ -36,13 +38,14 @@ character_event = {
 				de_jure_liege = ROOT
 				war = no
 				is_patrician = no
+				in_revolt = no
 			}
 		}
 		NOT = { has_character_flag = requested_vassal_transfer }
 	}
 	
 	mean_time_to_happen = {
-		months = 480
+		months = 12
 		modifier = {
 			factor = 0.25
 			trait = greedy
@@ -155,20 +158,51 @@ character_event = {
 				trait = greedy
 			}
 			modifier = {
-				factor = 0
+				factor = 0.1
 				NOT = {
-					opinion = { who = FROM value = 0 }
+					opinion = {
+						who = FROM
+						value = -25
+					}
 				}
 			}
 			modifier = {
 				factor = 2.0
-				opinion = { who = FROM value = 25 }
+				opinion = {
+					who = FROM
+					value = 25
+				}
+			}
+			modifier = {
+				factor = 2.0
+				opinion = {
+					who = FROM
+					value = 50
+				}
+			}
+			modifier = {
+				factor = 2.0
+				opinion = {
+					who = FROM
+					value = 75
+				}
+			}
+			modifier = {
+				factor = 2.0
+				opinion = {
+					who = FROM
+					value = 100
+				}
 			}
 		}
+		FROM = { clr_character_flag = requested_vassal_transfer }
 		random_vassal = {
 			limit = {
 				NOT = { character = FROM }
 				de_jure_liege = FROM
+				is_patrician = no
+				war = no
+				in_revolt = no
 			}
 			character_event = { id = 63002 tooltip = EVTTOOLTIP63002 }
 		}
@@ -177,6 +211,10 @@ character_event = {
 		name = EVTOPTB63001 # I think not
 		ai_chance = {
 			factor = 50
+			modifier = {
+				factor = 0
+				FROM = { ai = yes }
+			}
 			modifier = {
 				factor = 0.5
 				trait = charitable
@@ -209,11 +247,17 @@ character_event = {
 		}
 		ai_chance = { 
 			factor = 50
+			modifier = {
+				factor = 0
+				FROM = { ai = yes }
+			}
 		}
 		random_vassal = {
 			limit = {
 				NOT = { character = FROM }
 				de_jure_liege = FROM
+				war = no
+				in_revolt = no
 			}
 			opinion = {
 				who = ROOT
@@ -994,7 +1038,10 @@ letter_event = {
 	option = {
 		name = EVTOPTC63031 # Money? It's his duty!
 		trigger = {
-			NOT = { diplomacy = 9 }
+			OR = {
+				ai = no
+				NOT = { diplomacy = 9 }
+			}
 		}
 		ai_chance = { 
 			factor = 50
@@ -1125,24 +1172,31 @@ character_event = {
 	
 	trigger = {
 		independent = no
-		has_ambition = obj_gain_any_title
+		NOT = { has_character_flag = requested_de_jure_title }
+		NOT = { government = nomadic_government }
+		in_revolt = no
+		pf_war_flag_trigger = no
 		liege = {
-			war = no
-			NOT = { has_opinion_modifier = { who = ROOT modifier = requested_land } }
-			NOT = {
-				character = ROOT
-			}
-			demesne_size = 3
+			in_revolt = no
+			pf_war_flag_trigger = no
 			any_demesne_title = {
+				has_de_jure_pretension = ROOT
 				can_be_given_away = yes
 				lower_tier_than = PREV
-				NOT = { location = { is_capital = yes } }
+				NOT = {
+					AND = {
+						tier = count
+						location = {
+							is_capital = yes
+						}						
+					}
+				}
 			}
 		}
 	}
 	
 	mean_time_to_happen = {
-		months = 480
+		months = 120
 		modifier = {
 			factor = 0.5
 			trait = greedy
@@ -1169,9 +1223,17 @@ character_event = {
 		liege = {
 			random_demesne_title = {
 				limit = {
+					has_de_jure_pretension = ROOT
 					can_be_given_away = yes
 					lower_tier_than = PREV
-					NOT = { location = { is_capital = yes } }
+					NOT = {
+						AND = {
+							tier = count
+							location = {
+								is_capital = yes
+							}						
+						}
+					}
 				}
 				save_event_target_as = vassal_wanted_title
 			}
@@ -1181,14 +1243,8 @@ character_event = {
 	option = {
 		name = EVTOPTA63040 # Ask for the Title
 		ai_chance = { factor = 100 }
-		liege = {
-			opinion = {
-				who = ROOT
-				years = 2
-				modifier = requested_land
-			}
-		}
-		liege = { letter_event = { id = 63041 tooltip = EVTTOOLTIP63041 } }
+		set_character_flag = requested_de_jure_title
+		liege = { letter_event = { id = 63041 days = 4 tooltip = EVTTOOLTIP63041 } }
 	}
 	
 	option = {
@@ -1209,66 +1265,75 @@ letter_event = {
 	is_triggered_only = yes
 	
 	option = {
-		trigger = {
-			has_dlc = "Zeus"
-			NOT = { holds_favor_on = FROM }
-		}
-		name = EVTOPTD63041 # Accept the request
-		ai_chance = {
-			factor = 50
-			modifier = {
-				factor = 0
-				trait = greedy
-			}
-		}
-
-		add_favor = FROM
-
-		event_target:vassal_wanted_title = {
-			gain_title = FROM
-		}
-		
-		hidden_tooltip = {
-			FROM = { letter_event = { id = 63042 days = 1 } }
-		}
-	}
-
-	option = {
 		name = EVTOPTA63041 # Accept the request
-		ai_chance = {
+		ai_chance = { 
 			factor = 50
 			modifier = {
-				factor = 0
+				factor = 0.1
+				NOT = { has_character_flag = wants_duchy_title }
 				trait = greedy
 			}
 			modifier = {
-				factor = 0
+				factor = 2.0
+				NOT = { has_character_flag = wants_duchy_title }
+				NOT = { demesne_efficiency = 1.01 }
+			}
+			modifier = {
+				factor = 0.01
+				NOT = { has_character_flag = wants_duchy_title }
+				demesne_efficiency = 1.5
+			}
+			modifier = {
+				factor = 0.1
 				NOT = {
-					opinion = { who = FROM value = -20 }
+					opinion = {
+						who = FROM
+						value = -25
+					}
 				}
 			}
 			modifier = {
 				factor = 0.5
 				NOT = {
-					opinion = { who = FROM value = 25 }
+					opinion = {
+						who = FROM
+						value = 25
+					}
 				}
 			}
 			modifier = {
-				factor = 0.5
-				NOT = {
-					opinion = { who = FROM value = 50 }
+				factor = 2.0
+				opinion = {
+					who = FROM
+					value = 50
 				}
 			}
 			modifier = {
-				factor = 3
-				is_friend = FROM
+				factor = 2.0
+				opinion = {
+					who = FROM
+					value = 75
+				}
+			}
+			modifier = {
+				factor = 2.0
+				opinion = {
+					who = FROM
+					value = 100
+				}
 			}
 		}
-
+		FROM = { clr_character_flag = requested_de_jure_title }
 		event_target:vassal_wanted_title = {
 			gain_title = FROM
 		}
-		
+		if = {
+			limit = {
+				has_dlc = "Zeus"
+				NOT = { holds_favor_on = FROM }
+			}
+			add_favor = FROM
+		}
 		hidden_tooltip = {
 			FROM = { letter_event = { id = 63042 days = 1 } }
 		}
@@ -1277,6 +1342,13 @@ letter_event = {
 			who = FROM
 			months = 120
 		}
+		hidden_tooltip = {
+			FROM = {
+				set_defacto_liege = ROOT
+				pf_liege_change_effect = yes
+			}
+		}
+		clr_character_flag = wants_duchy_title
 	}
 	
 	option = {
@@ -1304,6 +1376,7 @@ letter_event = {
 			}
 			letter_event = { id = 63043 tooltip = EVTTOOLTIP63043 } 
 		}
+		clr_character_flag = wants_duchy_title
 	}
 	
 	option = {
@@ -1314,8 +1387,13 @@ letter_event = {
 		}
 		ai_chance = { 
 			factor = 1000
+			modifier = {
+				factor = 0.5
+				trait = charitable
+			}
 		}
 		FROM = { letter_event = { id = 63044 tooltip = EVTTOOLTIP63044 } }
+		clr_character_flag = wants_duchy_title
 	}
 }
 
@@ -1392,6 +1470,7 @@ character_event = {
 	trigger = {
 		host = {
 			is_liege_of = ROOT
+			war = no
 		}
 		liege = {
 			any_vassal = {
@@ -1399,6 +1478,7 @@ character_event = {
 				NOT = { trait = incapable }
 				NOT = { character = PREV }
 				OR = {
+					spouse = { character = ROOT }
 					is_friend = ROOT
 					AND = {
 						dynasty = ROOT
@@ -1407,9 +1487,26 @@ character_event = {
 				}
 			}
 		}
+		NOT = { has_character_flag = plea_for_mercy }
 	}
 	mean_time_to_happen = {
-		months = 240
+		months = 60
+		modifier = {
+			factor = 2
+			tier = baron
+		}
+		modifier = {
+			factor = 1.5
+			tier = count
+		}
+		modifier = {
+			factor = 0.5
+			tier = king
+		}
+		modifier = {
+			factor = 10
+			is_ruler = no
+		}
 		modifier = {
 			factor = 0.75
 			intrigue = 7
@@ -1430,6 +1527,7 @@ character_event = {
 					NOT = { trait = incapable }
 					NOT = { character = PREV }
 					OR = {
+						spouse = { character = ROOT }
 						is_friend = ROOT
 						AND = {
 							dynasty = ROOT
@@ -1440,6 +1538,7 @@ character_event = {
 				letter_event = { id = 63051 days = 4 tooltip = EVTTOOLTIP63051 }
 			}
 		}
+		set_character_flag = plea_for_mercy
 	}
 }
 
@@ -1497,9 +1596,12 @@ letter_event = {
 		ai_chance = { 
 			factor = 50
 			modifier = {
-				factor = 0.1
+				factor = 0.5
 				NOT = {
-					opinion = { who = FROM value = -20 }
+					opinion = {
+						who = FROM
+						value = -25
+					}
 				}
 			}
 		}
@@ -1511,7 +1613,10 @@ letter_event = {
 			factor = 50
 			modifier = {
 				factor = 0.5
-				opinion = { who = FROM value = 50 }
+				opinion = {
+					who = FROM
+					value = 0
+				}
 			}
 		}
 		
@@ -1551,7 +1656,19 @@ letter_event = {
 				months = 240
 				multiplier = 5
 			}
-			character_event = { id = 63055 tooltip = EVTTOOLTIP63055 } 
+		}
+		if = {
+			limit = { trait = just }
+			remove_trait = just
+		}
+
+		FROM = {
+			opinion = {
+				who = ROOT
+				modifier = opinion_arrest_attempt
+				months = 240
+			}
+			character_event = { id = 63055 tooltip = "EVTTOOLTIP63055" }
 		}
 	}
 	option = {
@@ -1586,6 +1703,11 @@ character_event = {
 	option = {
 		name = EVTOPTA63053 # Free at last!
 		FROM = { 
+			reverse_opinion = {
+				who = ROOT
+				modifier = opinion_merciful
+				months = 120
+			}
 			FROM = {
 				reverse_opinion = {
 					who = ROOT
@@ -1685,13 +1807,16 @@ character_event = {
 	only_rulers = yes
 	
 	trigger = {
-		NOT = { has_dlc = "Zeus" }
 		is_republic = yes
 		NOT = { wealth = 300 }
 		liege = {
 			NOT = { character = ROOT }
 			primary_title = {
-				NOT = { has_law = city_obligations_0 }
+				OR = {
+					has_law = city_obligations_2
+					has_law = city_obligations_3
+					has_law = city_obligations_4
+				}
 			}
 		}
 		
@@ -1774,27 +1899,24 @@ letter_event = {
 		}
 		if = {
 			limit = {
-				primary_title = { has_law = city_obligations_1 }
-			}
-			primary_title = { approve_law = city_obligations_0 }
-		}
-		if = {
-			limit = {
 				primary_title = { has_law = city_obligations_2 }
 			}
 			primary_title = { approve_law = city_obligations_1 }
+			break = yes
 		}
 		if = {
 			limit = {
 				primary_title = { has_law = city_obligations_3 }
 			}
 			primary_title = { approve_law = city_obligations_2 }
+			break = yes
 		}
 		if = {
 			limit = {
 				primary_title = { has_law = city_obligations_4 }
 			}
 			primary_title = { approve_law = city_obligations_3 }
+			break = yes
 		}
 	}
 	option = {
@@ -1812,27 +1934,24 @@ letter_event = {
 		}
 		if = {
 			limit = {
-				primary_title = { has_law = city_obligations_1 }
-			}
-			primary_title = { approve_law = city_obligations_0 }
-		}
-		if = {
-			limit = {
 				primary_title = { has_law = city_obligations_2 }
 			}
-			primary_title = { approve_law = city_obligations_1 }
+			primary_title = { add_law = city_obligations_1 }
+			break = yes
 		}
 		if = {
 			limit = {
 				primary_title = { has_law = city_obligations_3 }
 			}
-			primary_title = { approve_law = city_obligations_2 }
+			primary_title = { add_law = city_obligations_2 }
+			break = yes
 		}
 		if = {
 			limit = {
 				primary_title = { has_law = city_obligations_4 }
 			}
-			primary_title = { approve_law = city_obligations_3 }
+			primary_title = { add_law = city_obligations_3 }
+			break = yes
 		}
 	}
 	option = {
@@ -1930,6 +2049,11 @@ character_event = {
 	
 	is_triggered_only = yes
 	
+	trigger = {
+		demesne_size = 1
+		in_revolt = no
+	}
+	
 	option = {
 		name = EVTOPTA63100 # Become independent
 		trigger = {
@@ -1949,31 +2073,19 @@ character_event = {
 			factor = 50
 			modifier = {
 				factor = 0.25
-				is_tribal = yes
-				new_character = {
-					trait = strong
+				OR = {
+					is_tribal = yes
+					is_nomadic = yes
 				}
+				new_character = { trait = strong }
 			}
 			modifier = {
 				factor = 4
-				is_tribal = yes
-				new_character = {
-					trait = weak
+				OR = {
+					is_tribal = yes
+					is_nomadic = yes
 				}
-			}
-			modifier = {
-				factor = 0.25
-				is_nomadic = yes
-				new_character = {
-					trait = strong
-				}
-			}
-			modifier = {
-				factor = 4
-				is_nomadic = yes
-				new_character = {
-					trait = weak
-				}
+				new_character = { trait = weak }
 			}
 			modifier = {
 				factor = 0.5
@@ -1981,10 +2093,26 @@ character_event = {
 			}
 			modifier = {
 				factor = 0.5
+				trait = slothful
+			}
+			modifier = {
+				factor = 0.25
 				trait = content
 			}
 			modifier = {
-				factor = 10.0
+				factor = 0.5
+				trait = craven
+			}
+			modifier = {
+				factor = 0.5
+				trait = humble
+			}
+			modifier = {
+				factor = 1.5
+				trait = proud
+			}
+			modifier = {
+				factor = 5.0
 				trait = greedy
 			}
 			modifier = {
@@ -1992,21 +2120,49 @@ character_event = {
 				trait = ambitious
 			}
 			modifier = {
-				factor = 10.0
+				factor = 5.0
 				religion_group = pagan_group
 				is_reformed_religion = no
 			}
 			modifier = {
 				factor = 0.2
-				NOT = {
-					opinion = { who = liege value = 0 }
-				}
+				opinion = { who = liege value = 0 }
 			}
 			modifier = {
 				factor = 0.2
-				NOT = {
-					opinion = { who = liege value = 25 }
-				}
+				opinion = { who = liege value = 25 }
+			}
+			modifier = {
+				factor = 0.2
+				opinion = { who = liege value = 50 }
+			}
+			modifier = {
+				factor = 1.5
+				NOT = { opinion = { who = liege value = -25 } }
+			}
+			modifier = {
+				factor = 1.5
+				NOT = { opinion = { who = liege value = -50 } }
+			}
+			modifier = {
+				factor = 1.5
+				NOT = { opinion = { who = liege value = -75 } }
+			}
+			modifier = {
+				factor = 2
+				liege = { NOT = { religion = ROOT } }
+			}
+			modifier = {
+				factor = 5
+				liege = { NOT = { religion_group = ROOT } }
+			}
+			modifier = {
+				factor = 1.5
+				liege = { NOT = { culture = ROOT } }
+			}
+			modifier = {
+				factor = 2.5
+				liege = { NOT = { culture_group = ROOT } }
 			}
 		}
 		set_defacto_liege = THIS
@@ -2046,64 +2202,84 @@ character_event = {
 			factor = 50
 			modifier = {
 				factor = 0.25
-				is_tribal = yes
-				new_character = {
-					trait = strong
+				OR = {
+					is_tribal = yes
+					is_nomadic = yes
 				}
+				new_character = { trait = strong }
 			}
 			modifier = {
 				factor = 4
-				is_tribal = yes
-				new_character = {
-					trait = weak
+				OR = {
+					is_tribal = yes
+					is_nomadic = yes
 				}
+				new_character = { trait = weak }
+			}
+			modifier = {
+				factor = 0.5
+				trait = slothful
+			}
+			modifier = {
+				factor = 0.5
+				trait = humble
+			}
+			modifier = {
+				factor = 1.5
+				trait = proud
 			}
 			modifier = {
 				factor = 0.25
-				is_nomadic = yes
-				new_character = {
-					trait = strong
-				}
-			}
-			modifier = {
-				factor = 4
-				is_nomadic = yes
-				new_character = {
-					trait = weak
-				}
-			}
-			modifier = {
-				factor = 0.5
-				trait = just
-			}
-			modifier = {
-				factor = 0.5
 				trait = content
 			}
 			modifier = {
-				factor = 10.0
-				trait = greedy
-			}
-			modifier = {
-				factor = 10.0
+				factor = 2.0
 				trait = ambitious
 			}
 			modifier = {
-				factor = 10.0
+				factor = 5.0
 				religion_group = pagan_group
 				is_reformed_religion = no
 			}
 			modifier = {
-				factor = 0.2
-				NOT = {
-					opinion = { who = liege value = 0 }
-				}
+				factor = 2
+				liege = { NOT = { religion = ROOT } }
+			}
+			modifier = {
+				factor = 5
+				liege = { NOT = { religion_group = ROOT } }
+			}
+			modifier = {
+				factor = 1.5
+				liege = { NOT = { culture = ROOT } }
+			}
+			modifier = {
+				factor = 2.5
+				liege = { NOT = { culture_group = ROOT } }
 			}
 			modifier = {
 				factor = 0.2
-				NOT = {
-					opinion = { who = liege value = 25 }
-				}
+				opinion = { who = liege value = 0 }
+			}
+			modifier = {
+				factor = 0.2
+				opinion = { who = liege value = 25 }
+			}
+			modifier = {
+				factor = 0.2
+				opinion = { who = liege value = 50 }
+			}
+			modifier = {
+				factor = 1.5
+				NOT = { opinion = { who = liege value = -25 } }
+			}
+			modifier = {
+				factor = 1.5
+				NOT = { opinion = { who = liege value = -50 } }
+			}
+			modifier = {
+				factor = 1.5
+				NOT = { opinion = { who = liege value = -75 } }
 			}
 		}
 		liege = {
@@ -2149,6 +2325,25 @@ character_event = {
 	
 	option = {
 		name = EVTOPTA63101
+		FROM = {
+			any_demesne_title = {
+				limit = {
+					OR = {
+						tier = king
+						tier = emperor
+						is_primary_holder_title_tier = yes
+					}
+				}
+				if = {
+					limit = {
+						ROOT = {
+							NOT = { has_strong_claim = PREV }
+						}
+					}
+					add_claim = ROOT
+				}
+			}
+		}
 	}
 }
 
