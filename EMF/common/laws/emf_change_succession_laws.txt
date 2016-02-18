@@ -31,7 +31,80 @@ succession_laws = {
 		effect = {
 			emf_laws_change_succ_effect = yes
 			tooltip = { succession = gavelkind }
-			hidden_tooltip = { add_law = succ_gavelkind }
+			hidden_tooltip = {
+				set_title_flag = emf_succ_title
+				save_event_target_as = emf_succ_title
+				
+				#set opinion changes for heirs and pretenders
+				current_heir = { set_character_flag = emf_former_heir }
+				any_character = {
+					limit = { any_pretender_title = { title = event_target:changed_title } }
+					set_character_flag = emf_former_pretender
+				}
+				holder_scope = { character_event = { id = Plus.604 days = 1 } }
+				
+				#actually change the law
+				add_law = succ_gavelkind
+
+				holder_scope = {
+					#current heir is unhappy (they have to share) if they were the previous heir
+					event_target:changed_title = {
+						current_heir = {
+							if = { 
+								limit = { has_character_flag = former_heir }
+								opinion = {
+									who = PREVPREV
+									modifier = opinion_succ_law_change
+									months = 240
+								}
+							}
+						}
+					}
+					#legitimate children are happy
+					any_child = {
+						limit = {
+							NOR = {
+								trait = bastard
+								trait = monk
+								trait = nun
+								trait = disinherited
+								has_character_flag = former_heir
+								has_character_flag = former_pretender
+								any_heir_title = { title = event_target:changed_title }
+								any_pretender_title = { title = event_target:changed_title }
+								has_opinion_modifier = { who = PREV modifier = opinion_succ_law_change }
+								has_opinion_modifier = { who = PREV modifier = opinion_good_succ_law_change }
+								has_opinion_modifier = { who = PREV modifier = opinion_bad_succ_law_change 	}
+							}
+						}
+						opinion = {
+							who = PREV
+							modifier = opinion_good_succ_law_change
+							months = 240
+						}
+					}
+					#vassals are slightly upset
+					any_vassal = {
+						limit = {
+							OR = {
+								primary_title = { de_jure_liege_or_above = event_target:changed_title }
+								event_target:changed_title = { is_primary_holder_title = yes }
+								event_target:changed_title = { is_titular = yes }
+							}
+							NOR = {
+								has_opinion_modifier = { who = PREV modifier = opinion_succ_law_change }
+								has_opinion_modifier = { who = PREV modifier = opinion_good_succ_law_change }
+								has_opinion_modifier = { who = PREV modifier = opinion_bad_succ_law_change 	}
+							}
+						}
+						opinion = {
+							who = PREV
+							modifier = opinion_succ_law_change
+							months = 240
+						}
+					}
+				}
+			}
 		}
 		revoke_allowed = {
 			always = no
