@@ -19,6 +19,10 @@ character_event = {
 	hide_window = yes
 	is_triggered_only = yes
 	
+	only_independent = yes
+	
+	trigger = { has_landed_title = e_hip }
+	
 	immediate = {
 		any_playable_ruler = {
 			limit = {
@@ -297,8 +301,6 @@ character_event = {
 			}
 		}
 	}
-	
-	option = { name = OK }
 }
 
 
@@ -377,8 +379,6 @@ character_event = {
 			FROM = { set_title_flag = emf_ca_change }
 		}
 	}
-	
-	option = { name = OK }
 }
 
 
@@ -427,8 +427,6 @@ character_event = {
 			}
 		}
 	}
-	
-	option = { name = OK }
 }
 
 
@@ -467,8 +465,6 @@ character_event = {
 			}
 		}
 	}
-	
-	option = { name = OK }
 }
 
 
@@ -484,7 +480,7 @@ character_event = {
 # - opinion_succ_former_heir points to the former heir
 # - opinion_succ_former_pretender points to the former pretenders
 #
-# Fired from succ_adopt_* law effects with a delay of a day.
+# Fired from succ_adopt_* law effects with a delay of 1 day.
 character_event = {
 	id = emf_laws.10
 	
@@ -492,5 +488,403 @@ character_event = {
 	hide_window = yes
 	
 	immediate = {
+		random_demesne_title = { # Save our title...
+			limit = { has_title_flag = emf_succ_title }
+			clr_title_flag = emf_succ_title
+			save_event_target_as = emf_succ_title
+		}
+		
+		random_opinion_modifier_target = { # Save our former heir...
+			limit = { reverse_has_opinion_modifier = { who = PREV modifier = opinion_succ_former_heir } }
+			save_event_target_as = emf_former_heir
+		}
+		
+		event_target:emf_succ_title = { current_heir = { save_event_target_as = emf_heir } } # ... and current heir
+		
+		event_target:emf_former_heir = {
+			 # Former heir is now neither heir nor pretender
+			if = {
+				limit = {
+					NOT = { character = event_target:emf_heir }
+					NOT = { any_pretender_title = { title = event_target:emf_succ_title } }
+				}
+				remove_opinion = { who = ROOT modifier = opinion_succ_law_change }
+				remove_opinion = { who = ROOT modifier = opinion_good_succ_law_change }
+				remove_opinion = { who = ROOT modifier = opinion_bad_succ_law_change }
+				character_event = { id = emf_laws.11 } # Plus.605
+			}
+			
+			# Former heir is now pretender
+			if = {
+				limit = {
+					NOT = { character = event_target:emf_heir }
+					any_pretender_title = { title = event_target:emf_succ_title }
+				}
+				remove_opinion = { who = ROOT modifier = opinion_succ_law_change }
+				remove_opinion = { who = ROOT modifier = opinion_good_succ_law_change }
+				remove_opinion = { who = ROOT modifier = opinion_bad_succ_law_change }
+				character_event = { id = emf_laws.12 } # Plus.606
+			}
+		}
+		
+		# Former pretenders that are now neither heir nor pretender
+		any_opinion_modifier_target = {
+			limit = {
+				reverse_has_opinion_modifier = { who = PREV modifier = opinion_succ_former_pretender }
+				NOT = { character = event_target:emf_heir }
+				NOT = { any_pretender_title = { title = event_target:emf_succ_title } }
+			}
+			remove_opinion = { who = ROOT modifier = opinion_succ_law_change }
+			remove_opinion = { who = ROOT modifier = opinion_good_succ_law_change }
+			remove_opinion = { who = ROOT modifier = opinion_bad_succ_law_change }
+#			character_event = { id = emf_laws.13 } # Plus.607
+		}
+		
+		# The new heir
+		event_target:emf_heir = {
+			if = {
+				limit = { NOT = { character = event_target:emf_former_heir } }
+				remove_opinion = { who = ROOT modifier = opinion_succ_law_change }
+				remove_opinion = { who = ROOT modifier = opinion_good_succ_law_change }
+				remove_opinion = { who = ROOT modifier = opinion_bad_succ_law_change }
+#				character_event = { id = emf_laws.14 } # Plus.608
+			}
+		}
+		
+		# The new pretenders
+		any_character = {
+			limit = {
+				NOR = {
+					character = event_target:emf_former_heir
+					reverse_has_opinion_modifier = {
+						who = ROOT
+						modifier = opinion_succ_former_pretender
+					}
+				}
+				NOT = { character = event_target:emf_heir }
+				any_pretender_title = { title = event_target:emf_succ_title }
+			}
+			remove_opinion = { who = ROOT modifier = opinion_succ_law_change }
+			remove_opinion = { who = ROOT modifier = opinion_good_succ_law_change }
+			remove_opinion = { who = ROOT modifier = opinion_bad_succ_law_change }
+#			character_event = { id = emf_laws.15 } # Plus.609
+		}
+		
+		# Cleanup...
+		remove_opinion = { who = event_target:emf_former_heir modifier = opinion_succ_former_heir }
+		any_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = PREV modifier = opinion_succ_former_pretender } }
+			reverse_remove_opinion = { who = PREV modifier = opinion_succ_former_pretender }
+		}
+	}
+}
+
+# emf_laws.11 / Plus.605
+# A former heir is now neither the heir nor a pretender
+character_event = {
+	id = emf_laws.11
+	picture = GFX_evt_scandal
+	desc = EVTDESC_Plus_605
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_Plus_605 #So be it
+		trigger = {
+			NOR = {
+				trait = lunatic
+				trait = possessed
+			}
+		}
+		ai_chance = {
+			factor = 30
+			modifier = {
+				factor = 3
+				trait = content
+			}
+			modifier = {
+				factor = 2
+				trait = humble
+			}
+			modifier = {
+				factor = 1.5
+				trait = charitable
+			}
+			modifier = {
+				factor = 1.5
+				trait = patient
+			}
+			modifier = {
+				factor = 1.5
+				trait = trusting
+			}
+			modifier = {
+				factor = 0.5
+				trait = proud
+			}
+			modifier = {
+				factor = 0.25
+				trait = ambitious
+			}
+		}
+		opinion = { who = FROM modifier = opinion_bad_succ_law_change }
+		opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 2 months = 240 }
+		any_character = {
+			limit = { any_pretender_title = { title = event_target:emf_succ_title } }
+			reverse_opinion = { who = ROOT modifier = opinion_resentful months = 240 }
+		}
+		any_spouse = {
+			limit = {
+				NOT = { character = FROM }
+				NOT = { any_child = { character = event_target:emf_heir } }
+			}
+			hidden_tooltip = {
+				remove_opinion = { who = FROM modifier = opinion_bad_succ_law_change }
+				remove_opinion = { who = FROM modifier = opinion_good_succ_law_change }
+				remove_opinion = { who = FROM modifier = opinion_succ_law_change }
+			}
+			opinion = { who = FROM modifier = opinion_bad_succ_law_change }
+			opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 2 months = 240 }
+		}
+		any_child = {
+			limit = {
+				NOT = { character = FROM }
+				NOT = { any_child = { character = event_target:emf_heir } }
+				NOT = { any_spouse = { character = event_target:emf_heir } }
+			}
+			hidden_tooltip = {
+				remove_opinion = { who = FROM modifier = opinion_bad_succ_law_change }
+				remove_opinion = { who = FROM modifier = opinion_good_succ_law_change }
+				remove_opinion = { who = FROM modifier = opinion_succ_law_change }
+			}
+			opinion = { who = FROM modifier = opinion_bad_succ_law_change }
+			opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 2 months = 240 }
+		}
+	}
+	option = {
+		name = EVTOPTB_Plus_605 #This is an outrage!
+		ai_chance = {
+			factor = 70
+			modifier = {
+				factor = 3
+				trait = ambitious
+			}
+			modifier = {
+				factor = 2
+				trait = proud
+			}
+			modifier = {
+				factor = 1.5
+				trait = envious
+			}
+			modifier = {
+				factor = 1.5
+				trait = greedy
+			}
+			modifier = {
+				factor = 1.5
+				trait = wroth
+			}
+			modifier = {
+				factor = 1.5
+				trait = paranoid
+			}
+			modifier = {
+				factor = 0.5
+				trait = humble
+			}
+			modifier = {
+				factor = 0.25
+				trait = content
+			}
+		}
+		set_character_flag = emf_justified_claimant@event_target:emf_succ_title
+		opinion = { who = FROM modifier = succ_law_disinherit months = 240 }
+		opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 5 months = 240 }
+		event_target:emf_succ_title = { add_claim = ROOT }
+		any_character = {
+			limit = { any_pretender_title = { title = event_target:emf_succ_title } }
+			reverse_opinion = { who = ROOT modifier = opinion_resentful multiplier = 2 months = 240 }
+		}
+		any_spouse = {
+			limit = {
+				NOT = { character = FROM }
+				NOT = { any_child = { character = event_target:emf_heir } }
+			}
+			hidden_tooltip = {
+				remove_opinion = { who = FROM modifier = opinion_bad_succ_law_change }
+				remove_opinion = { who = FROM modifier = opinion_good_succ_law_change }
+				remove_opinion = { who = FROM modifier = opinion_succ_law_change }
+			}
+			opinion = { who = FROM modifier = opinion_bad_succ_law_change }
+			opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 5 months = 240 }
+		}
+		any_child = {
+			limit = {
+				NOT = { character = FROM }
+				NOT = { any_child = { character = event_target:emf_heir } }
+				NOT = { any_spouse = { character = event_target:emf_heir } }
+			}
+			hidden_tooltip = {
+				remove_opinion = { who = FROM modifier = opinion_bad_succ_law_change }
+				remove_opinion = { who = FROM modifier = opinion_good_succ_law_change }
+				remove_opinion = { who = FROM modifier = opinion_succ_law_change }
+			}
+			opinion = { who = FROM modifier = opinion_bad_succ_law_change }
+			opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 5 months = 240 }
+		}
+	}
+}
+
+# emf_laws.12 / Plus.606
+# A former heir is now pretender
+character_event = {
+	id = emf_laws.12
+	picture = "GFX_evt_scandal"
+	desc = "EVTDESC_Plus_606"
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = "EVTOPTA_Plus_605" #So be it
+		trigger = {
+			NOR = {
+				trait = lunatic
+				trait = possessed
+			}
+		}
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 3
+				trait = content
+			}
+			modifier = {
+				factor = 2
+				trait = humble
+			}
+			modifier = {
+				factor = 1.5
+				trait = charitable
+			}
+			modifier = {
+				factor = 1.5
+				trait = patient
+			}
+			modifier = {
+				factor = 1.5
+				trait = trusting
+			}
+			modifier = {
+				factor = 0.5
+				trait = proud
+			}
+			modifier = {
+				factor = 0.25
+				trait = ambitious
+			}
+		}
+		opinion = { who = FROM modifier = opinion_bad_succ_law_change }
+		opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 2 months = 120 }
+		hidden_tooltip = {
+			any_spouse = {
+				limit = {
+					NOT = { character = FROM }
+					NOT = { any_child = { character = event_target:emf_heir } }
+				}
+				hidden_tooltip = {
+					remove_opinion = { who = FROM modifier = opinion_bad_succ_law_change }
+					remove_opinion = { who = FROM modifier = opinion_good_succ_law_change }
+					remove_opinion = { who = FROM modifier = opinion_succ_law_change }
+				}
+				opinion = { who = FROM modifier = opinion_bad_succ_law_change }
+				opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 2 months = 240 }
+			}
+			any_child = {
+				limit = {
+					NOT = { character = FROM }
+					NOT = { any_child = { character = event_target:emf_heir } }
+					NOT = { any_spouse = { character = event_target:emf_heir } }
+				}
+				hidden_tooltip = {
+					remove_opinion = { who = FROM modifier = opinion_bad_succ_law_change }
+					remove_opinion = { who = FROM modifier = opinion_good_succ_law_change }
+					remove_opinion = { who = FROM modifier = opinion_succ_law_change }
+				}
+				opinion = { who = FROM modifier = opinion_bad_succ_law_change }
+				opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 2 months = 240 }
+			}
+		}
+	}
+	option = {
+		name = "EVTOPTB_Plus_605" #This is an outrage!
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 3
+				trait = ambitious
+			}
+			modifier = {
+				factor = 2
+				trait = proud
+			}
+			modifier = {
+				factor = 1.5
+				trait = envious
+			}
+			modifier = {
+				factor = 1.5
+				trait = greedy
+			}
+			modifier = {
+				factor = 1.5
+				trait = wroth
+			}
+			modifier = {
+				factor = 1.5
+				trait = paranoid
+			}
+			modifier = {
+				factor = 0.5
+				trait = humble
+			}
+			modifier = {
+				factor = 0.25
+				trait = content
+			}
+		}
+		set_character_flag = emf_justified_claimant@event_target:emf_succ_title
+		opinion = { who = FROM modifier = opinion_bad_succ_law_change multiplier = 2 }
+		opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 5 months = 240 }
+		event_target:emf_succ_title = { add_claim = ROOT }
+		hidden_tooltip = {
+			any_spouse = {
+				limit = {
+					NOT = { character = FROM }
+					NOT = { any_child = { character = event_target:emf_heir } }
+				}
+				hidden_tooltip = {
+					remove_opinion = { who = FROM modifier = opinion_bad_succ_law_change }
+					remove_opinion = { who = FROM modifier = opinion_good_succ_law_change }
+					remove_opinion = { who = FROM modifier = opinion_succ_law_change }
+				}
+				opinion = { who = FROM modifier = opinion_bad_succ_law_change }
+				opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 5 months = 240 }
+			}
+			any_child = {
+				limit = {
+					NOT = { character = FROM }
+					NOT = { any_child = { character = event_target:emf_heir } }
+					NOT = { any_spouse = { character = event_target:emf_heir } }
+				}
+				hidden_tooltip = {
+					remove_opinion = { who = FROM modifier = opinion_bad_succ_law_change }
+					remove_opinion = { who = FROM modifier = opinion_good_succ_law_change }
+					remove_opinion = { who = FROM modifier = opinion_succ_law_change }
+				}
+				opinion = { who = FROM modifier = opinion_bad_succ_law_change }
+				opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 5 months = 240 }
+			}
+		}
 	}
 }
