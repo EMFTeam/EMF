@@ -33,7 +33,9 @@ succession_laws = {
 			tooltip = { succession = gavelkind }
 			hidden_tooltip = {
 				save_event_target_as = emf_succ_title
-				set_title_flag = emf_succ_title
+				holder_scope = {
+					log = "INFO: succ_adopt_gavelkind: [This.GetTitledFirstName] (ID: [This.GetID]) changing law for the [emf_succ_title.GetFullBaseName]"
+				}
 				
 				# Mark current heir and pretenders so that they may be tracked here and in the succession
 				# law reaction events (briefly delayed)
@@ -54,28 +56,25 @@ succession_laws = {
 						}
 						reverse_add_opinion = { who = PREV modifier = opinion_succ_former_pretender }
 					}
-					character_event = { id = emf_laws.10 days = 1 }
 				}
 				
 				# Actually change the law now
 				add_law = succ_gavelkind
+				
+				current_heir = { save_event_target_as = emf_heir }
 
-				holder_scope = {					
+				holder_scope = {
+					# FIXME: Do we need to `recalc_succession = yes` to be sure that the new heirs &
+					# pretenders aren't stale? Probably not, since forcing a specific law by name already
+					# goes about distributing all the vanilla hard-coded opinions for law change, which
+					# implies that succession has been recalculated already. [This doesn't work when
+					# succession is set only via `succession = <type>`, however.]
+					
 					# Current heir is slightly upset if they were the previous heir (they have to share)
-					event_target:emf_succ_title = {
-						current_heir = {
-							if = { 
-								limit = {
-									reverse_has_opinion_modifier = {
-										who = PREVPREV
-										modifier = opinion_succ_former_heir
-									}
-								}
-								opinion = {
-									who = PREVPREV
-									modifier = opinion_succ_law_change
-								}
-							}
+					event_target:emf_heir = {
+						if = { 
+							limit = { character = event_target:emf_former_heir }
+							opinion = { who = PREVPREV modifier = opinion_succ_law_change }
 						}
 					}
 					# Legitimate children of same dynasty are happy
@@ -87,15 +86,12 @@ succession_laws = {
 								trait = bastard
 								trait = monk
 								trait = nun
-								reverse_has_opinion_modifier = {
-									who = PREVPREV
-									modifier = opinion_succ_former_heir
-								}
+								character = event_target:emf_former_heir
+								character = event_target:emf_heir
 								reverse_has_opinion_modifier = {
 									who = PREVPREV
 									modifier = opinion_succ_former_pretender
 								}
-								any_heir_title = { title = event_target:emf_succ_title }
 								any_pretender_title = { title = event_target:emf_succ_title }
 							}
 						}
@@ -114,6 +110,10 @@ succession_laws = {
 						opinion = { who = PREV modifier = opinion_succ_law_change }
 					}
 				}
+				
+				# Specfic, event-driven succession law change reactions (disinheritance, etc.)
+				set_title_flag = emf_succ_title
+				holder_scope = { character_event = { id = emf_laws.10 } }
 			}
 		}
 		revoke_allowed = {

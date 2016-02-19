@@ -487,6 +487,10 @@ character_event = {
 	is_triggered_only = yes
 	hide_window = yes
 	
+	trigger = {
+		is_alive = yes
+	}
+	
 	immediate = {
 		random_demesne_title = { # Save our title...
 			limit = { has_title_flag = emf_succ_title }
@@ -494,12 +498,33 @@ character_event = {
 			save_event_target_as = emf_succ_title
 		}
 		
+		if = {
+			limit = { NOT = { event_target:emf_succ_title = { always = yes } } }
+			log = "ERROR: emf_laws.10: Succesion law change title (emf_succ_title) not found in demesne of [Root.GetTitledName] (ID: [Root.GetID]); aborting!"
+			break = yes
+		}
+		
+		log = "DEBUG: emf_laws.10: Processing succession law change reactions for the [emf_succ_title.GetFullBaseName] held by [Root.GetTitledFirstName] (ID: [Root.GetID])..."
+		
+		event_target:emf_succ_title = { current_heir = { save_event_target_as = emf_heir } } # ... and its new heir
+		
+		if = {
+			limit = { NOT = { event_target:emf_heir = { always = yes } } }
+			log = "INFO: emf_laws.10: Succesion law change for the [emf_succ_title.GetFullBaseName] resulted in no known successor."
+		}
+		
 		random_opinion_modifier_target = { # Save our former heir...
 			limit = { reverse_has_opinion_modifier = { who = PREV modifier = opinion_succ_former_heir } }
 			save_event_target_as = emf_former_heir
 		}
 		
-		event_target:emf_succ_title = { current_heir = { save_event_target_as = emf_heir } } # ... and current heir
+		if = {
+			limit = { NOT = { event_target:emf_former_heir = { always = yes } } }
+			log = "INFO: emf_laws.10: No former heir for the [emf_succ_title.GetFullBaseName]."
+		}
+		
+		# Should the former heir have died or somehow not existed, emf_former_heir will be undefined, but that should
+		# work just fine for all of the uses below.
 		
 		event_target:emf_former_heir = {
 			 # Former heir is now neither heir nor pretender
@@ -508,9 +533,6 @@ character_event = {
 					NOT = { character = event_target:emf_heir }
 					NOT = { any_pretender_title = { title = event_target:emf_succ_title } }
 				}
-				remove_opinion = { who = ROOT modifier = opinion_succ_law_change }
-				remove_opinion = { who = ROOT modifier = opinion_good_succ_law_change }
-				remove_opinion = { who = ROOT modifier = opinion_bad_succ_law_change }
 				character_event = { id = emf_laws.11 } # Plus.605
 			}
 			
@@ -520,9 +542,6 @@ character_event = {
 					NOT = { character = event_target:emf_heir }
 					any_pretender_title = { title = event_target:emf_succ_title }
 				}
-				remove_opinion = { who = ROOT modifier = opinion_succ_law_change }
-				remove_opinion = { who = ROOT modifier = opinion_good_succ_law_change }
-				remove_opinion = { who = ROOT modifier = opinion_bad_succ_law_change }
 				character_event = { id = emf_laws.12 } # Plus.606
 			}
 		}
@@ -534,9 +553,6 @@ character_event = {
 				NOT = { character = event_target:emf_heir }
 				NOT = { any_pretender_title = { title = event_target:emf_succ_title } }
 			}
-			remove_opinion = { who = ROOT modifier = opinion_succ_law_change }
-			remove_opinion = { who = ROOT modifier = opinion_good_succ_law_change }
-			remove_opinion = { who = ROOT modifier = opinion_bad_succ_law_change }
 #			character_event = { id = emf_laws.13 } # Plus.607
 		}
 		
@@ -544,9 +560,6 @@ character_event = {
 		event_target:emf_heir = {
 			if = {
 				limit = { NOT = { character = event_target:emf_former_heir } }
-				remove_opinion = { who = ROOT modifier = opinion_succ_law_change }
-				remove_opinion = { who = ROOT modifier = opinion_good_succ_law_change }
-				remove_opinion = { who = ROOT modifier = opinion_bad_succ_law_change }
 #				character_event = { id = emf_laws.14 } # Plus.608
 			}
 		}
@@ -564,9 +577,6 @@ character_event = {
 					}
 				}
 			}
-			remove_opinion = { who = ROOT modifier = opinion_succ_law_change }
-			remove_opinion = { who = ROOT modifier = opinion_good_succ_law_change }
-			remove_opinion = { who = ROOT modifier = opinion_bad_succ_law_change }
 #			character_event = { id = emf_laws.15 } # Plus.609
 		}
 		
@@ -587,6 +597,10 @@ character_event = {
 	desc = EVTDESC_Plus_605
 	
 	is_triggered_only = yes
+	
+	immediate = {
+		emf_laws_remove_succ_change_opinion_effect = yes
+	}
 	
 	option = {
 		name = EVTOPTA_Plus_605 #So be it
@@ -638,11 +652,7 @@ character_event = {
 				NOT = { character = FROM }
 				NOT = { any_child = { character = event_target:emf_heir } }
 			}
-			hidden_tooltip = {
-				remove_opinion = { who = FROM modifier = opinion_bad_succ_law_change }
-				remove_opinion = { who = FROM modifier = opinion_good_succ_law_change }
-				remove_opinion = { who = FROM modifier = opinion_succ_law_change }
-			}
+			emf_laws_remove_succ_change_opinion_effect = yes
 			opinion = { who = FROM modifier = opinion_bad_succ_law_change }
 			opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 2 months = 240 }
 		}
@@ -652,11 +662,7 @@ character_event = {
 				NOT = { any_child = { character = event_target:emf_heir } }
 				NOT = { any_spouse = { character = event_target:emf_heir } }
 			}
-			hidden_tooltip = {
-				remove_opinion = { who = FROM modifier = opinion_bad_succ_law_change }
-				remove_opinion = { who = FROM modifier = opinion_good_succ_law_change }
-				remove_opinion = { who = FROM modifier = opinion_succ_law_change }
-			}
+			emf_laws_remove_succ_change_opinion_effect = yes
 			opinion = { who = FROM modifier = opinion_bad_succ_law_change }
 			opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 2 months = 240 }
 		}
@@ -711,11 +717,7 @@ character_event = {
 				NOT = { character = FROM }
 				NOT = { any_child = { character = event_target:emf_heir } }
 			}
-			hidden_tooltip = {
-				remove_opinion = { who = FROM modifier = opinion_bad_succ_law_change }
-				remove_opinion = { who = FROM modifier = opinion_good_succ_law_change }
-				remove_opinion = { who = FROM modifier = opinion_succ_law_change }
-			}
+			emf_laws_remove_succ_change_opinion_effect = yes
 			opinion = { who = FROM modifier = opinion_bad_succ_law_change }
 			opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 5 months = 240 }
 		}
@@ -725,11 +727,7 @@ character_event = {
 				NOT = { any_child = { character = event_target:emf_heir } }
 				NOT = { any_spouse = { character = event_target:emf_heir } }
 			}
-			hidden_tooltip = {
-				remove_opinion = { who = FROM modifier = opinion_bad_succ_law_change }
-				remove_opinion = { who = FROM modifier = opinion_good_succ_law_change }
-				remove_opinion = { who = FROM modifier = opinion_succ_law_change }
-			}
+			emf_laws_remove_succ_change_opinion_effect = yes
 			opinion = { who = FROM modifier = opinion_bad_succ_law_change }
 			opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 5 months = 240 }
 		}
@@ -744,6 +742,10 @@ character_event = {
 	desc = "EVTDESC_Plus_606"
 	
 	is_triggered_only = yes
+	
+	immediate = {
+		emf_laws_remove_succ_change_opinion_effect = yes
+	}
 	
 	option = {
 		name = "EVTOPTA_Plus_605" #So be it
@@ -792,11 +794,7 @@ character_event = {
 					NOT = { character = FROM }
 					NOT = { any_child = { character = event_target:emf_heir } }
 				}
-				hidden_tooltip = {
-					remove_opinion = { who = FROM modifier = opinion_bad_succ_law_change }
-					remove_opinion = { who = FROM modifier = opinion_good_succ_law_change }
-					remove_opinion = { who = FROM modifier = opinion_succ_law_change }
-				}
+				emf_laws_remove_succ_change_opinion_effect = yes
 				opinion = { who = FROM modifier = opinion_bad_succ_law_change }
 				opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 2 months = 240 }
 			}
@@ -806,11 +804,7 @@ character_event = {
 					NOT = { any_child = { character = event_target:emf_heir } }
 					NOT = { any_spouse = { character = event_target:emf_heir } }
 				}
-				hidden_tooltip = {
-					remove_opinion = { who = FROM modifier = opinion_bad_succ_law_change }
-					remove_opinion = { who = FROM modifier = opinion_good_succ_law_change }
-					remove_opinion = { who = FROM modifier = opinion_succ_law_change }
-				}
+				emf_laws_remove_succ_change_opinion_effect = yes
 				opinion = { who = FROM modifier = opinion_bad_succ_law_change }
 				opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 2 months = 240 }
 			}
@@ -863,11 +857,7 @@ character_event = {
 					NOT = { character = FROM }
 					NOT = { any_child = { character = event_target:emf_heir } }
 				}
-				hidden_tooltip = {
-					remove_opinion = { who = FROM modifier = opinion_bad_succ_law_change }
-					remove_opinion = { who = FROM modifier = opinion_good_succ_law_change }
-					remove_opinion = { who = FROM modifier = opinion_succ_law_change }
-				}
+				emf_laws_remove_succ_change_opinion_effect = yes
 				opinion = { who = FROM modifier = opinion_bad_succ_law_change }
 				opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 5 months = 240 }
 			}
@@ -877,11 +867,7 @@ character_event = {
 					NOT = { any_child = { character = event_target:emf_heir } }
 					NOT = { any_spouse = { character = event_target:emf_heir } }
 				}
-				hidden_tooltip = {
-					remove_opinion = { who = FROM modifier = opinion_bad_succ_law_change }
-					remove_opinion = { who = FROM modifier = opinion_good_succ_law_change }
-					remove_opinion = { who = FROM modifier = opinion_succ_law_change }
-				}
+				emf_laws_remove_succ_change_opinion_effect = yes
 				opinion = { who = FROM modifier = opinion_bad_succ_law_change }
 				opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 5 months = 240 }
 			}
