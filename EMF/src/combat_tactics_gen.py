@@ -266,7 +266,7 @@ good_charge_tactic = {
 		modifier = {
 			factor = 3
 			troops = {
-				who = knight
+				who = knights
 				value = 0.3
 			}
 		}
@@ -401,7 +401,7 @@ charge_tactic = {
 		modifier = {
 			factor = 3
 			troops = {
-				who = knight
+				who = knights
 				value = 0.3
 			}
 		}
@@ -536,7 +536,7 @@ bad_charge_tactic = {
 		modifier = {
 			factor = 3
 			troops = {
-				who = knight
+				who = knights
 				value = 0.3
 			}
 		}
