@@ -15,3 +15,6 @@ NDefines.NCharacter.TRIBAL_EMPTY_HOLDING_TAX_MULTIPLIER = 0.7   -- up from 0.5
 
 -- Nomad
 NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 1750 -- from 1250
+
+-- Military
+NDefines.NMilitary.SHATTERED_RETREAT_MAX_PROVINCES = 8
