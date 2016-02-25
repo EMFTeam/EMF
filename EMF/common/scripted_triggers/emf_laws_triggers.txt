@@ -1,4 +1,73 @@
 
+### CONVENIENCE TRIGGERS ###
+emf_laws_no_crown_law_title_trigger = {
+	custom_tooltip = {
+		text = emf_laws_ctt_no_crown_law_title
+		hidden_tooltip = { has_crown_law_title = no }
+	}
+}
+emf_laws_crownlaw_title_limited_ca_plus_trigger = {
+	custom_tooltip = {
+		text = emf_laws_ctt_crownlaw_title_limited_ca_plus
+		hidden_tooltip = {
+			crownlaw_title = {
+				OR = {
+					has_law = crown_authority_1
+					has_law = crown_authority_2
+					has_law = crown_authority_3
+					has_law = crown_authority_4
+				}
+			}
+		}
+	}
+}
+emf_laws_crownlaw_title_medium_ca_plus_trigger = {
+	custom_tooltip = {
+		text = emf_laws_ctt_crownlaw_title_medium_ca_plus
+		hidden_tooltip = {
+			crownlaw_title = {
+				OR = {
+					has_law = crown_authority_2
+					has_law = crown_authority_3
+					has_law = crown_authority_4
+				}
+			}
+		}
+	}
+}
+emf_laws_crownlaw_title_high_ca_plus_trigger = {
+	custom_tooltip = {
+		text = emf_laws_ctt_crownlaw_title_high_ca_plus
+		hidden_tooltip = {
+			crownlaw_title = {
+				OR = {
+					has_law = crown_authority_3
+					has_law = crown_authority_4
+				}
+			}
+		}
+	}
+}
+emf_laws_holder_has_late_adminstration_plus_trigger = {
+	custom_tooltip = {
+		text = emf_laws_ctt_holder_has_late_adminstration_plus_raw
+		hidden_tooltip = {
+			holder_scope = {
+				primary_title = {
+					OR = {
+						has_law = administration_1
+						has_law = administration_2
+					}
+				}
+			}
+		}
+	}
+}
+
+
+### SUCCESSION LAW CHANGES ###
+
+# A lot nicer-looking to the user than the direct-coded version
 emf_laws_change_succ_prestige_cost_trigger = {
 	OR = {
 		custom_tooltip = {
@@ -38,90 +107,170 @@ emf_laws_change_succ_prestige_cost_trigger = {
 		}
 	}
 }
-						
-emf_laws_cognatic_potential_trigger = {
+
+# Vassals are almost (always) upset by a succession law change; these are the ones that are affected:
+emf_laws_change_succ_affected_vassal_trigger = {
+	OR = {
+		event_target:emf_succ_title = {
+			OR = {
+				is_primary_holder_title = yes
+				is_titular = yes
+			}
+		}
+		capital_holding = { de_jure_liege_or_above = event_target:emf_succ_title }
+	}
+}
+
+# The succession law change reactions of the new heir, former heir, new pretenders, and former pretenders are all handled
+# by event and thus the succ_adopt_* effects should skip these characters in its blanket opinion effects. Note that we
+# don't use this for elective-style succession laws, because the new heir and pretenders will not really be valid for a bit,
+# and even so, it's subject to rapid change.
+emf_laws_change_succ_vip_trigger = {
+	OR = {
+		character = event_target:emf_heir
+		character = event_target:emf_former_heir
+		reverse_has_opinion_modifier = { who = event_target:emf_succ_changer modifier = opinion_succ_former_pretender }
+		any_pretender_title = { title = event_target:emf_succ_title }
+	}
+}
+
+# Additionally, as the succ_adopt_* effects hand-out blanket opinions, they do so in order of priority, and they mark each
+# "already reacted to this succession law change" character as they go with flags.
+#
+# Note that we distinguish the types of succession change reaction so that we may know which opinion modifier we've added
+# from the character to the succession law changer _for this law change only_ so that actual opinions may properly stack from
+# past reactions to law changes (alternative would be to check for the modifiers themselves, but that would not allow
+# coherent stacking across multiple law changes by the same ruler).
+emf_laws_change_succ_reaction_trigger = {
+	OR = {
+		has_character_flag = emf_mild_reaction
+		has_character_flag = emf_bad_reaction
+		has_character_flag = emf_good_reaction
+		has_character_flag = emf_bad2_reaction
+	}
+}
+
+
+# For the ai_adopt_* succession law change title decisions- "decisions/emf_succ_adopt_decisions.txt"
+emf_laws_succ_change_ai_potential_trigger = {
+	is_playable = yes
+	is_landed = yes
+	war = no
+	has_regent = no
+	ruled_years = 10
+	is_nomadic = no
+	ai = yes
+	NOR = {
+		any_vassal = {
+			OR = {
+				higher_real_tier_than = COUNT
+				AND = {
+					PREV = { lower_real_tier_than = EMPEROR }
+					higher_real_tier_than = BARON
+				}
+			}
+			OR = {
+				among_most_powerful_vassals = 5
+				relative_power_to_liege = 0.2
+				is_voter = yes
+			}
+			NOT = { opinion = { who = PREV value = -10 } }
+		}
+		AND = {
+			OR = {
+				has_character_flag = faction_court_unhappy
+				has_character_flag = faction_court_angry
+			}
+			any_vassal = {
+				leads_faction = faction_court
+				faction_power = { faction = faction_court power = 0.5 }
+			}
+		}
+		AND = {
+			OR = {
+				has_character_flag = faction_prosperity_unhappy
+				has_character_flag = faction_prosperity_angry
+			}
+			any_vassal = {
+				leads_faction = faction_prosperity
+				faction_power = { faction = faction_prosperity power = 0.5 }
+			}
+		}
+		AND = {
+			OR = {
+				has_character_flag = faction_glory_unhappy
+				has_character_flag = faction_glory_angry
+			}
+			any_vassal = {
+				leads_faction = faction_glory
+				faction_power = { faction = faction_glory power = 0.5 }
+			}
+		}
+		AND = {
+			OR = {
+				has_character_flag = faction_tradition_unhappy
+				has_character_flag = faction_tradition_angry
+			}
+			any_vassal = {
+				leads_faction = faction_tradition
+				faction_power = { faction = faction_tradition power = 0.5 }
+			}
+		}
+	}
+}
+
+
+emf_laws_succ_change_basic_ai_title_potential_trigger = {
+	OR = {
+		is_primary_holder_title = yes
+		higher_tier_than = DUKE
+	}
+	# Holder has never changed the succession law of this title during their lifetime
+	NOT = { holder_scope = { has_character_flag = changed_succession_@ROOT } }
+}
+
+
+# Used for most regular succession laws as PART of the potential. It's NOT common to every major succession type (e.g.,
+# primogeniture and turkish succession don't use it); it's just a convenience to clarify the succession laws code.
+emf_laws_succ_basic_potential_trigger = {
 	holder_scope = {
-		# Diff from vanilla:
-		# - removed some logically redundant code related to merchant republics
-		# - holders with a horde culture can be cognatic if a player
-		# - cosmetic conversion of the excluded character classes into a NOR
+		NOT = { religion_group = muslim }
 		OR = {
 			independent = yes
-			NOT = {
-				any_liege = {
-					holy_order = yes
-				}
+			NOR = {
+				any_liege = { holy_order = yes }
+				any_demesne_title = { is_vice_royalty = yes }
 			}
+		}
+	}
+	OR = {
+		is_landless_type_title = no
+		is_tribal_type_title = yes
+		temporary = yes
+	}
+	is_primary_type_title = no
+	is_vice_royalty = no
+}
+
+
+#### SUCCESSION LAW ADOPTION POTENTIAL & ALLOW TRIGGERS ####
+# These simply allow the AI succession law change logic and the succ_adopt_* laws to share the same code, 'lest they fall
+# out of sync otherwise.
+
+emf_laws_succ_adopt_gavelkind_potential_trigger = {
+	has_global_flag = EMF
+	NOT = { has_law = succ_gavelkind }
+	emf_laws_succ_basic_potential_trigger = yes
+	holder_scope = {
+		OR = {
+			is_tribal = no
+			NOT = { religion_group = pagan_group }
 		}
 		OR = {
-			NOR = {
-				religion_group = muslim
-				religion = aztec
-				religion = aztec_reformed
-				is_tribal = yes
-				is_nomadic = yes
-				is_merchant_republic = yes
-				is_patrician = yes
-				AND = {
-					has_horde_culture = yes
-					ai = yes
-				}
-			}
-			AND = {
-				has_dlc = "Zeus"
-				primary_title = {					
-					OR = {
-						has_law = status_of_women_3
-						has_law = status_of_women_4
-					}
-				}
-				OR = {
-					is_patrician = no
-					liege = {
-						primary_title = {
-							OR = {
-								has_law = true_cognatic_succession
-								has_law = cognatic_succession
-							}
-						}
-					}
-				}
-			}
+			is_feudal = yes
+			is_tribal = yes
 		}
+		in_revolt = no
 	}
-	OR = {
-		AND = {
-			tier = baron
-			is_theocracy = no
-			is_republic = no
-		}
-		holder_scope = {
-			is_theocracy = no
-			is_republic = no
-		}
-	}
-
-	# Here, we've made an exception to the vanilla rule for landless/primary-type
-	# titles if the title is temporary.  This should allow revolt titles to
-	# be Absolute Cognatic if full Gender Equality is enabled. Here, we do exclude
-	# adventurer titles (if that trigger even works-- I have my doubts) for safety,
-	# as I'm already unsure whether Absolute Cognatic won't have any weird side
-	# effects for revolt titles, and adventurers tend to be the wrong character
-	# type anyhow.
-	OR = {
-		AND = {
-			is_landless_type_title = no
-			is_primary_type_title = no
-		}
-		AND = {
-			has_global_flag = emf_gender_eq_law
-			temporary = yes
-			NOR = {
-				adventurer = yes
-				mercenary = yes
-				clan = yes
-				rebel = yes # major_revolt titles aren't rebel = yes
-			}
-		}
-	}
+	rebel = no
 }

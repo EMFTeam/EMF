@@ -9,6 +9,9 @@ NDefines.NDiplomacy.ASK_FOR_INVASION_INTERACTION_THRESHOLD_FOR_YES = 100
 NDefines.NDiplomacy.ASK_FOR_CLAIM_INTERACTION_PIETY = 50
 NDefines.NDiplomacy.ASK_FOR_CLAIM_INTERACTION_THRESHOLD_FOR_YES = 50
 
+-- Council
+NDefines.NCouncil.ENFORCE_PEACE_START_DELAY = 6    -- up from 3
+
 -- Infamy
 NDefines.NInfamy.REALM_SIZE_BASE_MODIFIER = 0.25   -- down from 1
 NDefines.NInfamy.REALM_SIZE_GROWTH_MODIFIER = 0.0  -- down from 0.125
