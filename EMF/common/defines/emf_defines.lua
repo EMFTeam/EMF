@@ -13,11 +13,8 @@ NDefines.NDiplomacy.ASK_FOR_CLAIM_INTERACTION_THRESHOLD_FOR_YES = 50
 NDefines.NCouncil.ENFORCE_PEACE_START_DELAY = 6    -- up from 3
 
 -- Infamy
-NDefines.NInfamy.REALM_SIZE_BASE_MODIFIER = 0.25   -- down from 1
 NDefines.NInfamy.REALM_SIZE_GROWTH_MODIFIER = 0.0  -- down from 0.125
-NDefines.NInfamy.WAR_REALM_CHANGE_VALUE = 0.3      -- down from 0.55
-NDefines.NInfamy.INHERITANCE_CHANGE_VALUE = 0.1    -- down from 0.15
-NDefines.NInfamy.VASSAL_CHANGE_VALUE = 0.15        -- down from 0.3
+NDefines.NInfamy.MAX_INFAMY_PER_WAR_PROVINCE = 8   -- down from 15
 
 -- Character
 NDefines.NCharacter.CHANGE_AMBITION_YEARS = 1
@@ -194,6 +191,7 @@ NDefines.NAI.REVOLT_OTHER_INDEP_RISK_CAP = 0
 NDefines.NAI.AI_ASSAULT_RATIO = 12
 NDefines.NAI.RAID_MAX_REALM_SIZE = 18
 NDefines.NAI.RAID_AGGRESSION = 22
+NDefines.NAI.COALITION_DISTANCE_MULTIPLIER = -1.5   -- up from -1.1
 
 -- RulerDesigner
 NDefines.NRulerDesigner.COST_ATTRIB = 0.0

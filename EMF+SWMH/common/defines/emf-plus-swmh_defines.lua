@@ -10,6 +10,9 @@ NDefines.NDiplomacy.CONCLAVE_VASSAL_LIMIT_EMPEROR_MULT = 35.0
 NDefines.NDiplomacy.MAX_PREP_INV_TARGET_HOLDINGS = 60   -- up from 40
 NDefines.NDiplomacy.MAX_PREP_INV_ATTACKER_HOLDINGS = 60 -- up from 40
 
+-- Infamy
+NDefines.NInfamy.REALM_SIZE_BASE_MODIFIER = 0.4   -- down from 1
+
 -- Character
 NDefines.NCharacter.TRIBAL_EMPTY_HOLDING_TAX_MULTIPLIER = 0.7   -- up from 0.5
 
@@ -18,3 +21,6 @@ NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 1750 -- from 1250
 
 -- Military
 NDefines.NMilitary.SHATTERED_RETREAT_MAX_PROVINCES = 8
+
+-- AI
+NDefines.NAI.COALITION_PROVINCE_MULTIPLIER = 0.5 -- down from 1.0
