@@ -60,7 +60,7 @@ character_event = {
 	is_triggered_only = yes
 
 	only_independent = yes
-	culture = hip_culture
+	only_women = yes
 
 	trigger = {
 		has_landed_title = e_hip
@@ -130,7 +130,48 @@ character_event = {
 }
 
 
-# emf_startup.3 FREE
+# emf_startup.3 [Ruler-Designed Player Character]
+#
+# Detect a ruler-designed character acquiring their titles upon game initialization
+# through on_new_holder_inheritance (neat trick from Rylock to workaround silly way
+# of inserting ruler-designed characters into an already-initialized game without
+# waiting for a maintenance event).
+#
+# Note that this might execute multiple times, not only due to the player manually causing
+# title inheritance before unpausing but also due to the _potential_ to inherit multiple
+# titles from the replaced character that are progressively higher-tier and thus each time
+# new primary holder title (in practice, it seems that the highest-tier title is inherited
+# first, however). Should that actually be a problem for anything running from this hook,
+# simply prevent multi-execution by setting a flag the first time. It is not presently
+# problematic.
+character_event = {
+	id = emf_startup.3
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+#	only_playable = yes
+	ai = no
+	
+	trigger = {
+		FROM = { is_primary_holder_title = yes }
+		# After the main on_startup but not before unpausing
+		has_global_flag = EMF
+		NOT = { had_global_flag = { flag = EMF days = 1 } }
+	}
+	
+	immediate = {
+		log = "DEBUG: emf_startup.3: day-1 player inheritance of [From.GetID] by [Root.GetID] from [FromFrom.GetID]: probably due to usage of ruler designer"
+		
+		# Remove any temp. age customization traits from Ruler Designer
+		remove_trait = age_1
+		remove_trait = age_2
+		remove_trait = age_4
+		remove_trait = age_8
+		remove_trait = age_16
+		remove_trait = age_32
+	}
+}
 
 
 # emf_startup.4
@@ -138,27 +179,23 @@ character_event = {
 # PB compatibility tweaks & setup
 character_event = {
 	id = emf_startup.4
-	desc = AI_EVENT
-	hide_window = yes
+	
 	is_triggered_only = yes
-
+	hide_window = yes
+	
 	immediate = {
 		set_global_flag = theme_system_reformed
+		
 		if = {
-			limit = {
-				year = 1066
-			}
+			limit = { year = 1066 }
 			clr_global_flag = theme_system_reformed
 		}
+		
 		if = {
-			limit = {
-				year = 1077
-			}
+			limit = { year = 1077 }
 			set_global_flag = rum_formed
 			k_anatolia = {
-				any_direct_de_jure_vassal_title = {
-					de_jure_liege = k_rum
-				}
+				any_direct_de_jure_vassal_title = { de_jure_liege = k_rum }
 			}
 		}
 
@@ -179,19 +216,13 @@ character_event = {
 
 		# Ensure the Persian Emperor doesn't hold the kingdom title too
 		if = {
-			limit = {
-				e_persia = {
-					owner = {
-						has_landed_title = k_persia
-					}
-				}
-			}
+			limit = { e_persia = { owner = { has_landed_title = k_persia } } }
 			k_persia = {
 				destroy_landed_title = THIS
 			}
 		}
 
-		# Ensure Egypt has no holder from 1066 until 1171
+		# Ensure Egypt has no holder from 1066 until 1171 # FIXME: Unnecessary
 		if = {
 			limit = {
 				k_egypt = { has_holder = yes }
@@ -203,8 +234,6 @@ character_event = {
 			}
 		}
 	}
-
-	option = { name = OK }
 }
 
 
@@ -605,7 +634,7 @@ character_event = {
 					PREV = { grant_title_no_opinion = ROOT }
 					if = {
 						limit = {
-							NOT = {
+							NOR = {
 								num_of_titles = 1
 								is_councillor = yes
 							}
@@ -622,7 +651,7 @@ character_event = {
 }
 
 
-# emf_startup.20
+# emf_startup.20 # FIXME: Remove if new RD detection method works (emf_startup.3)
 #
 # Remove age customizer traits within EVENT_PROCESS_OFFSET days of startup
 #
@@ -635,6 +664,8 @@ character_event = {
 	hide_window = yes
 
 	ai = no
+
+	trigger = { always = no }
 
 	mean_time_to_happen = {
 		days = 1
