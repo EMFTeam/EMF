@@ -9,14 +9,8 @@ character_event = {
 	is_triggered_only = yes
 
 	immediate = {
-		if = {
-			limit = {
-				NOT = {
-					k_sicily = {
-						de_jure_liege = e_byzantium # Only true for vanilla
-					}
-				}
-			}
+		if = { # Make sure we recognize SWMH ASAP.
+			limit = { NOT = { k_sicily = { de_jure_liege = e_byzantium } } } # Only true for vanilla
 			set_global_flag = SWMH
 		}
 
@@ -68,17 +62,9 @@ character_event = {
 	}
 
 	immediate = {
-		set_global_flag = EMF
-
 		# Prevent early mending of the Catholic Schism
 		if = {
-			limit = {
-				b_hagiasophia = {
-					owner = {
-						religion = catholic
-					}
-				}
-			}
+			limit = { b_hagiasophia = { owner = { religion = catholic } } }
 			k_orthodox = {
 				owner = {
 					b_hagiasophia = {
@@ -124,44 +110,42 @@ character_event = {
 
 		# Initialize dynlevy
 		character_event = { id = emf_dynlevy.0 }
-
+		
+		# Primary startup is done, so we raise the EMF flag.
+		set_global_flag = EMF
+		
 		narrative_event = { id = emf_startup.1 } # Welcome
 	}
 }
 
 
-# emf_startup.3 [Ruler-Designed Player Character]
+# emf_startup.3
 #
 # Detect a ruler-designed character acquiring their titles upon game initialization
 # through on_new_holder_inheritance (neat trick from Rylock to workaround silly way
 # of inserting ruler-designed characters into an already-initialized game without
 # waiting for a maintenance event).
 #
-# Note that this might execute multiple times, not only due to the player manually causing
-# title inheritance before unpausing but also due to the _potential_ to inherit multiple
-# titles from the replaced character that are progressively higher-tier and thus each time
-# new primary holder title (in practice, it seems that the highest-tier title is inherited
-# first, however). Should that actually be a problem for anything running from this hook,
-# simply prevent multi-execution by setting a flag the first time. It is not presently
-# problematic.
+# Technically this thing fires for a lot more than RDed characters, but is our secondary hook into
+# 2nd-stage campaign setup (setup which requires the presence of a possibly-RDed player's character
+# inserted into the game world).
 character_event = {
 	id = emf_startup.3
 	
 	is_triggered_only = yes
 	hide_window = yes
 	
-#	only_playable = yes
-	ai = no
+	only_playable = yes
+#	ai = no # Cannot use, because apparently the RD character is still AI at this point.
 	
 	trigger = {
 		FROM = { is_primary_holder_title = yes }
-		# After the main on_startup but not before unpausing
-		has_global_flag = EMF
-		NOT = { had_global_flag = { flag = EMF days = 1 } }
+		has_global_flag = EMF # After the main on_startup only ...
+		NOT = { had_global_flag = { flag = EMF days = 1 } } # ... but not before unpausing
 	}
 	
 	immediate = {
-		log = "DEBUG: emf_startup.3: day-1 player inheritance of [From.GetID] by [Root.GetID] from [FromFrom.GetID]: probably due to usage of ruler designer"
+		log = "DEBUG: emf_startup.3: day-1 inheritance of [From.GetID] by [Root.GetID] from [FromFrom.GetID]"
 		
 		# Remove any temp. age customization traits from Ruler Designer
 		remove_trait = age_1
@@ -647,40 +631,6 @@ character_event = {
 
 		# Tail-recurse
 		repeat_event = { id = emf_startup.13 }
-	}
-}
-
-
-# emf_startup.20 # FIXME: Remove if new RD detection method works (emf_startup.3)
-#
-# Remove age customizer traits within EVENT_PROCESS_OFFSET days of startup
-#
-# Due to weirdness with the way ruler designer characters are placed into
-# the game in place of a historical character, it actually appears to be
-# impossible to remove these traits immediately upon startup (either via
-# the welcome event or the on_startup on_action).
-character_event = {
-	id = emf_startup.20
-	hide_window = yes
-
-	ai = no
-
-	trigger = { always = no }
-
-	mean_time_to_happen = {
-		days = 1
-	}
-
-	option = {
-		name = OK
-
-		# Remove any temp. age customization traits from Ruler Designer
-		remove_trait = age_1
-		remove_trait = age_2
-		remove_trait = age_4
-		remove_trait = age_8
-		remove_trait = age_16
-		remove_trait = age_32
 	}
 }
 
