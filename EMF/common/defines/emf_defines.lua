@@ -9,12 +9,16 @@ NDefines.NDiplomacy.ASK_FOR_INVASION_INTERACTION_THRESHOLD_FOR_YES = 100
 NDefines.NDiplomacy.ASK_FOR_CLAIM_INTERACTION_PIETY = 50
 NDefines.NDiplomacy.ASK_FOR_CLAIM_INTERACTION_THRESHOLD_FOR_YES = 50
 
+NDefines.NDiplomacy.DEFENSIVE_PACT_THREAT_LIMIT = 0.15 -- up from 0.05 (5%), min. Threat required for defensive pacts to exist
+NDefines.NDiplomacy.DEFENSIVE_PACT_MAX_RANGE = 300     -- down from 400
+
 -- Council
 NDefines.NCouncil.ENFORCE_PEACE_START_DELAY = 6    -- up from 3
+NDefines.NCouncil.LAW_VOTE_CHANGE_TIME_LIMIT = 2   -- up from 1
 
 -- Infamy
 NDefines.NInfamy.REALM_SIZE_GROWTH_MODIFIER = 0.0  -- down from 0.125
-NDefines.NInfamy.MAX_INFAMY_PER_WAR_PROVINCE = 8   -- down from 15
+NDefines.NInfamy.MAX_INFAMY_PER_WAR_PROVINCE = 5   -- down from 15
 
 -- Character
 NDefines.NCharacter.CHANGE_AMBITION_YEARS = 1
