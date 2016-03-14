@@ -173,461 +173,290 @@ emf_laws_change_succ_basic_effect = {
 	pf_save_old_succ_law_effect = yes
 }
 
-emf_laws_succ_adopt_gavelkind_effect = {
-	emf_laws_change_succ_basic_effect = yes
-	tooltip = { succession = gavelkind }
-	hidden_tooltip = {
-		save_event_target_as = emf_succ_title
-		holder_scope = { save_event_target_as = emf_succ_changer }
-		
-		log = "INFO: succ_adopt_gavelkind: [emf_succ_changer.GetTitledFirstName] (ID: [emf_succ_changer.GetID]) changing law for the [emf_succ_title.GetFullBaseName]"
-		
-		# Mark current heir and pretenders so that they may be tracked after law change
-		emf_laws_change_succ_save_contenders_effect = yes
-		
-		# Actually change the law now
-		add_law = succ_gavelkind
-		
-		current_heir = { save_event_target_as = emf_heir }
+emf_laws_succ_gavelkind_reactions_effect = {
+	current_heir = { save_event_target_as = emf_heir }
 
-		holder_scope = {
-			# Vassals are slightly upset
-			any_vassal = {
-				limit = {
-					emf_laws_change_succ_affected_vassal_trigger = yes
-					emf_laws_change_succ_vip_trigger = no
-				}
+	holder_scope = {
+		# Vassals are slightly upset
+		any_vassal = {
+			limit = {
+				emf_laws_change_succ_affected_vassal_trigger = yes
+				emf_laws_change_succ_vip_trigger = no
+			}
+			emf_laws_change_succ_mild_reaction_effect = yes
+		}
+		# Legitimate children are happy
+		any_child = {
+			limit = {
+				emf_can_inherit_trigger = yes
+				emf_laws_change_succ_vip_trigger = no
+			}
+			emf_laws_change_succ_good_reaction_effect = yes
+		}
+		# Current heir is slightly upset if they were the previous heir (they have to share)
+		event_target:emf_heir = {
+			if = {
+				limit = { character = event_target:emf_former_heir }
 				emf_laws_change_succ_mild_reaction_effect = yes
-			}
-			# Legitimate children are happy
-			any_child = {
-				limit = {
-					emf_can_inherit_trigger = yes
-					emf_laws_change_succ_vip_trigger = no
-				}
-				emf_laws_change_succ_good_reaction_effect = yes
-			}
-			# Current heir is slightly upset if they were the previous heir (they have to share)
-			event_target:emf_heir = {
-				if = {
-					limit = { character = event_target:emf_former_heir }
-					emf_laws_change_succ_mild_reaction_effect = yes
-				}
 			}
 		}
-		
-		# Specfic, event-driven succession law change reactions for the new heir, the former heir,
-		# the former pretenders, and the new pretenders.
-		set_title_flag = emf_succ_title
-		holder_scope = { character_event = { id = emf_laws.10 } }
-		
-		emf_laws_change_succ_cleanup_effect = yes
 	}
+	
+	# Specfic, event-driven succession law change reactions for the new heir, the former heir,
+	# the former pretenders, and the new pretenders.
+	set_title_flag = emf_succ_title
+	holder_scope = { character_event = { id = emf_laws.10 } }
+	
+	emf_laws_change_succ_cleanup_effect = yes
 }
 
-emf_laws_succ_adopt_elective_gavelkind_effect = {
-	emf_laws_change_succ_basic_effect = yes
-	tooltip = { succession = elective_gavelkind }
-	hidden_tooltip = {
-		save_event_target_as = emf_succ_title
-		holder_scope = { save_event_target_as = emf_succ_changer }
-		
-		log = "INFO: succ_adopt_elective_gavelkind: [emf_succ_changer.GetTitledFirstName] (ID: [emf_succ_changer.GetID]) changing law for the [emf_succ_title.GetFullBaseName]"
+emf_laws_succ_elective_gavelkind_reactions_effect = {
+	current_heir = { save_event_target_as = emf_heir }
 
-		emf_laws_change_succ_save_contenders_effect = yes
-		add_law = succ_elective_gavelkind
-		current_heir = { save_event_target_as = emf_heir }
-
-		holder_scope = {
-			# Vassals are slightly upset
-			any_vassal = {
-				limit = {
-					emf_laws_change_succ_affected_vassal_trigger = yes
-					emf_laws_change_succ_vip_trigger = no
-				}
-				emf_laws_change_succ_mild_reaction_effect = yes
+	holder_scope = {
+		# Vassals are slightly upset
+		any_vassal = {
+			limit = {
+				emf_laws_change_succ_affected_vassal_trigger = yes
+				emf_laws_change_succ_vip_trigger = no
 			}
-			# Dynasty members are happy
-			any_dynasty_member = {
+			emf_laws_change_succ_mild_reaction_effect = yes
+		}
+		# Dynasty members are happy
+		any_dynasty_member = {
+			limit = {
+				emf_laws_change_succ_vip_trigger = no
+			}
+			emf_laws_change_succ_good_reaction_effect = yes
+		}
+		# The former pretenders are upset if not of the ruler's dynasty
+		any_opinion_modifier_target = {
+			limit = {
+				reverse_has_opinion_modifier = {
+					who = PREV
+					modifier = opinion_succ_former_pretender
+				}
+				NOT = { dynasty = event_target:emf_succ_changer }
+			}
+			emf_laws_change_succ_bad_reaction_effect = yes
+			event_target:emf_succ_title = {
+				if = {
+					limit = { NOT = { claimed_by = PREV } }
+					add_weak_claim = PREV
+				}
+			}
+			any_spouse = {
 				limit = {
 					emf_laws_change_succ_vip_trigger = no
-				}
-				emf_laws_change_succ_good_reaction_effect = yes
-			}
-			# The former pretenders are upset if not of the ruler's dynasty
-			any_opinion_modifier_target = {
-				limit = {
-					reverse_has_opinion_modifier = {
-						who = PREV
-						modifier = opinion_succ_former_pretender
-					}
 					NOT = { dynasty = event_target:emf_succ_changer }
 				}
 				emf_laws_change_succ_bad_reaction_effect = yes
-				event_target:emf_succ_title = {
-					if = {
-						limit = { NOT = { claimed_by = PREV } }
-						add_weak_claim = PREV
-					}
-				}
-				any_spouse = {
-					limit = {
-						emf_laws_change_succ_vip_trigger = no
-						NOT = { dynasty = event_target:emf_succ_changer }
-					}
-					emf_laws_change_succ_bad_reaction_effect = yes
-				}
-				any_child = {
-					limit = {
-						emf_can_inherit_trigger = yes
-						emf_laws_change_succ_vip_trigger = no
-						NOT = { dynasty = event_target:emf_succ_changer }
-					}
-					emf_laws_change_succ_bad_reaction_effect = yes
-				}
 			}
-			# The former heir is upset if not of the ruler's dynasty
-			event_target:emf_former_heir = {
-				if = {
-					limit = { NOT = { dynasty = event_target:emf_succ_changer } }
-					event_target:emf_succ_title = { add_claim = PREV }
-					emf_laws_change_succ_terrible_reaction_effect = yes
-					any_spouse = {
-						limit = {
-							emf_laws_change_succ_vip_trigger = no
-							NOT = { dynasty = event_target:emf_succ_changer }
-						}
-						emf_laws_change_succ_terrible_reaction_effect = yes
-					}
-					any_child = {
-						limit = {
-							emf_can_inherit_trigger = yes
-							emf_laws_change_succ_vip_trigger = no
-							NOT = { dynasty = event_target:emf_succ_changer }
-						}
-						emf_laws_change_succ_terrible_reaction_effect = yes
-					}
-				}
-			}
-		}
-		
-		emf_laws_change_succ_cleanup_effect = yes
-	}
-}
-
-emf_laws_succ_adopt_seniority_effect = {
-	emf_laws_change_succ_basic_effect = yes
-	tooltip = { succession = seniority }
-	hidden_tooltip = {
-		save_event_target_as = emf_succ_title
-		holder_scope = { save_event_target_as = emf_succ_changer }
-		
-		log = "INFO: succ_adopt_seniority: [emf_succ_changer.GetTitledFirstName] (ID: [emf_succ_changer.GetID]) changing law for the [emf_succ_title.GetFullBaseName]"
-		
-		emf_laws_change_succ_save_contenders_effect = yes
-		add_law = succ_seniority
-		current_heir = { save_event_target_as = emf_heir }
-
-		holder_scope = {
-			# Vassals are slightly upset
-			any_vassal = {
-				limit = {
-					emf_laws_change_succ_affected_vassal_trigger = yes
-					emf_laws_change_succ_vip_trigger = no
-				}
-				emf_laws_change_succ_mild_reaction_effect = yes
-			}
-			# Dynasty members are happy
-			any_dynasty_member = {
-				limit = {
-					emf_laws_change_succ_vip_trigger = no
-				}
-				emf_laws_change_succ_good_reaction_effect = yes
-			}
-			# Children that can inherit are angry
 			any_child = {
 				limit = {
 					emf_can_inherit_trigger = yes
 					emf_laws_change_succ_vip_trigger = no
+					NOT = { dynasty = event_target:emf_succ_changer }
 				}
 				emf_laws_change_succ_bad_reaction_effect = yes
 			}
 		}
-		
-		# Specfic, event-driven succession law change reactions for the new heir, the former heir,
-		# the former pretenders, and the new pretenders.
-		set_title_flag = emf_succ_title
-		holder_scope = { character_event = { id = emf_laws.10 } }
-		
-		emf_laws_change_succ_cleanup_effect = yes
-	}
-}
-
-emf_laws_succ_adopt_primogeniture_effect = {
-	emf_laws_change_succ_basic_effect = yes
-	tooltip = { succession = primogeniture }
-	hidden_tooltip = {
-		save_event_target_as = emf_succ_title
-		holder_scope = { save_event_target_as = emf_succ_changer }
-		
-		log = "INFO: succ_adopt_primogeniture: [emf_succ_changer.GetTitledFirstName] (ID: [emf_succ_changer.GetID]) changing law for the [emf_succ_title.GetFullBaseName]"
-		
-		emf_laws_change_succ_save_contenders_effect = yes
-		add_law = succ_primogeniture
-		current_heir = { save_event_target_as = emf_heir }
-
-		holder_scope = {
-			# Vassals are slightly upset
-			any_vassal = {
-				limit = {
-					emf_laws_change_succ_affected_vassal_trigger = yes
-					emf_laws_change_succ_vip_trigger = no
-				}
-				emf_laws_change_succ_mild_reaction_effect = yes
-			}
-			# Dynasty members are slightly upset
-			any_dynasty_member = {
-				limit = {
-					emf_laws_change_succ_vip_trigger = no
-				}
-				emf_laws_change_succ_mild_reaction_effect = yes
-			}
-			# Legitimate children are angry
-			any_child = {
-				limit = {
-					emf_can_inherit_trigger = yes
-					emf_laws_change_succ_vip_trigger = no
-				}
-				emf_laws_change_succ_bad_reaction_effect = yes
-			}
-			# Heir is happy
-			event_target:emf_heir = { emf_laws_change_succ_good_reaction_effect = yes }
-		}
-		
-		set_title_flag = emf_succ_title
-		holder_scope = { character_event = { id = emf_laws.10 } }
-		emf_laws_change_succ_cleanup_effect = yes
-	}
-}
-
-emf_laws_succ_adopt_feudal_elective_effect = {
-	emf_laws_change_succ_basic_effect = yes
-	tooltip = { succession = feudal_elective }
-	hidden_tooltip = {
-		save_event_target_as = emf_succ_title
-		holder_scope = { save_event_target_as = emf_succ_changer }
-		
-		log = "INFO: succ_adopt_feudal_elective: [emf_succ_changer.GetTitledFirstName] (ID: [emf_succ_changer.GetID]) changing law for the [emf_succ_title.GetFullBaseName]"
-		
-		emf_laws_change_succ_save_contenders_effect = yes
-		add_law = succ_feudal_elective
-		current_heir = { save_event_target_as = emf_heir }
-
-		holder_scope = {
-			# Vassals are slightly upset
-			any_vassal = {
-				limit = {
-					emf_laws_change_succ_affected_vassal_trigger = yes
-					emf_laws_change_succ_vip_trigger = no
-				}
-				emf_laws_change_succ_mild_reaction_effect = yes
-			}
-			# Electors are happy
-			any_vassal = {
-				limit = {
-					emf_laws_change_succ_vip_trigger = no
-					OR = {
-						AND = {
-							event_target:emf_succ_title = { tier = EMPEROR }
-							higher_real_tier_than = COUNT
-							OR = {
-								event_target:emf_succ_title = { is_titular = yes }
-								any_demesne_title = {
-									higher_tier_than = COUNT
-									de_jure_liege_or_above = event_target:emf_succ_title
-								}
-							}
-						}
-						AND = {
-							event_target:emf_succ_title = { tier = KING }
-							real_tier = DUKE
-							OR = {
-								event_target:emf_succ_title = { is_titular = yes }
-								any_demesne_title = {
-									tier = DUKE
-									de_jure_liege = event_target:emf_succ_title
-								}
-							}
-						}
-						AND = {
-							event_target:emf_succ_title = { tier = DUKE }
-							real_tier = COUNT
-							OR = {
-								event_target:emf_succ_title = { is_titular = yes }
-								any_demesne_title = {
-									tier = COUNT
-									de_jure_liege = event_target:emf_succ_title
-								}
-							}
-						}
-						AND = {
-							event_target:emf_succ_title = { tier = COUNT }
-							real_tier = BARON
-							any_demesne_title = {
-								de_jure_liege = event_target:emf_succ_title
-							}
-						}
-					}
-				}
-				emf_laws_change_succ_good_reaction_effect = yes
-			}
-			# Dynasty members are slightly upset
-			any_dynasty_member = {
-				limit = {
-					emf_laws_change_succ_vip_trigger = no
-				}
-				emf_laws_change_succ_mild_reaction_effect = yes
-			}
-			# Legitimate children are angry
-			any_child = {
-				limit = {
-					emf_can_inherit_trigger = yes
-					emf_laws_change_succ_vip_trigger = no
-				}
-				emf_laws_change_succ_bad_reaction_effect = yes
-			}
-			# The former pretenders are upset
-			any_opinion_modifier_target = {
-				limit = {
-					reverse_has_opinion_modifier = {
-						who = PREV
-						modifier = opinion_succ_former_pretender
-					}
-				}
-				emf_laws_change_succ_bad_reaction_effect = yes
-				event_target:emf_succ_title = {
-					if = {
-						limit = { NOT = { claimed_by = PREV } }
-						add_weak_claim = PREV
-					}
-				}
-				any_spouse = {
-					limit = { emf_laws_change_succ_vip_trigger = no }
-					emf_laws_change_succ_bad_reaction_effect = yes
-				}
-				any_child = {
-					limit = {
-						emf_can_inherit_trigger = yes
-						emf_laws_change_succ_vip_trigger = no
-					}
-					emf_laws_change_succ_bad_reaction_effect = yes
-				}
-			}
-			# The former heir is upset
-			event_target:emf_former_heir = {
-				emf_laws_change_succ_bad_reaction_effect = yes
+		# The former heir is upset if not of the ruler's dynasty
+		event_target:emf_former_heir = {
+			if = {
+				limit = { NOT = { dynasty = event_target:emf_succ_changer } }
 				event_target:emf_succ_title = { add_claim = PREV }
+				emf_laws_change_succ_terrible_reaction_effect = yes
 				any_spouse = {
-					limit = { emf_laws_change_succ_vip_trigger = no }
-					emf_laws_change_succ_bad_reaction_effect = yes
+					limit = {
+						emf_laws_change_succ_vip_trigger = no
+						NOT = { dynasty = event_target:emf_succ_changer }
+					}
+					emf_laws_change_succ_terrible_reaction_effect = yes
 				}
 				any_child = {
 					limit = {
 						emf_can_inherit_trigger = yes
 						emf_laws_change_succ_vip_trigger = no
+						NOT = { dynasty = event_target:emf_succ_changer }
 					}
-					emf_laws_change_succ_bad_reaction_effect = yes
+					emf_laws_change_succ_terrible_reaction_effect = yes
 				}
 			}
 		}
-		
-		emf_laws_change_succ_cleanup_effect = yes
 	}
+	
+	emf_laws_change_succ_cleanup_effect = yes
 }
 
-emf_laws_succ_adopt_tanistry_effect = {
-	emf_laws_change_succ_basic_effect = yes
-	tooltip = { succession = tanistry }
-	hidden_tooltip = {
-		save_event_target_as = emf_succ_title
-		holder_scope = { save_event_target_as = emf_succ_changer }
-		
-		log = "INFO: succ_adopt_tanistry: [emf_succ_changer.GetTitledFirstName] (ID: [emf_succ_changer.GetID]) changing law for the [emf_succ_title.GetFullBaseName]"
-		
-		emf_laws_change_succ_save_contenders_effect = yes
-		add_law = succ_tanistry
-		current_heir = { save_event_target_as = emf_heir }
+emf_laws_succ_seniority_reactions_effect = {
+	current_heir = { save_event_target_as = emf_heir }
 
-		# FIXME: I'm just guessing about Tanistry's behavior from the little, imprecise, and likely
-		# inaccurate info on the CKII Wiki.
-
-		holder_scope = {
-			# Vassals are slightly upset
-			any_vassal = {
-				limit = {
-					emf_laws_change_succ_affected_vassal_trigger = yes
-					emf_laws_change_succ_vip_trigger = no
-				}
-				emf_laws_change_succ_mild_reaction_effect = yes
+	holder_scope = {
+		# Vassals are slightly upset
+		any_vassal = {
+			limit = {
+				emf_laws_change_succ_affected_vassal_trigger = yes
+				emf_laws_change_succ_vip_trigger = no
 			}
-			# Elector vassals are happy.
-			# Regarding Tanistry, my assumptions are that empire-tier titles have king- and
-			# duke-tier electors, king-tier titles have duke- and count-tier electors, duke-tier
-			# titles have count- and baron-tier electors, and count-tier titles have baron-tier
-			# electors.
-			any_vassal = {
-				limit = {
-					emf_laws_change_succ_vip_trigger = no
-					OR = {
-						AND = {
-							event_target:emf_succ_title = { tier = EMPEROR }
-							higher_real_tier_than = COUNT
-							OR = {
-								event_target:emf_succ_title = { is_titular = yes }
-								any_demesne_title = {
-									higher_tier_than = COUNT
-									de_jure_liege_or_above = event_target:emf_succ_title
-								}
-							}
-						}
-						AND = {
-							event_target:emf_succ_title = { tier = KING }
-							higher_real_tier_than = BARON
-							OR = {
-								event_target:emf_succ_title = { is_titular = yes }
-								any_demesne_title = {
-									higher_tier_than = BARON
-									de_jure_liege_or_above = event_target:emf_succ_title
-								}
-							}
-						}
-						AND = {
-							event_target:emf_succ_title = { tier = DUKE }
-							OR = {
-								event_target:emf_succ_title = { is_titular = yes }
-								any_demesne_title = {
-									de_jure_liege_or_above = event_target:emf_succ_title
-								}
-							}
-						}
-						AND = {
-							event_target:emf_succ_title = { tier = COUNT }
+			emf_laws_change_succ_mild_reaction_effect = yes
+		}
+		# Dynasty members are happy
+		any_dynasty_member = {
+			limit = {
+				emf_laws_change_succ_vip_trigger = no
+			}
+			emf_laws_change_succ_good_reaction_effect = yes
+		}
+		# Children that can inherit are angry
+		any_child = {
+			limit = {
+				emf_can_inherit_trigger = yes
+				emf_laws_change_succ_vip_trigger = no
+			}
+			emf_laws_change_succ_bad_reaction_effect = yes
+		}
+	}
+	
+	# Specfic, event-driven succession law change reactions for the new heir, the former heir,
+	# the former pretenders, and the new pretenders.
+	set_title_flag = emf_succ_title
+	holder_scope = { character_event = { id = emf_laws.10 } }
+	
+	emf_laws_change_succ_cleanup_effect = yes
+}
+
+emf_laws_succ_primogeniture_reactions_effect = {
+	current_heir = { save_event_target_as = emf_heir }
+
+	holder_scope = {
+		# Vassals are slightly upset
+		any_vassal = {
+			limit = {
+				emf_laws_change_succ_affected_vassal_trigger = yes
+				emf_laws_change_succ_vip_trigger = no
+			}
+			emf_laws_change_succ_mild_reaction_effect = yes
+		}
+		# Dynasty members are slightly upset
+		any_dynasty_member = {
+			limit = {
+				emf_laws_change_succ_vip_trigger = no
+			}
+			emf_laws_change_succ_mild_reaction_effect = yes
+		}
+		# Legitimate children are angry
+		any_child = {
+			limit = {
+				emf_can_inherit_trigger = yes
+				emf_laws_change_succ_vip_trigger = no
+			}
+			emf_laws_change_succ_bad_reaction_effect = yes
+		}
+		# Heir is happy
+		event_target:emf_heir = { emf_laws_change_succ_good_reaction_effect = yes }
+	}
+	
+	set_title_flag = emf_succ_title
+	holder_scope = { character_event = { id = emf_laws.10 } }
+	emf_laws_change_succ_cleanup_effect = yes
+}
+
+emf_laws_succ_feudal_elective_reactions_effect = {
+	current_heir = { save_event_target_as = emf_heir }
+
+	holder_scope = {
+		# Vassals are slightly upset
+		any_vassal = {
+			limit = {
+				emf_laws_change_succ_affected_vassal_trigger = yes
+				emf_laws_change_succ_vip_trigger = no
+			}
+			emf_laws_change_succ_mild_reaction_effect = yes
+		}
+		# Electors are happy
+		any_vassal = {
+			limit = {
+				emf_laws_change_succ_vip_trigger = no
+				OR = {
+					AND = {
+						event_target:emf_succ_title = { tier = EMPEROR }
+						higher_real_tier_than = COUNT
+						OR = {
+							event_target:emf_succ_title = { is_titular = yes }
 							any_demesne_title = {
+								higher_tier_than = COUNT
+								de_jure_liege_or_above = event_target:emf_succ_title
+							}
+						}
+					}
+					AND = {
+						event_target:emf_succ_title = { tier = KING }
+						real_tier = DUKE
+						OR = {
+							event_target:emf_succ_title = { is_titular = yes }
+							any_demesne_title = {
+								tier = DUKE
 								de_jure_liege = event_target:emf_succ_title
 							}
 						}
 					}
+					AND = {
+						event_target:emf_succ_title = { tier = DUKE }
+						real_tier = COUNT
+						OR = {
+							event_target:emf_succ_title = { is_titular = yes }
+							any_demesne_title = {
+								tier = COUNT
+								de_jure_liege = event_target:emf_succ_title
+							}
+						}
+					}
+					AND = {
+						event_target:emf_succ_title = { tier = COUNT }
+						real_tier = BARON
+						any_demesne_title = {
+							de_jure_liege = event_target:emf_succ_title
+						}
+					}
 				}
-				emf_laws_change_succ_good_reaction_effect = yes
 			}
-			# Dynasty members are happy
-			any_dynasty_member = {
-				limit = { 
-					emf_laws_change_succ_vip_trigger = no
+			emf_laws_change_succ_good_reaction_effect = yes
+		}
+		# Dynasty members are slightly upset
+		any_dynasty_member = {
+			limit = {
+				emf_laws_change_succ_vip_trigger = no
+			}
+			emf_laws_change_succ_mild_reaction_effect = yes
+		}
+		# Legitimate children are angry
+		any_child = {
+			limit = {
+				emf_can_inherit_trigger = yes
+				emf_laws_change_succ_vip_trigger = no
+			}
+			emf_laws_change_succ_bad_reaction_effect = yes
+		}
+		# The former pretenders are upset
+		any_opinion_modifier_target = {
+			limit = {
+				reverse_has_opinion_modifier = {
+					who = PREV
+					modifier = opinion_succ_former_pretender
 				}
-				emf_laws_change_succ_good_reaction_effect = yes
 			}
-			# Legitimate children are angry
+			emf_laws_change_succ_bad_reaction_effect = yes
+			event_target:emf_succ_title = {
+				if = {
+					limit = { NOT = { claimed_by = PREV } }
+					add_weak_claim = PREV
+				}
+			}
+			any_spouse = {
+				limit = { emf_laws_change_succ_vip_trigger = no }
+				emf_laws_change_succ_bad_reaction_effect = yes
+			}
 			any_child = {
 				limit = {
 					emf_can_inherit_trigger = yes
@@ -635,28 +464,152 @@ emf_laws_succ_adopt_tanistry_effect = {
 				}
 				emf_laws_change_succ_bad_reaction_effect = yes
 			}
-			# The former pretenders are upset if not of the ruler's dynasty
-			any_opinion_modifier_target = {
+		}
+		# The former heir is upset
+		event_target:emf_former_heir = {
+			emf_laws_change_succ_bad_reaction_effect = yes
+			event_target:emf_succ_title = { add_claim = PREV }
+			any_spouse = {
+				limit = { emf_laws_change_succ_vip_trigger = no }
+				emf_laws_change_succ_bad_reaction_effect = yes
+			}
+			any_child = {
 				limit = {
-					reverse_has_opinion_modifier = {
-						who = PREV
-						modifier = opinion_succ_former_pretender
+					emf_can_inherit_trigger = yes
+					emf_laws_change_succ_vip_trigger = no
+				}
+				emf_laws_change_succ_bad_reaction_effect = yes
+			}
+		}
+	}
+	
+	emf_laws_change_succ_cleanup_effect = yes
+}
+
+emf_laws_succ_tanistry_reactions_effect = {
+	current_heir = { save_event_target_as = emf_heir }
+
+	# FIXME: I'm just guessing about Tanistry's behavior from the little, imprecise, and likely
+	# inaccurate info on the CKII Wiki.
+
+	holder_scope = {
+		# Vassals are slightly upset
+		any_vassal = {
+			limit = {
+				emf_laws_change_succ_affected_vassal_trigger = yes
+				emf_laws_change_succ_vip_trigger = no
+			}
+			emf_laws_change_succ_mild_reaction_effect = yes
+		}
+		# Elector vassals are happy.
+		# Regarding Tanistry, my assumptions are that empire-tier titles have king- and
+		# duke-tier electors, king-tier titles have duke- and count-tier electors, duke-tier
+		# titles have count- and baron-tier electors, and count-tier titles have baron-tier
+		# electors.
+		any_vassal = {
+			limit = {
+				emf_laws_change_succ_vip_trigger = no
+				OR = {
+					AND = {
+						event_target:emf_succ_title = { tier = EMPEROR }
+						higher_real_tier_than = COUNT
+						OR = {
+							event_target:emf_succ_title = { is_titular = yes }
+							any_demesne_title = {
+								higher_tier_than = COUNT
+								de_jure_liege_or_above = event_target:emf_succ_title
+							}
+						}
 					}
+					AND = {
+						event_target:emf_succ_title = { tier = KING }
+						higher_real_tier_than = BARON
+						OR = {
+							event_target:emf_succ_title = { is_titular = yes }
+							any_demesne_title = {
+								higher_tier_than = BARON
+								de_jure_liege_or_above = event_target:emf_succ_title
+							}
+						}
+					}
+					AND = {
+						event_target:emf_succ_title = { tier = DUKE }
+						OR = {
+							event_target:emf_succ_title = { is_titular = yes }
+							any_demesne_title = {
+								de_jure_liege_or_above = event_target:emf_succ_title
+							}
+						}
+					}
+					AND = {
+						event_target:emf_succ_title = { tier = COUNT }
+						any_demesne_title = {
+							de_jure_liege = event_target:emf_succ_title
+						}
+					}
+				}
+			}
+			emf_laws_change_succ_good_reaction_effect = yes
+		}
+		# Dynasty members are happy
+		any_dynasty_member = {
+			limit = { 
+				emf_laws_change_succ_vip_trigger = no
+			}
+			emf_laws_change_succ_good_reaction_effect = yes
+		}
+		# Legitimate children are angry
+		any_child = {
+			limit = {
+				emf_can_inherit_trigger = yes
+				emf_laws_change_succ_vip_trigger = no
+			}
+			emf_laws_change_succ_bad_reaction_effect = yes
+		}
+		# The former pretenders are upset if not of the ruler's dynasty
+		any_opinion_modifier_target = {
+			limit = {
+				reverse_has_opinion_modifier = {
+					who = PREV
+					modifier = opinion_succ_former_pretender
+				}
+				NOT = { dynasty = event_target:emf_succ_changer }
+			}
+			emf_laws_change_succ_bad_reaction_effect = yes
+			event_target:emf_succ_title = {
+				if = {
+					limit = { NOT = { claimed_by = PREV } }
+					add_weak_claim = PREV
+				}
+			}
+			any_spouse = {
+				limit = {
+					emf_laws_change_succ_vip_trigger = no
 					NOT = { dynasty = event_target:emf_succ_changer }
 				}
 				emf_laws_change_succ_bad_reaction_effect = yes
-				event_target:emf_succ_title = {
-					if = {
-						limit = { NOT = { claimed_by = PREV } }
-						add_weak_claim = PREV
-					}
+			}
+			any_child = {
+				limit = {
+					emf_can_inherit_trigger = yes
+					emf_laws_change_succ_vip_trigger = no
+					NOT = { dynasty = event_target:emf_succ_changer }
 				}
+				emf_laws_change_succ_bad_reaction_effect = yes
+			}
+		}
+		# The former heir is upset if not of the ruler's dynasty
+		event_target:emf_former_heir = {
+			if = {
+				limit = { NOT = { dynasty = event_target:emf_succ_changer } }
+				event_target:emf_succ_title = { add_claim = PREV }
+				emf_laws_change_succ_terrible_reaction_effect = yes
 				any_spouse = {
 					limit = {
 						emf_laws_change_succ_vip_trigger = no
 						NOT = { dynasty = event_target:emf_succ_changer }
 					}
-					emf_laws_change_succ_bad_reaction_effect = yes
+					emf_laws_change_succ_terrible_reaction_effect = yes
 				}
 				any_child = {
 					limit = {
@@ -664,83 +617,49 @@ emf_laws_succ_adopt_tanistry_effect = {
 						emf_laws_change_succ_vip_trigger = no
 						NOT = { dynasty = event_target:emf_succ_changer }
 					}
-					emf_laws_change_succ_bad_reaction_effect = yes
-				}
-			}
-			# The former heir is upset if not of the ruler's dynasty
-			event_target:emf_former_heir = {
-				if = {
-					limit = { NOT = { dynasty = event_target:emf_succ_changer } }
-					event_target:emf_succ_title = { add_claim = PREV }
 					emf_laws_change_succ_terrible_reaction_effect = yes
-					any_spouse = {
-						limit = {
-							emf_laws_change_succ_vip_trigger = no
-							NOT = { dynasty = event_target:emf_succ_changer }
-						}
-						emf_laws_change_succ_terrible_reaction_effect = yes
-					}
-					any_child = {
-						limit = {
-							emf_can_inherit_trigger = yes
-							emf_laws_change_succ_vip_trigger = no
-							NOT = { dynasty = event_target:emf_succ_changer }
-						}
-						emf_laws_change_succ_terrible_reaction_effect = yes
-					}
 				}
 			}
 		}
-		
-		emf_laws_change_succ_cleanup_effect = yes
 	}
+	
+	emf_laws_change_succ_cleanup_effect = yes
 }
 
-emf_laws_succ_adopt_ultimogeniture_effect = {
-	emf_laws_change_succ_basic_effect = yes
-	tooltip = { succession = ultimogeniture }
-	hidden_tooltip = {
-		save_event_target_as = emf_succ_title
-		holder_scope = { save_event_target_as = emf_succ_changer }
-		
-		log = "INFO: succ_adopt_ultimogeniture: [emf_succ_changer.GetTitledFirstName] (ID: [emf_succ_changer.GetID]) changing law for the [emf_succ_title.GetFullBaseName]"
-		
-		emf_laws_change_succ_save_contenders_effect = yes
-		add_law = succ_ultimogeniture
-		current_heir = { save_event_target_as = emf_heir }
+emf_laws_succ_ultimogeniture_reactions_effect = {
+	current_heir = { save_event_target_as = emf_heir }
 
-		holder_scope = {
-			# Vassals are slightly upset
-			any_vassal = {
-				limit = {
-					emf_laws_change_succ_affected_vassal_trigger = yes
-					emf_laws_change_succ_vip_trigger = no
-				}
-				emf_laws_change_succ_mild_reaction_effect = yes
+	holder_scope = {
+		# Vassals are slightly upset
+		any_vassal = {
+			limit = {
+				emf_laws_change_succ_affected_vassal_trigger = yes
+				emf_laws_change_succ_vip_trigger = no
 			}
-			# Dynasty members are slightly upset
-			any_dynasty_member = {
-				limit = {
-					emf_laws_change_succ_vip_trigger = no
-				}
-				emf_laws_change_succ_mild_reaction_effect = yes
-			}
-			# Legitimate children are angry
-			any_child = {
-				limit = {
-					emf_can_inherit_trigger = yes
-					emf_laws_change_succ_vip_trigger = no
-				}
-				emf_laws_change_succ_bad_reaction_effect = yes
-			}
-			# Heir is happy
-			event_target:emf_heir = { emf_laws_change_succ_good_reaction_effect = yes }
+			emf_laws_change_succ_mild_reaction_effect = yes
 		}
-		
-		set_title_flag = emf_succ_title
-		holder_scope = { character_event = { id = emf_laws.10 } }
-		emf_laws_change_succ_cleanup_effect = yes
+		# Dynasty members are slightly upset
+		any_dynasty_member = {
+			limit = {
+				emf_laws_change_succ_vip_trigger = no
+			}
+			emf_laws_change_succ_mild_reaction_effect = yes
+		}
+		# Legitimate children are angry
+		any_child = {
+			limit = {
+				emf_can_inherit_trigger = yes
+				emf_laws_change_succ_vip_trigger = no
+			}
+			emf_laws_change_succ_bad_reaction_effect = yes
+		}
+		# Heir is happy
+		event_target:emf_heir = { emf_laws_change_succ_good_reaction_effect = yes }
 	}
+	
+	set_title_flag = emf_succ_title
+	holder_scope = { character_event = { id = emf_laws.10 } }
+	emf_laws_change_succ_cleanup_effect = yes
 }
 
 #### CROWN LAWS ####
