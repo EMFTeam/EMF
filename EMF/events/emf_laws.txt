@@ -1,7 +1,9 @@
-
-# Law support events (currently only concerns crown laws)
-
 namespace = emf_laws
+
+#######################################
+# EXTENDED LAW SUPPORT CODE
+#######################################
+
 
 # emf_laws.0 [Isis]
 # 
@@ -315,7 +317,7 @@ character_event = {
 		}
 		
 		if = {
-			limit = { FROMFROM = { is_alive = yes } } # Title grant OR likewise
+			limit = { FROMFROM = { is_alive = yes } } # Title grant or likewise
 			break = yes
 		}
 		
@@ -368,7 +370,7 @@ character_event = {
 	immediate = {
 		FROM = {
 			clr_title_flag = emf_ca_change
-			clr_title_flag = emf_inv_change # Investiture cooldown
+			clr_title_flag = emf_inv_change
 			
 			if = {
 				limit = { has_law = crown_authority_1 }
@@ -398,13 +400,13 @@ character_event = {
 
 # emf_laws.10 [Holder of Title That's Just Changed Succession Law]
 #
-# Context (which should all be manually cleared when we're done):
-# - Succession law title has flag emf_succ_title
-# - opinion_succ_former_heir points to the former heir
-# - opinion_succ_former_pretender points to the former pretenders
+# Context:
+# - Succession law title has flag emf_succ_title (cleared when we're done)
+# - opinion_succ_former_heir points to the former heir (cleared elsewhere)
+# - opinion_succ_former_pretender points to the former pretenders (cleared elsewhere)
 #
-# Fired from non-elective succ_adopt_* law effects immediately
-# after applying lower-priority, law-specific succession law reactions.
+# Fired from non-elective succession law effects immediately after applying
+# lower-priority, law-specific succession law reactions.
 character_event = {
 	id = emf_laws.10
 	
@@ -1154,9 +1156,532 @@ character_event = {
 }
 
 
-#### DEBUG ####
+
+#######################################
+# SUCCESSION LAW ADJUDICATION
+#######################################
+
+
+# emf_laws.20
+#
+# on_new_holder on_action listener to [try to] handle unreadable succession laws upon title grant to player
+# - since this isn't for on_new_holder_inheritance, there is no delay between title receipt and law adjudication. Guts
+# of adjudication fix-up are in emf_laws.21 (for reuse), however.
+character_event = {
+	id = emf_laws.20
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	ai = no
+	
+	trigger = {
+		FROM = { succ_law_title = { emf_laws_has_playable_succession_law_trigger = no } }
+	}
+	
+	immediate = {
+		FROM = { succ_law_title = { save_event_target_as = emf_title } }
+		
+		log = "DEBUG: Player ([Root.GetID]) gained a title without a readable succession law ([From.GetID])"
+		
+		if = {
+			limit = { FROMFROM = { is_ruler = yes } }
+			log = "----> Title was received from [FromFrom.GetTitledName] ([FromFrom.GetID] / [FromFrom.PrimaryTitle.GetID])"
+			FROMFROM = { primary_title = { save_event_target_as = emf_ref_title } }
+			character_event = { id = emf_laws.21 }
+			break = yes
+		}
+		
+		character_event = { id = emf_laws.21 }
+	}
+}
+
+
+# emf_laws.21
+#
+# Try to fix unreadable succession laws on event_target:emf_title. Use the succession law of event_target:emf_ref_title
+# as reference while attempting to find the correct law.
+character_event = {
+	id = emf_laws.21
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	immediate = {
+		log = "DEBUG: Adjudicating succession law for title [emf_title.GetID] ([emf_title.GetFullName])..."
+		
+		event_target:emf_title = {
+			# Before anything, take care of some high-priority cases:
+			
+			if = {
+				limit = { is_law_potential = succ_patrician_elective }
+				log = "----> succ_patrician_elective (due to base case)"
+				succession = patrician_elective
+				break = yes
+			}
+			if = {
+				limit = { is_law_potential = succ_nomad_succession }
+				log = "----> succ_nomad_succession (due to base case)"
+				succession = nomad_succession
+				break = yes
+			}
+			
+			# Next, try to base the law off emf_ref_title. Note that we do require the allow of the base
+			# succession law, as vanilla hard-code would. [This is why a Primogeniture liege can grant titles to
+			# vassals yet have the granted title's law adjudicated to Gavelkind, e.g.]
+			if = {
+				limit = { event_target:emf_ref_title = { always = yes } }
+				log = "----> Attempting to use reference title [emf_ref_title.GetID] ([emf_ref_title.GetFullName])..."
+				if = {
+					limit = {
+						event_target:emf_ref_title = { has_law = succ_gavelkind }
+						is_law_potential = succ_adopt_gavelkind
+						is_law_allowed = succ_gavelkind
+					}
+					log = "----> succ_gavelkind (due to reference title)"
+					succession = gavelkind
+					break = yes
+				}
+				if = {
+					limit = {
+						event_target:emf_ref_title = { has_law = succ_elective_gavelkind }
+						is_law_potential = succ_adopt_elective_gavelkind
+						is_law_allowed = succ_elective_gavelkind
+					}
+					log = "----> succ_elective_gavelkind (due to reference title)"
+					succession = elective_gavelkind
+					break = yes
+				}
+				if = {
+					limit = {
+						event_target:emf_ref_title = { has_law = succ_seniority }
+						is_law_potential = succ_adopt_seniority
+						is_law_allowed = succ_seniority
+					}
+					log = "----> succ_seniority (due to reference title)"
+					succession = seniority
+					break = yes
+				}
+				if = {
+					limit = {
+						event_target:emf_ref_title = { has_law = succ_primogeniture }
+						is_law_potential = succ_adopt_primogeniture
+						is_law_allowed = succ_primogeniture
+					}
+					log = "----> succ_primogeniture (due to reference title)"
+					succession = primogeniture
+					break = yes
+				}
+				if = {
+					limit = {
+						event_target:emf_ref_title = { has_law = succ_feudal_elective }
+						is_law_potential = succ_adopt_feudal_elective
+						is_law_allowed = succ_feudal_elective
+						OR = {
+							higher_tier_than = DUKE
+							AND = {
+								is_primary_holder_title = yes
+								tier = DUKE
+							}
+						}
+					}
+					log = "----> succ_feudal_elective (due to reference title)"
+					succession = feudal_elective
+					break = yes
+				}
+				if = {
+					limit = {
+						event_target:emf_ref_title = { has_law = succ_tanistry }
+						is_law_potential = succ_adopt_tanistry
+						is_law_allowed = succ_tanistry
+					}
+					log = "----> succ_tanistry (due to reference title)"
+					succession = tanistry
+					break = yes
+				}
+				if = {
+					limit = {
+						event_target:emf_ref_title = { has_law = succ_ultimogeniture }
+						is_law_potential = succ_adopt_ultimogeniture
+						is_law_allowed = succ_ultimogeniture
+					}
+					log = "----> succ_ultimogeniture (due to reference title)"
+					succession = ultimogeniture
+					break = yes
+				}
+				if = {
+					limit = {
+						event_target:emf_ref_title = { has_law = succ_turkish_succession }
+						is_law_potential = succ_adopt_turkish_succession
+						is_law_allowed = succ_turkish_succession
+					}
+					log = "----> succ_turkish_succession (due to reference title)"
+					succession = turkish_succession
+					break = yes
+				}
+			}
+			
+			# Failing that, try to align with our primary title. Note that we do not care about law allow
+			# conditions in this case.
+			
+			log = "----> Attempting to use primary title as reference..."
+			
+			if = {
+				limit = {
+					primary_title = { has_law = succ_gavelkind }
+					is_law_potential = succ_adopt_gavelkind
+				}
+				log = "----> succ_gavelkind (due to primary title)"
+				succession = gavelkind
+				break = yes
+			}
+			if = {
+				limit = {
+					primary_title = { has_law = succ_elective_gavelkind }
+					is_law_potential = succ_adopt_elective_gavelkind
+				}
+				log = "----> succ_elective_gavelkind (due to primary title)"
+				succession = elective_gavelkind
+				break = yes
+			}
+			if = {
+				limit = {
+					primary_title = { has_law = succ_seniority }
+					is_law_potential = succ_adopt_seniority
+				}
+				log = "----> succ_seniority (due to primary title)"
+				succession = seniority
+				break = yes
+			}
+			if = {
+				limit = {
+					primary_title = { has_law = succ_primogeniture }
+					is_law_potential = succ_adopt_primogeniture
+				}
+				log = "----> succ_primogeniture (due to primary title)"
+				succession = primogeniture
+				break = yes
+			}
+			if = {
+				limit = {
+					primary_title = { has_law = succ_feudal_elective }
+					is_law_potential = succ_adopt_feudal_elective
+					OR = {
+						higher_tier_than = DUKE
+						AND = {
+							is_primary_holder_title = yes
+							tier = DUKE
+						}
+					}
+				}
+				log = "----> succ_feudal_elective (due to primary title)"
+				succession = feudal_elective
+				break = yes
+			}
+			if = {
+				limit = {
+					primary_title = { has_law = succ_tanistry }
+					is_law_potential = succ_adopt_tanistry
+				}
+				log = "----> succ_tanistry (due to primary title)"
+				succession = tanistry
+				break = yes
+			}
+			if = {
+				limit = {
+					primary_title = { has_law = succ_ultimogeniture }
+					is_law_potential = succ_adopt_ultimogeniture
+				}
+				log = "----> succ_ultimogeniture (due to primary title)"
+				succession = ultimogeniture
+				break = yes
+			}
+			if = {
+				limit = {
+					primary_title = { has_law = succ_turkish_succession }
+					is_law_potential = succ_adopt_turkish_succession
+				}
+				log = "----> succ_turkish_succession (due to primary title)"
+				succession = turkish_succession
+				break = yes
+			}
+		}
+
+		# If emf_title actually _is_ our primary, we were probably granted a title of higher tier than our previous.
+		# In that case, we're going with an ad hoc solution where we try to find a readable succession law on a non-crown
+		# title in our demesne and use it.
+		
+		random_demesne_title = {
+			limit = {
+				event_target:emf_title = {
+					is_primary_holder_title = yes
+					NOT = { title = PREV }
+				}
+				lower_tier_than = KING
+				emf_laws_has_playable_succession_law_trigger = yes
+			}
+			save_event_target_as = emf_other_ref_title
+		}
+		
+		
+		event_target:emf_title = {
+			if = {
+				limit = { event_target:emf_other_ref_title = { always = yes } }
+				
+				# NOTE: We do not care at all for succession law allow conditions in this fallback case
+				log = "----> Attempting to use other, demesne reference title [emf_other_ref_title.GetID] ([emf_other_ref_title.GetFullName])..."
+				if = {
+					limit = {
+						event_target:emf_other_ref_title = { has_law = succ_gavelkind }
+						is_law_potential = succ_adopt_gavelkind
+					}
+					log = "----> succ_gavelkind (due to demesne reference title)"
+					succession = gavelkind
+					break = yes
+				}
+				if = {
+					limit = {
+						event_target:emf_other_ref_title = { has_law = succ_elective_gavelkind }
+						is_law_potential = succ_adopt_elective_gavelkind
+					}
+					log = "----> succ_elective_gavelkind (due to demesne reference title)"
+					succession = elective_gavelkind
+					break = yes
+				}
+				if = {
+					limit = {
+						event_target:emf_other_ref_title = { has_law = succ_seniority }
+						is_law_potential = succ_adopt_seniority
+					}
+					log = "----> succ_seniority (due to demesne reference title)"
+					succession = seniority
+					break = yes
+				}
+				if = {
+					limit = {
+						event_target:emf_other_ref_title = { has_law = succ_primogeniture }
+						is_law_potential = succ_adopt_primogeniture
+					}
+					log = "----> succ_primogeniture (due to demesne reference title)"
+					succession = primogeniture
+					break = yes
+				}
+				if = {
+					limit = {
+						event_target:emf_other_ref_title = { has_law = succ_feudal_elective }
+						is_law_potential = succ_adopt_feudal_elective
+						OR = {
+							higher_tier_than = DUKE
+							AND = {
+								is_primary_holder_title = yes
+								tier = DUKE
+							}
+						}
+					}
+					log = "----> succ_feudal_elective (due to demesne reference title)"
+					succession = feudal_elective
+					break = yes
+				}
+				if = {
+					limit = {
+						event_target:emf_other_ref_title = { has_law = succ_tanistry }
+						is_law_potential = succ_adopt_tanistry
+					}
+					log = "----> succ_tanistry (due to demesne reference title)"
+					succession = tanistry
+					break = yes
+				}
+				if = {
+					limit = {
+						event_target:emf_other_ref_title = { has_law = succ_ultimogeniture }
+						is_law_potential = succ_adopt_ultimogeniture
+					}
+					log = "----> succ_ultimogeniture (due to demesne reference title)"
+					succession = ultimogeniture
+					break = yes
+				}
+				if = {
+					limit = {
+						event_target:emf_other_ref_title = { has_law = succ_turkish_succession }
+						is_law_potential = succ_adopt_turkish_succession
+					}
+					log = "----> succ_turkish_succession (due to demesne reference title)"
+					succession = turkish_succession
+					break = yes
+				}
+			}
+			
+			# Failing that, simply check all [player-relevant] succession laws from top to bottom, as vanilla
+			# hard-code would, picking our first match. Note: if we were to apply this to all rulers rather than
+			# just the player, we'd definitely want to be looking at more succession laws (but that is true
+			# generally of this event). Note that, allow conditions are again required in this case.
+			log = "----> Attempting standard succession law fallback..."
+			if = {
+				limit = {
+					is_law_potential = succ_adopt_gavelkind
+					is_law_allowed = succ_gavelkind
+				}
+				log = "----> succ_gavelkind (due to standard fallback)"
+				succession = gavelkind
+				break = yes
+			}
+			if = {
+				limit = {
+					is_law_potential = succ_adopt_elective_gavelkind
+					is_law_allowed = succ_elective_gavelkind
+				}
+				log = "----> succ_elective_gavelkind (due to standard fallback)"
+				succession = elective_gavelkind
+				break = yes
+			}
+			if = {
+				limit = {
+					is_law_potential = succ_adopt_seniority
+					is_law_allowed = succ_seniority
+				}
+				log = "----> succ_seniority (due to standard fallback)"
+				succession = seniority
+				break = yes
+			}
+			if = {
+				limit = {
+					is_law_potential = succ_adopt_primogeniture
+					is_law_allowed = succ_primogeniture
+				}
+				log = "----> succ_primogeniture (due to standard fallback)"
+				succession = primogeniture
+				break = yes
+			}
+			if = {
+				limit = {
+					is_law_potential = succ_adopt_feudal_elective
+					is_law_allowed = succ_feudal_elective
+					OR = {
+						higher_tier_than = DUKE
+						AND = {
+							is_primary_holder_title = yes
+							tier = DUKE
+						}
+					}
+				}
+				log = "----> succ_feudal_elective (due to standard fallback)"
+				succession = feudal_elective
+				break = yes
+			}
+			if = {
+				limit = {
+					is_law_potential = succ_adopt_tanistry
+					is_law_allowed = succ_tanistry
+				}
+				log = "----> succ_tanistry (due to standard fallback)"
+				succession = tanistry
+				break = yes
+			}
+			if = {
+				limit = {
+					is_law_potential = succ_adopt_ultimogeniture
+					is_law_allowed = succ_ultimogeniture
+				}
+				log = "----> succ_ultimogeniture (due to standard fallback)"
+				succession = ultimogeniture
+				break = yes
+			}
+			if = {
+				limit = {
+					is_law_potential = succ_adopt_turkish_succession
+					is_law_allowed = succ_turkish_succession
+				}
+				log = "----> succ_turkish_succession (due to standard fallback)"
+				succession = turkish_succession
+				break = yes
+			}
+			
+			# Failing THAT (somehow), drop the allow conditions from the standard fallback.
+			log = "----> Attempting final succession law fallback..."
+			if = {
+				limit = {
+					is_law_potential = succ_adopt_gavelkind
+				}
+				log = "----> succ_gavelkind (due to final fallback)"
+				succession = gavelkind
+				break = yes
+			}
+			if = {
+				limit = {
+					is_law_potential = succ_adopt_elective_gavelkind
+				}
+				log = "----> succ_elective_gavelkind (due to final fallback)"
+				succession = elective_gavelkind
+				break = yes
+			}
+			if = {
+				limit = {
+					is_law_potential = succ_adopt_seniority
+				}
+				log = "----> succ_seniority (due to final fallback)"
+				succession = seniority
+				break = yes
+			}
+			if = {
+				limit = {
+					is_law_potential = succ_adopt_primogeniture
+				}
+				log = "----> succ_primogeniture (due to final fallback)"
+				succession = primogeniture
+				break = yes
+			}
+			if = {
+				limit = {
+					is_law_potential = succ_adopt_feudal_elective
+					OR = {
+						higher_tier_than = DUKE
+						AND = {
+							is_primary_holder_title = yes
+							tier = DUKE
+						}
+					}
+				}
+				log = "----> succ_feudal_elective (due to final fallback)"
+				succession = feudal_elective
+				break = yes
+			}
+			if = {
+				limit = {
+					is_law_potential = succ_adopt_tanistry
+				}
+				log = "----> succ_tanistry (due to final fallback)"
+				succession = tanistry
+				break = yes
+			}
+			if = {
+				limit = {
+					is_law_potential = succ_adopt_ultimogeniture
+				}
+				log = "----> succ_ultimogeniture (due to final fallback)"
+				succession = ultimogeniture
+				break = yes
+			}
+			if = {
+				limit = {
+					is_law_potential = succ_adopt_turkish_succession
+				}
+				log = "----> succ_turkish_succession (due to final fallback)"
+				succession = turkish_succession
+				break = yes
+			}
+		}
+	}
+}
+
+
+#######################################
+# DEBUG
+#######################################
+
 
 # emf_laws.1000
+#
+# Log all titles which are either held primary or crown-tier, sorted descending by tier with no readable succession law.
 character_event = {
 	id = emf_laws.1000
 	
@@ -1185,7 +1710,7 @@ character_event = {
 					is_primary_holder_title = yes
 					higher_tier_than = DUKE
 				}
-				emf_laws_has_succession_law_trigger = no
+				NOT = { succ_law_title = { emf_laws_has_succession_law_trigger = yes } }
 			}
 			emf_laws_log_succession_effect = yes
 		}
@@ -1197,7 +1722,7 @@ character_event = {
 					is_primary_holder_title = yes
 					higher_tier_than = DUKE
 				}
-				emf_laws_has_succession_law_trigger = no
+				NOT = { succ_law_title = { emf_laws_has_succession_law_trigger = yes } }
 			}
 			emf_laws_log_succession_effect = yes
 		}
@@ -1209,7 +1734,7 @@ character_event = {
 					is_primary_holder_title = yes
 					higher_tier_than = DUKE
 				}
-				emf_laws_has_succession_law_trigger = no
+				NOT = { succ_law_title = { emf_laws_has_succession_law_trigger = yes } }
 			}
 			emf_laws_log_succession_effect = yes
 		}
@@ -1221,7 +1746,7 @@ character_event = {
 					is_primary_holder_title = yes
 					higher_tier_than = DUKE
 				}
-				emf_laws_has_succession_law_trigger = no
+				NOT = { succ_law_title = { emf_laws_has_succession_law_trigger = yes } }
 			}
 			emf_laws_log_succession_effect = yes
 		}
