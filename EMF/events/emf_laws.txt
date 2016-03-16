@@ -1176,23 +1176,35 @@ character_event = {
 	ai = no
 	
 	trigger = {
-		FROM = { succ_law_title = { emf_laws_has_playable_succession_law_trigger = no } }
+		has_global_flag = EMF
+		FROM = {
+			OR = {
+				is_primary_holder_title = yes
+				NOT = { succ_law_title = { emf_laws_has_playable_succession_law_trigger = yes } }
+			}
+		}
+		FROMFROM = { is_alive = yes }
 	}
 	
 	immediate = {
-		FROM = { succ_law_title = { save_event_target_as = emf_title } }
-		
-		log = "DEBUG: Player ([Root.GetID]) gained a title without a readable succession law ([From.GetID])"
-		
+		log = "DEBUG: [Root.GetTitledFirstName] ([Root.GetID]) gained a title ([From.GetID]) prompting succession law validation from [FromFrom.GetTitledName] ([FromFrom.GetID])"
 		if = {
-			limit = { FROMFROM = { is_ruler = yes } }
-			log = "----> Title was received from [FromFrom.GetTitledName] ([FromFrom.GetID] / [FromFrom.PrimaryTitle.GetID])"
-			FROMFROM = { primary_title = { save_event_target_as = emf_ref_title } }
-			character_event = { id = emf_laws.21 }
-			break = yes
+			limit = { FROM = { is_primary_holder_title = yes } }
+			FROM = { save_event_target_as = emf_title }
 		}
-		
-		character_event = { id = emf_laws.21 }
+		if = {
+			limit = { FROM = { is_primary_holder_title = no } }
+			FROM = { succ_law_title = { save_event_target_as = emf_title } }
+		}
+		if = {
+			limit = { FROMFROM = { primary_title = { always = yes } } }
+			FROMFROM = { primary_title = { save_event_target_as = emf_ref_title } }
+			character_event = { id = emf_laws.21 days = 1 }
+		}
+		if = {
+			limit = { FROMFROM = { NOT = { primary_title = { always = yes } } } }
+			character_event = { id = emf_laws.21 days = 1 }
+		}
 	}
 }
 
@@ -1210,6 +1222,8 @@ character_event = {
 	immediate = {
 		log = "DEBUG: Adjudicating succession law for title [emf_title.GetID] ([emf_title.GetFullName])..."
 		
+		set_global_flag = emf_law_adjudication
+		
 		event_target:emf_title = {
 			# Before anything, take care of some high-priority cases:
 			
@@ -1217,12 +1231,14 @@ character_event = {
 				limit = { is_law_potential = succ_patrician_elective }
 				log = "----> succ_patrician_elective (due to base case)"
 				succession = patrician_elective
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			if = {
 				limit = { is_law_potential = succ_nomad_succession }
 				log = "----> succ_nomad_succession (due to base case)"
 				succession = nomad_succession
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			
@@ -1235,47 +1251,51 @@ character_event = {
 				if = {
 					limit = {
 						event_target:emf_ref_title = { has_law = succ_gavelkind }
-						is_law_potential = succ_adopt_gavelkind
+						is_law_potential = succ_gavelkind
 						is_law_allowed = succ_gavelkind
 					}
-					log = "----> succ_gavelkind (due to reference title)"
+					log = "----> succ_gavelkind"
 					succession = gavelkind
+					clr_global_flag = emf_law_adjudication
 					break = yes
 				}
 				if = {
 					limit = {
 						event_target:emf_ref_title = { has_law = succ_elective_gavelkind }
-						is_law_potential = succ_adopt_elective_gavelkind
+						is_law_potential = succ_elective_gavelkind
 						is_law_allowed = succ_elective_gavelkind
 					}
-					log = "----> succ_elective_gavelkind (due to reference title)"
+					log = "----> succ_elective_gavelkind"
 					succession = elective_gavelkind
+					clr_global_flag = emf_law_adjudication
 					break = yes
 				}
 				if = {
 					limit = {
 						event_target:emf_ref_title = { has_law = succ_seniority }
-						is_law_potential = succ_adopt_seniority
+						is_law_potential = succ_seniority
 						is_law_allowed = succ_seniority
 					}
-					log = "----> succ_seniority (due to reference title)"
+					log = "----> succ_seniority"
 					succession = seniority
+					clr_global_flag = emf_law_adjudication
 					break = yes
 				}
 				if = {
 					limit = {
 						event_target:emf_ref_title = { has_law = succ_primogeniture }
-						is_law_potential = succ_adopt_primogeniture
+						is_law_potential = succ_primogeniture
 						is_law_allowed = succ_primogeniture
 					}
-					log = "----> succ_primogeniture (due to reference title)"
+					log = "----> succ_primogeniture"
 					succession = primogeniture
+					clr_global_flag = emf_law_adjudication
 					break = yes
 				}
 				if = {
 					limit = {
 						event_target:emf_ref_title = { has_law = succ_feudal_elective }
-						is_law_potential = succ_adopt_feudal_elective
+						is_law_potential = succ_feudal_elective
 						is_law_allowed = succ_feudal_elective
 						OR = {
 							higher_tier_than = DUKE
@@ -1285,38 +1305,42 @@ character_event = {
 							}
 						}
 					}
-					log = "----> succ_feudal_elective (due to reference title)"
+					log = "----> succ_feudal_elective"
 					succession = feudal_elective
+					clr_global_flag = emf_law_adjudication
 					break = yes
 				}
 				if = {
 					limit = {
 						event_target:emf_ref_title = { has_law = succ_tanistry }
-						is_law_potential = succ_adopt_tanistry
+						is_law_potential = succ_tanistry
 						is_law_allowed = succ_tanistry
 					}
-					log = "----> succ_tanistry (due to reference title)"
+					log = "----> succ_tanistry"
 					succession = tanistry
+					clr_global_flag = emf_law_adjudication
 					break = yes
 				}
 				if = {
 					limit = {
 						event_target:emf_ref_title = { has_law = succ_ultimogeniture }
-						is_law_potential = succ_adopt_ultimogeniture
+						is_law_potential = succ_ultimogeniture
 						is_law_allowed = succ_ultimogeniture
 					}
-					log = "----> succ_ultimogeniture (due to reference title)"
+					log = "----> succ_ultimogeniture"
 					succession = ultimogeniture
+					clr_global_flag = emf_law_adjudication
 					break = yes
 				}
 				if = {
 					limit = {
 						event_target:emf_ref_title = { has_law = succ_turkish_succession }
-						is_law_potential = succ_adopt_turkish_succession
+						is_law_potential = succ_turkish_succession
 						is_law_allowed = succ_turkish_succession
 					}
-					log = "----> succ_turkish_succession (due to reference title)"
+					log = "----> succ_turkish_succession"
 					succession = turkish_succession
+					clr_global_flag = emf_law_adjudication
 					break = yes
 				}
 			}
@@ -1329,43 +1353,47 @@ character_event = {
 			if = {
 				limit = {
 					primary_title = { has_law = succ_gavelkind }
-					is_law_potential = succ_adopt_gavelkind
+					is_law_potential = succ_gavelkind
 				}
-				log = "----> succ_gavelkind (due to primary title)"
+				log = "----> succ_gavelkind"
 				succession = gavelkind
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			if = {
 				limit = {
 					primary_title = { has_law = succ_elective_gavelkind }
-					is_law_potential = succ_adopt_elective_gavelkind
+					is_law_potential = succ_elective_gavelkind
 				}
-				log = "----> succ_elective_gavelkind (due to primary title)"
+				log = "----> succ_elective_gavelkind"
 				succession = elective_gavelkind
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			if = {
 				limit = {
 					primary_title = { has_law = succ_seniority }
-					is_law_potential = succ_adopt_seniority
+					is_law_potential = succ_seniority
 				}
-				log = "----> succ_seniority (due to primary title)"
+				log = "----> succ_seniority"
 				succession = seniority
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			if = {
 				limit = {
 					primary_title = { has_law = succ_primogeniture }
-					is_law_potential = succ_adopt_primogeniture
+					is_law_potential = succ_primogeniture
 				}
-				log = "----> succ_primogeniture (due to primary title)"
+				log = "----> succ_primogeniture"
 				succession = primogeniture
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			if = {
 				limit = {
 					primary_title = { has_law = succ_feudal_elective }
-					is_law_potential = succ_adopt_feudal_elective
+					is_law_potential = succ_feudal_elective
 					OR = {
 						higher_tier_than = DUKE
 						AND = {
@@ -1374,35 +1402,39 @@ character_event = {
 						}
 					}
 				}
-				log = "----> succ_feudal_elective (due to primary title)"
+				log = "----> succ_feudal_elective"
 				succession = feudal_elective
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			if = {
 				limit = {
 					primary_title = { has_law = succ_tanistry }
-					is_law_potential = succ_adopt_tanistry
+					is_law_potential = succ_tanistry
 				}
-				log = "----> succ_tanistry (due to primary title)"
+				log = "----> succ_tanistry"
 				succession = tanistry
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			if = {
 				limit = {
 					primary_title = { has_law = succ_ultimogeniture }
-					is_law_potential = succ_adopt_ultimogeniture
+					is_law_potential = succ_ultimogeniture
 				}
-				log = "----> succ_ultimogeniture (due to primary title)"
+				log = "----> succ_ultimogeniture"
 				succession = ultimogeniture
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			if = {
 				limit = {
 					primary_title = { has_law = succ_turkish_succession }
-					is_law_potential = succ_adopt_turkish_succession
+					is_law_potential = succ_turkish_succession
 				}
-				log = "----> succ_turkish_succession (due to primary title)"
+				log = "----> succ_turkish_succession"
 				succession = turkish_succession
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 		}
@@ -1423,7 +1455,6 @@ character_event = {
 			save_event_target_as = emf_other_ref_title
 		}
 		
-		
 		event_target:emf_title = {
 			if = {
 				limit = { event_target:emf_other_ref_title = { always = yes } }
@@ -1433,43 +1464,47 @@ character_event = {
 				if = {
 					limit = {
 						event_target:emf_other_ref_title = { has_law = succ_gavelkind }
-						is_law_potential = succ_adopt_gavelkind
+						is_law_potential = succ_gavelkind
 					}
-					log = "----> succ_gavelkind (due to demesne reference title)"
+					log = "----> succ_gavelkind"
 					succession = gavelkind
+					clr_global_flag = emf_law_adjudication
 					break = yes
 				}
 				if = {
 					limit = {
 						event_target:emf_other_ref_title = { has_law = succ_elective_gavelkind }
-						is_law_potential = succ_adopt_elective_gavelkind
+						is_law_potential = succ_elective_gavelkind
 					}
-					log = "----> succ_elective_gavelkind (due to demesne reference title)"
+					log = "----> succ_elective_gavelkind"
 					succession = elective_gavelkind
+					clr_global_flag = emf_law_adjudication
 					break = yes
 				}
 				if = {
 					limit = {
 						event_target:emf_other_ref_title = { has_law = succ_seniority }
-						is_law_potential = succ_adopt_seniority
+						is_law_potential = succ_seniority
 					}
-					log = "----> succ_seniority (due to demesne reference title)"
+					log = "----> succ_seniority"
 					succession = seniority
+					clr_global_flag = emf_law_adjudication
 					break = yes
 				}
 				if = {
 					limit = {
 						event_target:emf_other_ref_title = { has_law = succ_primogeniture }
-						is_law_potential = succ_adopt_primogeniture
+						is_law_potential = succ_primogeniture
 					}
-					log = "----> succ_primogeniture (due to demesne reference title)"
+					log = "----> succ_primogeniture"
 					succession = primogeniture
+					clr_global_flag = emf_law_adjudication
 					break = yes
 				}
 				if = {
 					limit = {
 						event_target:emf_other_ref_title = { has_law = succ_feudal_elective }
-						is_law_potential = succ_adopt_feudal_elective
+						is_law_potential = succ_feudal_elective
 						OR = {
 							higher_tier_than = DUKE
 							AND = {
@@ -1478,35 +1513,39 @@ character_event = {
 							}
 						}
 					}
-					log = "----> succ_feudal_elective (due to demesne reference title)"
+					log = "----> succ_feudal_elective"
 					succession = feudal_elective
+					clr_global_flag = emf_law_adjudication
 					break = yes
 				}
 				if = {
 					limit = {
 						event_target:emf_other_ref_title = { has_law = succ_tanistry }
-						is_law_potential = succ_adopt_tanistry
+						is_law_potential = succ_tanistry
 					}
-					log = "----> succ_tanistry (due to demesne reference title)"
+					log = "----> succ_tanistry"
 					succession = tanistry
+					clr_global_flag = emf_law_adjudication
 					break = yes
 				}
 				if = {
 					limit = {
 						event_target:emf_other_ref_title = { has_law = succ_ultimogeniture }
-						is_law_potential = succ_adopt_ultimogeniture
+						is_law_potential = succ_ultimogeniture
 					}
-					log = "----> succ_ultimogeniture (due to demesne reference title)"
+					log = "----> succ_ultimogeniture"
 					succession = ultimogeniture
+					clr_global_flag = emf_law_adjudication
 					break = yes
 				}
 				if = {
 					limit = {
 						event_target:emf_other_ref_title = { has_law = succ_turkish_succession }
-						is_law_potential = succ_adopt_turkish_succession
+						is_law_potential = succ_turkish_succession
 					}
-					log = "----> succ_turkish_succession (due to demesne reference title)"
+					log = "----> succ_turkish_succession"
 					succession = turkish_succession
+					clr_global_flag = emf_law_adjudication
 					break = yes
 				}
 			}
@@ -1518,43 +1557,47 @@ character_event = {
 			log = "----> Attempting standard succession law fallback..."
 			if = {
 				limit = {
-					is_law_potential = succ_adopt_gavelkind
+					is_law_potential = succ_gavelkind
 					is_law_allowed = succ_gavelkind
 				}
-				log = "----> succ_gavelkind (due to standard fallback)"
+				log = "----> succ_gavelkind"
 				succession = gavelkind
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			if = {
 				limit = {
-					is_law_potential = succ_adopt_elective_gavelkind
+					is_law_potential = succ_elective_gavelkind
 					is_law_allowed = succ_elective_gavelkind
 				}
-				log = "----> succ_elective_gavelkind (due to standard fallback)"
+				log = "----> succ_elective_gavelkind"
 				succession = elective_gavelkind
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			if = {
 				limit = {
-					is_law_potential = succ_adopt_seniority
+					is_law_potential = succ_seniority
 					is_law_allowed = succ_seniority
 				}
-				log = "----> succ_seniority (due to standard fallback)"
+				log = "----> succ_seniority"
 				succession = seniority
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			if = {
 				limit = {
-					is_law_potential = succ_adopt_primogeniture
+					is_law_potential = succ_primogeniture
 					is_law_allowed = succ_primogeniture
 				}
-				log = "----> succ_primogeniture (due to standard fallback)"
+				log = "----> succ_primogeniture"
 				succession = primogeniture
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			if = {
 				limit = {
-					is_law_potential = succ_adopt_feudal_elective
+					is_law_potential = succ_feudal_elective
 					is_law_allowed = succ_feudal_elective
 					OR = {
 						higher_tier_than = DUKE
@@ -1564,35 +1607,39 @@ character_event = {
 						}
 					}
 				}
-				log = "----> succ_feudal_elective (due to standard fallback)"
+				log = "----> succ_feudal_elective"
 				succession = feudal_elective
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			if = {
 				limit = {
-					is_law_potential = succ_adopt_tanistry
+					is_law_potential = succ_tanistry
 					is_law_allowed = succ_tanistry
 				}
-				log = "----> succ_tanistry (due to standard fallback)"
+				log = "----> succ_tanistry"
 				succession = tanistry
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			if = {
 				limit = {
-					is_law_potential = succ_adopt_ultimogeniture
+					is_law_potential = succ_ultimogeniture
 					is_law_allowed = succ_ultimogeniture
 				}
-				log = "----> succ_ultimogeniture (due to standard fallback)"
+				log = "----> succ_ultimogeniture"
 				succession = ultimogeniture
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			if = {
 				limit = {
-					is_law_potential = succ_adopt_turkish_succession
+					is_law_potential = succ_turkish_succession
 					is_law_allowed = succ_turkish_succession
 				}
-				log = "----> succ_turkish_succession (due to standard fallback)"
+				log = "----> succ_turkish_succession"
 				succession = turkish_succession
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			
@@ -1600,39 +1647,43 @@ character_event = {
 			log = "----> Attempting final succession law fallback..."
 			if = {
 				limit = {
-					is_law_potential = succ_adopt_gavelkind
+					is_law_potential = succ_gavelkind
 				}
-				log = "----> succ_gavelkind (due to final fallback)"
+				log = "----> succ_gavelkind"
 				succession = gavelkind
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			if = {
 				limit = {
-					is_law_potential = succ_adopt_elective_gavelkind
+					is_law_potential = succ_elective_gavelkind
 				}
-				log = "----> succ_elective_gavelkind (due to final fallback)"
+				log = "----> succ_elective_gavelkind"
 				succession = elective_gavelkind
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			if = {
 				limit = {
-					is_law_potential = succ_adopt_seniority
+					is_law_potential = succ_seniority
 				}
-				log = "----> succ_seniority (due to final fallback)"
+				log = "----> succ_seniority"
 				succession = seniority
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			if = {
 				limit = {
-					is_law_potential = succ_adopt_primogeniture
+					is_law_potential = succ_primogeniture
 				}
-				log = "----> succ_primogeniture (due to final fallback)"
+				log = "----> succ_primogeniture"
 				succession = primogeniture
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			if = {
 				limit = {
-					is_law_potential = succ_adopt_feudal_elective
+					is_law_potential = succ_feudal_elective
 					OR = {
 						higher_tier_than = DUKE
 						AND = {
@@ -1641,35 +1692,42 @@ character_event = {
 						}
 					}
 				}
-				log = "----> succ_feudal_elective (due to final fallback)"
+				log = "----> succ_feudal_elective"
 				succession = feudal_elective
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			if = {
 				limit = {
-					is_law_potential = succ_adopt_tanistry
+					is_law_potential = succ_tanistry
 				}
-				log = "----> succ_tanistry (due to final fallback)"
+				log = "----> succ_tanistry"
 				succession = tanistry
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			if = {
 				limit = {
-					is_law_potential = succ_adopt_ultimogeniture
+					is_law_potential = succ_ultimogeniture
 				}
-				log = "----> succ_ultimogeniture (due to final fallback)"
+				log = "----> succ_ultimogeniture"
 				succession = ultimogeniture
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 			if = {
 				limit = {
-					is_law_potential = succ_adopt_turkish_succession
+					is_law_potential = succ_turkish_succession
 				}
-				log = "----> succ_turkish_succession (due to final fallback)"
+				log = "----> succ_turkish_succession"
 				succession = turkish_succession
+				clr_global_flag = emf_law_adjudication
 				break = yes
 			}
 		}
+		
+		log = "ASSERT: Failed to find appropriate succession law for title!"
+		clr_global_flag = emf_law_adjudication
 	}
 }
 
