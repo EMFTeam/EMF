@@ -39,8 +39,9 @@ character_event = {
 
 # emf_core.1 [Ruler Undergoing Succession]
 #
-# Apply a 3-year liege levy malus to newly-minted duke+ rulers.
-# on_new_holder_inheritance on_action event
+# Generic succession handler for DUKE+ rulers. If applicable:
+# - Add a temporary succession modifier (or tiered series of them)
+# - Validate protected_appointment_1 opinions
 #
 # ROOT = character that now holds the title FROM, and FROMFROM is the previous holder
 character_event = {
@@ -54,41 +55,50 @@ character_event = {
 	trigger = {
 		FROM = { # Title is...
 			higher_tier_than = COUNT
-			is_primary_holder_title = yes # Gaining the title caused it to become primary, so this matters
-			is_primary_type_title = no # Not the Pope, mercs, HOs, temporary revolt titles, etc.
+			is_primary_holder_title = yes # Inheriting FROM caused it to become primary, so this matters.
 		}
-		# Not interested in abdications which cause inheritance
-		FROMFROM = {
-			OR = {
-				is_dying = yes
-				is_alive = no
-			}
-		}
-		NOT = { has_character_modifier = emf_mod_recent_succession }
 	}
 	
 	immediate = {
-		add_character_modifier = {
-			name = emf_mod_recent_succession
-			duration = 1825
-		}
+		# Succession malus
 		if = {
-			limit = { ai = yes }
-			add_character_modifier = {
-				name = emf_mod_recent_succession_t3
-				duration = 730
-				hidden = yes
+			limit = {
+				FROMFROM = { # Not interested in abdications which caused inheritance
+					OR = {
+						is_dying = yes
+						is_alive = no
+					}
+				}
+				FROM = { is_primary_type_title = no } # Nor pope, holy orders, etc.
+				NOT = { has_character_modifier = emf_mod_recent_succession } # Nor repeating ourselves
+			}
+			add_character_modifier = { name = emf_mod_recent_succession duration = 1825 }
+			if = {
+				limit = { ai = yes }
+				add_character_modifier = {
+					name = emf_mod_recent_succession_t3
+					duration = 730
+					hidden = yes
+				}
+			}
+			if = {
+				limit = { ai = no }
+				add_character_modifier = {
+					name = emf_mod_recent_succession_t1
+					duration = 365
+					hidden = yes
+				}
+				FROM = { save_event_target_as = emf_tier_title }
+				character_event = { id = emf_core.2 days = 365 }
 			}
 		}
 		if = {
-			limit = { ai = no }
-			add_character_modifier = {
-				name = emf_mod_recent_succession_t1
-				duration = 365
-				hidden = yes
-			}
-			FROM = { save_event_target_as = emf_tier_title }
-			character_event = { id = emf_core.2 days = 365 }
+			limit = { primary_title = { has_law = protected_appointment_0 } }
+			emf_laws_protected_appointment_0_validate_opinion_effect = yes
+		}
+		if = {
+			limit = { primary_title = { has_law = protected_appointment_1 } }
+			emf_laws_protected_appointment_1_validate_opinion_effect = yes
 		}
 	}
 }
