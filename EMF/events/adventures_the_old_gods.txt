@@ -1,0 +1,4929 @@
+#########################################################
+#
+# Landless Character Adventures for The Old Gods DLC
+# ( TOG.1200 to TOG.1499 )
+#
+#########################################################
+
+# Original Written by Henrik Fahraeus
+# Re-Written by Rylock
+
+namespace = TOG
+
+### CLAIMANT ADVENTURES
+
+# A landless claimant begins an adventurer to take the title
+character_event = {
+	id = TOG.1200
+	
+	hide_window = yes
+	
+	min_age = 16
+	max_age = 50
+	capable_only = yes
+	prisoner = no
+
+	trigger = {
+		has_dlc = "The Old Gods"
+		is_ruler = no
+		
+		#must be competent and healthy
+		health = 4
+		OR = {
+			diplomacy = 7
+			trait = ambitious
+			trait = decadent
+		}
+		OR = {
+			diplomacy = 14
+			martial = 10
+			prestige = 500
+			wealth = 200
+		}
+		
+		#has a claim that can be seized
+		any_claim = {
+			has_holder = yes
+			is_titular = no
+			is_landless_type_title = no
+			#either Duke+ tier or it's their primary title
+			OR = {
+				higher_tier_than = COUNT
+				is_primary_holder_title = yes
+			}
+			#weak claims only allowed against women/regencies/uncrowned unless claimant is ambitious
+			OR = {
+				ROOT = { has_strong_claim = PREV }
+				holder_scope = { is_female = yes }
+				holder_scope = { has_regent = yes }
+				holder_scope = { trait = uncrowned }
+				ROOT = { trait = ambitious }
+			}
+			#female claimants must be ambitious and can only target non-agnatic titles
+			OR = {
+				AND = {
+					ROOT = { is_female = no }
+					NOT = { has_law = enatic_succession }
+				}
+				AND = {
+					ROOT = { is_female = yes }
+					ROOT = { trait = ambitious }
+					NOT = { has_law = agnatic_succession }
+				}
+			}
+			#title holder must qualify
+			holder_scope = {
+				independent = yes
+				demesne_size = 1
+				#not held by theocracy unless not of the claimant's religion
+				OR = {
+					is_theocracy = no
+					NOT = { religion = ROOT }
+				}
+				#cannot target nomads for their clan title or primary title
+				NAND = {
+					government = nomadic_government
+					OR = {
+						clan_title = { title = PREVPREV }
+						primary_title = { title = PREVPREV }
+					}
+				}
+				#cannot target merchant republics unless their capital is not de jure
+				OR = {
+					is_merchant_republic = no
+					NOT = { capital_holding = { de_jure_liege_or_above = PREVPREV } }
+				}
+				#cannot target close relatives unless they are hated or the claimant is a bastard
+				OR = {
+					NOT = { reverse_opinion = { who = ROOT value = -25 } }
+					NOT = { is_close_relative = ROOT }
+					ROOT = { trait = bastard }
+				}
+				NOR = {
+					in_revolt = yes
+					any_liege = { in_revolt = yes }
+					any_spouse = { character = ROOT }
+					reverse_opinion = { who = ROOT value = 25 }
+					has_character_modifier = holy_truce_timer
+					has_character_modifier = adventurer_target_timer
+					has_any_opinion_modifier = opinion_targeted_by_adventurer
+				}
+			}
+		}		
+		
+		NOR = {
+			trait = content
+			trait = craven
+			trait = depressed
+			trait = imbecile
+			trait = nun
+			trait = monk
+			any_spouse = { is_ruler = yes }
+			any_heir_title = { always = yes }
+			any_liege = { holy_order = yes }
+			any_liege = { mercenary = yes }
+			has_character_modifier = planning_claimant_adventure
+			has_character_flag = claimant_adventurer
+			has_character_flag = was_claimant_adventurer
+		}
+	}
+	
+	mean_time_to_happen = {
+		years = 50
+		modifier = {
+			factor = 0.2
+			has_character_flag = flag_denied_title
+		}
+		modifier = {
+			factor = 0.2
+			OR = {
+				has_character_flag = demon_child_non_pagan
+				trait = changeling
+			}
+		}
+		modifier = {
+			factor = 0.5
+			has_character_flag = justified_claimant
+		}
+		modifier = {
+			factor = 0.5
+			trait = ambitious
+		}
+		modifier = {
+			factor = 0.5
+			trait = decadent
+		}
+		modifier = {
+			factor = 0.5
+			OR = {
+				trait = lunatic
+				trait = possessed
+			}
+		}
+		modifier = {
+			factor = 0.75
+			OR = {
+				trait = genius
+				trait = brilliant_strategist
+			}
+		}
+		modifier = {
+			factor = 0.75
+			trait = brave
+		}
+		modifier = {
+			factor = 0.75
+			trait = proud
+		}
+		modifier = {
+			factor = 0.75
+			trait = greedy
+		}
+		modifier = {
+			factor = 0.75
+			trait = envious
+		}
+		modifier = {
+			factor = 0.75
+			trait = wroth
+		}
+		modifier = {
+			factor = 0.75
+			trait = sayyid
+		}
+		modifier = {
+			factor = 0.75
+			OR = {
+				wealth = 100
+				has_character_modifier = estates_3
+				has_character_modifier = estates_4
+			}
+		}
+		modifier = {
+			factor = 0.75
+			OR = {
+				wealth = 200
+				has_character_modifier = estates_5
+			}
+		}
+		modifier = {
+			factor = 0.75
+			wealth = 300
+		}
+		modifier = {
+			factor = 0.75
+			diplomacy = 12
+		}
+		modifier = {
+			factor = 1.5
+			trait = slothful
+		}
+		modifier = {
+			factor = 1.5
+			trait = charitable
+		}
+		modifier = {
+			factor = 1.5
+			trait = patient
+		}
+		modifier = {
+			factor = 2.0
+			trait = kind
+		}
+		modifier = {
+			factor = 2.0
+			trait = humble
+		}
+		modifier = {
+			factor = 2.0
+			NOT = { diplomacy = 7 }
+		}
+	}
+
+	immediate = {
+		#pick adventurer target
+		random_claim = {
+			limit = {
+				has_holder = yes
+				is_titular = no
+				is_landless_type_title = no
+				#either Duke+ tier or it's their primary title
+				OR = {
+					higher_tier_than = COUNT
+					is_primary_holder_title = yes
+				}
+				#weak claims only allowed against women/regencies/uncrowned unless claimant is ambitious
+				OR = {
+					ROOT = { has_strong_claim = PREV }
+					holder_scope = { is_female = yes }
+					holder_scope = { has_regent = yes }
+					holder_scope = { trait = uncrowned }
+					ROOT = { trait = ambitious }
+				}
+				#female claimants must be ambitious and can only target non-agnatic titles
+				OR = {
+					AND = {
+						ROOT = { is_female = no }
+						NOT = { has_law = enatic_succession }
+					}
+					AND = {
+						ROOT = { is_female = yes }
+						ROOT = { trait = ambitious }
+						NOT = { has_law = agnatic_succession }
+					}
+				}
+				#title holder must qualify
+				holder_scope = {
+					independent = yes
+					demesne_size = 1
+					#not held by theocracy unless not of the claimant's religion
+					OR = {
+						is_theocracy = no
+						NOT = { religion = ROOT }
+					}
+					#cannot target nomads for their clan title or primary title
+					NAND = {
+						government = nomadic_government
+						OR = {
+							clan_title = { title = PREVPREV }
+							primary_title = { title = PREVPREV }
+						}
+					}
+					#cannot target merchant republics unless their capital is not de jure
+					OR = {
+						is_merchant_republic = no
+						NOT = { capital_holding = { de_jure_liege_or_above = PREVPREV } }
+					}
+					#cannot target close relatives unless they are hated or the claimant is a bastard
+					OR = {
+						NOT = { reverse_opinion = { who = ROOT value = -25 } }
+						NOT = { is_close_relative = ROOT }
+						ROOT = { trait = bastard }
+					}
+					NOR = {
+						in_revolt = yes
+						any_liege = { in_revolt = yes }
+						any_spouse = { character = ROOT }
+						reverse_opinion = { who = ROOT value = 25 }
+						has_character_modifier = holy_truce_timer
+						has_character_modifier = adventurer_target_timer
+						has_any_opinion_modifier = opinion_targeted_by_adventurer
+					}
+				}
+			}
+			log = "[Root.GetBestName] has begun an adventure to take the [This.GetFullName] from [This.Holder.GetBestName]"
+			ROOT = {
+				set_character_flag = was_claimant_adventurer
+				set_character_flag = planning_claimant_adventure
+				add_character_modifier = { name = planning_claimant_adventure hidden = yes duration = 1825 }
+				
+				#get rid of estates
+				if = {
+					limit = { has_minor_title = title_lord }
+					remove_title = title_lord
+				}
+				if = {
+					limit = { has_character_modifier = estates_1 }
+					remove_character_modifier = estates_1
+					wealth = 40
+				}
+				if = {
+					limit = { has_character_modifier = estates_2 }
+					remove_character_modifier = estates_2
+					wealth = 80
+				}
+				if = {
+					limit = { has_character_modifier = estates_3 }
+					remove_character_modifier = estates_3
+					wealth = 120
+				}
+				if = {
+					limit = { has_character_modifier = estates_4 }
+					remove_character_modifier = estates_4
+					wealth = 160
+				}
+				if = {
+					limit = { has_character_modifier = estates_5 }
+					remove_character_modifier = estates_5
+					wealth = 200
+				}
+				
+				#must drop out of hiding
+				if = {
+					limit = { trait = in_hiding	}
+					remove_trait = in_hiding
+					add_character_modifier = { name = went_out_of_hiding_timer duration = 180 hidden = yes }
+					hidden_tooltip = { character_event = { id = CM.6400 } } # Notify plotters and family
+				}
+			}
+			
+			#warn the target
+			holder_scope = {
+				reverse_opinion = { who = ROOT modifier = opinion_claimant_adventure_target years = 10 }
+				add_character_modifier = { name = adventurer_target_timer duration = 1825 hidden = yes }
+				character_event = { id = TOG.1201 }
+			}
+			
+			#find a court to reside in
+			ROOT = {
+				character_event = { id = TOG.1202 }
+			}
+		}
+	}
+}
+	
+# Targeted ruler receives word of the adventurer
+character_event = {
+	id = TOG.1201
+	desc = EVTDESC_TOG_1201
+	picture = GFX_evt_crusaders
+	border = GFX_event_normal_frame_war
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_TOG_1201
+		opinion = {
+			who = FROM
+			modifier = opinion_targeted_by_adventurer
+			months = 36
+		}
+	}
+}
+
+# Claimant seeks a court to "reside" in
+character_event = {
+	id = TOG.1202
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		adv_find_adventurer_target_effect = yes
+		
+		if = {
+			limit = {
+				liege = {
+					NOR = {
+						character = event_target:adventurer_target
+						is_liege_or_above = event_target:adventurer_target
+					}
+				}
+			}
+			liege = { save_event_target_as = adventurer_court }
+		}
+		
+		#only move if the target is their liege or above their liege
+		if = {
+			limit = {
+				liege = {
+					OR = {
+						character = event_target:adventurer_target
+						is_liege_or_above = event_target:adventurer_target
+					}
+				}
+			}
+			#first check for a nearby friendly ruler
+			random_playable_ruler = {
+				limit = {
+					adv_can_approach_trigger = yes
+					opinion = { who = ROOT value = -25 }
+					OR = {
+						opinion = { who = ROOT value = 40 }
+						NOT = { opinion = { who = event_target:adventurer_target value = -40 } }
+					}
+					NOR = {
+						same_realm = event_target:adventurer_target
+						is_allied_with = event_target:adventurer_target
+						has_non_aggression_pact_with = event_target:adventurer_target
+						opinion = { who = event_target:adventurer_target value = 25 }
+					}
+					capital_scope = {
+						event_target:adventurer_target = {
+							capital_scope = {
+								NOT = { distance = { where = PREVPREV value = 200 } }
+							}
+						}
+					}
+				}
+				ROOT = { set_character_flag = found_adventurer_court }
+				save_event_target_as = adventurer_court
+			}
+			#then check for a nearby ruler who doesn't hate me and doesn't like my target
+			if = {
+				limit = { NOT = { has_character_flag = found_adventurer_court } }
+				random_playable_ruler = {
+					limit = {
+						adv_can_approach_trigger = yes
+						opinion = { who = ROOT value = -25 }
+						NOR = {
+							same_realm = event_target:adventurer_target
+							is_allied_with = event_target:adventurer_target
+							has_non_aggression_pact_with = event_target:adventurer_target
+							opinion = { who = event_target:adventurer_target value = 25 }
+						}
+						capital_scope = {
+							event_target:adventurer_target = {
+								capital_scope = {
+									NOT = { distance = { where = PREVPREV value = 200 } }
+								}
+							}
+						}
+					}
+					ROOT = { set_character_flag = found_adventurer_court }
+					save_event_target_as = adventurer_court
+				}
+			}
+			#first check for a meadium distance friendly ruler
+			if = {
+				limit = { NOT = { has_character_flag = found_adventurer_court } }
+				random_playable_ruler = {
+					limit = {
+						adv_can_approach_trigger = yes
+						opinion = { who = ROOT value = -25 }
+						OR = {
+							opinion = { who = ROOT value = 40 }
+							NOT = { opinion = { who = event_target:adventurer_target value = -40 } }
+						}
+						NOR = {
+							same_realm = event_target:adventurer_target
+							is_allied_with = event_target:adventurer_target
+							has_non_aggression_pact_with = event_target:adventurer_target
+							opinion = { who = event_target:adventurer_target value = 25 }
+						}
+						capital_scope = {
+							event_target:adventurer_target = {
+								capital_scope = {
+									NOT = { distance = { where = PREVPREV value = 400 } }
+								}
+							}
+						}
+					}
+					ROOT = { set_character_flag = found_adventurer_court }
+					save_event_target_as = adventurer_court
+				}
+			}
+			#then check for a medium distance ruler who doesn't hate me and doesn't like my target
+			if = {
+				limit = { NOT = { has_character_flag = found_adventurer_court } }
+				random_playable_ruler = {
+					limit = {
+						adv_can_approach_trigger = yes
+						opinion = { who = ROOT value = -25 }
+						NOR = {
+							same_realm = event_target:adventurer_target
+							is_allied_with = event_target:adventurer_target
+							has_non_aggression_pact_with = event_target:adventurer_target
+							opinion = { who = event_target:adventurer_target value = 25 }
+						}
+						capital_scope = {
+							event_target:adventurer_target = {
+								capital_scope = {
+									NOT = { distance = { where = PREVPREV value = 400 } }
+								}
+							}
+						}
+					}
+					ROOT = { set_character_flag = found_adventurer_court }
+					save_event_target_as = adventurer_court
+				}
+			}
+			#first check for a far away friendly ruler
+			if = {
+				limit = { NOT = { has_character_flag = found_adventurer_court } }
+				random_playable_ruler = {
+					limit = {
+						adv_can_approach_trigger = yes
+						opinion = { who = ROOT value = -25 }
+						OR = {
+							opinion = { who = ROOT value = 40 }
+							NOT = { opinion = { who = event_target:adventurer_target value = -40 } }
+						}
+						NOR = {
+							same_realm = event_target:adventurer_target
+							is_allied_with = event_target:adventurer_target
+							has_non_aggression_pact_with = event_target:adventurer_target
+							opinion = { who = event_target:adventurer_target value = 25 }
+						}
+						capital_scope = {
+							event_target:adventurer_target = {
+								capital_scope = {
+									NOT = { distance = { where = PREVPREV value = 600 } }
+								}
+							}
+						}
+					}
+					ROOT = { set_character_flag = found_adventurer_court }
+					save_event_target_as = adventurer_court
+				}
+			}
+			#then check for a far away ruler who doesn't hate me and doesn't like my target
+			if = {
+				limit = { NOT = { has_character_flag = found_adventurer_court } }
+				random_playable_ruler = {
+					limit = {
+						adv_can_approach_trigger = yes
+						opinion = { who = ROOT value = -25 }
+						NOR = {
+							same_realm = event_target:adventurer_target
+							is_allied_with = event_target:adventurer_target
+							has_non_aggression_pact_with = event_target:adventurer_target
+							opinion = { who = event_target:adventurer_target value = 25 }
+						}
+						capital_scope = {
+							event_target:adventurer_target = {
+								capital_scope = {
+									NOT = { distance = { where = PREVPREV value = 600 } }
+								}
+							}
+						}
+					}
+					ROOT = { set_character_flag = found_adventurer_court }
+					save_event_target_as = adventurer_court
+				}
+			}
+			#then check for any friendly ruler
+			if = {
+				limit = { NOT = { has_character_flag = found_adventurer_court } }
+				random_playable_ruler = {
+					limit = {
+						adv_can_approach_trigger = yes
+						opinion = { who = ROOT value = -25 }
+						OR = {
+							opinion = { who = ROOT value = 40 }
+							NOT = { opinion = { who = event_target:adventurer_target value = -40 } }
+						}
+						NOR = {
+							same_realm = event_target:adventurer_target
+							is_allied_with = event_target:adventurer_target
+							has_non_aggression_pact_with = event_target:adventurer_target
+							opinion = { who = event_target:adventurer_target value = 25 }
+						}
+					}
+					ROOT = { set_character_flag = found_adventurer_court }
+					save_event_target_as = adventurer_court
+				}
+			}
+			#then check for any ruler who doesn't hate me and doesn't like my target
+			if = {
+				limit = { NOT = { has_character_flag = found_adventurer_court } }
+				random_playable_ruler = {
+					limit = {
+						adv_can_approach_trigger = yes
+						opinion = { who = ROOT value = -25 }
+						NOR = {
+							same_realm = event_target:adventurer_target
+							is_allied_with = event_target:adventurer_target
+							has_non_aggression_pact_with = event_target:adventurer_target
+							opinion = { who = event_target:adventurer_target value = 25 }
+						}
+					}
+					ROOT = { set_character_flag = found_adventurer_court }
+					save_event_target_as = adventurer_court
+				}
+			}
+			#then check for any nearby appropriate ruler
+			if = {
+				limit = { NOT = { has_character_flag = found_adventurer_court } }
+				random_playable_ruler = {
+					limit = {
+						adv_can_approach_trigger = yes
+						NOR = {
+							same_realm = event_target:adventurer_target
+							is_allied_with = event_target:adventurer_target
+							has_non_aggression_pact_with = event_target:adventurer_target
+							opinion = { who = event_target:adventurer_target value = 25 }
+						}
+						capital_scope = {
+							event_target:adventurer_target = {
+								capital_scope = {
+									NOT = { distance = { where = PREVPREV value = 200 } }
+								}
+							}
+						}
+					}
+					ROOT = { set_character_flag = found_adventurer_court }
+					save_event_target_as = adventurer_court
+				}
+			}
+			#then check for any medium distance appropriate ruler
+			if = {
+				limit = { NOT = { has_character_flag = found_adventurer_court } }
+				random_playable_ruler = {
+					limit = {
+						adv_can_approach_trigger = yes
+						NOR = {
+							same_realm = event_target:adventurer_target
+							is_allied_with = event_target:adventurer_target
+							has_non_aggression_pact_with = event_target:adventurer_target
+							opinion = { who = event_target:adventurer_target value = 25 }
+						}
+						capital_scope = {
+							event_target:adventurer_target = {
+								capital_scope = {
+									NOT = { distance = { where = PREVPREV value = 400 } }
+								}
+							}
+						}
+					}
+					ROOT = { set_character_flag = found_adventurer_court }
+					save_event_target_as = adventurer_court
+				}
+			}
+			#then check for any far away appropriate ruler
+			if = {
+				limit = { NOT = { has_character_flag = found_adventurer_court } }
+				random_playable_ruler = {
+					limit = {
+						adv_can_approach_trigger = yes
+						NOR = {
+							same_realm = event_target:adventurer_target
+							is_allied_with = event_target:adventurer_target
+							has_non_aggression_pact_with = event_target:adventurer_target
+							opinion = { who = event_target:adventurer_target value = 25 }
+						}
+						capital_scope = {
+							event_target:adventurer_target = {
+								capital_scope = {
+									NOT = { distance = { where = PREVPREV value = 600 } }
+								}
+							}
+						}
+					}
+					ROOT = { set_character_flag = found_adventurer_court }
+					save_event_target_as = adventurer_court
+				}
+			}
+			#failing that, any ruler will do
+			if = {
+				limit = { NOT = { has_character_flag = found_adventurer_court } }
+				random_playable_ruler = {
+					limit = {
+						adv_can_approach_trigger = yes
+						NOT = { same_realm = event_target:adventurer_target }
+					}
+					ROOT = { set_character_flag = found_adventurer_court }
+					save_event_target_as = adventurer_court
+				}
+			}
+			if = {
+				limit = { NOT = { has_character_flag = found_adventurer_court } }
+				random_playable_ruler = {
+					limit = {
+						is_playable = yes
+						demesne_size = 1
+						NOT = { same_realm = event_target:adventurer_target }
+					}
+					ROOT = { set_character_flag = found_adventurer_court }
+					save_event_target_as = adventurer_court
+				}
+			}
+			clr_character_flag = found_adventurer_court
+
+			#move the adventurer there and create their title
+			move_character = event_target:adventurer_court
+		}
+		
+		log = "--> [Root.GetBestName] will begin [Root.GetHerHis] adventure in the court of [adventurer_court.GetBestName]"
+		event_target:adventurer_court = {
+			capital_scope = {
+				ROOT = {
+					create_title = {
+						tier = DUKE
+						landless = yes
+						adventurer = yes
+						culture = THIS
+						name = "CLAIMANT_ADVENTURE"
+						holder = THIS
+						ruler = "LORD"
+						ruler_female = "LADY"
+						base_title = PREV
+					}
+				}
+			}
+		}
+		set_defacto_liege = ROOT
+		
+		#move family & friends to their court
+		any_spouse = {
+			limit = {
+				prisoner = no
+				is_ruler = no
+			}
+			log = "--> [This.GetBestName] has joined [Root.GetBestName] on their adventure (spouse)"
+			move_character = ROOT
+		}
+		any_child = {
+			limit = {
+				is_ruler = no
+				prisoner = no
+				OR = {
+					is_adult = no
+					opinion = { who = ROOT value = 50 }
+				}
+				OR = {
+					is_adult = no
+					liege = {
+						NOT = { reverse_opinion = { who = PREV value = 0 } }
+						NOT = { dynasty = PREV }
+					}
+				}
+			}
+			log = "--> [This.GetBestName] has joined [Root.GetBestName] on their adventure (child)"
+			move_character = ROOT
+			any_child = {
+				limit = {
+					is_ruler = no
+					prisoner = no
+					OR = {
+						is_adult = no
+						opinion = { who = ROOT value = 25 }
+					}
+					OR = {
+						is_adult = no
+						liege = {
+							NOT = { reverse_opinion = { who = PREV value = 0 } }
+							NOT = { dynasty = PREV }
+						}
+					}
+				}
+				log = "--> [This.GetBestName] has joined [Root.GetBestName] on their adventure (grandchild)"
+				move_character = ROOT
+			}
+		}
+		any_friend = {
+			limit = {
+				prisoner = no
+				is_adult = yes
+				is_ruler = no
+				NOR = {
+					trait = in_hiding
+					trait = incapable
+					opinion = { who = event_target:adventurer_target value = 25 }
+					opinion = { who = liege value = 50 }
+				}
+			}
+			log = "--> [This.GetBestName] has joined [Root.GetBestName] on their adventure (friend)"
+			move_character = ROOT
+		}
+		event_target:adventurer_target = {
+			any_realm_character = {
+				count = 3
+				limit = {
+					prisoner = no
+					is_adult = yes
+					is_ruler = no
+					is_councillor = no
+					OR = {
+						opinion = { who = ROOT value = 40 }
+						AND = {
+							NOT = { opinion = { who = event_target:adventurer_target value = -40 } }
+							opinion = { who = ROOT value = 25 }
+						}
+					}
+					NOR = {
+						trait = in_hiding
+						trait = incapable
+						is_married = event_target:adventurer_target
+						opinion = { who = event_target:adventurer_target value = 0 }
+						opinion = { who = liege value = 25 }
+					}
+				}
+				log = "--> [This.GetBestName] has joined [Root.GetBestName] on their adventure (realm character)"
+				move_character = ROOT
+			}
+		}
+
+		# Create some courtiers
+		create_random_soldier = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 30
+		}
+		create_random_soldier = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 25
+		}
+		create_random_soldier = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 29
+		}
+		create_random_intriguer = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 30
+		}
+		
+		#begin approaching rulers
+		character_event = { id = TOG.1210 days = 1 }
+	}
+}
+
+# Adventurer seeks a court to begin recruiting in
+character_event = {
+	id = TOG.1210
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		ROOT = { adv_is_valid_trigger = yes }
+		NOT = { has_character_flag = began_adventure }
+		NOT = { wealth = 1000 }
+	}
+	
+	immediate = {
+		remove_character_modifier = do_not_disturb
+		adv_find_adventurer_target_effect = yes
+		adv_reset_location_effect = yes
+		
+		#first ask from the top liege of their current location
+		if = {
+			limit = {
+				location = {
+					owner = {
+						top_liege = { adv_can_approach_trigger = yes }
+					}
+				}
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 1 hidden = yes } }
+			location = {
+				owner = {
+					top_liege = { character_event = { id = TOG.1215 days = 1 } }
+				}
+			}
+			break = yes
+		}
+		#then seek out close independent rulers who hate the targeted ruler and are also friends/close relatives
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				adv_like_adventurer_trigger = yes
+				adv_hate_adventurer_target_trigger = yes
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 150 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 5 hidden = yes } }
+			character_event = { id = TOG.1215 days = 5 }
+			break = yes
+		}
+		#then seek out close independent rulers who hate the targeted ruler and are of the same religion/culture
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				adv_hate_adventurer_target_trigger = yes
+				religion = ROOT
+				culture = ROOT
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 150 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 5 hidden = yes } }
+			character_event = { id = TOG.1215 days = 5 }
+			break = yes
+		}
+		#then seek out close independent rulers who like me
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				adv_like_adventurer_trigger = yes
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 150 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 5 hidden = yes } }
+			character_event = { id = TOG.1215 days = 5 }
+			break = yes
+		}
+		#then seek out nearby independent rulers who hate the targeted ruler and are also friends/close relatives
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				adv_like_adventurer_trigger = yes
+				adv_hate_adventurer_target_trigger = yes
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 300 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 10 hidden = yes } }
+			character_event = { id = TOG.1215 days = 10 }
+			break = yes
+		}
+		#then seek out nearby independent rulers who hate the targeted ruler and are of the same religion/culture
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				adv_hate_adventurer_target_trigger = yes
+				religion = ROOT
+				culture = ROOT
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 300 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 10 hidden = yes } }
+			character_event = { id = TOG.1215 days = 10 }
+			break = yes
+		}
+		#then seek out nearby independent rulers who like me
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				adv_like_adventurer_trigger = yes
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 300 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 10 hidden = yes } }
+			character_event = { id = TOG.1215 days = 10 }
+			break = yes
+		}
+		#then seek out independent rulers who are further afield and who hate the targeted ruler and also like me
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				adv_like_adventurer_trigger = yes
+				adv_hate_adventurer_target_trigger = yes
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 600 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 15 hidden = yes } }
+			character_event = { id = TOG.1215 days = 15 }
+			break = yes
+		}
+		#then seek out independent rulers who are further afield and who hate the targeted ruler and are of the same religion and culture
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				adv_hate_adventurer_target_trigger = yes
+				religion = ROOT
+				culture = ROOT
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 600 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 15 hidden = yes } }
+			character_event = { id = TOG.1215 days = 15 }
+			break = yes
+		}
+		#then seek out independent rulers who are further afield and who like me
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				adv_like_adventurer_trigger = yes
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 600 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 15 hidden = yes } }
+			character_event = { id = TOG.1215 days = 15 }
+			break = yes
+		}
+		#then seek out close independent rulers who hate the targeted ruler but do not hate me
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				adv_hate_adventurer_target_trigger = yes
+				opinion = { who = ROOT value = -25 }
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 150 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 5 hidden = yes } }
+			character_event = { id = TOG.1215 days = 5 }
+			break = yes
+		}
+		#then seek out nearby independent rulers who hate the targeted ruler but do not hate me
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				adv_hate_adventurer_target_trigger = yes
+				opinion = { who = ROOT value = -25 }
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 300 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 10 hidden = yes } }
+			character_event = { id = TOG.1215 days = 10 }
+			break = yes
+		}
+		#then seek out independent rulers who are further afield and who hate the targeted ruler but do not hate me
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				adv_hate_adventurer_target_trigger = yes
+				opinion = { who = ROOT value = -25 }
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 600 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 15 hidden = yes } }
+			character_event = { id = TOG.1215 days = 15 }
+			break = yes
+		}
+		#then seek out anyone of the same religion AND culture who is close
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				religion = ROOT
+				culture = ROOT
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 150 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 5 hidden = yes } }
+			character_event = { id = TOG.1215 days = 5 }
+			break = yes
+		}
+		#then seek out anyone of the same religion AND culture who is nearby
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				religion = ROOT
+				culture = ROOT
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 300 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 10 hidden = yes } }
+			character_event = { id = TOG.1215 days = 10 }
+			break = yes
+		}
+		#then seek out anyone of the same religion AND culture who is further afield
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				religion = ROOT
+				culture = ROOT
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 600 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 15 hidden = yes } }
+			character_event = { id = TOG.1215 days = 15 }
+			break = yes
+		}
+		#then seek out anyone of the same religion OR culture who is close
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				OR = {
+					religion = ROOT
+					culture = ROOT
+				}
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 150 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 5 hidden = yes } }
+			character_event = { id = TOG.1215 days = 5 }
+			break = yes
+		}
+		#then seek out anyone of the same religion OR culture who is nearby
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				OR = {
+					religion = ROOT
+					culture = ROOT
+				}
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 300 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 10 hidden = yes } }
+			character_event = { id = TOG.1215 days = 10 }
+			break = yes
+		}
+		#then seek out anyone of the same religion OR culture who is further afield
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				OR = {
+					religion = ROOT
+					culture = ROOT
+				}
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 600 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 15 hidden = yes } }
+			character_event = { id = TOG.1215 days = 15 }
+			break = yes
+		}
+		#then seek out anyone of the same religion group AND culture group who doesn't hate me and who is close
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				culture_group = ROOT
+				opinion = { who = ROOT value = -25 }
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 150 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 5 hidden = yes } }
+			character_event = { id = TOG.1215 days = 5 }
+			break = yes
+		}
+		#then seek out anyone of the same religion group AND culture group who doesn't hate me and who is nearby
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				culture_group = ROOT
+				opinion = { who = ROOT value = -25 }
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 300 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 10 hidden = yes } }
+			character_event = { id = TOG.1215 days = 10 }
+			break = yes
+		}
+		#then seek out anyone of the same religion group AND culture group who doesn't hate me and who is further afield
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				culture_group = ROOT
+				opinion = { who = ROOT value = -25 }
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 600 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 15 hidden = yes } }
+			character_event = { id = TOG.1215 days = 15 }
+			break = yes
+		}
+		#then seek out anyone of the same religion group who doesn't hate me and who is close
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				opinion = { who = ROOT value = -25 }
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 150 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 5 hidden = yes } }
+			character_event = { id = TOG.1215 days = 5 }
+			break = yes
+		}
+		#then seek out anyone of the same religion group who doesn't hate me and who is nearby
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				opinion = { who = ROOT value = -25 }
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 300 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 10 hidden = yes } }
+			character_event = { id = TOG.1215 days = 10 }
+			break = yes
+		}
+		#then seek out anyone of the same religion group who doesn't hate me and who is further afield
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				opinion = { who = ROOT value = -25 }
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 600 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 15 hidden = yes } }
+			character_event = { id = TOG.1215 days = 15 }
+			break = yes
+		}
+		#last resort: go anywhere close
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 150 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 5 hidden = yes } }
+			character_event = { id = TOG.1215 days = 5 }
+			break = yes
+		}
+		#last resort: go anywhere nearby
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 300 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 10 hidden = yes } }
+			character_event = { id = TOG.1215 days = 10 }
+			break = yes
+		}
+		#last resort: go anywhere further afield
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+				NOT = { distance = { where = event_target:current_court value = 600 } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 15 hidden = yes } }
+			character_event = { id = TOG.1215 days = 15 }
+			break = yes
+		}
+		#failing that, go anywhere
+		random_independent_ruler = {
+			limit = {
+				adv_can_approach_trigger = yes
+				any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
+			}
+			ROOT = { add_character_modifier = { name = do_not_disturb duration = 30 hidden = yes } }
+			character_event = { id = TOG.1215 days = 30 }
+			break = yes
+		}
+	}
+}
+
+# Adventurer arrives at a foreign court and asks for support
+character_event = {
+	id = TOG.1215
+	desc = EVTDESC_TOG_1215
+	picture = GFX_evt_emissary
+	border = GFX_event_normal_frame_diplomacy
+	
+	is_triggered_only = yes
+	
+	trigger = {
+		FROM = {
+			adv_is_valid_trigger = yes
+			NOT = { has_character_flag = began_adventure }
+		}
+	}
+	
+	immediate = {
+		FROM = { remove_character_modifier = do_not_disturb }
+		capital_scope = { save_event_target_as = current_court }
+	}
+	
+	option = {
+		name = EVTOPTA_TOG_1215 # I will give him my full support
+		trigger = {
+			wealth = 10
+		}
+		ai_chance = {
+			factor = 20
+			modifier = {
+				factor = 0.75
+				war = yes
+			}
+			modifier = {
+				factor = 0.5
+				FROM = { wealth = 500 }
+			}
+			modifier = {
+				factor = 0.5
+				FROM = { wealth = 750 }
+			}
+			modifier = {
+				factor = 0.5
+				FROM = { wealth = 1000 }
+			}
+			modifier = {
+				factor = 5
+				is_friend = FROM
+			}
+			modifier = {
+				factor = 5
+				is_rival = event_target:adventurer_target
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					is_friend = event_target:adventurer_target
+					is_rival = FROM
+					NOT = { opinion = { who = FROM value = -50 } }
+					opinion = { who = event_target:adventurer_target value = 50 }
+				}
+			}
+			modifier = {
+				factor = 1.5
+				religion = FROM
+				NOT = { religion = event_target:adventurer_target }
+			}
+			modifier = {
+				factor = 1.5
+				culture = FROM
+				NOT = { culture = event_target:adventurer_target }
+			}
+			modifier = {
+				factor = 2
+				is_close_relative = FROM
+				NOT = { is_close_relative = event_target:adventurer_target }
+			}
+			modifier = {
+				factor = 1.5
+				OR = {
+					dynasty = FROM
+					is_allied_with = FROM
+				}
+				NOT = {
+					is_close_relative = FROM
+					dynasty = event_target:adventurer_target
+					is_allied_with = event_target:adventurer_target
+					has_non_aggression_pact_with = event_target:adventurer_target
+				}
+			}
+			modifier = {
+				factor = 0.1
+				has_character_modifier = ai_austerity
+			}
+			modifier = {
+				factor = 1.5
+				trait = charitable
+			}
+			modifier = {
+				factor = 0.25
+				is_allied_with = event_target:adventurer_target
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { is_allied_with = event_target:adventurer_target }
+				has_non_aggression_pact_with = event_target:adventurer_target
+			}
+			modifier = {
+				factor = 0.5
+				trait = greedy
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { religion = FROM }
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { culture_group = FROM }
+			}
+			modifier = {
+				factor = 0.75
+				NOT = { opinion = { who = FROM value = 0 } }
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { opinion = { who = FROM value = -25 } }
+			}
+			modifier = {
+				factor = 1.25
+				opinion = { who = FROM value = 25 }
+			}
+			modifier = {
+				factor = 1.5
+				opinion = { who = FROM value = 50 }
+			}
+			modifier = {
+				factor = 2
+				opinion = { who = FROM value = 75 }
+			}
+			modifier = {
+				factor = 1.25
+				NOT = { opinion = { who = event_target:adventurer_target value = -25 } }
+			}
+			modifier = {
+				factor = 1.5
+				NOT = { opinion = { who = event_target:adventurer_target value = -50 } }
+			}
+			modifier = {
+				factor = 2
+				NOT = { opinion = { who = event_target:adventurer_target value = -75 } }
+			}
+			modifier = {
+				factor = 0.5
+				opinion = { who = event_target:adventurer_target value = 25 }
+			}
+			modifier = {
+				factor = 0.5
+				FROM = { NOT = { diplomacy = 6 } }
+			}
+			modifier = {
+				factor = 1.1
+				FROM = { diplomacy = 10 }
+			}
+			modifier = {
+				factor = 1.1
+				FROM = { diplomacy = 12 }
+			}
+			modifier = {
+				factor = 1.2
+				FROM = { diplomacy = 14 }
+			}
+			modifier = {
+				factor = 1.2
+				FROM = { diplomacy = 16 }
+			}
+		}
+		adv_donate_to_adventurer_effect = yes
+		reverse_opinion = { who = FROM modifier = backed_adventurer years = 20 }
+		reverse_opinion = { who = event_target:adventurer_target modifier = supported_adventurer_against_me multiplier = 2 years = 10 }
+		FROM = { custom_tooltip = { text = ADVENTURER_RECRUITS_FROM_MY_LANDS } }
+		hidden_tooltip = {
+			# inform targeted ruler
+			if = {
+				limit = {
+					is_within_diplo_range = event_target:adventurer_target
+					FROM = { NOT = { has_character_flag = not_interested_in_movement } }
+				}
+				event_target:adventurer_target = { character_event = { id = TOG.1216 days = 15 } }
+			}
+			# adventurer recruits in the realm, remaining a time based on the ruler's realm size
+			if = {
+				limit = { NOT = { realm_size = 50 } }
+				FROM = { add_character_modifier = { name = do_not_disturb duration = 75 hidden = yes } }
+				any_realm_character = {
+					limit = { adv_can_approach_vassal_trigger = yes }
+					letter_event = { id = TOG.1218 days = 15 random = 45 }
+				}
+				any_realm_province = {
+					limit = {
+						NOT = { has_province_modifier = adventurer_recruited }
+						county = { is_occupied = no }
+					}
+					province_event = { id = TOG.1219 days = 15 random = 45 }
+				}
+				# adventurer moves on after a time
+				FROM = { character_event = { id = TOG.1210 days = 60 random = 15 } }
+			}
+			if = {
+				limit = {
+					realm_size = 50
+					NOT = { realm_size = 100 }
+				}
+				FROM = { add_character_modifier = { name = do_not_disturb duration = 130 hidden = yes } }
+				any_realm_character = {
+					limit = { adv_can_approach_vassal_trigger = yes }
+					letter_event = { id = TOG.1218 days = 15 random = 100 }
+				}			
+				any_realm_province = {
+					limit = {
+						NOT = { has_province_modifier = adventurer_recruited }
+						county = { is_occupied = no }
+					}
+					province_event = { id = TOG.1219 days = 15 random = 100 }
+				}
+				# adventurer moves on after a time
+				FROM = { character_event = { id = TOG.1210 days = 115 random = 15 } }
+			}			
+			if = {
+				limit = { realm_size = 100 }
+				FROM = { add_character_modifier = { name = do_not_disturb duration = 180 hidden = yes } }
+				any_realm_character = {
+					limit = { adv_can_approach_vassal_trigger = yes }
+					letter_event = { id = TOG.1218 days = 15 random = 150 }
+				}
+				any_realm_province = {
+					limit = {
+						NOT = { has_province_modifier = adventurer_recruited }
+						county = { is_occupied = no }
+					}
+					province_event = { id = TOG.1219 days = 15 random = 150 }
+				}
+				# adventurer moves on after a time
+				FROM = { character_event = { id = TOG.1210 days = 165 random = 15 } }
+			}
+		}		
+	}
+	option = {
+		name = EVTOPTB_TOG_1215 # He may raise support in my lands
+		ai_chance = {
+			factor = 30
+			modifier = {
+				factor = 0.75
+				war = yes
+			}
+			modifier = {
+				factor = 5
+				is_friend = FROM
+			}
+			modifier = {
+				factor = 5
+				is_rival = event_target:adventurer_target
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					is_friend = event_target:adventurer_target
+					is_rival = FROM
+					NOT = { opinion = { who = FROM value = -50 } }
+					opinion = { who = event_target:adventurer_target value = 50 }
+				}
+			}
+			modifier = {
+				factor = 1.5
+				religion = FROM
+				NOT = { religion = event_target:adventurer_target }
+			}
+			modifier = {
+				factor = 1.5
+				culture = FROM
+				NOT = { culture = event_target:adventurer_target }
+			}
+			modifier = {
+				factor = 2
+				is_close_relative = FROM
+				NOT = { is_close_relative = event_target:adventurer_target }
+			}
+			modifier = {
+				factor = 1.5
+				OR = {
+					dynasty = FROM
+					is_allied_with = FROM
+				}
+				NOR = {
+					is_close_relative = FROM
+					dynasty = event_target:adventurer_target
+					is_allied_with = event_target:adventurer_target
+					has_non_aggression_pact_with = event_target:adventurer_target
+				}
+			}
+			modifier = {
+				factor = 0.25
+				is_allied_with = event_target:adventurer_target
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { is_allied_with = event_target:adventurer_target }
+				has_non_aggression_pact_with = event_target:adventurer_target
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { religion = FROM }
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { culture_group = FROM }
+			}
+			modifier = {
+				factor = 0.75
+				NOT = { opinion = { who = FROM value = 0 } }
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { opinion = { who = FROM value = -25 } }
+			}
+			modifier = {
+				factor = 1.25
+				opinion = { who = FROM value = 25 }
+			}
+			modifier = {
+				factor = 1.5
+				opinion = { who = FROM value = 50 }
+			}
+			modifier = {
+				factor = 2
+				opinion = { who = FROM value = 75 }
+			}
+			modifier = {
+				factor = 1.25
+				NOT = { opinion = { who = event_target:adventurer_target value = -25 } }
+			}
+			modifier = {
+				factor = 1.5
+				NOT = { opinion = { who = event_target:adventurer_target value = -50 } }
+			}
+			modifier = {
+				factor = 2
+				NOT = { opinion = { who = event_target:adventurer_target value = -75 } }
+			}
+			modifier = {
+				factor = 0.5
+				opinion = { who = event_target:adventurer_target value = 25 }
+			}
+			modifier = {
+				factor = 0.5
+				FROM = { NOT = { diplomacy = 6 } }
+			}
+			modifier = {
+				factor = 1.1
+				FROM = { diplomacy = 10 }
+			}
+			modifier = {
+				factor = 1.1
+				FROM = { diplomacy = 12 }
+			}
+			modifier = {
+				factor = 1.2
+				FROM = { diplomacy = 14 }
+			}
+			modifier = {
+				factor = 1.2
+				FROM = { diplomacy = 16 }
+			}
+		}
+		reverse_opinion = { who = FROM modifier = let_adventurer_stay years = 20 }
+		reverse_opinion = { who = event_target:adventurer_target modifier = supported_adventurer_against_me years = 10 }
+		FROM = { custom_tooltip = { text = ADVENTURER_RECRUITS_FROM_MY_LANDS } }
+		hidden_tooltip = {
+			# inform targeted ruler
+			if = {
+				limit = {
+					is_within_diplo_range = event_target:adventurer_target
+					FROM = { NOT = { has_character_flag = not_interested_in_movement } }
+				}
+				event_target:adventurer_target = { character_event = { id = TOG.1217 days = 15 } }
+			}
+			# adventurer recruits in the realm, remaining a time based on the ruler's realm size
+			if = {
+				limit = { NOT = { realm_size = 50 } }
+				FROM = { add_character_modifier = { name = do_not_disturb duration = 75 hidden = yes } }
+				any_realm_character = {
+					limit = { adv_can_approach_vassal_trigger = yes }
+					letter_event = { id = TOG.1218 days = 15 random = 45 }
+				}
+				any_realm_province = {
+					limit = {
+						NOT = { has_province_modifier = adventurer_recruited }
+						county = { is_occupied = no }
+					}
+					province_event = { id = TOG.1219 days = 15 random = 45 }
+				}
+				# adventurer moves on after a time
+				FROM = { character_event = { id = TOG.1210 days = 60 random = 15 } }
+			}
+			if = {
+				limit = {
+					realm_size = 50
+					NOT = { realm_size = 100 }
+				}
+				FROM = { add_character_modifier = { name = do_not_disturb duration = 130 hidden = yes } }
+				any_realm_character = {
+					limit = { adv_can_approach_vassal_trigger = yes }
+					letter_event = { id = TOG.1218 days = 15 random = 100 }
+				}			
+				any_realm_province = {
+					limit = {
+						NOT = { has_province_modifier = adventurer_recruited }
+						county = { is_occupied = no }
+					}
+					province_event = { id = TOG.1219 days = 15 random = 100 }
+				}
+				# adventurer moves on after a time
+				FROM = { character_event = { id = TOG.1210 days = 115 random = 15 } }
+			}			
+			if = {
+				limit = { realm_size = 100 }
+				FROM = { add_character_modifier = { name = do_not_disturb duration = 180 hidden = yes } }
+				any_realm_character = {
+					limit = { adv_can_approach_vassal_trigger = yes }
+					letter_event = { id = TOG.1218 days = 15 random = 150 }
+				}
+				any_realm_province = {
+					limit = {
+						NOT = { has_province_modifier = adventurer_recruited }
+						county = { is_occupied = no }
+					}
+					province_event = { id = TOG.1219 days = 15 random = 150 }
+				}
+				# adventurer moves on after a time
+				FROM = { character_event = { id = TOG.1210 days = 165 random = 15 } }
+			}
+		}
+	}
+	option = {
+		name = EVTOPTC_TOG_1215 # He can do as he wishes, but not here
+		ai_chance = {
+			factor = 40
+			modifier = {
+				factor = 2
+				NOT = { religion = FROM }
+			}
+			modifier = {
+				factor = 1.5
+				NOT = { culture = FROM }
+			}
+			modifier = {
+				factor = 1.5
+				NOT = { culture_group = FROM }
+			}
+		}
+		reverse_opinion = { who = FROM modifier = turned_adventurer_away years = 20 }
+		FROM = {
+			custom_tooltip = {
+				text = ADVENTURER_MUST_MOVE_ON
+				hidden_tooltip = { character_event = { id = TOG.1210 } }
+			}
+		}
+	}
+	option = {
+		name = EVTOPTD_TOG_1215 # Betray him for a ransom
+		trigger = {
+			intrigue = 8
+			NOT = { trait = honest }
+		}
+		ai_chance = {
+			factor = 10
+			modifier = {
+				factor = 2
+				NOT = { religion_group = FROM }
+			}
+			modifier = {
+				factor = 2
+				trait = deceitful
+			}
+			modifier = {
+				factor = 2
+				likes_better_than = { who = event_target:adventurer_target than = FROM }
+			}
+			modifier = {
+				factor = 0.5
+				likes_better_than = { who = FROM than = event_target:adventurer_target }
+			}
+			modifier = {
+				factor = 1.5
+				is_allied_with = event_target:adventurer_target
+			}
+			modifier = {
+				factor = 1.5
+				trait = cruel
+			}
+			modifier = {
+				factor = 1.5
+				trait = greedy
+			}
+			modifier = {
+				factor = 1.25
+				trait = arbitrary
+			}
+			modifier = {
+				factor = 1.25
+				FROM = { NOT = { diplomacy = 6 } }
+			}
+			modifier = {
+				factor = 0.8
+				FROM = { diplomacy = 10 }
+			}
+			modifier = {
+				factor = 0.8
+				FROM = { diplomacy = 14 }
+			}
+			modifier = {
+				factor = 0.8
+				FROM = { diplomacy = 18 }
+			}
+			modifier = {
+				factor = 0.5
+				is_close_relative = FROM
+			}
+			modifier = {
+				factor = 0.5
+				trait = just
+			}
+			modifier = {
+				factor = 0
+				NOR = {
+					trait = deceitful
+					trait = ambitious
+					trait = cruel
+					is_allied_with = event_target:adventurer_target
+				}
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					trait = kind
+					has_truce = event_target:adventurer_target
+					has_non_aggression_pact_with = event_target:adventurer_target
+					war_with = event_target:adventurer_target
+					is_rival = event_target:adventurer_target
+					is_friend = FROM
+				}
+			}	
+		}
+		if = {
+			limit = { trait = kind }
+			random = {
+				chance = 50
+				remove_trait = kind
+			}
+		}
+		if = {
+			limit = { NOT = { trait = deceitful } }
+			random = {
+				chance = 50
+				add_trait = deceitful
+			}
+		}
+		tooltip_info = intrigue
+		reverse_opinion = { who = FROM modifier = betrayed_adventurer years = 100 }
+		hidden_tooltip = { FROM = { add_character_modifier = { name = do_not_disturb duration = 20 hidden = yes } } }
+		random_list = {
+			50 = {
+				modifier = {
+					factor = 1.2
+					FROM = { attribute_diff = { character = ROOT attribute = intrigue value = 1 } }
+				}
+				modifier = {
+					factor = 1.2
+					FROM = { attribute_diff = { character = ROOT attribute = intrigue value = 3 } }
+				}
+				modifier = {
+					factor = 1.2
+					FROM = { attribute_diff = { character = ROOT attribute = intrigue value = 5 } }
+				}
+				modifier = {
+					factor = 1.5
+					FROM = { attribute_diff = { character = ROOT attribute = intrigue value = 7 } }
+				}
+				modifier = {
+					factor = 1.5
+					FROM = { attribute_diff = { character = ROOT attribute = intrigue value = 9 } }
+				}
+				modifier = {
+					factor = 2.0
+					FROM = { attribute_diff = { character = ROOT attribute = intrigue value = 11 } }
+				}
+				prestige = -50
+				FROM = { custom_tooltip = { text = ADVENTURER_ESCAPES } }
+				hidden_tooltip = {
+					character_event = { id = TOG.1220 }
+					FROM = { character_event = { id = TOG.1210 } } # Adventurer moves on
+				}
+			}
+			50 = {
+				modifier = {
+					factor = 1.2
+					attribute_diff = { character = FROM attribute = intrigue value = 1 }
+				}
+				modifier = {
+					factor = 1.2
+					attribute_diff = { character = FROM attribute = intrigue value = 3 }
+				}
+				modifier = {
+					factor = 1.2
+					attribute_diff = { character = FROM attribute = intrigue value = 5 }
+				}
+				modifier = {
+					factor = 1.2
+					attribute_diff = { character = FROM attribute = intrigue value = 7 }
+				}
+				modifier = {
+					factor = 1.2
+					attribute_diff = { character = FROM attribute = intrigue value = 9 }
+				}
+				FROM = { imprison = ROOT }
+				event_target:adventurer_target = { letter_event = { id = TOG.1222 tooltip = OFFER_ADVENTURER_FOR_RANSOM } }
+				hidden_tooltip = {
+					character_event = { id = TOG.1221 }
+				}
+			}
+		}
+	}
+}
+
+# Targeted ruler hears that adventurer is being supported
+character_event = {
+	id = TOG.1216
+	desc = EVTDESC_TOG_1216
+	picture = GFX_evt_crusaders
+	border = GFX_event_normal_frame_war
+	
+	is_triggered_only = yes
+	show_from_from = yes
+	
+	trigger = {
+		ai = no
+		has_opinion_modifier = { who = FROMFROM modifier = opinion_targeted_by_adventurer }
+		FROMFROM = { adv_is_valid_trigger = yes }
+	}
+	
+	option = {
+		name = EVTOPTA_TOG_1216
+	}
+	option = {
+		name = EVTOPTB_TOG_1216
+		hidden_tooltip = {
+			FROMFROM = { set_character_flag = not_interested_in_movements }
+		}
+	}
+}
+
+# Targeted ruler hears that adventurer is being allowed to recruit
+character_event = {
+	id = TOG.1217
+	desc = EVTDESC_TOG_1217
+	picture = GFX_evt_crusaders
+	border = GFX_event_normal_frame_war
+	
+	is_triggered_only = yes
+	show_from_from = yes
+	
+	trigger = {
+		ai = no
+		has_opinion_modifier = { who = FROMFROM modifier = opinion_targeted_by_adventurer }
+		FROMFROM = { adv_is_valid_trigger = yes }
+	}
+	
+	option = {
+		name = EVTOPTA_TOG_1217
+	}
+	option = {
+		name = EVTOPTB_TOG_1216
+		hidden_tooltip = {
+			FROMFROM = { set_character_flag = not_interested_in_movements }
+		}
+	}
+}
+
+# Adventurer asks those in the realm for support
+letter_event = {
+	id = TOG.1218
+	desc = EVTDESC_TOG_1218
+	border = GFX_event_letter_frame_diplomacy
+	
+	is_triggered_only = yes
+	show_from_from = yes
+	
+	trigger = {
+		FROMFROM = { adv_is_valid_trigger = yes }
+	}
+	
+	option = {
+		name = EVTOPTA_TOG_1218 # Agree
+		trigger = { wealth = 10 }
+		ai_chance = {
+			factor = 35
+			modifier = {
+				factor = 0.5
+				FROMFROM = { wealth = 500 }
+			}
+			modifier = {
+				factor = 0.5
+				FROMFROM = { wealth = 750 }
+			}
+			modifier = {
+				factor = 0.5
+				FROMFROM = { wealth = 1000 }
+			}
+			modifier = {
+				factor = 0.75
+				NOT = { wealth = 25 }
+			}
+			modifier = {
+				factor = 5
+				is_friend = FROMFROM
+			}
+			modifier = {
+				factor = 5
+				is_rival = event_target:adventurer_target
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					is_friend = event_target:adventurer_target
+					is_rival = FROMFROM
+					NOT = { opinion = { who = FROMFROM value = -50 } }
+					opinion = { who = event_target:adventurer_target value = 50 }
+				}
+			}
+			modifier = {
+				factor = 1.5
+				religion = FROMFROM
+				NOT = { religion = event_target:adventurer_target }
+			}
+			modifier = {
+				factor = 1.5
+				culture = FROMFROM
+				NOT = { culture = event_target:adventurer_target }
+			}
+			modifier = {
+				factor = 2
+				is_close_relative = FROMFROM
+				NOT = { is_close_relative = event_target:adventurer_target }
+			}
+			modifier = {
+				factor = 1.5
+				OR = {
+					dynasty = FROMFROM
+					is_allied_with = FROMFROM
+				}
+				NOR = {
+					is_close_relative = FROMFROM
+					dynasty = event_target:adventurer_target
+					is_allied_with = event_target:adventurer_target
+					has_non_aggression_pact_with = event_target:adventurer_target
+				}
+			}
+			modifier = {
+				factor = 0.1
+				has_character_modifier = ai_austerity
+			}
+			modifier = {
+				factor = 1.5
+				trait = charitable
+			}
+			modifier = {
+				factor = 0.25
+				is_allied_with = event_target:adventurer_target
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { is_allied_with = event_target:adventurer_target }
+				has_non_aggression_pact_with = event_target:adventurer_target
+			}
+			modifier = {
+				factor = 0.5
+				trait = greedy
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { religion = FROMFROM }
+			}
+			modifier = {
+				factor = 0.8
+				NOT = { culture = FROMFROM }
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { culture_group = FROMFROM }
+			}
+			modifier = {
+				factor = 0.75
+				NOT = { opinion = { who = FROMFROM value = 0 } }
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { opinion = { who = FROMFROM value = -25 } }
+			}
+			modifier = {
+				factor = 1.25
+				opinion = { who = FROMFROM value = 25 }
+			}
+			modifier = {
+				factor = 1.5
+				opinion = { who = FROMFROM value = 50 }
+			}
+			modifier = {
+				factor = 2
+				opinion = { who = FROMFROM value = 75 }
+			}
+			modifier = {
+				factor = 1.25
+				NOT = { opinion = { who = event_target:adventurer_target value = -25 } }
+			}
+			modifier = {
+				factor = 1.5
+				NOT = { opinion = { who = event_target:adventurer_target value = -50 } }
+			}
+			modifier = {
+				factor = 2
+				NOT = { opinion = { who = event_target:adventurer_target value = -75 } }
+			}
+			modifier = {
+				factor = 0.5
+				opinion = { who = event_target:adventurer_target value = 25 }
+			}
+			modifier = {
+				factor = 0.5
+				FROMFROM = { NOT = { diplomacy = 6 } }
+			}
+			modifier = {
+				factor = 1.2
+				FROMFROM = { diplomacy = 10 }
+			}
+			modifier = {
+				factor = 1.2
+				FROMFROM = { diplomacy = 12 }
+			}
+			modifier = {
+				factor = 1.2
+				FROMFROM = { diplomacy = 14 }
+			}
+			modifier = {
+				factor = 1.2
+				FROMFROM = { diplomacy = 16 }
+			}
+		}
+		if = {
+			limit = {
+				wealth = 10
+				NOT = { wealth = 40 }
+			}
+			wealth = -10
+			FROMFROM = { wealth = 10 }
+		}
+		if = {
+			limit = {
+				wealth = 40
+				NOT = { wealth = 80 }
+			}
+			wealth = -20
+			FROMFROM = { wealth = 20 }
+		}
+		if = {
+			limit = {
+				wealth = 80
+				NOT = { wealth = 120 }
+			}
+			wealth = -40
+			FROMFROM = { wealth = 40 }
+		}
+		if = {
+			limit = {
+				wealth = 120
+				NOT = { wealth = 160 }
+			}
+			wealth = -60
+			FROMFROM = { wealth = 60 }
+		}
+		if = {
+			limit = {
+				wealth = 160
+				NOT = { wealth = 200 }
+			}
+			wealth = -80
+			FROMFROM = { wealth = 80 }
+		}
+		if = {
+			limit = {
+				wealth = 200
+				NOT = { wealth = 300 }
+			}
+			wealth = -100
+			FROMFROM = { wealth = 100 }
+		}
+		if = {
+			limit = {
+				wealth = 300
+			}
+			wealth = -150
+			FROMFROM = { wealth = 150 }
+		}
+		reverse_opinion = { who = FROMFROM modifier = backed_adventurer years = 20 }
+	}
+	option = {
+		name = EVTOPTB_TOG_1218 # Refuse
+		ai_chance = {
+			factor = 65
+		}
+		reverse_opinion = { who = FROMFROM modifier = refused_adventurer years = 20 }
+	}
+}
+
+# Adventurer recruits from a province in the realm
+province_event = {
+	id = TOG.1219
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		FROMFROM = { adv_is_valid_trigger = yes }
+	}
+	
+	immediate = {
+		add_province_modifier = {
+			name = adventurer_recruited
+			duration = 900
+		}
+		if = {
+			limit = {
+				culture_group = FROMFROM
+				religion = FROMFROM
+			}
+			random_list = {
+				50 = {
+					modifier = {
+						factor = 0.8
+						FROMFROM = {
+							diplomacy = 10
+							NOT = { diplomacy = 15 }
+						}
+					}
+					modifier = {
+						factor = 0.4
+						FROMFROM = { diplomacy = 15 }
+					}
+					#no bonus
+				}
+				40 = {
+					modifier = {
+						factor = 0.75
+						FROMFROM = { diplomacy = 10 }
+					}
+					FROMFROM = { wealth = 10 }
+				}
+				10 = {
+					modifier = {
+						factor = 2.0
+						FROMFROM = {
+							diplomacy = 10
+							NOT = { diplomacy = 15 }
+						}
+					}
+					modifier = {
+						factor = 3.0
+						FROMFROM = { diplomacy = 15 }
+					}
+					FROMFROM = { wealth = 20 }
+				}
+				10 = {
+					modifier = {
+						factor = 0
+						FROMFROM = { NOT = { diplomacy = 10 } }
+					}
+					modifier = {
+						factor = 2.0
+						FROMFROM = { diplomacy = 15 }
+					}
+					FROMFROM = { wealth = 30 }
+				}
+			}
+		}
+		if = {
+			limit = {
+				OR = {
+					NOT = { culture_group = FROMFROM }
+					NOT = { religion = FROMFROM }
+				}
+				OR = {
+					culture_group = FROMFROM
+					religion = FROMFROM
+				}
+			}
+			random_list = {
+				60 = {
+					modifier = {
+						factor = 0.83
+						FROMFROM = {
+							diplomacy = 10
+							NOT = { diplomacy = 15 }
+						}
+					}
+					modifier = {
+						factor = 0.58
+						FROMFROM = { diplomacy = 15 }
+					}
+					#no bonus
+				}
+				30 = {
+					modifier = {
+						factor = 0.66
+						FROMFROM = {
+							diplomacy = 10
+							NOT = { diplomacy = 15 }
+						}
+					}
+					modifier = {
+						factor = 1.17
+						FROMFROM = { diplomacy = 15 }
+					}
+					FROMFROM = { wealth = 10 }
+				}
+				10 = {
+					modifier = {
+						factor = 2.0
+						FROMFROM = { diplomacy = 10 }
+					}
+					FROMFROM = { wealth = 20 }
+				}
+				10 = {
+					modifier = {
+						factor = 0
+						FROMFROM = { NOT = { diplomacy = 10 } }
+					}
+					FROMFROM = { wealth = 30 }
+				}
+			}
+		}
+		if = {
+			limit = {
+				NOT = { culture_group = FROMFROM }
+				NOT = { religion = FROMFROM }
+			}
+			random_list = {
+				80 = {
+					modifier = {
+						factor = 0.75
+						FROMFROM = {
+							diplomacy = 10
+							NOT = { diplomacy = 15 }
+						}
+					}
+					modifier = {
+						factor = 0.56
+						FROMFROM = { diplomacy = 15 }
+					}
+					FROMFROM = { wealth = 0 }
+				}
+				10 = {
+					modifier = {
+						factor = 3.0
+						FROMFROM = {
+							diplomacy = 10
+							NOT = { diplomacy = 15 }
+						}
+					}
+					modifier = {
+						factor = 3.5
+						FROMFROM = { diplomacy = 15 }
+					}
+					FROMFROM = { wealth = 10 }
+				}
+				10 = {
+					modifier = {
+						factor = 1.5
+						FROMFROM = { diplomacy = 15 }
+					}
+					FROMFROM = { wealth = 20 }
+				}
+				5 = {
+					modifier = {
+						factor = 0
+						FROMFROM = { NOT = { diplomacy = 15 } }
+					}
+					FROMFROM = { wealth = 30 }
+				}
+			}
+		}
+	}
+}
+
+# Adventurer escapes the trap and flees the realm
+character_event = {
+	id = TOG.1220
+	desc = EVTDESC_TOG_1220
+	picture = GFX_evt_bandits
+	
+	is_triggered_only = yes
+	show_from_from = yes
+	
+	option = {
+		name = CURSES
+	}
+}
+
+# Adventurer is imprisoned and can now be offered for ransom
+character_event = {
+	id = TOG.1221
+	desc = EVTDESC_TOG_1221
+	picture = GFX_evt_bandits
+	
+	is_triggered_only = yes
+	show_from_from = yes
+	
+	option = {
+		name = EXCELLENT
+	}
+}
+
+# Adventurer offered to the targeted ruler for ransom
+letter_event = {
+	id = TOG.1222
+	desc = EVTDESC_TOG_1222
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_TOG_1222 # Pay the ransom
+		ai_chance = {
+			factor = 75
+			modifier = {
+				factor = 0
+				NOT = { wealth = 50 }
+			}
+			modifier = {
+				factor = 0.5
+				has_character_modifier = ai_austerity
+			}
+			modifier = {
+				factor = 0.5
+				trait = greedy
+			}
+			modifier = {
+				factor = 0.75
+				FROMFROM = { NOT = { wealth = 250 } }
+			}
+			modifier = {
+				factor = 0.75
+				FROMFROM = { NOT = { wealth = 200 } }
+			}
+			modifier = {
+				factor = 0.75
+				FROMFROM = { NOT = { wealth = 150 } }
+			}
+			modifier = {
+				factor = 0.75
+				FROMFROM = { NOT = { wealth = 100 } }
+			}
+		}
+		wealth = -50
+		hidden_tooltip = {
+			save_event_target_as = new_court_home
+			FROM = { letter_event = { id = TOG.1223 days = 3 } }
+			FROMFROM = {
+				hidden_tooltip = { prisoner = no }
+				adv_abandon_adventure_effect = yes
+				reverse_opinion = { who = ROOT modifier = opinion_traitor }
+			}
+		}
+		FROMFROM = { imprison = ROOT }
+	}
+	option = {
+		name = EVTOPTB_TOG_1222 # Refuse
+		ai_chance = {
+			factor = 25
+			modifier = {
+				factor = 2
+				trait = greedy
+			}
+		}
+		hidden_tooltip = {
+			FROM = { letter_event = { id = TOG.1224 days = 3 } }
+		}
+	}
+}
+
+# Notification that the ransom has been paid
+letter_event = {
+	id = TOG.1223
+	desc = EVTDESC_TOG_1223
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EXCELLENT
+		wealth = 50
+		reverse_opinion = { who = FROM modifier = opinion_grateful years = 10 }
+	}
+}
+
+# Notification that the ransom has been refused
+letter_event = {
+	id = TOG.1224
+	desc = EVTDESC_TOG_1224
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_TOG_1224 # Let him go
+		FROMFROMFROM = {
+			prisoner = no
+			custom_tooltip = {
+				text = ADVENTURER_MUST_MOVE_ON
+				character_event = { id = TOG.1210 } # Adventurer moves on
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB_TOG_1224 # Leave him where he is
+		FROMFROMFROM = {
+			custom_tooltip = { text = ADVENTURER_STAYS_IN_PRISON }
+		}
+	}
+}
+
+# Adventurer seeks support in the targeted liege's realm
+character_event = {
+	id = TOG.1230
+	
+	hide_window = yes
+	
+	min_age = 16
+	capable_only = yes
+	prisoner = no
+	
+	trigger = {
+		adv_is_valid_trigger = yes
+		NOT = { has_character_flag = began_adventure }
+		NOT = { wealth = 1000 }
+		any_opinion_modifier_target = {
+			has_opinion_modifier = { who = ROOT modifier = opinion_targeted_by_adventurer }
+			any_realm_character = {
+				wealth = 10
+				is_within_diplo_range = ROOT
+				is_adult = yes
+				prisoner = no
+				OR = {
+					dynasty = ROOT
+					is_close_relative = ROOT
+					any_spouse = { is_close_relative = ROOT }
+					is_friend = ROOT
+					opinion = { who = ROOT value = 40 }
+					is_rival = PREV
+					NOT = { reverse_opinion = { who = PREV value = -40 } }
+				}
+				NOR = {
+					trait = incapable
+					has_opinion_modifier = { who = ROOT modifier = opinion_targeted_by_adventurer }
+					reverse_has_opinion_modifier = { who = ROOT modifier = turned_adventurer_away }
+					reverse_has_opinion_modifier = { who = ROOT modifier = let_adventurer_stay }
+					reverse_has_opinion_modifier = { who = ROOT modifier = backed_adventurer }
+					reverse_has_opinion_modifier = { who = ROOT modifier = betrayed_adventurer }
+					reverse_has_opinion_modifier = { who = ROOT modifier = refused_adventurer }
+				}
+			}
+		}
+	}
+	
+	mean_time_to_happen = {
+		days = 20
+		modifier = {
+			factor = 0.5
+			NOT = { wealth = 100 }
+		}
+		modifier = {
+			factor = 1.5
+			wealth = 300
+		}
+		modifier = {
+			factor = 1.5
+			wealth = 400
+		}
+		modifier = {
+			factor = 2
+			wealth = 500
+		}
+		modifier = {
+			factor = 2
+			wealth = 600
+		}
+		modifier = {
+			factor = 2
+			wealth = 700
+		}
+	}
+	
+	immediate = {
+		random_opinion_modifier_target = {
+			limit = { has_opinion_modifier = { who = ROOT modifier = opinion_targeted_by_adventurer } }
+			random_realm_character = {
+				limit = {
+					wealth = 10
+					is_within_diplo_range = ROOT
+					is_adult = yes
+					prisoner = no
+					OR = {
+						dynasty = ROOT
+						is_close_relative = ROOT
+						any_spouse = { is_close_relative = ROOT }
+						is_friend = ROOT
+						opinion = { who = ROOT value = 40 }
+						is_rival = PREV
+						NOT = { reverse_opinion = { who = PREV value = -40 } }
+					}
+					NOR = {
+						trait = incapable
+						has_opinion_modifier = { who = ROOT modifier = opinion_targeted_by_adventurer }
+						reverse_has_opinion_modifier = { who = ROOT modifier = turned_adventurer_away }
+						reverse_has_opinion_modifier = { who = ROOT modifier = let_adventurer_stay }
+						reverse_has_opinion_modifier = { who = ROOT modifier = backed_adventurer }
+						reverse_has_opinion_modifier = { who = ROOT modifier = betrayed_adventurer }
+						reverse_has_opinion_modifier = { who = ROOT modifier = refused_adventurer }
+					}
+				}
+				letter_event = { id = TOG.1231 }
+			}
+		}
+	}
+}
+
+# Member of targeted ruler's realm receives plea for support
+letter_event = {
+	id = TOG.1231
+	desc = EVTDESC_TOG_1231
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_TOG_1231 # Agree
+		ai_chance = {
+			factor = 35
+			modifier = {
+				factor = 5
+				OR = {
+					in_faction = faction_pretender
+					leads_faction = faction_pretender
+				}
+				supported_claimant = { character = FROM }
+			}
+			modifier = {
+				factor = 0.75
+				NOT = { wealth = 25 }
+			}
+			modifier = {
+				factor = 0.5
+				FROM = { wealth = 500 }
+			}
+			modifier = {
+				factor = 0.5
+				FROM = { wealth = 750 }
+			}
+			modifier = {
+				factor = 0.5
+				FROM = { wealth = 1000 }
+			}
+			modifier = {
+				factor = 5
+				is_friend = FROM
+			}
+			modifier = {
+				factor = 5
+				top_liege = { is_rival = ROOT }
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					top_liege = { is_friend = ROOT }
+					is_rival = FROM
+					NOT = { opinion = { who = FROM value = -50 } }
+					top_liege = { reverse_opinion = { who = ROOT value = 50 } }
+				}
+			}
+			modifier = {
+				factor = 1.25
+				religion = FROM
+				top_liege = { NOT = { religion = ROOT } }
+			}
+			modifier = {
+				factor = 1.25
+				culture = FROM
+				top_liege = { NOT = { culture = ROOT } }
+			}
+			modifier = {
+				factor = 2
+				is_close_relative = FROM
+				top_liege = { NOT = { is_close_relative = ROOT } }
+			}
+			modifier = {
+				factor = 1.5
+				OR = {
+					dynasty = FROM
+					is_allied_with = FROM
+				}
+				NOR = {
+					is_close_relative = FROM
+					top_liege = { dynasty = ROOT }
+					top_liege = { is_allied_with = ROOT }
+					top_liege = { has_non_aggression_pact_with = ROOT }
+				}
+			}
+			modifier = {
+				factor = 0.1
+				has_character_modifier = ai_austerity
+			}
+			modifier = {
+				factor = 1.5
+				trait = charitable
+			}
+			modifier = {
+				factor = 0.5
+				top_liege = { is_allied_with = ROOT }
+			}
+			modifier = {
+				factor = 0.75
+				top_liege = {
+					NOT = { is_allied_with = ROOT }
+					has_non_aggression_pact_with = ROOT
+				}
+			}
+			modifier = {
+				factor = 0.5
+				trait = greedy
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { religion = FROM }
+			}
+			modifier = {
+				factor = 0.8
+				NOT = { culture = FROM }
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { culture_group = FROM }
+			}
+			modifier = {
+				factor = 0.75
+				NOT = { opinion = { who = FROM value = 0 } }
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { opinion = { who = FROM value = -25 } }
+			}
+			modifier = {
+				factor = 1.25
+				opinion = { who = FROM value = 25 }
+			}
+			modifier = {
+				factor = 1.5
+				opinion = { who = FROM value = 50 }
+			}
+			modifier = {
+				factor = 2
+				opinion = { who = FROM value = 75 }
+			}
+			modifier = {
+				factor = 1.25
+				top_liege = { NOT = { reverse_opinion = { who = ROOT value = -25 } } }
+			}
+			modifier = {
+				factor = 1.5
+				top_liege = { NOT = { reverse_opinion = { who = ROOT value = -50 } } }
+			}
+			modifier = {
+				factor = 2
+				top_liege = { NOT = { reverse_opinion = { who = ROOT value = -75 } } }
+			}
+			modifier = {
+				factor = 0.5
+				top_liege = { reverse_opinion = { who = ROOT value = 25 } }
+			}
+			modifier = {
+				factor = 0.5
+				FROM = { NOT = { diplomacy = 6 } }
+			}
+			modifier = {
+				factor = 1.2
+				FROM = { diplomacy = 10 }
+			}
+			modifier = {
+				factor = 1.2
+				FROM = { diplomacy = 12 }
+			}
+			modifier = {
+				factor = 1.2
+				FROM = { diplomacy = 14 }
+			}
+			modifier = {
+				factor = 1.2
+				FROM = { diplomacy = 16 }
+			}
+		}
+		adv_donate_to_adventurer_effect = yes
+		reverse_opinion = { who = FROM modifier = backed_adventurer years = 20 }
+		hidden_tooltip = {
+			if = {
+				limit = { wealth = 50 }
+				random = {
+					chance = 50
+					modifier = {
+						factor = 0.5
+						top_liege = { NOT = { realm_intrigue = 20 } }
+					}
+					modifier = {
+						factor = 1.5
+						top_liege = { realm_intrigue = 40 }
+					}
+					top_liege = { character_event = { id = TOG.1232 } }
+				}
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB_TOG_1231 # Refuse
+		ai_chance = {
+			factor = 65
+		}
+		reverse_opinion = { who = FROM modifier = refused_adventurer years = 20 }
+	}
+}
+
+# Targeted ruler hears that someone prominent in their realm is supporting the adventurer
+character_event = {
+	id = TOG.1232
+	desc = EVTDESC_TOG_1232
+	picture = GFX_evt_crusaders
+	border = GFX_event_normal_frame_war
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_TOG_1232
+		opinion = { who = FROM modifier = supported_adventurer_against_me multiplier = 2 years = 10 }
+	}
+}
+
+# Notify targeted ruler that adventurer is halfway to raising an army
+character_event = {
+	id = TOG.1240
+	desc = EVTDESC_TOG_1240
+	picture = GFX_evt_crusaders
+	border = GFX_event_normal_frame_war
+
+	is_triggered_only = yes
+	
+	trigger = { ai = no }
+	
+	option = {
+		name = EVTOPTA_TOG_1240
+	}
+}
+
+# Notify ruler that adventurer has abandoned their quest after too long
+character_event = {
+	id = TOG.1241
+	desc = EVTDESC_TOG_1241
+	picture = GFX_evt_crusaders
+	border = GFX_event_normal_frame_war
+
+	is_triggered_only = yes
+	
+	trigger = { ai = no }
+	
+	option = {
+		name = EVTOPTA_TOG_1241
+	}
+}
+
+# Notify ruler that adventurer has abandoned their quest because they are incapable
+character_event = {
+	id = TOG.1242
+	desc = EVTDESC_TOG_1242
+	picture = GFX_evt_crusaders
+	border = GFX_event_normal_frame_war
+
+	is_triggered_only = yes
+	
+	trigger = { ai = no }
+	
+	option = {
+		name = EVTOPTA_TOG_1242
+	}
+}
+
+# Notify ruler that adventurer has abandoned their quest because they are now a ruler themselves
+character_event = {
+	id = TOG.1243
+	desc = EVTDESC_TOG_1243
+	picture = GFX_evt_crusaders
+	border = GFX_event_normal_frame_war
+
+	is_triggered_only = yes
+	
+	trigger = { ai = no }
+	
+	option = {
+		name = EVTOPTA_TOG_1243
+	}
+}
+
+# When adventurer is idle, send him off to a new realm (if possible}
+character_event = {
+	id = TOG.1244
+	
+	hide_window = yes
+	
+	min_age = 16
+	capable_only = yes
+	prisoner = no
+	
+	trigger = {
+		ROOT = { adv_is_valid_trigger = yes }
+		NOR = {
+			has_character_modifier = do_not_disturb
+			wealth = 1000
+		}
+	}
+	
+	mean_time_to_happen = {
+		days = 30
+		modifier = {
+			factor = 2
+			wealth = 400
+		}
+		modifier = {
+			factor = 2
+			wealth = 600
+		}
+		modifier = {
+			factor = 2
+			wealth = 800
+		}
+	}
+	
+	immediate = {
+		character_event = { id = TOG.1210 } # Adventurer moves on
+	}
+}
+
+# Adventurer dies while holding the title
+character_event = {
+	id = TOG.1245
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	trigger = {
+		any_demesne_title = { adventurer = yes }
+		OR = {
+			has_character_flag = claimant_adventurer
+			has_character_modifier = planning_claimant_adventure
+		}
+	}
+	
+	immediate = {
+		log = "[Root.GetBestName] has died before adventure completed -- removing title"
+		
+		#deal with adventurer's wealth
+		if = {
+			limit = {
+				current_heir = {
+					OR = {
+						is_child_of = ROOT
+						is_married = ROOT
+						dynasty = ROOT
+					}
+				}
+			}
+			current_heir = {
+				ROOT = {
+					transfer_scaled_wealth = {
+						to = PREV
+						value = all
+					}
+				}
+			}
+		}
+		if = {
+			limit = {
+				current_heir = {
+					NOR = {
+						is_child_of = ROOT
+						is_married = ROOT
+						dynasty = ROOT
+					}
+				}
+			}
+			clear_wealth = yes
+		}
+		
+		adv_find_adventurer_target_effect = yes
+		event_target:adventurer_target = { character_event = { id = TOG.1248 } } # notify target
+		
+		adv_find_friendly_court_effect = yes
+		
+		# remove all adventurer statuses
+		log = "---> [Root.GetBestName] and their court will retire to the court of [new_court_home.GetBestName]"
+		ROOT = { adv_abandon_adventure_effect = yes }
+	}
+}
+
+# Notify ruler of adventurer's death
+character_event = {
+	id = TOG.1248
+	desc = EVTDESC_TOG_1248
+	picture = GFX_evt_crusaders
+	border = GFX_event_normal_frame_war
+
+	is_triggered_only = yes
+	
+	trigger = { ai = no }
+	
+	option = {
+		name = EVTOPTA_TOG_1248
+	}	
+}
+
+# Adventurer begins their war against the targeted ruler
+character_event = {
+	id = TOG.1246
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		adv_find_adventurer_target_effect = yes
+		
+		# find a friendly court near the target, if possible
+		random_playable_ruler = {
+			limit = {
+				demesne_size = 1
+				OR = {
+					reverse_has_opinion_modifier = { who = ROOT modifier = let_adventurer_stay }
+					reverse_has_opinion_modifier = { who = ROOT modifier = backed_adventurer }
+				}
+				capital_scope = {
+					event_target:adventurer_target = {
+						capital_scope = {
+							NOT = { distance = { where = PREVPREV value = 150 } }
+						}
+					}
+				}
+			}
+			ROOT = { set_character_flag = found_attack_court }
+			capital_scope = { save_event_target_as = attack_court }
+		}
+		if = {
+			limit = { NOT = { has_character_flag = found_attack_court } }
+			random_playable_ruler = {
+				limit = {
+					demesne_size = 1
+					OR = {
+						reverse_has_opinion_modifier = { who = ROOT modifier = let_adventurer_stay }
+						reverse_has_opinion_modifier = { who = ROOT modifier = backed_adventurer }
+					}
+					capital_scope = {
+						event_target:adventurer_target = {
+							capital_scope = {
+								NOT = { distance = { where = PREVPREV value = 300 } }
+							}
+						}
+					}
+				}
+				ROOT = { set_character_flag = found_attack_court }
+				capital_scope = { save_event_target_as = attack_court }
+			}
+		}
+		if = {
+			limit = { NOT = { has_character_flag = found_attack_court } }
+			location = { save_event_target_as = attack_court }
+		}
+		clr_character_flag = found_attack_court
+		
+		# spawn armies
+		event_target:attack_court = {
+			ROOT = {
+				remove_character_modifier = do_not_disturb
+				set_character_flag = claimant_adventurer
+				# base troops
+				random_list = {
+					30 = {
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							leader = THIS
+							match_character = event_target:adventurer_target
+							match_mult = 0.6
+							match_min = 1000
+							match_max = 15000
+							attrition = 0.25
+							earmark = claimant_adventure
+							cannot_inherit = yes
+							reinforces = yes
+						}
+					}
+					40 = {
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							leader = THIS
+							match_character = event_target:adventurer_target
+							match_mult = 0.525
+							match_min = 1000
+							match_max = 15000
+							attrition = 0.25
+							earmark = claimant_adventure
+							cannot_inherit = yes
+							reinforces = yes
+						}
+					}
+					30 = {
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							leader = THIS
+							match_character = event_target:adventurer_target
+							match_mult = 0.45
+							match_min = 1000
+							match_max = 15000
+							attrition = 0.25
+							earmark = claimant_adventure
+							cannot_inherit = yes
+							reinforces = yes
+						}
+					}
+				}
+				# troops bought with wealth
+				adv_buy_troops_effect = yes
+				adv_buy_troops_effect = yes
+				adv_buy_troops_effect = yes
+				adv_buy_troops_effect = yes
+				adv_buy_troops_effect = yes
+				adv_buy_troops_effect = yes
+				adv_buy_troops_effect = yes
+				adv_buy_troops_effect = yes
+				adv_buy_troops_effect = yes
+				adv_buy_troops_effect = yes
+				adv_buy_troops_effect = yes
+				adv_buy_troops_effect = yes
+				adv_buy_troops_effect = yes
+				adv_buy_troops_effect = yes
+				adv_buy_troops_effect = yes
+				adv_buy_troops_effect = yes
+				adv_buy_troops_effect = yes
+				adv_buy_troops_effect = yes
+				adv_buy_troops_effect = yes
+				adv_buy_troops_effect = yes
+				# diplomacy/leadership troops
+				if = {
+					limit = { diplomacy = 12 }
+					spawn_unit = {
+						province = PREV
+						home = PREV
+						owner = THIS
+						match_character = event_target:adventurer_target
+						match_mult = 0.05
+						match_min = 100
+						match_max = 2000
+						attrition = 0.25
+						earmark = claimant_adventure
+						merge = yes
+						cannot_inherit = yes
+						reinforces = yes
+					}
+				}
+				if = {
+					limit = { diplomacy = 14 }
+					spawn_unit = {
+						province = PREV
+						home = PREV
+						owner = THIS
+						match_character = event_target:adventurer_target
+						match_mult = 0.05
+						match_min = 100
+						match_max = 2000
+						attrition = 0.25
+						earmark = claimant_adventure
+						merge = yes
+						cannot_inherit = yes
+						reinforces = yes
+					}
+				}
+				if = {
+					limit = { diplomacy = 16 }
+					spawn_unit = {
+						province = PREV
+						home = PREV
+						owner = THIS
+						match_character = event_target:adventurer_target
+						match_mult = 0.075
+						match_min = 100
+						match_max = 2000
+						attrition = 0.25
+						earmark = claimant_adventure
+						merge = yes
+						cannot_inherit = yes
+						reinforces = yes
+					}
+				}
+				if = {
+					limit = { diplomacy = 18 }
+					spawn_unit = {
+						province = PREV
+						home = PREV
+						owner = THIS
+						match_character = event_target:adventurer_target
+						match_mult = 0.075
+						match_min = 100
+						match_max = 2000
+						attrition = 0.25
+						earmark = claimant_adventure
+						merge = yes
+						cannot_inherit = yes
+						reinforces = yes
+					}
+				}
+				if = {
+					limit = { diplomacy = 20 }
+					spawn_unit = {
+						province = PREV
+						home = PREV
+						owner = THIS
+						match_character = event_target:adventurer_target
+						match_mult = 0.075
+						match_min = 100
+						match_max = 2000
+						attrition = 0.25
+						earmark = claimant_adventure
+						merge = yes
+						cannot_inherit = yes
+						reinforces = yes
+					}
+				}
+				if = {
+					limit = { 
+						diplomacy = 10
+						martial = 10
+						OR = {
+							trait = genius
+							trait = brilliant_strategist
+						}
+					}
+					spawn_unit = {
+						province = PREV
+						home = PREV
+						owner = THIS
+						match_character = event_target:adventurer_target
+						match_mult = 0.125
+						match_min = 300
+						match_max = 5000
+						attrition = 0.25
+						earmark = claimant_adventure
+						merge = yes
+						cannot_inherit = yes
+						reinforces = yes
+					}
+				}
+			}
+		}
+		
+		# create a fleet, just to be sure
+		spawn_fleet = {
+			province = closest # closest sea zone
+			owner = ROOT
+			disband_on_peace = yes
+			merge = yes
+			troops = {
+				galleys = { 100 100 }
+			}
+			earmark = claimant_adventure
+		}
+
+		# begin war, going in order of tier
+		random_claim = {
+			limit = {
+				holder_scope = {
+					character = event_target:adventurer_target
+					NAND = {
+						government = nomadic_government
+						OR = {
+							clan_title = { title = PREVPREV }
+							primary_title = { title = PREVPREV }
+						}
+					}
+					ROOT = {
+						any_claim = {
+							holder_scope = {
+								OR = {
+									character = PREVPREVPREV
+									is_liege_or_above = PREVPREVPREV
+								}
+							}
+							is_usable_claim_trigger = yes
+							count = 2
+						}
+					}
+				}
+			}
+			log = "TOG.1202: [Root.GetBestName] starts claim adventure for the [This.GetFullName]"
+			holder_scope = {
+				reverse_war = {
+					target = ROOT
+					casus_belli = claim_all
+					infamy = 0
+				}
+				adv_started_war_effect = yes
+			}
+			break = yes
+		}
+		random_claim = {
+			limit = {
+				tier = EMPEROR
+				holder_scope = {
+					character = event_target:adventurer_target
+					NAND = {
+						government = nomadic_government
+						primary_title = { title = PREVPREV }
+					}
+				}
+			}
+			log = "TOG.1202: [Root.GetBestName] starts claim adventure for the [This.GetFullName]"
+			holder_scope = {
+				reverse_war = {
+					target = ROOT
+					casus_belli = claim
+					thirdparty_title = PREV
+					infamy = 0
+				}
+				adv_started_war_effect = yes
+			}
+			break = yes
+		}
+		random_claim = {
+			limit = {
+				tier = KING
+				holder_scope = {
+					character = event_target:adventurer_target
+					NAND = {
+						government = nomadic_government
+						clan_title = { title = PREVPREV }
+					}
+				}
+			}
+			log = "TOG.1202: [Root.GetBestName] starts claim adventure for the [This.GetFullName]"
+			holder_scope = {
+				reverse_war = {
+					target = ROOT
+					casus_belli = claim
+					thirdparty_title = PREV
+					infamy = 0
+				}
+				adv_started_war_effect = yes
+			}
+			break = yes
+		}
+		random_claim = {
+			limit = {
+				tier = DUKE
+				holder_scope = { character = event_target:adventurer_target }
+			}
+			log = "TOG.1202: [Root.GetBestName] starts claim adventure for the [This.GetFullName]"
+			holder_scope = {
+				reverse_war = {
+					target = ROOT
+					casus_belli = claim
+					thirdparty_title = PREV
+					infamy = 0
+				}
+				adv_started_war_effect = yes
+			}
+			break = yes
+		}
+		random_claim = {
+			limit = {
+				tier = COUNT
+				holder_scope = { character = event_target:adventurer_target }
+			}
+			log = "TOG.1202: [Root.GetBestName] starts claim adventure for the [This.GetFullName]"
+			holder_scope = {
+				reverse_war = {
+					target = ROOT
+					casus_belli = claim
+					thirdparty_title = PREV
+					infamy = 0
+				}
+				adv_started_war_effect = yes
+			}
+			break = yes
+		}
+		random_claim = {
+			limit = {
+				tier = BARON
+				holder_scope = { character = event_target:adventurer_target }
+			}
+			log = "TOG.1202: [Root.GetBestName] starts claim adventure for the [This.GetFullName]"
+			holder_scope = {
+				reverse_war = {
+					target = ROOT
+					casus_belli = claim
+					thirdparty_title = PREV
+					infamy = 0
+				}
+				adv_started_war_effect = yes
+			}
+			break = yes
+		}
+	}
+}
+
+character_event = {
+	id = TOG.1247
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		if = {
+			limit = { war = yes }
+			add_trait = adventurer
+			remove_character_modifier = planning_claimant_adventure
+			clr_character_flag = planning_claimant_adventure
+			clr_character_flag = warned_adventurer_target
+			clr_character_flag = not_interested_in_movements
+		}
+		
+		if = {
+			limit = { war = no }
+			log = "ERROR: [Root.GetBestName] had an invalid adventure war, and thus is having adventurer status removed"
+			adv_find_friendly_court_effect = yes
+			
+			# remove all adventurer statuses
+			log = "---> [Root.GetBestName] will retire to the court of [new_court_home.GetBestName]"
+			clr_character_flag = claimant_adventurer
+			ROOT = { adv_abandon_adventure_effect = yes }
+		}
+	}
+}
+
+# Leader of claimant faction supporting the adventurer receives word of the attack
+letter_event = {
+	id = TOG.1250
+	desc = EVTDESC_TOG_1250
+
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_TOG_1250 #Join the war
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 2
+				dynasty = FROM
+			}
+			modifier = {
+				factor = 5
+				is_friend = FROM
+			}
+		}
+		reverse_opinion = { who = FROM modifier = opinion_very_grateful years = 10 }
+		join_attacker_wars = FROM
+		custom_tooltip = {
+			text = ASK_FACTION_MEMBERS_TO_JOIN_WAR
+			hidden_tooltip = {
+				any_faction_backer = {
+					faction = faction_pretender
+					letter_event = { id = TOG.1251 }
+				}
+			}
+		}
+		hidden_tooltip = {
+			opinion = { who = FROM modifier = opinion_fought_for_claimant years = 10 }
+			liege = { letter_event = { id = TOG.1252 days = 1 } }
+		}
+	}
+	
+	option = {
+		name = EVTOPTB_TOG_1250 #Refuse
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 10
+				NOT = {
+					faction_power = {
+						faction = faction_pretender
+						power = 0.3
+					}
+				}
+			}
+			modifier = {
+				factor = 5
+				faction_power = {
+					faction = faction_pretender
+					power = 0.3
+				}
+				NOT = {
+					faction_power = {
+						faction = faction_pretender
+						power = 0.4
+					}
+				}
+			}
+			modifier = {
+				factor = 2
+				faction_power = {
+					faction = faction_pretender
+					power = 0.4
+				}
+				NOT = {
+					faction_power = {
+						faction = faction_pretender
+						power = 0.5
+					}
+				}
+			}
+			modifier = {
+				factor = 0
+				faction_power = {
+					faction = faction_pretender
+					power = 0.5
+				}
+			}
+		}
+	}
+}
+
+# Faction member joins the war
+letter_event = {
+	id = TOG.1251
+	desc = EVTDESC_TOG_1251
+
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_TOG_1251
+		reverse_opinion = { who = FROMFROM modifier = opinion_very_grateful years = 10 }
+		join_attacker_wars = FROMFROM
+		hidden_tooltip = {
+			opinion = { who = FROMFROM modifier = opinion_fought_for_claimant years = 10 }
+		}
+	}	
+}	
+
+# Liege informed that claimant faction has joined the adventurer's side
+letter_event = {
+	id = TOG.1252
+	desc = EVTDESC_TOG_1252
+
+	is_triggered_only = yes
+	
+	option = {
+		name = CURSES
+	}	
+}
+
+# Armies disbanded after five years of peace
+character_event = {
+	id = TOG.1253
+	desc = EVTDESC_TOG_1253
+	picture = GFX_evt_crusaders
+	
+	only_rulers = yes
+	
+	trigger = {
+		has_earmarked_regiments = claimant_adventure
+		war = no
+		OR = {
+			had_character_flag = { flag = claimant_adventurer days = 1825 }
+			NOT = { has_character_flag = claimant_adventurer }
+		}
+	}
+	
+	mean_time_to_happen = {
+		days = 30
+	}
+	
+	option = {
+		name = EVTOPTA_TOG_1253
+		clr_character_flag = claimant_adventurer
+		disband_event_forces = claimant_adventure
+	}
+}
+
+### DUCHY ADVENTURES
+
+# An ambitious character with no inheritance begins to plan an adventure for a foreign title
+character_event = {
+	id = TOG.1260
+	
+	hide_window = yes # Only fires for unplayable landless characters
+	
+	min_age = 16
+	max_age = 50
+	only_men = yes
+	capable_only = yes
+	prisoner = no
+	
+	trigger = {
+		has_dlc = "The Old Gods"
+		has_global_flag = viking_age_started
+		
+		is_ruler = no
+		is_ill = no
+		
+		health = 4
+		OR = {
+			martial = 8
+			trait = ambitious
+			trait = possessed
+		}
+		calc_true_if = {
+			amount = 2
+			martial = 12
+			martial = 16
+			diplomacy = 8
+			trait = brave
+			is_strong_trigger = yes
+			trait = viking
+			prestige = 500
+		}
+		
+		NOR = {
+			dynasty = none
+			trait = content
+			trait = craven
+			trait = humble
+			trait = depressed
+			trait = imbecile
+			trait = wounded
+			trait = maimed
+			trait = incapable
+			trait = celibate
+			trait = blinded
+			trait = eunuch
+			is_weak_trigger = yes
+			trait = nun
+			trait = monk
+			any_liege = { holy_order = yes }
+			any_liege = { mercenary = yes }
+			any_spouse = { is_ruler = yes }
+			any_heir_title = { always = yes }
+		}
+		
+		OR = { # Only these for now
+			culture_group = north_germanic
+			culture_group = west_germanic
+			culture_group = altaic
+			culture = norman
+			culture = frankish
+			culture = breton
+			culture = catalan
+			AND = {
+				culture = hungarian
+				religion_group = pagan_group
+			}
+			has_character_flag = demon_child_non_pagan
+			trait = changeling
+		}
+		
+		# Handled by event TOG.1200
+		NOT = {
+			any_claim = {
+				has_holder = yes
+				is_titular = no
+				is_landless_type_title = no
+				OR = {
+					higher_tier_than = COUNT
+					holder_scope = { tier = PREV }
+				}
+				is_usable_claim_trigger = yes
+				OR = {
+					AND = {
+						ROOT = { is_female = no }
+						NOT = { has_law = enatic_succession }
+					}
+					AND = {
+						ROOT = { is_female = yes }
+						ROOT = { trait = ambitious }
+						NOT = { has_law = agnatic_succession }
+					}
+				}		
+				holder_scope = {
+					independent = yes
+					demesne_size = 1
+					OR = {
+						is_theocracy = no
+						NOT = { religion = ROOT }
+					}
+					NOR = {
+						trait = pf_rebel
+						any_spouse = { character = ROOT }
+						reverse_opinion = { who = ROOT value = 25 }
+						has_character_modifier = holy_truce_timer
+						has_character_modifier = adventurer_target_timer
+					}
+					OR = {
+						NOT = { reverse_opinion = { who = ROOT value = -25 } }
+						NOT = { is_close_relative = ROOT }
+						ROOT = { trait = bastard }
+					}
+					OR = {
+						is_merchant_republic = no
+						NOT = { capital_holding = { de_jure_liege_or_above = PREVPREV } }
+					}
+				}
+			}
+		}
+		
+		OR = {
+			AND = {
+				martial = 12
+				calc_true_if = {
+					amount = 2
+					martial = 16
+					diplomacy = 12
+					trait = brave
+					trait = ambitious
+					trait = viking
+				}
+			}
+			father_even_if_dead = {
+				OR = {
+					primary_title = { higher_tier_than = BARON }
+					father_even_if_dead = {
+						primary_title = { higher_tier_than = BARON }
+					}
+					mother_even_if_dead = {
+						primary_title = { higher_tier_than = BARON }
+					}
+				}
+			}
+			mother_even_if_dead = {
+				OR = {
+					primary_title = { higher_tier_than = BARON }
+					father_even_if_dead = {
+						primary_title = { higher_tier_than = BARON }
+					}
+					mother_even_if_dead = {
+						primary_title = { higher_tier_than = BARON }
+					}
+				}
+			}
+		}
+		
+		NOT = { has_character_modifier = planning_duchy_adventure }
+	}
+	
+	mean_time_to_happen = {
+		years = 100
+		modifier = {
+			factor = 0.5
+			trait = ambitious
+		}
+		modifier = {
+			factor = 0.5
+			OR = {
+				AND = {
+					culture = norman
+					NOT = { year = 1250 }
+				}
+				AND = {
+					culture_group = north_germanic
+					NOT = { year = 1066 }
+				}
+			}
+		}
+		modifier = {
+			factor = 0.5
+			has_character_flag = flag_denied_title
+		}
+		modifier = {
+			factor = 0.2
+			has_character_flag = demon_child_non_pagan
+		}
+		modifier = {
+			factor = 0.2
+			trait = changeling
+		}
+		modifier = {
+			factor = 0.75
+			diplomacy = 12
+		}
+		modifier = {
+			factor = 0.75
+			martial = 12
+		}
+		modifier = {
+			factor = 0.75
+			combat_rating = 3
+		}
+		modifier = {
+			factor = 0.75
+			trait = brave
+		}
+		modifier = {
+			factor = 0.85
+			trait = proud
+		}
+		modifier = {
+			factor = 0.85
+			trait = impaler
+		}
+		modifier = {
+			factor = 0.85
+			trait = greedy
+		}
+		modifier = {
+			factor = 0.85
+			trait = envious
+		}
+		modifier = {
+			factor = 0.85
+			trait = zealous
+		}
+		modifier = {
+			factor = 3.0
+			trait = slothful
+		}
+		modifier = {
+			factor = 3.0
+			trait = humble
+		}
+		modifier = {
+			factor = 3.0
+			trait = kind
+		}
+		modifier = {
+			factor = 3.0
+			any_liege = { ai = no }
+		}
+		modifier = {
+			factor = 0.5
+			NOT = { year = 900 }
+		}
+		modifier = {
+			factor = 0.75
+			year = 900
+			NOT = { year = 1000 }
+		}
+		modifier = {
+			factor = 1.25
+			year = 1000
+		}
+		modifier = {
+			factor = 2.0
+			NOR = {
+				father_even_if_dead = {
+					OR = {
+						primary_title = { higher_tier_than = BARON }
+						father_even_if_dead = {
+							primary_title = { higher_tier_than = BARON }
+						}
+						mother_even_if_dead = {
+							primary_title = { higher_tier_than = BARON }
+						}
+					}
+				}
+				mother_even_if_dead = {
+					OR = {
+						primary_title = { higher_tier_than = BARON }
+						father_even_if_dead = {
+							primary_title = { higher_tier_than = BARON }
+						}
+						mother_even_if_dead = {
+							primary_title = { higher_tier_than = BARON }
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	immediate = {
+		# come out of hiding if necessary
+		if = {
+			limit = { trait = in_hiding	}
+			remove_trait = in_hiding
+			add_character_modifier = {
+				name = went_out_of_hiding_timer
+				duration = 180
+				hidden = yes
+			}
+			hidden_tooltip = { character_event = { id = CM.6400 } } # Notify plotters and family
+		}
+		
+		add_character_modifier = {
+			name = do_not_disturb
+			hidden = yes
+			duration = 365
+		}
+		
+		if = {
+			limit = { culture = norse }
+			random = {
+				chance = 75
+				# Norse characters will first target low-levy realms in Britain, Normandy & Russia
+				random_independent_ruler = {
+					limit = {
+						adv_duchy_target_trigger = yes
+						NOR = {
+							culture_group = ROOT
+							realm_levies = 2000
+						}
+						any_realm_province = {
+							same_sea_zone_province_trigger = yes
+							port = yes
+							OR = {
+								region = custom_livonia
+								region = custom_novgorod
+								region = custom_muscovy
+								region = custom_rus
+								region = custom_england
+								region = custom_scotland
+								duchy = { title = d_normandy }
+							}
+						}
+					}
+					ROOT = { set_character_flag = found_target_province }
+					random_realm_province = {
+						limit = {
+							same_sea_zone_province_trigger = yes
+							port = yes
+							OR = {
+								region = custom_livonia
+								region = custom_novgorod
+								region = custom_muscovy
+								region = custom_rus
+								region = custom_england
+								region = custom_scotland
+								duchy = { title = d_normandy }
+							}
+						}
+						save_event_target_as = adventure_target_province
+					}
+				}
+				# Norse characters will then target small realms in Britain, Normandy & Russia
+				random_independent_ruler = {
+					limit = {
+						adv_duchy_target_trigger = yes
+						NOR = {
+							culture_group = ROOT
+							realm_size = 30
+						}
+						any_realm_province = {
+							same_sea_zone_province_trigger = yes
+							port = yes
+							OR = {
+								region = custom_livonia
+								region = custom_novgorod
+								region = custom_muscovy
+								region = custom_rus
+								region = custom_england
+								region = custom_scotland
+								duchy = { title = d_normandy }
+							}
+						}
+					}
+					ROOT = { set_character_flag = found_target_province }
+					random_realm_province = {
+						limit = {
+							same_sea_zone_province_trigger = yes
+							port = yes
+							OR = {
+								region = custom_livonia
+								region = custom_novgorod
+								region = custom_muscovy
+								region = custom_rus
+								region = custom_england
+								region = custom_scotland
+								duchy = { title = d_normandy }
+							}
+						}
+						save_event_target_as = adventure_target_province
+					}
+				}
+				# Norse characters will then target any realms in Britain, Normandy & Russia
+				random_independent_ruler = {
+					limit = {
+						adv_duchy_target_trigger = yes
+						NOT = { culture_group = ROOT }
+						any_realm_province = {
+							same_sea_zone_province_trigger = yes
+							port = yes
+							OR = {
+								region = custom_livonia
+								region = custom_novgorod
+								region = custom_muscovy
+								region = custom_rus
+								region = custom_england
+								region = custom_scotland
+							}
+						}
+					}
+					ROOT = { set_character_flag = found_target_province }
+					random_realm_province = {
+						limit = {
+							same_sea_zone_province_trigger = yes
+							port = yes
+							OR = {
+								region = custom_livonia
+								region = custom_novgorod
+								region = custom_muscovy
+								region = custom_rus
+								region = custom_england
+								region = custom_scotland
+							}
+						}
+						save_event_target_as = adventure_target_province
+					}
+				}
+			}
+		}
+
+		# Seafaring cultures will target low-levy coastal realms of a different culture group first
+		random_independent_ruler = {
+			limit = {
+				ROOT = {
+					NOT = { has_character_flag = found_target_province }
+					is_seafarer = yes
+				}
+				adv_duchy_target_trigger = yes
+				NOR = {
+					realm_levies = 2000
+					culture_group = ROOT
+				}
+				any_realm_province = {
+					port = yes
+					NOT = { region = custom_perm }
+					same_sea_zone_province_trigger = yes
+				}
+			}
+			ROOT = { set_character_flag = found_target_province }
+			random_realm_province = {
+				limit = {
+					port = yes
+					NOT = { region = custom_perm }
+					same_sea_zone_province_trigger = yes
+				}
+				save_event_target_as = adventure_target_province
+			}
+		}
+		# Seafaring cultures will target smaller coastal realms of a different culture group first
+		random_independent_ruler = {
+			limit = {
+				ROOT = {
+					NOT = { has_character_flag = found_target_province }
+					is_seafarer = yes
+				}
+				adv_duchy_target_trigger = yes
+				NOR = {
+					realm_size = 30
+					culture_group = ROOT
+				}
+				any_realm_province = {
+					port = yes
+					NOT = { region = custom_perm }
+					same_sea_zone_province_trigger = yes
+				}
+			}
+			ROOT = { set_character_flag = found_target_province }
+			random_realm_province = {
+				limit = {
+					port = yes
+					NOT = { region = custom_perm }
+					same_sea_zone_province_trigger = yes
+				}
+				save_event_target_as = adventure_target_province
+			}
+		}
+		# Seafaring cultures will target low-levy tribal realms of a different culture group next
+		random_independent_ruler = {
+			limit = {
+				ROOT = {
+					NOT = { has_character_flag = found_target_province }
+					is_seafarer = yes
+				}
+				is_tribal = yes
+				adv_duchy_target_trigger = yes
+				NOR = {
+					realm_levies = 2000
+					prestige = 250
+					culture_group = ROOT
+				}
+				any_realm_province = {
+					port = yes
+					NOT = { region = custom_perm }
+					same_sea_zone_province_trigger = yes
+				}
+			}
+			ROOT = { set_character_flag = found_target_province }
+			random_realm_province = {
+				limit = {
+					port = yes
+					NOT = { region = custom_perm }
+					same_sea_zone_province_trigger = yes
+				}
+				save_event_target_as = adventure_target_province
+			}
+		}
+		# Seafaring cultures will target low-levy coastal realms of a different culture next
+		random_independent_ruler = {
+			limit = {
+				ROOT = {
+					NOT = { has_character_flag = found_target_province }
+					is_seafarer = yes
+				}
+				adv_duchy_target_trigger = yes
+				NOR = {
+					realm_levies = 2000
+					culture = ROOT
+				}
+				any_realm_province = {
+					port = yes
+					NOT = { region = custom_perm }
+					same_sea_zone_province_trigger = yes
+				}
+			}
+			ROOT = { set_character_flag = found_target_province }
+			random_realm_province = {
+				limit = {
+					port = yes
+					NOT = { region = custom_perm }
+					same_sea_zone_province_trigger = yes
+				}
+				save_event_target_as = adventure_target_province
+			}
+		}
+		# Seafaring cultures will target smaller coastal realms of a different culture next
+		random_independent_ruler = {
+			limit = {
+				ROOT = {
+					NOT = { has_character_flag = found_target_province }
+					is_seafarer = yes
+				}
+				adv_duchy_target_trigger = yes
+				NOR = {
+					realm_size = 30
+					culture = ROOT
+				}
+				any_realm_province = {
+					port = yes
+					NOT = { region = custom_perm }
+					same_sea_zone_province_trigger = yes
+				}
+			}
+			ROOT = { set_character_flag = found_target_province }
+			random_realm_province = {
+				limit = {
+					port = yes
+					NOT = { region = custom_perm }
+					same_sea_zone_province_trigger = yes
+				}
+				save_event_target_as = adventure_target_province
+			}
+		}
+		# Seafaring cultures will target smaller tribal realms of a different culture next
+		random_independent_ruler = {
+			limit = {
+				ROOT = {
+					NOT = { has_character_flag = found_target_province }
+					is_seafarer = yes
+				}
+				is_tribal = yes
+				adv_duchy_target_trigger = yes
+				NOR = {
+					realm_size = 30
+					prestige = 250
+					culture = ROOT
+				}
+				any_realm_province = {
+					port = yes
+					NOT = { region = custom_perm }
+					same_sea_zone_province_trigger = yes
+				}
+			}
+			ROOT = { set_character_flag = found_target_province }
+			random_realm_province = {
+				limit = {
+					port = yes
+					NOT = { region = custom_perm }
+					same_sea_zone_province_trigger = yes
+				}
+				save_event_target_as = adventure_target_province
+			}
+		}
+		# Seafaring cultures will then target any realms of a different culture group
+		random_independent_ruler = {
+			limit = {
+				ROOT = {
+					NOT = { has_character_flag = found_target_province }
+					is_seafarer = yes
+				}
+				adv_duchy_target_trigger = yes
+				NOR = {
+					same_realm = ROOT
+					culture_group = ROOT
+				}
+				any_realm_province = {
+					port = yes
+					NOT = { region = custom_perm }
+					same_sea_zone_province_trigger = yes
+				}
+			}
+			ROOT = { set_character_flag = found_target_province }
+			random_realm_province = {
+				limit = {
+					port = yes
+					NOT = { region = custom_perm }
+					same_sea_zone_province_trigger = yes
+				}
+				save_event_target_as = adventure_target_province
+			}
+		}
+		# Seafaring cultures will then target any realms of a different culture
+		random_independent_ruler = {
+			limit = {
+				ROOT = {
+					NOT = { has_character_flag = found_target_province }
+					is_seafarer = yes
+				}
+				adv_duchy_target_trigger = yes
+				NOT = { culture = ROOT }
+				any_realm_province = {
+					port = yes
+					NOT = { region = custom_perm }
+					same_sea_zone_province_trigger = yes
+				}
+			}
+			ROOT = { set_character_flag = found_target_province }
+			random_realm_province = {
+				limit = {
+					port = yes
+					NOT = { region = custom_perm }
+					same_sea_zone_province_trigger = yes
+				}
+				save_event_target_as = adventure_target_province
+			}
+		}
+
+		# Others will first target low-levy realms of a different culture neighboring their liege
+		random_independent_ruler = {
+			limit = {
+				ROOT = { NOT = { has_character_flag = found_target_province } }
+				adv_duchy_target_trigger = yes
+				NOR = {
+					realm_levies = 2000
+					culture = ROOT
+				}
+				any_realm_province = {
+					any_neighbor_province = {
+						owner = { is_liege_of = ROOT }
+					}
+				}
+			}
+			ROOT = { set_character_flag = found_target_province }
+			random_realm_province = {
+				limit = {
+					any_neighbor_province = {
+						owner = { is_liege_of = ROOT }
+					}
+				}
+				save_event_target_as = adventure_target_province
+			}
+		}
+		# Others will then target smaller realms of a different culture neighboring their liege
+		random_independent_ruler = {
+			limit = {
+				ROOT = { NOT = { has_character_flag = found_target_province } }
+				adv_duchy_target_trigger = yes
+				NOR = {
+					realm_size = 30
+					culture = ROOT
+				}
+				any_realm_province = {
+					any_neighbor_province = {
+						owner = { is_liege_of = ROOT }
+					}
+				}
+			}
+			ROOT = { set_character_flag = found_target_province }
+			random_realm_province = {
+				limit = {
+					any_neighbor_province = {
+						owner = { is_liege_of = ROOT }
+					}
+				}
+				save_event_target_as = adventure_target_province
+			}
+		}
+		# Others will then target realms of a different culture neighboring their liege
+		random_independent_ruler = {
+			limit = {
+				ROOT = { NOT = { has_character_flag = found_target_province } }
+				adv_duchy_target_trigger = yes
+				NOT = { culture = ROOT }
+				any_realm_province = {
+					any_neighbor_province = {
+						owner = { is_liege_of = ROOT }
+					}
+				}
+			}
+			ROOT = { set_character_flag = found_target_province }
+			random_realm_province = {
+				limit = {
+					any_neighbor_province = {
+						owner = { is_liege_of = ROOT }
+					}
+				}
+				save_event_target_as = adventure_target_province
+			}
+		}
+		# Others will then target low-levy realms of a different culture group neighboring their top liege's realm
+		random_independent_ruler = {
+			limit = {
+				ROOT = { NOT = { has_character_flag = found_target_province } }
+				adv_duchy_target_trigger = yes
+				NOR = {
+					realm_levies = 2000
+					culture_group = ROOT
+				}
+				any_realm_province = {
+					adv_duchy_target_distance_trigger = yes
+				}
+			}
+			ROOT = { set_character_flag = found_target_province }
+			random_realm_province = {
+				limit = {
+					adv_duchy_target_distance_trigger = yes
+				}
+				save_event_target_as = adventure_target_province
+			}
+		}
+		# Others will then target smaller realms of a different culture group neighboring their top liege's realm
+		random_independent_ruler = {
+			limit = {
+				ROOT = { NOT = { has_character_flag = found_target_province } }
+				adv_duchy_target_trigger = yes
+				NOR = {
+					realm_size = 30
+					culture_group = ROOT
+				}
+				any_realm_province = {
+					adv_duchy_target_distance_trigger = yes
+				}
+			}
+			ROOT = { set_character_flag = found_target_province }
+			random_realm_province = {
+				limit = {
+					adv_duchy_target_distance_trigger = yes
+				}
+				save_event_target_as = adventure_target_province
+			}
+		}
+		# Others will then target low-levy tribal realms of a different culture group neighboring their top liege's realm
+		random_independent_ruler = {
+			limit = {
+				ROOT = { NOT = { has_character_flag = found_target_province } }
+				adv_duchy_target_trigger = yes
+				is_tribal = yes
+				NOR = {
+					realm_levies = 2000
+					prestige = 250
+					culture_group = ROOT
+				}
+				any_realm_province = {
+					adv_duchy_target_distance_trigger = yes
+				}
+			}
+			ROOT = { set_character_flag = found_target_province }
+			random_realm_province = {
+				limit = {
+					adv_duchy_target_distance_trigger = yes
+				}
+				save_event_target_as = adventure_target_province
+			}
+		}
+		# Others will then target low-levy realms of a different culture neighboring their top liege's realm
+		random_independent_ruler = {
+			limit = {
+				ROOT = { NOT = { has_character_flag = found_target_province } }
+				adv_duchy_target_trigger = yes
+				NOR = {
+					realm_levies = 2000
+					culture = ROOT
+				}
+				any_realm_province = {
+					adv_duchy_target_distance_trigger = yes
+				}
+			}
+			ROOT = { set_character_flag = found_target_province }
+			random_realm_province = {
+				limit = {
+					adv_duchy_target_distance_trigger = yes
+				}
+				save_event_target_as = adventure_target_province
+			}
+		}
+		# Others will then target smaller realms of a different culture neighboring their top liege's realm
+		random_independent_ruler = {
+			limit = {
+				ROOT = { NOT = { has_character_flag = found_target_province } }
+				adv_duchy_target_trigger = yes
+				NOR = {
+					realm_size = 30
+					culture = ROOT
+				}
+				any_realm_province = {
+					adv_duchy_target_distance_trigger = yes
+				}
+			}
+			ROOT = { set_character_flag = found_target_province }
+			random_realm_province = {
+				limit = {
+					adv_duchy_target_distance_trigger = yes
+				}
+				save_event_target_as = adventure_target_province
+			}
+		}
+		# Others will then target smaller tribal realms of a different culture neighboring their top liege's realm
+		random_independent_ruler = {
+			limit = {
+				ROOT = { NOT = { has_character_flag = found_target_province } }
+				adv_duchy_target_trigger = yes
+				is_tribal = yes
+				NOR = {
+					realm_size = 30
+					prestige = 250
+					culture = ROOT
+				}
+				any_realm_province = {
+					adv_duchy_target_distance_trigger = yes
+				}
+			}
+			ROOT = { set_character_flag = found_target_province }
+			random_realm_province = {
+				limit = {
+					adv_duchy_target_distance_trigger = yes
+				}
+				save_event_target_as = adventure_target_province
+			}
+		}
+		# Others will then target any realm of a different culture group neighboring their top liege's realm
+		random_independent_ruler = {
+			limit = {
+				ROOT = { NOT = { has_character_flag = found_target_province } }
+				adv_duchy_target_trigger = yes
+				NOT = { culture_group = ROOT }
+				any_realm_province = {
+					adv_duchy_target_distance_trigger = yes
+				}
+			}
+			ROOT = { set_character_flag = found_target_province }
+			random_realm_province = {
+				limit = {
+					adv_duchy_target_distance_trigger = yes
+				}
+				save_event_target_as = adventure_target_province
+			}
+		}
+		# Others will then target any realm of a different culture neighboring their top liege's realm
+		random_independent_ruler = {
+			limit = {
+				ROOT = { NOT = { has_character_flag = found_target_province } }
+				adv_duchy_target_trigger = yes
+				NOT = { culture = ROOT }
+				any_realm_province = {
+					adv_duchy_target_distance_trigger = yes
+				}
+			}
+			ROOT = { set_character_flag = found_target_province }
+			random_realm_province = {
+				limit = {
+					adv_duchy_target_distance_trigger = yes
+				}
+				save_event_target_as = adventure_target_province
+			}
+		}
+		
+		# Stop it here if nothing's found
+		if = {
+			limit = { NOT = { has_character_flag = found_target_province } }
+			log = "[Root.GetBestName] wanted to become a duchy adventurer, but found no suitable target"
+			break = yes
+		}
+		
+		# Fire the event
+		clr_character_flag = found_target_province
+		event_target:adventure_target_province = {
+			owner = {
+				top_liege = {
+					ROOT = {
+						opinion = { who = PREV years = 3 modifier = opinion_duchy_adventure_target }
+						add_character_modifier = { name = planning_duchy_adventure hidden = yes duration = 720 }
+						character_event = { id = TOG.1262 days = 720 } # Fire the attack
+					}
+					character_event = { id = TOG.1261 } # Warn the target
+				}
+			}
+		}
+	}
+}
+
+character_event = {
+	id = TOG.1261
+	desc = EVTDESC_TOG_1261
+	picture = GFX_evt_crusaders
+	border = GFX_event_normal_frame_war
+	
+	is_triggered_only = yes
+	
+	immediate = {
+		opinion = {
+			who = FROM
+			modifier = opinion_targeted_by_adventurer
+			months = 24
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_TOG_1261
+	}
+}
+
+# An ambitious character with no inheritance starts an adventure for a foreign title
+# (Temporary title created and a war declared)
+character_event = {
+	id = TOG.1262
+	
+	hide_window = yes # Only fires for unplayable landless characters
+	is_triggered_only = yes
+	
+	trigger = {
+		ai = yes
+		is_ruler = no
+		prisoner = no
+		NOR = {
+			trait = incapable
+			any_heir_title = { always = yes }
+		}
+	}
+	
+	immediate = {
+		# check if the target is no longer applicable
+		if = {
+			limit = {
+				NOT = {
+					event_target:adventure_target_province = {
+						owner = {
+							top_liege = {
+								reverse_has_opinion_modifier = { who = ROOT modifier = opinion_duchy_adventure_target }
+								NOR = {
+									is_allied_with = ROOT
+									has_non_aggression_pact_with = ROOT
+									any_spouse = { character = ROOT }
+								}
+							}
+						}
+					}
+				}
+			}
+			any_opinion_modifier_target = {
+				limit = { reverse_has_opinion_modifier = { who = ROOT modifier = opinion_duchy_adventure_target } }
+				reverse_remove_opinion = { who = ROOT modifier = opinion_duchy_adventure_target }
+			}
+			character_event = { id = TOG.1260 }
+			break = yes
+		}
+		
+		remove_character_modifier = do_not_disturb
+		
+		# target is good: start the war
+		wealth = 500
+		log = "[Root.GetBestName] has started their adventure against [adventure_target_province.Owner.TopLiege.GetBestName] for the [adventure_target_province.Duchy.GetFullName]"
+		
+		liege = {
+			character_event = { id = TOG.1263 days = 1 }
+		}
+		
+		liege = {
+			capital_scope = {
+				event_target:adventure_target_province = {
+					owner = {
+						top_liege = {
+							ROOT = {
+								set_defacto_liege = ROOT
+								create_title = {
+									tier = DUKE
+									landless = yes
+									temporary = yes
+									culture = ROOT
+									name = "CLAIMANT_ADVENTURE"
+									holder = ROOT
+									ruler = "LORD"
+									ruler_female = "LADY"
+								}
+								
+								set_character_flag = duchy_adventurer
+								
+								#base troops
+								spawn_unit = {
+									province = PREVPREVPREVPREV
+									home = PREVPREVPREVPREV
+									owner = THIS
+									match_character = PREV
+									match_mult = 0.375
+									match_min = 1500
+									match_max = 10000
+									attrition = 0.25
+									cannot_inherit = yes
+								}
+								if = {
+									limit = { NOT = { year = 1000 } }
+									random = {
+										chance = 25
+										spawn_unit = {
+											province = PREVPREVPREVPREV
+											home = PREVPREVPREVPREV
+											owner = THIS
+											match_character = PREV
+											match_mult = 0.125
+											match_min = 500
+											match_max = 2500
+											attrition = 0.25
+											cannot_inherit = yes
+											merge = yes
+										}
+									}
+									random = {
+										chance = 25
+										spawn_unit = {
+											province = PREVPREVPREVPREV
+											home = PREVPREVPREVPREV
+											owner = THIS
+											match_character = PREV
+											match_mult = 0.125
+											match_min = 500
+											match_max = 2500
+											attrition = 0.25
+											cannot_inherit = yes
+											merge = yes
+										}
+									}
+								}
+								
+								#extra troops based on qualities
+								if = {
+									limit = { martial = 12 }
+									spawn_unit = {
+										province = PREVPREVPREVPREV
+										home = PREVPREVPREVPREV
+										owner = THIS
+										match_character = PREV
+										match_mult = 0.125
+										match_min = 500
+										match_max = 2500
+										attrition = 0.25
+										cannot_inherit = yes
+										merge = yes
+									}
+								}
+								if = {
+									limit = { martial = 16 }
+									spawn_unit = {
+										province = PREVPREVPREVPREV
+										home = PREVPREVPREVPREV
+										owner = THIS
+										match_character = PREV
+										match_mult = 0.125
+										match_min = 500
+										match_max = 2500
+										attrition = 0.25
+										cannot_inherit = yes
+										merge = yes
+									}
+								}
+								if = {
+									limit = { diplomacy = 12 }
+									spawn_unit = {
+										province = PREVPREVPREVPREV
+										home = PREVPREVPREVPREV
+										owner = THIS
+										match_character = PREV
+										match_mult = 0.125
+										match_min = 500
+										match_max = 2500
+										attrition = 0.25
+										cannot_inherit = yes
+										merge = yes
+									}
+								}
+								if = {
+									limit = { trait = brave }
+									spawn_unit = {
+										province = PREVPREVPREVPREV
+										home = PREVPREVPREVPREV
+										owner = THIS
+										match_character = PREV
+										match_mult = 0.125
+										match_min = 500
+										match_max = 2500
+										attrition = 0.25
+										cannot_inherit = yes
+										merge = yes
+									}
+								}
+								if = {
+									limit = { is_strong_trigger = yes }
+									spawn_unit = {
+										province = PREVPREVPREVPREV
+										home = PREVPREVPREVPREV
+										owner = THIS
+										match_character = PREV
+										match_mult = 0.125
+										match_min = 500
+										match_max = 2500
+										attrition = 0.25
+										cannot_inherit = yes
+										merge = yes
+									}
+								}
+								if = {
+									limit = {
+										prestige = 500
+										NOT = { year = 1000 }
+									}
+									spawn_unit = {
+										province = PREVPREVPREVPREV
+										home = PREVPREVPREVPREV
+										owner = THIS
+										match_character = PREV
+										match_mult = 0.125
+										match_min = 500
+										match_max = 2500
+										attrition = 0.25
+										cannot_inherit = yes
+										merge = yes
+									}
+								}
+								war = {
+									target = PREV
+									casus_belli = duchy_adventure
+									thirdparty_title = PREVPREVPREV
+									tier = DUKE
+									infamy = 0
+								}
+								remove_opinion = { who = PREV modifier = opinion_duchy_adventure_target }
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		# Create some decent commander characters
+		create_random_soldier = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 30
+		}
+		create_random_soldier = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 25
+		}
+		create_random_soldier = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 25
+		}
+		create_random_intriguer = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 30
+		}
+		
+		if  = {
+			limit = { is_seafarer = yes }
+			# Create a fleet, just to be sure
+			spawn_fleet = {
+				province = closest # closest sea zone
+				owner = ROOT
+				disband_on_peace = yes
+				troops = {
+					galleys = { 200 200 }
+				}
+			}
+		}
+	}
+}
+
+character_event = {
+	id = TOG.1263
+	desc = EVTDESC_TOG_1263
+	picture = GFX_evt_crusaders
+	border = GFX_event_normal_frame_war
+	
+	is_triggered_only = yes
+	
+	trigger = {
+		FROM = { is_ruler = yes } # The DoW worked and the adventurer has a temporary title
+	}
+	
+	immediate = {
+		FROM = {
+			add_trait = adventurer
+		}
+		any_liege = {
+			character_event = {
+				id = TOG.1264
+			}
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_TOG_1263
+	}
+}
+
+character_event = {
+	id = TOG.1264
+	desc = EVTDESC_TOG_1264
+	picture = GFX_evt_crusaders
+	border = GFX_event_normal_frame_war
+	
+	show_from_from = yes
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_TOG_1263
+	}
+}
+
+# Extra norse adventurers appear after the Viking Age begins
+character_event = {
+	id = TOG.1265
+	
+	hide_window = yes
+	
+	ai = yes
+	only_playable = yes
+	culture = norse
+	religion = norse_pagan
+	
+	trigger = {
+		has_dlc = "The Old Gods"
+		has_global_flag = viking_age_started
+		holy_order = no
+		mercenary = no
+		OR = {
+			war = yes
+			is_looting = yes
+		}
+		NOR = {
+			year = 1000
+			any_courtier = { has_character_modifier = planning_duchy_adventure }
+		}
+		capital_scope = {
+			port = yes
+			OR = {
+				region = custom_denmark
+				region = custom_norway
+				region = custom_sweden
+			}
+		}
+		OR = {
+			NOT = { has_global_flag = extra_norse_adventurers }
+			had_global_flag = { flag = extra_norse_adventurers days = 3650 }
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 12
+		modifier = {
+			factor = 0.5
+			independent = yes
+		}
+		modifier = {
+			factor = 5
+			NOT = { has_global_flag = extra_norse_adventurers }
+		}
+	}
+	
+	immediate = {
+		set_global_flag = extra_norse_adventurers
+		create_random_soldier = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 30
+			health = 6
+			attributes = {
+				martial = 8
+				diplomacy = 8
+			}
+			trait = viking
+			trait = skilled_tactician
+			trait = ambitious
+		}
+		new_character = {
+			prestige = 250
+			remove_trait = humble
+			remove_trait = depressed
+			remove_trait = imbecile
+			remove_trait = weak
+			remove_trait = feeble
+			remove_trait = blinded
+			remove_trait = celibate
+			remove_trait = craven
+			random = {
+				chance = 50
+				remove_trait = skilled_tactician
+				add_trait = brilliant_strategist
+			}
+			random = {
+				chance = 50
+				add_trait = brave
+			}
+			character_event = { id = TOG.1260 }
+		}
+	}
+}
+
