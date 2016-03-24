@@ -1,0 +1,178 @@
+# Scripted triggers for adventurer events
+
+# THIS = adventurer, must be used inside the adventurer's scope
+emf_adventurer_is_valid_trigger = {
+	has_character_modifier = planning_claimant_adventure
+	NOR = {
+		prisoner = yes
+		trait = incapable
+		any_demesne_title = { adventurer = no }
+	}
+	any_opinion_modifier_target = {
+		independent = yes
+		demesne_size = 1
+		has_opinion_modifier = { who = PREV modifier = opinion_targeted_by_adventurer }
+		reverse_has_opinion_modifier = { who = PREV modifier = opinion_claimant_adventure_target }
+		any_demesne_title = { claimed_by = PREVPREV }
+	}
+}
+
+# ROOT = adventurer
+emf_adventurer_can_approach_trigger = {
+	is_playable = yes
+	demesne_size = 1
+	religion_group = ROOT
+	NOR = {
+		is_heresy_of = ROOT
+		is_parent_religion = ROOT
+		character = event_target:adventurer_target
+		reverse_has_opinion_modifier = { who = ROOT modifier = turned_adventurer_away }
+		reverse_has_opinion_modifier = { who = ROOT modifier = let_adventurer_stay }
+		reverse_has_opinion_modifier = { who = ROOT modifier = backed_adventurer }
+		reverse_has_opinion_modifier = { who = ROOT modifier = betrayed_adventurer }
+	}
+}
+
+# ROOT = approached liege, FROM = adventurer
+emf_adventurer_can_approach_vassal_trigger = {
+	wealth = 10
+	is_adult = yes
+	prisoner = no
+	OR = {
+		dynasty = FROM
+		is_close_relative = FROM
+		any_spouse = { is_close_relative = FROM }
+		opinion = { who = FROM value = 40 }
+		NOT = { opinion = { who = event_target:adventurer_target value = -40 } }
+	}
+	NOR = {
+		trait = incapable
+		reverse_has_opinion_modifier = { who = FROM modifier = turned_adventurer_away }
+		reverse_has_opinion_modifier = { who = FROM modifier = let_adventurer_stay }
+		reverse_has_opinion_modifier = { who = FROM modifier = backed_adventurer }
+		reverse_has_opinion_modifier = { who = FROM modifier = betrayed_adventurer }
+		reverse_has_opinion_modifier = { who = FROM modifier = refused_adventurer }
+	}
+}
+
+# ROOT = adventurer
+emf_adventurer_like_adventurer_trigger = {
+	OR = {
+		is_close_relative = ROOT
+		is_friend = ROOT
+		opinion = { who = ROOT value = 40 }
+	}
+}
+
+# ROOT = adventurer
+emf_adventurer_hate_adventurer_target_trigger = {
+	OR = {
+		NOT = { opinion = { who = event_target:adventurer_target value = -40 } }
+		is_rival = event_target:adventurer_target
+		war_with = event_target:adventurer_target
+	}
+}
+
+# ROOT = adventurer, THIS = adventurer's claim
+emf_adventurer_claim_is_valid_target_basic_trigger = {
+	# only held duke- or above-tier de jure titles that aren't landless
+	higher_tier_than = COUNT
+	is_landless_type_title = no
+	is_titular = no
+	holder_scope = {
+		# independent and landed (also implies not in a rebellion)
+		independent = yes
+		is_landed = yes
+		# weak claims only allowed against women/regencies/recent-succession unless claimant is ambitious
+		OR = {
+			ROOT = { has_strong_claim = PREVPREV }
+			ROOT = { trait = ambitious }
+			is_female = yes
+			AND = { # appropriate regencies
+				has_regent = yes
+				OR = { # not merely traveling or some such
+					is_adult = no
+					trait = incapable
+				}
+			}
+			has_character_modifier = emf_mod_recent_succession
+		}
+		# not held by theocracy of claimant's religion
+		NAND = {
+			is_theocracy = yes
+			religion = ROOT
+		}
+		# cannot target nomads for their clan title or primary title
+		NAND = {
+			is_nomadic = yes
+			OR = {
+				clan_title = { title = PREVPREV }
+				primary_title = { title = PREVPREV }
+			}
+		}
+		# cannot target merchant republics if their capital is a de jure vassal of the title
+		NAND = {
+			is_merchant_republic = yes
+			capital_holding = { de_jure_liege_or_above = PREVPREV }
+		}
+		# cannot not like the target too much
+		NOT = { reverse_opinion = { who = ROOT value = 25 } }
+		# cannot be targeted by another adventurer or have been recently targeted
+		NOR = {
+			has_character_modifier = adventurer_target_timer
+			has_any_opinion_modifier = opinion_targeted_by_adventurer
+		}
+		# cannot target close relatives unless they are hated or the claimant is a bastard
+		OR = {
+			ROOT = { trait = bastard }
+			NOT = { reverse_opinion = { who = ROOT value = -25 } }
+			NOT = { is_close_relative = ROOT }
+		}
+	}
+}
+
+# ROOT = adventurer, THIS = adventurer's claim
+emf_adventurer_claim_is_valid_target_female_trigger = {
+	succ_law_title = {
+		OR = {
+			has_law = true_cognatic_succession
+			AND = {
+				holder_scope = { is_female = yes }
+				has_law = cognatic_succession
+			}
+		}
+	}
+}
+
+# ROOT = duchy adventurer, THIS = target
+emf_adventurer_duchy_target_trigger = {
+	num_of_count_titles = 1
+	OR = {
+		is_theocracy = no
+		NOT = { religion = ROOT }
+	}
+	NOR = {
+		same_realm = ROOT
+		dynasty = ROOT
+		any_spouse = { character = ROOT }
+		reverse_opinion = { who = ROOT value = 25 }
+		has_any_opinion_modifier = opinion_targeted_by_adventurer
+	}
+}
+
+# ROOT = duchy adventurer, THIS = province
+emf_adventurer_duchy_target_distance_trigger = {
+	OR = {
+		any_neighbor_province = {
+			owner = { same_realm = ROOT }
+		}
+		ROOT = {
+			top_liege = {
+				any_realm_province = {
+					NOT = { distance = { where = PREVPREVPREV value = 75 } }
+				}
+			}
+		}
+	}
+}
+
