@@ -1,60 +1,73 @@
 # Scripted effects for adventurer events
 
-# ROOT = adventurer
-emf_adventurer_find_adventurer_target_effect = {
-	random_opinion_modifier_target = {
-		limit = {
-			reverse_has_opinion_modifier = { who = ROOT modifier = opinion_claimant_adventure_target }
+# THIS = adventurer
+emf_adventurer_reset_target_effect = {
+	if = {
+		limit = { NOT = { event_target:emf_adv_target = { always = yes } } }
+		random_opinion_modifier_target = {
+			limit = {
+				reverse_has_opinion_modifier = { who = PREV modifier = opinion_claimant_adventure_target }
+			}
+			save_event_target_as = emf_adv_target
 		}
-		save_event_target_as = adventurer_target
 	}
 }
 
-# ROOT = adventurer
+# THIS = scope whose location should be considered the current court's location if we don't already have one
 emf_adventurer_reset_location_effect = {
 	if = {
-		limit = {
-			NOT = { event_target:current_court = { always = yes } }
-		}
-		location = { save_event_target_as = current_court }
+		limit = { NOT = { event_target:emf_court = { always = yes } } }
+		location = { save_event_target_as = emf_court }
 	}
 }
 
-# ROOT = adventurer
+# THIS = adventurer
 emf_adventurer_find_friendly_court_effect = {
+	# if I have a non-adventurer title, my most friendly court is my own court
+	if = {
+		limit = { any_demesne_title = { adventurer = no } }
+		save_event_target_as = emf_new_home_court
+	}
+	# otherwise...
 	# find a court that supported me first
 	random_opinion_modifier_target = {
 		limit = {
+			NOT = { event_target:emf_new_home_court = { always = yes } }
+			reverse_has_opinion_modifier = { who = PREV modifier = backed_adventurer }
 			is_playable = yes
 			is_landed = yes
-			reverse_has_opinion_modifier = { who = ROOT modifier = backed_adventurer }
 		}
-		ROOT = { set_character_flag = found_home }
-		save_event_target_as = new_court_home
+		save_event_target_as = emf_new_home_court
 	}
 	# failing that, find a court that let me stay
 	random_opinion_modifier_target = {
 		limit = {
-			ROOT = { NOT = { has_character_flag = found_home } }
+			NOT = { event_target:emf_new_home_court = { always = yes } }
+			reverse_has_opinion_modifier = { who = PREV modifier = let_adventurer_stay }
 			is_playable = yes
 			is_landed = yes
-			reverse_has_opinion_modifier = { who = ROOT modifier = let_adventurer_stay }
 		}
-		ROOT = { set_character_flag = found_home }
-		save_event_target_as = new_court_home
+		save_event_target_as = emf_new_home_court
 	}
 	# failing that, my current location will have to do
 	if = {
-		limit = { NOT = { has_character_flag = found_home } }
-		location = { owner = { save_event_target_as = new_court_home } }
+		limit = { NOT = { event_target:emf_new_home_court = { always = yes } } }
+		location = { owner = { save_event_target_as = emf_new_home_court } }
 	}
-	clr_character_flag = found_home
 }
 
 # THIS = adventurer, must be used inside the adventurer's scope
-emf_adventurer_abandon_adventure_effect = {
+emf_adventurer_cleanup_adventure_effect = {
+	log = "INFO: adventurer: [This.GetBestName] (ID: [This.GetID]) abandoning adventure, relocating to the court of [emf_new_home_court.GetTitledName] ([emf_new_home_court.PrimaryTitle.GetID] / ID: [emf_new_home_court.GetID])"
+	
+	# free all prisoners
+	any_courtier = {
+		limit = { prisoner = yes }
+		prisoner = no
+	}
+	
 	# move all courtiers to the new court
-	any_courtier = { move_character = event_target:new_court_home }
+	any_courtier = { move_character = event_target:emf_new_home_court }
 	
 	# remove all adventurer statuses
 	remove_character_modifier = planning_claimant_adventure
@@ -72,7 +85,14 @@ emf_adventurer_abandon_adventure_effect = {
 		limit = { adventurer = yes }
 		unsafe_destroy_landed_title = THIS
 	}
-	move_character = event_target:new_court_home
+	move_character = event_target:emf_new_home_court
+	clear_event_target = emf_new_home_court
+}
+
+# THIS = adventurer
+emf_adventurer_abandon_adventure_effect = {
+	emf_adventurer_find_friendly_court_effect = yes
+	emf_adventurer_cleanup_adventure_effect = yes
 }
 
 # THIS = targeted ruler, ROOT = adventurer
@@ -93,7 +113,7 @@ emf_adventurer_buy_troops_effect = {
 			province = PREV
 			home = PREV
 			owner = THIS
-			match_character = event_target:adventurer_target
+			match_character = event_target:emf_adv_target
 			match_mult = 0.04
 			match_min = 100
 			match_max = 2000
