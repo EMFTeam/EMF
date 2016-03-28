@@ -276,12 +276,6 @@ EOS
 		$law_reqs .= ("\t" x $tabs)."}\n";
 	}
 	
-	if ($level > 0 && !$focus) {
-		$law_reqs .= <<EOS;
-			NOT = { has_law = themes_0 }
-EOS
-	}
-	
 	chop $law_reqs;
 	
 	my $revoke_laws = '';
