@@ -1,6 +1,5 @@
-# Scripted triggers for adventurer events
 
-# THIS = adventurer, must be used inside the adventurer's scope
+# THIS = adventurer
 emf_adventurer_is_valid_trigger = {
 	has_character_modifier = planning_claimant_adventure
 	NOR = {
@@ -8,50 +7,65 @@ emf_adventurer_is_valid_trigger = {
 		trait = incapable
 		any_demesne_title = { adventurer = no }
 	}
-	any_opinion_modifier_target = {
-		independent = yes
-		demesne_size = 1
+	any_independent_ruler = {
+		is_landed = yes
 		has_opinion_modifier = { who = PREV modifier = opinion_targeted_by_adventurer }
 		reverse_has_opinion_modifier = { who = PREV modifier = opinion_claimant_adventure_target }
 		any_demesne_title = { claimed_by = PREVPREV }
 	}
 }
 
-# ROOT = adventurer
+# THIS = potential host, ROOT = adventurer
 emf_adventurer_can_approach_trigger = {
 	is_playable = yes
-	demesne_size = 1
+	is_landed = yes
 	religion_group = ROOT
 	NOR = {
 		is_heresy_of = ROOT
 		is_parent_religion = ROOT
-		character = event_target:adventurer_target
+	}
+	NOT = { has_character_flag = emf_adv_approached_@ROOT }
+	capital_scope = { owner = { character = PREVPREV } } # Need to own their capital province
+	NOR = {
+		character = event_target:emf_adv_target
 		reverse_has_opinion_modifier = { who = ROOT modifier = turned_adventurer_away }
 		reverse_has_opinion_modifier = { who = ROOT modifier = let_adventurer_stay }
 		reverse_has_opinion_modifier = { who = ROOT modifier = backed_adventurer }
 		reverse_has_opinion_modifier = { who = ROOT modifier = betrayed_adventurer }
 	}
+	# Need to have provinces from which we can recruit (i.e., other adventurers haven't already depleted them all recently)
+	any_realm_province = { NOT = { has_province_modifier = adventurer_recruited } }
 }
 
-# ROOT = approached liege, FROM = adventurer
+# THIS = "vassal" (or below, of some host) to approach, ROOT = adventurer
 emf_adventurer_can_approach_vassal_trigger = {
 	wealth = 10
 	is_adult = yes
 	prisoner = no
+	NOT = { has_character_flag = emf_adv_approached_@ROOT }
 	OR = {
-		dynasty = FROM
-		is_close_relative = FROM
-		any_spouse = { is_close_relative = FROM }
-		opinion = { who = FROM value = 40 }
-		NOT = { opinion = { who = event_target:adventurer_target value = -40 } }
+		dynasty = ROOT
+		is_close_relative = ROOT
+		any_spouse = { is_close_relative = ROOT }
+		opinion = { who = ROOT value = 40 }
+		NOT = { opinion = { who = event_target:emf_adv_target value = -40 } }
 	}
 	NOR = {
 		trait = incapable
-		reverse_has_opinion_modifier = { who = FROM modifier = turned_adventurer_away }
-		reverse_has_opinion_modifier = { who = FROM modifier = let_adventurer_stay }
-		reverse_has_opinion_modifier = { who = FROM modifier = backed_adventurer }
-		reverse_has_opinion_modifier = { who = FROM modifier = betrayed_adventurer }
-		reverse_has_opinion_modifier = { who = FROM modifier = refused_adventurer }
+		reverse_has_opinion_modifier = { who = ROOT modifier = turned_adventurer_away }
+		reverse_has_opinion_modifier = { who = ROOT modifier = let_adventurer_stay }
+		reverse_has_opinion_modifier = { who = ROOT modifier = backed_adventurer }
+		reverse_has_opinion_modifier = { who = ROOT modifier = betrayed_adventurer }
+		reverse_has_opinion_modifier = { who = ROOT modifier = refused_adventurer }
+	}
+}
+
+# THIS = province, ROOT = adventurer
+emf_adventurer_can_recruit_province_trigger = {
+	NOR = {
+		has_province_flag = emf_adv_recruited_@ROOT
+		has_province_modifier = adventurer_recruited
+		any_province_holding = { is_occupied = yes }
 	}
 }
 
@@ -67,18 +81,25 @@ emf_adventurer_like_adventurer_trigger = {
 # ROOT = adventurer
 emf_adventurer_hate_adventurer_target_trigger = {
 	OR = {
-		NOT = { opinion = { who = event_target:adventurer_target value = -40 } }
-		is_rival = event_target:adventurer_target
-		war_with = event_target:adventurer_target
+		NOT = { opinion = { who = event_target:emf_adv_target value = -40 } }
+		is_rival = event_target:emf_adv_target
+		war_with = event_target:emf_adv_target
+		AND = {
+			is_foe = event_target:emf_adv_target
+			NOT = { opinion = { who = event_target:emf_adv_target value = 0 } }
+		}
 	}
 }
 
 # ROOT = adventurer, THIS = adventurer's claim
 emf_adventurer_claim_is_valid_target_basic_trigger = {
-	# only held duke- or above-tier de jure titles that aren't landless
-	higher_tier_than = COUNT
+	# only held count- or above-tier de jure titles (unless primary) that aren't landless
+	higher_tier_than = BARON
 	is_landless_type_title = no
-	is_titular = no
+	OR = {
+		is_primary_holder_title = yes
+		is_titular = no
+	}
 	holder_scope = {
 		# independent and landed (also implies not in a rebellion)
 		independent = yes
@@ -88,12 +109,9 @@ emf_adventurer_claim_is_valid_target_basic_trigger = {
 			ROOT = { has_strong_claim = PREVPREV }
 			ROOT = { trait = ambitious }
 			is_female = yes
-			AND = { # appropriate regencies
-				has_regent = yes
-				OR = { # not merely traveling or some such
-					is_adult = no
-					trait = incapable
-				}
+			OR = { # appropriate regencies, not merely traveling or some such
+				is_adult = no
+				trait = incapable
 			}
 			has_character_modifier = emf_mod_recent_succession
 		}
