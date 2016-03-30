@@ -1,36 +1,33 @@
 ## normal scopes(including posttitle scopes) ##
-# ROOT = receiver
-# FROM = giver
+#ROOT = receiver
+#FROM = giver
 # <no scope change> = attacker or receiver
 ## title scopes ##
 # ROOT = receiver
 # FROM = giver
-# <no scope change> = thirdparty landed title	
+# <no scope change> = thirdparty landed title
 #
 # the following effects/triggers exists (example execution order: on_success->on_success_title->on_success_posttitle):
 # is_valid, is_valid_title, on_add, on_add_title, on_add_posttitle, on_success, on_success_title, on_success_posttitle, on_fail, on_fail_title, on_fail_posttitle, on_reverse_demand, on_reverse_demand_title, on_reverse_demand_posttitle
 #
 # Added on_attacker_leader_death, on_defender_leader_death and on_thirdparty_death, which all trigger when corresponding character dies
-# These three all have war scopes, which currently has the following scope changes: 
+# These three all have war scopes, which currently has the following scope changes:
 # attacker, defender, thirdparty(only valid if thirdparty character is involved), thirdparty_title(only valid if thirdparty title is involved)
 #
 # ai_will_do: modifies value AI places on the CB compared to other CBs (default: 1)
 # can_use_gui: If otherwise valid, the CB is listed in the Diplo View, but you can't declare war unless 'can_use_gui' is also valid (also shows a trigger tooltip.)
-
-
 # Faction cb to install antiking
 cb_install_antiking = {
 	name = CB_NAME_INSTALL_ANTIKING
 	war_name = WAR_NAME_INSTALL_ANTIKING
 	sprite = 11
 	truce_days = 3650
-	
 	major_revolt = yes
 	attacker_can_call_allies = no
-	
 	attacker_rel_head_is_ally = yes # The attacker can call his (main) Pope into the war
-	
+
 	can_use = {
+		emf_cb_can_use_trigger = yes
 		ROOT = {
 			vassal_of = FROM
 			religion = FROM
@@ -40,14 +37,9 @@ cb_install_antiking = {
 			}
 		}
 	}
-	
-	is_valid_title = {
-		NOT = { 
-			holder_scope = { 
-				character = ROOT 
-			} 
-		}	
-	}
+
+	is_valid_title = { NOT = { holder_scope = { character = ROOT } } }
+
 	is_valid = {
 		ROOT = {
 			religion = FROM
@@ -56,32 +48,28 @@ cb_install_antiking = {
 				religion = fraticelli
 			}
 		}
-		
 		ROOT = {
 			OR = {
 				liege = {
 					character = PREV # either independent
 				}
-				liege = { 
-					FROM = { 
+				liege = {
+					FROM = {
 						is_liege_or_above = PREV # or have shared liege
 					}
 				}
 			}
 		}
 	}
-	
+
 	on_add = {
 		log = "CB(cb_install_antiking): START: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
-
 		emf_cb_dynlevy_begin_effect = yes
 	}
-	
+
 	on_success = {
 		log = "CB(cb_install_antiking): VICTORY: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
-
 		emf_cb_victory_effect = yes
-		
 		any_attacker = {
 			limit = { character = ROOT }
 			participation_scaled_piety = 500
@@ -89,22 +77,18 @@ cb_install_antiking = {
 		}
 		any_attacker = {
 			limit = { NOT = { character = ROOT } }
-			hidden_tooltip = { 
+			hidden_tooltip = {
 				participation_scaled_piety = 500
 				participation_scaled_prestige = 250
 			}
 		}
-		
 		ROOT = {
 			religion_authority = {
 				modifier = deposed_antipope
 				years = 50
 			}
-			
 			if = {
-				limit = {
-					religion = catholic
-				}
+				limit = { religion = catholic }
 				k_papal_state = {
 					holder_scope = {
 						opinion = {
@@ -115,9 +99,7 @@ cb_install_antiking = {
 				}
 			}
 			if = {
-				limit = {
-					religion = fraticelli
-				}
+				limit = { religion = fraticelli }
 				d_fraticelli = {
 					holder_scope = {
 						opinion = {
@@ -128,41 +110,40 @@ cb_install_antiking = {
 				}
 			}
 		}
-		
-		FROM = { 
+		FROM = {
 			piety = -500
 			prestige = -250
-			
 			hidden_tooltip = {
 				rightful_religious_head_scope = {
 					remove_claim = k_papal_state
 					remove_claim = d_fraticelli
 				}
 			}
-			
 			primary_title = {
-				usurp_title = { target = ROOT type = revolt }
+				usurp_title = {
+					target = ROOT
+					type = revolt
+				}
 			}
 		}
 		if = {
 			limit = { primary_title = { has_law = investiture_law_1 } }
 			primary_title = { add_law_w_cooldown = investiture_law_0 }
 		}
-		
 		emf_cb_dynlevy_end_effect = yes
 	}
 
+	on_success_posttitle = { emf_cb_on_success_posttitle_effect = yes }
+
 	on_fail = {
 		log = "CB(cb_install_antiking): WHITEPEACE: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
-
 		emf_cb_dynlevy_end_effect = yes
-		
-		ROOT = { 
+		ROOT = {
 			piety = -250
 			prestige = -125
 			cancel_plot = plot_gain_title
 		}
-		FROM = { 
+		FROM = {
 			piety = 100
 			prestige = 50
 		}
@@ -170,10 +151,8 @@ cb_install_antiking = {
 
 	on_reverse_demand = {
 		log = "CB(cb_install_antiking): DEFEAT: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
-
 		emf_cb_defeat_effect = yes
 		emf_cb_dynlevy_end_effect = yes
-		
 		ROOT = {
 			transfer_scaled_wealth = {
 				to = FROM
@@ -184,8 +163,7 @@ cb_install_antiking = {
 			prisoner = FROM
 			cancel_plot = plot_gain_title
 		}
-		
-		FROM = { 
+		FROM = {
 			piety = 500
 			prestige = 250
 		}
@@ -193,17 +171,14 @@ cb_install_antiking = {
 
 	on_invalidation = {
 		log = "CB(cb_install_antiking): INVALIDATED: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
-
 		emf_cb_dynlevy_end_effect = yes
-		ROOT = {
-			cancel_plot = plot_gain_title
-		}
+		ROOT = { cancel_plot = plot_gain_title }
 	}
 
 	attacker_ai_victory_worth = {
 		factor = -1 # always accept
 	}
-	
+
 	attacker_ai_defeat_worth = {
 		factor = 100
 	}
@@ -211,7 +186,7 @@ cb_install_antiking = {
 	defender_ai_victory_worth = {
 		factor = -1 # always accept
 	}
-	
+
 	defender_ai_defeat_worth = {
 		factor = 100
 	}
