@@ -230,43 +230,21 @@ decisions = {
 		is_high_prio = yes
 
 		potential = {
-			emf_hiprio_decision_basic_potential_trigger = yes
 			independent = yes
-			tier = KING
-			has_landed_title = c_byzantion
-			is_feudal = yes
 			e_byzantium = { has_holder = no }
 			e_roman_empire = { has_holder = no }
-			OR = {
-				culture_group = byzantine
-				AND = {
-					ai = no
-					culture_group = south_slavic
-				}
-			}
-			OR = {
-				religion = orthodox
-				religion = bogomilist
-				religion = paulician
-				religion = monothelite
-				religion = iconoclast
-				AND = {
-					ai = no
-					OR = {
-						religion = nestorian
-						religion = messalian
-						religion = miaphysite
-						religion = monophysite
-					}
-				}
-			}
+			c_byzantion = { owner_under_ROOT = yes }
+			higher_tier_than = COUNT
+			NOT = { any_demesne_title = { tier = EMPEROR is_titular = no } }
+			is_feudal = yes
+			religion_group = christian
+			emf_hiprio_decision_basic_potential_trigger = yes
 		}
 		allow = {
 			war = no
 			has_regent = no
 			prestige = 1000
 			realm_size = 75
-			emf_empires_no_empire_same_religion_trigger = yes
 			k_byzantium = {
 				de_jure_liege = e_byzantium
 				emf_ROOT_completely_controls_counties_trigger = yes
@@ -301,6 +279,7 @@ decisions = {
 					}
 				}
 			}
+			emf_empires_byz_valid_culture_religion_trigger = yes
 		}
 		revoke_allowed = {
 			always = no
@@ -364,12 +343,35 @@ decisions = {
 			}
 			clr_character_flag = emf_no_law_penalties
 			
+			hidden_tooltip = {
+				e_byzantium = { make_primary_title = yes }
+			}
+			
+			# Destroy any other empires held (only titular are allowed by this decision's `potential`)
+			any_demesne_title = {
+				limit = {
+					tier = EMPEROR
+					NOT = { title = e_byzantium }
+				}
+				destroy_landed_title = THIS
+			}
+			
 			# Destroy any imperial kingdoms which may have formed (or started with, in the case of the "Empires"
 			# of Trebizond and Nikaea) in the interim.
 			any_demesne_title = {
 				limit = {
 					tier = KING
 					de_jure_liege = e_byzantium
+				}
+				destroy_landed_title = THIS
+			}
+			
+			# Destroy held titular, landed kingdoms
+			any_demesne_title = {
+				limit = {
+					tier = KING
+					is_titular = yes
+					is_landless_type_title = no
 				}
 				destroy_landed_title = THIS
 			}
@@ -383,33 +385,15 @@ decisions = {
 			# Potentially give Hagia Sophia to our religious head if appropriate and if it's not theirs already,
 			# and vassalize the religious head title
 			
-			if = {
-				limit = { religion = orthodox }
-				k_orthodox = { holder_scope = { save_event_target_as = emf_relhead } }
-			}
-			if = {
-				limit = { religion = paulician }
-				d_paulician = { holder_scope = { save_event_target_as = emf_relhead } }
-			}
-			if = {
-				limit = { religion = monothelite }
-				d_monothelite = { holder_scope = { save_event_target_as = emf_relhead } }
-			}
-			if = {
-				limit = { religion = iconoclast }
-				d_iconoclast = { holder_scope = { save_event_target_as = emf_relhead } }
-			}
-			if = {
-				limit = { religion = miaphysite }
-				d_miaphysite = { holder_scope = { save_event_target_as = emf_relhead } }
-			}
-			if = {
-				limit = { religion = monophysite }
-				d_monophysite = { holder_scope = { save_event_target_as = emf_relhead } }
-			}
-			if = {
-				limit = { religion = nestorian }
-				d_nestorian = { holder_scope = { save_event_target_as = emf_relhead } }
+			trigger_switch = {
+				on_trigger = religion
+				orthodox =    { k_orthodox =    { owner = { save_event_target_as = emf_relhead } } }
+				paulician =   { d_paulician =   { owner = { save_event_target_as = emf_relhead } } }
+				monothelite = { d_monothelite = { owner = { save_event_target_as = emf_relhead } } }
+				iconoclast =  { d_iconoclast =  { owner = { save_event_target_as = emf_relhead } } }
+				miaphysite =  { d_miaphysite =  { owner = { save_event_target_as = emf_relhead } } }
+				monophysite = { d_monophysite = { owner = { save_event_target_as = emf_relhead } } }
+				nestorian =   { d_nestorian =   { owner = { save_event_target_as = emf_relhead } } }
 			}
 			
 			b_hagiasophia = { holder_scope = { save_event_target_as = emf_temple_owner } }
@@ -434,10 +418,10 @@ decisions = {
 					limit = {
 						event_target:emf_temple_owner = {
 							OR = {
-								character = ROOT
-								is_liege_or_above = ROOT
+								under_ROOT = yes
 								ai = yes
 							}
+							NOT = { character = event_target:emf_relhead }
 						}
 					}
 					b_hagiasophia = {
