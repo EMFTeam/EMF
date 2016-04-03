@@ -41,8 +41,9 @@ decisions = {
 			always = no
 		}
 		effect = {
+			clr_global_flag = emf_hre_formed
 			set_global_flag = emf_hre_formed
-			set_character_flag = emf_hre_founder
+			set_character_flag = emf_achievement_hre_founder
 			prestige = 1000
 
 			if = {
@@ -154,8 +155,9 @@ decisions = {
 			always = no
 		}
 		effect = {
+			clr_global_flag = emf_hre_formed
 			set_global_flag = emf_hre_formed
-			set_character_flag = emf_hre_founder
+			set_character_flag = emf_achievement_hre_founder
 			prestige = 1000
 
 			if = {
@@ -238,43 +240,39 @@ decisions = {
 			NOT = { any_demesne_title = { tier = EMPEROR is_titular = no } }
 			is_feudal = yes
 			religion_group = christian
+			k_byzantium = { de_jure_liege = e_byzantium }
+			war = no
 			emf_hiprio_decision_basic_potential_trigger = yes
 		}
 		allow = {
-			war = no
 			has_regent = no
 			prestige = 1000
-			realm_size = 75
-			k_byzantium = {
-				de_jure_liege = e_byzantium
-				emf_ROOT_completely_controls_counties_trigger = yes
-			}
-			c_byzantion = {
-				custom_tooltip = {
-					text = emf_empires_ctt_completely_controls_county_besides_hagiasophia
-					hidden_tooltip = {
+			realm_size = 50
+			k_byzantium = { emf_ROOT_completely_controls_counties_trigger = yes }
+			custom_tooltip = {
+				text = emf_empires_ctt_completely_controls_constantinople_besides_hagiasophia
+				hidden_tooltip = {
+					c_byzantion = {
 						NOT = {
 							any_direct_de_jure_vassal_title = {
+								has_holder = yes
+								owner_under_ROOT = no
 								NOT = { title = b_hagiasophia }
-								holder_scope = {
-									NOR = {
-										character = ROOT
-										is_liege_or_above = ROOT
-									}
-								}
 							}
 						}
 					}
 				}
 			}
-			OR = {
-				NOT = { religion = orthodox }
-				b_hagiasophia = {
-					holder_scope = {
+			custom_tooltip = {
+				text = emf_empires_ctt_hagiasophia_under_ROOT_or_held_by_patriarch_if_orthodox
+				hidden_tooltip = {
+					b_hagiasophia = {
 						OR = {
-							character = ROOT
-							is_liege_or_above = ROOT
-							has_landed_title = k_orthodox
+							owner_under_ROOT = yes
+							AND = {
+								ROOT = { religion = orthodox }
+								owner = { has_landed_title = k_orthodox }
+							}
 						}
 					}
 				}
@@ -308,7 +306,10 @@ decisions = {
 				e_byzantium = {
 					grant_title = ROOT
 					copy_title_laws = PREV
-					add_law = administration_2
+					if = {
+						limit = { PREV = { NOT = { has_law = administration_2 } } }
+						add_law = administration_2
+					}
 					if = {
 						limit = {
 							PREV = {
@@ -323,14 +324,14 @@ decisions = {
 						if = {
 							limit = {
 								has_dlc = "Zeus"
-								NOT = { has_law = ze_revokation_2 }
+								PREV = { NOT = { has_law = ze_revokation_2 } }
 							}
 							add_law = ze_revokation_2
 						}
 						if = {
 							limit = {
 								NOT = { has_dlc = "Zeus" }
-								NOT = { has_law = revokation_2 }
+								PREV = { NOT = { has_law = revokation_2 } }
 							}
 							add_law = revokation_2
 						}
@@ -338,7 +339,10 @@ decisions = {
 					# We don't use add_law so that it doesn't consume the lifetime cooldown upon
 					# succession law changes, should a player NOT want to be semi-irreversibly forced
 					# into primogeniture. Hence, the recalc_succession afterward.
-					succession = primogeniture
+					if = {
+						limit = { PREV = { NOT = { has_law = succ_primogeniture } } }
+						succession = primogeniture
+					}
 				}
 			}
 			clr_character_flag = emf_no_law_penalties
@@ -400,18 +404,9 @@ decisions = {
 			
 			if = {
 				limit = {
-					event_target:emf_relhead = { # The religious head is indeed valid
-						NOT = { # No other player is liege to the religious head
-							any_liege = {
-								NOT = { character = ROOT }
-								ai = no
-							}
-						}
-						OR = { # If not orthodox or iconoclast, rel. head must not hate ruler
-							religion = orthodox
-							religion = iconoclast
-							opinion = { who = ROOT value = -50 }
-						}
+					# The religious head is indeed valid, and no player is liege to them
+					event_target:emf_relhead = {
+						NOT = { any_liege = { ai = no } }
 					}
 				}
 				if = {
@@ -426,7 +421,7 @@ decisions = {
 					}
 					b_hagiasophia = {
 						grant_title_no_opinion = event_target:emf_relhead
-						remove_claim = event_target:emf_temple_owner
+						hidden_tooltip = { remove_claim = event_target:emf_temple_owner }
 					}
 				}
 				event_target:emf_relhead = {
@@ -441,12 +436,7 @@ decisions = {
 					limit = {
 						is_title_active = THIS
 						holder_scope = {
-							OR = {
-								independent = yes
-								liege = {
-									ai = yes
-								}
-							}
+							liege = { ai = yes }
 						}
 					}
 					holder_scope = {
