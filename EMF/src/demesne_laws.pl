@@ -6,7 +6,7 @@
 # without modification, of this program OR its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "1.3.0";
+my $VERSION = "1.3.1";
 
 my $opt = {
 	min_total_levy      => -0.2,
@@ -70,16 +70,16 @@ exit 0;
 ####
 
 sub print_params {
-	print "# Written by zijistark via demesne_laws.pl v$VERSION on ".localtime." (Pacific)\n";
-	print "# Code generation parameters:\n";
-	print "#   min_total_levy=$opt->{min_total_levy}\n";
-	print "#   max_total_levy=$opt->{max_total_levy}\n";
+	print "# Written by zijistark via demesne_laws.pl v$VERSION on ".localtime." (Pacific)\r\n";
+	print "# Code generation parameters:\r\n";
+	print "#   min_total_levy=$opt->{min_total_levy}\r\n";
+	print "#   max_total_levy=$opt->{max_total_levy}\r\n";
 	for my $t ( qw( castle temple city iqta tribal ) ) {
-		print "#   ${t}_tax_per_levy=".$opt->{"${t}_tax_per_levy"}."\n";
+		print "#   ${t}_tax_per_levy=".$opt->{"${t}_tax_per_levy"}."\r\n";
 	}
-	print "#   opinion_offset=$opt->{opinion_offset}\n";
-	print "#   opinion_slope=$opt->{opinion_slope}\n";
-	print "\n";
+	print "#   opinion_offset=$opt->{opinion_offset}\r\n";
+	print "#   opinion_slope=$opt->{opinion_slope}\r\n";
+	print "\r\n";
 }
 
 ####
@@ -93,27 +93,28 @@ EOS
 
 	print_params();
 	print_summary();
-	
-	print "law_groups = {\n";
+
+	print "law_groups = {\r\n";
 	
 	for my $type ( qw( castle temple city iqta tribal ) ) {
-		my $lg_focus = (($type eq 'castle') ? 'feudal' : $type).'_slider';
-		my $lg_ob = (($type eq 'castle') ? 'feudal' : $type).'_obligations';
-		print "\t$lg_focus = {\n";
-		print "\t\tlaw_type = obligations\n";
-		print "\t\tleft_value = LEVY\n";
-		print "\t\tright_value = TAX\n";
-		print "\t\tslider_sprite = GFX_focus_slider\n";
-		print "\t\tallowed_for_councillors = no\n";
-		print "\t}\n";
-		print "\t$lg_ob = {\n";
-		print "\t\tlaw_type = obligations\n";
-		print "\t\tslider_sprite = GFX_oblig_slider\n";
-		print "\t\tallowed_for_councillors = yes\n";
-		print "\t}\n";
+		my $lg_base = (($type eq 'castle') ? 'feudal' : $type);
+		my $lg_focus = $lg_base.'_slider';
+		my $lg_ob = $lg_base.'_obligations';
+		print "\t$lg_focus = {\r\n";
+		print "\t\tlaw_type = obligations\r\n";
+		print "\t\tleft_value = LEVY\r\n";
+		print "\t\tright_value = TAX\r\n";
+		print "\t\tslider_sprite = GFX_focus_slider\r\n";
+		print "\t\tallowed_for_councillors = no\r\n";
+		print "\t}\r\n";
+		print "\t$lg_ob = {\r\n";
+		print "\t\tlaw_type = obligations\r\n";
+		print "\t\tslider_sprite = GFX_oblig_${lg_base}_slider\r\n";
+		print "\t\tallowed_for_councillors = yes\r\n";
+		print "\t}\r\n";
 	}
 	
-	print "}\n\n";
+	print "}\r\n\r\n";
 	
 	print "laws = {";
 
@@ -122,14 +123,14 @@ EOS
 		my $tax_per_levy = $opt->{ "${type}_tax_per_levy" };
 		
 		# Focus
-		print "\n\n\t# \U$type FOCUS\n";
+		print "\r\n\r\n\t# \U$type FOCUS\r\n";
 		
 		for my $i (0..4) {
 			print_law(1, $type, $i, slider_function($i, $tax_per_levy));
 		}
 
 		# Obligations
-		print "\n\t# \U$type OBLIGATIONS\n";
+		print "\r\n\t# \U$type OBLIGATIONS\r\n";
 		
 		# Normalize/offset the actual "None" level of tax obligations to always be 0
 		my (undef, $min_tax_offset) = obligations_function(0, $tax_per_levy);
@@ -140,20 +141,20 @@ EOS
 		}
 	}
 	
-	print "}\n";
+	print "}\r\n";
 }
 
 ####
 
 sub print_summary {
 
-	print "# Law modifier summary (max_levy/tax):\n#\n";
+	print "# Law modifier summary (max_levy/tax):\r\n#\r\n";
 
 	for my $type ( qw( castle temple city iqta tribal ) ) {
 
 		my $tax_per_levy = $opt->{ "${type}_tax_per_levy" };
 		
-		print "#\n# \U$type\n";
+		print "#\r\n# \U$type\r\n";
 
 		printf("# %12s ", "Focus:");
 		
@@ -161,7 +162,7 @@ sub print_summary {
 			printf("%13s  ", sprintf("%5.3f/%5.3f", slider_function($i, $tax_per_levy)));
 		}
 		
-		printf("\n# %12s ", "Obligations:");
+		printf("\r\n# %12s ", "Obligations:");
 		
 		# Normalize/offset the actual "None" level of tax obligations to always be 0
 		my (undef, $min_tax_offset) = obligations_function(0, $tax_per_levy);
@@ -171,10 +172,10 @@ sub print_summary {
 			printf("%13s  ", sprintf("%5.3f/%5.3f", $levy, $tax - $min_tax_offset));
 		}
 		
-		print "\n";
+		print "\r\n";
 	}
 	
-	print "\n";
+	print "\r\n";
 }
 
 ####
@@ -221,7 +222,7 @@ EOS
 	if ($type ne 'city' && $type ne 'temple' && $type ne 'tribal') {
 		$muslim_holder = "holder_scope = { religion_group = muslim }";
 		$muslim_holder = "NOT = { $muslim_holder }" unless $muslim;
-		$muslim_holder = "\n\t\t\t$muslim_holder";
+		$muslim_holder = "\r\n\t\t\t$muslim_holder";
 	}
 	
 	my $law_down = '';
@@ -231,49 +232,49 @@ EOS
 	my $tabs = 3;
 	
 	if ( ($level > 0 && $level < 4) || $default ) {
-		$law_reqs .= ("\t" x $tabs)."OR = {\n";
+		$law_reqs .= ("\t" x $tabs)."OR = {\r\n";
 		++$tabs;
 	}
 	
 	if ($level > 0) {
 		$law_down = $law_group.'_'.($level-1);
-		$law_reqs .= ("\t" x $tabs)."has_law = $law_down\n";
+		$law_reqs .= ("\t" x $tabs)."has_law = $law_down\r\n";
 	}
 	
 	if ($level < 4) {
 		$law_up = $law_group.'_'.($level+1);
-		$law_reqs .= ("\t" x $tabs)."has_law = $law_up\n";
+		$law_reqs .= ("\t" x $tabs)."has_law = $law_up\r\n";
 	}
 	
 	if ($default) { # Allow the default law if no other laws in this group are set
-		$law_reqs .= ("\t" x $tabs)."custom_tooltip = {\n";
+		$law_reqs .= ("\t" x $tabs)."custom_tooltip = {\r\n";
 		++$tabs;
 
-		$law_reqs .= ("\t" x $tabs).'text = emf_laws_ctt_no_other_laws_passed'."\n";
+		$law_reqs .= ("\t" x $tabs).'text = emf_laws_ctt_no_other_laws_passed'."\r\n";
 		
-		$law_reqs .= ("\t" x $tabs)."hidden_tooltip = {\n";
+		$law_reqs .= ("\t" x $tabs)."hidden_tooltip = {\r\n";
 		++$tabs;
 
-		$law_reqs .= ("\t" x $tabs)."NOT = {\n";
+		$law_reqs .= ("\t" x $tabs)."NOR = {\r\n";
 		++$tabs;
 		
 		for my $i (0..4) {
-			$law_reqs .= ("\t" x $tabs).'has_law = '.$law_group.'_'.$i."\n";
+			$law_reqs .= ("\t" x $tabs).'has_law = '.$law_group.'_'.$i."\r\n";
 		}
 		
 		--$tabs;
-		$law_reqs .= ("\t" x $tabs)."}\n"; # NOT
+		$law_reqs .= ("\t" x $tabs)."}\r\n"; # NOT
 		
 		--$tabs;
-		$law_reqs .= ("\t" x $tabs)."}\n"; # HIDDEN_TOOLTIP
+		$law_reqs .= ("\t" x $tabs)."}\r\n"; # HIDDEN_TOOLTIP
 		
 		--$tabs;
-		$law_reqs .= ("\t" x $tabs)."}\n"; # CUSTOM_TOOLTIP
+		$law_reqs .= ("\t" x $tabs)."}\r\n"; # CUSTOM_TOOLTIP
 	}
 
 	if ( ($level > 0 && $level < 4) || $default ) {
 		--$tabs;
-		$law_reqs .= ("\t" x $tabs)."}\n";
+		$law_reqs .= ("\t" x $tabs)."}\r\n";
 	}
 	
 	chop $law_reqs;
@@ -281,7 +282,7 @@ EOS
 	my $revoke_laws = '';
 	
 	for my $i (0..4) {
-		$revoke_laws .= ("\t" x 4)."revoke_law = ".$law_group.'_'.$i."\n";
+		$revoke_laws .= ("\t" x 4)."revoke_law = ".$law_group.'_'.$i."\r\n";
 	}
 	
 	chop $revoke_laws;
@@ -289,7 +290,7 @@ EOS
 	my $ai_will_do = (!$focus && $level < 3) ? 1 : 0;
 	
 	$default = ($default) ? "\t\tdefault = yes" : '';
-	$default .= "\n" if $opinion_effect;
+	$default .= "\r\n" if $opinion_effect;
 	
 	print <<EOS;
 	$law = {
