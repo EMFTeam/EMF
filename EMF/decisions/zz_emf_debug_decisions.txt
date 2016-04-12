@@ -312,31 +312,6 @@ title_decisions = {
 			factor = 0
 		}
 	}
-	emf_debug_make_primary = {
-		filter = all
-		ai_target_filter = capital
-		
-		from_potential = {
-			ai = no
-			has_global_flag = emf_debug
-		}
-		potential = {
-			has_holder = yes
-			is_primary_holder_title = no
-			is_primary_holder_title_tier = yes
-		}
-		allow = {
-		}
-		effect = {
-			hidden_tooltip = { make_primary_title = yes }
-		}
-		revoke_allowed = {
-			always = no
-		}
-		ai_will_do = {
-			factor = 0
-		}
-	}
 	emf_debug_destroy_title = {
 		filter = all
 		ai_target_filter = capital
@@ -348,12 +323,189 @@ title_decisions = {
 		potential = {
 			higher_tier_than = COUNT
 			has_holder = yes
-			is_landless_type_title = no
 		}
 		allow = {
 		}
 		effect = {
-			emf_destroy_title_effect = yes
+			hidden_tooltip = {
+				# Try to prevent unnecessary madness
+				holder_scope = {
+					random_demesne_title = {
+						limit = {
+							ROOT = { is_primary_holder_title = yes }
+							NOT = { title = ROOT }
+							tier = ROOT
+							temporary = no
+						}
+						make_primary_title = yes
+					}
+					random_demesne_title = {
+						limit = {
+							ROOT = { is_primary_holder_title = yes }
+							NOT = { title = ROOT }
+							tier = ROOT
+						}
+						make_primary_title = yes
+					}
+				}
+			}
+			emf_destroy_title_unsafe_effect = yes
+		}
+		revoke_allowed = {
+			always = no
+		}
+		ai_will_do = {
+			factor = 0
+		}
+	}
+	emf_debug_activate_title = {
+		filter = all
+		ai_target_filter = capital
+		
+		from_potential = {
+			ai = no
+			has_global_flag = emf_debug
+		}
+		potential = {
+			NOT = { is_title_active = THIS }
+		}
+		allow = {
+		}
+		effect = {
+			hidden_tooltip = {
+				activate_title = { title = THIS status = yes }
+			}
+		}
+		revoke_allowed = {
+			always = no
+		}
+		ai_will_do = {
+			factor = 0
+		}
+	}
+	emf_debug_deactivate_title = {
+		filter = all
+		ai_target_filter = capital
+		
+		from_potential = {
+			ai = no
+			has_global_flag = emf_debug
+		}
+		potential = {
+			higher_tier_than = COUNT
+			has_holder = no
+			is_title_active = THIS
+		}
+		allow = {
+		}
+		effect = {
+			hidden_tooltip = {
+				activate_title = { title = THIS status = no }
+			}
+		}
+		revoke_allowed = {
+			always = no
+		}
+		ai_will_do = {
+			factor = 0
+		}
+	}
+	## Dynamic De Jure Reassignment ##
+	emf_debug_dj_liege_target_title = { # Target this as a de jure liege title
+		filter = all
+		ai_target_filter = capital
+		
+		from_potential = {
+			ai = no
+			has_global_flag = emf_debug
+		}
+		potential = {
+			higher_tier_than = COUNT
+			OR = {
+				NOT = { event_target:emf_debug_dj_liege = { tier = THIS } }
+				event_target:emf_debug_dj_liege = {
+					NOT = { title = ROOT }
+				}
+			}
+		}
+		allow = {
+		}
+		effect = {
+			hidden_tooltip = {
+				if = {
+					limit = { event_target:emf_debug_dj_liege = { always = yes } }
+					clear_global_event_target = emf_debug_dj_liege
+				}
+				ROOT = { save_global_event_target_as = emf_debug_dj_liege }
+			}
+		}
+		revoke_allowed = {
+			always = no
+		}
+		ai_will_do = {
+			factor = 0
+		}
+	}
+	emf_debug_dj_liege_untarget_title = { # Stop targeting previously-selected DJLiege title
+		filter = all
+		ai_target_filter = capital
+		
+		is_high_prio = yes
+		
+		from_potential = {
+			ai = no
+			has_global_flag = emf_debug
+			event_target:emf_debug_dj_liege = { tier = THIS }
+		}
+		potential = {
+			event_target:emf_debug_dj_liege = {
+				title = ROOT
+			}
+		}
+		allow = {
+		}
+		effect = {
+			hidden_tooltip = { clear_global_event_target = emf_debug_dj_liege }
+		}
+		revoke_allowed = {
+			always = no
+		}
+		ai_will_do = {
+			factor = 0
+		}
+	}
+	emf_debug_dj_liege_vassalize_title = { # Set the de jure liege of this title to the targeted DJLiege title
+		filter = all
+		ai_target_filter = capital
+		
+		from_potential = {
+			ai = no
+			has_global_flag = emf_debug
+			event_target:emf_debug_dj_liege = { tier = THIS }
+		}
+		potential = {
+			OR = {
+				AND = {
+					event_target:emf_debug_dj_liege = { tier = EMPEROR }
+					tier = KING
+				}
+				AND = {
+					event_target:emf_debug_dj_liege = { tier = KING }
+					tier = DUKE
+				}
+				AND = {
+					event_target:emf_debug_dj_liege = { tier = DUKE }
+					tier = COUNT
+				}
+			}
+			NOT = { de_jure_liege = event_target:emf_debug_dj_liege }
+		}
+		allow = {
+		}
+		effect = {
+			hidden_tooltip = { # de_jure_liege auto-tooltips are buggy with event targets
+				de_jure_liege = event_target:emf_debug_dj_liege
+			}
 		}
 		revoke_allowed = {
 			always = no
