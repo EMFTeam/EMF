@@ -6,7 +6,7 @@
 # without modification, of this program OR its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "1.3.2";
+my $VERSION = "1.3.3";
 
 my $opt = {
 	min_total_levy      => -0.2,
@@ -349,6 +349,15 @@ EOS
 				factor = 0
 				holder_scope = { trait = greedy }
 				has_law = $law_up
+			}
+EOS
+		}
+
+		if ($ai_will_do && $tribal) {
+			print <<EOS;
+			modifier = {
+				factor = 0
+				NOT = { any_vassal = { is_tribal = yes } }
 			}
 EOS
 		}
