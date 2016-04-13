@@ -6,7 +6,7 @@
 # without modification, of this program OR its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "1.3.1";
+my $VERSION = "1.3.2";
 
 my $opt = {
 	min_total_levy      => -0.2,
@@ -60,7 +60,6 @@ sub obligations_function {
 }
 
 
-
 #####
 
 print_laws();
@@ -109,6 +108,8 @@ EOS
 		print "\t}\r\n";
 		print "\t$lg_ob = {\r\n";
 		print "\t\tlaw_type = obligations\r\n";
+		print "\t\tleft_value = emf_laws_text_obligations_min\r\n";
+		print "\t\tright_value = emf_laws_text_obligations_max\r\n";
 		print "\t\tslider_sprite = GFX_oblig_${lg_base}_slider\r\n";
 		print "\t\tallowed_for_councillors = yes\r\n";
 		print "\t}\r\n";
@@ -310,7 +311,7 @@ $law_reqs
 		}
 		revoke_allowed = {
 			always = no
-		}			
+		}
 		ai_will_do = {
 			factor = $ai_will_do
 EOS
