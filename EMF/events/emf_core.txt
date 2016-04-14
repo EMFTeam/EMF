@@ -510,6 +510,184 @@ character_event = {
 	}
 }
 
+# emf_core.65
+# Feudalize a province by whatever means necessary, preferring historical castle-holders,
+# but without flipping counties between (sub)realms. As last resort, try to build a new castle.
+#
+# NOTE: when referring to the "count" or "baron" below, literal title holder is meant-- _nothing at all_ is
+# assumed about the tier of these character(s) -- in fact, they might even be the same dude [somehow].
+province_event = {
+	id = emf_core.65
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	trigger = {
+		NOT = { capital_holding = { holding_type = castle } }
+	}
+	
+	immediate = {
+		owner = { save_event_target_as = emf_count }
+		random_province_holding = { # A feudal castle-holder of COUNT+ tier over/under county holder
+			limit = {
+				holding_type = castle
+				owner = {
+					higher_tier_than = BARON
+					is_feudal = yes
+					OR = {
+						character = event_target:emf_count
+						is_liege_or_above = event_target:emf_count
+						is_vassal_or_below = event_target:emf_count
+					}
+				}
+			}
+			save_event_target_as = emf_castle
+			owner = { save_event_target_as = emf_baron }
+			break = yes
+		}
+		random_province_holding = { # A historical feudal castle-holder over/under county holder
+			limit = {
+				holding_type = castle
+				owner = {
+					historical = yes
+					is_feudal = yes
+					OR = {
+						character = event_target:emf_count
+						is_liege_or_above = event_target:emf_count
+						is_vassal_or_below = event_target:emf_count
+					}
+				}
+			}
+			save_event_target_as = emf_castle
+			owner = { save_event_target_as = emf_baron }
+			break = yes
+		}
+		random_province_holding = { # Any feudal castle-holder over/under county holder
+			limit = {
+				holding_type = castle
+				owner = {
+					is_feudal = yes
+					OR = {
+						character = event_target:emf_count
+						is_liege_or_above = event_target:emf_count
+						is_vassal_or_below = event_target:emf_count
+					}
+				}
+			}
+			save_event_target_as = emf_castle
+			owner = { save_event_target_as = emf_baron }
+			break = yes
+		}
+		random_province_holding = { # Steal the castle from a non-feudal over/under county holder
+			limit = {
+				holding_type = castle
+				owner = {
+					OR = {
+						character = event_target:emf_count
+						is_liege_or_above = event_target:emf_count
+						is_vassal_or_below = event_target:emf_count
+					}
+				}
+			}
+			save_event_target_as = emf_castle
+			break = yes
+		}
+		if = {
+			limit = { NOT = { has_empty_holding = yes } }
+			break = yes # No hope
+		}
+		# Build the castle ourselves
+		build_holding = { type = castle }
+		random_province_holding = {
+			limit = { holding_type = castle }
+			save_event_target_as = emf_castle
+		}
+	}
+	
+	option = {
+		name = OK
+		if = {
+			limit = { NOT = { event_target:emf_castle = { always = yes } } }
+			break = yes # No hope
+		}
+		if = {
+			limit = { NOT = { event_target:emf_baron = { always = yes } } }
+			owner = {
+				create_character = {
+					random_traits = yes
+					dynasty = random
+					female = no
+					religion = THIS
+					culture = THIS
+				}
+				new_character = {
+					save_event_target_as = emf_baron
+					if = {
+						limit = { religion_group = indian_group }
+						add_trait = kshatriya
+						character_event = { id = RoI.30121 }
+					}
+					grant_title_no_opinion = event_target:emf_castle
+					if = {
+						limit = { religion_group = muslim }
+						set_government_type = muslim_government
+						break = yes
+					}
+					set_government_type = feudal_government
+				}
+			}
+		}
+		owner = {
+			liege = { save_event_target_as = emf_count_liege }
+		}
+		# Flip province capital holding to the castle & give the county title to its baron
+		event_target:emf_castle = {
+			make_capital_holding = yes
+			dejure_liege_title = {
+				save_event_target_as = emf_county
+				grant_title_no_opinion = event_target:emf_baron
+			}
+		}
+		# Try to vassalize the new county holder to the original liege of the prior county holder, who may of course
+		# actually be their own liege (and if this doesn't work due to relative tier after granting the county, then
+		# that's WAD too by design)
+		event_target:emf_baron = {
+			if = {
+				limit = { lower_tier_than = event_target:emf_count_liege }
+				set_defacto_liege = event_target:emf_count_liege
+				emf_liege_change_effect = yes
+			}
+		}
+		# If the old county holder [now] only has titles which are de jure vassal to the county, then vassalize him
+		# to the new county holder. If he has no titles at all, vassalize him to his original liege in case he
+		# randomly jumped courts to some count in Mozambique or something.
+		event_target:emf_count = {
+			if = {
+				limit = { is_ruler = no }
+				if = {
+					limit = { character = event_target:emf_count_liege } # Was already independent, so
+					set_defacto_liege = event_target:emf_baron # ... assign him to the new county holder
+					emf_liege_change_effect = yes
+					break = yes
+				}
+				set_defacto_liege = event_target:emf_count_liege # Should already be in this court, but JIC
+				break = yes
+			}
+			if = {
+				limit = {
+					NOT = {
+						any_demesne_title = {
+							NOT = { de_jure_liege = event_target:emf_county }
+						}
+					}
+				}
+				set_defacto_liege = event_target:emf_baron
+				emf_liege_change_effect = yes
+			}
+		}
+	}
+}
+
 
 # emf_core.1000
 # Toggle global EMF debug flag
