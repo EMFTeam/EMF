@@ -70,6 +70,53 @@ character_event = {
 	}
 	
 	immediate = {
+		random_demesne_title = {
+			limit = {
+				tier = EMPEROR
+				temporary = no
+				rebel = no
+				OR = {
+					AND = {
+						ROOT = { NOT = { realm_size = 100 } }
+						NOR = {
+							title = e_hip
+							title = e_rebels
+							title = e_pirates
+							title = e_hre
+							title = e_byzantium
+							title = e_roman_empire
+							title = e_latin_empire
+							title = e_timurids
+							title = e_mexikha
+							title = e_seljuk_turks # Only until we convert title destruction to be time-delayed after fulfilling AED conditions
+							AND = {
+								OR = {
+									title = e_golden_horde
+									title = e_il-khanate
+									title = e_chagatai
+									title = e_mongol_empire
+								}
+								ROOT = { religion = tengri_pagan } # Hack to simulate time-delayed title destruction (holders of these titles can't convert away for 30yr)
+							}
+						}
+					}
+					AND = {
+						ROOT = { NOT = { realm_size = 150 } }
+						title = e_hre
+					}
+					AND = {
+						OR = {
+							title = e_byzantium
+							title = e_latin_empire
+						}
+						NOT = { c_byzantion = { owner = { same_realm = ROOT } } }
+					}
+				}
+			}
+			log = "INFO: AED: disentegrating [This.GetID] ([This.GetFullName])..."
+			save_event_target_as = emf_empire_title
+		}
+		
 		if = { # If we have another empire or king title to fallback-upon, then skip searching for a kingdom
 			limit = {
 				OR = {
@@ -100,10 +147,10 @@ character_event = {
 				}
 			}
 			
-			# Good. Now determine whether we'd qualify to form it by the 50% rule.
+			# Good. Now determine whether we'd qualify to form it by the 51% rule.
 			
 			capital_scope = { kingdom = { save_event_target_as = emf_king_title } }
-			character_event = { id = emf_empires.4 } # Check 50% rule
+			character_event = { id = emf_empires.4 } # Check 51% rule
 			
 			if = {
 				limit = { check_variable = { which = king_county value = 1 } } # 51% rule passes
@@ -205,9 +252,6 @@ character_event = {
 				new_title = {
 					log = "INFO: AED: created custom titular title [This.GetID] ([This.GetBaseName]) from base county title [Prev.GetID] ([Prev.GetBaseName]) for [Root.GetTitledName] ([Root.GetID])"
 					save_event_target_as = emf_new_title
-
-					set_title_flag = emf_autodestroy # TODO: Wishful thinking currently...
-
 					if = {
 						limit = { NOT = { empire = { always = yes } } }
 						de_jure_liege = e_null
@@ -220,71 +264,21 @@ character_event = {
 	option = {
 		name = emf_empires.0.opt.a
 
-		hidden_tooltip = {
-			set_variable = { which = king_county value = 0 }
-		}
-
+		hidden_tooltip = { set_variable = { which = king_county value = 0 } }
 		if = {
-			limit = { event_target:emf_new_title = { always = yes } } # We'll be creating a king title
+			limit = { event_target:emf_new_title = { always = yes } }
+			# We'll be creating or have created a fallback kingdom title
 			primary_title = {
 				event_target:emf_new_title = {
 					grant_title = ROOT
 					copy_title_laws = PREV
+					set_title_flag = emf_aed_fallback
 				}
 			}
-			set_character_flag = emf_aed_gave_me_kingdom
 		}
-		
-		set_character_flag = emf_aed_took_my_empire
-
-		random_demesne_title = {
-			limit = {
-				tier = EMPEROR
-				temporary = no
-				rebel = no
-				OR = {
-					AND = {
-						ROOT = { NOT = { realm_size = 100 } }
-						NOR = {
-							title = e_hip
-							title = e_rebels
-							title = e_pirates
-							title = e_hre
-							title = e_byzantium
-							title = e_roman_empire
-							title = e_latin_empire
-							title = e_timurids
-							title = e_mexikha
-							title = e_seljuk_turks # Only until we convert title destruction to be time-delayed after fulfilling AED conditions
-							AND = {
-								OR = {
-									title = e_golden_horde
-									title = e_il-khanate
-									title = e_chagatai
-									title = e_mongol_empire
-								}
-								ROOT = { religion = tengri_pagan } # Hack to simulate time-delayed title destruction (holders of these titles can't convert away for 30yr)
-							}
-						}
-					}
-					AND = {
-						ROOT = { NOT = { realm_size = 150 } }
-						title = e_hre
-					}
-					AND = {
-						OR = {
-							title = e_byzantium
-							title = e_latin_empire
-						}
-						NOT = { c_byzantion = { owner = { same_realm = ROOT } } }
-					}
-				}
-			}
-			
-			log = "INFO: AED: destroying empire title [This.GetID] ([This.GetFullName])"
-			
+		set_character_flag = emf_achievement_aed
+		event_target:emf_empire_title = {
 			emf_destroy_title_unsafe_effect = yes
-			
 			hidden_tooltip = {
 				save_event_target_as = emf_crier_dead_title
 				any_playable_ruler = {
@@ -537,8 +531,7 @@ character_event = {
 
 		random_realm_province = {
 			limit = {
-
-				OR = { # Not an isolated county, unless it's our capital
+				OR = { # Not a totally-isolated county, unless it's our capital
 					ROOT = {
 						capital_scope = {
 							province = PREVPREV
@@ -548,7 +541,6 @@ character_event = {
 						owner = { same_realm = ROOT }
 					}
 				}
-
 				any_neighbor_province = {
 					emf_empires_mongol_core_prov_trigger = yes
 				}
@@ -575,10 +567,9 @@ character_event = {
 
 		random_realm_province = {
 			limit = {
-				any_neighbor_province = { # Not an isolated county
+				any_neighbor_province = { # Not a totally-isolated county
 					owner = { same_realm = ROOT }
 				}
-
 				any_neighbor_province = {
 					emf_empires_mongol_extended_prov_trigger = yes
 				}
@@ -632,10 +623,8 @@ character_event = {
 					}
 				}
 			}
-
 			ROOT = {
 				set_character_flag = emf_horde_invasion_pass
-
 				war = {
 					casus_belli = emf_horde_invasion
 					target = PREV
@@ -677,8 +666,7 @@ character_event = {
 
 		any_realm_province = {
 			region = emf_region_mongol_core_fringe
-
-			# That isn't an isolated county
+			# That isn't a totally-isolated county
 			any_neighbor_province = {
 				owner = { same_realm = ROOT }
 			}
@@ -741,22 +729,16 @@ character_event = {
 						}
 					}
 				}
-
-				# Realm is completely within the de jure target kingdom
+				# Realm provinces are completely within the de jure target kingdom
 				NOT = {
 					any_realm_title = {
-						is_titular = no
-						NOR = {
-							title = event_target:emf_king_title
-							de_jure_liege_or_above = event_target:emf_king_title
-						}
+						tier = COUNT
+						NOT = { de_jure_liege_or_above = event_target:emf_king_title }
 					}
 				}
 			}
-
 			set_defacto_liege = ROOT
 			pf_liege_change_effect = yes
-
 			if = {
 				limit = { religion = ROOT }
 				opinion = {
