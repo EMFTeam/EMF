@@ -80,47 +80,105 @@ emf_reclaim_byz_capital = {
 			hidden_tooltip = { participation_scaled_prestige = 200 }
 		}
 		FROM = { prestige = -200 }
-		hidden_tooltip = {
-			# reset global CB-usage-success flag timer
-			clr_global_flag = emf_reclaim_byz_capital_success
-			set_global_flag = emf_reclaim_byz_capital_success
-			ROOT = {
-				set_character_flag = emf_achievement_reclaimed_byz_capital
-				# character_event = { id = emf_empires.30 } # Initiate new "ERE Restorer" AI
+		c_byzantion = {
+			# Since our vassalize_or_take_under_title(d_thrace) happens after we take c_byzantion, we must emulate
+			# its same_religion = yes subjugation behavior under c_byzantion ourselves (except w/ tweaks).
+			hidden_tooltip = {
+				any_direct_de_jure_vassal_title = {
+					limit = {
+						owner = {
+							under_FROM = yes
+							OR = {
+								PREV = { holding_type = castle } # Always take castles
+								NOT = { religion = ROOT } # Purge if diff-religion
+								character = FROM # Purge if FROM
+								any_realm_title = { # Purge if has land outside title
+									tier = BARON
+									NOT = { de_jure_liege_or_above = PREVPREVPREV }
+								}
+								NOT = { lower_tier_than = ROOT } # Purge if can't subjugate
+							}
+						}
+					}
+					ROOT = { grant_title = { target = PREV type = invasion } }
+				}
+				# Anyone remaining under FROM should be subjugated
+				any_de_jure_vassal = {
+					limit = { under_FROM = yes }
+					emf_ROOT_subjugate_ruler_effect = yes
+				}
 			}
+			# Take c_byzantion (only)
+			tooltip = { gain_title = ROOT }
+			hidden_tooltip = {
+				ROOT = { grant_title = { target = PREV type = invasion } }
+			}
+			# Take all castles under c_byzantion. Purely for tooltip purposes, as this was taken care of by the
+			# above, hidden "vassalize_or_take_under_title(same_religion - castles)" effect
+			location = {
+				any_province_holding = {
+					limit = {
+						holding_type = castle
+						owner_under_FROM = yes # still under FROM when tooltip is shown
+					}
+					tooltip = { gain_title = ROOT }
+				}
+			}
+			emf_make_location_ROOT_capital_effect = yes
 		}
 	}
 
 	on_success_title = {
 		emf_cb_nomadic_province_effect = yes
 		pf_liege_change_under_title_begin_effect = yes
-		ROOT = {
-			vassalize_or_take_under_title = {
-				title = PREV
-				enemy = FROM
-				is_religious = yes
-				same_religion = yes
-				type = invasion
+		custom_tooltip = {
+			text = emf_cb_ctt_vassalize_or_take_under_title_same_religion
+			hidden_tooltip = {
+				ROOT = {
+					vassalize_or_take_under_title = {
+						title = PREV
+						enemy = FROM
+						is_religious = yes
+						same_religion = yes
+						type = invasion
+					}
+				}
 			}
 		}
-		c_byzantion = {
-			usurp_title_plus_barony_if_unlanded = {
+		if = {
+			limit = { owner_under_FROM = yes }
+			usurp_title_only = {
 				target = ROOT
 				type = invasion
 			}
-			emf_make_location_ROOT_capital_effect = yes
 		}
 		pf_liege_change_under_title_end_effect = yes
+		if = {
+			limit = { has_holder = no }
+			grant_title = ROOT
+		}
 		hidden_tooltip = {
-			any_de_jure_vassal_title = {
-				limit = { tier = BARON }
-				remove_holding_modifier = recently_conquered
-				refill_holding_levy = yes
+			if = {
+				limit = { is_primary_holder_title_tier = yes }
+				make_primary_title = yes # AI should definitely not switch-back capital in this case
+				c_byzantion = { emf_make_location_ROOT_capital_effect = yes }
 			}
 		}
 	}
 
-	on_success_posttitle = { emf_cb_on_success_posttitle_effect = yes }
+	on_success_posttitle = {
+		hidden_tooltip = {
+			# Reset global CB usage success flag timer
+			clr_global_flag = emf_reclaim_byz_capital_success
+			set_global_flag = emf_reclaim_byz_capital_success
+			# Set internal cheevo & set AI mission to "ERE Restoration"
+			ROOT = {
+				set_character_flag = emf_achievement_reclaimed_byz_capital
+				# character_event = { id = emf_empires.30 } # Start new "ERE Restoration" AI mission
+			}
+		}
+		emf_cb_on_success_posttitle_effect = yes
+	}
 
 	on_fail = {
 		log = "CB(emf_reclaim_byz_capital): WHITEPEACE: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
