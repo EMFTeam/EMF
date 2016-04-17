@@ -67,6 +67,7 @@ emf_reclaim_byz_capital = {
 	on_add = {
 		log = "CB(emf_reclaim_byz_capital): START: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
 		FROM = { emf_remove_suzerain_under_ROOT = yes }
+		ROOT = { clr_character_flag = emf_cb_pass }
 	}
 
 	on_success = {
@@ -74,13 +75,22 @@ emf_reclaim_byz_capital = {
 		emf_cb_victory_effect = yes
 		any_attacker = {
 			limit = { character = ROOT }
-			participation_scaled_prestige = 200
+			participation_scaled_prestige = 300
+			if = {
+				limit = { NOT = { religion = FROM } }
+				participation_scaled_piety = 120
+			}
 		}
 		any_attacker = {
 			limit = { NOT = { character = ROOT } }
-			hidden_tooltip = { participation_scaled_prestige = 200 }
+			hidden_tooltip = {
+				participation_scaled_prestige = 300
+				if = {
+					limit = { NOT = { religion = FROM } }
+					participation_scaled_piety = 120
+				}
+			}
 		}
-		FROM = { prestige = -200 }
 		ROOT = { emf_remove_suzerain_under_FROM = yes }
 		c_byzantion = {
 			# Since our vassalize_or_take_under_title(d_thrace) happens after we take c_byzantion, we must emulate
@@ -156,8 +166,9 @@ emf_reclaim_byz_capital = {
 			set_global_flag = emf_reclaim_byz_capital_success
 			# Set internal cheevo & set AI mission to "ERE Restoration"
 			ROOT = {
-				set_character_flag = emf_achievement_reclaimed_byz_capital
-				# character_event = { id = emf_empires.30 } # Start new "ERE Restoration" AI mission
+				clr_character_flag = emf_context_reclaimed_byz_capital
+				set_character_flag = emf_context_reclaimed_byz_capital
+				# character_event = { id = emf_empires.30 } # Start new "ERE Restoration" AI mission (emf_aim1)
 			}
 		}
 		emf_cb_on_success_posttitle_effect = yes
@@ -165,7 +176,7 @@ emf_reclaim_byz_capital = {
 
 	on_fail = {
 		log = "CB(emf_reclaim_byz_capital): WHITEPEACE: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
-		ROOT = { prestige = -200 }
+		FROM = { prestige = 50 }
 	}
 
 	on_reverse_demand = {
@@ -176,25 +187,24 @@ emf_reclaim_byz_capital = {
 				to = FROM
 				value = 4.0
 			}
-			ROOT = { prestige = -300 }
+			prestige = -100
 		}
+		FROM = { prestige = 100 }
 		any_defender = {
 			limit = { character = FROM }
-			participation_scaled_piety = 100
 			participation_scaled_prestige = 300
 			if = {
-				limit = { uses_decadence = yes }
-				participation_scaled_decadence = -10
+				limit = { NOT = { religion = ROOT } }
+				participation_scaled_piety = 120
 			}
 		}
 		any_defender = {
 			limit = { NOT = { character = FROM } }
 			hidden_tooltip = {
-				participation_scaled_piety = 100
 				participation_scaled_prestige = 300
 				if = {
-					limit = { uses_decadence = yes }
-					participation_scaled_decadence = -10
+					limit = { NOT = { religion = ROOT } }
+					participation_scaled_piety = 120
 				}
 			}
 		}
@@ -210,20 +220,6 @@ emf_reclaim_byz_capital = {
 
 	attacker_ai_defeat_worth = {
 		factor = 100
-		additive_modifier = {
-			value = -25
-			ROOT = {
-				capital_scope = {
-					NOR = {
-						empire = { title = e_byzantium }
-						distance = {
-							where = 496 # Constantinople
-							value = 250
-						}
-					}
-				}
-			}
-		}
 	}
 
 	defender_ai_victory_worth = {
@@ -236,29 +232,65 @@ emf_reclaim_byz_capital = {
 
 	# ai importance placed on this CB: scope is the targeted title, ROOT is the attacking character, FROM is the defending character
 	ai_will_do = {
-		factor = 4
-		modifier = {
-			factor = 2
+		factor = 2
+		additive_modifier = {
+			value = 1.0
 			ROOT = {
-				OR = {
-					has_landed_title = k_nikaea
-					has_landed_title = k_epirus
-					has_landed_title = k_trebizond
-				}
+				has_character_flag = emf_context_reclaimed_byz_capital
+				NOT = { had_character_flag = = { flag = emf_context_reclaimed_byz_capital days = 3650 } } #10yr
 			}
+		}
+		additive_modifier = {
+			value = 1.0
+			ROOT = {
+				has_character_flag = emf_context_reclaimed_byz_capital
+				NOT = { had_character_flag = = { flag = emf_context_reclaimed_byz_capital days = 5475 } } #15yr
+			}
+		}
+		additive_modifier = {
+			value = 1.0
+			ROOT = {
+				has_character_flag = emf_context_reclaimed_byz_capital
+				NOT = { had_character_flag = = { flag = emf_context_reclaimed_byz_capital days = 7300 } } #20yr
+			}
+		}
+		modifier = {
+			factor = 1.1
+			always = yes
+		}
+		modifier = {
+			factor = 2.0
+			ROOT = { capital_scope = { empire = { title = e_byzantium } } }
+		}
+		modifier = {
+			factor = 2.0
+			ROOT = { has_landed_title = k_byzantium }
 		}
 		modifier = {
 			factor = 1.5
-			ROOT = {
-				any_realm_province = {
-					any_neighbor_province = {
-						owner_under_FROM = yes
-					}
-				}
+			FROM = { NOT = { religion_group = ROOT } }
+		}
+		modifier = {
+			factor = 1.25
+			FROM = {
+				religion_group = ROOT
+				NOT = { religion = ROOT }
 			}
 		}
 		modifier = {
-			factor = 10
+			factor = 0.5
+			ROOT = { capital_scope = { distance = { where = 496 value = 200 } } }
+		}
+		modifier = {
+			factor = 0.5
+			ROOT = { capital_scope = { distance = { where = 496 value = 300 } } }
+		}
+		modifier = {
+			factor = 0.1
+			ROOT = { capital_scope = { distance = { where = 496 value = 400 } } }
+		}
+		modifier = {
+			factor = 3.0
 			FROM = { ai = no }
 			had_global_flag = { flag = EMF days = 730 }
 		}
