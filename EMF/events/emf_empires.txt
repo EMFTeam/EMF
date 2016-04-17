@@ -17,7 +17,7 @@ character_event = {
 	only_independent = yes
 	
 	trigger = {
-		real_tier = EMPEROR
+		tier = EMPEROR
 		is_nomadic = no
 		war = no
 		had_global_flag = { flag = EMF days = 10950 } # First 30yr of campaign
@@ -196,7 +196,7 @@ character_event = {
 				}
 			}
 		}
-		set_character_flag = emf_achievement_aed
+		set_character_flag = emf_context_aed
 		event_target:emf_empire_title = {
 			emf_destroy_title_unsafe_effect = yes
 			hidden_tooltip = {
@@ -274,17 +274,18 @@ character_event = {
 # because none of the other cases really matter.
 character_event = {
 	id = emf_empires.2
-	desc = HIDE_EVENT
-	hide_window = yes
-	is_triggered_only = yes
 	
-	only_independent = yes
+	is_triggered_only = yes
+	hide_window = yes
+	
+	only_rulers = yes
 	
 	trigger = {
 		trait = conqueror
 		OR = {
 			ai = no
 			trait = incapable
+			is_adult = no
 			AND = {
 				OR = {
 					has_landed_title = e_golden_horde
@@ -313,8 +314,6 @@ character_event = {
 	immediate = {
 		remove_trait = conqueror
 	}
-
-	option = { name = OK }
 }
 
 
@@ -778,6 +777,388 @@ character_event = {
 				activate_title = { title = THIS status = yes }
 			}
 			clr_title_flag = emf_nae_titular
+		}
+	}
+}
+
+
+# emf_empires.30 [Legitimate ERE restoration contender AI]
+#
+# Initiate new "ERE Restoration" AI mission for ROOT (main mission for legit
+# candidates for restoration of the ERE during Imperial Anarchy that hold
+# c_byzantion already)
+#
+# Currently only fired from emf_reclaim_byz_capital/on_success
+character_event = {
+	id = emf_empires.30
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	trigger = {
+		emf_aim1_valid_trigger = yes
+		NOT = { has_character_flag = emf_aim1 }
+	}
+	
+	immediate = {
+		emf_aim1_init_effect = yes
+
+		d_thrace = {
+			# Refill holding levies as if Queen City was immediately settled by the new ERE successor candidate
+			# ( as they should also have moved their capital there automatically, although sometimes the AI will
+			# choose to move it right back to their primary title's de jure capital #ThingsThatIrritateZiji )
+			any_de_jure_vassal_title = {
+				limit = {
+					tier = BARON
+					owner_under_ROOT = yes
+				}
+				remove_holding_modifier = recently_conquered
+				remove_holding_modifier = new_administration
+				refill_holding_levy = yes
+				set_title_flag = emf_refill_levy
+			}
+			ROOT = { character_event = { id = emf_core.40 days = 30 } } # Make sure levies get refilled entirely
+		}
+		
+		# If we're a duke, then create d_thrace, make it primary, and try again to move capital to c_byzantion
+		d_thrace = {
+			if = {
+				limit = { NOT = { lower_tier_than = ROOT } }
+				if = {
+					limit = {
+						owner = {
+							ai = yes
+							NOT = { character = ROOT }
+						}
+					}
+					# Should destroy it first
+					if = {
+						limit = { is_primary_holder_title = yes }
+						# Destroying it would break vassalage
+						owner = {
+							if = {
+								limit = {
+									NOT = { num_of_duke_titles = 2 }
+									any_vassal = { tier = COUNT }
+								}
+								# No alternative duchies, create a titular auto-destroy duchy
+								capital_scope = {
+									county = {
+										create_title = {
+											tier = DUKE
+											landless = no
+											temporary = no
+											custom_created = yes
+											culture = PREVPREV
+											holder = PREVPREV
+											base_title = THIS
+										}
+										new_title = {
+											set_title_flag = emf_autodestroy
+										}
+									}
+								}
+							}
+							random_demesne_title = {
+								limit = {
+									is_primary_holder_title = no
+									is_primary_holder_title_tier = yes
+								}
+								make_primary_title = yes
+							}
+						}
+					}
+					destroy_landed_title = THIS
+				}
+				if = {
+					limit = { has_holder = no }
+					usurp_title = ROOT
+					make_primary_title = yes
+				}
+			}
+		}
+		
+		# Ensure that our capital moves to Constantinople
+		character_event = { id = emf_empires.40 }
+		
+		# Schedule first emf_aim1 tick event to start in 3mos
+		e_hip = { owner = { character_event = { id = emf_empires.31 days = 90 } } }
+	}
+}
+
+# emf_empires.31 [Isis]
+#
+# Ping/validation event for emf_aim1
+character_event = {
+	id = emf_empires.31
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	immediate = {
+		# Handle mission invalidation
+		if = {
+			limit = { FROM = { emf_aim1_valid_trigger = no } }
+			FROM = { emf_aim1_cleanup_effect = yes }
+			
+			# Try to gracefully reassign the mission if there's a valid candidate
+			c_byzantion = {
+				owner = {
+					top_liege = {
+						# Try to start a new mission chain upon him. If he's not valid for it or is
+						# already pursuing the mission, then this'll properly do nothing, as another
+						# mission chain is running for him already.
+						character_event = { id = emf_empires.30 days = 1 }
+						break = yes
+					}
+				}
+			}
+		}
+		
+		FROM = { character_event = { id = emf_empires.32 } } # Actual mission tick logic
+		repeat_event = { id = emf_empires.31 days = 30 } # Repeat in a month
+	}
+}
+
+# emf_empires.32
+#
+# Core mission tick event [post-validation ping]
+character_event = {
+	id = emf_empires.32
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	immediate = {
+		change_variable = { which = emf_aim1_ticks value = 1 }
+		if = {
+			limit = {
+				war = yes
+				check_variable = { which = emf_aim1_peace_ticks value = 0.1 }
+			}
+			change_variable = { which = emf_aim1_peace_ticks value = -0.25 }
+			break = yes
+		}
+		if = {
+			limit = { war = yes }
+			break = yes
+		}
+		change_variable = { which = emf_aim1_peace_ticks value = 1 }
+		character_event = { id = emf_empires.33 } # Try to create k_byzantium
+		if = {
+			limit = { NOT = { check_variable = { which = emf_aim1_peace_ticks value = 6 } } }
+			break = yes # Min. of 6 peace ticks accumulated before we even consider waging war
+		}
+		if = {
+			limit = { k_byzantium = { emf_ROOT_completely_controls_counties_trigger = yes } }
+			set_global_flag = emf_aim1_t2_tmp
+		}
+		any_playable_ruler = {
+			limit = {
+				liege = { character = PREV } # Effectively independent (could be a revolt leader)
+				NOT = { reverse_has_truce = ROOT }
+				any_realm_province = {
+					OR = {
+						kingdom = { title = k_byzantium }
+						AND = {
+							has_global_flag = emf_aim1_t2_tmp
+							kingdom = {
+								OR = {
+									title = k_achaea
+									title = k_nikaea
+								}
+							}
+							any_neighbor_province = { owner_under_ROOT = yes }
+						}
+					}
+				}
+			}
+			reverse_opinion = { who = ROOT modifier = opinion_aim1_tracking }
+			if = {
+				limit = { has_non_aggression_pact_with = ROOT }
+				reverse_opinion = { who = ROOT modifier = opinion_aim1_potential_target }
+			}
+		}
+		clr_global_flag = emf_aim1_t2_tmp
+		
+		random_opinion_modifier_target = {
+			limit = {
+				reverse_has_opinion_modifier = { who = PREV modifier = opinion_aim1_tracking }
+				NOT = { is_allied_with = ROOT }
+				NOT = {
+					relative_power_including_allies_defender = {
+						who = ROOT
+						power = 0.3
+					}
+				}
+			}
+			emf_aim1_pick_war_effect = yes
+			break = yes
+		}
+		
+		# WOULD-BE-TODO: many, many repetitions of the above in decreasing war target preference order. also, decide
+		# at what point we're willing to violate alliances to pick a war target (presumably when there are literally
+		# no other potential targets at current mission tier).
+	}
+	
+	option = {
+		name = OK
+		
+		# WOULD-BE-TODO: if a war target was picked on this tick, call a recursive event which spends as many of our
+		# peace ticks as allowed upon self-matched small unit spawns to try to raise our power differential just
+		# enough for us to have sufficiently favorable odds of war success, and then DoW w/ emf_reclaim_byz.
+		
+		any_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = PREV modifier = opinion_aim1_tracking } }
+			reverse_remove_opinion = { who = PREV modifier = opinion_aim1_tracking }
+		}
+	}
+}
+
+
+# emf_empires.33
+#
+# Create/usurp k_byzantium if we control at least 50% its de jure counties
+character_event = {
+	id = emf_empires.33
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	trigger = { NOT = { has_landed_title = k_byzantium } }
+	
+	immediate = {
+		k_byzantium = { save_event_target_as = emf_king_title }
+		character_event = { id = emf_empires.4 } # Check 50% rule
+		if = {
+			limit = { NOT = { check_variable = { which = king_county value = -0.1 } } } # 50% rule fails
+			break = yes
+		}
+		# Create/usurp
+		if = {
+			limit = { k_byzantium = { has_holder = no } }
+			primary_title = {
+				k_byzantium = {
+					usurp_title = ROOT
+					copy_title_laws = PREV
+				}
+			}
+			prestige = 250
+			break = yes
+		}
+		usurp_title = ROOT
+	}
+	
+	option = {
+		name = OK
+		clear_event_target = emf_king_title
+		set_variable = { which = king_county value = 0 }
+		k_byzantium = {
+			if = {
+				limit = { holder = ROOT }
+				make_primary_title = yes
+				character_event = { id = emf_empires.40 } # Capital check
+			}
+		}
+	}
+}
+
+
+# emf_empires.40
+#
+# Try to ensure that our capital becomes/remains Constantinople.
+character_event = {
+	id = emf_empires.40
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	trigger = {
+		NOT = { capital_scope = { province_id = 496 } }
+		primary_title = {
+			capital_scope = {
+				owner = { character = ROOT }
+			}
+		}
+	}
+	
+	immediate = {
+		primary_title = {
+			capital_scope = {
+				if = {
+					limit = { province_id = 496 }
+					ROOT = { capital = PREV } # Event trigger ensures we directly own it
+					break = yes
+				}
+			}
+		}
+		# Case where we need to give our primary title capital away so that the AI capital change will stick
+		create_random_soldier = {
+			random_traits = yes
+			dynasty = random
+			culture = ROOT
+			religion = ROOT
+			female = no
+			age = 26
+			trait = brilliant_strategist
+			attributes = { martial = 10 }
+		}
+		new_character = {
+			save_event_target_as = emf_general
+			add_trait = brave
+			random = { chance = 50 add_trait = zealous }
+			random_list = {
+				10 = { add_trait = trained_warrior }
+				60 = { add_trait = skilled_warrior }
+				30 = { add_trait = master_warrior }
+			}
+			random_list = {
+				30 = { add_trait = hunter }
+				30 = { add_trait = duelist }
+				30 = { add_trait = strategist }
+			}
+		}
+		primary_title = {
+			capital_scope = {
+				county = {
+					grant_title = event_target:emf_general
+					any_direct_de_jure_vassal_title = {
+						limit = { holder = ROOT }
+						grant_title = event_target:emf_general
+					}
+					dejure_liege_title = {
+						if = {
+							limit = {
+								owner = {
+									under_ROOT = yes
+									ai = yes
+								}
+							}
+							grant_title = ROOT # less likely to revoke county
+						}
+					}
+				}
+			}
+		}
+		event_target:emf_general = {
+			set_defacto_liege = ROOT
+			if = {
+				limit = { ROOT = { NOT = { job_marshal = { ai = no } } } }
+			}
+			give_job_title = job_marshal # less likely to revoke county
+			add_friend = ROOT # Hopefully less likely to revoke county, and hey, ROOT could use a decent friend.
+		}
+		# Attempt to move AI capital to Constantinople yet again
+		c_byzantion = {
+			# If for some reason we don't have direct control of the county, then ensure
+			# we do. [Could only happen if mission was started from somewhere other than
+			# the emf_reclaim_byz_capital CB.] FWIW, it's guaranteed to be under_ROOT = yes
+			# by definition of the mission validation invariants.
+			if = {
+				limit = { NOT = { holder = ROOT } }
+				usurp_title_plus_barony_if_unlanded_and_vassals = ROOT
+			}
+			emf_make_location_ROOT_capital_effect = yes
 		}
 	}
 }
