@@ -307,16 +307,6 @@ character_event = {
 										ROOT = { liege = { religion_head = { character = PREVPREVPREV } } }
 									}
 								}
-								NOT = { # EMF: No MR capital counties
-									AND = {
-										is_merchant_republic = yes
-										capital_scope = {
-											county = {
-												title = PREVPREVPREV
-											}
-										}
-									}
-								}
 							}
 						}
 						AND = {
@@ -329,16 +319,6 @@ character_event = {
 										AND = {
 											religion = catholic
 											ROOT = { liege = { religion_head = { character = PREVPREVPREV } } }
-										}
-									}
-									NOT = { # EMF: No MR capital duchies
-										AND = {
-											is_merchant_republic = yes
-											capital_scope = {
-												duchy = {
-													title = PREVPREVPREV
-												}
-											}
 										}
 									}
 								}
@@ -462,6 +442,7 @@ character_event = {
 		name = "EVTOPTA913"
 		hidden_tooltip = {
 			# Try to claim Kingdom title - only available with Become King ambition
+			location = { save_event_target_as = emf_location }
 			if = {
 				limit = {
 					diplomacy = 22
@@ -514,7 +495,7 @@ character_event = {
 					}
 				}
 				random = {
-					chance = 10
+					chance = 15
 					location = {
 						kingdom = {
 							holder_scope = {
@@ -523,7 +504,6 @@ character_event = {
 							}
 						}
 					}
-					set_character_flag = claim_done
 					break = yes
 				}
 			}
@@ -547,7 +527,7 @@ character_event = {
 					}
 				}
 				random = {
-					chance = 5
+					chance = 10
 					location = {
 						kingdom = {
 							holder_scope = {
@@ -556,7 +536,6 @@ character_event = {
 							}
 						}
 					}
-					set_character_flag = claim_done
 					break = yes
 				}
 			}
@@ -588,14 +567,13 @@ character_event = {
 							}
 						}
 					}
-					set_character_flag = claim_done
 					break = yes
 				}
 			}
 			if = {
 				limit = {
-					diplomacy = 15
-					NOT = { diplomacy = 18 }
+					diplomacy = 12
+					NOT = { diplomacy = 15 }
 					liege = {
 						ROOT = {
 							location = {
@@ -605,14 +583,6 @@ character_event = {
 										NOT = { is_liege_of = ROOT }
 										NOT = { character = ROOT }
 										owns = PREVPREV
-										NAND = {
-											is_merchant_republic = yes
-											capital_scope = {
-												duchy = {
-													title = PREVPREVPREV
-												}
-											}
-										}
 									}
 								}
 							}
@@ -629,13 +599,13 @@ character_event = {
 							}
 						}
 					}
-					set_character_flag = claim_done
+					break = yes
 				}
 			}
 			if = {
 				limit = {
 					diplomacy = 15
-					NOT = { diplomacy = 17 }
+					NOT = { diplomacy = 18 }
 					liege = {
 						ROOT = {
 							location = {
@@ -645,14 +615,6 @@ character_event = {
 										NOT = { is_liege_of = ROOT }
 										NOT = { character = ROOT }
 										owns = PREVPREV
-										NAND = {
-											is_merchant_republic = yes
-											capital_scope = {
-												duchy = {
-													title = PREVPREVPREV
-												}
-											}
-										}
 									}
 								}
 							}
@@ -669,12 +631,12 @@ character_event = {
 							}
 						}
 					}
-					set_character_flag = claim_done
+					break = yes
 				}
 			}
 			if = {
 				limit = {
-					diplomacy = 17
+					diplomacy = 18
 					liege = {
 						ROOT = {
 							location = {
@@ -684,14 +646,6 @@ character_event = {
 										NOT = { is_liege_of = ROOT }
 										NOT = { character = ROOT }
 										owns = PREVPREV
-										NAND = {
-											is_merchant_republic = yes
-											capital_scope = {
-												duchy = {
-													title = PREVPREVPREV
-												}
-											}
-										}
 									}
 								}
 							}
@@ -708,13 +662,12 @@ character_event = {
 							}
 						}
 					}
-					set_character_flag = claim_done
+					break = yes
 				}
 			}			
 			# Try to claim county title
 			if = {
 				limit = {
-					NOT = { has_character_flag = claim_done }
 					liege = {
 						ROOT = {
 							location = {
@@ -730,15 +683,8 @@ character_event = {
 						}
 					}
 				}
-				location = {
-					county = {
-						holder_scope = {
-							character_event = { id = 20130 days = 1 }
-						}
-					}
-				}
+				location = { owner = { character_event = { id = 20130 days = 1 } }
 			}
-			clr_character_flag = claim_done
 		}
 	}
 }
@@ -792,35 +738,47 @@ letter_event = {
 	is_triggered_only = yes
 	
 	trigger = {
-		FROM = {
-			FROM = {
-				has_job_action = action_fabricate_claims
-				location = {
-					OR = {
-						county = {
-							NOT = { claimed_by = ROOT }
-						}
-						duchy = {
-							NOT = { claimed_by = ROOT }
-						}
-					}
-				}
-			}
-		}
+		FROMFROM = { has_job_action = action_fabricate_claims }
+		event_target:emf_location = { county = { NOT = { claimed_by = ROOT } } }
 	}
 	
-	option = {	# Emperor or King
+	option = {	# Emperor
 		name = "EVTOPTA20131" #Press the Claim
-		trigger = { primary_title = { higher_tier_than = DUKE }	}
+		trigger = { real_tier = EMPEROR }
 		ai_chance = {
 			factor = 90
 			modifier = {
 				factor = 0
-				NOT = { scaled_wealth = 1.25 }
+				OR = {
+					NAND = {
+						scaled_wealth = 1.5
+						prestige = 200
+					}
+					spouse = { character = FROM }
+					current_heir = { character = FROM }
+				}
 			}
+		}
+		scaled_wealth = -1.0
+		prestige = -200
+		FROMFROM = { location = { county = { add_claim = ROOT } } }
+		FROM = {
+			opinion = { modifier = opinion_furious who = ROOT years = 10 }
+			hidden_tooltip = { character_event = { id = 20132 days = 7 } }
+		}
+	}
+	option = {	# King
+		name = "EVTOPTA20131" #Press the Claim
+		trigger = { real_tier = KING }
+		ai_chance = {
+			factor = 90
 			modifier = {
 				factor = 0
 				OR = {
+					NAND = {
+						scaled_wealth = 1.5
+						prestige = 150
+					}
 					spouse = { character = FROM }
 					current_heir = { character = FROM }
 				}
@@ -828,38 +786,24 @@ letter_event = {
 		}
 		scaled_wealth = -1.0
 		prestige = -150
+		FROMFROM = { location = { county = { add_claim = ROOT } } }
 		FROM = {
-			FROM = {
-				location = {
-					county = {
-						add_claim = ROOT
-					}
-				}
-			}
-		}
-		FROM = {
-			opinion = {
-				modifier = opinion_furious
-				who = ROOT
-				years = 10
-			}
-			hidden_tooltip = {
-				character_event = { id = 20132 days = 7 }
-			}
+			opinion = { modifier = opinion_furious who = ROOT years = 10 }
+			hidden_tooltip = { character_event = { id = 20132 days = 7 } }
 		}
 	}
 	option = {	# Duke
 		name = "EVTOPTA20131" #Press the Claim
-		trigger = { primary_title = { tier = DUKE } }
+		trigger = { real_tier = DUKE }
 		ai_chance = {
 			factor = 90
 			modifier = {
 				factor = 0
-				NOT = { scaled_wealth = 1.25 }
-			}
-			modifier = {
-				factor = 0
 				OR = {
+					NAND = {
+						scaled_wealth = 1.5
+						prestige = 100
+					}
 					spouse = { character = FROM }
 					current_heir = { character = FROM }
 				}
@@ -867,46 +811,24 @@ letter_event = {
 		}
 		scaled_wealth = -1.0
 		prestige = -100
+		FROMFROM = { location = { county = { add_claim = ROOT } } }
 		FROM = {
-			FROM = {
-				location = {
-					county = {
-						add_claim = ROOT
-					}
-				}
-			}
-		}
-		FROM = {
-			opinion = {
-				modifier = opinion_furious
-				who = ROOT
-				years = 10
-			}
-			hidden_tooltip = {
-				character_event = { id = 20132 days = 7 }
-			}
+			opinion = { modifier = opinion_furious who = ROOT years = 10 }
+			hidden_tooltip = { character_event = { id = 20132 days = 7 } }
 		}
 	}
 	option = {	# Count or Patrician
 		name = "EVTOPTA20131" #Press the Claim
-		trigger = {
-			OR = {
-				primary_title = { tier = COUNT }
-				AND = {
-					is_patrician = yes
-					primary_title = { NOT = { higher_tier_than = COUNT } }
-				}
-			}
-		}
+		trigger = { lower_real_tier_than = DUKE }
 		ai_chance = {
 			factor = 90
 			modifier = {
 				factor = 0
-				NOT = { scaled_wealth = 1.25 }
-			}
-			modifier = {
-				factor = 0
 				OR = {
+					NAND = {
+						scaled_wealth = 1.5
+						prestige = 50
+					}
 					spouse = { character = FROM }
 					current_heir = { character = FROM }
 				}
@@ -914,24 +836,10 @@ letter_event = {
 		}
 		scaled_wealth = -1.0
 		prestige = -50
+		FROMFROM = { location = { county = { add_claim = ROOT } } }
 		FROM = {
-			FROM = {
-				location = {
-					county = {
-						add_claim = ROOT
-					}
-				}
-			}
-		}
-		FROM = {
-			opinion = {
-				modifier = opinion_furious
-				who = ROOT
-				years = 10
-			}
-			hidden_tooltip = {
-				character_event = { id = 20132 days = 7 }
-			}
+			opinion = { modifier = opinion_furious who = ROOT years = 10 }
+			hidden_tooltip = { character_event = { id = 20132 days = 7 } }
 		}
 	}
 	option = {
@@ -939,13 +847,42 @@ letter_event = {
 		ai_chance = {
 			factor = 10
 			modifier = {
+				factor = 2
+				trait = content
+			}
+			modifier = {
+				factor = 1.5
+				trait = humble
+			}
+			modifier = {
+				factor = 0.667
+				trait = proud
+			}
+			modifier = {
+				factor = 0.5
+				trait = ambitious
+			}
+			modifier = {
 				factor = 0
-				scaled_wealth = 1.25
-				NOT = {
-					OR = {
-						spouse = { character = FROM }
-						current_heir = { character = FROM }
+				scaled_wealth = 2.5
+				OR = {
+					prestige = 300
+					AND = {
+						real_tier = KING
+						prestige = 225
 					}
+					AND = {
+						real_tier = DUKE
+						prestige = 150
+					}
+					AND = {
+						lower_real_tier_than = DUKE
+						prestige = 75
+					}
+				}
+				NOR = {
+					spouse = { character = FROM }
+					current_heir = { character = FROM }
 				}
 			}
 		}
@@ -964,112 +901,108 @@ letter_event = {
 	is_triggered_only = yes
 	
 	trigger = {
-		FROM = {
-			FROM = {
-				has_job_action = action_fabricate_claims
-				location = {
-					duchy = {
-						NOT = { claimed_by = ROOT }
-					}
-				}
-			}
-		}
+		FROMFROM = { has_job_action = action_fabricate_claims }
+		event_target:emf_location = { duchy = { NOT = { claimed_by = ROOT } } }
 	}
 
-	option = {	# Emperor or King
+	option = {	# Emperor
 		name = "EVTOPTA20131" #Press the Claim
-		trigger = { primary_title = { higher_tier_than = DUKE } }
+		trigger = { real_tier = EMPEROR }
 		ai_chance = {
 			factor = 90
 			modifier = {
 				factor = 0
-				NOT = { scaled_wealth = 2.25 }
+				OR = {
+					NAND = {
+						scaled_wealth = 2.5
+						prestige = 400
+					}
+					spouse = { character = FROM }
+					current_heir = { character = FROM }
+				}
+			}
+		}
+		scaled_wealth = -2.0
+		prestige = -400
+		FROMFROM = { location = { duchy = { add_claim = ROOT } } }
+		FROM = {
+			opinion = { modifier = opinion_furious who = ROOT years = 10 }
+			hidden_tooltip = { character_event = { id = 20132 days = 7 } }
+		}
+	}
+	option = {	# King
+		name = "EVTOPTA20131" #Press the Claim
+		trigger = { real_tier = KING }
+		ai_chance = {
+			factor = 90
+			modifier = {
+				factor = 0
+				OR = {
+					NAND = {
+						scaled_wealth = 2.5
+						prestige = 300
+					}
+					spouse = { character = FROM }
+					current_heir = { character = FROM }
+				}
 			}
 		}
 		scaled_wealth = -2.0
 		prestige = -300
+		FROMFROM = { location = { duchy = { add_claim = ROOT } } }
 		FROM = {
-			FROM = {
-				location = {
-					duchy = {
-						add_claim = ROOT
-					}
-				}
-			}
-		}
-		FROM = {
-			opinion = {
-				modifier = opinion_furious
-				who = ROOT
-				years = 20
-			}
-			hidden_tooltip = {
-				character_event = { id = 20132 days = 7 }
-			}
+			opinion = { modifier = opinion_furious who = ROOT years = 10 }
+			hidden_tooltip = { character_event = { id = 20132 days = 7 } }
 		}
 	}
 	option = {	# Duke
 		name = "EVTOPTA20131" #Press the Claim
-		trigger = { primary_title = { tier = DUKE } }
+		trigger = { real_tier = DUKE }
 		ai_chance = {
 			factor = 90
 			modifier = {
 				factor = 0
-				NOT = { scaled_wealth = 2.25 }
+				OR = {
+					NAND = {
+						scaled_wealth = 2.5
+						prestige = 200
+					}
+					spouse = { character = FROM }
+					current_heir = { character = FROM }
+				}
 			}
 		}
 		scaled_wealth = -2.0
 		prestige = -200
+		FROMFROM = { location = { duchy = { add_claim = ROOT } } }
 		FROM = {
-			FROM = {
-				location = {
-					duchy = {
-						add_claim = ROOT
-					}
-				}
-			}
-		}
-		FROM = {
-			opinion = {
-				modifier = opinion_furious
-				who = ROOT
-				years = 20
-			}
-			hidden_tooltip = {
-				character_event = { id = 20132 days = 7 }
-			}
+			opinion = { modifier = opinion_furious who = ROOT years = 10 }
+			hidden_tooltip = { character_event = { id = 20132 days = 7 } }
 		}
 	}
-	option = {	# Count
+	option = {	# Count or Patrician
 		name = "EVTOPTA20131" #Press the Claim
-		trigger = { primary_title = { tier = COUNT } }
+		trigger = { lower_real_tier_than = DUKE }
 		ai_chance = {
 			factor = 90
 			modifier = {
 				factor = 0
-				NOT = { scaled_wealth = 2.25 }
+				OR = {
+					NAND = {
+						scaled_wealth = 2.5
+						prestige = 100
+					}
+					spouse = { character = FROM }
+					current_heir = { character = FROM }
+				}
 			}
 		}
 		scaled_wealth = -2.0
 		prestige = -100
+		FROMFROM = { location = { duchy = { add_claim = ROOT } } }
 		FROM = {
-			FROM = {
-				location = {
-					duchy = {
-						add_claim = ROOT
-					}
-				}
-			}
-		}
-		FROM = {
-			opinion = {
-				modifier = opinion_furious
-				who = ROOT
-				years = 20
-			}
-			hidden_tooltip = {
-				character_event = { id = 20132 days = 7 }
-			}
+			opinion = { modifier = opinion_furious who = ROOT years = 10 }
+			hidden_tooltip = { character_event = { id = 20132 days = 7 } }
 		}
 	}
 	option = {
@@ -1077,8 +1010,43 @@ letter_event = {
 		ai_chance = {
 			factor = 10
 			modifier = {
+				factor = 2
+				trait = content
+			}
+			modifier = {
+				factor = 1.5
+				trait = humble
+			}
+			modifier = {
+				factor = 0.667
+				trait = proud
+			}
+			modifier = {
+				factor = 0.5
+				trait = ambitious
+			}
+			modifier = {
 				factor = 0
-				scaled_wealth = 2.25
+				scaled_wealth = 3.0
+				OR = {
+					prestige = 600
+					AND = {
+						real_tier = KING
+						prestige = 450
+					}
+					AND = {
+						real_tier = DUKE
+						prestige = 300
+					}
+					AND = {
+						lower_real_tier_than = DUKE
+						prestige = 150
+					}
+				}
+				NOR = {
+					spouse = { character = FROM }
+					current_heir = { character = FROM }
+				}
 			}
 		}
 		piety = 20
@@ -1096,80 +1064,58 @@ letter_event = {
 	is_triggered_only = yes
 	
 	trigger = {
-		FROM = {
-			FROM = {
-				has_job_action = action_fabricate_claims
-				location = {
-					kingdom = {
-						NOT = { claimed_by = ROOT }
-					}
-				}
-			}
-		}
+		FROMFROM = { has_job_action = action_fabricate_claims }
+		event_target:emf_location = { kingdom = { NOT = { claimed_by = ROOT } } }
 	}
 
 	option = {	# Duke
 		name = "EVTOPTA20131" #Press the Claim
-		trigger = { primary_title = { tier = DUKE } }
+		trigger = { real_tier = DUKE }
 		ai_chance = {
 			factor = 90
 			modifier = {
 				factor = 0
-				NOT = { scaled_wealth = 2.25 }
+				OR = {
+					NAND = {
+						scaled_wealth = 2.5
+						prestige = 200
+					}
+					spouse = { character = FROM }
+					current_heir = { character = FROM }
+				}
 			}
 		}
 		scaled_wealth = -2.0
 		prestige = -200
+		FROMFROM = { location = { kingdom = { add_claim = ROOT } } }
 		FROM = {
-			FROM = {
-				location = {
-					kingdom = {
-						add_claim = ROOT
-					}
-				}
-			}
-		}
-		FROM = {
-			opinion = {
-				modifier = opinion_furious
-				who = ROOT
-				years = 20
-			}
-			hidden_tooltip = {
-				character_event = { id = 20132 days = 7 }
-			}
+			opinion = { modifier = opinion_furious who = ROOT years = 10 }
+			hidden_tooltip = { character_event = { id = 20132 days = 7 } }
 		}
 	}
 	option = {	# Count
 		name = "EVTOPTA20131" #Press the Claim
-		trigger = { primary_title = { tier = COUNT } }
+		trigger = { lower_real_tier_than = DUKE }
 		ai_chance = {
 			factor = 90
 			modifier = {
 				factor = 0
-				NOT = { scaled_wealth = 2.25 }
+				OR = {
+					NAND = {
+						scaled_wealth = 2.5
+						prestige = 100
+					}
+					spouse = { character = FROM }
+					current_heir = { character = FROM }
+				}
 			}
 		}
 		scaled_wealth = -2.0
 		prestige = -100
+		FROMFROM = { location = { kingdom = { add_claim = ROOT } } }
 		FROM = {
-			FROM = {
-				location = {
-					kingdom = {
-						add_claim = ROOT
-					}
-				}
-			}
-		}
-		FROM = {
-			opinion = {
-				modifier = opinion_furious
-				who = ROOT
-				years = 20
-			}
-			hidden_tooltip = {
-				character_event = { id = 20132 days = 7 }
-			}
+			opinion = { modifier = opinion_furious who = ROOT years = 10 }
+			hidden_tooltip = { character_event = { id = 20132 days = 7 } }
 		}
 	}
 	option = {
@@ -1177,11 +1123,38 @@ letter_event = {
 		ai_chance = {
 			factor = 10
 			modifier = {
+				factor = 2
+				trait = content
+			}
+			modifier = {
+				factor = 1.5
+				trait = humble
+			}
+			modifier = {
+				factor = 0.667
+				trait = proud
+			}
+			modifier = {
+				factor = 0.5
+				trait = ambitious
+			}
+			modifier = {
 				factor = 0
-				scaled_wealth = 2.25
+				scaled_wealth = 3.0
+				OR = {
+					prestige = 300
+					AND = {
+						lower_real_tier_than = DUKE
+						prestige = 150
+					}
+				}
+				NOR = {
+					spouse = { character = FROM }
+					current_heir = { character = FROM }
+				}
 			}
 		}
-		piety = 20
+		piety = 30
 	}
 }
 
