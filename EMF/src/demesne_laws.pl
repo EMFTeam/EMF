@@ -6,7 +6,7 @@
 # without modification, of this program OR its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "1.3.3";
+my $VERSION = "1.3.4";
 
 my $opt = {
 	min_total_levy      => -0.2,
@@ -264,7 +264,7 @@ EOS
 		}
 		
 		--$tabs;
-		$law_reqs .= ("\t" x $tabs)."}\r\n"; # NOT
+		$law_reqs .= ("\t" x $tabs)."}\r\n"; # NOR
 		
 		--$tabs;
 		$law_reqs .= ("\t" x $tabs)."}\r\n"; # HIDDEN_TOOLTIP
@@ -301,7 +301,7 @@ $default$opinion_effect
 		potential = {
 			temporary = no
 			OR = {
-				NOT = { tier = baron }
+				NOT = { tier = BARON }
 				holder_scope = { is_patrician = yes }
 			}$muslim_holder$tribal_holder
 		}

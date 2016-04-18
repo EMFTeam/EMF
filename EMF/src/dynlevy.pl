@@ -12,7 +12,7 @@ use warnings;
 use Carp;
 use Getopt::Long qw(:config gnu_getopt);
 
-my $VERSION = "1.3.0";
+my $VERSION = "1.3.1";
 
 my $DEFAULT_N      = 64;
 my $DEFAULT_STRIDE = 5;
@@ -185,9 +185,9 @@ EOS
 
 		if ($i == 0) {
 			print <<EOS;
-			not = { tier = baron }
+			NOT = { tier = BARON }
 			temporary = no
-			or = {
+			OR = {
 				tier = count # Counts always use the default law
 				has_law = $law
 				holder_scope = { has_law = $law } # Even if title doesn't have the law, allow it to be copied
@@ -196,9 +196,9 @@ EOS
 		}
 		else {
 			print <<EOS;
-			higher_tier_than = count
+			higher_tier_than = COUNT
 			temporary = no
-			or = {
+			OR = {
 				has_law = $law
 				holder_scope = { has_law = $law } # Even if title doesn't have the law, allow it to be copied
 			}
@@ -283,7 +283,7 @@ character_event = {
 			if = {
 				limit = {
 					tier = COUNT
-					not = { has_law = dynlevy0_0 }
+					NOT = { has_law = dynlevy0_0 }
 				}
 				add_law = dynlevy0_0
 				break = yes
@@ -355,7 +355,7 @@ sub print_search_tree {
 			++$tab;
 			print "\t" x $tab, "if = {\n";
 			++$tab;
-			print "\t" x $tab, "limit = { not = { has_law = $law } }\n";
+			print "\t" x $tab, "limit = { NOT = { has_law = $law } }\n";
 			print "\t" x $tab, "add_law = $law\n";
 			print "\t" x $tab, "break = yes\n";
 			--$tab;
@@ -372,9 +372,9 @@ sub print_search_tree {
 			# ++$tab;
 			# print "\t" x $tab, "limit = {\n";
 			# ++$tab;
-			# print "\t" x $tab, "higher_tier_than = count\n";
-			# print "\t" x $tab, "not = { lower_tier_than = PREVPREV }\n";
-			# print "\t" x $tab, "not = { has_law = $law }\n";
+			# print "\t" x $tab, "higher_tier_than = COUNT\n";
+			# print "\t" x $tab, "NOT = { lower_tier_than = PREVPREV }\n";
+			# print "\t" x $tab, "NOT = { has_law = $law }\n";
 			# --$tab;
 			# print "\t" x $tab, "}\n"; # /limit
 			# print "\t" x $tab, "add_law = $law\n";
@@ -428,7 +428,7 @@ sub print_search_tree {
 	
 	print "\t" x $tab, "if = {\n";
 	++$tab;
-	print "\t" x $tab, "limit = { not = { realm_size = $rs } }\n";
+	print "\t" x $tab, "limit = { NOT = { realm_size = $rs } }\n";
 	print_search_tree($mode, $min, $mid, $tab);
 	--$tab;
 	print "\t" x $tab, "}\n";
