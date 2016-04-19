@@ -40,7 +40,9 @@ NDefines.NInfamy.MIN_INFAMY_PER_WAR_PROVINCE = 0
 -- Character
 NDefines.NCharacter.CHANGE_AMBITION_YEARS = 1
 NDefines.NCharacter.CHANGE_FOCUS_YEARS = 3
-NDefines.NCharacter.PRESTIGE_FROM_DYNASTY_ON_BIRTH_DIV = 10
+NDefines.NCharacter.PRESTIGE_FROM_DYNASTY_ON_BIRTH_DIV = 15       -- from 10 in EMF 5.02 (vanilla = 5)
+NDefines.NCharacter.PRESTIGE_FROM_DYNASTY_ON_MARRIAGE_DIV = 15    -- from 10
+NDefines.NCharacter.NEED_GUARDIAN_AT_AGE = 5                      -- from 6, obviously
 NDefines.NCharacter.ASSIGN_ACTION_DAYS = 92
 NDefines.NCharacter.RAISED_TROOPS_VASSAL_OPINION_DAYS = 42
 NDefines.NCharacter.MAX_JOINED_FACTIONS = 4
