@@ -1,38 +1,16 @@
-## normal scopes (including posttitle scopes) ##
-#ROOT = receiver
-#FROM = giver
-# <no scope change> = attacker OR receiver
-## title scopes ##
-# ROOT = receiver
-# FROM = giver
-# <no scope change> = thirdparty landed title
-#
-# the following effects/triggers exists (example execution order: on_success->on_success_title->on_success_posttitle):
-# is_valid, is_valid_title, on_add, on_add_title, on_add_posttitle, on_success, on_success_title, on_success_posttitle,
-# on_fail, on_fail_title, on_fail_posttitle, on_reverse_demand, on_reverse_demand_title, on_reverse_demand_posttitle
-#
-# Added on_attacker_leader_death, on_defender_leader_death AND on_thirdparty_death, which all trigger when corresponding
-# character dies
-# These three all have war scopes, which currently has the following scope changes:
-# attacker, defender, thirdparty (only valid if thirdparty character is involved), thirdparty_title (only valid if
-# thirdparty title is involved)
-#
-# ai_will_do: modifies value AI places on the CB compared to other CBs (default: 1)
-# can_use_gui: If otherwise valid, the CB is listed in the Diplo View, but you can't declare war unless 'can_use_gui' is
-# also valid (also shows a trigger tooltip.)
-# This casus belli replaces the vanilla one, AND instead uses a tier system to determine what kingdoms are valid targets
+# This casus belli replaces the vanilla one, and instead uses a tier system to determine what kingdoms are valid targets
 # To unlock a tier, all tiers before it have to be completely conquered
 # Tier 1: Byzantium
-# Tier 2: Balkans AND Sicily
-# Tier 3: Italy, Levant, AND Eastern/Central North Africa
-# Tier 4: Western North Africa AND Iberia
+# Tier 2: Balkans and Sicily
+# Tier 3: Italy, Levant, and Eastern/Central North Africa
+# Tier 4: Western North Africa and Iberia
 # Tier 5: France
-# Tier 6: England, Wales, AND (southern) Germany
+# Tier 6: England, Wales, and (southern) Germany
 imperial_reconquest = {
 	name = CB_NAME_IMPERIAL
 	war_name = WAR_NAME_IMPERIAL
 	sprite = 17
-	truce_days = 3650
+	truce_days = 1825
 	is_permanent = yes
 	# this scans all de-jure duchies for the counties which are held by OR vassals (OR below) of selected character.
 	# Only valid if is_permanent = yes
@@ -63,45 +41,61 @@ imperial_reconquest = {
 
 	can_use_title = {
 		emf_cb_can_use_de_jure_title_trigger = yes
+		any_direct_de_jure_vassal_title = { owner_under_FROM = yes }
 		OR = {
-			any_direct_de_jure_vassal_title = { location = { region = emf_region_ir_tier_1 } }
+			region = emf_region_ir_tier_1
 			AND = {
-				ROOT = { completely_controls_region = emf_region_ir_tier_1 }
-				any_direct_de_jure_vassal_title = { location = { region = emf_region_ir_tier_2 } }
-			}
-			AND = {
-				ROOT = {
-					completely_controls_region = emf_region_ir_tier_1
-					completely_controls_region = emf_region_ir_tier_2
+				NOT = {
+					any_province = {
+						region = emf_region_ir_tier_1
+						owner_under_ROOT = no
+					}
 				}
-				any_direct_de_jure_vassal_title = { location = { region = emf_region_ir_tier_3 } }
-			}
-			AND = {
-				ROOT = {
-					completely_controls_region = emf_region_ir_tier_1
-					completely_controls_region = emf_region_ir_tier_2
-					completely_controls_region = emf_region_ir_tier_3
+				OR = {
+					region = emf_region_ir_tier_2
+					AND = {
+						NOT = {
+							any_province = {
+								region = emf_region_ir_tier_2
+								owner_under_ROOT = no
+							}
+						}
+						OR = {
+							region = emf_region_ir_tier_3
+							AND = {
+								NOT = {
+									any_province = {
+										region = emf_region_ir_tier_3
+										owner_under_ROOT = no
+									}
+								}
+								OR = {
+									region = emf_region_ir_tier_4
+									AND = {
+										NOT = {
+											any_province = {
+												region = emf_region_ir_tier_4
+												owner_under_ROOT = no
+											}
+										}
+										OR = {
+											region = emf_region_ir_tier_5
+											AND = {
+												region = emf_region_ir_tier_6
+												NOT = {
+													any_province = {
+														region = emf_region_ir_tier_5
+														owner_under_ROOT = no
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
 				}
-				any_direct_de_jure_vassal_title = { location = { region = emf_region_ir_tier_4 } }
-			}
-			AND = {
-				ROOT = {
-					completely_controls_region = emf_region_ir_tier_1
-					completely_controls_region = emf_region_ir_tier_2
-					completely_controls_region = emf_region_ir_tier_3
-					completely_controls_region = emf_region_ir_tier_4
-				}
-				any_direct_de_jure_vassal_title = { location = { region = emf_region_ir_tier_5 } }
-			}
-			AND = {
-				ROOT = {
-					completely_controls_region = emf_region_ir_tier_1
-					completely_controls_region = emf_region_ir_tier_2
-					completely_controls_region = emf_region_ir_tier_3
-					completely_controls_region = emf_region_ir_tier_4
-					completely_controls_region = emf_region_ir_tier_5
-				}
-				any_direct_de_jure_vassal_title = { location = { region = emf_region_ir_tier_6 } }
 			}
 		}
 	}
@@ -117,9 +111,14 @@ imperial_reconquest = {
 			NOT = { same_realm = FROM }
 		}
 	}
+	
+	is_valid_title = {
+		any_de_jure_vassal_title = { owner_under_FROM = yes }
+	}
 
 	on_add = {
 		log = "CB(imperial_reconquest): START: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+		ROOT = { prestige = -100 }
 	}
 
 	on_success = {
@@ -138,14 +137,6 @@ imperial_reconquest = {
 
 	on_success_title = {
 		emf_cb_latb_effect = yes
-		if = {
-			limit = {
-				has_dlc = "Charlemagne"
-				ROOT = { primary_title = { has_law = administration_2 } }
-				holder_scope = { is_liege_or_above = FROM }
-			}
-			holder_scope = { save_event_target_as = emf_duchy_holder }
-		}
 		custom_tooltip = {
 			text = other_invasion_succ_tip
 			hidden_tooltip = {
@@ -158,75 +149,22 @@ imperial_reconquest = {
 					}
 				}
 				pf_liege_change_under_title_end_effect = yes
-				# Special case effect to counteract the new patch 2.0 event in which the Pope [frequently] asks
-				# rulers to prove their loyalty to the Catholic Church by transferring a random vassal bishop
-				# of the ruler to the Pope:
-				#
-				# Prevents decades of stalled Imperial Reconquest progress due only to waiting-out truces between
-				# wars against the Papacy using [other_]dejure_barony_claim to fight for a single Papal bishropic
-				# at a time when, in some areas, there are often multiple such bishropics per duchy, yet the duchy's
-				# already been conquered. Totally Lame.
-				#
-				# Instead, we simply turn the same [intricate] vassalize_or_take_under_title logic upon the Pope,
-				# as if ROOT had been at implicit, simultaneous war with the Papacy for the the de jure target duchy
-				# as well (essentially the union of enemy = FROM AND enemy = POPE in one vassalize_or_take_under).
-				#
-				# This is the cleanest way to emulate the Lame (for IR) event which transferred bishops' vassalage
-				# to the Pope never having occurred in the first place, but it has one caveat: if for some reason
-				# the Papacy is overlord of a castle OR a city in the de jure target duchy (NOT a bishropic), those
-				# titles would be vassalized too.  However, this essentially cannot happen unless FROM is actually
-				# the Pope himself, in which case we already did the right thing, AND this step will have no effect.
-				k_papal_state = { holder_scope = { save_event_target_as = pf_lc_enemy } }
-				if = {
-					limit = { event_target:pf_lc_enemy = { NOT = { vassal_of = ROOT } } }
-					any_direct_de_jure_vassal_title = {
-						limit = {
-							holder_scope = {
-								NOR = {
-									character = event_target:pf_lc_enemy
-									is_liege_or_above = event_target:pf_lc_enemy
-								}
-							}
-						}
-						pf_liege_change_under_title_ext_begin_effect = yes
-						ROOT = {
-							vassalize_or_take_under_title = {
-								title = PREV # Non-papal county
-								enemy = event_target:pf_lc_enemy
-								is_crusade = yes # Even if the title holder is NOT participating in the war...
-								type = invasion
-							}
-						}
-						pf_liege_change_under_title_end_effect = yes
-					}
-				}
 			}
 		}
 		if = {
-			limit = {
-				holder_scope = {
-					OR = {
-						character = FROM
-						AND = {
-							event_target:emf_duchy_holder = { is_liege_or_above = ROOT }
-							character = event_target:emf_duchy_holder
-						}
-					}
-				}
-			}
+			limit = { owner_under_FROM = yes }
 			usurp_title_only = {
 				target = ROOT
 				type = invasion
 			}
 		}
-		clear_event_target = emf_duchy_holder
 	}
 
 	on_success_posttitle = { emf_cb_on_success_posttitle_effect = yes }
 
 	on_fail = {
 		log = "CB(imperial_reconquest): WHITEPEACE: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
-		ROOT = { prestige = -150 }
+		ROOT = { prestige = -200 }
 	}
 
 	on_reverse_demand = {
@@ -237,12 +175,12 @@ imperial_reconquest = {
 				to = FROM
 				value = 4.0
 			}
-			ROOT = { prestige = -200 }
+			ROOT = { prestige = -250 }
 		}
 		any_defender = {
 			limit = { character = FROM }
 			participation_scaled_piety = 100
-			participation_scaled_prestige = 200
+			participation_scaled_prestige = 250
 			if = {
 				limit = { uses_decadence = yes }
 				participation_scaled_decadence = -10
@@ -252,7 +190,7 @@ imperial_reconquest = {
 			limit = { NOT = { character = FROM } }
 			hidden_tooltip = {
 				participation_scaled_piety = 100
-				participation_scaled_prestige = 200
+				participation_scaled_prestige = 250
 				if = {
 					limit = { uses_decadence = yes }
 					participation_scaled_decadence = -10
@@ -284,6 +222,31 @@ imperial_reconquest = {
 	# ai importance placed on this CB: scope is the targeted title, ROOT is the attacking character, FROM is the defending character
 	ai_will_do = {
 		factor = 1
+		modifier = {
+			factor = 2
+			any_direct_de_jure_vassal_title = {
+				owner_under_FROM = yes
+				location = { any_neighbor_province = { owner_under_ROOT = yes } }
+			}
+		}
+		modifier = {
+			factor = 1.25
+			any_direct_de_jure_vassal_title = { owner_under_ROOT = yes }
+		}
+		modifier = {
+			factor = 1.5
+			ROOT = { trait = lucky_ruler }
+		}
+		modifier = {
+			factor = 0.5 # Keep normal preference order under holy war if that CB is available
+			FROM = {
+				OR = {
+					NOT = { religion_group = ROOT }
+					is_heresy_of = ROOT
+					is_parent_religion = ROOT
+				}
+			}
+		}
 		modifier = {
 			factor = 10
 			FROM = { ai = no }
