@@ -66,12 +66,9 @@ character_event = {
 					}
 				}
 			}
-			
 			# Good. Now determine whether we'd qualify to form it by the 51% rule.
-			
 			capital_scope = { kingdom = { save_event_target_as = emf_king_title } }
 			character_event = { id = emf_empires.4 } # Check 51% rule
-			
 			if = {
 				limit = { check_variable = { which = king_county value = 1 } } # 51% rule passes
 				event_target:emf_king_title = { save_event_target_as = emf_new_title }
@@ -79,42 +76,18 @@ character_event = {
 			}
 		}
 		
-		# If not found, check all the de jure kingdoms of any empire titles that ROOT has, if the empire is de jure
-
+		# If not found, check all de jure kingdoms of any other empire titles that ROOT has, if the empire is de jure
 		any_demesne_title = { # For all the de jure empires...
-			limit = {
-				tier = EMPEROR
-				is_titular = no
-				is_title_active = THIS
-				# More rigorous than is_titular = no & guarantees that we have at least one de jure county
-				# within the title
-				ROOT = {
-					num_of_realm_counties = {
-						value = 1
-						title = PREV
-					}
-				}
-			}
-			
+			limit = { tier = EMPEROR }
 			any_direct_de_jure_vassal_title = { # For all the de jure vassal kingdoms...
 				limit = {
 					tier = KING
+					emf_titular_trigger = no
 					has_holder = no
-					is_titular = no
 					is_title_active = THIS
-					# More rigorous than is_titular = no & guarantees that we have at least one de jure
-					# county within the title
-					ROOT = {
-						num_of_realm_counties = {
-							value = 1
-							title = PREV
-						}
-					}
 				}
-				
 				save_event_target_as = emf_king_title
 				ROOT = { character_event = { id = emf_empires.4 } } # Check 50% rule
-				
 				if = {
 					limit = { ROOT = { check_variable = { which = king_county value = 1 } } } # 51% rule passes
 					event_target:emf_king_title = { save_event_target_as = emf_new_title }
@@ -124,32 +97,20 @@ character_event = {
 		}
 
 		# If still not found (empire was probably titular), check every de jure kingdom title in the game...
-
-		any_title = {
+		any_landed_title = {
 			limit = {
 				tier = KING
-				is_titular = no
+				emf_titular_trigger = no
 				has_holder = no
 				is_title_active = THIS
-				# More rigorous than is_titular = no & guarantees that we have at least one de jure
-				# county within the title
-				ROOT = {
-					num_of_realm_counties = {
-						value = 1
-						title = PREV
-					}
-				}
 			}
-
 			save_event_target_as = emf_king_title
 			ROOT = { character_event = { id = emf_empires.4 } } # Check 50% rule
-			
 			if = {
 				limit = { ROOT = { check_variable = { which = king_county value = 1 } } } # 51% rule passes
 				event_target:emf_king_title = { save_event_target_as = emf_new_title }
 				break = yes
 			}
-
 			clear_event_target = emf_king_title
 		}
 
@@ -157,7 +118,6 @@ character_event = {
 		# because some people might prefer not to have a silly titular king-tier title that they cannot destroy
 		# until they have another king- or higher-tier title to make primary). Title will have the name and CoA
 		# of the ruler's capital county (and some color offset).
-
 		capital_scope = {
 			county = {
 				create_title = {
@@ -172,6 +132,7 @@ character_event = {
 				new_title = {
 					log = "INFO: AED: created custom titular title [This.GetID] ([This.GetBaseName]) from base county title [Prev.GetID] ([Prev.GetBaseName]) for [Root.GetTitledName] ([Root.GetID])"
 					save_event_target_as = emf_new_title
+					set_title_flag = emf_autodestroy
 					if = {
 						limit = { NOT = { empire = { always = yes } } }
 						de_jure_liege = e_null
@@ -190,13 +151,17 @@ character_event = {
 			# We'll be creating or have created a fallback kingdom title
 			primary_title = {
 				event_target:emf_new_title = {
-					grant_title = ROOT
+					if = {
+						limit = { NOT = { holder = ROOT } }
+						grant_title = { target = ROOT type = created }
+					}
 					copy_title_laws = PREV
 					set_title_flag = emf_aed_fallback
 				}
 			}
 		}
 		set_character_flag = emf_context_aed
+		set_character_flag = emf_context_aed_@event_target:emf_empire_title
 		event_target:emf_empire_title = {
 			emf_destroy_title_unsafe_effect = yes
 			hidden_tooltip = {
