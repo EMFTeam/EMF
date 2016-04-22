@@ -1,0 +1,7222 @@
+namespace = emf_imperial
+
+#######################################
+# VICEROY EVENTS
+# written by Rylock
+#######################################
+
+# Duke/King title inherited in Imperial realm
+character_event = {
+	id = emf_imperial.3200
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	trigger = {
+		is_vice_royalty = no
+		independent = no
+		in_revolt = no
+		higher_real_tier_than = COUNT
+		top_liege = { emf_imperial_has_imperial_gov_trigger = yes }
+		FROM = {
+			is_titular = no
+			is_primary_type_title = no
+			OR = {
+				is_primary_holder_title = yes
+				is_primary_holder_title_tier = yes
+			}
+		}
+	}
+	
+	immediate = {
+		FROM = { save_event_target_as = viceroy_title }
+		FROMFROM = { save_event_target_as = former_viceroy }
+		liege = { character_event = { id = emf_imperial.3202 days = 1 } }
+	}
+}
+
+# Duke/King title usurped in Imperial realm
+character_event = {
+	id = emf_imperial.3201
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	trigger = {
+		is_vice_royalty = no
+		independent = no
+		in_revolt = no
+		higher_real_tier_than = COUNT
+		top_liege = { emf_imperial_has_imperial_gov_trigger = yes }
+		FROM = {
+			is_titular = no
+			is_primary_type_title = no
+			OR = {
+				is_primary_holder_title = yes
+				is_primary_holder_title_tier = yes
+			}
+		}
+	}
+	
+	immediate = {
+		#no need to actually fire the event if this is a viceroyalty which was just re-directed to a new holder
+		if = {
+			limit = { FROM = { has_title_flag = granted_by_liege } }
+			FROM = { clr_title_flag = granted_by_liege }
+			break = yes
+		}
+		FROM = {
+			save_event_target_as = viceroy_title
+			set_title_flag = usurped_title
+		}
+		FROMFROM = { save_event_target_as = former_viceroy }
+		liege = { character_event = { id = emf_imperial.3202 days = 1 } }
+	}
+}
+
+# Liege is asked to assent to new holder
+character_event = {
+	id = emf_imperial.3202
+	picture = GFX_evt_throne_room
+	
+	desc = {
+		text = EVTDESC_emf_imperial_3202_inherit
+		trigger = {
+			event_target:viceroy_title = { NOT = { has_title_flag = usurped_title } }
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3202_usurp
+		trigger = {
+			event_target:viceroy_title = { has_title_flag = usurped_title }
+		}
+	}
+	
+	is_triggered_only = yes
+	
+	trigger = {
+		emf_imperial_has_imperial_gov_trigger = yes
+		top_liege = { emf_imperial_has_imperial_gov_trigger = yes }
+		FROM = {
+			is_vice_royalty = no
+			emf_imperial_has_imperial_gov_trigger = yes
+			vassal_of = ROOT
+			has_landed_title = event_target:viceroy_title
+		}
+	}
+	
+	immediate = {
+		if = {
+			limit = { event_target:viceroy_title = { has_title_flag = usurped_title } }
+			log = "emf_imperial.3202: [viceroy_title.GetFullName] ([viceroy_title.GetID]) has been usurped by [From.GetBestName] ([FROM.GetID]) in Imperial realm"
+		}
+		if = {
+			limit = { event_target:viceroy_title = { NOT = { has_title_flag = usurped_title } } }
+			log = "emf_imperial.3202: [viceroy_title.GetFullName] ([viceroy_title.GetID]) has been inherited by [From.GetBestName] ([FROM.GetID]) in Imperial realm"
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3202 # Assent
+		ai_chance = {
+			factor = 70
+			modifier = {
+				factor = 0.7
+				event_target:viceroy_title = { has_title_flag = usurped_title }
+			}
+			modifier = {
+				factor = 0.1
+				FROM = { trait = incapable }
+			}
+			modifier = {
+				factor = 0.1
+				FROM = { is_adult = no }
+			}
+			modifier = {
+				factor = 0.05
+				is_foe = FROM
+			}
+			modifier = {
+				factor = 0.5
+				trait = lunatic
+			}
+			modifier = {
+				factor = 1.5
+				trait = kind
+			}
+			modifier = {
+				factor = 0.5
+				NOR = {
+					diplomacy = 5
+					martial = 5
+					stewardship = 5
+					intrigue = 5
+					learning = 5
+				}
+			}
+			modifier = {
+				factor = 0.75
+				is_dumb_trigger = yes
+			}
+			modifier = {
+				factor = 0.75
+				NOT = { reverse_opinion = { who = FROM value = 0 } }
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { reverse_opinion = { who = FROM value = -25 } }
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { reverse_opinion = { who = FROM value = -50 } }
+			}
+			modifier = {
+				factor = 1.2
+				opinion = { who = FROM value = 20 }
+			}
+			modifier = {
+				factor = 1.2
+				opinion = { who = FROM value = 40 }
+			}
+			modifier = {
+				factor = 1.5
+				reverse_opinion = { who = FROM value = 25 }
+			}
+			modifier = {
+				factor = 1.5
+				reverse_opinion = { who = FROM value = 50 }
+			}
+			modifier = {
+				factor = 2.0
+				holds_favor_on = FROM
+			}
+		}
+		log = "---> emf_imperial.3202: [Root.GetBestName] has assented to the title transfer"
+		if = {
+			limit = { event_target:viceroy_title = { has_title_flag = usurped_title } }
+			event_target:viceroy_title = { clr_title_flag = usurped_title }
+		}
+		if = {
+			limit = {
+				event_target:viceroy_title = { tier = DUKE }
+				FROM = { vassal_of = ROOT }
+			}
+			reverse_opinion = { who = FROM modifier = opinion_granted_duchy_vice_royalty years = 20 }
+		}
+		if = {
+			limit = {
+				event_target:viceroy_title = { tier = KING }
+				FROM = { vassal_of = ROOT }
+			}
+			reverse_opinion = { who = FROM modifier = opinion_granted_kingdom_vice_royalty years = 20 }
+		}
+		hidden_tooltip = {
+			FROM = { letter_event = { id = emf_imperial.3203 } } #notify
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_imperial_3202 # Refuse
+		ai_chance = {
+			factor = 30
+			modifier = {
+				factor = 1.65
+				event_target:viceroy_title = { has_title_flag = usurped_title }
+			}
+			modifier = {
+				factor = 0
+				FROM = { ai = no }
+				event_target:viceroy_title = { is_primary_holder_title = yes }
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					is_friend = FROM
+					is_allied_with = FROM
+					is_close_relative = FROM
+					opinion = { who = FROM value = 50 }
+					FROM = { is_voter = yes }
+				}
+			}
+			modifier = {
+				factor = 0.5
+				dynasty = FROM
+			}
+			modifier = {
+				factor = 0.5
+				OR = {
+					is_smart_trigger = yes
+					diplomacy = 15
+					martial = 15
+					stewardship = 15
+					intrigue = 15
+					learning = 15
+				}
+			}
+			modifier = {
+				factor = 1.2
+				NOT = { opinion = { who = FROM value = 0 } }
+			}
+			modifier = {
+				factor = 1.2
+				NOT = { opinion = { who = FROM value = -20 } }
+			}
+			modifier = {
+				factor = 1.5
+				NOT = { opinion = { who = FROM value = -40 } }
+			}
+			modifier = {
+				factor = 1.5
+				NOT = { opinion = { who = FROM value = -60 } }
+			}
+			modifier = {
+				factor = 2.0
+				NOT = { opinion = { who = FROM value = -80 } }
+			}
+		}
+		log = "---> emf_imperial.3202: [Root.GetBestName] has refused to assent to the title transfer"
+		if = {
+			limit = { event_target:viceroy_title = { has_title_flag = usurped_title } }
+			event_target:viceroy_title = { clr_title_flag = usurped_title }
+		}
+		FROM = {
+			save_event_target_as = current_viceroy
+			letter_event = { id = emf_imperial.3204 tooltip = REACTS_TO_LOSS_OF_TITLE }
+		}
+	}
+}
+
+# New holder is told they're keeping the title
+letter_event = {
+	id = emf_imperial.3203
+	desc = EVTDESC_emf_imperial_3203
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3203
+	}
+}
+
+# New holder is told they'll potentially be losing the title
+letter_event = {
+	id = emf_imperial.3204
+	desc = EVTDESC_emf_imperial_3204
+	
+	is_triggered_only = yes
+	
+	trigger = {
+		vassal_of = FROM
+	}
+	
+	immediate = {
+		remove_opinion = { who = FROM modifier = refused_favor }
+		remove_opinion = { who = FROM modifier = refused_bribe }
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3204 #Accept the decision
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 0
+				holds_favor_on = FROM
+			}
+			modifier = {
+				factor = 2.0
+				trait = content
+			}
+			modifier = {
+				factor = 1.5
+				trait = humble
+			}
+			modifier = {
+				factor = 0.75
+				trait = proud
+			}
+			modifier = {
+				factor = 0.75
+				trait = ambitious
+			}
+			modifier = {
+				factor = 0.5
+				trait = wroth
+			}
+		}
+		log = "---> emf_imperial.3204: [Root.GetBestName] ([Root.GetID]) has decided to accept [From.GetTitledFirstNameNoRegnal]'s decision"
+		FROM = {
+			letter_event = { id = emf_imperial.3205 tooltip = IS_INFORMED }
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_imperial_3204 #Offer a favor
+		trigger = {
+			is_adult = yes
+			NOR = {
+				trait = incapable
+				is_dumb_trigger = yes
+				owes_favor_to = FROM
+				holds_favor_on = FROM
+			}
+		}
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 0
+				NOR = {
+					intrigue = 8
+					learning = 8
+				}
+			}
+			modifier = {
+				factor = 1.2
+				intrigue = 10
+			}
+			modifier = {
+				factor = 1.2
+				intrigue = 12
+			}
+			modifier = {
+				factor = 1.2
+				intrigue = 14
+			}
+			modifier = {
+				factor = 1.2
+				intrigue = 16
+			}
+		}
+		log = "---> emf_imperial.3204: [Root.GetBestName] ([Root.GetID]) has decided to offer a favor to [From.GetTitledFirstNameNoRegnal]"
+		FROM = {
+			letter_event = { id = emf_imperial.3206 tooltip = OFFER_FAVOR }
+		}
+	}
+	option = {
+		name = EVTOPTC_emf_imperial_3204 #Call in my favor
+		trigger = {
+			is_adult = yes
+			holds_favor_on = FROM
+			NOT = { trait = incapable }
+		}
+		ai_chance = {
+			factor = 50
+		}
+		log = "---> emf_imperial.3204: [Root.GetBestName] ([Root.GetID]) has decided to call in their favor with [From.GetTitledFirstNameNoRegnal]"
+		tooltip = { reverse_remove_favor = FROM }
+		FROM = {
+			letter_event = { id = emf_imperial.3209 tooltip = CALL_IN_FAVOR }
+		}
+	}
+	option = {
+		name = EVTOPTD_emf_imperial_3204 #Bribe them
+		trigger = {
+			is_adult = yes
+			scaled_wealth = 1.0
+			wealth = 100
+			NOT = { trait = incapable }
+		}
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 0
+				holds_favor_on = FROM
+			}
+			modifier = {
+				factor = 0.5
+				trait = greedy
+			}
+			modifier = {
+				factor = 2
+				scaled_wealth = 2.0
+				wealth = 200
+			}
+			modifier = {
+				factor = 2
+				scaled_wealth = 3.0
+				wealth = 300
+			}
+			modifier = {
+				factor = 0
+				NOR = {
+					intrigue = 8
+					stewardship = 8
+				}
+			}
+			modifier = {
+				factor = 1.2
+				stewardship = 10
+			}
+			modifier = {
+				factor = 1.2
+				stewardship = 12
+			}
+			modifier = {
+				factor = 1.2
+				stewardship = 14
+			}
+			modifier = {
+				factor = 1.2
+				stewardship = 16
+			}
+		}
+		log = "---> emf_imperial.3204: [Root.GetBestName] ([Root.GetID]) has decided to offer a bribe to [From.GetTitledFirstNameNoRegnal]"
+		FROM = {
+			letter_event = { id = emf_imperial.3210 tooltip = OFFER_BRIBE }
+		}
+	}
+	option = {
+		name = EVTOPTE_emf_imperial_3204 #Rebel
+		trigger = {
+			prisoner = no
+			NOT = { trait = incapable }
+			is_adult = yes
+		}
+		ai_chance = {
+			factor = 25
+			modifier = {
+				factor = 0
+				holds_favor_on = FROM
+			}
+			modifier = {
+				factor = 0
+				NOT = { trait = lunatic }
+				NOT = { relative_power_to_liege = 0.50 }
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { relative_power_to_liege = 0.75 }
+			}
+			modifier = {
+				factor = 1.5
+				relative_power_to_liege = 1.0
+			}
+			modifier = {
+				factor = 2.0
+				relative_power_to_liege = 1.5
+			}
+			modifier = {
+				factor = 2.5
+				relative_power_to_liege = 2.0
+			}
+			modifier = {
+				factor = 0.75
+				trait = patient
+			}
+			modifier = {
+				factor = 0.75
+				trait = just
+			}
+			modifier = {
+				factor = 1.25
+				trait = greedy
+			}
+			modifier = {
+				factor = 1.5
+				trait = wroth
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					trait = content
+					trait = humble
+				}
+			}
+			modifier = {
+				factor = 0
+				NOR = {
+					trait = brave
+					trait = wroth
+					trait = ambitious
+					trait = lunatic
+					trait = possessed
+				}
+			}
+		}
+		log = "---> emf_imperial.3204: [Root.GetBestName] ([Root.GetID]) has decided to rebel rather than submit to [From.GetTitledFirstNameNoRegnal]"
+		tooltip = {
+			war = {
+				target = FROM
+				casus_belli = emf_resist_viceroy_revocation
+			}
+		}
+		hidden_tooltip = {
+			FROM = { letter_event = { id = emf_imperial.3214 } }
+		}
+	}
+}
+
+# Liege informed that new holder will accept their decision
+letter_event = {
+	id = emf_imperial.3205
+	desc = EVTDESC_emf_imperial_3205
+	
+	is_triggered_only = yes
+	
+	trigger = {
+		is_liege_of = FROM
+	}
+	
+	option = {
+		name = EXCELLENT
+		character_event = { id = emf_imperial.3215 tooltip = COUNCIL_FINDS_REPLACEMENT }
+	}
+}
+
+# Liege offered a favor in return for letting new holder keep title
+letter_event = {
+	id = emf_imperial.3206
+	desc = EVTDESC_emf_imperial_3206
+	
+	is_triggered_only = yes
+	
+	trigger = {
+		is_liege_of = FROM
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3206 #Accept
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 1.5
+				trait = patient
+			}
+			modifier = {
+				factor = 1.5
+				trait = trusting
+			}
+			modifier = {
+				factor = 2
+				OR = {
+					trait = schemer
+					trait = strategist
+					trait = gamer
+				}
+			}
+			modifier = {
+				factor = 1.5
+				intrigue = 10
+			}
+			modifier = {
+				factor = 1.5
+				intrigue = 12
+			}
+			modifier = {
+				factor = 1.5
+				intrigue = 14
+			}
+			modifier = {
+				factor = 1.5
+				intrigue = 16
+			}
+			modifier = {
+				factor = 1.5
+				intrigue = 18
+			}
+			modifier = {
+				factor = 2
+				opinion = { who = FROM value = 0 }
+			}
+			modifier = {
+				factor = 2
+				FROM = { relative_income_to_liege = 0.25 }
+			}
+		}
+		log = "---> emf_imperial.3206: [Root.GetBestName] has accepted the offer of a favor"
+		emf_imperial_add_decadence_1 = yes
+		tooltip = { add_favor = FROM }
+		if = {
+			limit = { reverse_has_opinion_modifier = { who = FROM modifier = refused_bribe } }
+			FROM = {
+				transfer_scaled_wealth = {
+					to = ROOT
+					value = 1.0
+					min = 100
+				}
+			}
+		}
+		if = {
+			limit = { event_target:viceroy_title = { tier = DUKE } }
+			reverse_opinion = { who = FROM modifier = opinion_granted_duchy_vice_royalty years = 20 }
+		}
+		if = {
+			limit = { event_target:viceroy_title = { tier = KING } }
+			reverse_opinion = { who = FROM modifier = opinion_granted_kingdom_vice_royalty years = 20 }
+		}
+		hidden_tooltip = {
+			FROM = { letter_event = { id = emf_imperial.3207 } }
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_imperial_3206 #Refuse
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 0
+				FROM = {
+					OR = {
+						among_most_powerful_vassals = 5
+						relative_power_to_liege = 0.25
+						relative_income_to_liege = 0.5
+						is_voter = yes
+					}
+				}
+			}
+			modifier = {
+				factor = 1.5
+				trait = paranoid
+			}
+			modifier = {
+				factor = 1.5
+				NOT = { intrigue = 8 }
+			}
+			modifier = {
+				factor = 1.5
+				NOT = { intrigue = 6 }
+			}
+			modifier = {
+				factor = 1.5
+				NOT = { intrigue = 4 }
+			}
+			modifier = {
+				factor = 1.5
+				NOT = { intrigue = 2 }
+			}
+		}
+		log = "---> emf_imperial.3206: [Root.GetBestName] has refused the offer of a favor"
+		FROM = {
+			opinion = { who = ROOT modifier = refused_favor years = 5 }
+			letter_event = { id = emf_imperial.3208 tooltip = IS_INFORMED }
+		}
+	}
+}
+
+# New holder's offer of a favor is accepted
+letter_event = {
+	id = emf_imperial.3207
+	desc = EVTDESC_emf_imperial_3207
+	
+	is_triggered_only = yes
+	
+	trigger = {
+		vassal_of = FROM
+	}
+	
+	option = {
+		name = EXCELLENT
+		reverse_add_favor = FROM
+	}
+}
+
+# New holder's offer of a favor is turned down
+letter_event = {
+	id = emf_imperial.3208
+	desc = EVTDESC_emf_imperial_3208
+	
+	is_triggered_only = yes
+	
+	trigger = {
+		vassal_of = FROM
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3204 #Accept the decision
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 0
+				holds_favor_on = FROM
+			}
+			modifier = {
+				factor = 2.0
+				trait = content
+			}
+			modifier = {
+				factor = 1.5
+				trait = humble
+			}
+			modifier = {
+				factor = 0.75
+				trait = proud
+			}
+			modifier = {
+				factor = 0.75
+				trait = ambitious
+			}
+			modifier = {
+				factor = 0.5
+				trait = wroth
+			}
+		}
+		log = "---> emf_imperial.3208: [Root.GetBestName] has decided to accept [From.GetTitledFirstNameNoRegnal]'s decision"
+		FROM = {
+			letter_event = { id = emf_imperial.3205 tooltip = IS_INFORMED }
+		}
+	}
+	option = {
+		name = EVTOPTD_emf_imperial_3204 #Bribe them
+		trigger = {
+			is_adult = yes
+			scaled_wealth = 1.0
+			wealth = 100
+			NOR = {
+				trait = incapable
+				has_opinion_modifier = { who = FROM modifier = refused_bribe }
+			}
+		}
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 0
+				holds_favor_on = FROM
+			}
+			modifier = {
+				factor = 0.5
+				trait = greedy
+			}
+			modifier = {
+				factor = 2
+				scaled_wealth = 2.0
+				wealth = 200
+			}
+			modifier = {
+				factor = 2
+				scaled_wealth = 3.0
+				wealth = 300
+			}
+			modifier = {
+				factor = 0
+				NOR = {
+					intrigue = 8
+					stewardship = 8
+				}
+			}
+			modifier = {
+				factor = 1.2
+				stewardship = 10
+			}
+			modifier = {
+				factor = 1.2
+				stewardship = 12
+			}
+			modifier = {
+				factor = 1.2
+				stewardship = 14
+			}
+			modifier = {
+				factor = 1.2
+				stewardship = 16
+			}
+		}
+		log = "---> emf_imperial.3208: [Root.GetBestName] has decided to offer a bribe to [From.GetTitledFirstNameNoRegnal]"
+		FROM = {
+			letter_event = { id = emf_imperial.3210 tooltip = OFFER_BRIBE }
+		}
+	}
+	option = {
+		name = EVTOPTE_emf_imperial_3204 #Rebel
+		trigger = {
+			prisoner = no
+			NOT = { trait = incapable }
+			is_adult = yes
+		}
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 0
+				holds_favor_on = FROM
+			}
+			modifier = {
+				factor = 0
+				NOT = { trait = lunatic }
+				NOT = { relative_power_to_liege = 0.50 }
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { relative_power_to_liege = 0.75 }
+			}
+			modifier = {
+				factor = 1.5
+				relative_power_to_liege = 1.0
+			}
+			modifier = {
+				factor = 2.0
+				relative_power_to_liege = 1.5
+			}
+			modifier = {
+				factor = 2.5
+				relative_power_to_liege = 2.0
+			}
+			modifier = {
+				factor = 0.75
+				trait = patient
+			}
+			modifier = {
+				factor = 0.75
+				trait = just
+			}
+			modifier = {
+				factor = 1.25
+				trait = greedy
+			}
+			modifier = {
+				factor = 1.5
+				trait = wroth
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					trait = content
+					trait = humble
+				}
+			}
+			modifier = {
+				factor = 0
+				NOR = {
+					trait = brave
+					trait = wroth
+					trait = ambitious
+					trait = lunatic
+					trait = possessed
+				}
+			}
+		}
+		log = "---> emf_imperial.3208: [Root.GetBestName] has decided to rebel rather than submit to [From.GetTitledFirstNameNoRegnal]"
+		tooltip = {
+			war = {
+				target = FROM
+				casus_belli = emf_resist_viceroy_revocation
+			}
+		}
+		hidden_tooltip = {
+			FROM = { letter_event = { id = emf_imperial.3214 } }
+		}
+	}
+}
+
+# Liege's favor is called in to force acceptance of the title
+letter_event = {
+	id = emf_imperial.3209
+	desc = EVTDESC_emf_imperial_3209
+	
+	is_triggered_only = yes
+	
+	trigger = {
+		is_liege_of = FROM
+	}
+	
+	option = {
+		name = OK
+		remove_favor = FROM
+		if = {
+			limit = { event_target:viceroy_title = { tier = DUKE } }
+			reverse_opinion = { who = FROM modifier = opinion_granted_duchy_vice_royalty years = 20 }
+		}
+		if = {
+			limit = { event_target:viceroy_title = { tier = KING } }
+			reverse_opinion = { who = FROM modifier = opinion_granted_kingdom_vice_royalty years = 20 }
+		}
+	}
+}
+
+# Liege offered bribe in return for letting new holder keep title
+letter_event = {
+	id = emf_imperial.3210
+	desc = EVTDESC_emf_imperial_3210
+	
+	is_triggered_only = yes
+	
+	trigger = {
+		is_liege_of = FROM
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3210 #Accept
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 2.0
+				trait = greedy
+			}
+			modifier = {
+				factor = 1.5
+				trait = gluttonous
+			}
+			modifier = {
+				factor = 1.5
+				trait = envious
+			}
+			modifier = {
+				factor = 1.5
+				trait = deceitful
+			}
+			modifier = {
+				factor = 1.5
+				trait = arbitrary
+			}
+			modifier = {
+				factor = 2
+				opinion = { who = FROM value = 0 }
+			}
+		}
+		log = "---> emf_imperial.3210: [Root.GetBestName] has accepted the offer of a bribe"
+		emf_imperial_add_decadence_1 = yes
+		if = {
+			limit = { reverse_has_opinion_modifier = { who = FROM modifier = refused_favor } }
+			add_favor = FROM
+		}
+		tooltip = {
+			FROM = {
+				transfer_scaled_wealth = {
+					to = ROOT
+					value = 1.0
+					min = 100
+				}
+			}
+		}
+		if = {
+			limit = { event_target:viceroy_title = { tier = DUKE } }
+			reverse_opinion = { who = FROM modifier = opinion_granted_duchy_vice_royalty years = 20 }
+		}
+		if = {
+			limit = { event_target:viceroy_title = { tier = KING } }
+			reverse_opinion = { who = FROM modifier = opinion_granted_kingdom_vice_royalty years = 20 }
+		}
+		hidden_tooltip = {
+			FROM = { letter_event = { id = emf_imperial.3211 } }
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_imperial_3210 #Refuse
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 1.5
+				trait = honest
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					NOT = { wealth = 0 }
+					has_character_flag = loan_taken
+					check_variable = { which = "loan_amount" value = 49.5 }
+				}
+			}
+		}
+		log = "---> emf_imperial.3210: [Root.GetBestName] has refused the offer of a bribe"
+		FROM = {
+			opinion = { who = ROOT modifier = refused_bribe years = 5 }
+			letter_event = { id = emf_imperial.3212 tooltip = IS_INFORMED }
+		}
+	}	
+}
+
+# New holder's offer of a bribe is accepted
+letter_event = {
+	id = emf_imperial.3211
+	desc = EVTDESC_emf_imperial_3211
+	
+	is_triggered_only = yes
+	
+	trigger = {
+		vassal_of = FROM
+	}
+	
+	option = {
+		name = EXCELLENT
+		transfer_scaled_wealth = {
+			to = FROM
+			value = 1.0
+			min = 100
+		}
+	}
+}
+
+# New holder's offer of a bribe is turned down
+letter_event = {
+	id = emf_imperial.3212
+	desc = EVTDESC_emf_imperial_3212
+	
+	is_triggered_only = yes
+	
+	trigger = {
+		vassal_of = FROM
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3204 #Accept the decision
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 0
+				holds_favor_on = FROM
+			}
+			modifier = {
+				factor = 2.0
+				trait = content
+			}
+			modifier = {
+				factor = 1.5
+				trait = humble
+			}
+			modifier = {
+				factor = 0.75
+				trait = proud
+			}
+			modifier = {
+				factor = 0.75
+				trait = ambitious
+			}
+			modifier = {
+				factor = 0.5
+				trait = wroth
+			}
+		}
+		log = "---> emf_imperial.3212: [Root.GetBestName] has decided to accept [From.GetTitledFirstNameNoRegnal]'s decision"
+		FROM = {
+			letter_event = { id = emf_imperial.3205 tooltip = IS_INFORMED }
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_imperial_3204 #Offer a favor
+		trigger = {
+			is_adult = yes
+			NOR = {
+				trait = incapable
+				is_dumb_trigger = yes
+				owes_favor_to = FROM
+				holds_favor_on = FROM
+				has_opinion_modifier = { who = FROM modifier = refused_favor }
+			}
+		}
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 0
+				NOR = {
+					intrigue = 8
+					learning = 8
+				}
+			}
+			modifier = {
+				factor = 1.2
+				intrigue = 10
+			}
+			modifier = {
+				factor = 1.2
+				intrigue = 12
+			}
+			modifier = {
+				factor = 1.2
+				intrigue = 14
+			}
+			modifier = {
+				factor = 1.2
+				intrigue = 16
+			}
+		}
+		log = "---> emf_imperial.3212: [Root.GetBestName] has decided to offer a favor to [From.GetTitledFirstNameNoRegnal]"
+		FROM = {
+			letter_event = { id = emf_imperial.3206 tooltip = OFFER_FAVOR }
+		}
+	}
+	option = {
+		name = EVTOPTC_emf_imperial_3204 #Call in my favor
+		trigger = {
+			is_adult = yes
+			holds_favor_on = FROM
+			NOT = { trait = incapable }
+		}
+		ai_chance = {
+			factor = 50
+		}
+		tooltip = { reverse_remove_favor = FROM }
+		log = "---> emf_imperial.3212: [Root.GetBestName] has decided to call in their favor on [From.GetTitledFirstNameNoRegnal]"
+		FROM = {
+			letter_event = { id = emf_imperial.3209 tooltip = CALL_IN_FAVOR }
+		}
+	}
+	option = {
+		name = EVTOPTE_emf_imperial_3204 #Rebel
+		trigger = {
+			prisoner = no
+			NOT = { trait = incapable }
+			is_adult = yes
+		}
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 0
+				holds_favor_on = FROM
+			}
+			modifier = {
+				factor = 0
+				NOT = { trait = lunatic }
+				NOT = { relative_power_to_liege = 0.50 }
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { relative_power_to_liege = 0.75 }
+			}
+			modifier = {
+				factor = 1.5
+				relative_power_to_liege = 1.0
+			}
+			modifier = {
+				factor = 2.0
+				relative_power_to_liege = 1.5
+			}
+			modifier = {
+				factor = 2.5
+				relative_power_to_liege = 2.0
+			}
+			modifier = {
+				factor = 0.75
+				trait = patient
+			}
+			modifier = {
+				factor = 0.75
+				trait = just
+			}
+			modifier = {
+				factor = 1.25
+				trait = greedy
+			}
+			modifier = {
+				factor = 1.5
+				trait = wroth
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					trait = content
+					trait = humble
+				}
+			}
+			modifier = {
+				factor = 0
+				NOR = {
+					trait = brave
+					trait = wroth
+					trait = ambitious
+					trait = lunatic
+					trait = possessed
+				}
+			}
+		}
+		log = "---> emf_imperial.3212: [Root.GetBestName] has decided to rebel rather than submit to [From.GetTitledFirstNameNoRegnal]"
+		tooltip = {
+			war = {
+				target = FROM
+				casus_belli = emf_resist_viceroy_revocation
+			}
+		}
+		hidden_tooltip = {
+			FROM = { letter_event = { id = emf_imperial.3214 } }
+		}
+	}
+}
+
+# New holder rebels rather than have their title stripped from them
+letter_event = {
+	id = emf_imperial.3214
+	desc = EVTDESC_emf_imperial_3214
+	
+	is_triggered_only = yes
+	
+	trigger = {
+		is_liege_of = FROM
+	}
+	
+	option = {
+		name = CURSES
+		reverse_war = {
+			target = FROM
+			casus_belli = emf_resist_viceroy_revocation
+		}
+	}
+}
+
+# Council is consulted to determine suitable successors
+character_event = {
+	id = emf_imperial.3215
+	picture = GFX_evt_council
+
+	desc = {
+		text = EVTDESC_emf_imperial_3215_several_choices
+		trigger = {
+			OR = {
+				event_target:council_second_pick = { always = yes }
+				event_target:council_third_pick = { always = yes }
+			}
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3215_one_choice
+		trigger = {
+			NOT = { event_target:council_first_pick = { character = event_target:current_viceroy } }
+			NOT = { event_target:council_second_pick = { always = yes } }
+			NOT = { event_target:council_third_pick = { always = yes } }
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3215_no_change
+		trigger = {
+			event_target:council_first_pick = { character = event_target:current_viceroy }
+			NOT = { event_target:council_second_pick = { always = yes } }
+			NOT = { event_target:council_third_pick = { always = yes } }
+		}
+	}
+	
+	is_triggered_only = yes
+	hide_from = yes
+	
+	immediate = {
+		# What we're doing here is trying to find three choices that the council will suggest in the event,
+		# so we're beginning from the "most likely" and working our way down -- with the current holder being the default if
+		# no-one else is applicable (meaning rulers in the duchy/kingdom, bordering it/nearby, and who nobody on the council hates)
+		
+		# Always start with previous holder, if still alive
+		if = {
+			limit = {
+				event_target:former_viceroy = {
+					is_alive = yes
+					emf_imperial_valid_viceroy_trigger = yes
+					OR = {
+						NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
+						ROOT = { any_voter = { character = PREVPREV } }
+					}
+				}
+			}
+			event_target:former_viceroy = {
+				emf_imperial_save_viceroy_pick_effect = yes
+			}
+		}
+		# Then check if the current holder is not disliked by the council
+		if = {
+			limit = {
+				event_target:current_viceroy = {
+					emf_imperial_valid_viceroy_trigger = yes
+					OR = {
+						NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
+						ROOT = { any_voter = { character = PREVPREV } }
+					}
+				}
+			}
+			event_target:current_viceroy = {
+				emf_imperial_save_viceroy_pick_effect = yes
+			}
+		}		
+		# Then check for someone that is friends/relative of someone on the council, or on the council, and nearby
+		random_playable_ruler = {
+			limit = {
+				emf_imperial_close_viceroy_trigger = yes
+				NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
+				ROOT = {
+					any_voter = {
+						OR = {
+							character = PREVPREV
+							is_friend = PREVPREV
+							is_close_relative = PREVPREV
+						}
+					}
+				}
+			}
+			emf_imperial_save_viceroy_pick_effect = yes
+		}
+		# Then expand criteria to someone with a strong claim on the title who a voter likes, and nearby
+		random_playable_ruler = {
+			limit = {
+				emf_imperial_close_viceroy_trigger = yes
+				NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
+				OR = {
+					ROOT = {
+						any_voter = {
+							OR = {
+								character = PREVPREV
+								is_friend = PREVPREV
+								is_close_relative = PREVPREV
+							}
+						}
+					}
+					AND = {
+						has_strong_claim = event_target:viceroy_title
+						ROOT = { any_voter = { opinion = { who = PREVPREV value = 0 } } }
+					}
+				}
+			}
+			emf_imperial_save_viceroy_pick_effect = yes
+		}
+		# Then expand criteria to anyone with a claim on the title who a voter likes, and nearby
+		random_playable_ruler = {
+			limit = {
+				emf_imperial_close_viceroy_trigger = yes
+				NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
+				OR = {
+					ROOT = {
+						any_voter = {
+							OR = {
+								dynasty = PREVPREV
+								character = PREVPREV
+								is_friend = PREVPREV
+								is_close_relative = PREVPREV
+							}
+						}
+					}
+					AND = {
+						has_claim = event_target:viceroy_title
+						ROOT = { any_voter = { opinion = { who = PREVPREV value = 0 } } }
+					}
+				}
+			}
+			emf_imperial_save_viceroy_pick_effect = yes
+		}
+		# Then check for anyone qualified and nearby who at least one voter likes
+		random_playable_ruler = {
+			limit = {
+				emf_imperial_close_viceroy_trigger = yes
+				NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
+				ROOT = {
+					any_voter = {
+						opinion = { who = PREVPREV value = 20 }
+					}
+				}
+			}
+			emf_imperial_save_viceroy_pick_effect = yes
+		}
+		# Then check for anyone qualified and nearby who isn't disliked by anyone
+		random_playable_ruler = {
+			limit = {
+				emf_imperial_close_viceroy_trigger = yes
+				NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
+			}
+			emf_imperial_save_viceroy_pick_effect = yes
+		}
+		# Then check for someone that is friends/relative of someone on the council, or on the council
+		random_playable_ruler = {
+			limit = {
+				emf_imperial_valid_viceroy_trigger = yes
+				NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
+				ROOT = {
+					any_voter = {
+						OR = {
+							character = PREVPREV
+							is_friend = PREVPREV
+							is_close_relative = PREVPREV
+						}
+					}
+				}
+			}
+			emf_imperial_save_viceroy_pick_effect = yes
+		}
+		# Then expand criteria to someone with a strong claim on the title who a voter likes
+		random_playable_ruler = {
+			limit = {
+				emf_imperial_valid_viceroy_trigger = yes
+				NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
+				OR = {
+					ROOT = {
+						any_voter = {
+							OR = {
+								character = PREVPREV
+								is_friend = PREVPREV
+								is_close_relative = PREVPREV
+							}
+						}
+					}
+					AND = {
+						has_strong_claim = event_target:viceroy_title
+						ROOT = { any_voter = { opinion = { who = PREVPREV value = 0 } } }
+					}
+				}
+			}
+			emf_imperial_save_viceroy_pick_effect = yes
+		}
+		# Then expand criteria to anyone with a claim on the title who a voter likes
+		random_playable_ruler = {
+			limit = {
+				emf_imperial_valid_viceroy_trigger = yes
+				NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
+				OR = {
+					ROOT = {
+						any_voter = {
+							OR = {
+								dynasty = PREVPREV
+								character = PREVPREV
+								is_friend = PREVPREV
+								is_close_relative = PREVPREV
+							}
+						}
+					}
+					AND = {
+						has_claim = event_target:viceroy_title
+						ROOT = { any_voter = { opinion = { who = PREVPREV value = 0 } } }
+					}
+				}
+			}
+			emf_imperial_save_viceroy_pick_effect = yes
+		}
+		# Then check for anyone qualified who at least one voter likes
+		random_playable_ruler = {
+			limit = {
+				emf_imperial_valid_viceroy_trigger = yes
+				NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
+				ROOT = {
+					any_voter = {
+						opinion = { who = PREVPREV value = 20 }
+					}
+				}
+			}
+			emf_imperial_save_viceroy_pick_effect = yes
+		}
+		# Then check for anyone qualified who isn't disliked by anyone
+		random_playable_ruler = {
+			limit = {
+				emf_imperial_valid_viceroy_trigger = yes
+				NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
+			}
+			emf_imperial_save_viceroy_pick_effect = yes
+		}
+		# Failing that, the default is whoever holds the title now
+		if = {
+			limit = { NOT = { event_target:council_first_pick = { always = yes } } }
+			event_target:current_viceroy = { save_event_target_as = council_first_pick }
+		}
+	}
+	
+	option = {
+		name = {
+			text = EVTOPTA_emf_imperial_3215 #first pick
+			trigger = {
+				NOT = { event_target:council_first_pick = { character = event_target:current_viceroy } }
+				OR = {
+					event_target:council_second_pick = { always = yes }
+					event_target:council_third_pick = { always = yes }
+					AND = {
+						event_target:viceroy_title = { tier = DUKE }
+						prestige = 200
+					}
+					AND = {
+						event_target:viceroy_title = { tier = KING }
+						prestige = 400
+					}
+				}
+			}
+		}
+		name = {
+			text = EVTOPTA_emf_imperial_3215_no_change
+			trigger = {
+				event_target:council_first_pick = { character = event_target:current_viceroy }
+				OR = {
+					event_target:council_second_pick = { always = yes }
+					event_target:council_third_pick = { always = yes }
+					AND = {
+						event_target:viceroy_title = { tier = DUKE }
+						prestige = 200
+					}
+					AND = {
+						event_target:viceroy_title = { tier = KING }
+						prestige = 400
+					}
+				}
+			}
+		}
+		name = {
+			text = EVTOPTA_emf_imperial_3215_default
+			trigger = {
+				NOR = {
+					event_target:council_second_pick = { always = yes }
+					event_target:council_third_pick = { always = yes }
+					AND = {
+						event_target:viceroy_title = { tier = DUKE }
+						prestige = 200
+					}
+					AND = {
+						event_target:viceroy_title = { tier = KING }
+						prestige = 400
+					}
+				}
+			}
+		}
+		log = "---> emf_imperial.3215: [council_first_pick.GetTitledName] (id#[council_first_pick.GetID]) has been selected to hold the [viceroy_title.GetFullName]"
+		if = {
+			limit = { event_target:council_first_pick = { character = event_target:current_viceroy } }
+			hidden_tooltip = { event_target:current_viceroy = { letter_event = { id = emf_imperial.3216 } } } #notify
+		}
+		if = {
+			limit = { NOT = { event_target:council_first_pick = { character = event_target:current_viceroy } } }
+			hidden_tooltip = { event_target:council_first_pick = { letter_event = { id = emf_imperial.3217 } } } #notify
+		}
+		if = {
+			limit = { NOT = { event_target:council_first_pick = { character = event_target:current_viceroy } } }
+			hidden_tooltip = { reverse_opinion = { who = event_target:current_viceroy modifier = opinion_outraged years = 20 } }
+			event_target:viceroy_title = {
+				set_title_flag = granted_by_liege
+				usurp_title = event_target:council_first_pick
+			}
+		}
+		if = {
+			limit = { event_target:viceroy_title = { tier = DUKE } }
+			reverse_opinion = { who = event_target:council_first_pick modifier = opinion_granted_duchy_vice_royalty years = 20 }
+		}
+		if = {
+			limit = { event_target:viceroy_title = { tier = KING } }
+			reverse_opinion = { who = event_target:council_first_pick modifier = opinion_granted_kingdom_vice_royalty years = 20 }
+		}
+	}
+	option = {
+		trigger = { event_target:council_second_pick = { always = yes } }
+		name = {
+			text = EVTOPTB_emf_imperial_3215
+			trigger = { NOT = { event_target:council_second_pick = { character = event_target:current_viceroy } } }
+		}
+		name = {
+			text = EVTOPTA_emf_imperial_3215_no_change
+			trigger = { event_target:council_second_pick = { character = event_target:current_viceroy } }
+		}
+		log = "---> emf_imperial.3215: [council_second_pick.GetTitledName] (id#[council_second_pick.GetID]) has been selected to hold the [viceroy_title.GetFullName]"
+		if = {
+			limit = { event_target:council_second_pick = { character = event_target:current_viceroy } }
+			hidden_tooltip = { event_target:current_viceroy = { letter_event = { id = emf_imperial.3216 } } } #notify
+		}
+		if = {
+			limit = { NOT = { event_target:council_second_pick = { character = event_target:current_viceroy } } }
+			hidden_tooltip = { event_target:council_second_pick = { letter_event = { id = emf_imperial.3217 } } } #notify
+		}
+		if = {
+			limit = { NOT = { event_target:council_second_pick = { character = event_target:current_viceroy } } }
+			hidden_tooltip = { reverse_opinion = { who = event_target:current_viceroy modifier = opinion_outraged years = 20 } }
+			event_target:viceroy_title = {
+				set_title_flag = granted_by_liege
+				usurp_title = event_target:council_second_pick
+			}
+		}
+		if = {
+			limit = { event_target:viceroy_title = { tier = DUKE } }
+			reverse_opinion = { who = event_target:council_second_pick modifier = opinion_granted_duchy_vice_royalty years = 20 }
+		}
+		if = {
+			limit = { event_target:viceroy_title = { tier = KING } }
+			reverse_opinion = { who = event_target:council_second_pick modifier = opinion_granted_kingdom_vice_royalty years = 20 }
+		}	
+	}
+	option = {
+		trigger = { event_target:council_third_pick = { always = yes } }
+		name = {
+			text = EVTOPTC_emf_imperial_3215
+			trigger = { NOT = { event_target:council_third_pick = { character = event_target:current_viceroy } } }
+		}
+		name = {
+			text = EVTOPTA_emf_imperial_3215_no_change
+			trigger = { event_target:council_third_pick = { character = event_target:current_viceroy } }
+		}
+		log = "---> emf_imperial.3215: [council_third_pick.GetTitledName] (id#[council_third_pick.GetID]) has been selected to hold the [viceroy_title.GetFullName]"
+		if = {
+			limit = { event_target:council_third_pick = { character = event_target:current_viceroy } }
+			hidden_tooltip = { event_target:current_viceroy = { letter_event = { id = emf_imperial.3216 } } } #notify
+		}
+		if = {
+			limit = { NOT = { event_target:council_third_pick = { character = event_target:current_viceroy } } }
+			hidden_tooltip = { event_target:council_third_pick = { letter_event = { id = emf_imperial.3217 } } } #notify
+		}
+		if = {
+			limit = { NOT = { event_target:council_third_pick = { character = event_target:current_viceroy } } }
+			hidden_tooltip = { reverse_opinion = { who = event_target:current_viceroy modifier = opinion_outraged years = 20 } }
+			event_target:viceroy_title = {
+				set_title_flag = granted_by_liege
+				usurp_title = event_target:council_third_pick
+			}
+		}
+		if = {
+			limit = { event_target:viceroy_title = { tier = DUKE } }
+			reverse_opinion = { who = event_target:council_third_pick modifier = opinion_granted_duchy_vice_royalty years = 20 }
+		}
+		if = {
+			limit = { event_target:viceroy_title = { tier = KING } }
+			reverse_opinion = { who = event_target:council_third_pick modifier = opinion_granted_kingdom_vice_royalty years = 20 }
+		}
+	}
+	option = {
+		name = EVTOPTD_emf_imperial_3215 #usurp title
+		trigger = {
+			OR = {
+				AND = {
+					event_target:viceroy_title = { tier = DUKE }
+					prestige = 200
+				}
+				AND = {
+					event_target:viceroy_title = { tier = KING }
+					prestige = 400
+				}
+			}
+		}
+		log = "---> emf_imperial.3215: [Root.GetBestName] has elected to keep the [viceroy_title.GetFullName] for [Root.GetHerHim]self"
+		if = {
+			limit = { event_target:viceroy_title = { tier = DUKE } }
+			prestige = -200
+		}
+		if = {
+			limit = { event_target:viceroy_title = { tier = KING } }
+			prestige = -400
+		}
+		event_target:viceroy_title = { usurp_title = ROOT }
+	}
+}
+
+# New holder informed they'll be keeping the title after all
+letter_event = {
+	id = emf_imperial.3216
+	desc = EVTDESC_emf_imperial_3216
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3216
+	}
+}
+
+# Title is granted to someone else
+letter_event = {
+	id = emf_imperial.3217
+	desc = EVTDESC_emf_imperial_3217
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EXCELLENT
+	}
+}
+
+### MAINTENANCE EVENTS
+
+# Double-check Imperial Government status upon title being assumed
+character_event = {
+	id = emf_imperial.3294
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		FROM = { is_primary_holder_title = yes }
+	}
+	
+	immediate = {
+		character_event = { id = emf_imperial.3299 days = 1 }
+	}
+}
+
+# Startup event to set Imperial Governments
+character_event = {
+	id = emf_imperial.3295
+
+	hide_window = yes
+	is_triggered_only = yes
+
+	trigger = {
+		ai = no
+		NOT = { has_global_flag = imperial_government_check }
+	}
+	
+	immediate = {
+		set_global_flag = imperial_government_check
+		# Add Imperial Government to starting rulers with the law
+		any_character = {
+			limit = {
+				independent = yes
+				is_feudal = yes
+				emf_imperial_has_imperial_gov_trigger = no
+				primary_title = {
+					tier = EMPEROR
+					has_law = administration_2
+				}
+			}
+			primary_title = { set_title_flag = has_imperial_administration }
+			emf_switch_to_imperial_effect = yes
+		}
+		# Remove Imperial Government from starting characters without the law/flag
+		any_character = {
+			limit = {
+				is_ruler = yes
+				independent = yes
+				emf_imperial_has_imperial_gov_trigger = yes
+				NOT = {
+					primary_title = {
+						tier = EMPEROR
+						has_law = administration_2
+						has_title_flag = has_imperial_administration
+					}
+				}
+			}
+			emf_switch_to_feudal_gov_effect = yes
+		}
+		# Remove Imperial Government from vassals not under an Imperial Government top liege
+		any_character = {
+			limit = {
+				is_ruler = yes
+				independent = no
+				emf_imperial_has_imperial_gov_trigger = yes
+				NOT = { top_liege = { emf_imperial_has_imperial_gov_trigger = yes } }
+			}
+			emf_switch_to_feudal_gov_effect = yes
+		}
+		# Fix governments for vassals under an Imperial Government
+		any_character = {
+			limit = {
+				is_ruler = yes
+				independent = no
+				is_feudal = yes
+				top_liege = { emf_imperial_has_imperial_gov_trigger = yes }
+			}
+			if = {
+				limit = {
+					emf_imperial_has_imperial_gov_trigger = no
+					NOT = { primary_title = { has_title_flag = viceroy_exemption } }
+				}
+				emf_switch_to_imperial_effect = yes
+			}
+			if = {
+				limit = {
+					emf_imperial_has_imperial_gov_trigger = yes
+					primary_title = { has_title_flag = viceroy_exemption }
+				}
+				emf_switch_to_feudal_gov_effect = yes
+			}
+		}
+	}
+}
+
+# Exemption flag removed upon liege revoking title
+diploresponse_event = {
+	id = emf_imperial.3296
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		ROOT = { clr_title_flag = viceroy_exemption }
+	}
+}
+
+# Exemption flag added upon new primary title being created
+character_event = {
+	id = emf_imperial.3297
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	trigger = {
+		independent = no
+		is_feudal = yes
+		FROM = {
+			is_primary_holder_title = yes
+			NOT = { has_title_flag = viceroy_exemption }
+		}
+		any_demesne_title = { has_title_flag = viceroy_exemption }
+	}
+	
+	immediate = {
+		log = "emf_imperial.3297: [From.GetFullName] ([From.GetID]) created by [Root.GetBestName] ([Root.GetID]), requires viceroy_exemption flag"
+		any_demesne_title = { clr_title_flag = viceroy_exemption }
+		FROM = { set_title_flag = viceroy_exemption }
+	}
+}
+
+# Exemption flag is removed upon title being usurped
+character_event = {
+	id = emf_imperial.3298
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	trigger = {
+		FROM = { has_title_flag = viceroy_exemption }
+	}
+	
+	immediate = {
+		log = "emf_imperial.3298: [From.GetFullName] ([From.GetID]) usurped by [Root.GetBestName] ([Root.GetID]), viceroy_exemption flag removed"
+		FROM = { clr_title_flag = viceroy_exemption }
+	}
+}
+
+# Double-check a ruler's imperial government status
+character_event = {
+	id = emf_imperial.3299
+	
+	is_triggered_only = yes
+	hide_window = yes
+	only_rulers = yes
+	
+	trigger = {
+		is_ruler = yes
+		in_revolt = no
+		NOT = { any_liege = { in_revolt = yes } }
+	}
+	
+	immediate = {
+		# Double-check the has_imperial_administration flag
+		any_demesne_title = {
+			if = {
+				limit = {
+					has_title_flag = has_imperial_administration
+					NOT = { has_law = administration_2 }
+				}
+				clr_title_flag = has_imperial_administration
+			}
+			if = {
+				limit = {
+					has_law = administration_2
+					NOT = { has_title_flag = has_imperial_administration }
+				}
+				set_title_flag = has_imperial_administration
+			}
+		}
+		
+		# Has title with exemption flag but is independent, non-feudal, or top liege not imperial
+		if = {
+			limit = {
+				any_demesne_title = { has_title_flag = viceroy_exemption }
+				OR = {
+					independent = yes
+					top_liege = { emf_imperial_has_imperial_gov_trigger = no }
+					is_feudal = no
+				}
+				in_revolt = no
+				NOT = { any_liege = { in_revolt = yes } }
+			}
+			any_demesne_title = {
+				limit = { has_title_flag = viceroy_exemption }
+				clr_title_flag = viceroy_exemption
+			}
+		}
+		# Ruler in imperial realm has a non-primary title with the exemption flag, but primary title does not
+		if = {
+			limit = {
+				top_liege = { emf_imperial_has_imperial_gov_trigger = yes }
+				any_demesne_title = { has_title_flag = viceroy_exemption }
+				primary_title = { NOT = { has_title_flag = viceroy_exemption } }
+				is_feudal = yes
+				in_revolt = no
+				NOT = { any_liege = { in_revolt = yes } }
+			}
+			log = "emf_imperial.3299: [Root.GetBestName] ([Root.GetID]) had [Root.PrimaryTitle.GetID] set to viceroy_exemption, as a non-primary title had the flag set"
+			any_demesne_title = { clr_title_flag = viceroy_exemption }
+			primary_title = { set_title_flag = viceroy_exemption }
+		}
+		# Maintenance check on ruler with imperial government
+		if = {
+			limit = {
+				emf_imperial_has_imperial_gov_trigger = yes
+				in_revolt = no
+				NOT = { any_liege = { in_revolt = yes } }
+			}
+			# Imperial Administration law not possessed (switch back to Feudal)
+			if = {
+				limit = {
+					independent = yes
+					NOT = { primary_title = { has_law = administration_2 } }
+				}
+				log = "emf_imperial.3299: [Root.GetBestName] ([Root.GetID]) was switched to feudal government because [Root.PrimaryTitle.GetID] does not have Imperial Administration law"
+				emf_switch_to_feudal_gov_effect = yes
+				any_realm_lord = {
+					limit = {
+						is_liege_or_above = ROOT
+						emf_imperial_has_imperial_gov_trigger = yes
+						in_revolt = no
+						NOT = { any_liege = { in_revolt = yes } }
+					}
+					emf_switch_to_feudal_gov_effect = yes
+				}
+			}
+			# Is vassal but has top liege without Imperial Government or primary title has the exemption flag
+			if = {
+				limit = {
+					independent = no
+					OR = {
+						top_liege = { emf_imperial_has_imperial_gov_trigger = no }
+						primary_title = { has_title_flag = viceroy_exemption }
+					}
+				}
+				if = {
+					limit = { top_liege = { emf_imperial_has_imperial_gov_trigger = no } }
+					log = "emf_imperial.3299: [Root.GetBestName] ([Root.GetID]) was switched to feudal government because [Root.TopLiege.GetBestName] does not have Imperial Government"
+				}
+				if = {
+					limit = { primary_title = { has_title_flag = viceroy_exemption } }
+					log = "emf_imperial.3299: [Root.GetBestName] ([Root.GetID]) was switched to feudal government because [Root.PrimaryTitle.GetID] has viceroy_exemption flag"
+				}
+				emf_switch_to_feudal_gov_effect = yes
+			}
+		}
+		# Maintenance check on ruler with non-Imperial Government
+		if = {
+			limit = {
+				is_feudal = yes
+				emf_imperial_has_imperial_gov_trigger = no
+				in_revolt = no
+				NOT = { any_liege = { in_revolt = yes } }
+			}
+			# Is independent and has Imperial Administration law
+			if = {
+				limit = {
+					independent = yes
+					primary_title = { has_law = administration_2 }
+				}
+				log = "emf_imperial.3299: [Root.GetBestName] was switched to imperial government because [Root.PrimaryTitle.GetID] has Imperial Administration law"
+				emf_switch_to_imperial_effect = yes
+				any_realm_lord = {
+					limit = {
+						is_liege_or_above = ROOT
+						is_feudal = yes
+						emf_imperial_has_imperial_gov_trigger = no
+						in_revolt = no
+						NOT = { any_liege = { in_revolt = yes } }
+					}
+					primary_title = { set_title_flag = viceroy_exemption }
+				}
+			}
+			# Is a vassal under an Imperial Government top liege and does not have exemption flag
+			if = {
+				limit = {
+					independent = no
+					top_liege = { emf_imperial_has_imperial_gov_trigger = yes }
+					NOT = { primary_title = { has_title_flag = viceroy_exemption } }
+				}
+				log = "emf_imperial.3299: [Root.GetBestName] was switched to imperial government because [Root.TopLiege.GetBestName] as imperial government and [Root.PrimaryTitle.GetID] does not have the viceroy_exemption flag"
+				emf_switch_to_imperial_effect = yes
+			}
+		}
+	}
+}
+
+#######################################
+# MORE IMPERIAL EVENTS
+# Written by Rylock
+#######################################
+
+### RELATIVE GOES TO THE IMPERIAL CAPITAL
+
+# Relative wants to go to the imperial capital to serve
+character_event = {
+	id = emf_imperial.3300
+	
+	hide_window = yes
+	
+	ai = yes
+	min_age = 16
+	max_age = 40
+	capable_only = yes
+	prisoner = no
+
+	trigger = {
+		independent = no
+		is_ruler = no
+		liege = {
+			higher_real_tier_than = COUNT
+			is_feudal = yes
+			religion = ROOT
+			has_regent = no
+			war = no
+			is_close_relative = ROOT
+		}
+		top_liege = {
+			real_tier = EMPEROR
+			is_feudal = yes
+			religion = ROOT
+			war = no
+			NOR = {
+				is_liege_of = ROOT
+				any_courtier = {
+					is_ruler = no
+					count = 50
+				}
+			}
+		}
+		OR = {
+			is_female = no
+			AND = {
+				is_married = no
+				liege = {
+					OR = {
+						has_law = true_cognatic_succession
+						has_law = enatic_cognatic_succession
+						has_law = enatic_succession
+					}
+				}
+				top_liege = {
+					OR = {
+						has_law = true_cognatic_succession
+						has_law = enatic_cognatic_succession
+						has_law = enatic_succession
+					}
+				}
+			}
+		}
+		OR = {
+			trait = ambitious
+			trait = diligent
+			trait = proud
+			martial = 8
+			diplomacy = 8
+			stewardship = 8
+			intrigue = 8
+		}
+		NOR = {
+			is_ill = yes
+			is_voter = yes
+			trait = slothful
+			trait = content
+			trait = stressed
+			trait = depressed
+			trait = in_hiding
+			trait = monk
+			trait = nun
+			any_spouse = {
+				trait = pregnant
+				father_of_unborn = { character = ROOT }
+			}
+			any_child = {
+				NOT = { trait = bastard }
+				is_adult = no
+			}
+			any_liege = { holy_order = yes }
+			any_liege = { mercenary = yes }
+			has_minor_title = title_appointed_regent
+			has_minor_title = title_commander
+			has_character_modifier = planning_claimant_adventure
+			has_character_flag = serving_varangian
+			has_character_flag = served_empire
+			has_character_flag = serving_empire
+			has_character_flag = denied_serving_empire
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 60
+		modifier = {
+			factor = 0.5
+			top_liege = { emf_imperial_has_imperial_gov_trigger = yes }
+		}
+		modifier = {
+			factor = 0.75
+			OR = {
+				martial = 12
+				diplomacy = 12
+				stewardship = 12
+				intrigue = 12
+			}
+		}
+		modifier = {
+			factor = 0.5
+			trait = ambitious
+		}
+		modifier = {
+			factor = 0.5
+			trait = diligent
+		}
+		modifier = {
+			factor = 0.5
+			OR = {
+				trait = administrator
+				trait = socializer
+				trait = schemer
+			}
+		}
+		modifier = {
+			factor = 0.5
+			NOT = { any_heir_title = { always = yes } }
+		}
+		modifier = {
+			factor = 1.5
+			trait = humble
+		}
+		modifier = {
+			factor = 1.5
+			trait = shy
+		}
+		modifier = {
+			factor = 1.5
+			any_heir_title = { always = yes }
+		}
+	}
+	
+	immediate = {
+		liege = { character_event = { id = emf_imperial.3301 } }
+	}
+}
+
+# Liege is asked to let them go to the capital
+character_event = {
+	id = emf_imperial.3301
+	desc = EVTDESC_emf_imperial_3301
+	picture = GFX_evt_emissary
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3301 # Refuse
+		ai_chance = {
+			factor = 25
+			modifier = {
+				factor = 3
+				trait = cruel
+			}
+			modifier = {
+				factor = 3
+				trait = paranoid
+			}
+			modifier = {
+				factor = 2
+				trait = slothful
+			}
+			modifier = {
+				factor = 0.5
+				trait = diligent
+			}
+			modifier = {
+				factor = 0.5
+				trait = kind
+			}
+			modifier = {
+				factor = 0.5
+				trait = trusting
+			}
+			modifier = {
+				factor = 3
+				current_heir = { character = FROM }
+			}
+			modifier = {
+				factor = 2
+				FROM = { is_female = yes }
+			}
+			modifier = {
+				factor = 0.5
+				FROM = { is_married = no }
+			}
+			modifier = {
+				factor = 1.5
+				FROM = { is_married = yes }
+			}
+			modifier = {
+				factor = 1.5
+				FROM = {
+					any_child = { NOT = { trait = bastard } }
+				}
+			}
+			modifier = {
+				factor = 0.5
+				top_liege = { emf_imperial_has_imperial_gov_trigger = yes }
+			}
+		}
+		FROM = {
+			prestige = -50
+			set_character_flag = denied_serving_empire
+			opinion = {
+				modifier = opinion_very_disappointed
+				years = 10
+				who = ROOT
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_imperial_3301 # Permit it
+		ai_chance = {
+			factor = 75
+		}
+		FROM = {
+			prestige = 50
+			set_character_flag = serving_empire
+			opinion = {
+				modifier = allowed_to_serve_empire
+				years = 100
+				who = ROOT
+			}
+		}
+		top_liege = {
+			FROM = { move_character = PREV }
+		}
+	}
+}	
+	
+# Relative remains where they are
+character_event = {
+	id = emf_imperial.3302
+	
+	hide_window = yes
+	
+	min_age = 16
+	capable_only = yes
+	prisoner = no
+	has_character_flag = serving_empire
+	
+	trigger = {
+		is_ruler = no
+		liege = { real_tier = EMPEROR }
+		OR = {
+			is_voter = yes
+			has_minor_title = title_appointed_regent
+			has_minor_title = title_commander
+		}
+		had_character_flag = { flag = serving_empire days = 1460 }
+	}
+	
+	mean_time_to_happen = {
+		months = 48
+	}
+	
+	immediate = {
+		clr_character_flag = serving_empire
+		set_character_flag = served_empire
+		random_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = allowed_to_serve_empire } }
+			letter_event = { id = emf_imperial.3303 }
+		}
+	}
+}
+
+# Inform liege
+letter_event = {
+	id = emf_imperial.3303
+	desc = EVTDESC_emf_imperial_3303
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = SO_BE_IT
+	}
+}
+
+# Relative has become a ruler
+character_event = {
+	id = emf_imperial.3304
+	
+	hide_window = yes
+	
+	min_age = 16
+	prisoner = no
+	only_rulers = yes
+	has_character_flag = serving_empire
+	
+	trigger = {
+		is_ruler = yes
+		had_character_flag = { flag = serving_empire days = 1460 }
+	}
+	
+	mean_time_to_happen = {
+		months = 48
+	}
+	
+	immediate = {
+		clr_character_flag = serving_empire
+		set_character_flag = served_empire
+	}
+}
+
+# Relative has become incapable
+character_event = {
+	id = emf_imperial.3305
+	
+	hide_window = yes
+	
+	min_age = 16
+	prisoner = no
+	has_character_flag = serving_empire
+	
+	trigger = {
+		trait = incapable
+		is_ruler = no
+		had_character_flag = { flag = serving_empire days = 1460 }
+	}
+	
+	mean_time_to_happen = {
+		months = 48
+	}
+	
+	immediate = {
+		clr_character_flag = serving_empire
+		set_character_flag = served_empire
+		random_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = allowed_to_serve_empire } }
+			character_event = { id = emf_imperial.3306 }
+		}
+	}
+}
+
+# Inform liege
+character_event = {
+	id = emf_imperial.3306
+	desc = EVTDESC_emf_imperial_3306
+	picture = GFX_evt_emissary
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = I_SEE
+		emf_return_home_effect = yes
+	}
+}
+
+# Relative returns - increased education
+character_event = {
+	id = emf_imperial.3307
+	
+	hide_window = yes
+	
+	min_age = 16
+	capable_only = yes
+	prisoner = no
+	has_character_flag = serving_empire
+	
+	trigger = {
+		NOR = {
+			trait = elusive_shadow
+			trait = grey_eminence
+			trait = midas_touched
+			trait = brilliant_strategist
+			trait = mastermind_theologian
+		}
+		NAND = {
+			liege = { real_tier = EMPEROR }
+			OR = {
+				is_voter = yes
+				has_minor_title = title_appointed_regent
+				has_minor_title = title_commander
+			}
+		}
+		is_ruler = no
+		had_character_flag = { flag = serving_empire days = 1460 }
+	}
+	
+	mean_time_to_happen = {
+		months = 48
+		modifier = {
+			factor = 0.5
+			is_smart_trigger = yes
+		}
+		modifier = {
+			factor = 2.0
+			is_dumb_trigger = yes
+		}
+		modifier = {
+			factor = 0.75
+			trait = diligent
+		}
+		modifier = {
+			factor = 1.25
+			trait = slothful
+		}
+	}
+	
+	immediate = {
+		clr_character_flag = serving_empire
+		set_character_flag = served_empire
+		random_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = allowed_to_serve_empire } }
+			character_event = { id = emf_imperial.3308 }
+		}
+	}
+}
+
+# Inform liege
+character_event = {
+	id = emf_imperial.3308
+	desc = EVTDESC_emf_imperial_3308
+	picture = GFX_evt_emissary
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EXCELLENT
+		FROM = {
+			if = {
+				limit = { trait = intricate_webweaver }
+				remove_trait = intricate_webweaver
+				add_trait = elusive_shadow
+			}
+			if = {
+				limit = { trait = flamboyant_schemer }
+				remove_trait = flamboyant_schemer
+				add_trait = intricate_webweaver
+			}
+			if = {
+				limit = { trait = amateurish_plotter }
+				remove_trait = amateurish_plotter
+				add_trait = flamboyant_schemer
+			}
+			if = {
+				limit = { trait = charismatic_negotiator }
+				remove_trait = charismatic_negotiator
+				add_trait = grey_eminence
+			}
+			if = {
+				limit = { trait = underhanded_rogue }
+				remove_trait = underhanded_rogue
+				add_trait = charismatic_negotiator
+			}
+			if = {
+				limit = { trait = naive_appeaser }
+				remove_trait = naive_appeaser
+				add_trait = underhanded_rogue
+			}
+			if = {
+				limit = { trait = fortune_builder }
+				remove_trait = fortune_builder
+				add_trait = midas_touched
+			}
+			if = {
+				limit = { trait = thrifty_clerk }
+				remove_trait = thrifty_clerk
+				add_trait = fortune_builder
+			}
+			if = {
+				limit = { trait = indulgent_wastrel }
+				remove_trait = indulgent_wastrel
+				add_trait = thrifty_clerk
+			}
+			if = {
+				limit = { trait = skilled_tactician }
+				remove_trait = skilled_tactician
+				add_trait = brilliant_strategist
+			}
+			if = {
+				limit = { trait = tough_soldier }
+				remove_trait = tough_soldier
+				add_trait = skilled_tactician
+			}
+			if = {
+				limit = { trait = misguided_warrior }
+				remove_trait = misguided_warrior
+				add_trait = tough_soldier
+			}
+			if = {
+				limit = { trait = scholarly_theologian }
+				remove_trait = scholarly_theologian
+				add_trait = mastermind_theologian
+			}
+			if = {
+				limit = { trait = martial_cleric }
+				remove_trait = martial_cleric
+				add_trait = scholarly_theologian
+			}
+			if = {
+				limit = { trait = detached_priest }
+				remove_trait = detached_priest
+				add_trait = martial_cleric
+			}
+		}
+		emf_return_home_effect = yes
+	}
+}
+
+# Relative returns = increased stat
+character_event = {
+	id = emf_imperial.3309
+	
+	hide_window = yes
+	
+	min_age = 16
+	capable_only = yes
+	prisoner = no
+	has_character_flag = serving_empire
+	
+	trigger = {
+		NAND = {
+			liege = { real_tier = EMPEROR }
+			OR = {
+				is_voter = yes
+				has_minor_title = title_appointed_regent
+				has_minor_title = title_commander
+			}
+		}
+		is_ruler = no
+		had_character_flag = { flag = serving_empire days = 1460 }
+	}
+	
+	mean_time_to_happen = {
+		months = 48
+		modifier = {
+			factor = 0.5
+			is_smart_trigger = yes
+		}
+		modifier = {
+			factor = 2.0
+			is_dumb_trigger = yes
+		}
+		modifier = {
+			factor = 0.75
+			trait = diligent
+		}
+		modifier = {
+			factor = 1.25
+			trait = slothful
+		}
+	}
+	
+	immediate = {
+		clr_character_flag = serving_empire
+		set_character_flag = served_empire
+		random_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = allowed_to_serve_empire } }
+			character_event = { id = emf_imperial.3310 }
+		}
+	}
+}
+
+# Inform liege
+character_event = {
+	id = emf_imperial.3310
+	desc = EVTDESC_emf_imperial_3308
+	picture = GFX_evt_emissary
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EXCELLENT
+		FROM = {
+			if = {
+				limit = {
+					OR = {
+						trait = amateurish_plotter
+						trait = flamboyant_schemer
+						trait = intricate_webweaver
+						trait = elusive_shadow
+					}
+				}
+				change_intrigue = 2
+			}
+			if = {
+				limit = {
+					OR = {
+						trait = naive_appeaser
+						trait = underhanded_rogue
+						trait = charismatic_negotiator
+						trait = grey_eminence
+					}
+				}
+				change_diplomacy = 2
+			}
+			if = {
+				limit = {
+					OR = {
+						trait = indulgent_wastrel
+						trait = thrifty_clerk
+						trait = fortune_builder
+						trait = midas_touched
+					}
+				}
+				change_stewardship = 2
+			}
+			if = {
+				limit = {
+					OR = {
+						trait = misguided_warrior
+						trait = tough_soldier
+						trait = skilled_tactician
+						trait = brilliant_strategist
+					}
+				}
+				change_martial = 2
+			}
+			if = {
+				limit = {
+					OR = {
+						trait = detached_priest
+						trait = martial_cleric
+						trait = scholarly_theologian
+						trait = mastermind_theologian
+					}
+				}
+				change_learning = 2
+			}
+		}
+		emf_return_home_effect = yes
+	}
+}
+
+# Relative returns with a lifestyle trait
+character_event = {
+	id = emf_imperial.3311
+	
+	hide_window = yes
+	
+	min_age = 16
+	capable_only = yes
+	prisoner = no
+	has_character_flag = serving_empire
+	
+	trigger = {
+		NOT = { lifestyle_traits = 1 }
+		NAND = {
+			liege = { real_tier = EMPEROR }
+			OR = {
+				is_voter = yes
+				has_minor_title = title_appointed_regent
+				has_minor_title = title_commander
+			}
+		}
+		is_ruler = no
+		had_character_flag = { flag = serving_empire days = 1460 }
+	}
+	
+	mean_time_to_happen = {
+		months = 48
+		modifier = {
+			factor = 0.75
+			trait = diligent
+		}
+		modifier = {
+			factor = 1.25
+			trait = slothful
+		}
+	}
+	
+	immediate = {
+		clr_character_flag = serving_empire
+		set_character_flag = served_empire
+		random_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = allowed_to_serve_empire } }
+			character_event = { id = emf_imperial.3312 }
+		}
+	}
+}
+
+# Inform liege
+character_event = {
+	id = emf_imperial.3312
+	desc = EVTDESC_emf_imperial_3308
+	picture = GFX_evt_emissary
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EXCELLENT
+		FROM = {
+			if = {
+				limit = {
+					OR = {
+						trait = amateurish_plotter
+						trait = flamboyant_schemer
+						trait = intricate_webweaver
+						trait = elusive_shadow
+					}
+				}
+				add_trait = schemer
+			}
+			if = {
+				limit = {
+					OR = {
+						trait = naive_appeaser
+						trait = underhanded_rogue
+						trait = charismatic_negotiator
+						trait = grey_eminence
+					}
+				}
+				add_trait = socializer
+			}
+			if = {
+				limit = {
+					OR = {
+						trait = indulgent_wastrel
+						trait = thrifty_clerk
+						trait = fortune_builder
+						trait = midas_touched
+					}
+				}
+				add_trait = administrator
+			}
+			if = {
+				limit = {
+					OR = {
+						trait = misguided_warrior
+						trait = tough_soldier
+						trait = skilled_tactician
+						trait = brilliant_strategist
+					}
+				}
+				add_trait = duelist
+			}
+			if = {
+				limit = {
+					OR = {
+						trait = detached_priest
+						trait = martial_cleric
+						trait = scholarly_theologian
+						trait = mastermind_theologian
+					}
+				}
+				add_trait = theologian
+			}
+		}
+		emf_return_home_effect = yes
+	}
+}
+
+# Relative returns with a wife
+character_event = {
+	id = emf_imperial.3313
+	
+	hide_window = yes
+	
+	min_age = 16
+	capable_only = yes
+	only_men = yes
+	prisoner = no
+	has_character_flag = serving_empire
+	
+	trigger = {
+		is_married = no
+		can_marry = yes
+		NOT = { trait = homosexual }
+		NAND = {
+			liege = { real_tier = EMPEROR }
+			OR = {
+				is_voter = yes
+				has_minor_title = title_appointed_regent
+				has_minor_title = title_commander
+			}
+		}
+		is_ruler = no
+		had_character_flag = { flag = serving_empire days = 1460 }
+	}
+	
+	mean_time_to_happen = {
+		months = 48
+	}
+	
+	immediate = {
+		clr_character_flag = serving_empire
+		set_character_flag = served_empire
+		random_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = allowed_to_serve_empire } }
+			character_event = { id = emf_imperial.3314 }
+		}
+	}
+}
+
+# Inform liege
+character_event = {
+	id = emf_imperial.3314
+	desc = EVTDESC_emf_imperial_3314
+	picture = GFX_evt_emissary
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = I_SEE
+		hidden_tooltip = {
+			top_liege = {
+				create_character = {
+					random_traits = yes
+					culture = THIS
+					religion = THIS
+					female = yes
+					age = 17
+				}
+				new_character = {
+					save_event_target_as = new_wife
+				}
+			}
+		}
+		FROM = { add_spouse = event_target:new_wife }
+		emf_return_home_effect = yes
+	}
+}
+
+# Relative returns with a bastard child
+character_event = {
+	id = emf_imperial.3315
+	
+	hide_window = yes
+	
+	min_age = 16
+	capable_only = yes
+	only_men = yes
+	prisoner = no
+	has_character_flag = serving_empire
+	
+	trigger = {
+		is_married = no
+		fertility = 0.25
+		NOT = { trait = homosexual }
+		NAND = {
+			liege = { real_tier = EMPEROR }
+			OR = {
+				is_voter = yes
+				has_minor_title = title_appointed_regent
+				has_minor_title = title_commander
+			}
+		}
+		is_ruler = no
+		had_character_flag = { flag = serving_empire days = 1460 }
+	}
+	
+	mean_time_to_happen = {
+		months = 48
+	}
+	
+	immediate = {
+		clr_character_flag = serving_empire
+		set_character_flag = served_empire
+		random_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = allowed_to_serve_empire } }
+			character_event = { id = emf_imperial.3316 }
+		}
+	}
+}
+
+# Inform liege
+character_event = {
+	id = emf_imperial.3316
+	picture = GFX_evt_emissary
+	
+	desc = {
+		text = EVTDESC_emf_imperial_3316_male
+		trigger = { FROM = { is_female = no } }
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3316_female
+		trigger = { FROM = { is_female = yes } }
+	}
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = I_SEE
+		hidden_tooltip = {
+			create_character = {
+				age = 0
+				female = no
+				trait = bastard
+				culture = FROM
+				religion = FROM
+			}
+			new_character = {
+				if = {
+					limit = { FROM = { is_female = no } }
+					set_father = FROM
+				}
+				if = {
+					limit = { FROM = { is_female = yes } }
+					set_mother = FROM
+				}
+			}
+			recalc_succession = yes
+		}
+		emf_return_home_effect = yes
+	}
+}
+
+# Relative returns depressed
+character_event = {
+	id = emf_imperial.3317
+	
+	hide_window = yes
+	
+	min_age = 16
+	capable_only = yes
+	prisoner = no
+	has_character_flag = serving_empire
+	
+	trigger = {
+		NOT = { trait = depressed }
+		NAND = {
+			liege = { real_tier = EMPEROR }
+			OR = {
+				is_voter = yes
+				has_minor_title = title_appointed_regent
+				has_minor_title = title_commander
+			}
+		}
+		is_ruler = no
+		had_character_flag = { flag = serving_empire days = 1460 }
+	}
+	
+	mean_time_to_happen = {
+		months = 48
+		modifier = {
+			factor = 1.25
+			trait = diligent
+		}
+		modifier = {
+			factor = 0.75
+			trait = slothful
+		}
+	}
+	
+	immediate = {
+		clr_character_flag = serving_empire
+		set_character_flag = served_empire
+		random_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = allowed_to_serve_empire } }
+			character_event = { id = emf_imperial.3318 }
+		}
+	}
+}
+
+# Inform liege
+character_event = {
+	id = emf_imperial.3318
+	desc = EVTDESC_emf_imperial_3318
+	picture = GFX_evt_emissary
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = I_SEE
+		FROM = { add_trait = depressed }
+		emf_return_home_effect = yes
+	}
+}
+
+# Relative returns a drunkard
+character_event = {
+	id = emf_imperial.3319
+	
+	hide_window = yes
+	
+	min_age = 16
+	capable_only = yes
+	prisoner = no
+	has_character_flag = serving_empire
+	
+	trigger = {
+		NOT = { trait = drunkard }
+		NOT = { trait = temperate }
+		NAND = {
+			liege = { real_tier = EMPEROR }
+			OR = {
+				is_voter = yes
+				has_minor_title = title_appointed_regent
+				has_minor_title = title_commander
+			}
+		}
+		is_ruler = no
+		had_character_flag = { flag = serving_empire days = 1460 }
+	}
+	
+	mean_time_to_happen = {
+		months = 48
+		modifier = {
+			factor = 0.75
+			trait = gluttonous
+		}
+		modifier = {
+			factor = 0.75
+			trait = gregarious
+		}
+		modifier = {
+			factor = 1.5
+			trait = shy
+		}
+	}
+	
+	immediate = {
+		clr_character_flag = serving_empire
+		set_character_flag = served_empire
+		random_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = allowed_to_serve_empire } }
+			character_event = { id = emf_imperial.3320 }
+		}
+	}
+}
+
+# Inform liege
+character_event = {
+	id = emf_imperial.3320
+	desc = EVTDESC_emf_imperial_3320
+	picture = GFX_evt_emissary
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = I_SEE
+		FROM = { add_trait = drunkard }
+		emf_return_home_effect = yes
+	}
+}
+
+# Relative returns more diligent
+character_event = {
+	id = emf_imperial.3321
+	
+	hide_window = yes
+	
+	min_age = 16
+	capable_only = yes
+	prisoner = no
+	has_character_flag = serving_empire
+	
+	trigger = {
+		NOT = { trait = diligent }
+		NOT = { trait = slothful }
+		NAND = {
+			liege = { real_tier = EMPEROR }
+			OR = {
+				is_voter = yes
+				has_minor_title = title_appointed_regent
+				has_minor_title = title_commander
+			}
+		}
+		is_ruler = no
+		had_character_flag = { flag = serving_empire days = 1460 }
+	}
+	
+	mean_time_to_happen = {
+		months = 48
+	}
+	
+	immediate = {
+		clr_character_flag = serving_empire
+		set_character_flag = served_empire
+		random_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = allowed_to_serve_empire } }
+			character_event = { id = emf_imperial.3322 }
+		}
+	}
+}
+
+# Inform liege
+character_event = {
+	id = emf_imperial.3322
+	desc = EVTDESC_emf_imperial_3322
+	picture = GFX_evt_emissary
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EXCELLENT
+		FROM = { add_trait = diligent }
+		emf_return_home_effect = yes
+	}
+}
+
+# Relative returns slothful
+character_event = {
+	id = emf_imperial.3323
+	
+	hide_window = yes
+	
+	min_age = 16
+	capable_only = yes
+	prisoner = no
+	has_character_flag = serving_empire
+	
+	trigger = {
+		NOT = { trait = diligent }
+		NOT = { trait = slothful }
+		NAND = {
+			liege = { real_tier = EMPEROR }
+			OR = {
+				is_voter = yes
+				has_minor_title = title_appointed_regent
+				has_minor_title = title_commander
+			}
+		}
+		is_ruler = no
+		had_character_flag = { flag = serving_empire days = 1460 }
+	}
+	
+	mean_time_to_happen = {
+		months = 48
+	}
+	
+	immediate = {
+		clr_character_flag = serving_empire
+		set_character_flag = served_empire
+		random_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = allowed_to_serve_empire } }
+			character_event = { id = emf_imperial.3324 }
+		}
+	}
+}
+
+# Inform liege
+character_event = {
+	id = emf_imperial.3324
+	desc = EVTDESC_emf_imperial_3324
+	picture = GFX_evt_emissary
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = I_SEE
+		FROM = { add_trait = slothful }
+		emf_return_home_effect = yes
+	}
+}
+
+# Relative returns a zealot
+character_event = {
+	id = emf_imperial.3325
+	
+	hide_window = yes
+	
+	min_age = 16
+	capable_only = yes
+	prisoner = no
+	has_character_flag = serving_empire
+	
+	trigger = {
+		NOT = { trait = zealous }
+		NOT = { trait = cynical }
+		NAND = {
+			liege = { real_tier = EMPEROR }
+			OR = {
+				is_voter = yes
+				has_minor_title = title_appointed_regent
+				has_minor_title = title_commander
+			}
+		}
+		is_ruler = no
+		had_character_flag = { flag = serving_empire days = 1460 }
+	}
+	
+	mean_time_to_happen = {
+		months = 48
+	}
+	
+	immediate = {
+		clr_character_flag = serving_empire
+		set_character_flag = served_empire
+		random_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = allowed_to_serve_empire } }
+			character_event = { id = emf_imperial.3326 }
+		}
+	}
+}
+
+# Inform liege
+character_event = {
+	id = emf_imperial.3326
+	desc = EVTDESC_emf_imperial_3326
+	picture = GFX_evt_emissary
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = I_SEE
+		FROM = { add_trait = zealous }
+		emf_return_home_effect = yes
+	}
+}
+
+# Relative returns a cynic
+character_event = {
+	id = emf_imperial.3327
+	
+	hide_window = yes
+	
+	min_age = 16
+	capable_only = yes
+	prisoner = no
+	has_character_flag = serving_empire
+	
+	trigger = {
+		NOT = { trait = zealous }
+		NOT = { trait = cynical }
+		NAND = {
+			liege = { real_tier = EMPEROR }
+			OR = {
+				is_voter = yes
+				has_minor_title = title_appointed_regent
+				has_minor_title = title_commander
+			}
+		}
+		is_ruler = no
+		had_character_flag = { flag = serving_empire days = 1460 }
+	}
+	
+	mean_time_to_happen = {
+		months = 48
+	}
+	
+	immediate = {
+		clr_character_flag = serving_empire
+		set_character_flag = served_empire
+		random_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = allowed_to_serve_empire } }
+			character_event = { id = emf_imperial.3328 }
+		}
+	}
+}
+
+# Inform liege
+character_event = {
+	id = emf_imperial.3328
+	desc = EVTDESC_emf_imperial_3328
+	picture = GFX_evt_emissary
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = I_SEE
+		FROM = { add_trait = cynical }
+		emf_return_home_effect = yes
+	}
+}
+
+# Ruler dies while a relative is away at the capital
+character_event = {
+	id = emf_imperial.3329
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		any_close_relative = {
+			has_character_flag = serving_empire
+			has_opinion_modifier = { who = ROOT modifier = allowed_to_serve_empire }
+		}
+	}
+	
+	immediate = {
+		any_character = {
+			limit = {
+				has_character_flag = serving_empire
+				has_opinion_modifier = { who = ROOT modifier = allowed_to_serve_empire }
+			}
+			clr_character_flag = serving_empire
+			if = {
+				limit = {
+					NOR = {
+						prisoner = yes
+						is_ruler = yes
+						AND = {
+							liege = { real_tier = EMPEROR }
+							OR = {
+								is_voter = yes
+								has_minor_title = title_appointed_regent
+								has_minor_title = title_commander
+							}
+						}
+					}
+				}
+				move_character = ROOT
+			}
+		}
+	}
+}
+
+# Ruler is unlanded while a relative is away at the capital
+character_event = {
+	id = emf_imperial.3330
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		any_close_relative = {
+			has_character_flag = serving_empire
+			has_opinion_modifier = { who = ROOT modifier = allowed_to_serve_empire }
+		}
+	}
+	
+	immediate = {
+		any_character = {
+			limit = {
+				has_character_flag = serving_empire
+				has_opinion_modifier = { who = ROOT modifier = allowed_to_serve_empire }
+			}
+			clr_character_flag = serving_empire
+			remove_opinion = { who = ROOT modifier = allowed_to_serve_empire }
+			if = {
+				limit = {
+					NOR = {
+						prisoner = yes
+						is_ruler = yes
+						AND = {
+							liege = { real_tier = EMPEROR }
+							OR = {
+								is_voter = yes
+								has_minor_title = title_appointed_regent
+								has_minor_title = title_commander
+							}
+						}
+					}
+				}
+				random_dynasty_member = {
+					limit = { higher_tier_than = COUNT }
+					reverse_banish = PREV
+					break = yes
+				}
+				random_dynasty_member = {
+					limit = { higher_tier_than = BARON }
+					reverse_banish = PREV
+					break = yes
+				}
+				random_dynasty_member = {
+					limit = { is_ruler = yes }
+					reverse_banish = PREV
+					break = yes
+				}
+			}
+		}
+	}
+}
+
+# Relative's liege is no longer the emperor
+character_event = {
+	id = emf_imperial.3331
+	
+	hide_window = yes
+	
+	min_age = 16
+	capable_only = yes
+	only_men = yes
+	prisoner = no
+	has_character_flag = serving_empire
+
+	trigger = {
+		is_ruler = no
+		is_voter = no
+		liege = { NOT = { real_tier = EMPEROR } }
+	}
+	
+	mean_time_to_happen = {
+		months = 6
+	}
+	
+	immediate = {
+		#find original liege
+		random_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = allowed_to_serve_empire } }
+			save_event_target_as = original_liege
+		}
+		#move the relative to the new emperor, if they're not their original liege
+		if = {
+			limit = {
+				top_liege = {
+					real_tier = EMPEROR
+					same_realm = event_target:original_liege
+					NOT = { character = event_target:original_liege }
+				}
+			}
+			top_liege = {
+				ROOT = { move_character = PREV }
+			}
+			break = yes
+		}
+		#otherwise, return home immediately
+		clr_character_flag = serving_empire
+		event_target:original_liege = {
+			ROOT = { move_character = PREV }
+		}
+	}
+}
+
+### IMPERIAL COUP EVENTS
+
+# Adds Away From Court modifier when emperor is leading armies away from the capital
+character_event = {
+	id = emf_imperial.3338
+	
+	hide_window = yes
+	
+	min_age = 16
+	capable_only = yes
+	prisoner = no
+	only_independent = yes
+	
+	trigger = {
+		real_tier = EMPEROR
+		in_command = yes
+		war = yes
+		NOT = { has_character_modifier = away_from_court }
+		capital_scope = {
+			ROOT = {
+				location = {
+					NOT = { province_id = PREVPREV }
+				}
+			}
+		}
+	}
+	
+	mean_time_to_happen = {
+		days = 1
+	}
+	
+	immediate = {
+		set_character_flag = away_from_court
+		add_character_modifier = {
+			name = away_from_court
+			hidden = yes
+			duration = -1
+		}
+	}
+}
+
+# Removes Away From Court modifier from the emperor
+character_event = {
+	id = emf_imperial.3339
+	
+	hide_window = yes
+	
+	has_character_flag = away_from_court
+	
+	trigger = {
+		has_character_modifier = away_from_court
+		OR = {
+			trait = incapable
+			prisoner = yes
+			is_playable = no
+			NAND = {
+				in_command = yes
+				war = yes
+				capital_scope = {
+					ROOT = {
+						location = {
+							NOT = { province_id = PREVPREV }
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	mean_time_to_happen = {
+		days = 1
+	}
+	
+	immediate = {
+		remove_character_modifier = away_from_court
+		clr_character_flag = away_from_court
+	}
+}
+
+# Opportunity to begin coup arises
+character_event = {
+	id = emf_imperial.3340
+	picture = GFX_evt_spymaster
+	border = GFX_event_normal_frame_intrigue
+	
+	desc = {
+		text = EVTDESC_emf_imperial_3340_low_home
+		trigger = {
+			has_character_flag = chance_low_home
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3340_med_home
+		trigger = {
+			has_character_flag = chance_med_home
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3340_high_home
+		trigger = {
+			has_character_flag = chance_high_home
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3340_low_not_home
+		trigger = {
+			has_character_flag = chance_low_not_home
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3340_med_not_home
+		trigger = {
+			has_character_flag = chance_med_not_home
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3340_high_not_home
+		trigger = {
+			has_character_flag = chance_high_not_home
+		}
+	}
+	
+	min_age = 16
+	capable_only = yes
+	prisoner = no
+	is_part_of_plot = yes
+	
+	trigger = {
+		has_plot = plot_overthrow_empire
+		num_of_plot_backers = 1
+		plot_power = 0.75
+		plot_target_char = {
+			tier = EMPEROR
+			is_liege_of = ROOT
+			emf_imperial_has_imperial_gov_trigger = yes
+		}
+		NOT = { has_character_flag = plot_in_action }
+	}
+	
+	mean_time_to_happen = {
+		months = 120
+		modifier = {
+			factor = 0.75
+			NOT = {
+				plot_target_char = {
+					location = {
+						PREV = {
+							capital_scope = { province_id = PREVPREV }
+						}
+					}
+				}
+			}			
+		}
+		modifier = {
+			factor = 0.5
+			trait = genius
+		}
+		modifier = {
+			factor = 0.75
+			OR = {
+				trait = quick
+				trait = shrewd
+			}
+		}
+		modifier = {
+			factor = 0.75
+			plot_target_char = { trait = trusting }
+		}
+		modifier = {
+			factor = 1.25
+			plot_target_char = { trait = paranoid }
+		}
+		modifier = {
+			factor = 0.75
+			plot_target_char = {
+				OR = {
+					is_ill = yes
+					trait = infirm
+					is_dumb_trigger = yes
+				}
+			}
+		}
+		modifier = {
+			factor = 0.75
+			plot_power = 1.0
+		}
+		modifier = {
+			factor = 0.75
+			plot_power = 1.25
+		}
+		modifier = {
+			factor = 0.75
+			plot_power = 1.50
+		}
+		modifier = {
+			factor = 0.75
+			plot_power = 1.75
+		}
+		modifier = {
+			factor = 0.75
+			plot_power = 2.0
+		}
+	}
+
+	immediate = {
+		clr_character_flag = lost_plotter
+		clr_character_flag = chance_low_home
+		clr_character_flag = chance_med_home
+		clr_character_flag = chance_high_home
+		clr_character_flag = chance_low_not_home
+		clr_character_flag = chance_med_not_home
+		clr_character_flag = chance_high_not_home
+		clr_character_flag = killed_during_coup
+		clr_character_flag = captured_during_coup
+		clr_character_flag = coup_succeeds
+		if = {
+			limit = {
+				NOT = { plot_power = 1.0 }
+				plot_target_char = {
+					NOT = { has_character_modifier = away_from_court }
+				}
+			}
+			set_character_flag = chance_low_home
+			break = yes
+		}
+		if = {
+			limit = {
+				plot_power = 1.0
+				NOT = { plot_power = 2.0 }
+				plot_target_char = {
+					NOT = { has_character_modifier = away_from_court }
+				}
+			}
+			set_character_flag = chance_med_home
+			break = yes
+		}
+		if = {
+			limit = {
+				plot_power = 2.0
+				plot_target_char = {
+					NOT = { has_character_modifier = away_from_court }
+				}
+			}
+			set_character_flag = chance_high_home
+			break = yes
+		}
+		if = {
+			limit = {
+				NOT = { plot_power = 1.0 }
+				plot_target_char = {
+					has_character_modifier = away_from_court
+				}
+			}
+			set_character_flag = chance_low_not_home
+			break = yes
+		}
+		if = {
+			limit = {
+				plot_power = 1.0
+				NOT = { plot_power = 2.0 }
+				plot_target_char = {
+					has_character_modifier = away_from_court
+				}
+			}
+			set_character_flag = chance_med_not_home
+			break = yes
+		}
+		if = {
+			limit = {
+				plot_power = 2.0
+				plot_target_char = {
+					has_character_modifier = away_from_court
+				}
+			}
+			set_character_flag = chance_high_not_home
+			break = yes
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3340 # Get ready
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 0
+				NOT = { plot_power = 1.0 }
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { plot_power = 1.5 }
+			}
+			modifier = {
+				factor = 0.5
+				plot_target_char = { has_character_modifier = away_from_court }
+			}
+			modifier = {
+				factor = 3
+				trait = lunatic
+			}
+			modifier = {
+				factor = 3
+				trait = possessed
+			}
+			modifier = {
+				factor = 1.5
+				trait = brave
+			}
+			modifier = {
+				factor = 1.5
+				trait = wroth
+			}
+		}
+		set_character_flag = plot_in_action
+		custom_tooltip = {
+			text = TELL_PLOTTERS_GET_READY
+			hidden_tooltip = {
+				#notify backers
+				any_plot_backer = { character_event = { id = emf_imperial.3341 } }
+				#double-check
+				character_event = { id = emf_imperial.3344 days = 7 }
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_imperial_3340 # We should wait
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 2.0
+				NOT = { plot_power = 2.0 }
+				trait = craven
+			}
+			modifier = {
+				factor = 1.5
+				NOT = { plot_power = 1.5 }
+				trait = patient
+			}
+		}
+	}
+}
+
+# Co-conspirators informed; remain or drop out?
+character_event = {
+	id = emf_imperial.3341
+	picture = GFX_evt_spymaster
+	border = GFX_event_normal_frame_intrigue
+	
+	desc = {
+		text = EVTDESC_emf_imperial_3341_low_home
+		trigger = {
+			FROM = { has_character_flag = chance_low_home }
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3341_med_home
+		trigger = {
+			FROM = { has_character_flag = chance_med_home }
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3341_high_home
+		trigger = {
+			FROM = { has_character_flag = chance_high_home }
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3341_low_not_home
+		trigger = {
+			FROM = { has_character_flag = chance_low_not_home }
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3341_med_not_home
+		trigger = {
+			FROM = { has_character_flag = chance_med_not_home }
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3341_high_not_home
+		trigger = {
+			FROM = { has_character_flag = chance_high_not_home }
+		}
+	}
+	
+	is_triggered_only = yes
+	capable_only = yes
+	prisoner = no
+	
+	trigger = {
+		FROM = {
+			has_plot = plot_overthrow_empire
+			plot_target_char = {
+				tier = EMPEROR
+				is_liege_of = ROOT
+				emf_imperial_has_imperial_gov_trigger = yes
+			}
+		}
+	}
+
+	immediate = {
+		clr_character_flag = informed_liege
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3341 # I'm still in
+		ai_chance = {
+			factor = 70
+			modifier = {
+				factor = 0
+				FROM = {
+					plot_target_char = {
+						OR = {
+							reverse_opinion = { who = ROOT value = 40 }
+							current_heir = { character = ROOT }
+							AND = {
+								is_married = ROOT
+								ROOT = { is_ruler = no }
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_imperial_3341 # No, this is too risky
+		ai_chance = {
+			factor = 20
+			modifier = {
+				factor = 0.1
+				is_ruler = yes
+				is_voter = no
+			}
+			modifier = {
+				factor = 0.1
+				OR = {
+					trait = lunatic
+					trait = possessed
+				}
+			}
+			modifier = {
+				factor = 0.5
+				trait = brave
+			}
+			modifier = {
+				factor = 2
+				trait = craven
+			}
+		}
+		tooltip = { leave_plot = FROM }
+		hidden_tooltip = {
+			FROM = { character_event = { id = emf_imperial.3342 days = 1 random = 5 } }
+		}
+	}
+	option = {
+		name = EVTOPTC_emf_imperial_3341 # Inform the liege
+		trigger = { intrigue = 10 }
+		ai_chance = {
+			factor = 5
+			modifier = {
+				factor = 2
+				trait = deceitful
+			}
+			modifier = {
+				factor = 2
+				intrigue = 14
+			}
+			modifier = {
+				factor = 2
+				intrigue = 16
+			}
+			modifier = {
+				factor = 2
+				intrigue = 18
+			}
+			modifier = {
+				factor = 2
+				intrigue = 20
+			}
+			modifier = {
+				factor = 0.01
+				FROM = {
+					plot_target_char = {
+						NOT = { reverse_opinion = { who = ROOT value = 25 } }
+					}
+				}
+			}
+			modifier = {
+				factor = 0.01
+				OR = {
+					trait = honest
+					trait = craven
+					FROM = { reverse_opinion = { who = ROOT value = 0 } }
+					is_close_relative = ROOT
+				}
+			}
+			modifier = {
+				factor = 0.01
+				NOR = {
+					trait = ambitious
+					trait = deceitful
+					FROM = { plot_target_char = { is_close_relative = ROOT } }
+				}
+			}
+		}
+		tooltip_info = intrigue
+		tooltip = { leave_plot = FROM }
+		FROM = {
+			plot_target_char = {
+				letter_event = { id = emf_imperial.3343 days = 5 tooltip = INFORM_LIEGE_PLOT }
+			}
+		}
+		random_list = {
+			50 = {
+				custom_tooltip = {
+					text = PLOT_LEADER_FINDS_OUT
+					hidden_tooltip = {
+						set_character_flag = informed_liege
+						FROM = { character_event = { id = emf_imperial.3342 days = 1 random = 5 } }
+					}
+				}
+			}
+			50 = {
+				custom_tooltip = {
+					text = PLOT_LEADER_DOESNT_FIND_OUT
+				}
+			}
+		}
+		if = {
+			limit = {
+				NOT = { trait = honest }
+				NOT = { trait = deceitful }
+			}
+			random = {
+				chance = 50
+				add_trait = deceitful
+			}
+		}
+		if = {
+			limit = { trait = honest }
+			remove_trait = honest
+		}
+	}
+}
+
+# Coup leader informed that co-conspirator has dropped out
+character_event = {
+	id = emf_imperial.3342
+	picture = GFX_evt_spymaster
+	border = GFX_event_normal_frame_intrigue
+	
+	desc = {
+		text = EVTDESC_emf_imperial_3342
+		trigger = {
+			FROM = { NOT = { has_character_flag = informed_liege } }
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3342_informed
+		trigger = {
+			FROM = { has_character_flag = informed_liege }
+		}
+	}
+
+	is_triggered_only = yes
+	capable_only = yes
+	prisoner = no
+	
+	trigger = {
+		has_plot = plot_overthrow_empire
+		plot_target_char = {
+			tier = EMPEROR
+			is_liege_of = ROOT
+			emf_imperial_has_imperial_gov_trigger = yes
+		}
+	}
+	
+	option = {
+		name = CURSES
+		set_character_flag = lost_plotter
+		FROM = { leave_plot = ROOT }
+		if = {
+			limit = { FROM = { has_character_flag = informed_liege } }
+			opinion = { who = FROM modifier = grievously_offended years = 5 }
+		}
+		hidden_tooltip = {
+			if = {
+				limit = { FROM = { NOT = { has_character_flag = informed_liege } } }
+				opinion = { who = FROM modifier = grievously_offended years = 5 }
+			}
+			reverse_opinion = { who = FROM modifier = opinion_left_plot years = 5 }
+		}
+	}
+}
+
+# Ruler given advance notice of coup plan
+letter_event = {
+	id = emf_imperial.3343
+	desc = EVTDESC_emf_imperial_3343
+	border = GFX_event_letter_frame_intrigue
+	
+	is_triggered_only = yes
+	capable_only = yes
+	prisoner = no
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3343
+		set_character_flag = on_guard_coup
+		opinion = { who = FROM modifier = opinion_very_grateful years = 5 }
+	}
+}
+
+# Coup is ready to begin: proceed?
+character_event = {
+	id = emf_imperial.3344
+	picture = GFX_evt_spymaster
+	border = GFX_event_normal_frame_intrigue
+	
+	desc = {
+		text = EVTDESC_emf_imperial_3344_low
+		trigger = {
+			NOT = { plot_power = 1.0 }
+			NOT = { has_character_flag = lost_plotter }
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3344_med
+		trigger = {
+			plot_power = 1.0
+			NOT = { plot_power = 2.0 }
+			NOT = { has_character_flag = lost_plotter }
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3344_high
+		trigger = {
+			plot_power = 2.0
+			NOT = { has_character_flag = lost_plotter }
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3344_low_lost
+		trigger = {
+			NOT = { plot_power = 1.0 }
+			has_character_flag = lost_plotter
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3344_med_lost
+		trigger = {
+			plot_power = 1.0
+			NOT = { plot_power = 2.0 }
+			has_character_flag = lost_plotter
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3344_high_lost
+		trigger = {
+			plot_power = 2.0
+			has_character_flag = lost_plotter
+		}
+	}
+
+	is_triggered_only = yes
+	capable_only = yes
+	prisoner = no
+	
+	trigger = {
+		has_plot = plot_overthrow_empire
+		plot_target_char = {
+			tier = EMPEROR
+			is_liege_of = ROOT
+			emf_imperial_has_imperial_gov_trigger = yes
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3344 # Begin!
+		ai_chance = {
+			factor = 70
+			modifier = {
+				factor = 0
+				NOT = { plot_power = 1.0 }
+			}
+			modifier = {
+				factor = 2
+				plot_power = 1.5
+			}
+		}
+		hidden_tooltip = {
+			diplomatic_immunity = yes
+			any_plot_backer = { diplomatic_immunity = yes }
+			plot_target_char = {
+				clr_character_flag = captured_during_coup
+				clr_character_flag = killed_during_coup
+				clr_character_flag = coup_not_in_capital
+				save_event_target_as = coup_target
+				capital_scope = { save_event_target_as = coup_target_capital }
+				if = {
+					limit = { NOT = { has_character_modifier = away_from_court } }
+					character_event = { id = emf_imperial.3348 } # Notification of coup start
+				}
+				any_courtier = {
+					limit = {
+						prisoner = no
+						OR = {
+							in_command = no
+							event_target:coup_target = { war = no }
+						}
+						NOT = {
+							any_backed_character = {
+								character = ROOT
+							}
+						}
+					}
+					character_event = { id = emf_imperial.3348 } # Notification of coup start
+				}
+			}
+		}
+		random_list = {
+			50 = {
+				modifier = {
+					factor = 0.5
+					plot_target_char = { has_character_flag = on_guard_coup }
+				}
+				modifier = {
+					factor = 1.5
+					trait = genius
+				}
+				modifier = {
+					factor = 1.2
+					OR = {
+						trait = quick
+						trait = shrewd
+					}
+				}
+				modifier = {
+					factor = 0.5
+					trait = imbecile
+				}
+				modifier = {
+					factor = 0.8
+					OR = {
+						trait = dull
+						trait = slow
+					}
+				}
+				modifier = {
+					factor = 1.1
+					OR = {
+						has_job_title = job_marshal
+						any_plot_backer = { has_job_title = job_marshal }
+					}
+				}
+				modifier = {
+					factor = 1.2
+					OR = {
+						has_job_title = job_spymaster
+						any_plot_backer = { has_job_title = job_spymaster }
+					}
+				}
+				modifier = {
+					factor = 0.9
+					NOT = { plot_power = 0.7 }
+				}
+				modifier = {
+					factor = 0.9
+					NOT = { plot_power = 0.8 }
+				}
+				modifier = {
+					factor = 0.9
+					NOT = { plot_power = 0.9 }
+				}
+				modifier = {
+					factor = 0.9
+					NOT = { plot_power = 1.0 }
+				}
+				modifier = {
+					factor = 0.9
+					NOT = { plot_power = 1.1 }
+				}
+				modifier = {
+					factor = 0.9
+					NOT = { plot_power = 1.2 }
+				}
+				modifier = {
+					factor = 0.9
+					NOT = { plot_power = 1.3 }
+				}
+				modifier = {
+					factor = 0.9
+					NOT = { plot_power = 1.4 }
+				}
+				modifier = {
+					factor = 0.9
+					NOT = { plot_power = 1.5 }
+				}
+				modifier = {
+					factor = 1.1
+					plot_power = 1.6
+				}
+				modifier = {
+					factor = 1.1
+					plot_power = 1.7
+				}
+				modifier = {
+					factor = 1.1
+					plot_power = 1.8
+				}
+				modifier = {
+					factor = 1.1
+					plot_power = 1.9
+				}
+				modifier = {
+					factor = 1.1
+					plot_power = 2.0
+				}
+				modifier = {
+					factor = 1.1
+					plot_power = 2.1
+				}
+				modifier = {
+					factor = 1.1
+					plot_power = 2.2
+				}
+				modifier = {
+					factor = 1.1
+					plot_power = 2.3
+				}
+				modifier = {
+					factor = 1.1
+					plot_power = 2.4
+				}
+				modifier = {
+					factor = 1.1
+					plot_power = 2.5
+				}
+				custom_tooltip = {
+					text = COUP_SUCCESSFUL
+					hidden_tooltip = {
+						set_character_flag = coup_succeeds
+						event_target:coup_target = {
+							primary_title = { save_event_target_as = usurped_title }
+							clr_character_flag = on_guard_coup
+							if = {
+								limit = { NOT = { has_character_modifier = away_from_court } }
+								random = {
+									chance = 50
+									# Ruler is injured/maimed/killed/captured in successful coup (days = 2)
+									character_event = { id = emf_imperial.3359 days = 2 }
+								}
+							}
+							if = {
+								limit = { has_character_modifier = away_from_court }
+								# Ruler is not in the capital during successful coup (days = 2)
+								character_event = { id = emf_imperial.3358 days = 2 }
+							}
+						}
+						random = {
+							chance = 25
+							# Coup leader is injured/maimed in successful coup (days = 2)
+							character_event = { id = emf_imperial.3357 days = 2 }
+						}
+						# Notification of coup success
+						narrative_event = { id = emf_imperial.3361 days = 3 }
+						character_event = { id = emf_imperial.3362 days = 3 }
+					}
+				}
+			}
+			50 = {
+				modifier = {
+					factor = 1.5
+					plot_target_char = { demesne_garrison_size = 500 }
+				}
+				modifier = {
+					factor = 1.5
+					plot_target_char = { trait = genius }
+				}
+				modifier = {
+					factor = 1.2
+					plot_target_char = {
+						OR = {
+							trait = quick
+							trait = shrewd
+							trait = paranoid
+						}
+					}
+				}
+				modifier = {
+					factor = 0.5
+					plot_target_char = {
+						OR = {
+							trait = imbecile
+							trait = incapable
+							is_adult = no
+						}
+					}
+				}
+				modifier = {
+					factor = 0.8
+					plot_target_char = {
+						OR = {
+							trait = dull
+							trait = slow
+							trait = trusting
+						}
+					}
+				}
+				modifier = {
+					factor = 0.8
+					plot_target_char = {
+						has_character_modifier = away_from_court
+					}
+				}
+				custom_tooltip = {
+					text = COUP_FAILS
+					hidden_tooltip = {
+						event_target:coup_target = {
+							clr_character_flag = on_guard_coup
+							if = {
+								limit = { NOT = { has_character_modifier = away_from_court } }
+								random = {
+									chance = 25
+									# Ruler is injured/maimed/killed in failed coup (days = 2)
+									character_event = { id = emf_imperial.3355 days = 2 }
+								}
+							}
+							if = {
+								limit = { has_character_modifier = away_from_court }
+								# Ruler is not in the capital during failed coup (days = 2)
+								character_event = { id = emf_imperial.3356 days = 2 }
+							}
+						}
+						random = {
+							chance = 50
+							# Coup leader is injured/maimed/killed/captured in failed coup (days = 2)
+							character_event = { id = emf_imperial.3354 days = 2 }
+						}
+						# Notification of coup failure
+						narrative_event = { id = emf_imperial.3360 days = 3 }
+					}
+				}
+			}
+		}
+		hidden_tooltip = {
+			any_plot_backer = {
+				limit = {
+					OR = {
+						AND = {
+							host = { character = event_target:coup_target }
+							OR = {
+								in_command = no
+								event_target:coup_target = { war = no }
+							}
+						}
+						is_voter = yes
+					}
+				}
+				character_event = { id = emf_imperial.3346 days = 1 } # Assigning events during coup
+			}
+			event_target:coup_target = {
+				any_courtier = {
+					limit = {
+						prisoner = no
+						OR = {
+							in_command = no
+							event_target:coup_target = { war = no }
+						}
+						NOT = {
+							any_backed_character = {
+								character = ROOT
+							}
+						}
+					}
+					character_event = { id = emf_imperial.3347 days = 1 } # Assigning events during coup
+				}
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_imperial_3344 # Wait for a better time
+		ai_chance = {
+			factor = 30
+		}
+		clr_character_flag = plot_in_action
+		hidden_tooltip = {
+			plot_target_char = { clr_character_flag = on_guard_coup }
+			any_plot_backer = {
+				limit = { ai = no }
+				letter_event = { id = emf_imperial.3345 }
+			}
+		}
+	}
+	option = {
+		name = EVTOPTC_emf_imperial_3344 # Scrap all plans
+		ai_chance = {
+			factor = 0
+		}
+		hidden_tooltip = { plot_target_char = { clr_character_flag = on_guard_coup } }
+		set_character_flag = abort_plot
+		cancel_plot = plot_overthrow_empire
+	}
+}
+
+# Plot leader has called off the coup
+letter_event = {
+	id = emf_imperial.3345
+	desc = EVTDESC_emf_imperial_3345
+	border = GFX_event_letter_frame_intrigue
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = I_SEE
+	}
+}
+
+# Bounce event (for assigning results to co-conspirators)
+character_event = {
+	id = emf_imperial.3346
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	immediate = {
+		random_list = {
+			20 = {
+				modifier = {
+					factor = 0.5
+					FROM = { has_character_flag = coup_succeeds }
+				}
+				# Co-conspirator injured/maimed/killed during coup
+				character_event = { id = emf_imperial.3349 }
+			}
+			20 = {
+				modifier = {
+					factor = 0
+					FROM = { has_character_flag = coup_succeeds }
+				}
+				modifier = {
+					factor = 0
+					event_target:coup_target = {
+						has_character_modifier = away_from_court
+					}
+				}
+				# Co-conspirator comes to ruler's attention in failed coup
+				character_event = { id = emf_imperial.3353 }
+			}
+			3 = {
+				modifier = {
+					factor = 0
+					OR = {
+						is_adult = no
+						is_female = yes
+						trait = in_hiding
+						trait = incapable
+						trait = infirm
+						NOT = { martial = 10 }
+					}
+				}
+				# Co-conspirator saves the coup leader's life
+				character_event = { id = emf_imperial.3351 }
+			}
+			40 = {
+				# Nothing
+			}
+		}
+	}
+}
+
+# Bounce event (for assigning results to courtiers)
+character_event = {
+	id = emf_imperial.3347
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	immediate = {
+		random_list = {
+			20 = {
+				modifier = {
+					factor = 0.5
+					FROM = { has_character_flag = coup_succeeds }
+				}
+				# Courtier injured/maimed/killed during coup
+				character_event = { id = emf_imperial.3350 }
+			}
+			3 = {
+				modifier = {
+					factor = 0
+					event_target:coup_target = {
+						has_character_modifier = away_from_court
+					}
+				}
+				modifier = {
+					factor = 0
+					OR = {
+						is_adult = no
+						is_female = yes
+						trait = in_hiding
+						trait = incapable
+						trait = infirm
+						NOT = { martial = 10 }
+					}
+				}
+				# Courtier saves the ruler's life
+				character_event = { id = emf_imperial.3352 }
+			}
+			40 = {
+				# Nothing
+			}
+		}
+	}
+}
+
+# Notification to ruler & courtiers that coup has begun
+character_event = {
+	id = emf_imperial.3348
+	desc = EVTDESC_emf_imperial_3348
+	picture = GFX_evt_siege
+	border = GFX_event_normal_frame_intrigue
+	
+	is_triggered_only = yes
+	hide_from = yes
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3348
+	}
+}
+
+# Co-conspirator injured/maimed/killed during coup
+character_event = {
+	id = emf_imperial.3349
+	desc = EVTDESC_emf_imperial_3349
+	picture = GFX_evt_melee
+	border = GFX_event_normal_frame_intrigue
+	
+	is_triggered_only = yes
+	capable_only = yes
+	prisoner = no
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3349
+		random_list = {
+			20 = {
+				modifier = {
+					factor = 0
+					OR = {
+						trait = wounded
+						trait = maimed
+					}
+				}
+				add_trait = wounded
+			}
+			10 = {
+				modifier = {
+					factor = 0
+					trait = maimed
+				}
+				add_trait = maimed
+			}
+			5 = {
+				death = { death_reason = death_battle }
+			}
+		}
+	}
+}
+
+# Courtier injured/maimed/killed during coup
+character_event = {
+	id = emf_imperial.3350
+	desc = EVTDESC_emf_imperial_3350
+	picture = GFX_evt_melee
+	border = GFX_event_normal_frame_intrigue
+	
+	is_triggered_only = yes
+	hide_from = yes
+	
+	capable_only = yes
+	prisoner = no
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3350
+		random_list = {
+			20 = {
+				modifier = {
+					factor = 0
+					OR = {
+						trait = wounded
+						trait = maimed
+					}
+				}
+				add_trait = wounded
+			}
+			10 = {
+				modifier = {
+					factor = 0
+					trait = maimed
+				}
+				add_trait = maimed
+			}
+			5 = {
+				death = { death_reason = death_battle }
+			}
+		}
+	}
+}
+
+# Co-conspirator saves the coup leader's life
+character_event = {
+	id = emf_imperial.3351
+	desc = EVTDESC_emf_imperial_3351
+	picture = GFX_evt_siege
+	border = GFX_event_normal_frame_intrigue
+	
+	is_triggered_only = yes
+	capable_only = yes
+	prisoner = no
+	major = yes
+	
+	major_trigger = {
+		OR = {
+			character = FROM
+			character = FROMFROM
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3351
+		trigger = { character = FROM }
+		add_friend = FROMFROM
+	}
+	option = {
+		name = EVTOPTB_emf_imperial_3351
+		trigger = { character = FROMFROM }
+		tooltip = { add_friend = FROM }
+	}
+}
+
+# Courtier saves the ruler's life
+character_event = {
+	id = emf_imperial.3352
+	desc = EVTDESC_emf_imperial_3352
+	picture = GFX_evt_siege
+	border = GFX_event_normal_frame_intrigue
+	
+	is_triggered_only = yes
+	capable_only = yes
+	prisoner = no
+	major = yes
+	
+	major_trigger = {
+		OR = {
+			character = FROM
+			character = event_target:coup_target
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3351
+		trigger = { character = FROM }
+		add_friend = event_target:coup_target
+	}
+	option = {
+		name = EVTOPTB_emf_imperial_3351
+		trigger = { character = event_target:coup_target }
+		tooltip = { add_friend = FROM }
+	}
+}
+
+# Co-conspirator comes to ruler's attention in failed coup
+character_event = {
+	id = emf_imperial.3353
+	desc = EVTDESC_emf_imperial_3353
+	picture = GFX_evt_siege
+	border = GFX_event_normal_frame_intrigue
+	
+	is_triggered_only = yes
+	capable_only = yes
+	prisoner = no
+	major = yes
+	
+	major_trigger = {
+		OR = {
+			character = FROM
+			character = event_target:coup_target
+		}
+	}
+	
+	option = {
+		name = CURSES
+		trigger = { character = FROM }
+		tooltip = {
+			reverse_opinion = { who = event_target:coup_target modifier = opinion_traitor years = 5 }
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_imperial_3353
+		trigger = { character = event_target:coup_target }
+		opinion = { who = FROM modifier = opinion_traitor years = 5 }
+	}
+}
+
+# Coup leader is injured/maimed/killed/captured in failed coup
+character_event = {
+	id = emf_imperial.3354
+	desc = EVTDESC_emf_imperial_3354
+	picture = GFX_evt_melee
+	border = GFX_event_normal_frame_intrigue
+	
+	is_triggered_only = yes
+	capable_only = yes
+	prisoner = no
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3354
+		random_list = {
+			10 = {
+				custom_tooltip = {
+					text = CAPTURED_DURING_COUP
+					hidden_tooltip = { set_character_flag = captured_during_coup }
+				}
+			}
+			20 = {
+				modifier = {
+					factor = 0
+					OR = {
+						trait = wounded
+						trait = maimed
+					}
+				}
+				custom_tooltip = {
+					text = WOUNDED_MAYBE_CAPTURED
+					hidden_tooltip = {
+						add_trait = wounded
+						random = {
+							chance = 25
+							set_character_flag = captured_during_coup
+						}
+					}
+				}
+			}
+			10 = {
+				modifier = {
+					factor = 0
+					trait = maimed
+				}
+				custom_tooltip = {
+					text = MAIMED_MAYBE_CAPTURED
+					hidden_tooltip = {
+						add_trait = maimed
+						random = {
+							chance = 50
+							set_character_flag = captured_during_coup
+						}
+					}
+				}
+			}
+			5 = {
+				set_character_flag = killed_during_coup
+				custom_tooltip = { text = DIES_DURING_COUP }
+			}
+		}
+	}
+}
+
+# Ruler is injured/maimed/killed in failed coup
+character_event = {
+	id = emf_imperial.3355
+	desc = EVTDESC_emf_imperial_3355
+	picture = GFX_evt_melee
+	border = GFX_event_normal_frame_intrigue
+	
+	is_triggered_only = yes
+	hide_from = yes
+	
+	capable_only = yes
+	prisoner = no
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3355
+		random_list = {
+			40 = {
+				modifier = {
+					factor = 0
+					OR = {
+						trait = wounded
+						trait = maimed
+					}
+				}
+				add_trait = wounded
+			}
+			10 = {
+				modifier = {
+					factor = 0
+					trait = maimed
+				}
+				add_trait = maimed
+			}
+			5 = {
+				set_character_flag = killed_during_coup
+				custom_tooltip = { text = DIES_DURING_COUP }
+			}
+		}
+	}
+}
+
+# Ruler is not in the capital during failed coup
+character_event = {
+	id = emf_imperial.3356
+	desc = EVTDESC_emf_imperial_3356
+	picture = GFX_evt_siege
+	border = GFX_event_normal_frame_intrigue
+	
+	is_triggered_only = yes
+	hide_from = yes
+	
+	capable_only = yes
+	prisoner = no
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3356
+		set_character_flag = coup_not_in_capital
+	}
+}
+
+# Coup leader is injured/maimed in successful coup
+character_event = {
+	id = emf_imperial.3357
+	desc = EVTDESC_emf_imperial_3357
+	picture = GFX_evt_melee
+	border = GFX_event_normal_frame_intrigue
+	
+	is_triggered_only = yes
+	capable_only = yes
+	prisoner = no
+	
+	trigger = {
+		NOT = { trait = maimed }
+	}
+	
+	option = {
+		name = CURSES
+		random_list = {
+			20 = {
+				modifier = {
+					factor = 0
+					OR = {
+						trait = wounded
+						trait = maimed
+					}
+				}
+				add_trait = wounded
+			}
+			5 = {
+				modifier = {
+					factor = 0
+					trait = maimed
+				}
+				add_trait = maimed
+			}
+		}
+	}
+}
+
+# Ruler is not in the capital during successful coup
+character_event = {
+	id = emf_imperial.3358
+	desc = EVTDESC_emf_imperial_3358
+	picture = GFX_evt_siege
+	border = GFX_event_normal_frame_intrigue
+	
+	is_triggered_only = yes
+	hide_from = yes
+	
+	capable_only = yes
+	prisoner = no
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3358
+		set_character_flag = coup_not_in_capital
+	}
+}
+
+# Ruler is injured/maimed/killed/captured in successful coup
+character_event = {
+	id = emf_imperial.3359
+	desc = EVTDESC_emf_imperial_3359
+	picture = GFX_evt_melee
+	border = GFX_event_normal_frame_intrigue
+	
+	is_triggered_only = yes
+	hide_from = yes
+	
+	capable_only = yes
+	prisoner = no
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3359
+		random_list = {
+			10 = {
+				custom_tooltip = {
+					text = CAPTURED_DURING_COUP
+					hidden_tooltip = { set_character_flag = captured_during_coup }
+				}
+			}
+			20 = {
+				modifier = {
+					factor = 0
+					OR = {
+						trait = wounded
+						trait = maimed
+					}
+				}
+				custom_tooltip = {
+					text = WOUNDED_MAYBE_CAPTURED
+					hidden_tooltip = {
+						add_trait = wounded
+						random = {
+							chance = 25
+							set_character_flag = captured_during_coup
+						}
+					}
+				}
+			}
+			10 = {
+				modifier = {
+					factor = 0
+					trait = maimed
+				}
+				custom_tooltip = {
+					text = MAIMED_MAYBE_CAPTURED
+					hidden_tooltip = {
+						add_trait = maimed
+						random = {
+							chance = 50
+							set_character_flag = captured_during_coup
+						}
+					}
+				}
+			}
+			5 = {
+				set_character_flag = killed_during_coup
+				custom_tooltip = { text = DIES_DURING_COUP }
+			}
+		}
+	}
+}
+
+# News of failed coup
+narrative_event = {
+	id = emf_imperial.3360
+	title = EVTNAME_emf_imperial_3360
+	picture = GFX_evt_siege
+	border = GFX_event_narrative_frame_intrigue
+	
+	desc = {
+		text = EVTDESC_emf_imperial_3360_1
+		trigger = {
+			event_target:coup_target = { has_character_flag = coup_not_in_capital }
+			ROOT = { NOT = { has_character_flag = captured_during_coup } }
+			ROOT = { NOT = { has_character_flag = killed_during_coup } }
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3360_2
+		trigger = {
+			event_target:coup_target = { has_character_flag = coup_not_in_capital }
+			ROOT = { has_character_flag = captured_during_coup }
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3360_3
+		trigger = {
+			event_target:coup_target = { has_character_flag = coup_not_in_capital }
+			ROOT = { has_character_flag = killed_during_coup }
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3360_4
+		trigger = {
+			event_target:coup_target = { NOT = { has_character_flag = coup_not_in_capital } }
+			event_target:coup_target = { NOT = { has_character_flag = captured_during_coup } }
+			event_target:coup_target = { NOT = { has_character_flag = killed_during_coup } }
+			ROOT = { NOT = { has_character_flag = captured_during_coup } }
+			ROOT = { NOT = { has_character_flag = killed_during_coup } }
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3360_5
+		trigger = {
+			event_target:coup_target = { NOT = { has_character_flag = coup_not_in_capital } }
+			event_target:coup_target = { has_character_flag = killed_during_coup }
+			ROOT = { NOT = { has_character_flag = captured_during_coup } }
+			ROOT = { NOT = { has_character_flag = killed_during_coup } }
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3360_6
+		trigger = {
+			event_target:coup_target = { NOT = { has_character_flag = coup_not_in_capital } }
+			event_target:coup_target = { NOT = { has_character_flag = captured_during_coup } }
+			event_target:coup_target = { NOT = { has_character_flag = killed_during_coup } }
+			ROOT = { has_character_flag = captured_during_coup }
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3360_7
+		trigger = {
+			event_target:coup_target = { NOT = { has_character_flag = coup_not_in_capital } }
+			event_target:coup_target = { has_character_flag = killed_during_coup }
+			ROOT = { has_character_flag = captured_during_coup }
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3360_8
+		trigger = {
+			event_target:coup_target = { NOT = { has_character_flag = coup_not_in_capital } }
+			event_target:coup_target = { NOT = { has_character_flag = captured_during_coup } }
+			event_target:coup_target = { NOT = { has_character_flag = killed_during_coup } }
+			ROOT = { has_character_flag = killed_during_coup }
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3360_9
+		trigger = {
+			event_target:coup_target = { NOT = { has_character_flag = coup_not_in_capital } }
+			event_target:coup_target = { has_character_flag = killed_during_coup }
+			ROOT = { has_character_flag = killed_during_coup }
+		}
+	}
+	
+	is_triggered_only = yes
+	capable_only = yes
+	prisoner = no
+	major = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			character = event_target:coup_target
+			same_realm = event_target:coup_target
+		}
+	}
+	
+	option = {
+		name = CURSES # Coup Leader
+		trigger = { character = ROOT }
+		prestige = -200
+		if = {
+			limit = { has_character_flag = captured_during_coup }
+			imprison = event_target:coup_target
+		}
+		hidden_tooltip = {
+			diplomatic_immunity = no
+			any_plot_backer = { diplomatic_immunity = no }
+			if = {
+				limit = { event_target:coup_target = { has_character_flag = killed_during_coup } }
+				event_target:coup_target = {
+					save_event_target_as = target_victim
+					current_heir = {
+						if = {
+							limit = { NOT = { character = ROOT } }
+							opinion = { who = ROOT modifier = opinion_traitor years = 10 }
+						}
+					}
+					death = {
+						death_reason = death_murder
+						killer = ROOT
+					}
+				}
+				character_event = { id = 10 } # Consequences of discovery
+				clear_event_target = target_victim
+			}
+		}
+		if = {
+			limit = { has_character_flag = killed_during_coup }
+			death = { death_reason = death_battle }
+		}
+		set_character_flag = abort_plot
+	}
+	option = {
+		name = EVTOPTB_emf_imperial_3360 # Ruler
+		trigger = { character = event_target:coup_target }
+		prestige = 200
+		opinion = { who = ROOT modifier = opinion_traitor years = 10 }
+		if = {
+			limit = { has_character_flag = killed_during_coup }
+			tooltip = { death = { death_reason = death_battle } }
+		}
+	}
+	option = {
+		name = I_SEE # Everyone else
+		trigger = {
+			NOR = {
+				character = ROOT
+				character = event_target:coup_target
+			}
+		}
+	}
+}
+
+# News of successful coup
+narrative_event = {
+	id = emf_imperial.3361
+	title = EVTNAME_emf_imperial_3361
+	picture = GFX_evt_siege
+	border = GFX_event_narrative_frame_intrigue
+	
+	desc = {
+		text = EVTDESC_emf_imperial_3361_1
+		trigger = {
+			event_target:coup_target = { has_character_flag = coup_not_in_capital }
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3361_2
+		trigger = {
+			event_target:coup_target = { NOT = { has_character_flag = coup_not_in_capital } }
+			event_target:coup_target = { NOT = { has_character_flag = captured_during_coup } }
+			event_target:coup_target = { NOT = { has_character_flag = killed_during_coup } }
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3361_3
+		trigger = {
+			event_target:coup_target = { NOT = { has_character_flag = coup_not_in_capital } }
+			event_target:coup_target = { has_character_flag = captured_during_coup }
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_3361_4
+		trigger = {
+			event_target:coup_target = { NOT = { has_character_flag = coup_not_in_capital } }
+			event_target:coup_target = { has_character_flag = killed_during_coup }
+		}
+	}
+	
+	is_triggered_only = yes
+	capable_only = yes
+	prisoner = no
+	major = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			character = event_target:coup_target
+			same_realm = event_target:coup_target
+		}
+	}
+	
+	option = {
+		name = EXCELLENT # Coup Leader
+		trigger = { character = ROOT }
+		prestige = 200
+		event_target:usurped_title = {
+			tooltip = {
+				usurp_title_plus_barony_if_unlanded = { target = ROOT type = claim }
+			}
+		}
+		hidden_tooltip = {
+			diplomatic_immunity = no
+			any_plot_backer = { diplomatic_immunity = no }
+			if = {
+				limit = { event_target:coup_target = { has_character_flag = captured_during_coup } }
+				event_target:coup_target = {
+					imprison = ROOT
+				}
+			}
+		}
+		set_character_flag = plot_success
+	}
+	option = {
+		name = EVTOPTB_emf_imperial_3360 # Ruler
+		trigger = { character = event_target:coup_target }
+		event_target:usurped_title = {
+			tooltip = {
+				usurp_title_plus_barony_if_unlanded = { target = ROOT type = claim }
+			}
+		}
+		prestige = -500
+		opinion = { who = ROOT modifier = opinion_traitor years = 10 }
+		if = {
+			limit = { has_character_flag = captured_during_coup }
+			tooltip = { imprison = ROOT }
+		}
+		if = {
+			limit = { has_character_flag = killed_during_coup }
+			tooltip = { death = { death_reason = death_battle } }
+		}
+	}
+	option = {
+		name = I_SEE # Everyone else
+		trigger = {
+			NOR = {
+				character = ROOT
+				character = event_target:coup_target
+			}
+		}
+	}
+}
+
+# Usurpation event
+character_event = {
+	id = emf_imperial.3362
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	immediate = {		
+		event_target:usurped_title = {
+			# the claimant has the wrong government type, take care of that first.
+			if = {
+				limit = {
+					higher_tier_than = ROOT
+					holder_scope = {
+						OR = {
+							is_feudal = yes
+							is_tribal = yes
+						}
+					}
+					ROOT = {
+						is_ruler = yes
+						OR = {
+							is_theocracy = yes
+							is_republic = yes
+						}
+					}
+				}
+				ROOT = { abdicate = yes }
+			}
+			
+			event_target:coup_target = {
+				# reduce CA & TO
+				pf_lower_CA_effect = yes # lower Crown Authority
+				pf_lower_TO_effect = yes # lower Tribal Organization
+				
+				# usurp primary title
+				primary_title = {
+					usurp_title_plus_barony_if_unlanded = { target = ROOT type = claim }
+					hidden_tooltip = { make_primary_title = yes }
+				}
+				
+				# ruler stays within the realm
+				set_defacto_liege = ROOT
+			}
+
+			# check to see if the ruler needs to give the claimant a capital
+			hidden_tooltip = {
+				if = {
+					limit = {
+						event_target:coup_target = {
+							ROOT = { 
+								primary_title = { 
+									NOT = { has_law = succ_feudal_elective } 
+									event_target:coup_target = {
+										capital_scope = {
+											de_jure_liege_or_above = PREVPREV
+										}
+									}
+								} 
+							}
+							OR = {
+								num_of_count_titles = 2
+								primary_title = { higher_tier_than = COUNT }
+							}
+						}
+					}
+					event_target:coup_target = {
+						capital_scope = {
+							county = {
+								usurp_title_plus_barony_if_unlanded = { target = ROOT type = claim }
+							}
+						}
+					}			
+				}	
+			}
+
+			# set proper liege statuses
+			hidden_tooltip = {
+				event_target:coup_target = {
+					set_defacto_liege = ROOT 
+					any_vassal = {
+						limit = { NOT = { primary_title = { de_jure_liege_or_above = PREVPREV } } }
+						set_defacto_liege = ROOT 
+					}
+				}
+			}
+			
+			ROOT = { emf_dynlevy_update_effect = yes }
+			emf_cb_dynlevy_end_effect = yes
+		}		
+
+		# Actual death of the former ruler must follow the usurpation
+		if = {
+			limit = { event_target:coup_target = { has_character_flag = killed_during_coup } }
+			event_target:coup_target = {
+				save_event_target_as = target_victim
+				current_heir = {
+					if = {
+						limit = { NOT = { character = ROOT } }
+						opinion = { who = ROOT modifier = opinion_traitor years = 10 }
+					}
+				}
+				death = {
+					death_reason = death_murder
+					killer = ROOT
+				}
+			}
+			character_event = { id = 10 } # Consequences of discovery
+			clear_event_target = target_victim
+		}
+	}
+}
+
+### IMPERIAL COURT EVENTS
+
+# Courtier gets a court trait
+character_event = {
+	id = emf_imperial.3365
+	
+	hide_window = yes
+	
+	min_age = 20
+	capable_only = yes
+	prisoner = no
+	ai = yes
+	
+	trigger = {
+		is_ruler = no
+		liege = {
+			real_tier = EMPEROR
+			is_feudal = yes
+			religion = ROOT
+		}
+		OR = {
+			is_female = no
+			liege = {
+				primary_title = {
+					has_law = status_of_women_4
+				}
+			}
+			AND = {
+				can_be_chancellor_trigger = yes
+				OR = {
+					trait = underhanded_rogue
+					trait = charismatic_negotiator
+					trait = grey_eminence
+				}
+			}
+			AND = {
+				can_be_marshal_trigger = yes
+				OR = {
+					trait = tough_soldier
+					trait = skilled_tactician
+					trait = brilliant_strategist
+				}
+			}
+			AND = {
+				can_be_treasurer_trigger = yes
+				OR = {
+					trait = thrifty_clerk
+					trait = fortune_builder
+					trait = midas_touched
+				}
+			}
+			AND = {
+				can_be_spymaster_trigger = yes
+				OR = {
+					trait = flamboyant_schemer
+					trait = intricate_webweaver
+					trait = elusive_shadow
+					
+				}
+			}
+		}
+		NOR = {
+			is_dumb_trigger = yes
+			trait = amateurish_plotter
+			trait = naive_appeaser
+			trait = indulgent_wastrel
+			trait = misguided_warrior
+			trait = detached_priest
+			trait = imperial_bureaucrat
+			trait = imperial_courtier
+			trait = imperial_guard
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 40
+		modifier = {
+			factor = 0.25
+			has_character_flag = serving_empire
+		}
+		modifier = {
+			factor = 0.5
+			OR = {
+				is_councillor = yes
+				has_minor_title = title_commander
+				liege = { emf_imperial_has_imperial_gov_trigger = yes }
+			}
+		}
+		modifier = {
+			factor = 0.5
+			trait = genius
+		}
+		modifier = {
+			factor = 0.75
+			OR = {
+				trait = quick
+				trait = shrewd
+			}
+		}
+		modifier = {
+			factor = 0.75
+			trait = diligent
+		}
+		modifier = {
+			factor = 1.5
+			trait = slothful
+		}
+		modifier = {
+			factor = 1.5
+			OR = {
+				trait = flamboyant_schemer
+				trait = underhanded_rogue
+				trait = thrifty_clerk
+				trait = tough_soldier
+				trait = martial_cleric
+			}
+		}
+		modifier = {
+			factor = 0.5
+			OR = {
+				trait = elusive_shadow
+				trait = grey_eminence
+				trait = midas_touched
+				trait = brilliant_strategist
+				trait = mastermind_theologian
+			}
+		}
+	}
+	
+	immediate = {
+		if = {
+			limit = {
+				can_be_marshal_trigger = yes
+				OR = {
+					trait = tough_soldier
+					trait = skilled_tactician
+					trait = brilliant_strategist
+				}
+			}
+			add_trait = imperial_guard
+			set_character_flag = is_imperial_guard
+			break = yes
+		}
+		if = {
+			limit = {
+				OR = {
+					trait = thrifty_clerk
+					trait = fortune_builder
+					trait = midas_touched
+					trait = martial_cleric
+					trait = scholarly_theologian
+					trait = mastermind_theologian
+				}
+			}
+			add_trait = imperial_bureaucrat
+			set_character_flag = is_imperial_bureaucrat
+			break = yes
+		}
+		add_trait = imperial_courtier
+		set_character_flag = is_imperial_courtier
+	}
+}
+
+# Imperial Bureaucrat seeks employment in the empire
+character_event = {
+	id = emf_imperial.3366
+	
+	hide_window = yes
+	
+	min_age = 20
+	capable_only = yes
+	prisoner = no
+	ai = yes
+	has_character_flag = is_imperial_bureaucrat
+	
+	trigger = {
+		is_ruler = no
+		is_voter = no
+		health = 4
+		stewardship = 8
+		can_be_treasurer_trigger = yes
+		liege = {
+			real_tier = EMPEROR
+			is_feudal = yes
+			NOT = { dynasty = ROOT }
+			war = no
+			any_courtier = {
+				prisoner = no
+				is_ruler = no
+				count = 30
+			}
+		}
+		NOR = {
+			is_ill = yes
+			trait = stressed
+			trait = depressed
+			has_minor_title = title_appointed_regent
+			has_minor_title = title_commander
+			has_character_flag = serving_empire
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 60
+	}
+	
+	immediate = {
+		liege = {
+			random_realm_lord = {
+				limit = {
+					higher_real_tier_than = COUNT
+					religion = ROOT
+					culture = ROOT
+					has_regent = no
+					reverse_opinion = { who = ROOT value = 0 }
+					NOT = { reverse_has_opinion_modifier = { who = ROOT modifier = opinion_disappointed } }
+					OR = {
+						NOT = { any_courtier = { has_job_title = job_treasurer } }
+						job_treasurer = {
+							NOT = { stewardship = ROOT }
+							NOT = { among_most_powerful_vassals = 4 }
+						}
+					}
+				}
+				if = {
+					limit = { ai = yes }
+					ROOT = {
+						move_character = PREV
+						clr_character_flag = is_imperial_bureaucrat
+					}
+					break = yes
+				}
+				if = {
+					limit = { ai = no }
+					letter_event = { id = emf_imperial.3369 }
+					break = yes
+				}
+			}
+			random_realm_lord = {
+				limit = {
+					higher_real_tier_than = COUNT
+					religion = ROOT
+					has_regent = no
+					reverse_opinion = { who = ROOT value = 0 }
+					NOT = { reverse_has_opinion_modifier = { who = ROOT modifier = opinion_disappointed } }
+					OR = {
+						NOT = { any_courtier = { has_job_title = job_treasurer } }
+						job_treasurer = {
+							NOT = { stewardship = ROOT }
+							NOT = { among_most_powerful_vassals = 4 }
+						}
+					}
+				}
+				if = {
+					limit = { ai = yes }
+					ROOT = {
+						move_character = PREV
+						clr_character_flag = is_imperial_bureaucrat
+					}
+					break = yes
+				}
+				if = {
+					limit = { ai = no }
+					letter_event = { id = emf_imperial.3369 }
+					break = yes
+				}
+			}
+		}
+	}
+}
+
+# Imperial Courtier seeks employment in the empire
+character_event = {
+	id = emf_imperial.3367
+	
+	hide_window = yes
+	
+	min_age = 20
+	capable_only = yes
+	prisoner = no
+	ai = yes
+	has_character_flag = is_imperial_courtier
+	
+	trigger = {
+		is_ruler = no
+		is_voter = no
+		health = 4
+		OR = {
+			diplomacy = 8
+			intrigue = 8
+		}
+		OR = {
+			can_be_chancellor_trigger = yes
+			can_be_spymaster_trigger = yes
+		}
+		liege = {
+			real_tier = EMPEROR
+			is_feudal = yes
+			NOT = { dynasty = ROOT }
+			war = no
+			any_courtier = {
+				prisoner = no
+				is_ruler = no
+				count = 30
+			}
+		}
+		NOR = {
+			is_ill = yes
+			trait = stressed
+			trait = depressed
+			has_minor_title = title_appointed_regent
+			has_minor_title = title_commander
+			has_character_flag = serving_empire
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 60
+	}
+	
+	immediate = {
+		if = {
+			limit = { can_be_spymaster_trigger = yes }
+			liege = {
+				random_realm_lord = {
+					limit = {
+						higher_real_tier_than = COUNT
+						religion = ROOT
+						culture = ROOT
+						has_regent = no
+						reverse_opinion = { who = ROOT value = 0 }
+						NOT = { reverse_has_opinion_modifier = { who = ROOT modifier = opinion_disappointed } }
+						OR = {
+							NOT = { any_courtier = { has_job_title = job_spymaster } }
+							job_spymaster = {
+								NOT = { intrigue = ROOT }
+								NOT = { among_most_powerful_vassals = 4 }
+							}
+						}
+					}
+					if = {
+						limit = { ai = yes }
+						ROOT = {
+							move_character = PREV
+							clr_character_flag = is_imperial_courtier
+						}
+						break = yes
+					}
+					if = {
+						limit = { ai = no }
+						letter_event = { id = emf_imperial.3369 }
+						break = yes
+					}
+				}
+				random_realm_lord = {
+					limit = {
+						higher_real_tier_than = COUNT
+						religion = ROOT
+						has_regent = no
+						reverse_opinion = { who = ROOT value = 0 }
+						NOT = { reverse_has_opinion_modifier = { who = ROOT modifier = opinion_disappointed } }
+						OR = {
+							NOT = { any_courtier = { has_job_title = job_spymaster } }
+							job_spymaster = {
+								NOT = { intrigue = ROOT }
+								NOT = { among_most_powerful_vassals = 4 }
+							}
+						}
+					}
+					if = {
+						limit = { ai = yes }
+						ROOT = {
+							move_character = PREV
+							clr_character_flag = is_imperial_courtier
+						}
+						break = yes
+					}
+					if = {
+						limit = { ai = no }
+						letter_event = { id = emf_imperial.3369 }
+						break = yes
+					}
+				}
+			}
+		}
+		if = {
+			limit = { can_be_chancellor_trigger = yes }
+			liege = {
+				random_realm_lord = {
+					limit = {
+						higher_real_tier_than = COUNT
+						religion = ROOT
+						culture = ROOT
+						has_regent = no
+						reverse_opinion = { who = ROOT value = 0 }
+						OR = {
+							NOT = { any_courtier = { has_job_title = job_chancellor } }
+							job_chancellor = {
+								NOT = { diplomacy = ROOT }
+								NOT = { among_most_powerful_vassals = 4 }
+							}
+						}
+					}
+					if = {
+						limit = { ai = yes }
+						ROOT = {
+							move_character = PREV
+							clr_character_flag = is_imperial_courtier
+						}
+						break = yes
+					}
+					if = {
+						limit = { ai = no }
+						letter_event = { id = emf_imperial.3369 }
+						break = yes
+					}
+				}
+				random_realm_lord = {
+					limit = {
+						higher_real_tier_than = COUNT
+						religion = ROOT
+						has_regent = no
+						reverse_opinion = { who = ROOT value = 0 }
+						OR = {
+							NOT = { any_courtier = { has_job_title = job_chancellor } }
+							job_chancellor = {
+								NOT = { diplomacy = ROOT }
+								NOT = { among_most_powerful_vassals = 4 }
+							}
+						}
+					}
+					if = {
+						limit = { ai = yes }
+						ROOT = {
+							move_character = PREV
+							clr_character_flag = is_imperial_courtier
+						}
+						break = yes
+					}
+					if = {
+						limit = { ai = no }
+						letter_event = { id = emf_imperial.3369 }
+						break = yes
+					}
+				}
+			}
+		}
+	}
+}
+
+# Imperial Guard seeks employment in the empire
+character_event = {
+	id = emf_imperial.3368
+	
+	hide_window = yes
+	
+	min_age = 20
+	capable_only = yes
+	prisoner = no
+	ai = yes
+	has_character_flag = is_imperial_guard
+	
+	trigger = {
+		is_ruler = no
+		is_voter = no
+		health = 4
+		martial = 8
+		can_be_marshal_trigger = yes
+		liege = {
+			real_tier = EMPEROR
+			is_feudal = yes
+			NOT = { dynasty = ROOT }
+			war = no
+			any_courtier = {
+				prisoner = no
+				is_ruler = no
+				count = 30
+			}
+		}
+		NOR = {
+			is_ill = yes
+			trait = stressed
+			trait = depressed
+			has_minor_title = title_appointed_regent
+			has_minor_title = title_commander
+			has_character_flag = serving_empire
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 60
+	}
+	
+	immediate = {
+		liege = {
+			random_realm_lord = {
+				limit = {
+					higher_real_tier_than = COUNT
+					religion = ROOT
+					culture = ROOT
+					has_regent = no
+					reverse_opinion = { who = ROOT value = 0 }
+					NOT = { reverse_has_opinion_modifier = { who = ROOT modifier = opinion_disappointed } }
+					OR = {
+						NOT = { any_courtier = { has_job_title = job_marshal } }
+						job_marshal = {
+							NOT = { martial = ROOT }
+							NOT = { among_most_powerful_vassals = 4 }
+						}
+					}
+				}
+				if = {
+					limit = { ai = yes }
+					ROOT = {
+						move_character = PREV
+						clr_character_flag = is_imperial_guard
+					}
+					break = yes
+				}
+				if = {
+					limit = { ai = no }
+					letter_event = { id = emf_imperial.3369 }
+					break = yes
+				}
+			}
+			random_realm_lord = {
+				limit = {
+					higher_real_tier_than = COUNT
+					religion = ROOT
+					has_regent = no
+					reverse_opinion = { who = ROOT value = 0 }
+					NOT = { reverse_has_opinion_modifier = { who = ROOT modifier = opinion_disappointed } }
+					OR = {
+						NOT = { any_courtier = { has_job_title = job_marshal } }
+						job_marshal = {
+							NOT = { martial = ROOT }
+							NOT = { among_most_powerful_vassals = 4 }
+						}
+					}
+				}
+				if = {
+					limit = { ai = yes }
+					ROOT = {
+						move_character = PREV
+						clr_character_flag = is_imperial_guard
+					}
+					break = yes
+				}
+				if = {
+					limit = { ai = no }
+					letter_event = { id = emf_imperial.3369 }
+					break = yes
+				}
+			}
+		}
+	}
+}
+
+# Letter of introduction to the new liege
+letter_event = {
+	id = emf_imperial.3369
+	desc = EVTDESC_emf_imperial_3369
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3369 # You are welcome
+		FROM = {
+			move_character = ROOT
+			clr_character_flag = is_imperial_bureaucrat
+			clr_character_flag = is_imperial_courtier
+			clr_character_flag = is_imperial_guard
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_imperial_3369 # Refuse
+		reverse_opinion = { who = FROM modifier = opinion_disappointed }
+	}
+}
+
+# Bureaucrat proposes revisions to tax laws
+character_event = {
+	id = emf_imperial.3376
+	desc = EVTDESC_emf_imperial_3376
+	picture = GFX_evt_imperial_court
+	
+	only_independent = yes
+	capable_only = yes
+	prisoner = no
+	min_age = 16
+	
+	trigger = {
+		tier = EMPEROR
+		is_tribal = no
+		is_nomadic = no
+		war = no
+		primary_title = {
+			OR = {
+				NOT = { has_title_flag = imperial_court_event }
+				had_title_flag = { flag = imperial_court_event days = 1825 }
+			}
+		}
+		any_courtier = {
+			trait = imperial_bureaucrat
+			is_ruler = no
+			is_councillor = no
+			prisoner = no
+			NOT = { trait = incapable }
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 200
+	}
+	
+	immediate = {
+		primary_title = { set_title_flag = imperial_court_event }
+		random_courtier = {
+			limit = {
+				trait = imperial_bureaucrat
+				is_ruler = no
+				is_councillor = no
+				prisoner = no
+				NOT = { trait = incapable }
+			}
+			save_event_target_as = bureaucrat
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3375 # Do it
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 2
+				event_target:bureaucrat = { stewardship = 12 }
+			}
+		}
+		event_target:bureaucrat = {
+			opinion = { who = ROOT modifier = opinion_approves multiplier = 4 years = 5 }
+		}
+		random_list = {
+			15 = {
+				modifier = {
+					factor = 1.1
+					event_target:bureaucrat = { stewardship = 10 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:bureaucrat = { stewardship = 12 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:bureaucrat = { stewardship = 14 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:bureaucrat = { stewardship = 16 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:bureaucrat = { stewardship = 18 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:bureaucrat = { stewardship = 20 }
+				}
+				modifier = {
+					factor = 0.9
+					event_target:bureaucrat = { NOT = { stewardship = 8 } }
+				}
+				modifier = {
+					factor = 0.9
+					event_target:bureaucrat = { NOT = { stewardship = 6 } }
+				}
+				modifier = {
+					factor = 0.9
+					event_target:bureaucrat = { NOT = { stewardship = 4 } }
+				}
+				modifier = {
+					factor = 0.9
+					event_target:bureaucrat = { NOT = { stewardship = 2 } }
+				}
+				add_character_modifier = {
+					name = bureaucratic_reform_2
+					duration = 900
+				}
+			}
+			30 = {
+				modifier = {
+					factor = 1.1
+					event_target:bureaucrat = { stewardship = 10 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:bureaucrat = { stewardship = 12 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:bureaucrat = { stewardship = 14 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:bureaucrat = { stewardship = 16 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:bureaucrat = { stewardship = 18 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:bureaucrat = { stewardship = 20 }
+				}
+				modifier = {
+					factor = 0.9
+					event_target:bureaucrat = { NOT = { stewardship = 8 } }
+				}
+				modifier = {
+					factor = 0.9
+					event_target:bureaucrat = { NOT = { stewardship = 6 } }
+				}
+				modifier = {
+					factor = 0.9
+					event_target:bureaucrat = { NOT = { stewardship = 4 } }
+				}
+				modifier = {
+					factor = 0.9
+					event_target:bureaucrat = { NOT = { stewardship = 2 } }
+				}
+				add_character_modifier = {
+					name = bureaucratic_reform_1
+					duration = 900
+				}
+			}
+			15 = {
+				add_character_modifier = {
+					name = bureaucratic_chaos
+					duration = 365
+				}
+			}
+			5 = {
+				emf_imperial_add_decadence_2 = yes
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_imperial_3375 # Not now
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 2
+				event_target:bureaucrat = { NOT = { stewardship = 8 } }
+			}
+		}
+		add_character_modifier = {
+			name = bureaucratic_anger
+			duration = 365
+		}
+		any_courtier = {
+			limit = {
+				trait = imperial_bureaucrat
+				prisoner = no
+				NOT = { trait = incapable }
+			}
+			opinion = { who = ROOT modifier = opinion_disapprove years = 3 }
+		}
+	}
+}	
+
+# Imperial coffers shrink
+character_event = {
+	id = emf_imperial.3377
+	desc = EVTDESC_emf_imperial_3377
+	picture = GFX_evt_imperial_court
+	
+	only_independent = yes
+	capable_only = yes
+	prisoner = no
+	min_age = 16
+	
+	trigger = {
+		tier = EMPEROR
+		is_tribal = no
+		is_nomadic = no
+		wealth = 100
+		primary_title = {
+			OR = {
+				NOT = { has_title_flag = imperial_court_event }
+				had_title_flag = { flag = imperial_court_event days = 1825 }
+			}
+		}
+		any_courtier = {
+			trait = imperial_bureaucrat
+			is_ruler = no
+			is_councillor = no
+			prisoner = no
+			NOT = { trait = incapable }
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 200
+		modifier = {
+			factor = 1.5
+			war = yes
+		}
+	}
+	
+	immediate = {
+		primary_title = { set_title_flag = imperial_court_event }
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3377
+		scaled_wealth = { value = -0.5 min = -100 }
+		hidden_tooltip = {
+			any_courtier = {
+				limit = {
+					trait = imperial_bureaucrat
+					is_ruler = no
+					is_councillor = no
+					prisoner = no
+					NOT = { trait = incapable }
+				}
+				if = {
+					limit = { trait = deceitful }
+					wealth = 25
+				}
+				if = {
+					limit = {
+						NOT = { trait = honest }
+						NOT = { trait = deceitful }
+					}
+					wealth = 10
+					random = {
+						chance = 50
+						add_trait = deceitful
+					}
+				}
+				if = {
+					limit = { trait = honest }
+					random = {
+						chance = 50
+						remove_trait = honest
+					}
+				}
+			}
+		}
+	}
+}
+
+# Too many imperial bureaucrats!
+character_event = {
+	id = emf_imperial.3378
+	desc = EVTDESC_emf_imperial_3378
+	picture = GFX_evt_imperial_court
+	
+	only_independent = yes
+	capable_only = yes
+	prisoner = no
+	min_age = 16
+	
+	trigger = {
+		tier = EMPEROR
+		is_tribal = no
+		is_nomadic = no
+		NOT = { trait = imperial_bureaucrat }
+		primary_title = {
+			OR = {
+				NOT = { has_title_flag = imperial_court_event }
+				had_title_flag = { flag = imperial_court_event days = 1825 }
+			}
+		}
+		any_courtier = {
+			count = 3
+			trait = imperial_bureaucrat
+			is_ruler = no
+			is_councillor = no
+			prisoner = no
+			NOT = { trait = incapable }
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 200
+		modifier = {
+			factor = 1.5
+			war = yes
+		}
+	}
+	
+	immediate = {
+		primary_title = { set_title_flag = imperial_court_event }
+	}
+	
+	option = {
+		name = CURSES
+		emf_imperial_add_decadence_2 = yes
+	}
+}
+
+# Imperial courtier offers to help emperor with problem vassal
+character_event = {
+	id = emf_imperial.3379
+	desc = EVTDESC_emf_imperial_3379
+	picture = GFX_evt_imperial_court
+	
+	only_independent = yes
+	capable_only = yes
+	prisoner = no
+	min_age = 16
+	
+	trigger = {
+		tier = EMPEROR
+		is_tribal = no
+		is_nomadic = no
+		war = no
+		primary_title = {
+			OR = {
+				NOT = { has_title_flag = imperial_court_event }
+				had_title_flag = { flag = imperial_court_event days = 1825 }
+			}
+		}
+		any_courtier = {
+			trait = imperial_courtier
+			is_ruler = no
+			is_councillor = no
+			prisoner = no
+			religion = ROOT
+			opinion = { who = ROOT value = 0 }
+			NOT = { trait = incapable }
+		}
+		any_vassal = {
+			ai = yes
+			is_playable = yes
+			religion = ROOT
+			NOR = {
+				has_opinion_modifier = { who = ROOT modifier = opinion_coerced_into_leaving_faction }
+				opinion = { who = ROOT value = -25 }
+			}
+			OR = {
+				in_faction = faction_court
+				in_faction = faction_prosperity
+				in_faction = faction_glory
+				in_faction = faction_tradition
+			}
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 200
+	}
+	
+	immediate = {
+		primary_title = { set_title_flag = imperial_court_event }
+		random_courtier = {
+			limit = {
+				trait = imperial_courtier
+				is_ruler = no
+				is_councillor = no
+				prisoner = no
+				religion = ROOT
+				opinion = { who = ROOT value = 0 }
+				NOT = { trait = incapable }
+			}
+			save_event_target_as = courtier
+		}
+		random_vassal = {
+			limit = {
+				ai = yes
+				is_playable = yes
+				religion = ROOT
+				NOR = {
+					has_opinion_modifier = { who = ROOT modifier = opinion_coerced_into_leaving_faction }
+					opinion = { who = ROOT value = -25 }
+				}
+				OR = {
+					in_faction = faction_court
+					in_faction = faction_prosperity
+					in_faction = faction_glory
+					in_faction = faction_tradition
+				}
+			}
+			save_event_target_as = problem_vassal
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3379 # Do what you can
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 2
+				event_target:courtier = { intrigue = 12 }
+			}
+		}
+		if = {
+			limit = { num_of_friends = 5 }
+			opinion = { who = event_target:courtier modifier = opinion_very_grateful years = 5 }
+			reverse_opinion = { who = event_target:courtier modifier = opinion_very_grateful years = 5 }
+		}
+		if = {
+			limit = { NOT = { num_of_friends = 5 } }
+			add_friend = event_target:courtier
+		}
+		random_list = {
+			25 = {
+				modifier = {
+					factor = 0.9
+					event_target:courtier = { NOT = { intrigue = 8 } }
+				}
+				modifier = {
+					factor = 0.9
+					event_target:courtier = { NOT = { intrigue = 6 } }
+				}
+				modifier = {
+					factor = 0.9
+					event_target:courtier = { NOT = { intrigue = 4 } }
+				}
+				modifier = {
+					factor = 0.9
+					event_target:courtier = { NOT = { intrigue = 2 } }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:courtier = { intrigue = 12 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:courtier = { intrigue = 14 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:courtier = { intrigue = 16 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:courtier = { intrigue = 18 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:courtier = { intrigue = 20 }
+				}
+				event_target:problem_vassal = {
+					opinion = { who = ROOT modifier = opinion_coerced_into_leaving_faction years = 5 }
+				}
+			}
+			10 = {
+				event_target:problem_vassal = {
+					opinion = { who = ROOT modifier = opinion_outraged years = 5 }
+				}
+			}
+			5 = {
+				modifier = {
+					factor = 0
+					OR = {
+						is_rival = event_target:problem_vassal
+						num_of_rivals = 5
+					}
+				}
+				add_rival = event_target:problem_vassal
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_imperial_3379 # I don't need your help
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 2
+				event_target:courtier = { NOT = { intrigue = 8 } }
+			}
+		}
+		random_list = {
+			50 = {
+				reverse_opinion = { who = event_target:courtier modifier = opinion_outraged years = 5 }
+			}
+			25 = {
+				modifier = {
+					factor = 0
+					OR = {
+						is_rival = event_target:courtier
+						num_of_rivals = 5
+					}
+				}
+				add_rival = event_target:courtier
+			}
+			15 = {
+				add_character_modifier = {
+					name = courtier_anger
+					duration = 365
+				}
+			}
+		}
+	}
+}
+
+# Incident during the imperial court
+character_event = {
+	id = emf_imperial.3380
+	desc = EVTDESC_emf_imperial_3380
+	picture = GFX_evt_imperial_court
+	
+	only_independent = yes
+	capable_only = yes
+	prisoner = no
+	min_age = 16
+	
+	trigger = {
+		tier = EMPEROR
+		is_tribal = no
+		is_nomadic = no
+		primary_title = {
+			OR = {
+				NOT = { has_title_flag = imperial_court_event }
+				had_title_flag = { flag = imperial_court_event days = 1825 }
+			}
+		}
+		any_courtier = {
+			count = 2
+			trait = imperial_courtier
+			is_ruler = no
+			is_councillor = no
+			prisoner = no
+			NOT = { trait = incapable }
+			OR = {
+				ROOT = { war = no }
+				in_command = no
+			}
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 200
+		modifier = {
+			factor = 1.5
+			war = yes
+		}
+	}
+	
+	immediate = {
+		primary_title = { set_title_flag = imperial_court_event }
+		random_courtier = {
+			limit = {
+				trait = imperial_courtier
+				is_ruler = no
+				is_councillor = no
+				prisoner = no
+				NOT = { trait = incapable }
+				OR = {
+					ROOT = { war = no }
+					in_command = no
+				}
+			}
+			save_event_target_as = first_courtier
+		}
+		# first look for disliked courtier
+		random_courtier = {
+			limit = {
+				OR = {
+					trait = imperial_courtier
+					trait = imperial_bureaucrat
+					trait = imperial_guard
+				}
+				is_ruler = no
+				is_councillor = no
+				prisoner = no
+				NOR = {
+					trait = incapable
+					character = event_target:first_courtier
+					reverse_opinion = { who = event_target:first_courtier value = -25 }
+				}
+				OR = {
+					ROOT = { war = no }
+					in_command = no
+				}
+			}
+			save_event_target_as = second_courtier
+		}
+		# then anyone will do
+		random_courtier = {
+			limit = {
+				NOT = { event_target:second_courtier = { always = yes } }
+				OR = {
+					trait = imperial_courtier
+					trait = imperial_bureaucrat
+					trait = imperial_guard
+				}
+				is_ruler = no
+				is_councillor = no
+				prisoner = no
+				NOR = {
+					trait = incapable
+					character = event_target:first_courtier
+				}
+				OR = {
+					ROOT = { war = no }
+					in_command = no
+				}
+			}
+			save_event_target_as = second_courtier
+		}
+		if = {
+			limit = { event_target:first_courtier = { is_friend = event_target:second_courtier } }
+			event_target:first_courtier = { remove_friend = event_target:second_courtier }
+		}
+		event_target:first_courtier = { add_rival = event_target:second_courtier }
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3380 # Support first courtier
+		if = {
+			limit = {
+				OR = {
+					num_of_friends = 5
+					is_friend = event_target:first_courtier
+				}
+			}
+			opinion = { who = event_target:first_courtier modifier = opinion_very_grateful years = 5 }
+			reverse_opinion = { who = event_target:first_courtier modifier = opinion_very_grateful years = 5 }
+		}
+		if = {
+			limit = {
+				NOR = {
+					num_of_friends = 5
+					is_friend = event_target:first_courtier
+				}
+			}
+			add_friend = event_target:second_courtier
+		}
+		if = {
+			limit = {
+				OR = {
+					num_of_rivals = 5
+					is_rival = event_target:second_courtier
+				}
+			}
+			reverse_opinion = { who = event_target:second_courtier modifier = opinion_hatred years = 5 }
+		}
+		if = {
+			limit = {
+				NOR = {
+					num_of_rivals = 5
+					is_rival = event_target:second_courtier
+				}
+			}
+			add_rival = event_target:second_courtier
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_imperial_3380 # Support second courtier
+		if = {
+			limit = {
+				OR = {
+					num_of_friends = 5
+					is_friend = event_target:second_courtier
+				}
+			}
+			opinion = { who = event_target:second_courtier modifier = opinion_very_grateful years = 5 }
+			reverse_opinion = { who = event_target:second_courtier modifier = opinion_very_grateful years = 5 }
+		}
+		if = {
+			limit = {
+				NOR = {
+					num_of_friends = 5
+					is_friend = event_target:second_courtier
+				}
+			}
+			add_friend = event_target:second_courtier
+		}
+		if = {
+			limit = {
+				OR = {
+					num_of_rivals = 5
+					is_rival = event_target:first_courtier
+				}
+			}
+			reverse_opinion = { who = event_target:first_courtier modifier = opinion_hatred years = 5 }
+		}
+		if = {
+			limit = {
+				NOR = {
+					num_of_rivals = 5
+					is_rival = event_target:first_courtier
+				}
+			}
+			add_rival = event_target:first_courtier
+		}
+	}
+	option = {
+		name = EVTOPTC_emf_imperial_3380 # Take neither side
+		trigger = {
+			NOT = { diplomacy = 15 }
+		}
+		reverse_opinion = { who = event_target:first_courtier modifier = opinion_furious years = 5 }
+		reverse_opinion = { who = event_target:second_courtier modifier = opinion_furious years = 5 }
+		add_character_modifier = {
+			name = courtier_anger
+			duration = 365
+		}
+	}
+	option = {
+		name = EVTOPTD_emf_imperial_3380 # Help them work it out
+		trigger = {
+			diplomacy = 15
+		}
+		tooltip_info = diplomacy
+		prestige = 50
+		event_target:first_courtier = {
+			remove_rival = event_target:second_courtier
+		}
+	}
+}
+
+# Too many imperial courtiers!
+character_event = {
+	id = emf_imperial.3381
+	desc = EVTDESC_emf_imperial_3381
+	picture = GFX_evt_imperial_court
+	
+	only_independent = yes
+	capable_only = yes
+	prisoner = no
+	min_age = 16
+	
+	trigger = {
+		tier = EMPEROR
+		is_tribal = no
+		is_nomadic = no
+		primary_title = {
+			OR = {
+				NOT = { has_title_flag = imperial_court_event }
+				had_title_flag = { flag = imperial_court_event days = 1825 }
+			}
+		}
+		any_courtier = {
+			count = 3
+			trait = imperial_courtier
+			is_ruler = no
+			is_councillor = no
+			prisoner = no
+			NOT = { trait = incapable }
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 200
+		modifier = {
+			factor = 1.5
+			war = yes
+		}
+	}
+	
+	immediate = {
+		primary_title = { set_title_flag = imperial_court_event }
+	}
+	
+	option = {
+		name = CURSES
+		emf_imperial_add_decadence_2 = yes
+	}
+}
+
+# Imperial guard proposes revisions to military training
+character_event = {
+	id = emf_imperial.3382
+	desc = EVTDESC_emf_imperial_3382
+	picture = GFX_evt_imperial_court
+	
+	only_independent = yes
+	capable_only = yes
+	prisoner = no
+	min_age = 16
+	
+	trigger = {
+		tier = EMPEROR
+		is_tribal = no
+		is_nomadic = no
+		war = no
+		primary_title = {
+			OR = {
+				NOT = { has_title_flag = imperial_court_event }
+				had_title_flag = { flag = imperial_court_event days = 1825 }
+			}
+		}
+		any_courtier = {
+			trait = imperial_guard
+			is_ruler = no
+			is_councillor = no
+			prisoner = no
+			NOT = { trait = incapable }
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 200
+	}
+	
+	immediate = {
+		primary_title = { set_title_flag = imperial_court_event }
+		random_courtier = {
+			limit = {
+				trait = imperial_guard
+				is_ruler = no
+				is_councillor = no
+				prisoner = no
+				NOT = { trait = incapable }
+			}
+			save_event_target_as = guard
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3375 # Do it
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 2
+				event_target:guard = { martial = 12 }
+			}
+		}
+		event_target:guard = {
+			opinion = { who = ROOT modifier = opinion_approves multiplier = 4 years = 5 }
+		}
+		random_list = {
+			15 = {
+				modifier = {
+					factor = 1.1
+					event_target:guard = { martial = 10 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:guard = { martial = 12 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:guard = { martial = 14 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:guard = { martial = 16 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:guard = { martial = 18 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:guard = { martial = 20 }
+				}
+				modifier = {
+					factor = 0.9
+					event_target:guard = { NOT = { martial = 8 } }
+				}
+				modifier = {
+					factor = 0.9
+					event_target:guard = { NOT = { martial = 6 } }
+				}
+				modifier = {
+					factor = 0.9
+					event_target:guard = { NOT = { martial = 4 } }
+				}
+				modifier = {
+					factor = 0.9
+					event_target:guard = { NOT = { martial = 2 } }
+				}
+				add_character_modifier = {
+					name = military_reform_2
+					duration = 900
+				}
+			}
+			30 = {
+				modifier = {
+					factor = 1.1
+					event_target:guard = { martial = 10 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:guard = { martial = 12 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:guard = { martial = 14 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:guard = { martial = 16 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:guard = { martial = 18 }
+				}
+				modifier = {
+					factor = 1.1
+					event_target:guard = { martial = 20 }
+				}
+				modifier = {
+					factor = 0.9
+					event_target:guard = { NOT = { martial = 8 } }
+				}
+				modifier = {
+					factor = 0.9
+					event_target:guard = { NOT = { martial = 6 } }
+				}
+				modifier = {
+					factor = 0.9
+					event_target:guard = { NOT = { martial = 4 } }
+				}
+				modifier = {
+					factor = 0.9
+					event_target:guard = { NOT = { martial = 2 } }
+				}
+				add_character_modifier = {
+					name = military_reform_1
+					duration = 900
+				}
+			}
+			15 = {
+				add_character_modifier = {
+					name = military_chaos
+					duration = 365
+				}
+			}
+			5 = {
+				emf_imperial_add_decadence_2 = yes
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_imperial_3375 # Not now
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 2
+				event_target:guard = { NOT = { martial = 8 } }
+			}
+		}
+		add_character_modifier = {
+			name = bureaucratic_anger
+			duration = 365
+		}
+		any_courtier = {
+			limit = {
+				trait = imperial_guard
+				prisoner = no
+				NOT = { trait = incapable }
+			}
+			opinion = { who = ROOT modifier = opinion_disapprove years = 3 }
+		}
+	}
+}
+
+# The imperial bodyguards
+character_event = {
+	id = emf_imperial.3383
+	desc = EVTDESC_emf_imperial_3383
+	picture = GFX_evt_imperial_court
+	
+	only_independent = yes
+	capable_only = yes
+	prisoner = no
+	min_age = 16
+	
+	trigger = {
+		tier = EMPEROR
+		is_tribal = no
+		is_nomadic = no
+		war = no
+		primary_title = {
+			OR = {
+				NOT = { has_title_flag = imperial_court_event }
+				had_title_flag = { flag = imperial_court_event days = 1825 }
+			}
+		}
+		any_courtier = {
+			trait = imperial_guard
+			is_ruler = no
+			is_councillor = no
+			prisoner = no
+			NOT = { trait = incapable }
+			NOT = { age = 50 }
+			opinion = { who = ROOT value = 25 }
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 200
+	}
+	
+	immediate = {
+		primary_title = { set_title_flag = imperial_court_event }
+		random_courtier = {
+			limit = {
+				trait = imperial_guard
+				is_ruler = no
+				is_councillor = no
+				prisoner = no
+				NOT = { trait = incapable }
+				NOT = { age = 50 }
+				opinion = { who = ROOT value = 25 }
+			}
+			save_event_target_as = guard
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3383
+		reverse_opinion = { who = event_target:guard modifier = opinion_loyal_servant years = 5 }
+		add_character_modifier = {
+			name = imperial_bodyguards
+			duration = 1825
+		}
+	}
+}
+	
+# Capable commander becomes popular
+character_event = {
+	id = emf_imperial.3384
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		martial = 8
+		is_ruler = no
+		NOR = {
+			trait = incapable
+			trait = maimed
+			trait = imbecile
+			trait = infirm
+			trait = inbred
+			trait = weak
+			trait = dwarf
+			trait = imperial_courtier
+			trait = imperial_bureaucrat
+			age = 60
+		}
+		liege = {
+			real_tier = EMPEROR
+			emf_imperial_has_imperial_gov_trigger = yes
+			is_tribal = no
+			is_nomadic = no
+			primary_title = {
+				NOT = { claimed_by = ROOT }
+			}
+		}
+	}
+	
+	immediate = {
+		if = {
+			limit = { trait = imperial_guard }
+			random = {
+				chance = 25
+				modifier = {
+					factor = 1.5
+					is_strong_trigger = yes
+				}
+				modifier = {
+					factor = 1.5
+					trait = tall
+				}
+				modifier = {
+					factor = 1.5
+					trait = imposing
+				}
+				modifier = {
+					factor = 1.5
+					trait = ambitious
+				}
+				modifier = {
+					factor = 0.5
+					trait = content
+				}
+				modifier = {
+					factor = 0.5
+					trait = humble
+				}
+				modifier = {
+					factor = 0.5
+					NOT = { diplomacy = 4 }
+				}
+				modifier = {
+					factor = 0.5
+					NOT = { diplomacy = 8 }
+				}
+				modifier = {
+					factor = 0.5
+					NOT = { martial = 12 }
+				}
+				modifier = {
+					factor = 0.5
+					NOT = { martial = 10 }
+				}
+				modifier = {
+					factor = 1.2
+					martial = 14
+				}
+				modifier = {
+					factor = 1.2
+					martial = 16
+				}
+				modifier = {
+					factor = 1.2
+					martial = 18
+				}
+				modifier = {
+					factor = 1.2
+					martial = 20
+				}
+				modifier = {
+					factor = 1.2
+					diplomacy = 12
+				}
+				modifier = {
+					factor = 1.2
+					diplomacy = 14
+				}
+				modifier = {
+					factor = 1.2
+					diplomacy = 16
+				}
+				modifier = {
+					factor = 1.2
+					diplomacy = 18
+				}
+				prestige = 500
+				liege = {
+					primary_title = { add_claim = ROOT }
+					opinion = { who = ROOT modifier = opinion_war_hero years = 10 }
+					any_realm_character = { opinion = { who = ROOT modifier = opinion_war_hero years = 10 } }
+					character_event = { id = emf_imperial.3385 days = 1 }
+				}
+			}
+			break = yes
+		}
+		add_trait = imperial_guard
+	}
+}
+
+character_event = {
+	id = emf_imperial.3385
+	title = EVTNAME_emf_imperial_3385
+	desc = EVTDESC_emf_imperial_3385
+	picture = GFX_evt_battle
+	border = GFX_event_normal_frame_war	
+	
+	is_triggered_only = yes
+	major = yes
+	
+	major_trigger = {
+		OR = {
+			character = FROM
+			character = ROOT
+			same_realm = ROOT
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3385
+		trigger = { character = ROOT }
+		tooltip = {
+			primary_title = {
+				add_claim = FROM
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_imperial_3385
+		trigger = { NOT = { character = ROOT } }
+	}
+}
+
+# Capable imperial guard is better than the emperor
+character_event = {
+	id = emf_imperial.3386
+	desc = EVTDESC_emf_imperial_3386
+	picture = GFX_evt_imperial_court
+	
+	only_independent = yes
+	capable_only = yes
+	prisoner = no
+	min_age = 16
+	
+	trigger = {
+		tier = EMPEROR
+		emf_imperial_has_imperial_gov_trigger = yes
+		is_tribal = no
+		is_nomadic = no
+		war = no
+		primary_title = {
+			OR = {
+				NOT = { has_title_flag = imperial_court_event }
+				had_title_flag = { flag = imperial_court_event days = 1825 }
+			}
+		}
+		any_courtier = {
+			trait = imperial_guard
+			martial = 12
+			attribute_diff = { character = ROOT attribute = martial value = 3 }
+			prisoner = no
+			is_ill = no
+			NOR = {
+				is_dumb_trigger = yes
+				trait = incapable
+				trait = content
+				trait = humble
+				trait = stressed
+				trait = depressed
+				trait = maimed
+				opinion = { who = ROOT value = 0 }
+				any_claim = {
+					is_primary_holder_title = yes
+					holder = ROOT
+				}
+			}
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 200
+	}
+	
+	immediate = {
+		primary_title = { set_title_flag = imperial_court_event }
+		random_courtier = {
+			limit = {
+				trait = imperial_guard
+				martial = 12
+				attribute_diff = { character = ROOT attribute = martial value = 3 }
+				prisoner = no
+				is_ill = no
+				NOR = {
+					is_dumb_trigger = yes
+					trait = incapable
+					trait = content
+					trait = humble
+					trait = stressed
+					trait = depressed
+					trait = maimed
+					opinion = { who = ROOT value = 0 }
+					any_claim = {
+						is_primary_holder_title = yes
+						holder = ROOT
+					}
+					ROOT = {
+						any_courtier = {
+							trait = imperial_guard
+							martial = 12
+							attribute_diff = { character = ROOT attribute = martial value = 3 }
+							attribute_diff = { character = PREVPREV attribute = martial value = 1 }
+							prisoner = no
+							is_ill = no
+							NOR = {
+								is_dumb_trigger = yes
+								trait = incapable
+								trait = content
+								trait = humble
+								trait = stressed
+								trait = depressed
+								trait = maimed
+								opinion = { who = ROOT value = 0 }
+								any_claim = {
+									is_primary_holder_title = yes
+									holder = ROOT
+								}
+							}
+						}
+					}
+				}
+			}
+			save_event_target_as = guard
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_3386
+		primary_title = {
+			add_claim = event_target:guard
+		}
+		event_target:guard = {
+			if = {
+				limit = { NOT = { trait = ambitious } }
+				add_trait = ambitious
+			}
+		}
+	}
+}
+
+# A claimant against the empire arises (fired by 'Claim the Byzantine Throne' decision)
+character_event = {
+	id = emf_imperial.3387
+	desc = EVTDESC_emf_imperial_3387
+	picture = GFX_evt_imperial_court
+
+	is_triggered_only = yes
+
+	option = {
+		name = EVTOPTA_emf_imperial_3387
+		prestige = -100
+		reverse_opinion = { who = FROM modifier = opinion_basileus_claimant months = 120 }
+		opinion = { who = FROM modifier = opinion_basileus_claimant months = 60 }
+	}
+}
+
