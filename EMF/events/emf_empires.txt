@@ -163,6 +163,7 @@ character_event = {
 		set_character_flag = emf_context_aed
 		set_character_flag = emf_context_aed_@event_target:emf_empire_title
 		event_target:emf_empire_title = {
+			set_title_flag = emf_aed_destroyed
 			emf_destroy_title_unsafe_effect = yes
 			hidden_tooltip = {
 				save_event_target_as = emf_crier_dead_title
@@ -176,7 +177,6 @@ character_event = {
 		prestige = -500
 	}
 }
-
 
 # emf_empires.1
 #
@@ -226,7 +226,6 @@ character_event = {
 
 	option = { name = OK }
 }
-
 
 # emf_empires.2
 #
@@ -281,7 +280,6 @@ character_event = {
 	}
 }
 
-
 # emf_empires.4
 #
 # Check the 50% rule for kingdom event_target:emf_king_title
@@ -312,6 +310,34 @@ character_event = {
 	}
 }
 
+# emf_empires.5
+#
+# on_new_holder on_action which fires whenever a new empire is created.
+character_event = {
+	id = emf_empires.5
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	only_independent = yes
+	
+	trigger = {
+		FROM = { tier = EMPEROR }
+		NOT = { FROMFROM = { always = yes } }
+		has_game_started = yes
+		FROM = { has_title_flag = emf_aed_destroyed } # Currently the only thing we do here
+	}
+	
+	immediate = {
+		FROM = {
+			clr_title_flag = emf_aed_destroyed
+			# SOMEDAY: might want to store the duration in years or some approximation of the emf_aed_destroyed
+			# flag into a cumulative title variable for "years spent disintegrated," but the applications for
+			# that don't currently exist (mostly contextual stuff).
+			change_variable = { which = emf_aed_restored value = 1 }
+		}
+	}
+}
 
 # emf_empires.10 [Mongol Emperor]
 #
@@ -330,7 +356,6 @@ character_event = {
 		set_global_flag = emf_mongols_defeated
 	}
 }
-
 
 # emf_empires.11 [Mongol Emperor]
 #
@@ -534,7 +559,6 @@ character_event = {
 	}
 }
 
-
 # emf_empires.12 [Mongol Emperor]
 #
 # Set a global flag when e_mongol_empire can unlock their full conquest zone.
@@ -566,7 +590,6 @@ character_event = {
 		set_global_flag = emf_mongols_in_persia
 	}
 }
-
 
 # emf_empires.13 [Mongol Emperor]
 #
@@ -627,7 +650,6 @@ character_event = {
 	}
 }
 
-
 # emf_empires.14 [Horde Invader]
 #
 # Handles the initial declaration of war when the Mongols first arrive.
@@ -665,8 +687,6 @@ character_event = {
 	}
 }
 
-
-
 # emf_empires.20
 #
 # Remove ahistorical empires
@@ -682,7 +702,7 @@ character_event = {
 		any_title = {
 			limit = {
 				tier = EMPEROR
-				is_titular = no
+				emf_titular_trigger = no
 				NOR = {
 					title = e_hre
 					title = e_byzantium
@@ -710,7 +730,6 @@ character_event = {
 		}
 	}
 }
-
 
 # emf_empires.21
 #
@@ -745,7 +764,6 @@ character_event = {
 		}
 	}
 }
-
 
 # emf_empires.30 [AI Ruler]
 #
@@ -784,13 +802,14 @@ character_event = {
 		# Dissolve some potential NAPs
 		any_independent_ruler = {
 			limit = {
+				ai = yes
 				has_non_aggression_pact_with = ROOT
 				NOT = { is_allied_with = ROOT }
 				any_realm_province = {
-					kingdom = { title = k_byzantium }
+					empire = { title = e_byzantium }
 				}
 			}
-			reverse_opinion = { who = ROOT modifier = opinion_disabled_nap }
+			reverse_opinion = { who = ROOT modifier = opinion_disabled_nap years = 15 }
 		}
 	}
 }
@@ -870,7 +889,7 @@ character_event = {
 						}
 						if = {
 							limit = { has_holder = no }
-							usurp_title = {
+							grant_title = {
 								target = event_target:emf_general
 								type = created
 							}
@@ -896,7 +915,14 @@ character_event = {
 			# by definition of the mission validation invariants.
 			if = {
 				limit = { NOT = { holder = ROOT } }
-				usurp_title_plus_barony_if_unlanded_and_vassals = ROOT
+				any_direct_de_jure_vassal_title = {
+					limit = {
+						owner = { is_liege_or_above = ROOT }
+						holding_type = castle
+					}
+					usurp_title = { target = ROOT type = revoke }
+				}
+				usurp_title = { target = ROOT type = revoke }
 			}
 			emf_make_location_ROOT_capital_effect = yes
 		}

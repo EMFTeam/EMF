@@ -308,11 +308,9 @@ decisions = {
 		is_high_prio = yes
 
 		potential = {
-			independent = yes
-			emf_empires_reclaim_byz_valid_attacker_trigger = yes
 			c_byzantion = { owner_under_ROOT = yes }
-			k_byzantium = { de_jure_liege = e_byzantium }
-			religion_group = christian
+			emf_empires_byz_restorer_potential_trigger = yes
+			emf_empires_byz_restoration_potential_trigger = yes
 			emf_hiprio_decision_basic_potential_trigger = yes
 		}
 		allow = {
@@ -373,7 +371,7 @@ decisions = {
 				}
 			}
 			# Valid culture_group & religion (possibilities for which are expanded if the restorer is a player)
-			emf_empires_byz_valid_culture_religion_trigger = yes
+			emf_empires_byz_restorer_culrel_allow_trigger = yes
 		}
 		revoke_allowed = {
 			always = no
@@ -384,10 +382,8 @@ decisions = {
 			}
 			clr_global_flag = emf_byz_restored
 			set_global_flag = emf_byz_restored
-			set_character_flag = emf_context_byz_restorer
-			
+			set_character_flag = emf_context_restored_byzantium
 			emf_empires_create_dj_empire_basic_effect = yes
-
 			random_list = {
 				40 = {
 					modifier = {
@@ -408,22 +404,17 @@ decisions = {
 					}
 					give_nickname = nick_the_great
 				}
-				40 = { give_nickname = nick_the_restorer }
-				20 = { give_nickname = nick_the_lawgiver }
+				50 = { give_nickname = nick_the_restorer }
+				10 = { give_nickname = nick_the_lawgiver }
 			}
-
-			if = {
-				limit = { NOT = { is_title_active = e_byzantium } }
-				activate_title = { title = e_byzantium status = yes }
-			}
-
 			set_character_flag = emf_no_law_penalties
 			primary_title = {
 				e_byzantium = {
-					grant_title = {
-						target = ROOT
-						type = created
+					if = {
+						limit = { NOT = { is_title_active = THIS } }
+						activate_title = { title = THIS status = yes }
 					}
+					grant_title = { target = ROOT type = created }
 					copy_title_laws = PREV
 					if = {
 						limit = { PREV = { NOT = { has_law = administration_2 } } }
@@ -465,38 +456,45 @@ decisions = {
 				}
 			}
 			clr_character_flag = emf_no_law_penalties
-			
 			hidden_tooltip = {
 				e_byzantium = { make_primary_title = yes }
 			}
-			
 			# Destroy any other empires held (only titular are allowed by this decision's `potential`)
 			any_demesne_title = {
 				limit = {
 					tier = EMPEROR
 					NOT = { title = e_byzantium }
+					is_landless_type_title = no
 				}
 				emf_destroy_title_effect = yes
 			}
-			
 			# Destroy any imperial kingdoms which may have formed (or started with, in the case of the "Empires"
 			# of Trebizond and Nikaea) in the interim.
 			any_demesne_title = {
 				limit = {
 					tier = KING
 					de_jure_liege = e_byzantium
-				}
-				emf_destroy_title_effect = yes
-			}
-			
-			# Destroy held titular, landed kingdoms
-			any_demesne_title = {
-				limit = {
-					tier = KING
-					is_titular = yes
 					is_landless_type_title = no
 				}
 				emf_destroy_title_effect = yes
+			}
+			# Set AI capital to Constantinople if not already
+			if = {
+				limit = { ai = yes }
+				c_byzantion = {
+					if = {
+						limit = { NOT = { holder = ROOT } }
+						any_direct_de_jure_vassal_title = {
+							limit = {
+								owner = { is_liege_or_above = ROOT }
+								holding_type = castle
+							}
+							usurp_title = { target = ROOT type = revoke }
+						}
+						usurp_title = { target = ROOT type = revoke }
+					}
+					emf_make_location_ROOT_capital_effect = yes
+				}
 			}
 			
 			hidden_tooltip = { recalc_succession = yes }
@@ -506,8 +504,7 @@ decisions = {
 			clr_global_flag = emf_reclaim_byz_capital_success
 			
 			# Potentially give Hagia Sophia to our religious head if appropriate and if it's not theirs already,
-			# and vassalize the religious head title
-			
+			# and vassalize the religious head title (if any)
 			trigger_switch = {
 				on_trigger = religion
 				orthodox =    { k_orthodox =    { owner = { save_event_target_as = emf_relhead } } }
@@ -518,9 +515,7 @@ decisions = {
 				monophysite = { d_monophysite = { owner = { save_event_target_as = emf_relhead } } }
 				nestorian =   { d_nestorian =   { owner = { save_event_target_as = emf_relhead } } }
 			}
-			
-			b_hagiasophia = { holder_scope = { save_event_target_as = emf_temple_owner } }
-			
+			b_hagiasophia = { owner = { save_event_target_as = emf_temple_owner } }
 			if = {
 				limit = {
 					# The religious head is indeed valid, and no player is liege to them
@@ -554,11 +549,11 @@ decisions = {
 				if = {
 					limit = {
 						is_title_active = THIS
-						holder_scope = {
+						owner = {
 							liege = { ai = yes }
 						}
 					}
-					holder_scope = {
+					owner = {
 						set_defacto_liege = ROOT
 						emf_liege_change_effect = yes
 					}
