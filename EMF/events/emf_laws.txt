@@ -1,7 +1,11 @@
-
-# Law support events (currently only concerns crown laws)
+# -*- ck2.events -*-
 
 namespace = emf_laws
+
+#######################################
+# EXTENDED LAW SUPPORT CODE
+#######################################
+
 
 # emf_laws.0 [Isis]
 # 
@@ -56,7 +60,7 @@ character_event = {
 		set_character_flag = emf_no_law_penalties
 		
 		any_demesne_title = {
-			limit = { higher_tier_than = duke }
+			limit = { higher_tier_than = DUKE }
 			
 			if = {
 				limit = { has_law = crown_authority_0 }
@@ -275,7 +279,7 @@ character_event = {
 	only_playable = yes
 	
 	trigger = {
-		FROM = { higher_tier_than = duke }
+		FROM = { higher_tier_than = DUKE }
 	}
 	
 	immediate = {
@@ -315,16 +319,16 @@ character_event = {
 		}
 		
 		if = {
-			limit = { FROMFROM = { is_alive = yes } } # Title grant OR likewise
+			limit = { FROMFROM = { is_alive = yes } } # Title grant or likewise
 			break = yes
 		}
 		
 		# Title creation
 		if = {
 			limit = {
-				FROM = { tier = emperor }
+				FROM = { tier = EMPEROR }
 				any_demesne_title = {
-					higher_tier_than = duke
+					higher_tier_than = DUKE
 					has_title_flag = emf_ca_change
 				}
 			}
@@ -333,9 +337,9 @@ character_event = {
 		}
 		if = {
 			limit = {
-				FROM = { tier = king }
+				FROM = { tier = KING }
 				primary_title = {
-					higher_tier_than = duke
+					higher_tier_than = DUKE
 					has_title_flag = emf_ca_change
 				}
 			}
@@ -368,7 +372,7 @@ character_event = {
 	immediate = {
 		FROM = {
 			clr_title_flag = emf_ca_change
-			clr_title_flag = emf_inv_change # Investiture cooldown
+			clr_title_flag = emf_inv_change
 			
 			if = {
 				limit = { has_law = crown_authority_1 }
@@ -390,92 +394,6 @@ character_event = {
 	}
 }
 
-# emf_laws.5 [Holder]
-#
-# on_startup event to validate & adjust laws. Motivated primarily due to a bug in EMF 5.01 that caused the crown laws for
-# king's peace and title revocation (non-Zeus) to be forced to titles that start the scenario w/ at least Medium CA despite
-# Zeus being enabled.
-#
-# #TMP-SAVE-COMPAT#
-character_event = {
-	id = emf_laws.5
-	hide_window = yes
-	is_triggered_only = yes
-	
-	only_playable = yes
-	
-	trigger = {
-		higher_real_tier_than = DUKE
-		is_nomadic = no
-		is_tribal = no
-	}
-	
-	immediate = {
-		if = {
-			limit = { has_dlc = "Zeus" }
-			any_demesne_title = {
-				limit = {
-					higher_tier_than = DUKE
-					OR = {
-						has_law = king_peace_0
-						has_law = king_peace_1
-						has_law = king_peace_2
-					}
-				}
-				if = {
-					limit = { NOT = { has_law = king_peace_0 } }
-					add_law = king_peace_0 # To ensure the king's peace title flag is removed
-				}
-				revoke_law = king_peace_0
-				revoke_law = king_peace_1
-				revoke_law = king_peace_2
-			}
-			any_demesne_title = {
-				limit = {
-					higher_tier_than = DUKE
-					OR = {
-						has_law = revokation_0
-						has_law = revokation_1
-						has_law = revokation_2
-					}
-				}
-				revoke_law = revokation_0
-				revoke_law = revokation_1
-				revoke_law = revokation_2
-			}
-			primary_title = {
-				if = {
-					limit = {
-						NOR = {
-							has_law = ze_revokation_0
-							has_law = ze_revokation_1
-							has_law = ze_revokation_2
-						}
-					}
-					add_law = ze_revokation_0
-				}
-			}
-		}
-		if = {
-			limit = { NOT = { has_dlc = "Zeus" } }
-			primary_title = {
-				if = {
-					limit = {
-						OR = {
-							has_law = ze_revokation_0
-							has_law = ze_revokation_1
-							has_law = ze_revokation_2
-						}
-					}
-					revoke_law = ze_revokation_0
-					revoke_law = ze_revokation_1
-					revoke_law = ze_revokation_2
-				}
-			}
-		}
-	}
-}
-
 
 #######################################
 # REACTIONS TO SUCCESSION LAW CHANGES
@@ -484,12 +402,13 @@ character_event = {
 
 # emf_laws.10 [Holder of Title That's Just Changed Succession Law]
 #
-# Context (which should all be manually cleared when we're done):
-# - Succession law title has flag emf_succ_title
-# - opinion_succ_former_heir points to the former heir
-# - opinion_succ_former_pretender points to the former pretenders
+# Context:
+# - Succession law title has flag emf_succ_title (cleared when we're done)
+# - opinion_succ_former_heir points to the former heir (cleared elsewhere)
+# - opinion_succ_former_pretender points to the former pretenders (cleared elsewhere)
 #
-# Fired from succ_adopt_* law effects with a delay of 1 day.
+# Fired from non-elective succession law effects immediately after applying
+# lower-priority, law-specific succession law reactions.
 character_event = {
 	id = emf_laws.10
 	
@@ -515,13 +434,13 @@ character_event = {
 			break = yes
 		}
 		
-		log = "DEBUG: emf_laws.10: Processing special succession law change reactions for the [emf_succ_title.GetFullBaseName] held by [Root.GetTitledFirstName] (ID: [Root.GetID])..."
+		log = "DEBUG: emf_laws.10: Processing special succession law change reactions for [emf_succ_title.GetID] ([emf_succ_title.GetFullBaseName]), held by [Root.GetTitledName] (ID: [Root.GetID])..."
 		
 		event_target:emf_succ_title = { current_heir = { save_event_target_as = emf_heir } } # ... and its new heir
 		
 		if = {
 			limit = { NOT = { event_target:emf_heir = { always = yes } } }
-			log = "INFO: emf_laws.10: Succesion law change for the [emf_succ_title.GetFullBaseName] resulted in no known successor."
+			log = "INFO: emf_laws.10: Succesion law change for [emf_succ_title.GetID] resulted in no known successor"
 		}
 		
 		random_opinion_modifier_target = { # Save our former heir...
@@ -531,7 +450,17 @@ character_event = {
 		
 		if = {
 			limit = { NOT = { event_target:emf_former_heir = { always = yes } } }
-			log = "INFO: emf_laws.10: No former heir for the [emf_succ_title.GetFullBaseName]."
+			log = "INFO: emf_laws.10: No former heir for [emf_succ_title.GetID]"
+		}
+		
+		# Former pretenders that are now neither heir nor pretender
+		any_opinion_modifier_target = {
+			limit = {
+				reverse_has_opinion_modifier = { who = PREV modifier = opinion_succ_former_pretender }
+				NOT = { character = event_target:emf_heir }
+				NOT = { any_pretender_title = { title = event_target:emf_succ_title } }
+			}
+			character_event = { id = emf_laws.13 }
 		}
 		
 		# Should the former heir have died or somehow not existed, emf_former_heir will be undefined, but that should
@@ -557,24 +486,6 @@ character_event = {
 			}
 		}
 		
-		# Former pretenders that are now neither heir nor pretender
-		any_opinion_modifier_target = {
-			limit = {
-				reverse_has_opinion_modifier = { who = PREV modifier = opinion_succ_former_pretender }
-				NOT = { character = event_target:emf_heir }
-				NOT = { any_pretender_title = { title = event_target:emf_succ_title } }
-			}
-			character_event = { id = emf_laws.13 }
-		}
-		
-		# The new heir
-		event_target:emf_heir = {
-			if = {
-				limit = { NOT = { character = event_target:emf_former_heir } }
-				character_event = { id = emf_laws.14 }
-			}
-		}
-		
 		# The new pretenders
 		any_character = {
 			limit = {
@@ -589,6 +500,14 @@ character_event = {
 				}
 			}
 			character_event = { id = emf_laws.15 }
+		}
+
+		# The new heir
+		event_target:emf_heir = {
+			if = {
+				limit = { NOT = { character = event_target:emf_former_heir } }
+				character_event = { id = emf_laws.14 }
+			}
 		}
 	}
 }
@@ -729,7 +648,10 @@ character_event = {
 		}
 		log = "DEBUG: emf_laws.11: Former heir [Root.GetTitledName] (ID: [Root.GetID]) is now neither heir NOR pretender (outraged)"
 		
-		set_character_flag = justified_claimant_@event_target:emf_succ_title
+		event_target:emf_succ_title = {
+			ROOT = { set_character_flag = emf_justified_claimant_@PREV }
+		}
+		set_character_flag = justified_claimant
 		opinion = { who = FROM modifier = succ_law_disinherit months = 240 }
 		opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 5 months = 240 }
 		event_target:emf_succ_title = { add_claim = ROOT }
@@ -911,7 +833,10 @@ character_event = {
 		}
 		log = "DEBUG: emf_laws.12: Former heir [Root.GetTitledName] (ID: [Root.GetID]) is now merely a pretender (outraged)"
 		
-		set_character_flag = justified_claimant_@event_target:emf_succ_title
+		event_target:emf_succ_title = {
+			ROOT = { set_character_flag = emf_justified_claimant_@PREV }
+		}
+		set_character_flag = justified_claimant
 		emf_laws_change_succ_terrible_reaction_effect = yes
 		opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 5 months = 240 }
 		event_target:emf_succ_title = { add_claim = ROOT }
@@ -1083,7 +1008,10 @@ character_event = {
 		}
 		log = "DEBUG: emf_laws.13: Former pretender [Root.GetTitledName] (ID: [Root.GetID]) is now neither heir NOR pretender (outraged)"
 		
-		set_character_flag = justified_claimant_@event_target:emf_succ_title
+		event_target:emf_succ_title = {
+			ROOT = { set_character_flag = emf_justified_claimant_@PREV }
+		}
+		set_character_flag = justified_claimant
 		emf_laws_change_succ_terrible_reaction_effect = yes
 		event_target:emf_succ_title = { add_weak_claim = ROOT }
 		opinion = { who = event_target:emf_heir modifier = opinion_resentful multiplier = 2 months = 240 }
@@ -1234,6 +1162,94 @@ character_event = {
 				emf_can_inherit_trigger = yes
 			}
 			emf_laws_change_succ_good_reaction_effect = yes
+		}
+	}
+}
+
+
+#######################################
+# PROTECTED COUNCIL APPOINTMENTS
+#######################################
+
+# emf_laws.20
+#
+# Maintenance event to validate appointment protection opinion bonuses for a given liege's council
+#
+# This is necessary due to the fact that powerful-vassal status obviously changes over time, and we
+# only want the "my job is protected by my liege" bonus to apply when it is, in fact, protected.
+character_event = {
+	id = emf_laws.20
+	
+	hide_window = yes
+	
+	only_playable = yes
+	
+	trigger = {
+		higher_real_tier_than = COUNT
+		primary_title = { has_law = protected_appointment_1 }
+		OR = {
+			any_voter = {
+				is_powerful_vassal = yes
+				NOT = { has_opinion_modifier = { who = ROOT modifier = opinion_protected_appointment_always } }
+			}
+			any_voter = {
+				NOT = { is_powerful_vassal = yes }
+				has_opinion_modifier = { who = ROOT modifier = opinion_protected_appointment_always }
+			}
+		}
+	}
+	
+	mean_time_to_happen = {
+		days = 1
+	}
+	
+	immediate = {
+		emf_laws_protected_appointment_1_validate_opinion_effect = yes
+	}
+}
+
+
+
+#######################################
+# SAVE-COMPAT / LAW UPGRADES
+#######################################
+
+# emf_laws.100 [Isis]
+#
+# Law upgrades for EMF 5.03+, on_startup ##TMP-SAVE-COMPAT##
+# Note that I'm not bothering w/ converting the viceroyalty change. This is because this entire save-compatibility
+# measure is actually unnecessary (though helpful for protected_appointment law in alpha testing) due to SWMH
+# breaking save-compatibility for the Zeus4 HIP release.
+character_event = {
+	id = emf_laws.100
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	only_independent = yes
+	only_women = yes
+	culture = hip_culture
+	
+	trigger = {
+		has_landed_title = e_hip
+		has_global_flag = EMF # We've already completed startup on this campaign
+	}
+	
+	immediate = {
+		# Protected Appointments
+		any_title = {
+			limit = {
+				higher_tier_than = COUNT
+				has_holder = yes
+				is_primary_holder_title = yes
+				NOR = {
+					has_law = protected_appointment_0
+					has_law = protected_appointment_1
+				}
+			}
+			owner = { set_character_flag = emf_no_law_penalties }
+			add_law = protected_appointment_0
+			owner = { clr_character_flag = emf_no_law_penalties }
 		}
 	}
 }

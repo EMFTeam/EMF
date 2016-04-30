@@ -1,3 +1,5 @@
+# -*- ck2.decisions -*-
+
 # Targetted decisions are possible vs _all_ other characters and shown are in the Diplomacy View, not the Intrigue View. The taker is in the FROM scope.
 #
 # filter = [self/court/home_court/vassals/sub_realm/realm/dynasty/all] ('self' MUST be set for decisions targetting only the taker, the other filter types can be set to lessen CPU load)
@@ -13,7 +15,6 @@
 #	
 
 targetted_decisions = {
-
 	emf_debug_vassalize = {
 		ai_target_filter = self
 		
@@ -26,14 +27,33 @@ targetted_decisions = {
 			NOT = { vassal_of = FROM }
 			lower_tier_than = FROM
 		}
-		allow = {
-		}
 		effect = {
 			set_defacto_liege = FROM
-			pf_liege_change_effect = yes
+			emf_liege_change_effect = yes
 		}
-		revoke_allowed = {
-			always = no
+		ai_will_do = {
+			factor = 0
+		}
+	}
+	emf_debug_make_independent = {
+		ai_target_filter = self
+		
+		from_potential = {
+			ai = no
+			has_global_flag = emf_debug
+		}
+		potential = {
+			is_ruler = yes
+			independent = no
+			in_revolt = no
+			OR = {
+				is_merchant_republic = yes
+				is_patrician = no
+			}
+		}
+		effect = {
+			set_defacto_liege = THIS
+			emf_liege_change_effect = yes
 		}
 		ai_will_do = {
 			factor = 0
@@ -46,15 +66,8 @@ targetted_decisions = {
 			ai = no
 			has_global_flag = emf_debug
 		}
-		potential = {
-		}
-		allow = {
-		}
 		effect = {
 			death = yes
-		}
-		revoke_allowed = {
-			always = no
 		}
 		ai_will_do = {
 			factor = 0
@@ -70,13 +83,8 @@ targetted_decisions = {
 		potential = {
 			is_ruler = yes
 		}
-		allow = {
-		}
 		effect = {
 			abdicate = yes
-		}
-		revoke_allowed = {
-			always = no
 		}
 		ai_will_do = {
 			factor = 0
@@ -111,9 +119,6 @@ targetted_decisions = {
 				}
 			}
 		}
-		revoke_allowed = {
-			always = no
-		}
 		ai_will_do = {
 			factor = 0
 		}
@@ -147,9 +152,6 @@ targetted_decisions = {
 				}
 			}
 		}
-		revoke_allowed = {
-			always = no
-		}
 		ai_will_do = {
 			factor = 0
 		}
@@ -167,8 +169,6 @@ targetted_decisions = {
 				is_landless_type_title = no
 			}
 		}
-		allow = {
-		}
 		effect = {
 			hidden_tooltip = {
 				any_demesne_title = {
@@ -183,6 +183,92 @@ targetted_decisions = {
 					usurp_title = FROM
 				}
 			}
+		}
+		ai_will_do = {
+			factor = 0
+		}
+	}
+	emf_debug_spawn_troops = {
+		ai_target_filter = self
+		
+		from_potential = {
+			ai = no
+			has_global_flag = emf_debug
+		}
+		potential = {
+			is_playable = yes
+		}
+		effect = {
+			hidden_tooltip = {
+				FROM = { letter_event = { id = emf_debug.1 } } # Give the decision-taker a few options
+			}
+		}
+		ai_will_do = {
+			factor = 0
+		}
+	}
+	emf_debug_disband_troops = {
+		ai_target_filter = self
+		
+		from_potential = {
+			ai = no
+			has_global_flag = emf_debug
+		}
+		potential = {
+			has_earmarked_regiments = emf_debug_army
+		}
+		effect = {
+			disband_event_forces = emf_debug_army
+		}
+		ai_will_do = {
+			factor = 0
+		}
+	}
+}
+
+# Settlement decisions are possible vs _all_ settlements and are shown in the Settlement Diplomacy View, not the Intrigue View. The taker is in the FROM scope.
+#
+# filter = [capital/owned/vassal_owned/sub_realm_owned/realm_owned/dynasty_owned/all]
+# ai_target_filter = [capital/owned/vassal_owned/sub_realm_owned/realm_owned/dynasty_owned/all] (which settlements for which the AI evaluates the decision.)
+#	owned: all settlements owned by the AI
+#	vassal_owned: all settlements owned by direct vassal rulers of the AI's employer
+#	sub_realm_owned: all settlements below the AI's employer
+#	realm_owned: all settlements in the same top realm as the AI
+#	dynasty_owned: all settlements owned by members of the same dynasty
+#	all: all settlements (Avoid if possible. VERY CPU-HEAVY!)
+#	
+
+
+settlement_decisions = {
+	emf_debug_destroy_settlement = {
+		filter = all
+		ai_target_filter = capital
+		
+		from_potential = {
+			ai = no
+			has_global_flag = emf_debug
+		}
+		potential = {
+			has_holder = yes
+			NOT = { holding_type = nomad }
+			NOT = { holding_type = family_palace }
+		}
+		allow = {
+			OR = {
+				NOT = { holder = FROM }
+				FROM = {
+					any_demesne_title = {
+						NOT = { title = ROOT }
+						OR = {
+							tier = BARON
+							is_landless_type_title = yes
+						}
+					}
+				}
+			}
+		}
+		effect = {
+			destroy_settlement = ROOT
 		}
 		revoke_allowed = {
 			always = no
@@ -266,6 +352,11 @@ title_decisions = {
 				higher_tier_than = COUNT
 				has_holder = yes
 			}
+			NOT = {
+				holder_scope = {
+					character = FROM
+				}
+			}
 		}
 		allow = {
 		}
@@ -279,7 +370,7 @@ title_decisions = {
 			factor = 0
 		}
 	}
-	emf_debug_make_primary = {
+	emf_debug_grant_title = {
 		filter = all
 		ai_target_filter = capital
 		
@@ -288,14 +379,17 @@ title_decisions = {
 			has_global_flag = emf_debug
 		}
 		potential = {
-			has_holder = yes
-			is_primary_holder_title = no
-			is_primary_holder_title_tier = yes
+			holder_scope = {
+				NOT = {
+					character = FROM
+				}
+			}
 		}
 		allow = {
+			can_be_given_away = yes
 		}
 		effect = {
-			hidden_tooltip = { make_primary_title = yes }
+			grant_title = FROM
 		}
 		revoke_allowed = {
 			always = no
@@ -315,12 +409,189 @@ title_decisions = {
 		potential = {
 			higher_tier_than = COUNT
 			has_holder = yes
-			is_landless_type_title = no
 		}
 		allow = {
 		}
 		effect = {
-			destroy_landed_title = THIS
+			hidden_tooltip = {
+				# Try to prevent unnecessary madness
+				holder_scope = {
+					random_demesne_title = {
+						limit = {
+							ROOT = { is_primary_holder_title = yes }
+							NOT = { title = ROOT }
+							tier = ROOT
+							temporary = no
+						}
+						make_primary_title = yes
+					}
+					random_demesne_title = {
+						limit = {
+							ROOT = { is_primary_holder_title = yes }
+							NOT = { title = ROOT }
+							tier = ROOT
+						}
+						make_primary_title = yes
+					}
+				}
+			}
+			emf_destroy_title_unsafe_effect = yes
+		}
+		revoke_allowed = {
+			always = no
+		}
+		ai_will_do = {
+			factor = 0
+		}
+	}
+	emf_debug_activate_title = {
+		filter = all
+		ai_target_filter = capital
+		
+		from_potential = {
+			ai = no
+			has_global_flag = emf_debug
+		}
+		potential = {
+			NOT = { is_title_active = THIS }
+		}
+		allow = {
+		}
+		effect = {
+			hidden_tooltip = {
+				activate_title = { title = THIS status = yes }
+			}
+		}
+		revoke_allowed = {
+			always = no
+		}
+		ai_will_do = {
+			factor = 0
+		}
+	}
+	emf_debug_deactivate_title = {
+		filter = all
+		ai_target_filter = capital
+		
+		from_potential = {
+			ai = no
+			has_global_flag = emf_debug
+		}
+		potential = {
+			higher_tier_than = COUNT
+			has_holder = no
+			is_title_active = THIS
+		}
+		allow = {
+		}
+		effect = {
+			hidden_tooltip = {
+				activate_title = { title = THIS status = no }
+			}
+		}
+		revoke_allowed = {
+			always = no
+		}
+		ai_will_do = {
+			factor = 0
+		}
+	}
+	## Dynamic De Jure Reassignment ##
+	emf_debug_dj_liege_target_title = { # Target this as a de jure liege title
+		filter = all
+		ai_target_filter = capital
+		
+		from_potential = {
+			ai = no
+			has_global_flag = emf_debug
+		}
+		potential = {
+			higher_tier_than = COUNT
+			OR = {
+				NOT = { event_target:emf_debug_dj_liege = { tier = THIS } }
+				event_target:emf_debug_dj_liege = {
+					NOT = { title = ROOT }
+				}
+			}
+		}
+		allow = {
+		}
+		effect = {
+			hidden_tooltip = {
+				if = {
+					limit = { event_target:emf_debug_dj_liege = { always = yes } }
+					clear_global_event_target = emf_debug_dj_liege
+				}
+				ROOT = { save_global_event_target_as = emf_debug_dj_liege }
+			}
+		}
+		revoke_allowed = {
+			always = no
+		}
+		ai_will_do = {
+			factor = 0
+		}
+	}
+	emf_debug_dj_liege_untarget_title = { # Stop targeting previously-selected DJLiege title
+		filter = all
+		ai_target_filter = capital
+		
+		is_high_prio = yes
+		
+		from_potential = {
+			ai = no
+			has_global_flag = emf_debug
+			event_target:emf_debug_dj_liege = { tier = THIS }
+		}
+		potential = {
+			event_target:emf_debug_dj_liege = {
+				title = ROOT
+			}
+		}
+		allow = {
+		}
+		effect = {
+			hidden_tooltip = { clear_global_event_target = emf_debug_dj_liege }
+		}
+		revoke_allowed = {
+			always = no
+		}
+		ai_will_do = {
+			factor = 0
+		}
+	}
+	emf_debug_dj_liege_vassalize_title = { # Set the de jure liege of this title to the targeted DJLiege title
+		filter = all
+		ai_target_filter = capital
+		
+		from_potential = {
+			ai = no
+			has_global_flag = emf_debug
+			event_target:emf_debug_dj_liege = { tier = THIS }
+		}
+		potential = {
+			OR = {
+				AND = {
+					event_target:emf_debug_dj_liege = { tier = EMPEROR }
+					tier = KING
+				}
+				AND = {
+					event_target:emf_debug_dj_liege = { tier = KING }
+					tier = DUKE
+				}
+				AND = {
+					event_target:emf_debug_dj_liege = { tier = DUKE }
+					tier = COUNT
+				}
+			}
+			NOT = { de_jure_liege = event_target:emf_debug_dj_liege }
+		}
+		allow = {
+		}
+		effect = {
+			hidden_tooltip = { # de_jure_liege auto-tooltips are buggy with event targets
+				de_jure_liege = event_target:emf_debug_dj_liege
+			}
 		}
 		revoke_allowed = {
 			always = no

@@ -1,49 +1,225 @@
+# -*- ck2.scripted_triggers -*-
 
-emf_empires_mongol_core_prov_trigger = {
-	
-	owner = { NOT = { same_realm = ROOT } } # Border province
 
-	region = emf_region_mongol_core
-
-	owner = {
-		top_liege = {
-			NOR = {
-				# Respect truce
-				reverse_has_truce = ROOT
-
-				# Respect suzerainty
-				ROOT = { pays_tribute_to = PREV }
-
-				# Respect alliances
-				is_allied_with = ROOT
-
-				# Respect NAPs
-				has_non_aggression_pact_with = ROOT
+# For de jure empire formation/restoration via decision
+emf_empires_create_dj_empire_basic_trigger = {
+	war = no
+	is_adult = yes
+	prisoner = no
+	has_regent = no
+	prestige = 1000
+	custom_tooltip = {
+		text = emf_empires_ctt_can_afford_dj_empire_creation
+		hidden_tooltip = {
+			OR = {
+				piety = 400
+				AND = {
+					ROOT = { ai = yes }
+					piety = 0
+				}
+			}
+			OR = {
+				wealth = 600
+				AND = {
+					ROOT = { ai = yes }
+					wealth = 0
+				}
 			}
 		}
 	}
 }
 
-emf_empires_mongol_extended_prov_trigger = {
-	
+
+###############################################
+#### AUTOMATIC EMPIRE DISINTEGRATION (AED) ####
+###############################################
+
+# THIS = empire title
+emf_empires_aed_valid_title_trigger = {
+	tier = EMPEROR
+	is_landless_type_title = no
+	is_nomadic = no
+	temporary = no
+	rebel = no
+	NOR = { # Never, ever disintegrate these specific titles with AED:
+		title = e_timurids
+		title = e_mexikha
+		title = e_seljuk_turks
+	}
+	OR = {
+		# Minimum 100 realm_size rule that applies by default to almost all empires:
+		NOR = {
+			# Titles exempt even from any realm size rule:
+			title = e_byzantium
+			title = e_latin_empire
+			# Titles which only use 100-size rule when they have at least High CA:
+			AND = {
+				OR = {
+					title = e_hre
+					title = e_hre_french
+					title = e_roman_empire
+					title = e_persia
+				}
+				OR = {
+					has_law = crown_authority_3
+					has_law = crown_authority_4
+				}
+			}
+			owner = { realm_size = 100 }
+		}
+		# Empires with higher min. realm size requirements, unless they have at least High CA:
+		AND = {
+			NOR = {
+				has_law = crown_authority_3
+				has_law = crown_authority_4
+			}
+			OR = {
+				AND = {
+					OR = {
+						title = e_hre
+						title = e_hre_french
+					}
+					OR = {
+						AND = {
+							NOT = { owner = { realm_size = 200 } }
+							NOT = { has_global_flag = SWMH }
+						}
+						AND = {
+							NOT = { owner = { realm_size = 300 } }
+							has_global_flag = SWMH
+						}
+					}
+				}
+				AND = {
+					title = e_roman_empire
+					OR = {
+						AND = {
+							NOT = { owner = { realm_size = 300 } }
+							NOT = { has_global_flag = SWMH }
+						}
+						AND = {
+							NOT = { owner = { realm_size = 400 } }
+							has_global_flag = SWMH
+						}
+					}
+				}
+				AND = {
+					title = e_persia
+					NOT = { owner = { realm_size = 200 } }
+				}
+			}
+		}
+		# Empires which disintegrate solely based upon whether they control the Queen of Cities:
+		AND = {
+			OR = {
+				title = e_byzantium
+				title = e_latin_empire
+			}
+			NOT = { owner = { c_byzantion = { owner = { same_realm = PREVPREV } } } }
+		}
+	}
+}
+
+###############################################
+####       RESTORATION OF BYZANTIUM        ####
+###############################################
+
+emf_empires_byz_restoration_potential_trigger = {
+	e_byzantium = { has_holder = no }
+	e_roman_empire = { has_holder = no }
+	c_byzantion = {
+		dejure_liege_title = { title = d_thrace }
+		kingdom = { title = k_byzantium }
+		empire = { title = e_byzantium }
+	}
+	# FIXME: currently enabled when NWO has been used, because due to the fact that NWO can be very selective about
+	# what parts of the world to affect, I need to actually know that the ERE was destroyed as a result of NWO as
+	# opposed to some other reason.  even then, in nwo_duke or nwo_king mode, the Imperial Anarchy mechanics might be fun
+	# NOT = { has_global_flag = emf_nwo }
+}
+
+emf_empires_byz_restorer_potential_trigger = {
+	independent = yes
+	religion_group = christian
+	higher_tier_than = COUNT
+	is_feudal = yes
+	primary_title = { is_primary_type_title = no }
+	NOT = {
+		any_demesne_title = {
+			tier = EMPEROR
+			emf_not_titular_trigger = yes
+		}
+	}
+}
+
+# THIS = character whose culture/religion is to be evaluated
+emf_empires_byz_restorer_culrel_allow_trigger = {
+	OR = {
+		culture_group = byzantine
+		AND = {
+			ai = no
+			culture_group = south_slavic
+		}
+	}
+	OR = {
+		custom_tooltip = {
+			text = emf_empires_ctt_byz_valid_religion
+			hidden_tooltip = {
+				OR = {
+					religion = orthodox
+					religion = bogomilist
+					religion = paulician
+					religion = monothelite
+					religion = iconoclast
+				}
+			}
+		}
+		AND = {
+			ai = no
+			custom_tooltip = {
+				text = emf_empires_ctt_byz_valid_religion_player
+				hidden_tooltip = {
+					OR = {
+						religion = nestorian
+						religion = messalian
+						religion = miaphysite
+						religion = monophysite
+					}
+				}
+			}
+		}
+	}
+}
+
+###############################################
+####            MONGOL INVASION            ####
+###############################################
+
+# THIS = province, ROOT = mongol khagan
+emf_empires_mongol_core_prov_trigger = {
 	owner = { NOT = { same_realm = ROOT } } # Border province
-
-	region = emf_region_mongol_extended
-
+	region = emf_region_mongol_core
 	owner = {
 		top_liege = {
 			NOR = {
-				# Respect truce
-				reverse_has_truce = ROOT
+				reverse_has_truce = ROOT # Respect truces
+				is_allied_with = ROOT # Respect alliances
+				has_non_aggression_pact_with = ROOT # Respect NAPs
+			}
+		}
+	}
+}
 
-				# Respect suzerainty
-				ROOT = { pays_tribute_to = PREV }
-
-				# Respect alliances
-				is_allied_with = ROOT
-
-				# Respect NAPs
-				has_non_aggression_pact_with = ROOT
+# THIS = province, ROOT = mongol khagan
+emf_empires_mongol_extended_prov_trigger = {
+	owner = { NOT = { same_realm = ROOT } } # Border province
+	region = emf_region_mongol_extended
+	owner = {
+		top_liege = {
+			NOR = {
+				reverse_has_truce = ROOT # Respect truces
+				is_allied_with = ROOT # Respect alliances
+				has_non_aggression_pact_with = ROOT # Respect NAPs
 			}
 		}
 	}

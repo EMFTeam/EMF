@@ -1,37 +1,40 @@
+# -*- ck2.cb_types -*-
+
 ## normal scopes(including posttitle scopes) ##
-# ROOT = actor
-# FROM = recipient
+#ROOT = actor
+#FROM = recipient
 # <no scope change> = thirdparty character
 ## title scopes ##
 # ROOT = actor
 # FROM = recipient
-# <no scope change> = thirdparty landed title	
+# <no scope change> = thirdparty landed title
 #
 # the following effects/triggers exists (example execution order: on_success->on_success_title->on_success_posttitle):
 # is_valid, is_valid_title, on_add, on_add_title, on_add_posttitle, on_success, on_success_title, on_success_posttitle, on_fail, on_fail_title, on_fail_posttitle, on_reverse_demand, on_reverse_demand_title, on_reverse_demand_posttitle
 #
 # Added on_attacker_leader_death, on_defender_leader_death and on_thirdparty_death, which all trigger when corresponding character dies
-# These three all have war scopes, which currently has the following scope changes: 
+# These three all have war scopes, which currently has the following scope changes:
 # attacker, defender, thirdparty(only valid if thirdparty character is involved), thirdparty_title(only valid if thirdparty title is involved)
 #
-
 cb_faction_overthrow_ruler = {
 	name = CB_NAME_OVERTHROWRULER
 	war_name = WAR_NAME_FACTION_DEPOSE
 	sprite = 12
 	truce_days = 3650
-	
 	major_revolt = yes
 	attacker_can_call_allies = no
 	defender_can_call_allies = no
 	can_ask_to_join_war = no
-	
-	infamy_modifier = 0
-	
+	infamy_modifier = 0.01
+
 	can_use = {
+		emf_cb_can_use_trigger = yes
 		ROOT = {
 			vassal_of = FROM
-			has_opinion_modifier = { who = FROM modifier = revolting_against }
+			has_opinion_modifier = {
+				who = FROM
+				modifier = revolting_against
+			}
 		}
 	}
 
@@ -42,12 +45,15 @@ cb_faction_overthrow_ruler = {
 					character = PREV # either independent
 				}
 				liege = {
-					FROM = { 
+					FROM = {
 						is_liege_or_above = PREV # or have shared liege
 					}
 				}
 			}
-			has_opinion_modifier = { who = FROM modifier = revolting_against }
+			has_opinion_modifier = {
+				who = FROM
+				modifier = revolting_against
+			}
 		}
 		FROM = {
 			any_demesne_title = {
@@ -57,14 +63,12 @@ cb_faction_overthrow_ruler = {
 			in_revolt = no
 			liege_before_war = {
 				in_revolt = no
-				liege_before_war = {
-					in_revolt = no
-				}
+				liege_before_war = { in_revolt = no }
 			}
 		}
 		OR = {
 			# Never invalidate the revolt due to demands being impossible to fulfill if still the original liege
-			ROOT = { has_character_flag = original_war_liege }			
+			ROOT = { has_character_flag = original_war_liege }
 			# Succession law wars are invalid if the non-original liege doesn't hold the succession title
 			NOT = { FROM = { has_character_flag = faction_succession_war } }
 			AND = {
@@ -107,39 +111,48 @@ cb_faction_overthrow_ruler = {
 	}
 
 	on_add = {
-		log = "CB(cb_faction_overthrow_ruler): START: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+		log = "CB(cb_faction_overthrow_ruler): START: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
 		FROM = { pf_log_state_effect = yes }
 		emf_cb_dynlevy_begin_effect = yes
 	}
-	
+
 	on_success = {
-		log = "CB(cb_faction_overthrow_ruler): VICTORY: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
-		
-		# # the defender loses 10 Imperial Decadence ("out with the old, in with the new")
-		# if = {
-		# 	limit = { FROM = { uses_imperial_decadence_trigger = yes } }
-		# 	FROM = {
-		# 		custom_tooltip = { text = IMPERIAL_DECADENCE_MINUS_10 }
-		# 		hidden_tooltip = {
-		# 			primary_title = {
-		# 				change_variable = { which = "imperial_decadence" value = -10 }
-		# 				set_title_flag = skip_decadence_gain
-		# 			}
-		# 		}
-		# 	}
-		# }
-
+		log = "CB(cb_faction_overthrow_ruler): VICTORY: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+		## the defender loses 10 Imperial Decadence ("out with the old, in with the new")
+		#if = {
+		#	limit = { FROM = { uses_imperial_decadence_trigger = yes } }
+		#	FROM = {
+		#		custom_tooltip = { text = IMPERIAL_DECADENCE_MINUS_10 }
+		#		hidden_tooltip = {
+		#			primary_title = {
+		#				change_variable = {
+		#					which = imperial_decadence
+		#					value = -10
+		#				}
+		#				set_title_flag = skip_decadence_gain
+		#			}
+		#		}
+		#	}
+		#}
 		emf_cb_obj_win_war_effect = yes
-
 		# apply immediate effects to the revolters
 		hidden_tooltip = {
 			any_attacker = {
-				limit = { has_opinion_modifier = { who = FROM modifier = revolting_against } }
-				
+				limit = {
+					has_opinion_modifier = {
+						who = FROM
+						modifier = revolting_against
+					}
+				}
 				# the revolters remember who they overthrew
-				opinion = { modifier = overthrown_ruler who = FROM }
-				reverse_opinion = { modifier = overthrew_me who = FROM }
-				
+				opinion = {
+					modifier = overthrown_ruler
+					who = FROM
+				}
+				reverse_opinion = {
+					modifier = overthrew_me
+					who = FROM
+				}
 				# and also are grateful to each other for their victory
 				FROM = {
 					any_opinion_modifier_target = {
@@ -159,29 +172,24 @@ cb_faction_overthrow_ruler = {
 				}
 			}
 		}
-		
 		# apply revolt effects to the defender
 		FROM = {
 			prestige = -500
-			
 			# existing vassals may declare independence
 			# if = {
-			# 	limit = { independent = yes }
-			# 	hidden_tooltip = { any_vassal = { character_event = { id = Plus.430 days = 3 } } }
+			# limit = { independent = yes }
+			# hidden_tooltip = { any_vassal = { character_event = { id = Plus.430 days = 3 } } }
 			# }
-
-			# # check whether title will be destroyed (CK2Plus only)
+			## check whether title will be destroyed (CK2Plus only)
 			# any_demesne_title = {
-			# 	limit = { can_destroy_title_trigger = yes }
-			# 	custom_tooltip = { text = TITLE_ENDANGERED_NO_NAME }
-			# 	log = "[This.GetFullName] should be destroyed as a result of the revolt"
-			# 	set_title_flag = destroy_title
+			# limit = { can_destroy_title_trigger = yes }
+			# custom_tooltip = { text = TITLE_ENDANGERED_NO_NAME }
+			# log = "[This.GetFullName] should be destroyed as a result of the revolt"
+			# set_title_flag = destroy_title
 			# }
-		
 			# always lower CA/TO, even if it wasn't a revolt demand
 			pf_lower_CA_effect = yes # lower Crown Authority
-			pf_lower_TO_effect = yes # lower Tribal Organization		
-		
+			pf_lower_TO_effect = yes # lower Tribal Organization
 			# enforce any rebel demands that prompted the civil war
 			if = {
 				limit = { ROOT = { has_character_flag = demands_revert_succession } }
@@ -203,10 +211,10 @@ cb_faction_overthrow_ruler = {
 				limit = { ROOT = { has_character_flag = demands_lower_temple_obligations } }
 				pf_lower_temple_obligations_effect = yes
 			}
-			# if = {
-			# 	limit = { ROOT = { has_character_flag = demands_council_life_terms } }
-			# 	primary_title = { add_law_w_cooldown = council_privileges_1 }
-			# }
+			#if = {
+			#	limit = { ROOT = { has_character_flag = demands_council_life_terms } }
+			#	primary_title = { add_law_w_cooldown = council_privileges_1 }
+			#}
 			if = {
 				limit = { ROOT = { has_character_flag = demands_seniority } }
 				random_demesne_title = {
@@ -243,11 +251,9 @@ cb_faction_overthrow_ruler = {
 				}
 				recalc_succession = yes
 			}
-			
 			# Prevent on_new_holder / on_unlanded edge case handlers from tearing-down any civil war state while the CB
 			# completes due to, e.g., liege changes or gained titles.
 			set_global_flag = pf_teardown_lock
-		
 			# surrender any non-capital counties to rebels with claims
 			save_event_target_as = current_holder
 			any_demesne_title = {
@@ -303,7 +309,7 @@ cb_faction_overthrow_ruler = {
 							NOT = {
 								any_opinion_modifier_target = {
 									pf_part_of_this_revolt_trigger = yes
-									has_strong_claim = PREVPREV							
+									has_strong_claim = PREVPREV
 									emf_can_inherit_trigger = yes
 								}
 							}
@@ -349,11 +355,9 @@ cb_faction_overthrow_ruler = {
 					}
 				}
 			}
-			
 			# transfer vassals to their de jure lieges, giving preference to the
 			# rebels with the lowest-tier held titles that are de jure liege to
 			# each vassal (prefer most specific de jure liege) ...
-
 			# king-tier de jure liege title vassal transfer to rebels
 			any_vassal = {
 				limit = {
@@ -475,14 +479,12 @@ cb_faction_overthrow_ruler = {
 					}
 				}
 			}
-			
 			# save event targets for primary title and current liege
 			primary_title = { save_event_target_as = former_primary_title }
 			if = {
 				limit = { independent = no }
 				liege = { save_event_target_as = current_liege }
 			}
-			
 			# check whether defender should have titles usurped
 			if = {
 				limit = {
@@ -576,9 +578,7 @@ cb_faction_overthrow_ruler = {
 										any_pretender_title = {
 											title = PREVPREVPREV
 										}
-										any_heir_title = {
-											title = PREVPREVPREV
-										}
+										any_heir_title = { title = PREVPREVPREV }
 									}
 									emf_can_inherit_trigger = yes
 								}
@@ -593,9 +593,7 @@ cb_faction_overthrow_ruler = {
 										any_pretender_title = {
 											title = PREVPREVPREV
 										}
-										any_heir_title = {
-											title = PREVPREVPREV
-										}
+										any_heir_title = { title = PREVPREVPREV }
 									}
 									emf_can_inherit_trigger = yes
 								}
@@ -614,7 +612,6 @@ cb_faction_overthrow_ruler = {
 						}
 					}
 				}
-
 				# just abdicate if there is no rebel with a claim or a pretender/heir to primary title
 				if = {
 					limit = {
@@ -625,18 +622,21 @@ cb_faction_overthrow_ruler = {
 									pf_part_of_this_revolt_trigger = yes
 									OR = {
 										has_claim = event_target:former_primary_title
-										any_pretender_title = { title = event_target:former_primary_title }
-										any_heir_title = { title = event_target:former_primary_title }
+										any_pretender_title = {
+											title = event_target:former_primary_title
+										}
+										any_heir_title = {
+											title = event_target:former_primary_title
+										}
 									}
 									emf_can_inherit_trigger = yes
 								}
 							}
 						}
 					}
-					# hidden_tooltip = { character_event = { id = Plus.306 } } #pass on tyrant/dishonorable traits
+					#hidden_tooltip = { character_event = { id = Plus.306 } } # pass on tyrant/dishonorable traits
 					abdicate = yes
 				}
-				
 				# give primary title to rebel with weak claim if none with a strong claim or pretender/heir exists
 				if = {
 					limit = {
@@ -652,8 +652,12 @@ cb_faction_overthrow_ruler = {
 									pf_part_of_this_revolt_trigger = yes
 									OR = {
 										has_strong_claim = event_target:former_primary_title
-										any_pretender_title = { title = event_target:former_primary_title }
-										any_heir_title = { title = event_target:former_primary_title }
+										any_pretender_title = {
+											title = event_target:former_primary_title
+										}
+										any_heir_title = {
+											title = event_target:former_primary_title
+										}
 									}
 									emf_can_inherit_trigger = yes
 								}
@@ -682,7 +686,6 @@ cb_faction_overthrow_ruler = {
 						}
 					}
 				}
-
 				# give primary title to rebel with a strong claim if no rebel pretender/heir exists
 				if = {
 					limit = {
@@ -697,8 +700,12 @@ cb_faction_overthrow_ruler = {
 								any_opinion_modifier_target = {
 									pf_part_of_this_revolt_trigger = yes
 									OR = {
-										any_pretender_title = { title = event_target:former_primary_title }
-										any_heir_title = { title = event_target:former_primary_title }
+										any_pretender_title = {
+											title = event_target:former_primary_title
+										}
+										any_heir_title = {
+											title = event_target:former_primary_title
+										}
 									}
 									emf_can_inherit_trigger = yes
 								}
@@ -727,7 +734,6 @@ cb_faction_overthrow_ruler = {
 						}
 					}
 				}
-
 				# give primary title to rebel who is a pretender/heir
 				if = {
 					limit = {
@@ -736,9 +742,13 @@ cb_faction_overthrow_ruler = {
 							any_opinion_modifier_target = {
 								pf_part_of_this_revolt_trigger = yes
 								OR = {
-									any_pretender_title = { title = event_target:former_primary_title }
-									any_heir_title = { title = event_target:former_primary_title }
-								}								
+									any_pretender_title = {
+										title = event_target:former_primary_title
+									}
+									any_heir_title = {
+										title = event_target:former_primary_title
+									}
+								}
 								emf_can_inherit_trigger = yes # Presumably redundant here
 							}
 						}
@@ -748,8 +758,12 @@ cb_faction_overthrow_ruler = {
 							limit = {
 								pf_part_of_this_revolt_trigger = yes
 								OR = {
-									any_pretender_title = { title = event_target:former_primary_title }
-									any_heir_title = { title = event_target:former_primary_title }
+									any_pretender_title = {
+										title = event_target:former_primary_title
+									}
+									any_heir_title = {
+										title = event_target:former_primary_title
+									}
 								}
 								emf_can_inherit_trigger = yes
 							}
@@ -769,11 +783,12 @@ cb_faction_overthrow_ruler = {
 					}
 				}
 			}
-			
 			# check whether defender should simply abdicate
 			if = {
 				limit = {
-					event_target:current_holder = { has_landed_title = event_target:former_primary_title }
+					event_target:current_holder = {
+						has_landed_title = event_target:former_primary_title
+					}
 					NAND = {
 						# this is not a succession law revolt
 						NOT = { has_character_flag = faction_succession_war }
@@ -802,29 +817,20 @@ cb_faction_overthrow_ruler = {
 						}
 					}
 				}
-				# hidden_tooltip = { character_event = { id = Plus.306 } } #pass on tyrant/dishonorable traits
+				#hidden_tooltip = { character_event = { id = Plus.306 } } # pass on tyrant/dishonorable traits
 				abdicate = yes
 			}
 		}
-		
 		clr_global_flag = pf_teardown_lock
-					
 		# figure out who are the supporters, losers, and neutrals
 		if = {
 			# primary title has changed hands
-			limit = {
-				event_target:former_primary_title = {
-					holder_scope = {
-						NOT = { character = FROM }
-					}
-				}
-			}
+			limit = { event_target:former_primary_title = { holder_scope = { NOT = { character = FROM } } } }
 			hidden_tooltip = {
 				event_target:former_primary_title = {
 					holder_scope = {
 						# clear previous civil war opinions
 						pf_civil_war_clear_old_opinions_effect = yes
-						
 						# mark rebels as supporters
 						event_target:current_holder = {
 							any_opinion_modifier_target = {
@@ -839,7 +845,6 @@ cb_faction_overthrow_ruler = {
 								}
 							}
 						}
-						
 						# mark former liege and loyalists as losers
 						any_vassal = {
 							limit = {
@@ -861,7 +866,6 @@ cb_faction_overthrow_ruler = {
 								months = 60
 							}
 						}
-						
 						# remember those who chose to be neutral
 						any_vassal = {
 							limit = {
@@ -880,22 +884,22 @@ cb_faction_overthrow_ruler = {
 				}
 			}
 		}
-
-		# # check whether the primary title should be destroyed due to CA loss
-		# if = {
-		# 	limit = { event_target:former_primary_title = { has_title_flag = destroy_title } }
-		# 	hidden_tooltip = {
-		# 		event_target:former_primary_title = {
-		# 			holder_scope = {
-		# 				character_event = { id = Plus.1620 days = 4 } #destroy title
-		# 			}
-		# 		}
-		# 	}
-		# }
-
+		## check whether the primary title should be destroyed due to CA loss
+		#if = {
+		#	limit = { event_target:former_primary_title = { has_title_flag = destroy_title } }
+		#	hidden_tooltip = {
+		#		event_target:former_primary_title = {
+		#			holder_scope = {
+		#				character_event = {
+		#					id = Plus.1620
+		#					days = 4
+		#				} # destroy title
+		#			}
+		#		}
+		#	}
+		#}
 		# clean up remaining civil war state
 		pf_civil_war_cleanup_effect = yes
-
 		any_attacker = {
 			limit = { character = ROOT }
 			participation_scaled_prestige = 250
@@ -904,16 +908,9 @@ cb_faction_overthrow_ruler = {
 			limit = { NOT = { character = ROOT } }
 			hidden_tooltip = { participation_scaled_prestige = 250 }
 		}
-		
 		# post-civil war event to reward allies (if title has changed hands)
 		if = {
-			limit = {
-				event_target:former_primary_title = {
-					holder_scope = {
-						NOT = { character = FROM }
-					}
-				}
-			}
+			limit = { event_target:former_primary_title = { holder_scope = { NOT = { character = FROM } } } }
 			event_target:former_primary_title = {
 				holder_scope = {
 					emf_dynlevy_update_effect = yes
@@ -921,25 +918,34 @@ cb_faction_overthrow_ruler = {
 				}
 			}
 		}
-		
 		# change faction moods
-		FROM = { hidden_tooltip = { character_event = { id = PlusFaction.200 days = 1 } } }
-		ROOT = { hidden_tooltip = { character_event = { id = PlusFaction.200 days = 1 } } }
-		
+		FROM = {
+			hidden_tooltip = {
+				character_event = {
+					id = PlusFaction.200
+					days = 1
+				}
+			}
+		}
+		ROOT = {
+			hidden_tooltip = {
+				character_event = {
+					id = PlusFaction.200
+					days = 1
+				}
+			}
+		}
 		emf_cb_dynlevy_end_effect = yes
 	}
 
-	on_fail = {
-		log = "CB(cb_faction_overthrow_ruler): WHITEPEACE: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+	on_success_posttitle = { emf_cb_on_success_posttitle_effect = yes }
 
+	on_fail = {
+		log = "CB(cb_faction_overthrow_ruler): WHITEPEACE: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
 		emf_cb_dynlevy_end_effect = yes
-		
 		# clean up remaining civil war state
 		pf_civil_war_cleanup_effect = yes
-		
-		ROOT = {
-			prestige = -100
-		}
+		ROOT = { prestige = -100 }
 		hidden_tooltip = {
 			FROM = {
 				remove_opinion = {
@@ -951,49 +957,76 @@ cb_faction_overthrow_ruler = {
 	}
 
 	on_reverse_demand = {
-		log = "CB(cb_faction_overthrow_ruler): DEFEAT: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
-
+		log = "CB(cb_faction_overthrow_ruler): DEFEAT: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
 		emf_cb_obj_win_war_reverse_effect = yes
 		emf_cb_dynlevy_end_effect = yes
-
 		FROM = {
-			# # the defender loses 1 Imperial Decadence
-			# imperial_decadence_minus_1_effect = yes
-			# # add victory modifier for the 'Win a War' ambition
-			# add_character_modifier = { name = victory_timer duration = 1 hidden = yes }
+			## the defender loses 1 Imperial Decadence
+			#imperial_decadence_minus_1_effect = yes
+			## add victory modifier for the 'Win a War' ambition
+			#add_character_modifier = {
+			#	name = victory_timer
+			#	duration = 1
+			#	hidden = yes
+			#}
 			pf_civil_war_clear_old_opinions_effect = yes
 		}
-		
 		# apply immediate effects to the revolters
 		any_attacker = {
-			limit = { has_opinion_modifier = { who = FROM modifier = revolting_against } }
+			limit = {
+				has_opinion_modifier = {
+					who = FROM
+					modifier = revolting_against
+				}
+			}
 			imprison = FROM
 			hidden_tooltip = {
-				reverse_opinion = { who = FROM modifier = opinion_civil_war_loser months = 60 }
-				opinion = { who = FROM modifier = opinion_coerced_into_leaving_faction months = 60 }
+				reverse_opinion = {
+					who = FROM
+					modifier = opinion_civil_war_loser
+					months = 60
+				}
+				opinion = {
+					who = FROM
+					modifier = opinion_coerced_into_leaving_faction
+					months = 60
+				}
 			}
 		}
-
 		# mark loyalists and neutrals for the reward event
 		hidden_tooltip = {
 			FROM = {
 				any_vassal = {
-					limit = { reverse_has_opinion_modifier = { who = PREV modifier = pf_loyal_to_me } }
-					reverse_opinion = { who = PREV modifier = opinion_civil_war_supporter months = 60 }
+					limit = {
+						reverse_has_opinion_modifier = {
+							who = PREV
+							modifier = pf_loyal_to_me
+						}
+					}
+					reverse_opinion = {
+						who = PREV
+						modifier = opinion_civil_war_supporter
+						months = 60
+					}
 				}
 				any_vassal = {
-					limit = { reverse_has_opinion_modifier = { who = PREV modifier = pf_neutral_to_me } }
-					reverse_opinion = { who = PREV modifier = opinion_civil_war_neutral months = 60 }
+					limit = {
+						reverse_has_opinion_modifier = {
+							who = PREV
+							modifier = pf_neutral_to_me
+						}
+					}
+					reverse_opinion = {
+						who = PREV
+						modifier = opinion_civil_war_neutral
+						months = 60
+					}
 				}
 			}
 		}
-		
 		# clean up remaining civil war state
 		pf_civil_war_cleanup_effect = yes
-		
-		ROOT = {
-			prestige = -250
-		}
+		ROOT = { prestige = -250 }
 		any_defender = {
 			limit = { character = FROM }
 			participation_scaled_prestige = 100
@@ -1002,32 +1035,36 @@ cb_faction_overthrow_ruler = {
 			limit = { NOT = { character = FROM } }
 			hidden_tooltip = { participation_scaled_prestige = 100 }
 		}
-		
 		# post-civil war event to reward allies
-		FROM = {
-			hidden_tooltip = { character_event = { id = PlusFaction.450 } }
-		}
-		
+		FROM = { hidden_tooltip = { character_event = { id = PlusFaction.450 } } }
 		# change faction moods
 		hidden_tooltip = {
-			FROM = { character_event = { id = PlusFaction.200 days = 1 } }
-			ROOT = { character_event = { id = PlusFaction.200 days = 1 } }
+			FROM = {
+				character_event = {
+					id = PlusFaction.200
+					days = 1
+				}
+			}
+			ROOT = {
+				character_event = {
+					id = PlusFaction.200
+					days = 1
+				}
+			}
 		}
 	}
 
 	on_invalidation = {
-		log = "CB(cb_faction_overthrow_ruler): INVALIDATED: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
-
+		log = "CB(cb_faction_overthrow_ruler): INVALIDATED: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
 		emf_cb_dynlevy_end_effect = yes
-		
 		# clean up remaining civil war state
 		pf_civil_war_cleanup_effect = yes
 	}
-	
+
 	attacker_ai_victory_worth = {
 		factor = -1 # always accept
 	}
-	
+
 	attacker_ai_defeat_worth = {
 		factor = 100
 	}
@@ -1035,7 +1072,7 @@ cb_faction_overthrow_ruler = {
 	defender_ai_victory_worth = {
 		factor = -1 # always accept
 	}
-	
+
 	defender_ai_defeat_worth = {
 		factor = 100
 	}

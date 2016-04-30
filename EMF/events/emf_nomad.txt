@@ -1,3 +1,5 @@
+# -*- ck2.events -*-
+
 
 namespace = emf_nomad
 
@@ -154,7 +156,7 @@ character_event = {
 
 		random_independent_ruler = {
 			limit = {
-				tier = emperor
+				tier = EMPEROR
 				is_nomadic = yes
 				primary_title = {
 					any_previous_holder = {
@@ -170,12 +172,7 @@ character_event = {
 			
 			log = "emf_nomad.1: SERIOUS: could not find new khan of prior nomad title"
 
-			any_title = {
-				limit = { tier = count }
-				location = {
-					clr_province_flag = emf_old_khan_claim
-				}
-			}
+			any_province = { clr_province_flag = emf_old_khan_claim }
 
 			break = yes
 		}
@@ -463,7 +460,7 @@ character_event = {
 						}
 						owner = {
 							set_defacto_liege = ROOT
-							pf_liege_change_effect = yes
+							emf_liege_change_effect = yes
 							any_realm_province = {
 								clr_province_flag = emf_old_khan_claim
 							}
@@ -471,41 +468,13 @@ character_event = {
 					}
 
 					ROOT = { repeat_event = { id = emf_nomad.4 } }
-
 					break = yes
 				}
 
 				# Just take it back...
-
-				county = {
-					grant_title_no_opinion = ROOT
-				}
-
-				# Similar in effect to emf_cb_nomadic_province_effect (in context):
-				if = {
-					limit = {
-						NOT = {
-							any_province_holding = {
-								NOT = { holding_type = nomad } # An actual nomad capital here should be impossible, but nevertheless.
-							}
-						}
-					}
-
-					build_holding = {
-						type = tribal
-						holder = ROOT
-					}
-					random_province_holding = {
-						limit = { holding_type = tribal }
-						make_capital_holding = yes
-					}
-
-					# Even though this should've happened upon transferring
-					# the county title, sometimes the engine is confused:
-
-					religion = ROOT
-					culture = ROOT
-				}
+				set_global_flag = emf_latb_upon_gain
+				county = { gain_title = ROOT }
+				clr_global_flag = emf_latb_upon_gain
 			}
 		}
 
@@ -576,7 +545,7 @@ character_event = {
 # emf_nomad.20 [New Empty County Holder]
 #
 # on_new_holder_usurpation listener for empty/nomadic provinces that enforces
-# the equivalent of the scripted effect emf_cb_nomadic_province_effect upon
+# the equivalent of the scripted effect emf_cb_latb_effect upon
 # all usurped empty counties.
 #
 # The scripted effect is still used throughout CBs, because this method needs to
@@ -606,23 +575,20 @@ character_event = {
 	is_triggered_only = yes
 
 	trigger = {
-		FROM = { tier = count } # Filter only county titles ...
+		FROM = { tier = COUNT } # Filter only county titles ...
 		FROM = { # ... that correspond to empty/nomadic provinces.
-			location = {
-				NOT = {
-					any_province_holding = {
-						NOT = { holding_type = nomad }
-					}
-				}
-			}
+			location = { NOT = { any_province_holding = { NOT = { holding_type = nomad } } } }
 		}
 		# And the new holder isn't a nomad, or the culture & religion of the new
 		# & prior holders is/are not the same.
 		ROOT = {
 			OR = {
 				is_nomadic = no
-				NOT = { culture = FROMFROM }
-				NOT = { religion = FROMFROM }
+				NOT = { culture = FROMFROM } # Culture is always preserved
+				NOR = { # Else, religion isn't preserved unless receiver's non-nomad
+					is_nomadic = yes
+					religion = FROMFROM
+				}
 			}
 		}
 		# We depend upon being able to query character religion/culture, so this
@@ -634,10 +600,9 @@ character_event = {
 		FROMFROM = { save_event_target_as = emf_prior_holder }
 		FROM = {
 			location = {
-
 				if = {
 					limit = { has_empty_holding = yes }
-					province_event = { id = emf_nomad.21 }
+					province_event = { id = emf_nomad.22 }
 					break = yes
 				}
 
@@ -647,53 +612,89 @@ character_event = {
 				# so try to build it on the next game day.
 
 				if = {
-					limit = {
-						NOT = { any_province_holding = { holding_type = nomad } }
-					}
+					limit = { NOT = { any_province_holding = { holding_type = nomad } } }
 					log = "emf_nomad.20: SERIOUS: conquered empty province '[This.GetName]' seems to have 0 holding slots, or else game constraints have changed"
 				}
-				
-				province_event = { id = emf_nomad.21 days = 1 }
+				province_event = { id = emf_nomad.22 days = 1 }
 			}
 		}
 	}
 }
 
 
-# emf_nomad.21 [Newly-Usurped Empty Province]
+# emf_nomad.21 [New Empty County Holder]
 #
-# Actually build a tribal holding in ROOT, which was
-# previously held by event_target:emf_prior_holder and
-# is now held by FROM.
-province_event = {
+# on_new_holder listener equivalent to emf_nomad.21, except that it doesn't trigger
+# unless the global flag `emf_latb_upon_gain` is set.
+character_event = {
 	id = emf_nomad.21
 	hide_window = yes
 	is_triggered_only = yes
 
 	trigger = {
-		has_empty_holding = yes
+		# Script specifically enabled this behavior upon title gain/grant (temporarily, presumably)
+		has_global_flag = emf_latb_upon_gain
+		FROM = { tier = COUNT } # Filter only county titles ...
+		FROM = { # ... that correspond to empty/nomadic provinces.
+			location = { NOT = { any_province_holding = { NOT = { holding_type = nomad } } } }
+		}
+		# And the new holder isn't a nomad, or the culture & religion of the new
+		# & prior holders is/are not the same.
+		ROOT = {
+			OR = {
+				is_nomadic = no
+				NOT = { culture = FROMFROM } # Culture is always preserved
+				NOR = { # Else, religion isn't preserved unless receiver's non-nomad
+					is_nomadic = yes
+					religion = FROMFROM
+				}
+			}
+		}
+		# We depend upon being able to query character religion/culture, so this
+		# is here as a sort of assertion:
+		FROMFROM = { always = yes }
 	}
 
 	immediate = {
-		build_holding = { type = tribal }
+		repeat_event = { id = emf_nomad.20 } # Invoke main LATB on_action event w/ same scopes immediately
+	}
+}
 
+
+# emf_nomad.22 [Newly-Usurped Empty Province]
+#
+# Actually build a tribal holding in ROOT, which was
+# previously held by event_target:emf_prior_holder and
+# is now held by FROM.
+province_event = {
+	id = emf_nomad.22
+	hide_window = yes
+	is_triggered_only = yes
+
+	trigger = { has_empty_holding = yes }
+
+	immediate = {
+		build_holding = { type = tribal }
 		random_province_holding = {
 			limit = {
-				FROM = { is_nomadic = yes }
 				holding_type = tribal
+				FROM = { is_nomadic = yes }
 				is_capital = yes
 			}
 			revoke_capital_holding = yes
 		}
 		random_province_holding = {
 			limit = {
-				FROM = { is_nomadic = no }
 				holding_type = tribal
+				FROM = { is_nomadic = no }
 				is_capital = no
 			}
 			make_capital_holding = yes
 		}
-
+		random_province_holding = {
+			limit = { holding_type = tribal }
+			log = "DEBUG: LATB: built tribal holding [This.GetID] ([This.GetBaseName]) in [Root.GetName] ([Root.County.GetID]) -- via on_action"
+		}
 		religion = event_target:emf_prior_holder
 		culture = event_target:emf_prior_holder
 	}

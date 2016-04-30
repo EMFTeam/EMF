@@ -1,3 +1,5 @@
+# -*- ck2.events -*-
+
 
 namespace = PlusFaction
 
@@ -256,18 +258,7 @@ character_event = {
 
 	immediate = {
 		if = {
-			limit = { is_vice_royalty = yes }
-			capital_scope = {
-				county = {
-					current_heir = {
-						save_event_target_as = heir
-					}
-				}
-			}
-		}
-		if = {
 			limit = {
-				is_vice_royalty = no
 				current_heir = { is_alive = yes }
 			}
 			current_heir = {
@@ -276,7 +267,6 @@ character_event = {
 		}
 		if = {
 			limit = {
-				is_vice_royalty = no
 				NOT = { current_heir = { is_alive = yes } }
 			}
 			save_event_target_as = heir
@@ -411,7 +401,6 @@ character_event = {
 				NOR = {
 					liege = { character = event_target:heir } # aforementioned case
 					character = event_target:heir # unknown heir
-					is_vice_royalty = yes # viceroys suck at everything
 				}
 			}
 			
@@ -556,7 +545,6 @@ character_event = {
 				OR = {
 					liege = { character = event_target:heir }
 					character = event_target:heir
-					is_vice_royalty = yes
 				}
 			}
 			if = {
@@ -571,10 +559,6 @@ character_event = {
 			if = {
 				limit = { character = event_target:heir }
 				log = "dying ruler is a civil war liege, but [Root.GetSheHe] has no known successor, so the revolt should invalidate."
-			}
-			if = {
-				limit = { is_vice_royalty = yes }
-				log = "dying ruler is a civil war liege, but [Root.GetSheHe] is also a viceroy, so the revolt should invalidate."
 			}
 			any_war = {
 				limit = {
@@ -608,7 +592,6 @@ character_event = {
 							character = PREV
 							character = ROOT
 							is_liege_of = ROOT
-							ROOT = { is_vice_royalty = yes }
 							AND = {
 								trait = pf_rebel
 								any_opinion_modifier_target = {
@@ -769,10 +752,6 @@ character_event = {
 			log = "-> the dying rebel's current liege is also his heir"
 		}
 		if = {
-			limit = { is_vice_royalty = yes }
-			log = "-> the dying rebel is a viceroy, and viceroys can do nothing but drool incessantly"
-		}
-		if = {
 			limit = {
 				event_target:pf_war_liege = {
 					event_target:heir = {
@@ -844,6 +823,15 @@ character_event = {
 
 	immediate = {
 		FROM = { character_event = { id = PlusFaction.212 days = 1 } }
+		holder_scope = {
+			log = "INFO: title grant: [Root.GetID] ([Root.GetFullBaseName]) granted to [This.GetTitledFirstName] (ID: [This.GetID]) by [From.GetTitledName] (ID: [From.GetID])"
+			# Title grant may have transferred de jure vassals under the new owner implicitly, so check the new
+			# owner's vassals for PF state invalidation.
+			any_vassal = {
+				limit = { is_playable = yes }
+				emf_liege_change_effect = yes
+			}
+		}
 	}
 }
 
@@ -864,15 +852,21 @@ character_event = {
 			holder_scope = { save_event_target_as = pf_new_owner }
 		}
 		
-		# Title grant may have transferred de jure vassals under the new owner implicitly, so check the new owner's
-		# vassals for PF state invalidation.
-		any_vassal = {
-			limit = { is_playable = yes }
-			pf_liege_change_effect = yes
+		event_target:pf_new_owner = {
+			
+			# Validate liege for all of our vassals due to possible de jure vassal transfer due to grant.
+			#
+			# Yes, we currently do this immediately upon grant and also now, 1 day later, so...
+			#
+			# FIXME: Actually verify that de jure vassal transfers as a result of a a title grant are already
+			# complete by the time PlusFaction.211 executes so that we can remove this from here safely.
+			any_vassal = {
+				limit = { is_playable = yes }
+				emf_liege_change_effect = yes
+			}
 		}
 		
 		#claimants to the granted title who aren't close relatives of the new owner are displeased
-		log = "[pf_new_owner.GetBestName] (ID:[pf_new_owner.GetID]) was granted the [pf_new_title.GetFullName] by [Root.GetBestName] (ID:[Root.GetID])"
 		event_target:pf_new_title = {
 			any_claimant = {
 				limit = {
@@ -2994,8 +2988,8 @@ character_event = {
 	}
 
 	immediate = {
+		log = "INFO: ruler took-over defense against civil war due to gaining title [From.GetID] ([From.GetFullName]). old liege's interim state pre-transfer:"
 		FROMFROM = {
-			log = "INFO: ruler took-over defense against civil war due to gaining title '[From.GetFullBaseName]'. old liege's interim state pre-transfer:"
 			pf_log_state_effect = yes
 			
 			# Transfer revolt TOMs
@@ -3133,8 +3127,8 @@ character_event = {
 	}
 
 	immediate = {
+		log = "INFO: rebel dropped-out of a civil war after losing the title [From.GetID] ([From.GetFullName]). interim state pre-cleanup:"
 		FROMFROM = {
-			log = "INFO: rebel dropped-out of a civil war after losing a title ([From.GetFullBaseName]). interim state pre-cleanup:"
 			pf_log_state_effect = yes
 			pf_teardown_rebel_effect = yes
 			log = "... ex-rebel's state post-cleanup:"
@@ -3179,7 +3173,7 @@ character_event = {
 	}
 
 	immediate = {
-		log = "INFO: rebel is dropping-out of civil war due to [This.GetHerHim] gaining title ([From.GetFullBaseName]): [This.GetHerHis] interim state follows..."
+		log = "INFO: rebel dropped-out of civil war due to gaining title [From.GetID] ([From.GetFullName]): interim state pre-cleanup:"
 		pf_log_state_effect = yes
 		pf_teardown_rebel_effect = yes
 		log = "... ex-rebel's state post-cleanup:"
@@ -3216,18 +3210,18 @@ character_event = {
 	immediate = {
 		if = {
 			limit = { trait = pf_loyalist }
-			log = "INFO: loyalist's liege changed due to [This.GetHerHim] gaining a title ([From.GetFullBaseName]): [This.GetHerHis] interim state follows..."
+			log = "INFO: loyalist's liege changed due to gaining title [From.GetID] ([From.GetFullName]): interim state pre-cleanup:"
 			pf_log_state_effect = yes
 			pf_teardown_loyalist_effect = yes
-			log = "... ex-loyalist's PF state dump post-cleanup:"
+			log = "... ex-loyalist's state post-cleanup:"
 			pf_log_state_effect = yes
 		}
 		if = {
 			limit = { trait = pf_neutral }
-			log = "INFO: neutral's liege changed due to [This.GetHerHim] gaining a title ([From.GetFullBaseName]): [This.GetHerHis] interim state follows..."
+			log = "INFO: neutral's liege changed due to gaining title [From.GetID] ([From.GetFullName]): interim state pre-cleanup:"
 			pf_log_state_effect = yes
 			pf_teardown_neutral_effect = yes
-			log = "... ex-neutral's PF state dump post-cleanup:"
+			log = "... ex-neutral's state post-cleanup:"
 			pf_log_state_effect = yes
 		}
 	}
@@ -3259,7 +3253,7 @@ character_event = {
 			log = "INFO: loyalist unlanded. interim state pre-cleanup:"
 			pf_log_state_effect = yes
 			pf_teardown_loyalist_effect = yes
-			log = "... ex-loyalist's PF state dump post-cleanup:"
+			log = "... ex-loyalist's state post-cleanup:"
 			pf_log_state_effect = yes
 		}
 		if = {
@@ -3267,7 +3261,7 @@ character_event = {
 			log = "INFO: neutral unlanded. interim state pre-cleanup:"
 			pf_log_state_effect = yes
 			pf_teardown_neutral_effect = yes
-			log = "... ex-neutral's PF state dump post-cleanup:"
+			log = "... ex-neutral's state post-cleanup:"
 			pf_log_state_effect = yes
 		}
 	}

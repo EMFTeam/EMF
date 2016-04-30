@@ -1,3 +1,5 @@
+# -*- ck2.scripted_effects -*-
+
 
 # Scripted effects for PlusFaction, prefixed by 'pf_'
 
@@ -173,7 +175,7 @@ pf_glory_minus1_effect = {
 pf_glory_plus2_effect = {
 	if = {
 		limit = { any_vassal = { leads_faction = faction_glory } }
-		custom_tooltip = { text = GLORYFACTIONMOODPLUS_NONAME }
+		custom_tooltip = { text = GLORYFACTIONMOODPLUS }
 		hidden_tooltip = {
 			random_vassal = {
 				limit = { leads_faction = faction_glory }
@@ -355,6 +357,15 @@ pf_clear_demands_flags_effect = {
 	clr_character_flag = demands_primogeniture
 	clr_character_flag = demands_gavelkind
 	clr_character_flag = demands_feudal_elective
+	
+	liege = {
+		any_vassal = {
+			ROOT = { clr_character_flag = faction_demand_@PREV }
+		}
+		any_demesne_title = {
+			ROOT = { clr_character_flag = faction_demand_@PREV }
+		}
+	}
 }
 
 pf_reset_maintenance_vars_effect = {
@@ -455,7 +466,7 @@ pf_member_vote_against_effect = {
 pf_save_old_gender_law_effect = {
 	if = {
 		limit = {
-			higher_tier_than = count
+			higher_tier_than = COUNT
 		}
 		clr_title_flag = former_cognatic_succession
 		clr_title_flag = former_agnatic_succession
@@ -478,7 +489,7 @@ pf_save_old_gender_law_effect = {
 pf_save_old_succ_law_effect = {
 	if = {
 		limit = {
-			higher_tier_than = count
+			higher_tier_than = COUNT
 		}
 		clr_title_flag = former_gavelkind
 		clr_title_flag = former_seniority
@@ -486,6 +497,7 @@ pf_save_old_succ_law_effect = {
 		clr_title_flag = former_feudal_elective
 		clr_title_flag = former_tanistry
 		clr_title_flag = former_ultimogeniture
+		clr_title_flag = former_turkish_succession
 		if = {
 			limit = { has_law = succ_gavelkind }
 			set_title_flag = former_gavelkind
@@ -509,6 +521,10 @@ pf_save_old_succ_law_effect = {
 		if = {
 			limit = { has_law = succ_ultimogeniture }
 			set_title_flag = former_ultimogeniture
+		}
+		if = {
+			limit = { has_law = succ_turkish_succession }
+			set_title_flag = former_turkish_succession
 		}
 	}
 }
@@ -567,9 +583,17 @@ pf_revert_succession_law_effect = {
 	}
 	if = {
 		limit = {
+			has_title_flag = former_turkish_succession
+			NOT = { has_law = succ_turkish_succession }
+			is_law_potential = succ_turkish_succession
+		}
+		add_law = succ_turkish_succession
+	}
+	if = {
+		limit = {
 			has_title_flag = former_cognatic_succession
 			NOT = { has_law = cognatic_succession }
-			emf_laws_cognatic_potential_trigger = yes
+			is_law_potential = cognatic_succession
 		}
 		add_law = cognatic_succession
 	}
@@ -584,7 +608,7 @@ pf_revert_succession_law_effect = {
 		limit = {
 			has_title_flag = former_true_cognatic_succession
 			NOT = { has_law = true_cognatic_succession }
-			emf_laws_cognatic_potential_trigger = yes
+			is_law_potential = true_cognatic_succession
 		}
 		add_law = true_cognatic_succession
 	}
@@ -738,7 +762,7 @@ pf_lower_TO_effect = {
 pf_lower_CA_effect = {
 	any_demesne_title = {
 		limit = {
-			higher_tier_than = duke
+			higher_tier_than = DUKE
 			OR = {
 				has_law = crown_authority_1
 				has_law = crown_authority_2
@@ -1037,53 +1061,38 @@ pf_liege_change_effect = {
 	}
 }
 
-# Careful! Don't put this convenience wrapper under a nested FROM!
 pf_liege_change_under_title_begin_effect = {
-	FROM = { save_event_target_as = pf_lc_enemy }
+	ROOT_FROM = { save_event_target_as = pf_lc_enemy }
 	pf_liege_change_under_title_ext_begin_effect = yes
 	clear_event_target = pf_lc_enemy
 }
 
 pf_liege_change_under_title_ext_begin_effect = {
 	hidden_tooltip = {
-		any_de_jure_vassal = { # All rulers with land under this de jure title
+		any_de_jure_vassal = { # For all de jure vassals of this title...
 			limit = {
-				# That have civil war state
 				is_playable = yes
+				# That have civil war participant state
 				pf_war_trait_trigger = yes
-				# That are in pf_lc_enemy's subrealm under the title PREV
+				# That are in pf_lc_enemy's subrealm
 				OR = {
 					character = event_target:pf_lc_enemy
 					is_liege_or_above = event_target:pf_lc_enemy
 				}
 			}
 			# Add temporary TOM from Isis to tracked ruler
-			e_hip = {
-				holder_scope = {
-					if = {
-						limit = {
-							NOT = {
-								has_opinion_modifier = {
-									who = PREVPREV
-									modifier = pf_lcut_ruler
-								}
-							}
-						}
-						opinion = { who = PREVPREV modifier = pf_lcut_ruler }
-					}
-				}
-			}
+			e_hip = { holder_scope = { opinion = { who = PREVPREV modifier = pf_lcut_ruler } } }
 		}
 		# And now to also add any folks PF-revolting against folks under this title+subrealm...
-		any_de_jure_vassal = { # All rulers with land under this de jure title
+		any_de_jure_vassal = { # For all de jure vassals of this title...
 			limit = {
-				# That have civil war defender state
 				is_playable = yes
+				# That have civil war defender state
 				any_war = {
 					defender = { character = PREV }
 					using_cb = cb_faction_overthrow_ruler
 				}
-				# That are in pf_lc_enemy's subrealm under the title PREV
+				# That are in pf_lc_enemy's subrealm
 				OR = {
 					character = event_target:pf_lc_enemy
 					is_liege_or_above = event_target:pf_lc_enemy
@@ -1091,60 +1100,15 @@ pf_liege_change_under_title_ext_begin_effect = {
 			}
 			any_opinion_modifier_target = { # Revolters
 				limit = { reverse_has_opinion_modifier = { who = PREV modifier = revolting_against_me } }
-				# Add temporary TOM from Isis to tracked ruler
-				e_hip = {
-					holder_scope = {
-						if = {
-							limit = {
-								NOT = {
-									has_opinion_modifier = {
-										who = PREVPREV
-										modifier = pf_lcut_ruler
-									}
-								}
-							}
-							opinion = { who = PREVPREV modifier = pf_lcut_ruler }
-						}
-					}
-				}
+				e_hip = { holder_scope = { opinion = { who = PREVPREV modifier = pf_lcut_ruler } } }
 			}
 			any_opinion_modifier_target = { # Neutrals
 				limit = { reverse_has_opinion_modifier = { who = PREV modifier = pf_neutral_to_me } }
-				# Add temporary TOM from Isis to tracked ruler
-				e_hip = {
-					holder_scope = {
-						if = {
-							limit = {
-								NOT = {
-									has_opinion_modifier = {
-										who = PREVPREV
-										modifier = pf_lcut_ruler
-									}
-								}
-							}
-							opinion = { who = PREVPREV modifier = pf_lcut_ruler }
-						}
-					}
-				}
+				e_hip = { holder_scope = { opinion = { who = PREVPREV modifier = pf_lcut_ruler } } }
 			}
 			any_opinion_modifier_target = { # Loyalists
 				limit = { reverse_has_opinion_modifier = { who = PREV modifier = pf_loyal_to_me } }
-				# Add temporary TOM from Isis to tracked ruler
-				e_hip = {
-					holder_scope = {
-						if = {
-							limit = {
-								NOT = {
-									has_opinion_modifier = {
-										who = PREVPREV
-										modifier = pf_lcut_ruler
-									}
-								}
-							}
-							opinion = { who = PREVPREV modifier = pf_lcut_ruler }
-						}
-					}
-				}
+				e_hip = { holder_scope = { opinion = { who = PREVPREV modifier = pf_lcut_ruler } } }
 			}
 		}
 	}
@@ -1157,7 +1121,7 @@ pf_liege_change_under_title_end_effect = {
 				any_opinion_modifier_target = { # Tracked rulers
 					limit = { reverse_has_opinion_modifier = { who = PREV modifier = pf_lcut_ruler } }
 					reverse_remove_opinion = { who = PREV modifier = pf_lcut_ruler }
-					pf_liege_change_effect = yes
+					emf_liege_change_effect = yes
 				}
 			}
 		}

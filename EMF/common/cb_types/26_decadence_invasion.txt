@@ -1,21 +1,4 @@
-## normal scopes(including posttitle scopes) ##
-# ROOT = receiver
-# FROM = giver
-# <no scope change> = attacker or receiver
-## title scopes ##
-# ROOT = receiver
-# FROM = giver
-# <no scope change> = thirdparty landed title	
-#
-# the following effects/triggers exists (example execution order: on_success->on_success_title->on_success_posttitle):
-# is_valid, is_valid_title, on_add, on_add_title, on_add_posttitle, on_success, on_success_title, on_success_posttitle, on_fail, on_fail_title, on_fail_posttitle, on_reverse_demand, on_reverse_demand_title, on_reverse_demand_posttitle
-#
-# Added on_attacker_leader_death, on_defender_leader_death and on_thirdparty_death, which all trigger when corresponding character dies
-# These three all have war scopes, which currently has the following scope changes: 
-# attacker, defender, thirdparty(only valid if thirdparty character is involved), thirdparty_title(only valid if thirdparty title is involved)
-#
-# ai_will_do: modifies value AI places on the CB compared to other CBs (default: 1)
-# can_use_gui: If otherwise valid, the CB is listed in the Diplo View, but you can't declare war unless 'can_use_gui' is also valid (also shows a trigger tooltip.)
+# -*- ck2.cb_types -*-
 
 
 decadence_invasion = {
@@ -25,177 +8,24 @@ decadence_invasion = {
 	truce_days = 3650
 	hostile_against_others = yes
 	can_ask_to_join_war = no
+
+	can_use = { always = no }
+	is_valid = { always = no }
 	
-	can_use = {
-		ROOT = { has_character_flag = decadence_invader }
-	}
+	on_success = { }
 
-	on_add = {
-		log = "CB(decadence_invasion): START: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
-	}
+	on_fail = { }
 
-	on_success = {
-		log = "CB(decadence_invasion): VICTORY: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
-
-		emf_cb_victory_effect = yes
-		FROM = {
-			any_demesne_title = { # All titles
-				limit = {
-					higher_tier_than = duke
-					OR = {
-						has_law = crown_authority_1
-						has_law = crown_authority_2
-						has_law = crown_authority_3
-						has_law = crown_authority_4
-					}
-				}
-				add_law = crown_authority_0
-			}
-		}
-		
-		ROOT = {
-			prestige = 200
-			piety = 100
-			occupy_minors_of_occupied_settlements = FROM
-			gain_all_occupied_titles = { who = FROM type = revolt }
-			give_nickname = nick_the_conqueror
-		}
-		any_attacker = {
-			limit = { character = ROOT }
-			participation_scaled_prestige = 200
-			participation_scaled_piety = 100
-		}
-		any_attacker = {
-			limit = { NOT = { character = ROOT } }
-			hidden_tooltip = { 
-				participation_scaled_prestige = 200
-				participation_scaled_piety = 100
-			}
-		}
-		
-		FROM = {
-			prestige = -200
-			primary_title = {
-				holder_scope = {
-					any_demesne_title = {
-						limit = {
-							tier = PREVPREV
-						}
-		
-						usurp_title_plus_barony_if_unlanded = { target = ROOT type = revolt }
-						
-						if = {
-							limit = {
-								higher_tier_than = BARON
-								NOT = { culture = ROOT }
-							}
-							hidden_tooltip = { conquest_culture = ROOT }
-						}
-					}
-				}
-			}
-			
-			set_defacto_liege = ROOT
-			pf_liege_change_effect = yes
-			
-			imprison = ROOT
-			
-			hidden_tooltip = {
-				if = {
-					limit = {
-						has_nickname = no
-					}
-					random_list = {
-						10 = { give_nickname = nick_the_decadent }
-						10 = { give_nickname = nick_the_unready }
-						10 = { give_nickname = nick_the_ill_ruler }
-					}
-				}
-			}
-		}
-		
-		hidden_tooltip = {
-			ROOT = { 
-				disband_event_forces = decadence_revolters
-				
-				# Powerful vassals can choose independence
-				any_vassal = {
-					limit = {
-						NOT = { character = FROM }
-						higher_tier_than = COUNT
-						prisoner = no
-					}
-					character_event = { id = 91240 }
-				}
-			}
-		}
-	}
-
-	on_fail = {
-		log = "CB(decadence_invasion): WHITEPEACE: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
-
-		ROOT = {
-			prestige = -200
-		}
-		FROM = {
-			prestige = 100
-		}
-		any_defender = {
-			limit = { character = FROM }
-			participation_scaled_prestige = 100
-		}
-		any_defender = {
-			limit = { NOT = { character = FROM } }
-			hidden_tooltip = { participation_scaled_prestige = 100 }
-		}
-		hidden_tooltip = {
-			ROOT = { disband_event_forces = decadence_revolters }
-		}
-	}
-
-	on_reverse_demand = {
-		log = "CB(decadence_invasion): DEFEAT: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
-
-		emf_cb_defeat_effect = yes
-		ROOT = { set_defacto_liege = FROM }
-		ROOT = {
-			prestige = -200
-			transfer_scaled_wealth = {
-				to = FROM
-				value = 8.0
-			}
-		}
-		FROM = {
-			prestige = 200
-		}
-		ROOT = { 
-			imprison = FROM
-			disband_event_forces = decadence_revolters
-		}
-		if = {
-			limit = {
-				FROM = {
-					ai = no
-					NOT = { has_character_flag = achievement_decadent_warrior }
-				}
-			}
-			FROM = { set_character_flag = achievement_decadent_warrior }
-		}
-	}
-
-	on_reverse_demand_title = {
-		remove_claim = ROOT
-	}
+	on_reverse_demand = { }
 
 	on_invalidation = {
-		log = "CB(decadence_invasion): INVALIDATED: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (ID: [Root.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (ID: [From.GetID])"
+		log = "CB(decadence_invasion): INVALIDATED: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
 	}
-
 
 	attacker_ai_victory_worth = {
 		factor = 100
 	}
-	
+
 	attacker_ai_defeat_worth = {
 		factor = 100
 	}
@@ -203,7 +33,7 @@ decadence_invasion = {
 	defender_ai_victory_worth = {
 		factor = -1 # always accept
 	}
-	
+
 	defender_ai_defeat_worth = {
 		factor = 150
 	}

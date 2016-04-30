@@ -1,3 +1,5 @@
+# -*- ck2.scripted_triggers -*-
+
 
 ### CONVENIENCE TRIGGERS ###
 emf_laws_no_crown_law_title_trigger = {
@@ -63,16 +65,39 @@ emf_laws_holder_has_late_adminstration_plus_trigger = {
 		}
 	}
 }
-emf_laws_no_elective_succession_voting_trigger = {
+emf_laws_penalty_trigger = {
+	holder_scope = { NOT = { has_character_flag = emf_no_law_penalties } }
+}
+emf_laws_infidel_revocation_trigger = {
 	custom_tooltip = {
-		text = emf_laws_ctt_no_elective_succession_voting_trigger
+		text = emf_laws_ctt_infidel_revocation_trigger
 		hidden_tooltip = {
-			NAND = {
-				has_law = succession_voting_power_1
-				has_law = succ_feudal_elective
+			OR = {
+				has_law = revokation_2
+				has_law = ze_revokation_2
 			}
 		}
 	}
+}
+
+### SUCCESSION LAWS ###
+
+
+# Used for most regular succession laws as PART of the potential. It's NOT common to every major succession type (e.g.,
+# turkish succession doesn't use it); it's just a convenience to clarify the succession laws code.
+emf_laws_succ_basic_potential_trigger = {
+	holder_scope = {
+		NOT = { religion_group = muslim }
+		OR = {
+			independent = yes
+			NOT = { any_liege = { holy_order = yes } }
+		}
+	}
+	OR = {
+		is_landless_type_title = no
+		temporary = yes
+	}
+	is_primary_type_title = no
 }
 
 
@@ -132,20 +157,7 @@ emf_laws_change_succ_affected_vassal_trigger = {
 	}
 }
 
-# The succession law change reactions of the new heir, former heir, new pretenders, and former pretenders are all handled
-# by event and thus the succ_adopt_* effects should skip these characters in its blanket opinion effects. Note that we
-# don't use this for elective-style succession laws, because the new heir and pretenders will not really be valid for a bit,
-# and even so, it's subject to rapid change.
-emf_laws_change_succ_vip_trigger = {
-	OR = {
-		character = event_target:emf_heir
-		character = event_target:emf_former_heir
-		reverse_has_opinion_modifier = { who = event_target:emf_succ_changer modifier = opinion_succ_former_pretender }
-		any_pretender_title = { title = event_target:emf_succ_title }
-	}
-}
-
-# Additionally, as the succ_adopt_* effects hand-out blanket opinions, they do so in order of priority, and they mark each
+# Additionally, as the succ_* effects hand-out blanket opinions, they do so in order of priority, and they mark each
 # "already reacted to this succession law change" character as they go with flags.
 #
 # Note that we distinguish the types of succession change reaction so that we may know which opinion modifier we've added
@@ -159,129 +171,4 @@ emf_laws_change_succ_reaction_trigger = {
 		has_character_flag = emf_good_reaction
 		has_character_flag = emf_bad2_reaction
 	}
-}
-
-
-# For the ai_adopt_* succession law change title decisions- "decisions/emf_succ_adopt_decisions.txt"
-emf_laws_succ_change_ai_potential_trigger = {
-	is_playable = yes
-	is_landed = yes
-	war = no
-	has_regent = no
-	ruled_years = 10
-	is_nomadic = no
-	ai = yes
-	NOR = {
-		any_vassal = {
-			OR = {
-				higher_real_tier_than = COUNT
-				AND = {
-					PREV = { lower_real_tier_than = EMPEROR }
-					higher_real_tier_than = BARON
-				}
-			}
-			OR = {
-				among_most_powerful_vassals = 5
-				relative_power_to_liege = 0.2
-				is_voter = yes
-			}
-			NOT = { opinion = { who = PREV value = -10 } }
-		}
-		AND = {
-			OR = {
-				has_character_flag = faction_court_unhappy
-				has_character_flag = faction_court_angry
-			}
-			any_vassal = {
-				leads_faction = faction_court
-				faction_power = { faction = faction_court power = 0.5 }
-			}
-		}
-		AND = {
-			OR = {
-				has_character_flag = faction_prosperity_unhappy
-				has_character_flag = faction_prosperity_angry
-			}
-			any_vassal = {
-				leads_faction = faction_prosperity
-				faction_power = { faction = faction_prosperity power = 0.5 }
-			}
-		}
-		AND = {
-			OR = {
-				has_character_flag = faction_glory_unhappy
-				has_character_flag = faction_glory_angry
-			}
-			any_vassal = {
-				leads_faction = faction_glory
-				faction_power = { faction = faction_glory power = 0.5 }
-			}
-		}
-		AND = {
-			OR = {
-				has_character_flag = faction_tradition_unhappy
-				has_character_flag = faction_tradition_angry
-			}
-			any_vassal = {
-				leads_faction = faction_tradition
-				faction_power = { faction = faction_tradition power = 0.5 }
-			}
-		}
-	}
-}
-
-
-emf_laws_succ_change_basic_ai_title_potential_trigger = {
-	OR = {
-		is_primary_holder_title = yes
-		higher_tier_than = DUKE
-	}
-	# Holder has never changed the succession law of this title during their lifetime
-	NOT = { holder_scope = { has_character_flag = changed_succession_@ROOT } }
-}
-
-
-# Used for most regular succession laws as PART of the potential. It's NOT common to every major succession type (e.g.,
-# primogeniture and turkish succession don't use it); it's just a convenience to clarify the succession laws code.
-emf_laws_succ_basic_potential_trigger = {
-	holder_scope = {
-		NOT = { religion_group = muslim }
-		OR = {
-			independent = yes
-			NOR = {
-				any_liege = { holy_order = yes }
-				any_demesne_title = { is_vice_royalty = yes }
-			}
-		}
-	}
-	OR = {
-		is_landless_type_title = no
-		is_tribal_type_title = yes
-		temporary = yes
-	}
-	is_primary_type_title = no
-	is_vice_royalty = no
-}
-
-
-#### SUCCESSION LAW ADOPTION POTENTIAL & ALLOW TRIGGERS ####
-# These simply allow the AI succession law change logic and the succ_adopt_* laws to share the same code, 'lest they fall
-# out of sync otherwise.
-
-emf_laws_succ_adopt_gavelkind_potential_trigger = {
-	has_global_flag = EMF
-	NOT = { has_law = succ_gavelkind }
-	emf_laws_succ_basic_potential_trigger = yes
-	holder_scope = {
-		OR = {
-			is_tribal = no
-			NOT = { religion_group = pagan_group }
-		}
-		OR = {
-			is_feudal = yes
-			is_tribal = yes
-		}
-		in_revolt = no
-	}
-	rebel = no
 }

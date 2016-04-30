@@ -1,3 +1,5 @@
+# -*- ck2.events -*-
+
 
 namespace = emf_empires
 
@@ -17,51 +19,12 @@ character_event = {
 	only_independent = yes
 	
 	trigger = {
-		tier = emperor
+		tier = EMPEROR
 		is_nomadic = no
 		war = no
 		had_global_flag = { flag = EMF days = 10950 } # First 30yr of campaign
 		any_demesne_title = {
-			tier = emperor
-			temporary = no
-			rebel = no
-			OR = {
-				AND = {
-					ROOT = { NOT = { realm_size = 100 } }
-					NOR = {
-						title = e_hip
-						title = e_rebels
-						title = e_pirates
-						title = e_hre
-						title = e_byzantium
-						title = e_roman_empire
-						title = e_latin_empire
-						title = e_timurids
-						title = e_mexikha
-						title = e_seljuk_turks # Only until we convert title destruction to be time-delayed after fulfilling AED conditions
-						AND = {
-							OR = {
-								title = e_golden_horde
-								title = e_il-khanate
-								title = e_chagatai
-								title = e_mongol_empire
-							}
-							ROOT = { religion = tengri_pagan } # Hack to simulate time-delayed title destruction
-						}
-					}
-				}
-				AND = {
-					ROOT = { NOT = { realm_size = 150 } }
-					title = e_hre
-				}
-				AND = {
-					OR = {
-						title = e_byzantium
-						title = e_latin_empire
-					}
-					NOT = { c_byzantion = { owner = { same_realm = ROOT } } }
-				}
-			}
+			emf_empires_aed_valid_title_trigger = yes
 		}
 	}
 	
@@ -70,193 +33,152 @@ character_event = {
 	}
 	
 	immediate = {
-		if = { # If we don't have another empire or king title to fallback upon...
+		random_demesne_title = {
+			limit = { emf_empires_aed_valid_title_trigger = yes }
+			log = "INFO: AED: disentegrating [This.GetID] ([This.GetFullName])..."
+			save_event_target_as = emf_empire_title
+		}
+		
+		if = { # If we have another empire or king title to fallback-upon, then skip searching for a kingdom
 			limit = {
-				NOT = {
-					num_of_emperor_titles = 2
+				OR = {
 					any_demesne_title = {
-						tier = king
+						tier = EMPEROR
+						is_primary_holder_title = no
+						temporary = no
+					}
+					any_demesne_title = {
+						tier = KING
 						temporary = no
 					}
 				}
 			}
-			
-			# Then we will try to find one...
-			
-			# First, check capital kingdom for availability
-			if = {
-				limit = {
-					capital_scope = {
-						kingdom = {
-							has_holder = no
-						}
-					}
-				}
-				
-				# Good. Now determine whether we'd qualify to form it by the 50% rule.
-				
-				capital_scope = { kingdom = { save_event_target_as = emf_king_title } }
-				character_event = { id = emf_empires.4 } # Check 50% rule
-				
-				if = {
-					limit = { check_variable = { which = king_county value = 0 } } # 50% rule passes
-					event_target:emf_king_title = { save_event_target_as = emf_new_title }
-					break = yes
-				}
-			}
-			
-			# If not found, check all the de jure kingdoms of any empire titles that ROOT has, if the empire is de jure
-
-			any_demesne_title = { # For all the de jure empires...
-				limit = {
-					tier = emperor
-					is_titular = no
-				}
-				
-				any_direct_de_jure_vassal_title = { # For all the de jure vassal kingdoms...
-					limit = {
+			break = yes
+		}
+		
+		# Then we will try to find one...
+		
+		# First, check capital kingdom for availability
+		if = {
+			limit = {
+				capital_scope = {
+					kingdom = {
 						has_holder = no
-						is_titular = no
-					}
-					
-					save_event_target_as = emf_king_title
-					ROOT = { character_event = { id = emf_empires.4 } } # Check 50% rule
-					
-					if = {
-						limit = { ROOT = { check_variable = { which = king_county value = 0 } } } # 50% rule passes
-						event_target:emf_king_title = { save_event_target_as = emf_new_title }
-						break = yes
+						is_title_active = THIS
 					}
 				}
 			}
-
-			# If still not found (empire was probably titular), check every de jure kingdom title in the game...
-
-			any_title = {
+			# Good. Now determine whether we'd qualify to form it by the 51% rule.
+			capital_scope = { kingdom = { save_event_target_as = emf_king_title } }
+			character_event = { id = emf_empires.4 } # Check 51% rule
+			if = {
+				limit = { check_variable = { which = king_county value = 1 } } # 51% rule passes
+				event_target:emf_king_title = { save_event_target_as = emf_new_title }
+				break = yes
+			}
+		}
+		
+		# If not found, check all de jure kingdoms of any other empire titles that ROOT has, if the empire is de jure
+		any_demesne_title = { # For all the de jure empires...
+			limit = { tier = EMPEROR }
+			any_direct_de_jure_vassal_title = { # For all the de jure vassal kingdoms...
 				limit = {
-					tier = king
-					is_titular = no
+					tier = KING
+					emf_titular_trigger = no
 					has_holder = no
+					is_title_active = THIS
 				}
-
 				save_event_target_as = emf_king_title
 				ROOT = { character_event = { id = emf_empires.4 } } # Check 50% rule
-				
 				if = {
-					limit = { ROOT = { check_variable = { which = king_county value = 0 } } } # 50% rule passes
+					limit = { ROOT = { check_variable = { which = king_county value = 1 } } } # 51% rule passes
 					event_target:emf_king_title = { save_event_target_as = emf_new_title }
 					break = yes
 				}
-
-				clear_event_target = emf_king_title
 			}
+		}
 
-			# If STILL not found, create a titular kingdom title (might want to make this optional in the future,
-			# because some people might prefer not to have a silly titular king-tier title that they cannot destroy
-			# until they have another king- or higher-tier title to make primary). Title will have the name and CoA
-			# of the ruler's capital county (and some color offset).
+		# If still not found (empire was probably titular), check every de jure kingdom title in the game...
+		any_landed_title = {
+			limit = {
+				tier = KING
+				emf_titular_trigger = no
+				has_holder = no
+				is_title_active = THIS
+			}
+			save_event_target_as = emf_king_title
+			ROOT = { character_event = { id = emf_empires.4 } } # Check 50% rule
+			if = {
+				limit = { ROOT = { check_variable = { which = king_county value = 1 } } } # 51% rule passes
+				event_target:emf_king_title = { save_event_target_as = emf_new_title }
+				break = yes
+			}
+			clear_event_target = emf_king_title
+		}
 
-			capital_scope = {
-				county = {
-					create_title = {
-						tier = KING
-						landless = no
-						temporary = no
-						custom_created = yes
-						culture = ROOT
-						holder = ROOT
-						base_title = THIS
+		# If STILL not found, create a titular kingdom title (might want to make this optional in the future,
+		# because some people might prefer not to have a silly titular king-tier title that they cannot destroy
+		# until they have another king- or higher-tier title to make primary). Title will have the name and CoA
+		# of the ruler's capital county (and some color offset).
+		capital_scope = {
+			county = {
+				create_title = {
+					tier = KING
+					landless = no
+					temporary = no
+					custom_created = yes
+					culture = ROOT
+					holder = ROOT
+					base_title = THIS
+				}
+				new_title = {
+					log = "INFO: AED: created custom titular title [This.GetID] ([This.GetBaseName]) from base county title [Prev.GetID] ([Prev.GetBaseName]) for [Root.GetTitledName] ([Root.GetID])"
+					save_event_target_as = emf_new_title
+					set_title_flag = emf_autodestroy
+					if = {
+						limit = { NOT = { empire = { always = yes } } }
+						de_jure_liege = e_null
 					}
 				}
 			}
-
-			new_title = {
-				log = "AED created custom titular title '[This.GetFullName]'"
-				save_event_target_as = emf_new_title
-
-				set_title_flag = emf_autodestroy # TODO: Wishful thinking currently...
-
-				if = {
-					limit = {
-						NOT = {
-							empire = { always = yes }
-						}
-					}
-					de_jure_liege = e_null
-				}
-			}
-
-			# TODO: In the future, I'd like to also ensure that they have a duchy title INSTEAD to bind count-tier
-			# vassals, if they don't have any vassals higher than count-tier.
 		}
 	}
 	
 	option = {
 		name = emf_empires.0.opt.a
 
-		hidden_tooltip = {
-			set_variable = { which = king_county value = 0 }
-		}
-
+		hidden_tooltip = { set_variable = { which = king_county value = 0 } }
 		if = {
-			limit = { event_target:emf_new_title = { always = yes } } # We'll be creating a king title
+			limit = { event_target:emf_new_title = { always = yes } }
+			# We'll be creating or have created a fallback kingdom title
+			set_character_flag = emf_no_law_penalties
 			primary_title = {
 				event_target:emf_new_title = {
-					grant_title = ROOT
+					if = {
+						limit = { NOT = { holder = ROOT } }
+						grant_title = { target = ROOT type = created }
+					}
 					copy_title_laws = PREV
+					if = {
+						limit = { PREV = { has_law = administration_2 } }
+						add_law = administration_1
+					}
+					set_title_flag = emf_aed_fallback
 				}
 			}
-			set_character_flag = emf_aed_gave_me_kingdom
+			clr_character_flag = emf_no_law_penalties
 		}
-		
-		set_character_flag = emf_aed_took_my_empire
-
-		random_demesne_title = {
-			limit = {
-				tier = emperor
-				temporary = no
-				rebel = no
-				OR = {
-					AND = {
-						ROOT = { NOT = { realm_size = 100 } }
-						NOR = {
-							title = e_hip
-							title = e_rebels
-							title = e_pirates
-							title = e_hre
-							title = e_byzantium
-							title = e_roman_empire
-							title = e_latin_empire
-							title = e_timurids
-							title = e_mexikha
-							title = e_seljuk_turks # Only until we convert title destruction to be time-delayed after fulfilling AED conditions
-							AND = {
-								OR = {
-									title = e_golden_horde
-									title = e_il-khanate
-									title = e_chagatai
-									title = e_mongol_empire
-								}
-								ROOT = { religion = tengri_pagan } # Hack to simulate time-delayed title destruction (holders of these titles can't convert away for 30yr)
-							}
-						}
-					}
-					AND = {
-						ROOT = { NOT = { realm_size = 150 } }
-						title = e_hre
-					}
-					AND = {
-						OR = {
-							title = e_byzantium
-							title = e_latin_empire
-						}
-						NOT = { c_byzantion = { owner = { same_realm = ROOT } } }
-					}
-				}
+		set_character_flag = emf_context_aed
+		set_character_flag = emf_context_aed_@event_target:emf_empire_title
+		hidden_tooltip = {
+			any_realm_lord = { character_event = { id = emf_imperial.3299 days = 1 } }
+		}
+		event_target:emf_empire_title = {
+			set_title_flag = emf_aed_destroyed
+			emf_destroy_title_unsafe_effect = yes
+			hidden_tooltip = {
+				ROOT = { character_event = { id = emf_imperial.3299 } }
 			}
-			
-			unsafe_destroy_landed_title = THIS
-			
 			hidden_tooltip = {
 				save_event_target_as = emf_crier_dead_title
 				any_playable_ruler = {
@@ -266,11 +188,9 @@ character_event = {
 				clear_event_target = emf_crier_dead_title
 			}
 		}
-		
-		prestige = -1200
+		prestige = -500
 	}
 }
-
 
 # emf_empires.1
 #
@@ -278,15 +198,16 @@ character_event = {
 # Called from on_actions yearly pulse
 character_event = {
 	id = emf_empires.1
-	hide_window = yes
+	
 	is_triggered_only = yes
+	hide_window = yes
 	
 	only_independent = yes
 	only_capable = yes
 	min_age = 16
 	
 	trigger = {
-		tier = emperor
+		tier = EMPEROR
 		NOT = { trait = conqueror }
 		ai = yes
 		primary_title = { # Horde invaders
@@ -320,11 +241,10 @@ character_event = {
 	option = { name = OK }
 }
 
-
 # emf_empires.2
 #
 # Remove conqueror trait from horde invaders that settle down (or become
-# player-controlled or incapable)
+# player-controlled or incapable).
 #
 # Called from on_actions biannual pulse
 #
@@ -332,17 +252,18 @@ character_event = {
 # because none of the other cases really matter.
 character_event = {
 	id = emf_empires.2
-	desc = HIDE_EVENT
-	hide_window = yes
-	is_triggered_only = yes
 	
-	only_independent = yes
+	is_triggered_only = yes
+	hide_window = yes
+	
+	only_rulers = yes
 	
 	trigger = {
 		trait = conqueror
 		OR = {
 			ai = no
 			trait = incapable
+			is_adult = no
 			AND = {
 				OR = {
 					has_landed_title = e_golden_horde
@@ -371,10 +292,7 @@ character_event = {
 	immediate = {
 		remove_trait = conqueror
 	}
-
-	option = { name = OK }
 }
-
 
 # emf_empires.4
 #
@@ -388,24 +306,52 @@ character_event = {
 		set_variable = { which = king_county value = 0 }
 
 		event_target:emf_king_title = {
-			any_direct_de_jure_vassal_title = { # Duchies...
-				any_direct_de_jure_vassal_title = { # Counties...
-				
-					if = {
-						limit = { owner = { same_realm = ROOT } }
-						ROOT = { change_variable = { which = king_county value = 1 } }
-					}
-					if = {
-						limit = { owner = { NOT = { same_realm = ROOT } } }
-						ROOT = { change_variable = { which = king_county value = -1 } }
-					}
-					
+			any_de_jure_vassal_title = {
+				limit = {
+					tier = COUNT
+					owner_under_ROOT = yes
 				}
+				ROOT = { change_variable = { which = king_county value = 1 } }
+			}
+			any_de_jure_vassal_title = {
+				limit = {
+					tier = COUNT
+					owner_under_ROOT = no
+				}
+				ROOT = { change_variable = { which = king_county value = -1 } }
 			}
 		}
 	}
 }
 
+# emf_empires.5
+#
+# on_new_holder on_action which fires whenever a new empire is created.
+character_event = {
+	id = emf_empires.5
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	only_independent = yes
+	
+	trigger = {
+		FROM = { tier = EMPEROR }
+		NOT = { FROMFROM = { always = yes } }
+		has_game_started = yes
+		FROM = { has_title_flag = emf_aed_destroyed } # Currently the only thing we do here
+	}
+	
+	immediate = {
+		FROM = {
+			clr_title_flag = emf_aed_destroyed
+			# SOMEDAY: might want to store the duration in years or some approximation of the emf_aed_destroyed
+			# flag into a cumulative title variable for "years spent disintegrated," but the applications for
+			# that don't currently exist (mostly contextual stuff).
+			change_variable = { which = emf_aed_restored value = 1 }
+		}
+	}
+}
 
 # emf_empires.10 [Mongol Emperor]
 #
@@ -425,24 +371,22 @@ character_event = {
 	}
 }
 
-
 # emf_empires.11 [Mongol Emperor]
 #
 # emf_horde_invasion war tick for e_mongol_empire
 character_event = {
 	id = emf_empires.11
-	desc = AI_EVENT
-	picture = GFX_evt_battle
-#	hide_window = yes
+	
+	hide_window = yes
 	
 	only_independent = yes
 	culture = mongol
 	only_capable = yes
 	min_age = 16
-	ai = yes
 
 	trigger = {
 		has_landed_title = e_mongol_empire
+		ai = yes
 		war = no
 		is_landed = yes
 		has_regent = no
@@ -452,9 +396,6 @@ character_event = {
 
 		# Not if we're over our vassal limit
 		NOT = { over_vassal_limit = 0 }
-		
-		# Not if we've reached at least 95% threat
-		NOT = { infamy = 95 }
 
 		# Don't consider invasion until it's been awhile since last successful invasion ended
 		OR = {
@@ -514,8 +455,7 @@ character_event = {
 
 		random_realm_province = {
 			limit = {
-
-				OR = { # Not an isolated county, unless it's our capital
+				OR = { # Not a totally-isolated county, unless it's our capital
 					ROOT = {
 						capital_scope = {
 							province = PREVPREV
@@ -525,7 +465,6 @@ character_event = {
 						owner = { same_realm = ROOT }
 					}
 				}
-
 				any_neighbor_province = {
 					emf_empires_mongol_core_prov_trigger = yes
 				}
@@ -552,10 +491,9 @@ character_event = {
 
 		random_realm_province = {
 			limit = {
-				any_neighbor_province = { # Not an isolated county
+				any_neighbor_province = { # Not a totally-isolated county
 					owner = { same_realm = ROOT }
 				}
-
 				any_neighbor_province = {
 					emf_empires_mongol_extended_prov_trigger = yes
 				}
@@ -609,14 +547,13 @@ character_event = {
 					}
 				}
 			}
-
 			ROOT = {
 				set_character_flag = emf_horde_invasion_pass
-
 				war = {
 					casus_belli = emf_horde_invasion
 					target = PREV
 					thirdparty_title = event_target:emf_king_title
+					infamy = 0
 				}
 			}
 		}
@@ -636,7 +573,6 @@ character_event = {
 	}
 }
 
-
 # emf_empires.12 [Mongol Emperor]
 #
 # Set a global flag when e_mongol_empire can unlock their full conquest zone.
@@ -653,8 +589,7 @@ character_event = {
 
 		any_realm_province = {
 			region = emf_region_mongol_core_fringe
-
-			# That isn't an isolated county
+			# That isn't a totally-isolated county
 			any_neighbor_province = {
 				owner = { same_realm = ROOT }
 			}
@@ -669,7 +604,6 @@ character_event = {
 		set_global_flag = emf_mongols_in_persia
 	}
 }
-
 
 # emf_empires.13 [Mongol Emperor]
 #
@@ -693,17 +627,22 @@ character_event = {
 
 		any_independent_ruler = {
 			limit = {
-				war_with = ROOT
-				lower_tier_than = ROOT
-
+				# Are currently at war with us via this CB
+				any_war = {
+					defender = { character = PREV }
+					attacker = { character = ROOT }
+					using_cb = emf_horde_invasion
+					# TODO: don't do this when warscore is significantly in favor of defender
+				}
+				lower_tier_than = ROOT # Can be vassalized
+				# Not the guy who lost the war prompting this potential subjugation
 				NOT = { character = event_target:emf_defender }
-
+				# Not weird folks
 				mercenary = no
 				holy_order = no
 				controls_religion = no
 				primary_title = { is_primary_type_title = no }
 				ai = yes
-
 				# Share a border presently
 				any_realm_province = {
 					any_neighbor_province = {
@@ -712,40 +651,18 @@ character_event = {
 						}
 					}
 				}
-
-				# Realm is completely within the de jure target kingdom
+				# Realm provinces are completely within the de jure target kingdom
 				NOT = {
 					any_realm_title = {
-						is_titular = no
-						NOR = {
-							title = event_target:emf_king_title
-							de_jure_liege_or_above = event_target:emf_king_title
-						}
+						tier = COUNT
+						NOT = { de_jure_liege_or_above = event_target:emf_king_title }
 					}
 				}
 			}
-
-			set_defacto_liege = ROOT
-			pf_liege_change_effect = yes
-
-			if = {
-				limit = { religion = ROOT }
-				opinion = {
-					who = ROOT
-					modifier = opinion_subjugated
-				}
-			}
-			if = {
-				limit = { NOT = { religion = ROOT } }
-				opinion = {
-					who = ROOT
-					modifier = opinion_subjugated_other_rel
-				}
-			}
+			emf_ROOT_subjugate_ruler_effect = yes
 		}
 	}
 }
-
 
 # emf_empires.14 [Horde Invader]
 #
@@ -779,6 +696,249 @@ character_event = {
 			casus_belli = emf_horde_invasion
 			target = event_target:emf_defender
 			thirdparty_title = event_target:emf_title
+			infamy = 0
+		}
+	}
+}
+
+# emf_empires.20
+#
+# Remove ahistorical empires
+#
+# Called both from emf_startup for the default de jure setup & from customization decision emf_customize_nae (user can toggle)
+character_event = {
+	id = emf_empires.20
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		clr_global_flag = emf_ahistorical_empires
+		any_title = {
+			limit = {
+				tier = EMPEROR
+				emf_titular_trigger = no
+				NOR = {
+					title = e_hre
+					title = e_byzantium
+					title = e_persia
+					title = e_null # Might already be de jure
+				}
+			}
+			any_direct_de_jure_vassal_title = {
+				# Transfer de jure vassal kingdoms to e_null
+				de_jure_liege = e_null
+				# And mark which empire was our de jure liege title for later (Add Ahistorical Empires)
+				set_title_flag = emf_nae_dejure_vassal_@PREV
+			}
+			# If this is not our first run (i.e., not prior to completion of campaign setup), then
+			# we also deactivate the ahistorical empire title (but only if it has no holder)
+			if = {
+				limit = {
+					has_global_flag = EMF
+					has_holder = no
+					is_title_active = THIS
+				}
+				activate_title = { title = THIS status = no }
+			}
+			set_title_flag = emf_nae_titular
+		}
+	}
+}
+
+# emf_empires.21
+#
+# Add ahistorical empires [again]
+#
+# Called from scenario customization decision emf_customize_aae
+character_event = {
+	id = emf_empires.21
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		set_global_flag = emf_ahistorical_empires
+		any_title = {
+			limit = {
+				tier = EMPEROR
+				has_title_flag = emf_nae_titular
+			}
+			any_title = {
+				limit = {
+					tier = KING
+					has_title_flag = emf_nae_dejure_vassal_@PREV
+				}
+				de_jure_liege = PREV
+				clr_title_flag = emf_nae_dejure_vassal_@PREV
+			}
+			if = {
+				limit = { NOT = { is_title_active = THIS } }
+				activate_title = { title = THIS status = yes }
+			}
+			clr_title_flag = emf_nae_titular
+		}
+	}
+}
+
+# emf_empires.30 [AI Ruler]
+#
+# Currently only fired from emf_reclaim_byz_capital/on_success_posttitle
+character_event = {
+	id = emf_empires.30
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	trigger = {
+		ai = yes
+	}
+	
+	immediate = {
+		d_thrace = {
+			# Refill holding levies as if Queen City was immediately settled by the new ERE successor candidate
+			# ( as they should also have moved their capital there automatically, although sometimes the AI will
+			# choose to move it right back to their primary title's de jure capital #ThingsThatIrritateZiji )
+			any_de_jure_vassal_title = {
+				limit = {
+					tier = BARON
+					owner_under_ROOT = yes
+				}
+				remove_holding_modifier = recently_conquered
+				remove_holding_modifier = new_administration
+				refill_holding_levy = yes
+				set_title_flag = emf_refill_levy
+			}
+			ROOT = { character_event = { id = emf_core.40 days = 30 } } # Make sure levies get refilled entirely
+		}
+		
+		# Ensure that our capital moves to Constantinople
+		character_event = { id = emf_empires.31 }
+		
+		# Dissolve some potential NAPs
+		any_independent_ruler = {
+			limit = {
+				ai = yes
+				has_non_aggression_pact_with = ROOT
+				NOT = { is_allied_with = ROOT }
+				any_realm_province = {
+					empire = { title = e_byzantium }
+				}
+			}
+			reverse_opinion = { who = ROOT modifier = opinion_disabled_nap years = 15 }
+		}
+	}
+}
+
+# emf_empires.31
+#
+# Try to ensure that our capital becomes/remains Constantinople.
+character_event = {
+	id = emf_empires.31
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	trigger = {
+		ai = yes
+		NOT = { capital_scope = { province_id = 496 } }
+		primary_title = {
+			capital_scope = {
+				owner = { character = ROOT }
+			}
+		}
+	}
+	
+	immediate = {
+		primary_title = {
+			capital_scope = {
+				if = {
+					limit = { province_id = 496 }
+					ROOT = { capital = PREV } # Event trigger ensures we directly own it
+					break = yes
+				}
+			}
+		}
+		# Case where we need to give our primary title capital away so that the AI capital change will stick
+		create_random_soldier = {
+			random_traits = yes
+			dynasty = random
+			culture = ROOT
+			religion = ROOT
+			female = no
+			age = 26
+			trait = brilliant_strategist
+			attributes = { martial = 10 }
+		}
+		new_character = {
+			save_event_target_as = emf_general
+			add_trait = brave
+			random = { chance = 50 add_trait = zealous }
+			random_list = {
+				10 = { add_trait = trained_warrior }
+				60 = { add_trait = skilled_warrior }
+				30 = { add_trait = master_warrior }
+			}
+			random_list = {
+				30 = { add_trait = hunter }
+				30 = { add_trait = duelist }
+				30 = { add_trait = strategist }
+			}
+		}
+		primary_title = {
+			capital_scope = {
+				county = {
+					grant_title = event_target:emf_general
+					any_direct_de_jure_vassal_title = {
+						limit = { holder = ROOT }
+						grant_title = event_target:emf_general
+					}
+					dejure_liege_title = {
+						if = {
+							limit = {
+								owner = {
+									under_ROOT = yes
+									ai = yes
+								}
+							}
+							grant_title = event_target:emf_general # less likely to revoke county
+						}
+						if = {
+							limit = { has_holder = no }
+							grant_title = {
+								target = event_target:emf_general
+								type = created
+							}
+							event_target:emf_general = { prestige = 125 }
+						}
+					}
+				}
+			}
+		}
+		event_target:emf_general = {
+			set_defacto_liege = ROOT
+			if = {
+				limit = { ROOT = { NOT = { job_marshal = { ai = no } } } }
+			}
+			give_job_title = job_marshal # less likely to revoke county
+			add_friend = ROOT # Hopefully less likely to revoke county, and hey, ROOT could use a decent friend.
+		}
+		# Attempt to move AI capital to Constantinople yet again
+		c_byzantion = {
+			# If for some reason we don't have direct control of the county, then ensure
+			# we do. [Could only happen if mission was started from somewhere other than
+			# the emf_reclaim_byz_capital CB.] FWIW, it's guaranteed to be under_ROOT = yes
+			# by definition of the mission validation invariants.
+			if = {
+				limit = { NOT = { holder = ROOT } }
+				any_direct_de_jure_vassal_title = {
+					limit = {
+						owner = { is_liege_or_above = ROOT }
+						holding_type = castle
+					}
+					usurp_title = { target = ROOT type = revoke }
+				}
+				usurp_title = { target = ROOT type = revoke }
+			}
+			emf_make_location_ROOT_capital_effect = yes
 		}
 	}
 }

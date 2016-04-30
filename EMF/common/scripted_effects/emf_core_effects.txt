@@ -1,0 +1,151 @@
+# -*- ck2.scripted_effects -*-
+
+
+emf_stop_hiding_effect = {
+	if = {
+		limit = { trait = in_hiding }
+		remove_trait = in_hiding
+		add_character_modifier = { name = went_out_of_hiding_timer duration = 180 hidden = yes }
+		hidden_tooltip = { character_event = { id = CM.6400 } } # Notify plotters and family
+	}
+}
+
+# These do_not_disturb related effects are here for convenience as well as primarily a means of centralizing code which deals
+# with this status, should we ever switch to an alterate design based-upon automatically-expiring, timed, and hidden
+# character modifiers.
+
+emf_do_not_disturb_effect = {
+	# We clear it first so that anything which triggers upon the time since the flag was set will indeed reflect the
+	# proper interval. E.g., EMF's maintenance do_not_disturb flag clearance system will never have considered it to have
+	# been set for "inappropriately long" (indicating a script bug somewhere) and clear it by accident.
+	clr_character_flag = do_not_disturb
+	set_character_flag = do_not_disturb
+}
+
+emf_can_disturb_effect = {
+	clr_character_flag = do_not_disturb
+}
+
+
+emf_make_location_ROOT_capital_effect = {
+	if = {
+		limit = {
+			ROOT = { is_nomadic = no } # Can't seem to set nomad capitals by event (tested last in 2.4)
+			location = {
+				owner = { character = ROOT } # Must own the province in order to make it capital, of course
+				NOT = { # Location not already our capital
+					ROOT = {
+						capital_scope = { province = PREVPREV }
+					}
+				}
+			}
+		}
+		custom_tooltip = {
+			text = emf_ctt_make_location_ROOT_capital_effect
+			hidden_tooltip = {
+				location = { ROOT = { capital = PREV } }
+			}
+		}
+		# MAYBE-SOMEDAY-TODO: this'd be a place to call a hook which does some stuff whenever a ruler capital changes
+	}
+}
+
+emf_destroy_title_effect = {
+	if = {
+		limit = { has_holder = yes }
+		hidden_tooltip = { # Hopefully this stops the `log` commands from executing when just generating a tooltip
+			holder_scope = {
+				log = "DEBUG: emf_destroy_title_effect: [Prev.GetID] ([Prev.GetFullName]), held by [This.GetTitledName] ([This.GetID]/[This.PrimaryTitle.GetID])"
+			}
+			clr_title_flag = has_imperial_administration
+		}
+		destroy_landed_title = THIS
+	}
+}
+
+emf_destroy_title_unsafe_effect = {
+	if = {
+		limit = { has_holder = yes }
+		hidden_tooltip = { # Hopefully this stops the `log` commands from executing when just generating a tooltip
+			holder_scope = {
+				log = "DEBUG: emf_destroy_title_unsafe_effect: [Prev.GetID] ([Prev.GetFullName]), held by [This.GetTitledName] ([This.GetID]/[This.PrimaryTitle.GetID])"
+			}
+			clr_title_flag = has_imperial_administration
+		}
+		unsafe_destroy_landed_title = THIS
+	}
+}
+
+# THIS = ruler to subjugate, ROOT = new liege
+emf_ROOT_subjugate_ruler_effect = {
+	if = {
+		limit = { NOT = { vassal_of = ROOT } }
+		ROOT = { save_event_target_as = emf_cb_new_imperial_liege }
+		emf_set_viceroy_exemption_effect = yes
+		set_defacto_liege = ROOT
+		hidden_tooltip = {
+			if = {
+				limit = { vassal_of = ROOT }
+				emf_liege_change_effect = yes
+				if = {
+					limit = { religion = ROOT }
+					opinion = { who = ROOT modifier = opinion_subjugated }
+				}
+				if = {
+					limit = { NOT = { religion = ROOT } }
+					opinion = { who = ROOT modifier = opinion_subjugated_other_rel }
+				}
+			}
+		}
+	}
+}
+
+# THIS = tributary, ROOT = potential suzerain which has THIS as a tribute; that tributary relation will be removed.
+emf_remove_suzerain_under_ROOT = {
+	if = {
+		limit = {
+			is_tributary = yes
+			suzerain = { under_ROOT = yes }
+		}
+		suzerain = { remove_tributary = PREV }
+	}
+}
+
+# THIS = tributary, FROM = potential suzerain (merely scope variant)
+emf_remove_suzerain_under_FROM = {
+	if = {
+		limit = {
+			is_tributary = yes
+			suzerain = { under_FROM = yes }
+		}
+		suzerain = { remove_tributary = PREV }
+	}
+}
+
+# THIS = province to feudalize (do whatever it takes to make the province capital a castle, w/i reason)
+emf_feudalize_province_effect = {
+	hidden_tooltip = { province_event = { id = emf_core.65 } }
+}
+
+emf_liege_change_effect = {
+	hidden_tooltip = {
+		pf_liege_change_effect = yes
+		
+		if = {
+			limit = {
+				independent = no
+				is_tributary = yes
+			}
+			any_suzerain = { remove_tributary = PREV }
+		}
+		
+		# Remove any invalidated protected_appointment opinions due to liege change
+		any_opinion_modifier_target = {
+			limit = {
+				reverse_has_opinion_modifier = { who = PREV modifier = opinion_protected_appointment_always }
+				NOT = { is_liege_of = PREV }
+			}
+			reverse_remove_opinion = { who = PREV modifier = opinion_protected_appointment_always }
+		}
+	}
+}
