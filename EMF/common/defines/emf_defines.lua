@@ -1,7 +1,6 @@
 -- Diplomacy
 NDefines.NDiplomacy.LONG_REIGN_YEARS_START = 15
 NDefines.NDiplomacy.GAVELKIND_MAX_SIZE_BONUS = 0.5
-NDefines.NDiplomacy.VASSAL_LIMIT_DECADENCE_MULTIPLIER = 0
 NDefines.NDiplomacy.TITULAR_TITLES_COUNT_TOWARDS_DUCHY_LIMIT = 0                    -- from 1
 NDefines.NDiplomacy.LAW_CHANGE_PRESTIGE_COST = 150                                  -- from 100
 NDefines.NDiplomacy.CROWN_LAW_CHANGE_PRESTIGE_COST = 300                            -- from 200
@@ -73,11 +72,6 @@ NDefines.NTitle.EMPEROR_CREATION_PRESTIGE = 500
 NDefines.NTitle.DUKE_DESTRUCTION_PRESTIGE_COST = 125
 NDefines.NTitle.KING_DESTRUCTION_PRESTIGE_COST = 250
 NDefines.NTitle.EMPEROR_DESTRUCTION_PRESTIGE_COST = 500
-NDefines.NTitle.BARON_GRANT_DECADENCE_RED = 0
-NDefines.NTitle.COUNT_GRANT_DECADENCE_RED = 0
-NDefines.NTitle.DUKE_GRANT_DECADENCE_RED = 0
-NDefines.NTitle.KING_GRANT_DECADENCE_RED = 0
-NDefines.NTitle.EMPEROR_GRANT_DECADENCE_RED = 0
 NDefines.NTitle.NORMAL_LAW_CHANGE_COUNCIL_MONTHS = 48 -- from 60
 NDefines.NTitle.NORMAL_LAW_CHANGE_ABSOLUTISM_MONTHS = 120
 NDefines.NTitle.MAX_CROWN_LAW_CHANGES = 64  -- intention is "unlimited" due to the way EMF CA sub-laws are designed & existence of its soft-coded cooldowns
@@ -105,26 +99,11 @@ NDefines.NReligion.ELECTOR_FAMOUS_DYNASTY_FACTOR = 0.005
 -- Economy
 NDefines.NEconomy.MUSLIM_MUSLIM_PROVINCE_TAX_MOD = 0
 NDefines.NEconomy.BISHOP_TAX_TO_POPE_FACTOR = 0.25
-NDefines.NEconomy.DECADENCE_MODIFIER = 0
-NDefines.NEconomy.DECADENCE_PER_WEEK_OF_COMBAT = 0
-NDefines.NEconomy.DECADENCE_PER_WEEK_OF_SIEGE = 0
 NDefines.NEconomy.TRADE_POST_COST_INC_DIST = 0.0045
 NDefines.NEconomy.PATRICIAN_CITY_TAX_MULT = 0.25
 NDefines.NEconomy.OVER_MAX_DEMESNE_TAX_PENALTY = 0.05
 NDefines.NEconomy.POPULATION_TO_LOOT_MULTIPLIER = 0.01
 NDefines.NEconomy.BUILDING_COST_MULT = 0.0
-
--- Decadence
-NDefines.NDecadence.BASE_EMPEROR_GAIN = 0
-NDefines.NDecadence.BASE_KING_GAIN = 0
-NDefines.NDecadence.BASE_DUKE_GAIN = 0
-NDefines.NDecadence.BASE_COUNT_GAIN = 0
-NDefines.NDecadence.BASE_BARON_GAIN = 0
-NDefines.NDecadence.BASE_UNLANDED_GAIN = 0
-NDefines.NDecadence.REALM_SIZE_MULTIPLIER = 0
-NDefines.NDecadence.DEMESNE_FRACTION_MULT_POS = 0
-NDefines.NDecadence.DEMESNE_FRACTION_MULT_NEG = 0
-NDefines.NDecadence.SAFETY_VALUE = 100
 
 -- Nomad
 NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 1500
@@ -146,8 +125,6 @@ NDefines.NMilitary.NUM_DAYS_BETWEEN_SIEGE_MORALE_LOSS = 10
 NDefines.NMilitary.BATTLE_TECH_MULTIPLIER = 0.25
 NDefines.NMilitary.REINFORCE_RATE = 0.04
 NDefines.NMilitary.ARMY_LOAD_MOVE_COST = 40.0
-NDefines.NMilitary.LOW_DECADENCE_MORALE_MOD = 0
-NDefines.NMilitary.HIGH_DECADENCE_MORALE_MOD = 0
 NDefines.NMilitary.CAPTURED_HEIR_WAR_SCORE = 30.0
 NDefines.NMilitary.RETINUE_FROM_REALMSIZE = 1.5
 NDefines.NMilitary.RETINUE_INCREASE_PER_TECH = 0.5

@@ -1,0 +1,265 @@
+targetted_decisions = {
+	banish_takfir = {
+		filter = dynasty
+		ai_target_filter = dynasty
+		
+		from_potential = {
+			is_playable = yes
+			religion_group = muslim
+			dynasty_head = { character = FROM }
+		}
+		potential = {
+			dynasty = FROM
+			prisoner = yes
+			host = { character = FROM }
+			NOT = { employer = { character = FROM } }
+			reverse_has_opinion_modifier = { who = FROM modifier = opinion_takfir }
+		}
+		effect = {
+			hidden_tooltip = {
+				prisoner = no
+				remove_opinion = {
+					who = FROM
+					modifier = opinion_tyrant
+				}
+				opinion = {
+					who = FROM
+					modifier = opinion_hate
+					years = 100
+				}
+				any_dynasty_member = {
+					limit = {
+						is_close_relative = ROOT
+						is_ruler = yes
+						is_feudal = yes
+						OR = {
+							character = FROM
+							is_liege_or_above = FROM
+						}
+					}
+					primary_title = {
+						if = {
+							limit = { ROOT = { NOT = { has_strong_claim = PREV } } }
+							add_claim = ROOT
+						}
+					}
+				}
+			}
+			if = {
+				limit = { is_ruler = yes }
+				abdicate = yes
+			}
+			random_dynasty_member = {
+				limit = {
+					trait = decadent
+					NOT = { is_liege_or_above = FROM }
+					is_ruler = yes
+				}
+				ROOT = { banish = PREV }
+				break = yes
+			}
+			top_liege = {
+				random_vassal = {
+					limit = {
+						NOT = { dynasty = ROOT }
+						NOT = { is_liege_or_above = FROM }
+						religion = ROOT
+						higher_tier_than = BARON
+					}
+					ROOT = { banish = PREV }
+					break = yes
+				}
+			}
+			top_liege = {
+				random_realm_lord = {
+					limit = {
+						NOT = { dynasty = ROOT }
+						NOT = { is_liege_or_above = FROM }
+						religion = ROOT
+						higher_tier_than = BARON
+					}
+					ROOT = { banish = PREV }
+					break = yes
+				}
+			}
+			random_independent_ruler = {
+				limit = {
+					NOT = { character = FROM }
+					NOT = { dynasty = ROOT }
+					religion = ROOT
+					trait = decadent
+				}
+				ROOT = { banish = PREV }
+				break = yes
+			}
+			random_independent_ruler = {
+				limit = {
+					NOT = { character = FROM }
+					NOT = { dynasty = ROOT }
+					religion = ROOT
+					NOT = { distance = { who = ROOT value = 300 } }
+				}
+				ROOT = { banish = PREV }
+				break = yes
+			}
+			random_independent_ruler = {
+				limit = {
+					NOT = { character = FROM }
+					NOT = { dynasty = ROOT }
+					religion = ROOT
+				}
+				ROOT = { banish = PREV }
+				break = yes
+			}
+			banish = yes
+		}
+		ai_will_do = {
+			factor = 1
+		}
+	}
+}
+
+decisions = {
+	# Muslims can start a new dynasty if no longer part of dynasty head's realm
+	start_dynasty_decadence = {
+		is_high_prio = yes
+		
+		potential = {
+			is_playable = yes
+			religion_group = muslim
+			is_female = no
+			is_adult = yes
+			OR = {
+				is_tribal = yes
+				is_feudal = yes
+				is_merchant_republic = yes
+				is_patrician = yes
+			}
+			holy_order = no
+			mercenary = no
+			dynasty_head = {
+				OR = {
+					NOT = { is_vassal_or_below = ROOT }
+					ROOT = { trait = bastard }
+				}
+				NOT = { character = ROOT }
+			}
+			NOT = { has_character_flag = started_new_dynasty }
+		}
+		allow = {
+			war = no
+			has_regent = no
+			ruled_years = 1
+		}
+		effect = {
+			set_character_flag = started_new_dynasty
+			prestige = 100
+			custom_tooltip = { text = ESTABLISH_CADET_BRANCH }
+			if = {
+				limit = { NOT = { trait = proud } }
+				add_trait = proud
+			}
+			hidden_tooltip = {
+				dynasty_head = { save_event_target_as = old_dynasty_head }
+				character_event = { id = emf_decadence.2512 } # Notification for players
+				any_dynasty_member = {
+					limit = {
+						OR = {
+							is_child_of = ROOT
+							mother_even_if_dead = { is_child_of = ROOT }
+							father_even_if_dead = { is_child_of = ROOT }
+						}
+					}
+					character_event = { id = emf_decadence.2510 days = 1 }
+				}
+				any_dynasty_member = {
+					limit = {
+						NOT = {
+							is_child_of = ROOT
+							mother_even_if_dead = { is_child_of = ROOT }
+							father_even_if_dead = { is_child_of = ROOT }
+						}
+					}
+					character_event = { id = emf_decadence.2511 days = 1 }
+				}
+				any_realm_character = {
+					limit = {
+						NOT = { dynasty = ROOT }
+						OR = {
+							is_close_relative = ROOT
+							vassal_of = ROOT
+						}
+					}
+					set_character_flag = no_chronicle_update
+					character_event = { id = emf_decadence.2511 days = 1 }
+				}
+				if = {
+					limit = {
+						mother_even_if_dead = { dynasty = ROOT }
+						father_even_if_dead = { NOT = { dynasty = ROOT } }
+					}
+					dynasty = mother_bastard
+				}
+				if = {
+					limit = { father_even_if_dead = { dynasty = ROOT } }
+					dynasty = father_bastard
+				}
+			}
+			if = {
+				limit = { ai = no }
+				chronicle = {
+					entry = CHRONICLE_CADET_BRANCH
+					portrait = [Root.GetID]
+					picture = GFX_evt_coronation
+				}
+			}
+		}
+		ai_will_do = {
+			factor = 1
+			modifier = {
+				factor = 0.1
+				always = yes
+			}
+			modifier = {
+				factor = 2.5
+				dynasty_head = { trait = dynasty_decadence_low }
+			}
+			modifier = {
+				factor = 5
+				dynasty_head = { trait = dynasty_decadence_med }
+			}
+			modifier = {
+				factor = 7.5
+				dynasty_head = { trait = dynasty_decadence_high }
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					any_heir_title = { holder_scope = { dynasty = ROOT } }
+					any_pretender_title = { holder_scope = { dynasty = ROOT } }
+				}
+			}
+			modifier = {
+				factor = 2
+				trait = ambitious
+			}
+			modifier = {
+				factor = 2
+				trait = proud
+			}
+			modifier = {
+				factor = 0.1
+				trait = content
+			}
+			modifier = {
+				factor = 0.1
+				trait = humble
+			}
+			modifier = {
+				factor = 0
+				NOT = { had_global_flag = { flag = EMF days = 1825 } }
+			}
+		}
+	}
+}
+
