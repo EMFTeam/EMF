@@ -1,409 +1,536 @@
 # -*- ck2.events -*-
 
-
 namespace = pb_crusades
 
-# pb_crusades.0
-# Handle crusade revolter cleanup immediately (CB supplement)
-#
-# FROMFROM is CB giver (loser in this case), ROOT is the winner, and
-# FROM is the Pope (or Caliph or whoever was the primary attacker).
-character_event = {
-	id = pb_crusades.0
-	desc = OK
+# Refill holding levies (needs to be done on a delay)
+character_event = { # refills levy holdings after switching to feudal
+	id = pb_crusades.1
+	
 	hide_window = yes
 	is_triggered_only = yes
 	
 	immediate = {
-		random_demesne_title = {
-			limit = { has_law = the_crusade_target }
-			# Usurp from smallest to largest tier of de jure vassal titles.
-			# Otherwise, it is arbitrary whether we will usurp all affected
-			# titles (and very highly unlikely).
-			any_de_jure_vassal_title = {
-				limit = {
-					tier = BARON
-					holder_scope = {
-						top_liege = { #Should work at any level of revolt
-							in_revolt = yes
-							liege_before_war = {
-								character = FROMFROM
-							}
-						}
-					}
-				}
-				usurp_title = ROOT
-			}
-			any_de_jure_vassal_title = {
-				limit = {
-					tier = COUNT
-					holder_scope = {
-						top_liege = { #Should work at any level of revolt
-							in_revolt = yes
-							liege_before_war = {
-								character = FROMFROM
-							}
-						}
-					}
-				}
-				usurp_title = ROOT
-			}
-			any_de_jure_vassal_title = {
-				limit = {
-					tier = DUKE
-					holder_scope = {
-						top_liege = { #Should work at any level of revolt
-							in_revolt = yes
-							liege_before_war = {
-								character = FROMFROM
-							}
-						}
-					}
-				}
-				usurp_title = ROOT
-			}
+		any_demesne_title = {
+			limit = { has_title_flag = refill_levy }
+			clr_title_flag = refill_levy
+			remove_holding_modifier = recently_conquered
+			remove_holding_modifier = new_administration
+			refill_holding_levy = yes
 		}
 	}
-	
-	option = { name = OK }
 }
 
-
-# pb_crusades.1
-# Give away the Crusader State? (CB supplement)
-#
-# Moved from meneth.204 out of PB_various.txt
-#
-# FROMFROM is the loser of the crusade, ROOT is the winner
-# and holds the target kingdom title, and FROM is the caller
-# of the crusade (Pope, Caliph, etc.)
-#
-# ROOT might be any religion, not just catholic.  They'll be
-# a holy order or mercenary grandmaster if non-catholic.
-# ROOT may also be FROM (the Pope, specifically).
+# pb_crusades.2
+# Post-crusade event to check whether kingdom should be given away
+# FROMFROM is ther former title owner (CB loser), ROOT is the winner, FROM is the religion head
+# all of ROOT's titles held prior to the crusade gain have the "previous_holding" title flag
+# all of ROOT's vassals held prior to the crusade gain have the "previous_vassal" character flag
+# ROOT's primary title prior to the crusade gain is saved as current_title event target
+# The crusade title is saved as crusade_title event target
 character_event = {
-	id = pb_crusades.1
-	desc = pb_crusades.1.desc
+	id = pb_crusades.2
+	desc = EVTDESC_Plus_400
 	picture = GFX_evt_crusaders
 	
 	is_triggered_only = yes
 	
-	#Keep it
-	option = {
-		name = pb_crusades.1.a
-		trigger = {
-			ai = no
-		}
-		# No title transfer necessary...
-		ai_chance = {
-			factor = 0
-		}
-	}
-	#Generate a new character
-	option = {
-		name = pb_crusades.1.b
-		trigger = {
-			ai = yes
-		}
-		prestige = 200
-		create_character = {
-			random_traits = no
-			age = 25
-			dynasty = random
-			female = no
-			religion = ROOT
-			culture = ROOT
-			trait = crusader
-			trait = diligent
-			trait = quick
-			trait = brave
-			trait = brilliant_strategist
-			attributes = {
-				martial = 10
-				learning = 5
-				stewardship = 7
-				intrigue = 5
-				diplomacy = 7
-			}
-		}
-		new_character = {		
-			character_event = { id = pb_crusades.2 }
-		}
-		ai_chance = {
-			factor = 5
-			
-			modifier = {
-				factor = 2000
-				primary_title = { is_primary_type_title = yes }
-			}
-		}
-	}
-	#Give it to a secondary son
-	option = {
-		name = pb_crusades.1.c
-		trigger = {
-			any_child = {
-				is_female = no
-				is_adult = yes
-				is_alive = yes
-				is_ruler = no
-				is_primary_heir = no
-				religion = ROOT
-			}
-			OR = {
-				ai = no
-				primary_title = { is_primary_type_title = no }
-			}
-		}
-		prestige = 200
+	immediate = {
 		random_child = {
 			limit = {
-				is_female = no
 				is_adult = yes
-				is_alive = yes
+				prisoner = no
 				is_ruler = no
-				is_primary_heir = no
 				religion = ROOT
+				is_liege_or_above = ROOT
+				health = 4.0
+				emf_can_inherit_trigger = yes
+				OR = {
+					is_female = no
+					ROOT = { primary_title = { has_law = true_cognatic_succession } }
+					ROOT = { primary_title = { has_law = enatic_cognatic_succession } }
+					ROOT = { primary_title = { has_law = enatic_succession } }
+				}
+				NOR = {
+					trait = incapable
+					any_spouse = { is_ruler = yes }
+					any_heir_title = { always = yes }
+				}
+				OR = {
+					NOT = { age = 40 }
+					any_child = {
+						is_female = no
+						emf_can_inherit_trigger = yes
+					}
+				}
 			}
-			character_event = { id = pb_crusades.2 }
+			save_event_target_as = child_heir
 		}
-		ai_chance = {
-			factor = 100
-		}
-	}
-	#Give it to a brother
-	option = {
-		name = pb_crusades.1.d
-		trigger = {
-			any_sibling = {
-				is_female = no
-				is_adult = yes
-				is_alive = yes
-				is_ruler = no
-				is_primary_heir = no
-				religion = ROOT
-			}
-			OR = {
-				ai = no
-				primary_title = { is_primary_type_title = no }
-			}
-		}
-		prestige = 200
 		random_sibling = {
 			limit = {
-				is_female = no
 				is_adult = yes
-				is_alive = yes
+				prisoner = no
 				is_ruler = no
-				is_primary_heir = no
 				religion = ROOT
+				is_liege_or_above = ROOT
+				health = 4.0
+				emf_can_inherit_trigger = yes
+				OR = {
+					is_female = no
+					ROOT = { primary_title = { has_law = true_cognatic_succession } }
+					ROOT = { primary_title = { has_law = enatic_cognatic_succession } }
+					ROOT = { primary_title = { has_law = enatic_succession } }
+				}
+				NOR = {
+					trait = incapable
+					any_spouse = { is_ruler = yes }
+					any_heir_title = { always = yes }
+				}
+				OR = {
+					NOT = { age = 40 }
+					any_child = {
+						is_female = no
+						emf_can_inherit_trigger = yes
+					}
+				}
 			}
-			character_event = { id = pb_crusades.2 }
+			save_event_target_as = sibling_heir
+		}
+		random_dynasty_member = {
+			limit = {
+				is_adult = yes
+				prisoner = no
+				is_ruler = no
+				religion = ROOT
+				is_liege_or_above = ROOT
+				health = 4.0
+				piety = 0
+				reverse_opinion = { who = ROOT value = 0 }
+				emf_can_inherit_trigger = yes
+				OR = {
+					is_female = no
+					ROOT = { primary_title = { has_law = true_cognatic_succession } }
+					ROOT = { primary_title = { has_law = enatic_cognatic_succession } }
+					ROOT = { primary_title = { has_law = enatic_succession } }
+				}
+				OR = {
+					diplomacy = 12
+					martial = 12
+					stewardship = 12
+					is_smart_trigger = yes
+					reverse_opinion = { who = ROOT value = 75 }
+					calc_true_if = {
+						amount = 2
+						diplomacy = 8
+						martial = 8
+						stewardship = 8
+					}
+				}
+				NOR = {
+					is_child_of = ROOT
+					sibling = ROOT
+					trait = incapable
+					trait = lunatic
+					trait = imbecile
+					trait = inbred
+					is_dumb_trigger = yes
+					any_spouse = { is_ruler = yes }
+					any_heir_title = { always = yes }
+				}
+				OR = {
+					NOT = { age = 40 }
+					any_child = {
+						is_female = no
+						emf_can_inherit_trigger = yes
+					}
+				}
+			}
+			save_event_target_as = relative_heir
+		}
+		random_dynasty_member = {
+			limit = {
+				NOT = { event_target:relative_heir = { always = yes } }
+				is_adult = yes
+				prisoner = no
+				is_ruler = no
+				religion = ROOT
+				is_liege_or_above = ROOT
+				health = 4.0
+				piety = 0
+				reverse_opinion = { who = ROOT value = 0 }
+				emf_can_inherit_trigger = yes
+				OR = {
+					is_female = no
+					ROOT = { primary_title = { has_law = true_cognatic_succession } }
+					ROOT = { primary_title = { has_law = enatic_cognatic_succession } }
+					ROOT = { primary_title = { has_law = enatic_succession } }
+				}
+				NOR = {
+					is_child_of = ROOT
+					sibling = ROOT
+					trait = incapable
+					trait = lunatic
+					trait = imbecile
+					trait = inbred
+					is_dumb_trigger = yes
+					any_spouse = { is_ruler = yes }
+					any_heir_title = { always = yes }
+				}
+				OR = {
+					NOT = { age = 40 }
+					any_child = {
+						is_female = no
+						emf_can_inherit_trigger = yes
+					}
+				}
+			}
+			save_event_target_as = relative_heir
+		}
+		random_courtier = {
+			limit = {
+				is_adult = yes
+				prisoner = no
+				is_ruler = no
+				religion = ROOT
+				is_liege_or_above = ROOT
+				health = 4.0
+				piety = 0
+				reverse_opinion = { who = ROOT value = 0 }
+				emf_can_inherit_trigger = yes
+				OR = {
+					is_female = no
+					ROOT = { primary_title = { has_law = true_cognatic_succession } }
+					ROOT = { primary_title = { has_law = enatic_cognatic_succession } }
+					ROOT = { primary_title = { has_law = enatic_succession } }
+				}
+				OR = {
+					diplomacy = 12
+					martial = 12
+					stewardship = 12
+					is_smart_trigger = yes
+					reverse_opinion = { who = ROOT value = 75 }
+					calc_true_if = {
+						amount = 2
+						diplomacy = 8
+						martial = 8
+						stewardship = 8
+					}
+				}
+				NOR = {
+					is_child_of = ROOT
+					sibling = ROOT
+					dynasty = ROOT
+					trait = incapable
+					trait = lunatic
+					trait = imbecile
+					trait = inbred
+					is_dumb_trigger = yes
+					any_spouse = { is_ruler = yes }
+					any_heir_title = { always = yes }
+				}
+				OR = {
+					NOT = { age = 40 }
+					any_child = {
+						is_female = no
+						emf_can_inherit_trigger = yes
+					}
+				}
+			}
+			save_event_target_as = courtier_heir
+		}
+		# Free wrong-religion holy orders from vassalage
+		any_realm_lord = {
+			limit = {
+				NOT = { religion = ROOT }
+				primary_title = { holy_order = yes }
+				NOT = { has_character_flag = previous_vassal }
+			}
+			set_defacto_liege = THIS
+			emf_liege_change_effect = yes
+		}
+	}
+	
+	option = {
+		name = "EVTOPTA_Plus_400" #To my son
+		trigger = {
+			event_target:child_heir = { is_alive = yes }
 		}
 		ai_chance = {
 			factor = 100
-			modifier = {
-				factor = 0
-				any_child = {
-					is_female = no
-					is_adult = yes
-					is_alive = yes
-					is_ruler = no
-					is_primary_heir = no
-					religion = ROOT
+		}
+		prestige = 500
+		event_target:child_heir = {
+			custom_tooltip = {
+				if = {
+					limit = { NOT = { is_friend = ROOT } }
+					add_friend = ROOT
+				}
+				text = WILL_INHERIT_CRUSADE_KINGDOM
+				hidden_tooltip = {
+					character_event = { id = pb_crusades.3 }
 				}
 			}
 		}
 	}
-	#Give it to a close relative
 	option = {
-		name = pb_crusades.1.e
-		trigger = {
-			any_dynasty_member = {
-				is_female = no
-				is_adult = yes
-				is_alive = yes
-				is_ruler = no
-				is_primary_heir = no
-				is_close_relative = ROOT
-				religion = ROOT
-			}
-			OR = {
-				ai = no
-				primary_title = { is_primary_type_title = no }
-			}
+		name = {
+			text = EVTOPTB_Plus_400_brother
+			trigger = { event_target:sibling_heir = { is_female = no } }
 		}
-		prestige = 200
-		random_dynasty_member = {
-			limit = {
-				is_female = no
-				is_adult = yes
-				is_alive = yes
-				is_ruler = no
-				is_primary_heir = no
-				is_close_relative = ROOT
-				religion = ROOT
-			}
-			character_event = { id = pb_crusades.2 }
+		name = {
+			text = EVTOPTB_Plus_400_sister
+			trigger = { event_target:sibling_heir = { is_female = yes } }
+		}
+		trigger = {
+			event_target:sibling_heir = { is_alive = yes }
 		}
 		ai_chance = {
-			factor = 50
+			factor = 100
+		}
+		prestige = 500
+		event_target:sibling_heir = {
+			custom_tooltip = {
+				if = {
+					limit = { NOT = { is_friend = ROOT } }
+					add_friend = ROOT
+				}
+				text = WILL_INHERIT_CRUSADE_KINGDOM
+				hidden_tooltip = {
+					character_event = { id = pb_crusades.3 }
+				}
+			}
 		}
 	}
-	#Give it to a dynasty member
 	option = {
-		name = pb_crusades.1.f
+		name = "EVTOPTC_Plus_400" #To a capable relative
 		trigger = {
-			any_dynasty_member = {
-				is_female = no
-				is_adult = yes
-				is_alive = yes
-				is_ruler = no
-				is_primary_heir = no
-				religion = ROOT
-			}
-			OR = {
-				ai = no
-				primary_title = { is_primary_type_title = no }
-			}
-		}
-		prestige = 200
-		random_dynasty_member = {
-			limit = {
-				is_female = no
-				is_adult = yes
-				is_alive = yes
-				is_ruler = no
-				is_primary_heir = no
-				religion = ROOT
-			}
-			character_event = { id = pb_crusades.2 }
+			event_target:relative_heir = { is_alive = yes }
 		}
 		ai_chance = {
-			factor = 25
+			factor = 10
+		}
+		prestige = 500
+		event_target:relative_heir = {
+			custom_tooltip = {
+				if = {
+					limit = { NOT = { is_friend = ROOT } }
+					add_friend = ROOT
+				}
+				text = WILL_INHERIT_CRUSADE_KINGDOM
+				hidden_tooltip = {
+					character_event = { id = pb_crusades.3 }
+				}
+			}
 		}
 	}
-	#Give it to someone from my realm
 	option = {
-		name = pb_crusades.1.g
+		name = EVTOPTD_Plus_400 #To a valiant retainer
 		trigger = {
-			any_realm_character = {
-				is_female = no
-				is_adult = yes
-				is_alive = yes
-				is_ruler = no
-				is_primary_heir = no
-				opinion = { who = ROOT value = 0 }
-				reverse_opinion = { who = ROOT value = 30 }
-				trait = crusader
-				religion = ROOT
+			OR = {
+				NOT = { event_target:child_heir = { is_alive = yes } }
+				NOT = { event_target:sibling_heir = { is_alive = yes } }
+				NOT = { event_target:relative_heir = { is_alive = yes } }
+			}
+		}
+		ai_chance = {
+			factor = 1
+		}
+		prestige = 500
+		if = {
+			limit = { event_target:courtier_heir = { always = yes } }
+			event_target:courtier_heir = {
+				custom_tooltip = {
+					if = {
+						limit = { NOT = { is_friend = ROOT } }
+						add_friend = ROOT
+					}
+					text = WILL_INHERIT_CRUSADE_KINGDOM
+					hidden_tooltip = {
+						character_event = { id = pb_crusades.3 }
+					}
+				}
+			}
+		}
+		if = {
+			limit = { NOT = { event_target:courtier_heir = { always = yes } } }
+			custom_tooltip = {
+				text = RANDOM_WILL_INHERIT_CRUSADE_KINGDOM
+				hidden_tooltip = {
+					create_character = {
+						random_traits = yes
+						dynasty = random
+						religion = ROOT
+						culture = ROOT
+						female = no
+						age = 25
+						health = 7
+						attributes = {
+							martial = 10
+							diplomacy = 10
+						}
+					}
+					new_character = {
+						add_friend = ROOT
+						character_event = { id = pb_crusades.3 }
+					}
+				}
+			}
+		}
+	}
+	option = {
+		name = "EVTOPTE_Plus_400" #To myself
+		ai_chance = {
+			factor = 1000
+		}
+		trigger = {
+			OR = {
+				ai = no
+				independent = yes
+				is_feudal = yes
 			}
 			OR = {
 				ai = no
-				primary_title = { is_primary_type_title = no }
+				AND = {
+					independent = no
+					lower_tier_than = king
+				}
+				any_demesne_title = {
+					tier = COUNT
+					NOT = { has_title_flag = previous_holding }
+					location = {
+						any_neighbor_province = {
+							OR = {
+								county = { has_title_flag = previous_holding }
+								owner = { has_character_flag = previous_vassal }
+								owner = { any_liege = { has_character_flag = previous_vassal } }
+							}
+						}
+					}
+				}
 			}
 		}
-		prestige = 200
-		random_realm_character = {
-			limit = {
-				is_female = no
-				is_adult = yes
-				is_alive = yes
-				is_ruler = no
-				is_primary_heir = no
-				opinion = { who = ROOT value = 0 }
-				reverse_opinion = { who = ROOT value = 30 }
-				trait = crusader
-				religion = ROOT
-			}
-			character_event = { id = pb_crusades.2 }
+		if = {
+			limit = { independent = no }
+			custom_tooltip = { text = CRUSADE_RELINQUISH_TITLES }
 		}
-		ai_chance = {
-			factor = 15
+		if = {
+			limit = { independent = yes }
+			custom_tooltip = { text = CRUSADE_KEEP_TITLES }
+		}
+		hidden_tooltip = {
+			if = {
+				limit = { independent = no }
+				liege = {
+					ROOT = {
+						# Previous vassals will be reassigned to the liege
+						any_character = {
+							limit = { has_character_flag = previous_vassal }
+							clr_character_flag = previous_vassal
+							set_defacto_liege = PREVPREV
+							pf_liege_change_effect = yes
+						}
+						# Previous non-titular titles will be reassigned to the liege
+						any_demesne_title = {
+							limit = {
+								is_titular = no
+								is_landless_type_title = no
+								has_title_flag = previous_holding
+							}
+							clr_title_flag = previous_holding
+							gain_title = PREVPREV
+						}
+					}
+				}
+				set_defacto_liege = ROOT
+			}
+			event_target:crusade_title = {
+				destroy_landed_title = yes
+				gain_title = ROOT
+				copy_title_laws = event_target:current_title
+				capital_scope = {
+					county = {
+						if = {
+							limit = { holder = ROOT }
+							ROOT = { capital = PREV }
+						}
+					}
+				}
+			}
+			# Refill levies of conquered holdings within target kingdom
+			any_demesne_title = {
+				limit = {
+					tier = BARON
+					de_jure_liege_or_above = event_target:crusade_title
+				}
+				set_title_flag = refill_levy
+			}
+			character_event = { id = pb_crusades.5 } # Grant fiefs to crusade participants
+			character_event = { id = pb_crusades.1 days = 3 } # Refill holding levies
 		}
 	}
 }
 
-
-# pb_crusades.2
-# Crusader State Granted to New Ruler [immediate]
-#
-# ROOT = non-ruler (ergo, AI)
-# FROM = giver of crusade target kingdom
-# FROMFROM = initiator of crusade
 character_event = {
-	id = pb_crusades.2
-	desc = OK # Should only be reached by AI characters	
+	id = pb_crusades.3
+	
 	hide_window = yes
 	is_triggered_only = yes
 	
 	immediate = {
+		# Grant titles in crusade kingdom, starting with feudal titles
 		FROM = {
-			random_demesne_title = {
-				limit = { has_law = the_crusade_target }
-
-				# NOTE: When FROM is a holy order, mercenary, the Pope, independent
-				#       theocrat, or a republican, the trigger 'is_feudal = yes'
-				#       may not be true until the game has run for a couple of days.
-				#       However, we can ensure that a castle is granted to the
-				#       character first by checking the holding_type trigger, and
-				#       that's sufficient. All succession laws are ensured to be
-				#       properly feudal, wherever appropriate, by pb_crusades.5
-				
-				any_de_jure_vassal_title = {
-					limit = {
-						OR = {
-							is_feudal = yes
-							holding_type = castle
-						}
-						holder_scope = { character = PREVPREVPREV }
+			any_demesne_title = {
+				limit = {
+					OR = {
+						is_feudal = yes
+						holding_type = castle
 					}
-					grant_title = ROOT
+					NOT = { has_title_flag = previous_holding }
 				}
-				any_de_jure_vassal_title = {
-					limit = {
-						holder_scope = { character = PREVPREVPREV }
-					}
-					grant_title = ROOT
-				}
-				
 				grant_title = ROOT
 			}
-		} # Title transfer complete
+			any_demesne_title = {
+				limit = { NOT = { has_title_flag = previous_holding } }
+				grant_title = ROOT
+			}
+		}
+		emf_switch_to_feudal_gov_effect = yes # just in case
 
-		set_defacto_liege = THIS
-		emf_liege_change_effect = yes
-		character_event = { id = pb_crusades.5 } # Ensure desirable succession laws now that independent
+		# Refill levies of conquered holdings within target kingdom
+		any_demesne_title = {
+			limit = {
+				tier = BARON
+				de_jure_liege_or_above = event_target:crusade_title
+			}
+			set_title_flag = refill_levy
+		}
 
-		# Try to set the capital to the de jure capital of the crusader state.
-		# The AI will do whatever it wants afterward, of course.
-		
-		# Rather than worry about whether the de jure capital of the crusader state
-		# is_feudal = yes yet, simply set the character's capital to the de jure
-		# capital province, and let them sort out any possible character type
-		# issues automatically (whether the province_capital is no longer a castle
-		# for some reason or succession law changes haven't yet taken effect).
-
-		random_demesne_title = {
-			limit = { tier = KING }
-			
-			if = { limit = { c_jerusalem = { de_jure_liege_or_above = PREV } }
-				c_jerusalem = { location = { ROOT = { capital = PREV } } } # Jerusalem
+		event_target:crusade_title = {
+			destroy_landed_title = yes
+			gain_title = ROOT
+			copy_title_laws = event_target:current_title
+			add_law = inheritance_1
+			if = {
+				limit = {
+					NOR = {
+						has_law = succ_gavelkind
+						has_law = succ_primogeniture
+						has_law = succ_seniority
+						has_law = succ_feudal_elective
+						has_law = succ_turkish_succession
+					}
+				}
+				add_law = succ_primogeniture
 			}
-			if = { limit = { c_cordoba = { de_jure_liege_or_above = PREV } }
-				c_cordoba = { location = { ROOT = { capital = PREV } } } # Andalusia
+			capital_scope = {
+				county = {
+					if = {
+						limit = { holder = ROOT }
+						ROOT = { capital = PREV }
+					}
+				}
 			}
-			if = { limit = { c_byzantion = { de_jure_liege_or_above = PREV } }
-				c_byzantion = { location = { ROOT = { capital = PREV } } } # Byzantium / Thessalonika
-			}
-			if = { limit = { c_palermo = { de_jure_liege_or_above = PREV } }
-				c_palermo = { location = { ROOT = { capital = PREV } } } # Sicily
-			}
-			# TODO: Egypt
 		}
 		
-		# And now we leave all titles and laws of the realm behind...
-
 		add_character_modifier = {
 			name = formation_of_rum
 			duration = 9125
@@ -412,124 +539,179 @@ character_event = {
 		wealth = 500
 		prestige = 200
 		piety = 100
-		
+		set_defacto_liege = THIS
+		add_alliance = { who = event_target:crusade_victor years = 50 }
+
+		# Improve the new ruler
 		random_list = {
-			20 = { remove_trait = feeble add_trait = robust }
-			20 = { remove_trait = craven add_trait = brave }
-			20 = { remove_trait = content add_trait = ambitious }
-			20 = { remove_trait = cynical add_trait = zealous }
-			20 = { remove_trait = slothful add_trait = diligent }
+			20 = {
+				modifier = {
+					factor = 0
+					is_smart_trigger = yes
+				}
+				add_trait = shrewd
+			}
+			20 = {
+				modifier = {
+					factor = 0
+					trait = brave
+				}
+				add_trait = brave
+			}
+			20 = {
+				modifier = {
+					factor = 0
+					trait = ambitious
+				}
+				add_trait = ambitious
+			}
+			20 = {
+				modifier = {
+					factor = 0
+					trait = zealous
+				}
+				add_trait = zealous
+			}
+			20 = {
+				modifier = {
+					factor = 0
+					trait = diligent
+				}
+				add_trait = diligent
+			}
 		}
 		random_list = {
-			20 = { remove_trait = feeble add_trait = robust }
-			20 = { remove_trait = craven add_trait = brave }
-			20 = { remove_trait = content add_trait = ambitious }
-			20 = { remove_trait = cynical add_trait = zealous }
-			20 = { remove_trait = slothful add_trait = diligent }
+			20 = {
+				modifier = {
+					factor = 0
+					is_smart_trigger = yes
+				}
+				add_trait = shrewd
+			}
+			20 = {
+				modifier = {
+					factor = 0
+					trait = brave
+				}
+				add_trait = brave
+			}
+			20 = {
+				modifier = {
+					factor = 0
+					trait = ambitious
+				}
+				add_trait = ambitious
+			}
+			20 = {
+				modifier = {
+					factor = 0
+					trait = zealous
+				}
+				add_trait = zealous
+			}
+			20 = {
+				modifier = {
+					factor = 0
+					trait = diligent
+				}
+				add_trait = diligent
+			}
 		}
 		
+		# Spawn 3 regiments
 		capital_scope = {
-			religion = ROOT # Capital's official religion changes to crusaders'
-		
 			ROOT = {
-				# Spawn 3 regiments, each with 1000 troops and a good, but randomized, commander
-				create_character = {
-					random_traits = yes
-					dynasty = random
-					religion = ROOT
-					culture = ROOT
-					female = no
-					age = 30
-					attributes = {
-						martial = 12
+				spawn_unit = {
+					province = PREV
+					home = PREV
+					owner = THIS
+					troops = {
+						archers = { 150 150 }
+						pikemen = { 150 150 }
+						heavy_infantry = { 250 250 }
+						light_cavalry = { 250 250 }
+						knights = { 50 50 }
 					}
 				}
-				new_character = {
-					character_event = { id = pb_crusades.4 } # Assign appropriate traits/attributes [immediate]
-					spawn_unit = {
-						province = PREVPREV
-						home = PREVPREV
-						owner = ROOT
-						leader = THIS
-						attrition = 1.0
-						troops =
-						{ # Unit total: 1000
-							archers = { 150 150 }
-							pikemen = { 150 150 }
-							heavy_infantry = { 250 250 }
-							light_cavalry = { 250 250 }
-							knights = { 200 200 }
-						}
+				spawn_unit = {
+					province = PREV
+					home = PREV
+					owner = THIS
+					troops = {
+						archers = { 150 150 }
+						pikemen = { 150 150 }
+						heavy_infantry = { 250 250 }
+						light_cavalry = { 250 250 }
+						knights = { 50 50 }
 					}
 				}
-				create_character = {
-					random_traits = yes
-					dynasty = random
-					religion = ROOT
-					culture = ROOT
-					female = no
-					age = 35
-					attributes = {
-						martial = 12
-					}
-				}
-				new_character = {
-					character_event = { id = pb_crusades.4 } # Assign appropriate traits/attributes [immediate]
-					spawn_unit = {
-						province = PREVPREV
-						home = PREVPREV
-						owner = ROOT
-						leader = THIS
-						attrition = 1.0
-						troops =
-						{ # Unit total: 1000
-							archers = { 150 150 }
-							pikemen = { 150 150 }
-							heavy_infantry = { 250 250 }
-							light_cavalry = { 250 250 }
-							knights = { 200 200 }
-						}
-					}
-				}
-				create_character = {
-					random_traits = yes
-					dynasty = random
-					religion = ROOT
-					culture = ROOT
-					female = no
-					age = 27
-					attributes = {
-						martial = 12
-					}
-				}
-				new_character = {
-					character_event = { id = pb_crusades.4 } # Assign appropriate traits/attributes [immediate]
-					spawn_unit = {
-						province = PREVPREV
-						home = PREVPREV
-						owner = ROOT
-						leader = THIS
-						attrition = 1.0
-						troops =
-						{ # Unit total: 1000
-							archers = { 150 150 }
-							pikemen = { 150 150 }
-							heavy_infantry = { 250 250 }
-							light_cavalry = { 250 250 }
-							knights = { 200 200 }
-						}
+				spawn_unit = {
+					province = PREV
+					home = PREV
+					owner = THIS
+					troops = {
+						archers = { 150 150 }
+						pikemen = { 150 150 }
+						heavy_infantry = { 250 250 }
+						light_cavalry = { 250 250 }
+						knights = { 50 50 }
 					}
 				}
 			}
 		}
 		
-		#Ensure some decent councilors (aside from marshal-- a crusader general is a better pick)
+		# Ensure some decent councilors/generals
+		create_random_soldier = {
+			random_traits = yes
+			dynasty = random
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 30
+			attributes = {
+				martial = 12
+			}
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant }
+		}
+		create_random_soldier = {
+			random_traits = yes
+			dynasty = random
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 30
+			attributes = {
+				martial = 12
+			}
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant }
+		}
+		create_random_soldier = {
+			random_traits = yes
+			dynasty = random
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 30
+			attributes = {
+				martial = 12
+			}
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant }
+		}
 		create_random_priest = {
 			random_traits = yes
 			dynasty = random
 			female = no
 			religion = ROOT
 			culture = ROOT
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant }
 		}
 		create_random_steward = {
 			random_traits = yes
@@ -538,12 +720,18 @@ character_event = {
 			religion = ROOT
 			culture = ROOT
 		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant }
+		}
 		create_random_intriguer = {
 			random_traits = yes
 			dynasty = random
 			female = no
 			religion = ROOT
 			culture = ROOT
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant }
 		}
 		create_random_diplomat = {
 			random_traits = yes
@@ -552,216 +740,613 @@ character_event = {
 			religion = ROOT
 			culture = ROOT
 		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant }
+		}
+		
+		# Fire follow-up events
+		character_event = { id = pb_crusades.5 } # Grant fiefs to crusade participants
+		character_event = { id = pb_crusades.1 days = 3 } # Refill holding levies		
 	}
-	
-	option = { name = OK }
 }
-
-
-# pb_crusades.3
-# Remove all education traits [immediate]
-#
-# Useful for all random character generation, may
-# eventually belong somewhere else.
-character_event = {
-	id = pb_crusades.3
-	desc = OK
-	hide_window = yes
-	is_triggered_only = yes
-
-	immediate = {
-		remove_trait = amateurish_plotter
-		remove_trait = flamboyant_schemer
-		remove_trait = intricate_webweaver
-		remove_trait = elusive_shadow
-		remove_trait = naive_appeaser
-		remove_trait = underhanded_rogue
-		remove_trait = charismatic_negotiator
-		remove_trait = grey_eminence
-		remove_trait = indulgent_wastrel
-		remove_trait = thrifty_clerk
-		remove_trait = fortune_builder
-		remove_trait = midas_touched
-		remove_trait = misguided_warrior
-		remove_trait = tough_soldier
-		remove_trait = skilled_tactician
-		remove_trait = brilliant_strategist
-		remove_trait = detached_priest
-		remove_trait = martial_cleric
-		remove_trait = scholarly_theologian
-		remove_trait = mastermind_theologian
-	}
 	
-	option = { name = OK }
-}
-
-
-# pb_crusades.4
-# Adjust the traits/attributes of a randomized crusader general [immediate]
+# Crusade participant requests a fief for relative
 character_event = {
 	id = pb_crusades.4
-	desc = OK
-	hide_window = yes
+	desc = EVTDESC_Plus_401
+	picture = GFX_evt_crusaders
+	
 	is_triggered_only = yes
-
-	immediate = {
-		character_event = { id = pb_crusades.3 } # Remove ed. traits [immediately]
-		random_list = {
-			67 = { add_trait = brilliant_strategist }
-			33 = { add_trait = skilled_tactician }
-		}
-		if = {
-			limit = { trait = brilliant_strategist }
-			random_list = {
-				75 = { add_trait = master_warrior }
-				25 = { add_trait = skilled_warrior }
-			}
-			# Brilliant strategists get one free leadership trait by default
-			random_list = {
-				50  = { add_trait = light_foot_leader }
-				50  = { add_trait = heavy_infantry_leader }
-				100 = { add_trait = cavalry_leader }
-				100 = { add_trait = inspiring_leader }
-				100 = { add_trait = trickster }
-				100 = { add_trait = organizer }
-				100 = { add_trait = defensive_leader }
-				100 = { add_trait = experimenter }
-				100 = { add_trait = flanker }
-				100 = { add_trait = aggressive_leader }
-				100 = { add_trait = siege_leader }
-				100 = { add_trait = narrow_flank_leader }
-				20  = { add_trait = flat_terrain_leader }
-				20  = { add_trait = rough_terrain_leader }
-				20  = { add_trait = mountain_terrain_leader }
-				200 = { add_trait = desert_terrain_leader }
-				250 = { add_trait = holy_warrior }
-				100 = { add_trait = unyielding_leader }
+	
+	option = {
+		name = "EVTOPTA_Plus_401" #Request a fief for my son
+		trigger = {
+			any_child = {
+				is_adult = yes
+				prisoner = no
+				is_ruler = no
+				religion = ROOT
+				is_liege_or_above = ROOT
+				health = 4.0
+				emf_can_inherit_trigger = yes
+				is_female = no
+				NOR = {
+					trait = incapable
+					any_spouse = { is_ruler = yes }
+					any_heir_title = { always = yes }
+				}
+				OR = {
+					NOT = { age = 40 }
+					any_child = {
+						is_female = no
+						emf_can_inherit_trigger = yes
+					}
+				}
 			}
 		}
-		if = {
-			limit = { trait = skilled_tactician }
-			random_list = {
-				33 = { add_trait = master_warrior }
-				67 = { add_trait = skilled_warrior }
+		ai_chance = {
+			factor = 100
+			modifier = {
+				factor = 2
+				trait = ambitious
+			}
+			modifier = {
+				factor = 2
+				trait = proud
 			}
 		}
-		# Slightly randomize the martial attribute (+/- 2 from 12, uniform)
-		random_list = {
-			20 = { change_martial = -2 }
-			20 = { change_martial = -1 }
-			20 = { }
-			20 = { change_martial =  1 }
-			20 = { change_martial =  2 }
+		prestige = 50
+		random_child = {
+			limit = {
+				is_adult = yes
+				prisoner = no
+				is_ruler = no
+				religion = ROOT
+				is_liege_or_above = ROOT
+				health = 4.0
+				emf_can_inherit_trigger = yes
+				is_female = no
+				NOR = {
+					trait = incapable
+					any_spouse = { is_ruler = yes }
+					any_heir_title = { always = yes }
+				}
+				OR = {
+					NOT = { age = 40 }
+					any_child = {
+						is_female = no
+						emf_can_inherit_trigger = yes
+					}
+				}
+			}
+			custom_tooltip = { text = GRANTED_CRUSADE_FIEF }
+			opinion = { who = ROOT modifier = opinion_grateful years = 20 }
+			set_character_flag = wants_fief_@event_target:crusade_victor
+		}
+		hidden_tooltip = {
+			if = {
+				limit = { ai = no }
+				event_target:crusade_title = {
+					holder_scope = {
+						character_event = { id = pb_crusades.5 }
+					}
+				}
+			}
 		}
 	}
-	
-	option = { name = OK }
+	option = {
+		name = "EVTOPTB_Plus_401" #Request a fief for my brother
+		trigger = {
+			any_sibling = {
+				is_adult = yes
+				prisoner = no
+				is_ruler = no
+				religion = ROOT
+				is_liege_or_above = ROOT
+				health = 4.0
+				emf_can_inherit_trigger = yes
+				is_female = no
+				NOR = {
+					trait = incapable
+					any_spouse = { is_ruler = yes }
+					any_heir_title = { always = yes }
+				}
+				OR = {
+					NOT = { age = 40 }
+					any_child = {
+						is_female = no
+						emf_can_inherit_trigger = yes
+					}
+				}
+			}
+		}
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 2
+				trait = proud
+			}
+		}
+		prestige = 50
+		random_sibling = {
+			limit = {
+				is_adult = yes
+				prisoner = no
+				is_ruler = no
+				religion = ROOT
+				is_liege_or_above = ROOT
+				health = 4.0
+				emf_can_inherit_trigger = yes
+				is_female = no
+				NOR = {
+					trait = incapable
+					any_spouse = { is_ruler = yes }
+					any_heir_title = { always = yes }
+				}
+				OR = {
+					NOT = { age = 40 }
+					any_child = {
+						is_female = no
+						emf_can_inherit_trigger = yes
+					}
+				}
+			}
+			custom_tooltip = { text = GRANTED_CRUSADE_FIEF }
+			opinion = { who = ROOT modifier = opinion_grateful years = 20 }
+			set_character_flag = wants_fief_@event_target:crusade_victor
+		}
+		hidden_tooltip = {
+			if = {
+				limit = { ai = no }
+				event_target:crusade_title = {
+					holder_scope = {
+						character_event = { id = pb_crusades.5 }
+					}
+				}
+			}
+		}
+	}
+	option = {
+		name = "EVTOPTC_Plus_401" #Request a fief for a relative
+		trigger = {
+			any_dynasty_member = {
+				is_adult = yes
+				prisoner = no
+				is_ruler = no
+				religion = ROOT
+				is_liege_or_above = ROOT
+				health = 4.0
+				piety = 0
+				reverse_opinion = { who = ROOT value = 0 }
+				emf_can_inherit_trigger = yes
+				is_female = no
+				NOR = {
+					is_child_of = ROOT
+					sibling = ROOT
+					trait = incapable
+					trait = lunatic
+					trait = imbecile
+					trait = inbred
+					is_dumb_trigger = yes
+					any_spouse = { is_ruler = yes }
+					any_heir_title = { always = yes }
+				}
+				OR = {
+					NOT = { age = 40 }
+					any_child = {
+						is_female = no
+						emf_can_inherit_trigger = yes
+					}
+				}
+			}
+		}
+		ai_chance = {
+			factor = 25
+			modifier = {
+				factor = 2
+				trait = proud
+			}
+		}
+		prestige = 25
+		random_dynasty_member = {
+			limit = {
+				is_adult = yes
+				prisoner = no
+				is_ruler = no
+				religion = ROOT
+				is_liege_or_above = ROOT
+				health = 4.0
+				piety = 0
+				reverse_opinion = { who = ROOT value = 0 }
+				emf_can_inherit_trigger = yes
+				is_female = no
+				OR = {
+					diplomacy = 12
+					martial = 12
+					stewardship = 12
+					is_smart_trigger = yes
+					reverse_opinion = { who = ROOT value = 75 }
+					calc_true_if = {
+						amount = 2
+						diplomacy = 8
+						martial = 8
+						stewardship = 8
+					}
+				}
+				NOR = {
+					is_child_of = ROOT
+					sibling = ROOT
+					trait = incapable
+					trait = lunatic
+					trait = imbecile
+					trait = inbred
+					is_dumb_trigger = yes
+					any_spouse = { is_ruler = yes }
+					any_heir_title = { always = yes }
+				}
+				OR = {
+					NOT = { age = 40 }
+					any_child = {
+						is_female = no
+						emf_can_inherit_trigger = yes
+					}
+				}
+			}
+			custom_tooltip = { text = GRANTED_CRUSADE_FIEF }
+			opinion = { who = ROOT modifier = opinion_grateful years = 20 }
+			set_character_flag = wants_fief_@event_target:crusade_victor
+			hidden_tooltip = {
+				if = {
+					limit = { ROOT = { ai = no } }
+					event_target:crusade_title = {
+						holder_scope = {
+							character_event = { id = pb_crusades.5 }
+						}
+					}
+				}
+			}
+			break = yes
+		}
+		random_dynasty_member = {
+			limit = {
+				is_adult = yes
+				prisoner = no
+				is_ruler = no
+				religion = ROOT
+				is_liege_or_above = ROOT
+				health = 4.0
+				piety = 0
+				reverse_opinion = { who = ROOT value = 0 }
+				emf_can_inherit_trigger = yes
+				is_female = no
+				NOR = {
+					is_child_of = ROOT
+					sibling = ROOT
+					trait = incapable
+					trait = lunatic
+					trait = imbecile
+					trait = inbred
+					is_dumb_trigger = yes
+					any_spouse = { is_ruler = yes }
+					any_heir_title = { always = yes }
+				}
+				OR = {
+					NOT = { age = 40 }
+					any_child = {
+						is_female = no
+						emf_can_inherit_trigger = yes
+					}
+				}
+			}
+			custom_tooltip = { text = GRANTED_CRUSADE_FIEF }
+			opinion = { who = ROOT modifier = opinion_grateful years = 20 }
+			set_character_flag = wants_fief_@event_target:crusade_victor
+		}
+		hidden_tooltip = {
+			if = {
+				limit = { ai = no }
+				event_target:crusade_title = {
+					holder_scope = {
+						character_event = { id = pb_crusades.5 }
+					}
+				}
+			}
+		}
+	}
+	option = {
+		name = "EVTOPTD_Plus_401" #To a valiant retainer
+		trigger = {
+			any_courtier = {
+				is_adult = yes
+				prisoner = no
+				is_ruler = no
+				religion = ROOT
+				is_liege_or_above = ROOT
+				health = 4.0
+				piety = 0
+				reverse_opinion = { who = ROOT value = 0 }
+				emf_can_inherit_trigger = yes
+				is_female = no
+				OR = {
+					diplomacy = 12
+					martial = 12
+					stewardship = 12
+					is_smart_trigger = yes
+					reverse_opinion = { who = ROOT value = 75 }
+					calc_true_if = {
+						amount = 2
+						diplomacy = 8
+						martial = 8
+						stewardship = 8
+					}
+				}
+				NOR = {
+					is_child_of = ROOT
+					sibling = ROOT
+					dynasty = ROOT
+					trait = incapable
+					trait = lunatic
+					trait = imbecile
+					trait = inbred
+					is_dumb_trigger = yes
+					any_spouse = { is_ruler = yes }
+					any_heir_title = { always = yes }
+				}
+				OR = {
+					NOT = { age = 40 }
+					any_child = {
+						is_female = no
+						emf_can_inherit_trigger = yes
+					}
+				}
+			}
+			OR = {
+				NOT = {
+					any_child = {
+						is_adult = yes
+						prisoner = no
+						is_ruler = no
+						religion = ROOT
+						is_liege_or_above = ROOT
+						health = 4.0
+						emf_can_inherit_trigger = yes
+						is_female = no
+						NOR = {
+							trait = incapable
+							any_spouse = { is_ruler = yes }
+							any_heir_title = { always = yes }
+						}
+						OR = {
+							NOT = { age = 40 }
+							any_child = {
+								is_female = no
+								emf_can_inherit_trigger = yes
+							}
+						}
+					}
+				}
+				NOT = {
+					any_sibling = {
+						is_adult = yes
+						prisoner = no
+						is_ruler = no
+						religion = ROOT
+						is_liege_or_above = ROOT
+						health = 4.0
+						emf_can_inherit_trigger = yes
+						is_female = no
+						NOR = {
+							trait = incapable
+							any_spouse = { is_ruler = yes }
+							any_heir_title = { always = yes }
+						}
+						OR = {
+							NOT = { age = 40 }
+							any_child = {
+								is_female = no
+								emf_can_inherit_trigger = yes
+							}
+						}
+					}
+				}
+				NOT = {
+					any_dynasty_member = {
+						is_adult = yes
+						prisoner = no
+						is_ruler = no
+						religion = ROOT
+						is_liege_or_above = ROOT
+						health = 4.0
+						piety = 0
+						reverse_opinion = { who = ROOT value = 0 }
+						emf_can_inherit_trigger = yes
+						is_female = no
+						NOR = {
+							is_child_of = ROOT
+							sibling = ROOT
+							trait = incapable
+							trait = lunatic
+							trait = imbecile
+							trait = inbred
+							is_dumb_trigger = yes
+							any_spouse = { is_ruler = yes }
+							any_heir_title = { always = yes }
+						}
+						OR = {
+							NOT = { age = 40 }
+							any_child = {
+								is_female = no
+								emf_can_inherit_trigger = yes
+							}
+						}
+					}
+				}
+			}
+		}
+		ai_chance = {
+			factor = 5
+		}
+		prestige = 10
+		random_courtier = {
+			limit = {
+				is_adult = yes
+				prisoner = no
+				is_ruler = no
+				religion = ROOT
+				is_liege_or_above = ROOT
+				health = 4.0
+				piety = 0
+				reverse_opinion = { who = ROOT value = 0 }
+				emf_can_inherit_trigger = yes
+				is_female = no
+				OR = {
+					diplomacy = 12
+					martial = 12
+					stewardship = 12
+					is_smart_trigger = yes
+					reverse_opinion = { who = ROOT value = 75 }
+					calc_true_if = {
+						amount = 2
+						diplomacy = 8
+						martial = 8
+						stewardship = 8
+					}
+				}
+				NOR = {
+					is_child_of = ROOT
+					sibling = ROOT
+					dynasty = ROOT
+					trait = incapable
+					trait = lunatic
+					trait = imbecile
+					trait = inbred
+					is_dumb_trigger = yes
+					any_spouse = { is_ruler = yes }
+					any_heir_title = { always = yes }
+				}
+				OR = {
+					NOT = { age = 40 }
+					any_child = {
+						is_female = no
+						emf_can_inherit_trigger = yes
+					}
+				}
+			}
+			custom_tooltip = { text = GRANTED_CRUSADE_FIEF }
+			opinion = { who = ROOT modifier = opinion_grateful years = 20 }
+			set_character_flag = wants_fief_@event_target:crusade_victor
+		}
+		hidden_tooltip = {
+			if = {
+				limit = { ai = no }
+				event_target:crusade_title = {
+					holder_scope = {
+						character_event = { id = pb_crusades.5 }
+					}
+				}
+			}
+		}
+	}
+	option = {
+		name = "EVTOPTE_Plus_401" #No, our victory belongs to God
+		ai_chance = {
+			factor = 5
+			modifier = {
+				factor = 5
+				trait = zealous
+			}
+			modifier = {
+				factor = 5
+				trait = content
+			}
+		}
+		piety = 25
+	}
 }
 
-
-# pb_crusades.5
-# Normalize succession laws of target kingdom [immediate]
-#
-# NOTE: Meant to be called from pb_crusades.2 after title transfer from giver
-#
-# ROOT = AI ruler of crusader state
-# FROM = ROOT
-# FROMFROM = giver of crusade target kingdom
+# Grant fiefs to crusade participants
 character_event = {
 	id = pb_crusades.5
-	desc = OK
-	hide_window = yes
-	is_triggered_only = yes
 	
-	trigger = {
-		# Only alter the succession laws if FROMFROM's were undesirable for the
-		# crusader state. Otherwise, copy their primary title's succession law.
-		# Gender succession laws are always left as-is, currently.
-		FROMFROM = {
-			primary_title = {
-				NOT = {
-					has_law = succ_gavelkind
-					has_law = succ_primogeniture
-					has_law = succ_seniority
-					has_law = succ_feudal_elective
-#					has_law = succ_tanistry
-					has_law = succ_turkish_succession
+	is_triggered_only = yes
+	hide_window = yes
+	
+	immediate = {
+		capital_scope = {
+			duchy = { save_event_target_as = capital_duchy }
+		}
+		any_character = {
+			limit = { has_character_flag = wants_fief_@event_target:crusade_victor }
+			clr_character_flag = wants_fief_@event_target:crusade_victor
+			move_character = ROOT
+			opinion = { who = ROOT modifier = opinion_loyal_vassal multiplier = 2 }
+			if = {
+				limit = {
+					ROOT = {
+						NOT = { demesne_efficiency = 1.00 }
+					}
+				}
+				liege = { primary_title = { save_event_target_as = liege_title } }
+				save_event_target_as = wants_fief
+				event_target:liege_title = {
+					ROOT = {
+						random_demesne_title = {
+							limit = {
+								tier = COUNT
+								is_feudal = yes
+								NOR = {
+									has_title_flag = previous_holding
+									any_direct_de_jure_vassal_title = { is_holy_site = ROOT }
+									duchy = { title = event_target:capital_duchy }
+									kingdom = {
+										capital_scope = {
+											county = { title = PREVPREVPREV }
+										}
+									}
+								}
+							}
+							grant_title_no_opinion  = event_target:wants_fief
+							any_direct_de_jure_vassal_title = {
+								limit = { holder_scope = { character = ROOT } }
+								grant_title_no_opinion  = event_target:wants_fief
+							}
+							copy_title_laws = PREVPREV
+							if = {
+								limit = {
+									NOR = {
+										has_law = succ_gavelkind
+										has_law = succ_primogeniture
+										has_law = succ_seniority
+										has_law = succ_feudal_elective
+										has_law = succ_turkish_succession
+									}
+								}
+								add_law = succ_primogeniture
+							}
+							event_target:wants_fief = {
+								any_demesne_title = {
+									limit = { tier = BARON }
+									add_title_flag = refill_levy
+								}
+								character_event = { id = pb_crusades.1 days = 3 } # Refill holding levies
+								recalc_succession = yes
+							}
+						}
+					}
 				}
 			}
 		}
-	}
-	
-	immediate = {
-		random_demesne_title = {
-			limit = { tier = KING }
 
-			if = {
-				limit = { ROOT = { NOT = { religion_group = muslim } } }
-				
-				# Non-muslims default to gavelkind for the new realm
-
-				# NOTE: Feudal elective might be a more accurate choice for
-				#       these crusader states and also prevent, say, the KoJ
-				#       from being inherited by the giver/winner or a landed
-				#       relative back home.
-				
-				if = {
-					limit = { NOT = { has_law = succ_gavelkind } }
-					add_law = succ_gavelkind # To the target kingdom
-				}
-				
-				# For the feudal titles... (the rest will auto-correct)
-				any_de_jure_vassal_title = {
-					limit = {
-						OR = {
-							higher_tier_than = BARON # If a county capital is not a castle, this won't matter
-							holding_type = castle
-						}
-						NOT = { has_law = succ_gavelkind }
-					}
-					add_law = succ_gavelkind
-				}
-			} # Non-muslim
-			
-			if = {
-				limit = { ROOT = { religion_group = muslim } }
-				
-				# Muslim feudal titles always use agnatic open.
-				
-				if = {
-					limit = { NOT = { has_law = succ_turkish_succession } }
-					add_law = succ_turkish_succession # To the target kingdom
-				}
-				
-				# For the feudal titles... (the rest will auto-correct)
-				any_de_jure_vassal_title = {
-					limit = {
-						OR = {
-							higher_tier_than = BARON # If a county capital is a city, this won't matter
-							holding_type = castle
-							holding_type = temple
-						}
-						NOT = { has_law = succ_turkish_succession }
-					}
-					add_law = succ_turkish_succession
-				}
-			} # Muslim
-		}
+		# Clear original flags
+		any_landed_title = { clr_title_flag = previous_holding }
+		any_character = { clr_character_flag = previous_vassal }
 	}
-	
-	option = { name = OK }
 }
 
-
-# pb_crusades.6
-# Temporarily cripple ability of Pope to quickly hire all the holy orders right
-# after Christian Crusade creation. [Now applies to mercenaries too.]
+# Temporarily cripple ability of Pope to quickly hire all the holy orders and mercenaries
+# right after Christian Crusade creation. [Now applies to mercenaries too.]
 #
 # Called by on_crusade_creation on_action.
-#
-# NOTE: Modified to also subtract any huge chunks of change the Pope might have
-# for hiring a ton of mercs until restoring it along with the piety 4 months
-# after crusade creation so that it can be used.
 #
 # ROOT = religious head
 # FROM = target kingdom title
@@ -772,7 +1357,7 @@ character_event = {
 # so I'm just going to code this CB-style and make no assumptions about scopes.
 character_event = {
 	id = pb_crusades.6
-	desc = OK
+
 	hide_window = yes
 	is_triggered_only = yes
 	
@@ -801,18 +1386,13 @@ character_event = {
 			character_event = { id = pb_crusades.10 days = 30 }
 		}
 	}
-	
-	option = { name = OK }
 }
 
-
-# pb_crusades.7
 # Recursively subtract piety from ROOT and save it in a karmic debt counter.
-#
 # Invoked by pb_crusades.6
 character_event = {
 	id = pb_crusades.7
-	desc = OK
+
 	hide_window = yes
 	is_triggered_only = yes
 	
@@ -820,143 +1400,96 @@ character_event = {
 		piety = 50
 	}
 	
-	option = {
-		name = OK
-		
+	immeditate = {
 		piety = -50
 		change_variable = { which = crusade_karma value = 1 }
 		character_event = { id = pb_crusades.7 }
 	}
 }
 
-
-# pb_crusades.8
 # Restore the piety which was taken away from the Pope on crusade creation.
-#
-# First invoked as a delayed-offset event from pb_crusades.6, then recursively
-# keeps calling itself until the Pope's piety debt counter reaches even.
-#
 # ROOT = religious head
 character_event = {
 	id = pb_crusades.8
-	desc = OK
+	
 	hide_window = yes
 	is_triggered_only = yes
 	
 	trigger = {
-		check_variable = { which = crusade_karma value = 1 }
+		OR = {
+			check_variable = { which = crusade_karma value = 1 }
+			is_variable_equal = { which = crusade_karma value = 1 }
+		}
 	}
 	
-	option = {
-		name = OK
-		
+	immediate = {
 		piety = 50
 		change_variable = { which = crusade_karma value = -1 }
 		character_event = { id = pb_crusades.8 }
 	}
 }
 
-
-# pb_crusades.9
 # Recursively subtract cash from ROOT and save it in a debt counter.
-#
 # Invoked by pb_crusades.6
 character_event = {
 	id = pb_crusades.9
-	desc = OK
+
 	hide_window = yes
 	is_triggered_only = yes
 	
 	trigger = {
-		wealth = 200
+		wealth = 100
 	}
 	
-	option = {
-		name = OK
-		
-		wealth = -200
+	immediate = {
+		wealth = -100
 		change_variable = { which = crusade_cash value = 1 }
 		character_event = { id = pb_crusades.9 }
 	}
 }
 
-
-# pb_crusades.10
 # Restore the cash which was taken away from the Pope on crusade creation.
-#
-# First invoked as a delayed-offset event from pb_crusades.6, then recursively
-# keeps calling itself until the Pope's debt counter reaches even.
-#
 # ROOT = religious head
 character_event = {
 	id = pb_crusades.10
-	desc = OK
+
 	hide_window = yes
 	is_triggered_only = yes
 	
 	trigger = {
-		check_variable = { which = crusade_cash value = 1 }
+		OR = {
+			check_variable = { which = crusade_cash value = 1 }
+			is_variable_equal = { which = crusade_cash value = 1 }
+		}
 	}
 	
-	option = {
-		name = OK
-		
-		wealth = 200
+	immediate = {
+		wealth = 100
 		change_variable = { which = crusade_cash value = -1 }
 		character_event = { id = pb_crusades.10 }
 	}
 }
 
-
-# pb_crusades.12
-# Free holy orders of wrong religion from target kingdom title vassalage (CB supplement)
-#
-# FROMFROM is CB giver (loser in this case), ROOT is the winner, and
-# FROM is the Pope (or Caliph or whoever was the primary attacker).
-character_event = {
-	id = pb_crusades.12
-	desc = OK
-	hide_window = yes
-	is_triggered_only = yes
-	
-	immediate = {
-		any_realm_lord = {
-			limit = {
-				NOT = { religion = ROOT }
-				primary_title = { holy_order = yes }
-			}
-			set_defacto_liege = THIS
-			emf_liege_change_effect = yes
-		}
-	}
-	
-	option = {
-		name = OK
-	}
-}
-
-
-# pb_crusades.13
 # Unlock crusades for the scenario (MTTH event).
 #
 # This starts its random countdown after the official "Crusader Kings"
 # vanilla unlock event.
 character_event = {
 	id = pb_crusades.13
-	desc = OK
+
 	hide_window = yes
 	
 	only_playable = yes
+	religion = catholic
 	
 	trigger = {
 		has_landed_title = k_papal_state
 		has_global_flag = christian_crusades_unlocked # Unlocked at same time as jihad and before GHWs
-		NOT = { has_global_flag = pb_crusades_unlocked }
+		NOT = { has_global_flag = emf_crusades_unlocked }
 	}
 	
 	mean_time_to_happen = {
 		years = 5
-		
 		modifier = {
 			factor = 0.01
 			had_global_flag = { flag = christian_crusades_unlocked days = 3650 }
@@ -964,29 +1497,26 @@ character_event = {
 	}
 	
 	immediate = {
-		set_global_flag = pb_crusades_unlocked
+		set_global_flag = emf_crusades_unlocked
 	}
-	
-	option = { name = OK }
 }
 
-
-# pb_crusades.14
 # Unlock crusades for the scenario: Catholics (MTTH event).
 #
 # This starts its random countdown along with the Muslim version once
 # pb_crusades.13 fires.
 character_event = {
 	id = pb_crusades.14
-	desc = OK
+
 	hide_window = yes
 
 	only_playable = yes
+	religion = catholic
 
 	trigger = {
 		has_landed_title = k_papal_state
-		has_global_flag = pb_crusades_unlocked
-		NOT = { has_global_flag = pb_cath_crusades_unlocked }
+		has_global_flag = emf_crusades_unlocked
+		NOT = { has_global_flag = emf_catholic_crusades_unlocked }
 	}
 
 	mean_time_to_happen = {
@@ -994,33 +1524,33 @@ character_event = {
 		
 		modifier = {
 			factor = 0.01
-			had_global_flag = { flag = pb_crusades_unlocked days = 3650 }
+			had_global_flag = { flag = emf_crusades_unlocked days = 3650 }
 		}
 	}
 
 	immediate = {
-		set_global_flag = pb_cath_crusades_unlocked
+		set_global_flag = emf_catholic_crusades_unlocked
 	}
 
 	option = { name = OK }
 }
 
-# pb_crusades.15
 # Unlock crusades for the scenario: Muslims (MTTH event).
 #
 # This starts its random countdown along with the Muslim version once
 # pb_crusades.13 fires.
 character_event = {
 	id = pb_crusades.15
-	desc = OK
+
 	hide_window = yes
 
 	only_playable = yes
+	religion = catholic
 
 	trigger = {
 		has_landed_title = k_papal_state
-		has_global_flag = pb_crusades_unlocked
-		NOT = { has_global_flag = pb_mus_crusades_unlocked }
+		has_global_flag = emf_crusades_unlocked
+		NOT = { has_global_flag = emf_muslim_crusades_unlocked }
 	}
 
 	mean_time_to_happen = {
@@ -1028,13 +1558,12 @@ character_event = {
 		
 		modifier = {
 			factor = 0.01
-			had_global_flag = { flag = pb_crusades_unlocked days = 3650 }
+			had_global_flag = { flag = emf_crusades_unlocked days = 3650 }
 		}
 	}
 
 	immediate = {
-		set_global_flag = pb_mus_crusades_unlocked
+		set_global_flag = emf_muslim_crusades_unlocked
 	}
-
-	option = { name = OK }
 }
+
