@@ -8,3 +8,4 @@ changes made to the `adventurer` branch before merging into `alpha`:
 - added adventurer supporter's / backer's clickable portrait to target notification event option tooltip
 - removed `capable_only = yes` pre-trigger from adventure invalidation event (would skip invalidation due to becoming incapable)
 - fixed a problem with finding an optimal attack court which would defeat the point of distance preference
+- split main army spawn into 6 subunits instead of 3
