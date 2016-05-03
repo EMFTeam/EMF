@@ -1,0 +1,5 @@
+changes made to the `adventurer` branch before merging into `alpha`:
+
+- fixed a mismatch between how long the `do_not_disturb` timer was set in `emf_travel_to_ruler_effect` and the actual scheduled event delay
+  - the longer trips did not set the timer long enough, so the adventurer would end-up being detected as "idle," sent somewhere else, and then later also appear where they were originally scheduled to travel.
+- removed a stray `is_ruler = no` from the limit of an `any_vassal` in `emf_adventurer_recruits_demesne` (can't happen otherwise)
