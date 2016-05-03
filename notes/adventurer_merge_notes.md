@@ -14,3 +14,4 @@ changes made to the `adventurer` branch before merging into `alpha`:
 - removed [my] unnecessary custom_tooltip to get `FROM` in the target notification event option tooltip portrait in favor of showing the opinion effect
 - added a couple more random soldier courtiers for claimant adventurers, as the AI now attempts to have stacks ~10K max. in size (and ideally would have 3 flank commanders of some kind available for each stack)
 - increased odds of escape, given that a ruler has decided to betray the adventurer (separately, tweaking of adventurer betrayal chance should definitely also happen)
+- made the adventurer-target support-notification delay uniform so that notifications don't appear out-of-order in terms of a rational progression of the adventurer from ruler to ruler
