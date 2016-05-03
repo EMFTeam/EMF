@@ -9,3 +9,7 @@ changes made to the `adventurer` branch before merging into `alpha`:
 - removed `capable_only = yes` pre-trigger from adventure invalidation event (would skip invalidation due to becoming incapable)
 - fixed a problem with finding an optimal attack court which would defeat the point of distance preference
 - split main army spawn into 6 subunits instead of 3
+- removed `merge = yes` from all claimant adventurer spawns
+- added `only_independent = yes` pre-trigger to adventurer maintenance events [tested; only_playable & only_rulers also work]
+- removed [my] unnecessary custom_tooltip to get `FROM` in the target notification event option tooltip portrait in favor of showing the opinion effect
+- added a couple more random soldier courtiers for claimant adventurers, as the AI now attempts to have stacks ~10K max. in size (and ideally would have 3 flank commanders of some kind available for each stack)
