@@ -7,3 +7,4 @@ changes made to the `adventurer` branch before merging into `alpha`:
   - I also converted the `county = { is_occupied = no }` to a check on the province's `capital_holding = { is_occupied = no }`, as I've run into issues recently with using `is_occupied` on county titles rather than barony titles for non-nomadic provinces-- it won't register as occupied despite being, well, occupied. [needs confirmation for current version, but heck, why not.]
 - added adventurer supporter's / backer's clickable portrait to target notification event option tooltip
 - removed `capable_only = yes` pre-trigger from adventure invalidation event (would skip invalidation due to becoming incapable)
+- fixed a problem with finding an optimal attack court which would defeat the point of distance preference
