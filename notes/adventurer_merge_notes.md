@@ -16,3 +16,4 @@ changes made to the `adventurer` branch before merging into `alpha`:
 - increased odds of escape, given that a ruler has decided to betray the adventurer (separately, tweaking of adventurer betrayal chance should definitely also happen)
 - made the adventurer-target support-notification delay uniform so that notifications don't appear out-of-order in terms of a rational progression of the adventurer from ruler to ruler
 - added `emf_adventurer_scale_commander_effect` which, randomly dependent upon the tier of the adventure target and the fitness of the adventurer, may upgrade a newly-spawned soldier courtier
+- when bringing children & grandchildren with the adventurer, first take them out of hiding
