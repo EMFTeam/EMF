@@ -2,9 +2,13 @@
 
 emf_character_become_heretic_effect = {
 	# Prefer heresy of a fellow dynasty member
-	random_dynasty_member = {
-		limit = { is_heresy_of = PREV }
-		reverse_religion = PREV
+	if = {
+		limit = { any_dynasty_member = { is_heresy_of = PREV } }
+		random_dynasty_member = {
+			limit = { is_heresy_of = PREV }
+			reverse_religion = PREV
+		}
+		break = yes
 	}
 	location = { save_event_target_as = heretic_province }
 	save_event_target_as = converter
@@ -21,56 +25,120 @@ emf_become_heretic_effect = {
 	# Prefer heresy of their current location
 	if = {
 		limit = {
-			is_heretic = no
-			event_target:heretic_province = { is_heresy_of = event_target:converter }
+			event_target:heretic_province = {
+				event_target:converter = {
+					PREV = { is_heresy_of = PREV }
+				}
+			}
 		}
-		event_target:converter = { religion = event_target:heretic_province }
+		event_target:heretic_province = {
+			event_target:converter = { religion = PREV }
+		}
 		break = yes
 	}
 	# Prefer a neighboring heresy
-	event_target:heretic_province = {
-		random_neighbor_province = {
-			limit = { is_heresy_of = event_target:converter }
-			event_target:converter = { religion = PREV }
-			break = yes
+	if = {
+		limit = {
+			event_target:heretic_province = {
+				any_neighbor_province = {
+					event_target:converter = {
+						PREV = { is_heresy_of = PREV }
+					}
+				}
+			}
 		}
+		event_target:heretic_province = {
+			random_neighbor_province = {
+				limit = {
+					event_target:converter = {
+						PREV = { is_heresy_of = PREV }
+					}
+				}
+				event_target:converter = { religion = PREV }
+			}
+		}
+		break = yes
 	}
 	# Prefer same-religion group of their current location
 	if = {
-		limit = { event_target:heretic_province = { religion_group = event_target:converter } }
-		event_target:converter = { religion = event_target:heretic_province }
+		limit = {
+			event_target:heretic_province = {
+				event_target:converter = {
+					PREV = {
+						NOT = { religion = PREV }
+						religion_group = PREV
+					}
+				}
+			}
+		}
+		event_target:heretic_province = {
+			event_target:converter = { religion = PREV }
+		}
 		break = yes
 	}
-	# Prefer a same-religion group of a neighboring province if Pagan or Muslim
+	# Prefer a same-religion group of a same-culture group neighboring province if Pagan or Muslim
 	if = {
 		limit = {
 			OR = {
 				religion_group = pagan_group
 				religion_group = muslim
 			}
-		}
-		event_target:heretic_province = {
-			random_neighbor_province = {
-				limit = { religion_group = event_target:converter }
-				event_target:converter = { religion = PREV }
-				break = yes
-			}
-		}
-	}
-	# Prefer an existing heresy in the realm
-	event_target:heretic_province = {
-		owner = {
-			top_liege = {
-				random_realm_province = {
-					limit = {
-						is_heresy_of = event_target:converter
-						NOT = { distance = { where = PREV value = 200 } }
+			event_target:heretic_province = {
+				any_neighbor_province = {
+					event_target:converter = {
+						PREV = {
+							culture_group = PREV
+							religion_group = PREV
+							NOT = { religion = PREV }
+						}
 					}
-					event_target:converter = { religion = PREV }
-					break = yes
 				}
 			}
 		}
+		event_target:heretic_province = {
+			random_neighbor_province = {
+				limit = {
+					event_target:converter = {
+						PREV = {
+							culture_group = PREV
+							religion_group = PREV
+							NOT = { religion = PREV }
+						}
+					}
+				}
+				event_target:converter = { religion = PREV }
+			}
+		}
+		break = yes
+	}
+	# Prefer an existing heresy in the realm
+	if = {
+		limit = {
+			event_target:heretic_province = {
+				owner = {
+					top_liege = {
+						any_realm_province = {
+							event_target:converter = { PREV = { is_heresy_of = PREV } }
+							NOT = { distance = { where = PREV value = 200 } }
+						}
+					}
+				}
+			}
+		}
+		event_target:heretic_province = {
+			owner = {
+				top_liege = {
+					random_realm_province = {
+						limit = {
+							event_target:converter = { PREV = { is_heresy_of = PREV } }
+							NOT = { distance = { where = PREV value = 200 } }
+						}
+						event_target:converter = { religion = PREV }
+					}
+				}
+			}
+		}
+		break = yes
 	}
 	# ...otherwise, just pick a religion to convert to
 	if = {
@@ -830,7 +898,7 @@ emf_eastern_conversion_effect = {
 }
 
 emf_muslim_conversion_effect = {
-	reandom_list = {
+	random_list = {
 		75 = {
 			modifier = {
 				factor = 0
