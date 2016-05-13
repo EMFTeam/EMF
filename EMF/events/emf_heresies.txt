@@ -1417,6 +1417,99 @@ letter_event = {
 	}
 }
 
+# A Lollard Primate is elected (fired from decision)
+character_event = {
+	id = emf_heresy.2070
+	
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		activate_title = { title = d_lollard status = yes }
+		
+		# First pick appropriate realm priest
+		random_realm_lord = {
+			limit = {
+				religion = lollard
+				is_theocracy = yes
+				capital_holding = { is_holy_site = ROOT }
+				prisoner = no
+				NOT = { trait = incapable }
+			}
+			d_lollard = { grant_title = PREV }
+			set_defacto_liege = ROOT
+			pf_liege_change_effect = yes
+			save_event_target_as = new_lollard_primate
+			ROOT = { narrative_event = { id = emf_heresy.2071 } }
+			break = yes
+		}
+		
+		# Failing that, create a new character
+		create_random_priest = {
+			random_traits = yes
+			dynasty = random
+			religion = lollard
+			culture = ROOT
+			age = 40
+			health = 7
+			trait = quick
+			trait = zealous
+			trait = charitable
+			trait = scholar
+			trait = mastermind_theologian
+			attributes = {
+				learning = 5
+				diplomacy = 5
+				martial = 2
+				stewardship = 5
+				intrigue = 5
+			}
+		}
+		new_character = {
+			d_lollard = { grant_title = PREV }
+			ROOT = {
+				random_realm_title = {
+					limit = { is_holy_site = ROOT }
+					gain_title = PREVPREV
+				}
+			}
+			set_defacto_liege = ROOT
+			save_event_target_as = new_lollard_primate
+		}
+		narrative_event = { id = emf_heresy.2071 }
+	}
+}
+
+# The rest of the world is told about the new Lollard Primate
+narrative_event = {
+	id = emf_heresy.2071
+	title = EVTTITLE_emf_heresy_2071
+	desc = EVTDESC_emf_heresy_2071
+	picture = GFX_evt_lollard_heresy
+	border = GFX_event_narrative_frame_religion
+	sound = church_bells
+
+	major = yes
+
+	is_triggered_only = yes
+
+	option = {
+		name = EVTOPTA_emf_heresy_2071
+		trigger = {
+			NOT = { religion = lollard }
+			religion_group = christian
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_heresy_2071
+		trigger = { NOT = { religion_group = christian } }
+	}
+	option = {
+		name = EVTOPTC_emf_heresy_2071
+		trigger = { religion = lollard }
+	}
+}
+
 ### FRATICELLI EVENTS
 
 # Brother Angelo criticizes the Pope
@@ -2419,6 +2512,36 @@ character_event = {
 					days = 3
 				}
 			}
+		}
+	}
+}
+
+# Waldensian Primate appears
+narrative_event = {
+	id = emf_heresy.2072
+	title = EVTNAME_emf_heresy_2072
+	desc = EVTDESC_emf_heresy_2072
+	picture = GFX_evt_heretic_pride
+	border = GFX_event_narrative_frame_religion
+
+	major = yes
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_heresy_2072
+		trigger = { religion = waldensian }
+	}
+	option = {
+		name = EVTOPTB_emf_heresy_2072
+		trigger = {
+			religion_group = christian
+			NOT = { religion = waldensian }
+		}
+	}
+	option = {
+		name = EVTOPTC_emf_heresy_2072
+		trigger = {
+			NOT = { religion_group = christian }
 		}
 	}
 }
@@ -3838,6 +3961,405 @@ character_event = {
 			}
 			ROOT = { move_character = PREV }
 			break = yes
+		}
+	}
+}
+
+### RELIGIOUS EMANCIPATION EVENTS
+
+# Leader sponsors meeting between religion heads
+character_event = {
+	id = emf_heresy.2075
+	title = EVTNAME_emf_heresy_2075
+	desc = EVTDESC_emf_heresy_2075
+	picture = GFX_evt_cathedral
+	border = GFX_event_normal_frame_religion
+	
+	is_triggered_only = yes
+	major = yes
+	
+	major_trigger = {
+		OR = {
+			religion = event_target:heretic_relhead
+			religion = event_target:parent_relhead
+		}
+	}
+	
+	immediate = {
+		ROOT = {
+			save_event_target_as = sponsor
+		}
+		religion_head = {
+			save_event_target_as = heretic_relhead
+		}
+		random_playable_ruler = {
+			limit = {
+				controls_religion = yes
+				is_parent_religion = ROOT
+				war = no
+			}
+			save_event_target_as = parent_relhead
+			character_event = { id = emf_heresy.2076 days = 7 }
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_heresy_2075
+		trigger = {
+			religion = event_target:heretic_relhead
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_heresy_2075
+		trigger = {
+			religion = event_target:parent_relhead
+		}
+	}
+}
+
+# Religion head chooses result
+character_event = {
+	id = emf_heresy.2076
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_heresy_2076 # Agree to peaceful seperation
+		ai_chance = {
+			factor = 30
+		}
+		FROM = {
+			narrative_event = { id = emf_heresy.2077 }
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_heresy_2076 # Refuse and call crusade
+		ai_chance = {
+			factor = 70
+			modifier = {
+				factor = 0
+				OR = {
+					has_called_crusade = yes
+					can_call_crusade = no
+					NOT = { religion_authority = 0.04 }
+					NOT = { num_of_baron_titles = 1 }
+				}
+			}
+			modifier = {
+				factor = 0
+				NOR = {
+					any_independent_ruler = {
+						religion = ROOT
+						war = no
+						NOT = { trait = excommunicated }
+						NOT = { has_non_aggression_pact_with = event_target:sponsor }
+						NOT = { is_allied_with = event_target:sponsor }
+						relative_power = { who = event_target:sponsor power = 0.5 }
+					}
+					any_independent_ruler = {
+						count = 2
+						religion = ROOT
+						war = no
+						NOT = { trait = excommunicated }
+						NOT = { has_non_aggression_pact_with = event_target:sponsor }
+						NOT = { is_allied_with = event_target:sponsor }
+						relative_power = { who = event_target:sponsor power = 0.25 }
+					}
+				}
+			}
+			modifier = {
+				factor = 2.0
+				trait = zealous
+			}
+			modifier = {
+				factor = 1.5
+				trait = wroth
+			}
+			modifier = {
+				factor = 1.5
+				trait = cruel
+			}
+			modifier = {
+				factor = 1.25
+				trait = proud
+			}
+			modifier = {
+				factor = 1.25
+				trait = arbitrary
+			}
+			modifier = {
+				factor = 0.75
+				trait = patient
+			}
+			modifier = {
+				factor = 0.75
+				trait = charitable
+			}
+			modifier = {
+				factor = 0.75
+				trait = humble
+			}
+			modifier = {
+				factor = 0.75
+				trait = just
+			}
+			modifier = {
+				factor = 0.75
+				trait = kind
+			}
+			modifier = {
+				factor = 0.5
+				trait = cynical
+			}
+		}
+		set_character_flag = reclaim_heresy_crusade
+		event_target:sponsor = {
+			capital_scope = {
+				kingdom = {
+					ROOT = {
+						war = {
+							target = event_target:sponsor
+							casus_belli = crusade
+							thirdparty_title = PREV
+							infamy = 0
+						}
+					}
+				}
+			}
+		}
+		FROM = {
+			narrative_event = { id = emf_heresy.2078 }
+		}
+		any_independent_ruler = {
+			limit = {
+				religion = ROOT
+				war = no
+				NOT = { trait = excommunicated }
+				NOT = { has_non_aggression_pact_with = event_target:sponsor }
+				NOT = { is_allied_with = event_target:sponsor }
+				any_realm_province = {
+					any_neighbor_province = {
+						owner = { same_realm = event_target:sponsor }
+					}
+				}
+			}
+			letter_event = { id = emf_heresy.2079 days = 5 }
+		}
+	}
+}
+
+# The heresy will peacefully separate
+narrative_event = {
+	id = emf_heresy.2077
+	title = EVTNAME_emf_heresy_2075
+	desc = EVTDESC_emf_heresy_2077
+	picture = GFX_evt_heresy_defeated
+	border = GFX_event_narrative_frame_religion
+	
+	is_triggered_only = yes
+	major = yes
+	
+	immediate = {
+		set_parent_religion = { religion = event_target:heretic_relhead parent = 0 }
+	}
+	
+	option = {
+		name = EVTOPTA_emf_heresy_2077
+		trigger = {
+			religion = event_target:heretic_relhead
+		}
+		tooltip = {
+			set_parent_religion = { religion = event_target:heretic_relhead parent = 0 }
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_heresy_2077
+		trigger = {
+			religion = event_target:parent_relhead
+		}
+		tooltip = {
+			set_parent_religion = { religion = event_target:heretic_relhead parent = 0 }
+		}
+	}
+	option = {
+		name = EVTOPTC_emf_heresy_2077
+		trigger = {
+			religion_group = event_target:parent_relhead
+			NOT = { religion = event_target:heretic_relhead }
+			NOT = { religion = event_target:parent_relhead }
+		}
+		tooltip = {
+			set_parent_religion = { religion = event_target:heretic_relhead parent = 0 }
+		}
+	}
+	option = {
+		name = EVTOPTD_emf_heresy_2077
+		trigger = {
+			NOT = { religion_group = event_target:parent_relhead }
+		}
+		tooltip = {
+			set_parent_religion = { religion = event_target:heretic_relhead parent = 0 }
+		}
+	}
+}
+
+# The parent religion has called a crusade
+narrative_event = {
+	id = emf_heresy.2078
+	title = EVTNAME_emf_heresy_2075
+	desc = EVTDESC_emf_heresy_2078
+	picture = GFX_evt_crusaders
+	border = GFX_event_narrative_frame_religion
+	
+	is_triggered_only = yes
+	major = yes
+	
+	major_trigger = {
+		OR = {
+			religion = event_target:heretic_relhead
+			religion = event_target:parent_relhead
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_heresy_2078
+		trigger = {
+			religion = event_target:heretic_relhead
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_heresy_2078
+		trigger = {
+			religion = event_target:parent_relhead
+		}
+	}
+}
+
+# The parent religion head calls for others to join the crusade
+letter_event = {
+	id = emf_heresy.2079
+	desc = EVTDESC_emf_heresy_2079
+	border = GFX_event_letter_frame_religion
+	
+	is_triggered_only = yes
+	
+	trigger = {
+		religion = FROM
+		war = no
+		NOT = { trait = excommunicated }
+		NOT = { has_non_aggression_pact_with = event_target:sponsor }
+		NOT = { is_allied_with = event_target:sponsor }
+	}
+	
+	option = {
+		name = EVTOPTA_emf_heresy_2079 # Join the crusade
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 3
+				trait = zealous
+			}
+			modifier = {
+				factor = 1.5
+				trait = diligent
+			}
+			modifier = {
+				factor = 1.5
+				trait = humble
+			}
+			modifier = {
+				factor = 1.5
+				trait = brave
+			}
+			modifier = {
+				factor = 1.25
+				opinion = { who = FROM value = 20 }
+			}
+			modifier = {
+				factor = 1.25
+				opinion = { who = FROM value = 40 }
+			}
+			modifier = {
+				factor = 1.25
+				opinion = { who = FROM value = 60 }
+			}
+			modifier = {
+				factor = 1.25
+				opinion = { who = FROM value = 80 }
+			}
+			modifier = {
+				factor = 1.25
+				NOT = { opinion = { who = event_target:sponsor value = -20 } }
+			}
+			modifier = {
+				factor = 1.25
+				NOT = { opinion = { who = event_target:sponsor value = -40 } }
+			}
+			modifier = {
+				factor = 1.25
+				NOT = { opinion = { who = event_target:sponsor value = -60 } }
+			}
+			modifier = {
+				factor = 1.25
+				NOT = { opinion = { who = event_target:sponsor value = -80 } }
+			}
+		}
+		piety = 100
+		join_attacker_wars = FROM
+	}
+	option = {
+		name = EVTOPTB_emf_heresy_2079 # We'll think about it
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 3
+				trait = cynical
+			}
+			modifier = {
+				factor = 1.5
+				trait = slothful
+			}
+			modifier = {
+				factor = 1.5
+				trait = proud
+			}
+			modifier = {
+				factor = 1.5
+				trait = craven
+			}
+			modifier = {
+				factor = 1.25
+				NOT = { opinion = { who = FROM value = -20 } }
+			}
+			modifier = {
+				factor = 1.25
+				NOT = { opinion = { who = FROM value = -40 } }
+			}
+			modifier = {
+				factor = 1.25
+				NOT = { opinion = { who = FROM value = -60 } }
+			}
+			modifier = {
+				factor = 1.25
+				NOT = { opinion = { who = FROM value = -80 } }
+			}
+			modifier = {
+				factor = 1.25
+				opinion = { who = event_target:sponsor value = 20 }
+			}
+			modifier = {
+				factor = 1.25
+				opinion = { who = event_target:sponsor value = 40 }
+			}
+			modifier = {
+				factor = 1.25
+				opinion = { who = event_target:sponsor value = 60 }
+			}
+			modifier = {
+				factor = 1.25
+				opinion = { who = event_target:sponsor value = 80 }
+			}
 		}
 	}
 }
@@ -5855,7 +6377,7 @@ character_event = {
 			any_war = {
 				OR = {
 					using_cb = crusade
-					using_cb = holy_war
+					using_cb = religious
 					using_cb = religious_revolt
 					using_cb = emf_religious_reconquest
 				}
@@ -5864,7 +6386,7 @@ character_event = {
 				any_war = {
 					OR = {
 						using_cb = crusade
-						using_cb = holy_war
+						using_cb = religious
 						using_cb = religious_revolt
 						using_cb = emf_religious_reconquest
 					}
