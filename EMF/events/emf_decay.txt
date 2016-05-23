@@ -1,0 +1,1931 @@
+# -*- ck2.events -*-
+
+namespace = emf_imperial
+
+#######################################
+# IMPERIAL DECAY EVENTS
+# Written by Rylock
+#######################################
+
+### MAINTENANCE EVENTS
+
+# Main decay event upon an imperial title being inherited/usurped
+character_event = {
+	id = emf_imperial.1850
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		FROM = {
+			tier = EMPEROR
+			temporary = no
+			is_tribal = no
+			is_nomadic = no
+			is_primary_holder_title = yes
+		}
+		FROMFROM = { always = yes }
+		NOT = { uses_decadence = yes }
+		is_nomadic = no
+		is_ironman = no
+		had_global_flag = { flag = EMF days = 1 }
+	}
+	
+	immediate = {
+		FROMFROM = { save_event_target_as = former_owner }
+		character_event = { id = emf_imperial.1851 days = 1 }
+		
+		# Remove the decay modifier from the former owner, if alive
+		FROMFROM = {
+			if = {
+				limit = {
+					is_alive = yes
+					lower_tier_than = EMPEROR
+				}
+				emf_remove_decay_mods_effect = yes
+			}
+		}
+	}
+}
+
+character_event = {
+	id = emf_imperial.1851
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		has_landed_title = FROMFROM
+		NOT = { uses_decadence = yes }
+		is_ironman = no
+		is_nomadic = no
+	}
+	
+	immediate = {
+		# First look for other held imperial titles which have higher decadence, and copy their value over
+		any_demesne_title = {
+			limit = {
+				tier = EMPEROR
+				is_primary_holder_title = no
+				check_variable = { which = "imperial_decay" which = FROMFROM }
+			}
+			FROMFROM = { set_variable = { which = "imperial_decay" which = PREV } }
+		}
+		
+		FROMFROM = {
+			# Skip the increase if title was overthrown
+			if = {
+				limit = { has_title_flag = skip_decay_gain }
+				clr_title_flag = skip_decay_gain
+				ROOT = { character_event = { id = emf_imperial.1852 } }
+				break = yes
+			}
+			
+			# Then reset the decay value to 0, in case it's negative
+			if = {
+				limit = { NOT = { check_variable = { which = "imperial_decay" value = 0.5 } } }
+				set_variable = { which = "imperial_decay" value = 0 }
+			}
+			
+			# Then increase the variable by 1 (the base minimum)
+			change_variable = { which = "imperial_decay" value = 1 }
+			
+			# Reset dynasty count if this is a new dynasty
+			if = {
+				limit = {
+					ROOT = { NOT = { dynasty = event_target:former_owner } }
+				}
+				set_variable = { which = "imperial_dynasty_count" value = 0 }
+			}
+			
+			# Increase dynasty count if this is an ongoing dynasty
+			if = {
+				limit = {
+					ROOT = { dynasty = event_target:former_owner }
+				}
+				change_variable = { which = "imperial_dynasty_count" value = 1 }
+			}
+			
+			# Decay value goes higher for long-running dynasties	
+			if = {
+				limit = { check_variable = { which = "imperial_dynasty_count" value = 0.5 } }
+				change_variable = { which = "imperial_decay" value = 1 }
+			}
+			if = {
+				limit = { check_variable = { which = "imperial_dynasty_count" value = 3.5 } }
+				change_variable = { which = "imperial_decay" value = 1 }
+			}
+			if = {
+				limit = { check_variable = { which = "imperial_dynasty_count" value = 6.5 } }
+				change_variable = { which = "imperial_decay" value = 1 }
+			}
+			if = {
+				limit = { check_variable = { which = "imperial_dynasty_count" value = 9.5 } }
+				change_variable = { which = "imperial_decay" value = 1 }
+			}
+			
+			# Increase more if this is an usurpation
+			if = {
+				limit = {
+					event_target:former_owner = {
+						is_alive = yes
+						has_claim = FROMFROM
+					}
+				}
+				change_variable = { which = "imperial_decay" value = 2 }
+			}
+			
+			# Imperial Administration gets an additional +1
+			if = {
+				limit = {
+					FROMFROM = { has_law = administration_2 }
+				}
+				change_variable = { which = "imperial_decay" value = 1 }
+			}
+			
+			# Then determine how much the realm size should change it
+			set_variable = { which = "imperial_realm_size" value = 0 }
+			if = {
+				limit = { ROOT = { has_horde_culture = yes } }
+				change_variable = { which = "imperial_realm_size" value = -2 }
+			}
+			if = {
+				limit = { ROOT = { NOT = { realm_size = 100 } } }
+				change_variable = { which = "imperial_realm_size" value = -1 }
+			}
+			if = {
+				limit = { NOT = { ROOT = { realm_size = 150 } } }
+				change_variable = { which = "imperial_realm_size" value = -1 }
+			}
+			if = {
+				limit = { ROOT = { realm_size = 200 } }
+				change_variable = { which = "imperial_realm_size" value = 1 }
+			}
+			if = {
+				limit = { ROOT = { realm_size = 250 } }
+				change_variable = { which = "imperial_realm_size" value = 1 }
+			}
+			if = {
+				limit = { ROOT = { realm_size = 300 } }
+				change_variable = { which = "imperial_realm_size" value = 1 }
+			}
+			if = {
+				limit = { ROOT = { realm_size = 350 } }
+				change_variable = { which = "imperial_realm_size" value = 1 }
+			}
+			if = {
+				limit = { ROOT = { realm_size = 400 } }
+				change_variable = { which = "imperial_realm_size" value = 1 }
+			}
+			if = {
+				limit = { ROOT = { realm_size = 450 } }
+				change_variable = { which = "imperial_realm_size" value = 1 }
+			}
+			if = {
+				limit = { ROOT = { realm_size = 500 } }
+				change_variable = { which = "imperial_realm_size" value = 1 }
+			}
+			if = {
+				limit = {
+					NOR = {
+						has_law = crown_authority_2
+						has_law = crown_authority_3
+						has_law = crown_authority_4
+					}
+				}
+				change_variable = { which = "imperial_realm_size" value = 3 }
+			}
+			if = {
+				limit = { has_law = crown_authority_2 }
+				change_variable = { which = "imperial_realm_size" value = 2 }
+			}
+			if = {
+				limit = { has_law = crown_authority_3 }
+				change_variable = { which = "imperial_realm_size" value = 1 }
+			}
+			change_variable = { which = "imperial_decay" which = "imperial_realm_size" }
+		}
+		
+		# Change the decadence modifier
+		character_event = { id = emf_imperial.1852 }
+	}
+}
+
+# Notification of decay change and adding the proper decay modifier
+character_event = {
+	id = emf_imperial.1852
+	desc = EVTDESC_emf_imperial_1852
+	picture = GFX_evt_council
+	
+	is_triggered_only = yes
+	notification = yes
+	
+	trigger = {
+		is_ironman = no
+	}
+	
+	immediate = {
+		# reset the decay value to 0, in case it's negative
+		if = {
+			limit = { primary_title = { NOT = { check_variable = { which = "imperial_decay" value = 0.5 } } } }
+			primary_title = { set_variable = { which = "imperial_decay" value = 0 } }
+		}
+		
+		# Remove old decay modifier
+		emf_remove_decay_mods_effect = yes
+		
+		# Remove all existing Imperial Decay buildings
+		any_demesne_title = {
+			limit = { tier = BARON }
+			remove_building = ca_imperial_dec_1
+			remove_building = ca_imperial_dec_2
+			remove_building = ca_imperial_dec_3
+			remove_building = ca_imperial_dec_4
+			remove_building = ca_imperial_dec_5
+			remove_building = ca_imperial_dec_6
+			remove_building = ca_imperial_dec_7
+			remove_building = ca_imperial_dec_8
+		}
+		
+		if = {
+			limit = {
+				OR = {
+					uses_decadence = yes
+					is_tribal = yes
+					is_nomadic = yes
+				}
+			}
+			break = yes
+		}
+		
+		if = {
+			limit = {
+				primary_title = {
+					check_variable = { which = "imperial_decay" value = 10 }
+					NOT = { check_variable = { which = "imperial_decay" value = 21 } }
+				}
+			}
+			add_character_modifier = {
+				name = imperial_decay_1
+				duration = -1
+			}
+			hidden_tooltip = {
+				any_demesne_title = {
+					limit = {
+						tier = BARON
+						is_feudal = yes
+					}
+					add_building = ca_imperial_dec_1
+				}
+			}
+		} 
+		if = {
+			limit = {
+				primary_title = {
+					check_variable = { which = "imperial_decay" value = 21 }
+					NOT = { check_variable = { which = "imperial_decay" value = 31 } }
+				}
+			}
+			add_character_modifier = {
+				name = imperial_decay_2
+				duration = -1
+			}
+			hidden_tooltip = {
+				any_demesne_title = {
+					limit = {
+						tier = BARON
+						is_feudal = yes
+					}
+					add_building = ca_imperial_dec_2
+				}
+			}
+		}
+		if = {
+			limit = {
+				primary_title = {
+					check_variable = { which = "imperial_decay" value = 31 }
+					NOT = { check_variable = { which = "imperial_decay" value = 41 } }
+				}
+			}
+			add_character_modifier = {
+				name = imperial_decay_3
+				duration = -1
+			}
+			hidden_tooltip = {
+				any_demesne_title = {
+					limit = {
+						tier = BARON
+						is_feudal = yes
+					}
+					add_building = ca_imperial_dec_3
+				}
+			}
+		}   
+		if = {
+			limit = {
+				primary_title = {
+					check_variable = { which = "imperial_decay" value = 41 }
+					NOT = { check_variable = { which = "imperial_decay" value = 51 } }
+				}
+			}
+			add_character_modifier = {
+				name = imperial_decay_4
+				duration = -1
+			}
+			hidden_tooltip = {
+				any_demesne_title = {
+					limit = {
+						tier = BARON
+						is_feudal = yes
+					}
+					add_building = ca_imperial_dec_4
+				}
+			}
+		}  
+		if = {
+			limit = {
+				primary_title = {
+					check_variable = { which = "imperial_decay" value = 51 }
+					NOT = { check_variable = { which = "imperial_decay" value = 61 } }
+				}
+			}
+			add_character_modifier = {
+				name = imperial_decay_5
+				duration = -1
+			}
+			hidden_tooltip = {
+				any_demesne_title = {
+					limit = {
+						tier = BARON
+						is_feudal = yes
+					}
+					add_building = ca_imperial_dec_5
+				}
+			}
+		}   
+		if = {
+			limit = {
+				primary_title = {
+					check_variable = { which = "imperial_decay" value = 61 }
+					NOT = { check_variable = { which = "imperial_decay" value = 71 } }
+				}
+			}
+			add_character_modifier = {
+				name = imperial_decay_6
+				duration = -1
+			}
+			hidden_tooltip = {
+				any_demesne_title = {
+					limit = {
+						tier = BARON
+						is_feudal = yes
+					}
+					add_building = ca_imperial_dec_6
+				}
+			}
+		}    
+		if = {
+			limit = {
+				primary_title = {
+					check_variable = { which = "imperial_decay" value = 71 }
+					NOT = { check_variable = { which = "imperial_decay" value = 81 } }
+				}
+			}
+			add_character_modifier = {
+				name = imperial_decay_7
+				duration = -1
+			}
+			hidden_tooltip = {
+				any_demesne_title = {
+					limit = {
+						tier = BARON
+						is_feudal = yes
+					}
+					add_building = ca_imperial_dec_7
+				}
+			}
+		}     
+		if = {
+			limit = {
+				primary_title = {
+					check_variable = { which = "imperial_decay" value = 81 }
+				}             
+			}
+			add_character_modifier = {
+				name = imperial_decay_8
+				duration = -1
+			}
+			hidden_tooltip = {
+				any_demesne_title = {
+					limit = {
+						tier = BARON
+						is_feudal = yes
+					}
+					add_building = ca_imperial_dec_8
+				}
+			}
+		}
+	}
+	
+	option = {
+		name = "OK"
+	}
+}
+
+### RANDOM EVENTS
+
+# Emperor/Regent is Just
+character_event = {
+	id = emf_imperial.1855
+	picture = GFX_evt_throne_room
+	
+	desc = {
+		text = EVTDESC_emf_imperial_1855A
+		trigger = { ROOT = { has_regent = no } }
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_1855B
+		trigger = { ROOT = { has_regent = yes } }
+	}
+	
+	is_triggered_only = yes
+	major = yes
+	
+	only_playable = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			same_realm = ROOT
+		}
+	}
+	
+	trigger = {
+		emf_uses_imperial_decay_trigger = yes
+		primary_title = { check_variable = { which = "imperial_decay" value = 1 } }
+		OR = {
+			AND = {
+				has_regent = no
+				trait = just
+			}
+			AND = {
+				has_regent = yes
+				NOT = { trait = arbitrary }
+				regent = { trait = just }
+			}
+		}
+		NOT = { has_character_modifier = decay_event_timer }
+	}
+	
+	weight_multiplier = {
+		days = 1
+		modifier = {
+			factor = 0.5
+			NOT = { primary_title = { check_variable = { which = "imperial_decay" value = 10 } } }
+		}
+		modifier = {
+			factor = 2.0
+			primary_title = { check_variable = { which = "imperial_decay" value = 30 } }
+		}
+		modifier = {
+			factor = 2.0
+			primary_title = { check_variable = { which = "imperial_decay" value = 60 } }
+		}
+	}
+	
+	option = {
+		name = OK
+		ROOT = { custom_tooltip = { text = IMPERIAL_DECAY_MINUS_1 } }
+		if = {
+			limit = { character = ROOT }
+			hidden_tooltip = {
+				emf_imperial_decay_minus_1_effect = yes
+				add_character_modifier = {
+					name = decay_event_timer
+					hidden = yes
+					duration = 1825
+				}
+			}
+		}
+	}
+}
+
+# Emperor/Regent is Arbitrary
+character_event = {
+	id = emf_imperial.1856
+	picture = GFX_evt_throne_room
+	
+	desc = {
+		text = EVTDESC_emf_imperial_1856A
+		trigger = { ROOT = { has_regent = no } }
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_1856B
+		trigger = { ROOT = { has_regent = yes } }
+	}
+	
+	is_triggered_only = yes
+	major = yes
+	
+	only_playable = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			same_realm = ROOT
+		}
+	}
+	
+	trigger = {
+		emf_uses_imperial_decay_trigger = yes
+		primary_title = { NOT = { check_variable = { which = "imperial_decay" value = 100 } } }
+		OR = {
+			AND = {
+				has_regent = no
+				trait = arbitrary
+			}
+			AND = {
+				has_regent = yes
+				NOT = { trait = just }
+				regent = { trait = arbitrary }
+			}
+		}
+		NOT = { has_character_modifier = decay_event_timer }
+	}
+	
+	weight_multiplier = {
+		days = 1
+		modifier = {
+			factor = 2.0
+			has_regent = yes
+		}
+		modifier = {
+			factor = 2.0
+			NOT = { primary_title = { check_variable = { which = "imperial_decay" value = 10 } } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 30 } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 60 } }
+		}
+		modifier = {
+			factor = 0.5
+			primary_title = { check_variable = { which = "imperial_decay" value = 90 } }
+		}
+	}
+	
+	option = {
+		name = OK
+		ROOT = { custom_tooltip = { text = IMPERIAL_DECAY_PLUS_1 } }
+		if = {
+			limit = { character = ROOT }
+			hidden_tooltip = {
+				emf_imperial_decay_plus_1_effect = yes
+				add_character_modifier = {
+					name = decay_event_timer
+					hidden = yes
+					duration = 1825
+				}
+			}
+		}
+	}
+}
+
+# Emperor/Regent is Diligent
+character_event = {
+	id = emf_imperial.1857
+	picture = GFX_evt_throne_room
+	
+	desc = {
+		text = EVTDESC_emf_imperial_1857A
+		trigger = { ROOT = { has_regent = no } }
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_1857B
+		trigger = { ROOT = { has_regent = yes } }
+	}
+	
+	is_triggered_only = yes
+	major = yes
+	
+	only_playable = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			same_realm = ROOT
+		}
+	}
+	
+	trigger = {
+		emf_uses_imperial_decay_trigger = yes
+		primary_title = { check_variable = { which = "imperial_decay" value = 1 } }
+		OR = {
+			AND = {
+				has_regent = no
+				trait = diligent
+			}
+			AND = {
+				has_regent = yes
+				NOT = { trait = slothful }
+				regent = { trait = diligent }
+			}
+		}
+		NOT = { has_character_modifier = decay_event_timer }
+	}
+	
+	weight_multiplier = {
+		days = 1
+		modifier = {
+			factor = 0.5
+			NOT = { primary_title = { check_variable = { which = "imperial_decay" value = 10 } } }
+		}
+		modifier = {
+			factor = 2.0
+			primary_title = { check_variable = { which = "imperial_decay" value = 30 } }
+		}
+		modifier = {
+			factor = 2.0
+			primary_title = { check_variable = { which = "imperial_decay" value = 60 } }
+		}
+	}
+	
+	option = {
+		name = OK
+		ROOT = { custom_tooltip = { text = IMPERIAL_DECAY_MINUS_1 } }
+		if = {
+			limit = { character = ROOT }
+			hidden_tooltip = {
+				emf_imperial_decay_minus_1_effect = yes
+				add_character_modifier = {
+					name = decay_event_timer
+					hidden = yes
+					duration = 1825
+				}
+			}
+		}
+	}
+}
+
+# Emperor/Regent is Slothful
+character_event = {
+	id = emf_imperial.1858
+	picture = GFX_evt_throne_room
+	
+	desc = {
+		text = EVTDESC_emf_imperial_1858A
+		trigger = { ROOT = { has_regent = no } }
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_1858B
+		trigger = { ROOT = { has_regent = yes } }
+	}
+	
+	is_triggered_only = yes
+	major = yes
+	
+	only_playable = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			same_realm = ROOT
+		}
+	}
+	
+	trigger = {
+		emf_uses_imperial_decay_trigger = yes
+		primary_title = { NOT = { check_variable = { which = "imperial_decay" value = 100 } } }
+		OR = {
+			AND = {
+				has_regent = no
+				trait = slothful
+			}
+			AND = {
+				has_regent = yes
+				NOT = { trait = diligent }
+				regent = { trait = slothful }
+			}
+		}
+		NOT = { has_character_modifier = decay_event_timer }
+	}
+	
+	weight_multiplier = {
+		days = 1
+		modifier = {
+			factor = 2.0
+			has_regent = yes
+		}
+		modifier = {
+			factor = 2.0
+			NOT = { primary_title = { check_variable = { which = "imperial_decay" value = 10 } } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 30 } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 60 } }
+		}
+		modifier = {
+			factor = 0.5
+			primary_title = { check_variable = { which = "imperial_decay" value = 90 } }
+		}
+	}
+	
+	option = {
+		name = OK
+		ROOT = { custom_tooltip = { text = IMPERIAL_DECAY_PLUS_1 } }
+		if = {
+			limit = { character = ROOT }
+			hidden_tooltip = {
+				emf_imperial_decay_plus_1_effect = yes
+				add_character_modifier = {
+					name = decay_event_timer
+					hidden = yes
+					duration = 1825
+				}
+			}
+		}
+	}
+}
+
+# Emperor/Regent is Hedonist
+character_event = {
+	id = emf_imperial.1859
+	picture = GFX_evt_brothel
+	
+	desc = {
+		text = EVTDESC_emf_imperial_1859A
+		trigger = { ROOT = { has_regent = no } }
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_1859B
+		trigger = { ROOT = { has_regent = yes } }
+	}
+	
+	is_triggered_only = yes
+	major = yes
+	
+	only_playable = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			same_realm = ROOT
+		}
+	}
+	
+	trigger = {
+		emf_uses_imperial_decay_trigger = yes
+		primary_title = { NOT = { check_variable = { which = "imperial_decay" value = 100 } } }
+		OR = {
+			AND = {
+				has_regent = no
+				trait = hedonist
+			}
+			AND = {
+				has_regent = yes
+				regent = { trait = hedonist }
+			}
+		}
+		NOT = { has_character_modifier = decay_event_timer }
+	}
+	
+	weight_multiplier = {
+		days = 1
+		modifier = {
+			factor = 2.0
+			has_regent = yes
+		}
+		modifier = {
+			factor = 2.0
+			NOT = { primary_title = { check_variable = { which = "imperial_decay" value = 10 } } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 30 } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 60 } }
+		}
+		modifier = {
+			factor = 0.5
+			primary_title = { check_variable = { which = "imperial_decay" value = 90 } }
+		}
+	}
+	
+	option = {
+		name = OK
+		ROOT = { custom_tooltip = { text = IMPERIAL_DECAY_PLUS_1 } }
+		if = {
+			limit = { character = ROOT }
+			hidden_tooltip = {
+				emf_imperial_decay_plus_1_effect = yes
+				add_character_modifier = {
+					name = decay_event_timer
+					hidden = yes
+					duration = 1825
+				}
+			}
+		}
+	}
+}
+
+# Emperor/Regent is Cruel/Impaler
+character_event = {
+	id = emf_imperial.1860
+	picture = GFX_evt_brothel
+	
+	desc = {
+		text = EVTDESC_emf_imperial_1860A
+		trigger = { ROOT = { has_regent = no } }
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_1860B
+		trigger = { ROOT = { has_regent = yes } }
+	}
+	
+	is_triggered_only = yes
+	major = yes
+	
+	only_playable = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			same_realm = ROOT
+		}
+	}
+	
+	trigger = {
+		emf_uses_imperial_decay_trigger = yes
+		primary_title = { NOT = { check_variable = { which = "imperial_decay" value = 100 } } }
+		OR = {
+			AND = {
+				has_regent = no
+				OR = {
+					trait = cruel
+					trait = impaler
+				}
+			}
+			AND = {
+				has_regent = yes
+				NOT = { trait = kind }
+				regent = {
+					OR = {
+						trait = cruel
+						trait = impaler
+					}
+				}
+			}
+		}
+		NOT = { has_character_modifier = decay_event_timer }
+	}
+	
+	weight_multiplier = {
+		days = 1
+		modifier = {
+			factor = 2.0
+			has_regent = yes
+		}
+		modifier = {
+			factor = 2.0
+			NOT = { primary_title = { check_variable = { which = "imperial_decay" value = 10 } } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 30 } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 60 } }
+		}
+		modifier = {
+			factor = 0.5
+			primary_title = { check_variable = { which = "imperial_decay" value = 90 } }
+		}
+	}
+	
+	option = {
+		name = OK
+		ROOT = { custom_tooltip = { text = IMPERIAL_DECAY_PLUS_1 } }
+		if = {
+			limit = { character = ROOT }
+			hidden_tooltip = {
+				emf_imperial_decay_plus_1_effect = yes
+				add_character_modifier = {
+					name = decay_event_timer
+					hidden = yes
+					duration = 1825
+				}
+			}
+		}
+	}
+}
+
+# Emperor/Regent is Quick/Genius
+character_event = {
+	id = emf_imperial.1861
+	picture = GFX_evt_throne_room
+	
+	desc = {
+		text = EVTDESC_emf_imperial_1861A
+		trigger = { ROOT = { has_regent = no } }
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_1861B
+		trigger = { ROOT = { has_regent = yes } }
+	}
+	
+	is_triggered_only = yes
+	major = yes
+	
+	only_playable = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			same_realm = ROOT
+		}
+	}
+	
+	trigger = {
+		emf_uses_imperial_decay_trigger = yes
+		primary_title = { check_variable = { which = "imperial_decay" value = 1 } }
+		OR = {
+			AND = {
+				has_regent = no
+				is_smart_trigger = yes
+			}
+			AND = {
+				has_regent = yes
+				regent = {
+					is_smart_trigger = yes
+				}
+			}
+		}
+		NOT = { has_character_modifier = decay_event_timer }
+	}
+	
+	weight_multiplier = {
+		days = 1
+		modifier = {
+			factor = 2.0
+			has_regent = no
+			trait = genius
+		}
+		modifier = {
+			factor = 2.0
+			has_regent = yes
+			regent = { trait = genius }
+		}
+		modifier = {
+			factor = 0.5
+			NOT = { primary_title = { check_variable = { which = "imperial_decay" value = 10 } } }
+		}
+		modifier = {
+			factor = 2.0
+			primary_title = { check_variable = { which = "imperial_decay" value = 30 } }
+		}
+		modifier = {
+			factor = 2.0
+			primary_title = { check_variable = { which = "imperial_decay" value = 60 } }
+		}
+	}
+	
+	option = {
+		name = OK
+		ROOT = { custom_tooltip = { text = IMPERIAL_DECAY_MINUS_1 } }
+		if = {
+			limit = { character = ROOT }
+			hidden_tooltip = {
+				emf_imperial_decay_minus_1_effect = yes
+				add_character_modifier = {
+					name = decay_event_timer
+					hidden = yes
+					duration = 1825
+				}
+			}
+		}
+	}
+}
+
+# Emperor/Regent is Inbred/Imbecile/Slow
+character_event = {
+	id = emf_imperial.1862
+	picture = GFX_evt_throne_room
+	
+	desc = {
+		text = EVTDESC_emf_imperial_1862A
+		trigger = { ROOT = { has_regent = no } }
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_1862B
+		trigger = { ROOT = { has_regent = yes } }
+	}
+	
+	is_triggered_only = yes
+	major = yes
+	
+	only_playable = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			same_realm = ROOT
+		}
+	}
+	
+	trigger = {
+		emf_uses_imperial_decay_trigger = yes
+		primary_title = { NOT = { check_variable = { which = "imperial_decay" value = 100 } } }
+		OR = {
+			AND = {
+				has_regent = no
+				OR = {
+					is_dumb_trigger = yes
+					trait = inbred
+				}
+			}
+			AND = {
+				has_regent = yes
+				regent = {
+					OR = {
+						is_dumb_trigger = yes
+						trait = inbred
+					}
+				}
+			}
+		}
+		NOT = { has_character_modifier = decay_event_timer }
+	}
+	
+	weight_multiplier = {
+		days = 1
+		modifier = {
+			factor = 2.0
+			has_regent = no
+			trait = imbecile
+		}
+		modifier = {
+			factor = 2.0
+			has_regent = yes
+			regent = { trait = imbecile }
+		}
+		modifier = {
+			factor = 1.5
+			has_regent = no
+			trait = inbred
+		}
+		modifier = {
+			factor = 1.5
+			has_regent = yes
+			regent = { trait = inbred }
+		}
+		modifier = {
+			factor = 2.0
+			has_regent = yes
+		}
+		modifier = {
+			factor = 2.0
+			NOT = { primary_title = { check_variable = { which = "imperial_decay" value = 10 } } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 30 } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 60 } }
+		}
+		modifier = {
+			factor = 0.5
+			primary_title = { check_variable = { which = "imperial_decay" value = 90 } }
+		}
+	}
+	
+	option = {
+		name = OK
+		ROOT = { custom_tooltip = { text = IMPERIAL_DECAY_PLUS_1 } }
+		if = {
+			limit = { character = ROOT }
+			hidden_tooltip = {
+				emf_imperial_decay_plus_1_effect = yes
+				add_character_modifier = {
+					name = decay_event_timer
+					hidden = yes
+					duration = 1825
+				}
+			}
+		}
+	}
+}
+
+# Emperor is Incapable
+character_event = {
+	id = emf_imperial.1863
+	picture = GFX_evt_throne_room
+	desc = EVTDESC_emf_imperial_1863
+	
+	is_triggered_only = yes
+	major = yes
+	
+	only_playable = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			same_realm = ROOT
+		}
+	}
+	
+	trigger = {
+		emf_uses_imperial_decay_trigger = yes
+		primary_title = { NOT = { check_variable = { which = "imperial_decay" value = 100 } } }
+		trait = incapable
+		NOT = { has_character_modifier = decay_event_timer }
+	}
+	
+	weight_multiplier = {
+		days = 1
+		modifier = {
+			factor = 2.0
+			NOT = { primary_title = { check_variable = { which = "imperial_decay" value = 10 } } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 30 } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 60 } }
+		}
+		modifier = {
+			factor = 0.5
+			primary_title = { check_variable = { which = "imperial_decay" value = 90 } }
+		}
+	}
+	
+	option = {
+		name = OK
+		ROOT = { custom_tooltip = { text = IMPERIAL_DECAY_PLUS_1 } }
+		if = {
+			limit = { character = ROOT }
+			hidden_tooltip = {
+				emf_imperial_decay_plus_1_effect = yes
+				add_character_modifier = {
+					name = decay_event_timer
+					hidden = yes
+					duration = 1825
+				}
+			}
+		}
+	}
+}
+
+# Emperor/Regent is Drunkard
+character_event = {
+	id = emf_imperial.1864
+	picture = GFX_evt_dancing
+	
+	desc = {
+		text = EVTDESC_emf_imperial_1864A
+		trigger = { ROOT = { has_regent = no } }
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_1864B
+		trigger = { ROOT = { has_regent = yes } }
+	}
+	
+	is_triggered_only = yes
+	major = yes
+	
+	only_playable = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			same_realm = ROOT
+		}
+	}
+	
+	trigger = {
+		emf_uses_imperial_decay_trigger = yes
+		primary_title = { NOT = { check_variable = { which = "imperial_decay" value = 100 } } }
+		OR = {
+			AND = {
+				has_regent = no
+				trait = drunkard
+			}
+			AND = {
+				has_regent = yes
+				regent = { trait = drunkard }
+			}
+		}
+		NOT = { has_character_modifier = decay_event_timer }
+	}
+	
+	weight_multiplier = {
+		days = 1
+		modifier = {
+			factor = 2.0
+			has_regent = yes
+		}
+		modifier = {
+			factor = 2.0
+			NOT = { primary_title = { check_variable = { which = "imperial_decay" value = 10 } } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 30 } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 60 } }
+		}
+		modifier = {
+			factor = 0.5
+			primary_title = { check_variable = { which = "imperial_decay" value = 90 } }
+		}
+	}
+	
+	option = {
+		name = OK
+		ROOT = { custom_tooltip = { text = IMPERIAL_DECAY_PLUS_1 } }
+		if = {
+			limit = { character = ROOT }
+			hidden_tooltip = {
+				emf_imperial_decay_plus_1_effect = yes
+				add_character_modifier = {
+					name = decay_event_timer
+					hidden = yes
+					duration = 1825
+				}
+			}
+		}
+	}
+}
+
+# Emperor/Regent is Lunatic
+character_event = {
+	id = emf_imperial.1865
+	picture = GFX_evt_lunatic
+	
+	desc = {
+		text = EVTDESC_emf_imperial_1865A
+		trigger = { ROOT = { has_regent = no } }
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_1865B
+		trigger = { ROOT = { has_regent = yes } }
+	}
+	
+	is_triggered_only = yes
+	major = yes
+	
+	only_playable = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			same_realm = ROOT
+		}
+	}
+	
+	trigger = {
+		emf_uses_imperial_decay_trigger = yes
+		primary_title = { NOT = { check_variable = { which = "imperial_decay" value = 100 } } }
+		OR = {
+			AND = {
+				has_regent = no
+				trait = lunatic
+			}
+			AND = {
+				has_regent = yes
+				regent = { trait = lunatic }
+			}
+		}
+		NOT = { has_character_modifier = decay_event_timer }
+	}
+	
+	weight_multiplier = {
+		days = 1
+		modifier = {
+			factor = 2.0
+			has_regent = yes
+		}
+		modifier = {
+			factor = 2.0
+			NOT = { primary_title = { check_variable = { which = "imperial_decay" value = 10 } } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 30 } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 60 } }
+		}
+		modifier = {
+			factor = 0.5
+			primary_title = { check_variable = { which = "imperial_decay" value = 90 } }
+		}
+	}
+	
+	option = {
+		name = OK
+		ROOT = { custom_tooltip = { text = IMPERIAL_DECAY_PLUS_1 } }
+		if = {
+			limit = { character = ROOT }
+			hidden_tooltip = {
+				emf_imperial_decay_plus_1_effect = yes
+				add_character_modifier = {
+					name = decay_event_timer
+					hidden = yes
+					duration = 1825
+				}
+			}
+		}
+	}
+}
+
+# Emperor/Regent is Possessed
+character_event = {
+	id = emf_imperial.1866
+	picture = GFX_evt_lunatic
+	
+	desc = {
+		text = EVTDESC_emf_imperial_1866A
+		trigger = { ROOT = { has_regent = no } }
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_1866B
+		trigger = { ROOT = { has_regent = yes } }
+	}
+	
+	is_triggered_only = yes
+	major = yes
+	
+	only_playable = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			same_realm = ROOT
+		}
+	}
+	
+	trigger = {
+		emf_uses_imperial_decay_trigger = yes
+		primary_title = { NOT = { check_variable = { which = "imperial_decay" value = 100 } } }
+		OR = {
+			AND = {
+				has_regent = no
+				trait = possessed
+			}
+			AND = {
+				has_regent = yes
+				regent = { trait = possessed }
+			}
+		}
+		NOT = { has_character_modifier = decay_event_timer }
+	}
+	
+	weight_multiplier = {
+		days = 1
+		modifier = {
+			factor = 1.5
+			has_regent = no
+			has_character_modifier = voice_of_jesus
+		}
+		modifier = {
+			factor = 1.5
+			has_regent = yes
+			regent = { has_character_modifier = voice_of_jesus }
+		}
+		modifier = {
+			factor = 2.0
+			has_regent = no
+			has_character_modifier = voice_of_satan
+		}
+		modifier = {
+			factor = 2.0
+			has_regent = yes
+			regent = { has_character_modifier = voice_of_satan }
+		}
+		modifier = {
+			factor = 2.0
+			has_regent = yes
+		}
+		modifier = {
+			factor = 2.0
+			NOT = { primary_title = { check_variable = { which = "imperial_decay" value = 10 } } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 30 } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 60 } }
+		}
+		modifier = {
+			factor = 0.5
+			primary_title = { check_variable = { which = "imperial_decay" value = 90 } }
+		}
+	}
+	
+	option = {
+		name = OK
+		ROOT = { custom_tooltip = { text = IMPERIAL_DECAY_PLUS_1 } }
+		if = {
+			limit = { character = ROOT }
+			hidden_tooltip = {
+				emf_imperial_decay_plus_1_effect = yes
+				add_character_modifier = {
+					name = decay_event_timer
+					hidden = yes
+					duration = 1825
+				}
+			}
+		}
+	}
+}
+
+# Emperor/Regent is Depressed
+character_event = {
+	id = emf_imperial.1867
+	picture = GFX_evt_bad_news
+	
+	desc = {
+		text = EVTDESC_emf_imperial_1867A
+		trigger = { ROOT = { has_regent = no } }
+	}
+	desc = {
+		text = EVTDESC_emf_imperial_1867B
+		trigger = { ROOT = { has_regent = yes } }
+	}
+	
+	is_triggered_only = yes
+	major = yes
+	
+	only_playable = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			same_realm = ROOT
+		}
+	}
+	
+	trigger = {
+		emf_uses_imperial_decay_trigger = yes
+		primary_title = { NOT = { check_variable = { which = "imperial_decay" value = 100 } } }
+		OR = {
+			AND = {
+				has_regent = no
+				trait = depressed
+			}
+			AND = {
+				has_regent = yes
+				regent = { trait = depressed }
+			}
+		}
+		NOT = { has_character_modifier = decay_event_timer }
+	}
+	
+	weight_multiplier = {
+		days = 1
+		modifier = {
+			factor = 2.0
+			has_regent = yes
+		}
+		modifier = {
+			factor = 2.0
+			NOT = { primary_title = { check_variable = { which = "imperial_decay" value = 10 } } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 30 } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 60 } }
+		}
+		modifier = {
+			factor = 0.5
+			primary_title = { check_variable = { which = "imperial_decay" value = 90 } }
+		}
+	}
+	
+	option = {
+		name = OK
+		ROOT = { custom_tooltip = { text = IMPERIAL_DECAY_PLUS_1 } }
+		if = {
+			limit = { character = ROOT }
+			hidden_tooltip = {
+				emf_imperial_decay_plus_1_effect = yes
+				add_character_modifier = {
+					name = decay_event_timer
+					hidden = yes
+					duration = 1825
+				}
+			}
+		}
+	}
+}
+
+# Emperor is a prisoner
+character_event = {
+	id = emf_imperial.1868
+	picture = GFX_evt_into_the_dungeon
+	desc = EVTDESC_emf_imperial_1868
+	
+	is_triggered_only = yes
+	major = yes
+	
+	only_playable = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			same_realm = ROOT
+		}
+	}
+	
+	trigger = {
+		emf_uses_imperial_decay_trigger = yes
+		primary_title = { NOT = { check_variable = { which = "imperial_decay" value = 100 } } }
+		prisoner = yes
+		NOT = { has_character_modifier = decay_event_timer }
+	}
+	
+	weight_multiplier = {
+		days = 1
+		modifier = {
+			factor = 2.0
+			NOT = { primary_title = { check_variable = { which = "imperial_decay" value = 10 } } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 30 } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 60 } }
+		}
+		modifier = {
+			factor = 0.5
+			primary_title = { check_variable = { which = "imperial_decay" value = 90 } }
+		}
+	}
+	
+	option = {
+		name = OK
+		ROOT = { custom_tooltip = { text = IMPERIAL_DECAY_PLUS_1 } }
+		if = {
+			limit = { character = ROOT }
+			hidden_tooltip = {
+				emf_imperial_decay_plus_1_effect = yes
+				add_character_modifier = {
+					name = decay_event_timer
+					hidden = yes
+					duration = 1825
+				}
+			}
+		}
+	}
+}
+
+# Emperor has a capable Steward
+character_event = {
+	id = emf_imperial.1869
+	desc = EVTDESC_emf_imperial_1869
+	picture = GFX_evt_throne_room
+	
+	is_triggered_only = yes
+	major = yes
+	
+	only_playable = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			same_realm = ROOT
+		}
+	}
+	
+	trigger = {
+		emf_uses_imperial_decay_trigger = yes
+		primary_title = { check_variable = { which = "imperial_decay" value = 1 } }
+		job_treasurer = { stewardship = 15 }
+		realm_stewardship = 30
+		NOT = { has_character_modifier = decay_event_timer }
+	}
+	
+	weight_multiplier = {
+		days = 1
+		modifier = {
+			factor = 1.5
+			job_treasurer = { stewardship = 20 }
+		}
+		modifier = {
+			factor = 1.5
+			job_treasurer = { stewardship = 25 }
+		}
+		modifier = {
+			factor = 0.5
+			NOT = { primary_title = { check_variable = { which = "imperial_decay" value = 10 } } }
+		}
+		modifier = {
+			factor = 2.0
+			primary_title = { check_variable = { which = "imperial_decay" value = 30 } }
+		}
+		modifier = {
+			factor = 2.0
+			primary_title = { check_variable = { which = "imperial_decay" value = 60 } }
+		}
+	}
+	
+	option = {
+		name = OK
+		ROOT = { custom_tooltip = { text = IMPERIAL_DECAY_MINUS_1 } }
+		if = {
+			limit = { character = ROOT }
+			hidden_tooltip = {
+				emf_imperial_decay_minus_1_effect = yes
+				add_character_modifier = {
+					name = decay_event_timer
+					hidden = yes
+					duration = 1825
+				}
+			}
+		}
+	}
+}
+
+# Emperor has a lousy Steward
+character_event = {
+	id = emf_imperial.1870
+	desc = EVTDESC_emf_imperial_1870
+	picture = GFX_evt_throne_room
+	
+	is_triggered_only = yes
+	major = yes
+	
+	only_playable = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			same_realm = ROOT
+		}
+	}
+	
+	trigger = {
+		emf_uses_imperial_decay_trigger = yes
+		primary_title = { NOT = { check_variable = { which = "imperial_decay" value = 100 } } }
+		any_courtier = { has_job_title = job_treasurer }
+		job_treasurer = { NOT = { stewardship = 10 } }
+		NOT = { has_character_modifier = decay_event_timer }
+	}
+	
+	weight_multiplier = {
+		days = 1
+		modifier = {
+			factor = 1.5
+			job_treasurer = { NOT = { stewardship = 8 } }
+		}
+		modifier = {
+			factor = 1.5
+			job_treasurer = { NOT = { stewardship = 5 } }
+		}
+		modifier = {
+			factor = 2.0
+			NOT = { primary_title = { check_variable = { which = "imperial_decay" value = 10 } } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 30 } }
+		}
+		modifier = {
+			factor = 0.75
+			primary_title = { check_variable = { which = "imperial_decay" value = 60 } }
+		}
+		modifier = {
+			factor = 0.5
+			primary_title = { check_variable = { which = "imperial_decay" value = 90 } }
+		}
+	}
+	
+	option = {
+		name = OK
+		ROOT = { custom_tooltip = { text = IMPERIAL_DECAY_PLUS_1 } }
+		if = {
+			limit = { character = ROOT }
+			hidden_tooltip = {
+				emf_imperial_decay_plus_1_effect = yes
+				add_character_modifier = {
+					name = decay_event_timer
+					hidden = yes
+					duration = 1825
+				}
+			}
+		}
+	}
+}
+
+### BYZANTINE STARTUP EVENTS
+
+# Bounce event (fired from emf_startup.2)
+character_event = {
+	id = emf_imperial.1875
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		e_byzantium = {
+			holder_scope = {
+				narrative_event = { id = emf_imperial.1876 }
+				narrative_event = { id = emf_imperial.1877 }
+				narrative_event = { id = emf_imperial.1878 }
+				narrative_event = { id = emf_imperial.1879 }
+			}
+		}
+	}
+}
+
+# Byzantine Empire is flourishing
+narrative_event = {
+	id = emf_imperial.1876
+	title = EVTNAME_emf_imperial_1876
+	desc = EVTDESC_emf_imperial_1876
+	picture = GFX_evt_byzantine_throne
+	
+	is_triggered_only = yes
+	hide_from = yes
+	
+	trigger = {
+		has_landed_title = e_byzantium
+		has_global_flag = byz_empire_flourishes
+	}
+	
+	immediate = {
+		set_character_flag = was_byzantine_emperor
+		if = {
+			limit = { is_ironman = no }
+			e_byzantium = { set_variable = { which = "imperial_decay" value = 10 } }
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_1876
+		clr_global_flag = byz_empire_flourishes
+		if = {
+			limit = { emf_was_strong_basileus = yes }
+			add_trait = strong_basileus
+		}
+		# Change the decadence modifier
+		hidden_tooltip = { character_event = { id = emf_imperial.1852 } }
+	}
+}
+
+# Byzantine Empire is cracking
+narrative_event = {
+	id = emf_imperial.1877
+	title = EVTNAME_emf_imperial_1877
+	desc = EVTDESC_emf_imperial_1877
+	picture = GFX_evt_byzantine_throne
+	
+	is_triggered_only = yes
+	hide_from = yes
+	
+	trigger = {
+		has_landed_title = e_byzantium
+		has_global_flag = byz_empire_cracking
+	}
+	
+	immediate = {
+		set_character_flag = was_byzantine_emperor
+		if = {
+			limit = { is_ironman = no }
+			e_byzantium = { set_variable = { which = "imperial_decay" value = 30 } }
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_1876
+		clr_global_flag = byz_empire_cracking
+		if = {
+			limit = { emf_was_strong_basileus = yes }
+			add_trait = strong_basileus
+		}
+		if = {
+			limit = {
+				is_ironman = no
+				trait = strong_basileus
+			}
+			hidden_tooltip = {
+				e_byzantium = { change_variable = { which = "imperial_decay" value = -10 } }
+			}
+		}
+		# Change the decadence modifier
+		hidden_tooltip = { character_event = { id = emf_imperial.1852 } }
+	}
+}
+
+# Byzantine Empire is falling
+narrative_event = {
+	id = emf_imperial.1878
+	title = EVTNAME_emf_imperial_1878
+	desc = EVTDESC_emf_imperial_1878
+	picture = GFX_evt_byzantine_throne
+	
+	is_triggered_only = yes
+	hide_from = yes
+	
+	trigger = {
+		has_landed_title = e_byzantium
+		has_global_flag = byz_empire_falling
+	}
+	
+	immediate = {
+		set_character_flag = was_byzantine_emperor
+		if = {
+			limit = { is_ironman = no }
+			e_byzantium = { set_variable = { which = "imperial_decay" value = 50 } }
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_1876
+		clr_global_flag = byz_empire_falling
+		if = {
+			limit = { emf_was_strong_basileus = yes }
+			add_trait = strong_basileus
+		}
+		if = {
+			limit = {
+				is_ironman = no
+				trait = strong_basileus
+			}
+			hidden_tooltip = {
+				e_byzantium = { change_variable = { which = "imperial_decay" value = -10 } }
+			}
+		}
+		# Change the decadence modifier
+		hidden_tooltip = { character_event = { id = emf_imperial.1852 } }
+	}
+}
+
+# Byzantine Empire is shattered
+narrative_event = {
+	id = emf_imperial.1879
+	title = EVTNAME_emf_imperial_1879
+	desc = EVTDESC_emf_imperial_1879
+	picture = GFX_evt_byzantine_throne
+	
+	is_triggered_only = yes
+	hide_from = yes
+	
+	trigger = {
+		has_landed_title = e_byzantium
+		has_global_flag = byz_empire_shattered
+	}
+	
+	immediate = {
+		set_character_flag = was_byzantine_emperor
+		if = {
+			limit = { is_ironman = no }
+			e_byzantium = { set_variable = { which = "imperial_decay" value = 70 } }
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_imperial_1876
+		clr_global_flag = byz_empire_shattered
+		if = {
+			limit = { emf_was_strong_basileus = yes }
+			add_trait = strong_basileus
+		}
+		if = {
+			limit = {
+				is_ironman = no
+				trait = strong_basileus
+			}
+			hidden_tooltip = {
+				e_byzantium = { change_variable = { which = "imperial_decay" value = -10 } }
+			}
+		}
+		# Change the decadence modifier
+		hidden_tooltip = { character_event = { id = emf_imperial.1852 } }
+	}
+}
+
