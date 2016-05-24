@@ -84,7 +84,7 @@ province_event = {
 	}
 	
 	immediate = {
-		become_heretic = yes
+		emf_province_become_heretic_effect = yes
 		set_province_flag = heresy_in_province
 		add_province_modifier = {
 			name = religious_unrest
@@ -1164,6 +1164,8 @@ narrative_event = {
 			religion = fraticelli
 			religion = waldensian
 			religion = lollard
+			religion = adoptionist
+			religion = arian
 		}
 		is_heretic = no
 		
@@ -1278,6 +1280,8 @@ narrative_event = {
 			religion = fraticelli
 			religion = waldensian
 			religion = lollard
+			religion = adoptionist
+			religion = arian
 		}
 		is_heretic = no
 		
@@ -1379,6 +1383,8 @@ narrative_event = {
 			religion = fraticelli
 			religion = waldensian
 			religion = lollard
+			religion = adoptionist
+			religion = arian
 		}
 		is_heretic = no
 		
@@ -4948,37 +4954,51 @@ character_event = {
 	}
 }
 
-# RISE OF THE SHI'A CALIPHATE
+# RISE OF THE ISMA'ILI CALIPHATE
 narrative_event = {
 	id = 39640
-	title = EVTNAME39640
-	desc = EVTDESC39640
-	picture = GFX_evt_bishop
-	border = GFX_event_narrative_frame_religion
-	
-	major = yes
+
+	hide_window = yes
 	
 	only_independent = yes
 	only_playable = yes
 	religion_group = muslim
 	
 	trigger = {
+		ai = yes
+		year = 870
+		d_ismaili = { has_holder = no }
 		is_landed = yes
-		NOT = { religion = shiite }
-		higher_tier_than = DUKE
-		d_shiite = {
-			has_holder = no
+		higher_tier_than = DUKE		
+		capital_scope = {
+			OR = {
+				region = world_persia
+				region = world_middle_east_jerusalem
+				region = world_africa_north
+			}
 		}
-		uses_decadence = yes
-		decadence = 10
-		NOT = { has_global_flag = shia_caliphate_revolt_ongoing }
+		OR = {
+			trait = dynasty_decadence_low
+			trait = dynasty_decadence_med
+			trait = dynasty_decadence_high
+		}
+		NOR = {
+			imamah_claimant = { is_alive = yes }
+			religion = ismaili
+			has_global_flag = ismaili_caliphate_revolt_ongoing
+			has_global_flag = ismaili_caliphate_revolt
+		}
 		any_realm_province = {
+			religion_group = muslim
+			OR = {
+				region = world_persia
+				region = world_middle_east_jerusalem
+				region = world_africa_north
+			}
 			kingdom = {
 				OR = {
 					has_holder = no
-					holder_scope = {
-						character = ROOT
-					}
+					holder_scope = { character = ROOT }
 				}
 				num_title_realm_provs = {
 					who = ROOT
@@ -4989,339 +5009,159 @@ narrative_event = {
 	}
 	
 	mean_time_to_happen = {
-		months = 1800
+		months = 1000
 		modifier = {
 			factor = 0.25
 			OR = {
-				c_cairo = {
-					holder_scope = {
-						same_realm = ROOT
-					}
-				}
-				c_damascus = {
-					holder_scope = {
-						same_realm = ROOT
-					}
-				}
-				c_tunis = {
-					holder_scope = {
-						same_realm = ROOT
-					}
-				}
+				c_cairo = { owner_under_ROOT = yes }
+				c_tunis = { owner_under_ROOT = yes }
 			}
 		}
 		modifier = {
 			factor = 0.5
-			decadence = 90
+			trait = dynasty_decadence_high
 		}
 		modifier = {
 			factor = 4.0
-			NOT = { decadence = 25 }
+			trait = dynasty_decadence_low
+			NOT = { trait = decadent }
 		}
 		modifier = {
-			factor = 2.0
+			factor = 0.75
+			year = 900
+		}
+		modifier = {
+			factor = 0.75
+			year = 950
+		}
+		modifier = {
+			factor = 0.5
+			year = 1000
+		}
+		modifier = {
+			factor = 0.25
+			year = 1050
+		}
+		modifier = {
+			factor = 0.25
 			year = 1100
-		}
-		modifier = {
-			factor = 2.0
-			year = 1200
-		}
-		modifier = {
-			factor = 2.0
-			year = 1300
-		}
-		modifier = {
-			factor = 4.0
-			year = 1400
-		}
-		modifier = {
-			factor = 10.0
-			ai = no
 		}
 	}
 	
 	immediate = {
-		set_character_flag = shia_caliphate_revolt
-		set_global_flag = shia_caliphate_revolt_ongoing
+		set_global_flag = ismaili_caliphate_revolt
+		save_event_target_as = ismaili_revolt_target
 		
-		decadence = -30 # Do not want to be hit with a decadence revolt as well!
-		
+		# Prioritize k_africa or k_egypt
 		random_realm_province = {
 			limit = {
+				religion_group = muslim
 				kingdom = {
 					OR = {
+						title = k_egypt
+						title = k_africa
+					}	
+					OR = {
 						has_holder = no
-						holder_scope = {
-							character = ROOT
-						}
+						holder_scope = { character = ROOT }
 					}
 					num_title_realm_provs = {
 						who = ROOT
-						value = 6
+						value = 5
 					}
 				}
 			}
-			ROOT = {
-				create_character = {
-					dynasty = random
-					religion = shiite
-					culture = ROOT
-					female = no
-					age = 3
-					health = 6.5
-					fertility = 0.6
-					trait = sayyid
-					trait = quick
-					trait = fair
-					attributes = {
-						learning = 1
-						diplomacy = 2
-						martial = 1
-						stewardship = 1
-						intrigue = 1
+			save_event_target_as = ismaili_revolt_target_province
+			kingdom = { save_event_target_as = ismaili_revolt_target_title }
+		}
+		
+		# Then prioritize anywhere in africa
+		random_realm_province = {
+			limit = {
+				NOT = { event_target:ismaili_revolt_target_title = { always = yes } }
+				religion_group = muslim
+				region = world_africa_north
+				kingdom = {
+					OR = {
+						has_holder = no
+						holder_scope = { character = ROOT }
 					}
-				}
-				
-				new_character = {
-					set_character_flag = shia_caliphate_pretender
-					create_title = {
-						tier = DUKE
-						landless = yes
-						temporary = yes
-						culture = ROOT
-						name = SHIA_CALIPHATE_REVOLT
-						holder = THIS
-					}
-					create_character = {
-						random_traits = yes
-						dynasty = none
-						religion = THIS
-						culture = THIS
-						female = no
-						age = 30
-						trait = brilliant_strategist
-					}
-					new_character = {
-						spawn_unit = {
-							province = PREVPREVPREV
-							home = PREVPREVPREV
-							owner = PREV
-							#leader = THIS
-							match_character = PREVPREV
-							match_mult = 0.1
-							attrition = 0.5
-							cannot_inherit = yes
-						}
-					}
-					create_character = {
-						random_traits = yes
-						dynasty = none
-						religion = THIS
-						culture = THIS
-						female = no
-						age = 27
-						trait = brilliant_strategist
-					}
-					new_character = {
-						spawn_unit = {
-							province = PREVPREVPREV
-							home = PREVPREVPREV
-							owner = PREV
-							#leader = THIS
-							match_character = PREVPREV
-							match_mult = 0.1
-							attrition = 0.5
-							cannot_inherit = yes
-						}
-					}
-					create_character = {
-						random_traits = yes
-						dynasty = none
-						religion = THIS
-						culture = THIS
-						female = no
-						age = 25
-						trait = skilled_tactician
-					}
-					new_character = {
-						spawn_unit = {
-							province = PREVPREVPREV
-							home = PREVPREVPREV
-							owner = PREV
-							#leader = THIS
-							match_character = PREVPREV
-							match_mult = 0.1
-							attrition = 0.5
-							cannot_inherit = yes
-						}
-					}
-					create_character = {
-						random_traits = yes
-						dynasty = none
-						religion = THIS
-						culture = THIS
-						female = no
-						age = 23
-						trait = skilled_tactician
-					}
-					new_character = {
-						spawn_unit = {
-							province = PREVPREVPREV
-							home = PREVPREVPREV
-							owner = PREV
-							#leader = THIS
-							match_character = PREVPREV
-							match_mult = 0.1
-							attrition = 0.5
-							cannot_inherit = yes
-						}
-					}
-					create_character = {
-						random_traits = yes
-						dynasty = none
-						religion = THIS
-						culture = THIS
-						female = no
-						age = 27
-						trait = skilled_tactician
-					}
-					new_character = {
-						spawn_unit = {
-							province = PREVPREVPREV
-							home = PREVPREVPREV
-							owner = PREV
-							#leader = THIS
-							match_character = PREVPREV
-							match_mult = 0.1
-							attrition = 0.5
-							cannot_inherit = yes
-						}
-					}
-					create_character = {
-						random_traits = yes
-						dynasty = none
-						religion = THIS
-						culture = THIS
-						female = no
-						age = 24
-						trait = skilled_tactician
-					}
-					new_character = {
-						spawn_unit = {
-							province = PREVPREVPREV
-							home = PREVPREVPREV
-							owner = PREV
-							#leader = THIS
-							match_character = PREVPREV
-							match_mult = 0.1
-							attrition = 0.5
-							cannot_inherit = yes
-						}
-					}
-					create_character = {
-						random_traits = yes
-						dynasty = none
-						religion = THIS
-						culture = THIS
-						female = no
-						age = 32
-						trait = brilliant_strategist
-					}
-					new_character = {
-						spawn_unit = {
-							province = PREVPREVPREV
-							home = PREVPREVPREV
-							owner = PREV
-							#leader = THIS
-							match_character = PREVPREV
-							match_mult = 0.15
-							attrition = 0.0
-							cannot_inherit = yes
-							disband_on_peace = yes
-						}
-					}
-					create_character = {
-						random_traits = yes
-						dynasty = none
-						religion = THIS
-						culture = THIS
-						female = no
-						age = 25
-						trait = skilled_tactician
-					}
-					new_character = {
-						spawn_unit = {
-							province = PREVPREVPREV
-							home = PREVPREVPREV
-							owner = PREV
-							#leader = THIS
-							match_character = PREVPREV
-							match_mult = 0.15
-							attrition = 0.0
-							cannot_inherit = yes
-							disband_on_peace = yes
-						}
-					}
-					create_character = {
-						random_traits = yes
-						dynasty = none
-						religion = THIS
-						culture = THIS
-						female = no
-						age = 28
-						trait = skilled_tactician
-					}
-					new_character = {
-						spawn_unit = {
-							province = PREVPREVPREV
-							home = PREVPREVPREV
-							owner = PREV
-							#leader = THIS
-							match_character = PREVPREV
-							match_mult = 0.15
-							attrition = 0.0
-							cannot_inherit = yes
-							disband_on_peace = yes
-						}
-					}
-					war = {
-						target = ROOT
-						casus_belli = shia_caliphate_rising
-						thirdparty_title = PREVPREV
-						tier = KING
+					num_title_realm_provs = {
+						who = ROOT
+						value = 5
 					}
 				}
 			}
+			save_event_target_as = ismaili_revolt_target_province
+			kingdom = { save_event_target_as = ismaili_revolt_target_title }
 		}
-	}
-	
-	option = {
-		name = "EVTOPTA39640"
-		trigger = {
-			has_character_flag = shia_caliphate_revolt 
+		
+		#then any title will do
+		random_realm_province = {
+			limit = {
+				NOT = { event_target:ismaili_revolt_target_title = { always = yes } }
+				religion_group = muslim
+				OR = {
+					region = world_persia
+					region = world_middle_east_jerusalem
+					region = world_africa_north
+				}
+				kingdom = {
+					OR = {
+						has_holder = no
+						holder_scope = { character = ROOT }
+					}
+					num_title_realm_provs = {
+						who = ROOT
+						value = 5
+					}
+				}
+			}
+			save_event_target_as = ismaili_revolt_target_province
+			kingdom = { save_event_target_as = ismaili_revolt_target_title }
 		}
-		clr_character_flag = shia_caliphate_revolt
-	}
-	
-	option = {
-		name = "EVTOPTB39640"
-		trigger = {
-			religion = shiite
+		
+		# Create the new Imamah
+		create_random_diplomat = {
+			random_traits = yes
+			dynasty = 589 #Fatimid
+			religion = ismaili
+			culture = event_target:ismaili_revolt_target_province
+			female = no
+			age = 16
+			health = 6.5
+			fertility = 0.6
+			trait = sayyid
+			trait = imamah_claimant
+			trait = quick
+			trait = fair
+			attributes = {
+				learning = 5
+				diplomacy = 5
+				martial = 8
+			}
 		}
-	}
-	option = {
-		name = "EVTOPTC39640"
-		trigger = {
-			religion_group = muslim
-			NOT = { religion = shiite }
-			NOT = { has_character_flag = shia_caliphate_revolt }
-		}
-	}
-	option = {
-		name = "EVTOPTD39640"
-		trigger = {
-			NOT = { religion_group = muslim }
-			NOT = { has_character_flag = shia_caliphate_revolt }
+		new_character = {
+			log = "39640: [This.GetBestName] (id:[This.GetID]) is a newly-created Imamah starting the Isma'ili Caliphate Uprising in [shiite_revolt_target_title.GetName]"
+			set_character_flag = is_imamah_claimant
+			set_character_flag = found_claimant
+			set_character_flag = ismaili_caliphate_pretender
+			set_character_flag = led_ismaili_caliphate_revolt
+			save_event_target_as = ismaili_revolter
+			if = {
+				limit = {
+					OR = {
+						trait = naive_appeaser
+						trait = underhanded_rogue
+						trait = charismatic_negotiator
+					}
+				}
+				remove_trait = naive_appeaser
+				remove_trait = underhanded_rogue
+				remove_trait = charismatic_negotiator
+				add_trait = grey_eminence
+			}
+			narrative_event = { id = emf_heresy.1972 }
 		}
 	}
 }

@@ -1,0 +1,2021 @@
+# -*- ck2.scripted_effects -*-
+
+emf_character_become_heretic_effect = {
+	# Prefer heresy of a fellow dynasty member
+	if = {
+		limit = { any_dynasty_member = { is_heresy_of = PREV } }
+		random_dynasty_member = {
+			limit = { is_heresy_of = PREV }
+			reverse_religion = PREV
+		}
+		break = yes
+	}
+	
+	location = { save_event_target_as = heretic_province }
+	save_event_target_as = converter
+	emf_become_heretic_effect = yes
+}
+
+emf_province_become_heretic_effect = {
+	save_event_target_as = heretic_province
+	save_event_target_as = converter
+	emf_become_heretic_effect = yes
+}
+
+emf_become_heretic_effect = {
+	# Prefer heresy of their current location
+	if = {
+		limit = {
+			event_target:heretic_province = {
+				event_target:converter = { is_parent_religion = PREV }
+			}
+		}
+		event_target:heretic_province = {
+			event_target:converter = { religion = PREV }
+		}
+		break = yes
+	}
+	# Prefer a neighboring heresy
+	if = {
+		limit = {
+			event_target:heretic_province = {
+				any_neighbor_province = {
+					event_target:converter = { is_parent_religion = PREV }
+				}
+			}
+		}
+		event_target:heretic_province = {
+			random_neighbor_province = {
+				limit = {
+					event_target:converter = { is_parent_religion = PREV }
+				}
+				event_target:converter = { religion = PREV }
+			}
+		}
+		break = yes
+	}
+	# Prefer same-religion group of their current location
+	if = {
+		limit = {
+			event_target:heretic_province = {
+				event_target:converter = {
+					PREV = {
+						NOT = { religion = PREV }
+						religion_group = PREV
+					}
+				}
+			}
+		}
+		event_target:heretic_province = {
+			event_target:converter = { religion = PREV }
+		}
+		break = yes
+	}
+	# Prefer a same-religion group of a same-culture group neighboring province if Pagan or Muslim
+	if = {
+		limit = {
+			OR = {
+				religion_group = pagan_group
+				religion_group = muslim
+			}
+			event_target:heretic_province = {
+				any_neighbor_province = {
+					event_target:converter = {
+						PREV = {
+							culture_group = PREV
+							religion_group = PREV
+							NOT = { religion = PREV }
+						}
+					}
+				}
+			}
+		}
+		event_target:heretic_province = {
+			random_neighbor_province = {
+				limit = {
+					event_target:converter = {
+						PREV = {
+							culture_group = PREV
+							religion_group = PREV
+							NOT = { religion = PREV }
+						}
+					}
+				}
+				event_target:converter = { religion = PREV }
+			}
+		}
+		break = yes
+	}
+	# Prefer an existing heresy in the realm
+	if = {
+		limit = {
+			event_target:heretic_province = {
+				owner = {
+					top_liege = {
+						any_realm_province = {
+							event_target:converter = { is_parent_religion = PREV }
+							NOT = { distance = { where = PREVPREVPREV value = 200 } }
+						}
+					}
+				}
+			}
+		}
+		event_target:heretic_province = {
+			owner = {
+				top_liege = {
+					random_realm_province = {
+						limit = {
+							event_target:converter = { is_parent_religion = PREV }
+							NOT = { distance = { where = PREVPREVPREV value = 200 } }
+						}
+						event_target:converter = { religion = PREV }
+					}
+				}
+			}
+		}
+		break = yes
+	}
+	# ...otherwise, just pick a religion to convert to
+	if = {
+		limit = {
+			OR = {
+				religion = catholic
+				religion = cathar
+				religion = fraticelli
+				religion = waldensian
+				religion = lollard
+				religion = adoptionist
+				religion = arian
+			}
+		}
+		emf_catholic_conversion_effect = yes
+	}
+	if = {
+		limit = {
+			religion_group = christian
+			NOR = {
+				religion = catholic
+				religion = cathar
+				religion = fraticelli
+				religion = waldensian
+				religion = lollard
+				religion = adoptionist
+				religion = arian
+			}
+		}
+		emf_eastern_conversion_effect = yes
+	}
+	if = {
+		limit = { religion_group = muslim }
+		emf_muslim_conversion_effect = yes
+	}
+	if = {
+		limit = { religion_group = zoroastrian_group }
+		emf_zoroastrian_conversion_effect = yes
+	}
+	if = {
+		limit = { religion_group = jewish_group }
+		emf_jewish_conversion_effect = yes
+	}
+	become_heretic = yes
+}
+
+emf_catholic_conversion_effect = {
+	random_list = {
+		75 = {
+			modifier = {
+				factor = 0
+				religion = catholic
+			}
+			religion = catholic
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = cathar
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { has_global_flag = cathar_activated }
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = world_europe_west_francia }
+					culture = occitan
+				}
+			}
+			religion = cathar
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = fraticelli
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { has_global_flag = fraticelli_activated }
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = world_europe_south_italy }
+					culture = italian
+				}
+			}
+			religion = fraticelli
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = waldensian
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { has_global_flag = waldensian_activated }
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = world_europe_west_francia }
+					culture = frankish
+				}
+			}
+			religion = waldensian
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = lollard
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { has_global_flag = lollard_activated }
+			}
+			modifier = {
+				factor = 0.25
+				NOT = {
+					event_target:heretic_province = { region = world_europe_west_brittania }
+				}
+			}		
+			modifier = {
+				factor = 0.5
+				event_target:heretic_province = { region = world_europe_west_brittania }
+				NOR = {
+					event_target:heretic_province = { region = custom_england }
+					culture = english
+				}
+			}
+			religion = lollard
+		}
+		50 = {
+			modifier = {
+				factor = 0
+				religion = adoptionist
+			}
+			modifier = {
+				factor = 0.5
+				has_global_flag = cathar_activated
+			}
+			modifier = {
+				factor = 0.5
+				has_global_flag = lollard_activated
+			}
+			modifier = {
+				factor = 0.5
+				has_global_flag = waldensian_activated
+			}
+			modifier = {
+				factor = 0.2
+				has_global_flag = adoptionist_deactivated
+			}
+			modifier = {
+				factor = 0.25
+				NOT = {
+					event_target:heretic_province = { region = world_europe_west_iberia }
+				}
+			}
+			religion = adoptionist
+		}
+		50 = {
+			modifier = {
+				factor = 0
+				religion = arian
+			}
+			modifier = {
+				factor = 0
+				has_global_flag = arian_deactivated
+			}
+			modifier = {
+				factor = 0.5
+				has_global_flag = cathar_activated
+			}
+			modifier = {
+				factor = 0.5
+				has_global_flag = lollard_activated
+			}
+			modifier = {
+				factor = 0.5
+				has_global_flag = waldensian_activated
+			}
+			modifier = {
+				factor = 0.25
+				NOT = {
+					event_target:heretic_province = { region = world_europe_west }
+				}
+			}
+			religion = arian
+		}
+		25 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_europe_south_east }
+					event_target:heretic_province = { region = world_europe_east }
+					event_target:heretic_province = { region = world_asia_minor }
+					event_target:heretic_province = { region = world_middle_east_jerusalem }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = world_europe_south_east }
+					culture_group = byzantine
+					culture_group = east_slavic
+					culture_group = south_slavic
+				}
+			}
+			religion = orthodox
+		}
+		25 = {
+			modifier = {
+				factor = 0
+				NOT = {
+					event_target:heretic_province = { region = world_middle_east_jerusalem }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = custom_lebanon }
+					culture = assyrian
+				}
+			}
+			religion = maronite
+		}
+		25 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_middle_east }
+					event_target:heretic_province = { region = world_africa }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					culture = egyptian_arabic
+					culture_group = east_african
+					event_target:heretic_province = { region = world_africa_east }
+				}
+			}
+			religion = miaphysite
+		}
+		25 = {
+			modifier = {
+				factor = 0
+				NOT = {
+					event_target:heretic_province = { region = world_asia_minor }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOT = { culture = armenian }
+			}
+			religion = apostolic
+		}
+		25 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_india }
+					event_target:heretic_province = { region = world_steppe }
+					event_target:heretic_province = { region = world_middle_east }
+					event_target:heretic_province = { region = world_asia_minor }
+					event_target:heretic_province = { region = world_persia }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = world_india }
+					event_target:heretic_province = { region = world_steppe }
+					event_target:heretic_province = { region = world_persia }
+				}
+			}
+			modifier = {
+				factor = 0.5
+				year = 1200
+			}
+			religion = nestorian
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_persia }
+					event_target:heretic_province = { region = world_steppe_east }
+					event_target:heretic_province = { region = world_steppe_tarim }
+					event_target:heretic_province = { region = world_middle_east_arabia }
+					trait = sympathy_zoroastrianism
+				}
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_zoroastrianism
+			}
+			modifier = {
+				factor = 0.5
+				year = 1100
+			}
+			modifier = {
+				factor = 0.5
+				year = 1200
+			}
+			religion = zoroastrian
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_persia }
+					event_target:heretic_province = { region = world_steppe_east }
+					event_target:heretic_province = { region = world_steppe_tarim }
+					event_target:heretic_province = { region = world_middle_east_arabia }
+					trait = sympathy_zoroastrianism
+				}
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_zoroastrianism
+			}
+			modifier = {
+				factor = 0.5
+				year = 1100
+			}
+			modifier = {
+				factor = 0.5
+				year = 1200
+			}
+			religion = manichean
+		}
+		10 = {
+			modifier = {
+				factor = 0.1
+				NOR = {
+					event_target:heretic_province = { region = world_middle_east_jerusalem }
+					culture_group = israelite
+					trait = sympathy_judaism
+				}
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_judaism
+			}
+			religion = jewish
+		}
+		10 = {
+			religion = sunni
+			modifier = {
+				factor = 0
+				NOR = {
+					trait = sympathy_islam
+					event_target:heretic_province = { region = world_middle_east }
+					event_target:heretic_province = { region = world_steppe }
+					event_target:heretic_province = { region = world_africa }
+					event_target:heretic_province = { region = world_persia }
+				}
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_islam
+			}
+		}
+	}
+	break = yes
+}
+
+emf_eastern_conversion_effect = {
+	random_list = {
+		75 = {
+			modifier = {
+				factor = 0
+				religion = orthodox
+			}
+			modifier = {
+				factor = 0.25
+				OR = {
+					religion = maronite
+					religion = miaphysite
+					religion = monophysite
+					religion = apostolic
+					religion = tondrakian
+					religion = nestorian
+					religion = messalian
+				}
+			}
+			religion = orthodox
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = bogomilist
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { has_global_flag = bogomilist_activated }
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					religion = maronite
+					religion = miaphysite
+					religion = monophysite
+					religion = apostolic
+					religion = tondrakian
+					religion = nestorian
+					religion = messalian
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = custom_balkans }
+					culture_group = south_slavic
+				}
+			}
+			modifier = {
+				factor = 1.5
+				culture_group = south_slavic
+			}
+			religion = bogomilist
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = monothelite
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					religion = nestorian
+					religion = messalian
+				}
+			}
+			modifier = {
+				factor = 0.25
+				OR = {
+					religion = miaphysite
+					religion = monophysite
+					religion = apostolic
+					religion = paulician
+					religion = tondrakian
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = world_middle_east }
+					event_target:heretic_province = { region = world_persia }
+					culture_group = arabic
+				}
+			}
+			religion = monothelite
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = iconoclast
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					religion = maronite
+					religion = miaphysite
+					religion = monophysite
+					religion = apostolic
+					religion = paulician
+					religion = tondrakian
+					religion = nestorian
+					religion = messalian
+				}
+			}
+			modifier = {
+				factor = 0.25
+				OR = {
+					NOT = { event_target:heretic_province = { region = world_europe_south_east } }
+					event_target:heretic_province = { region = custom_balkans }
+				}
+			}
+			religion = iconoclast
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = maronite
+			}
+			modifier = {
+				factor = 0
+				NOT = {
+					event_target:heretic_province = { region = world_middle_east_jerusalem }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = custom_lebanon }
+					culture = assyrian
+				}
+			}
+			religion = maronite
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = miaphysite
+			}
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_middle_east }
+					event_target:heretic_province = { region = world_africa }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					culture = egyptian_arabic
+					culture_group = east_african
+					event_target:heretic_province = { region = world_africa_east }
+				}
+			}
+			religion = miaphysite
+		}
+		25 = {
+			modifier = {
+				factor = 0
+				religion = monophysite
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					religion = orthodox
+					religion = bogomilist
+					religion = monothelite
+					religion = iconoclast
+					religion = nestorian
+					religion = messalian
+				}
+			}
+			modifier = {
+				factor = 0.25
+				OR = {
+					religion = maronite
+					religion = apostolic
+					religion = paulician
+					religion = tondrakian
+				}
+			}
+			religion = monophysite
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = apostolic
+			}
+			modifier = {
+				factor = 0
+				NOT = {
+					event_target:heretic_province = { region = world_asia_minor }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOT = { culture = armenian }
+			}
+			religion = apostolic
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = paulician
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					religion = miaphysite
+					religion = monophysite
+					religion = maronite
+					religion = nestorian
+					religion = messalian
+				}
+			}
+			modifier = {
+				factor = 0.5
+				OR = {
+					religion = orthodox
+					religion = bogomilist
+					religion = monothelite
+					religion = iconoclast
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = world_europe_south_east }
+					event_target:heretic_province = { region = world_asia_minor }
+					culture = armenian
+				}
+			}
+			religion = paulician
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = tondrakian
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					religion = miaphysite
+					religion = monophysite
+					religion = maronite
+					religion = nestorian
+					religion = messalian
+				}
+			}
+			modifier = {
+				factor = 0.25
+				OR = {
+					religion = orthodox
+					religion = bogomilist
+					religion = monothelite
+					religion = iconoclast
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = world_asia_minor }
+					culture = armenian
+					culture = georgian
+				}
+			}
+			religion = tondrakian
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = nestorian
+			}
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_india }
+					event_target:heretic_province = { region = world_steppe }
+					event_target:heretic_province = { region = world_middle_east }
+					event_target:heretic_province = { region = world_asia_minor }
+					event_target:heretic_province = { region = world_persia }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = world_india }
+					event_target:heretic_province = { region = world_steppe }
+					event_target:heretic_province = { region = world_persia }
+				}
+			}
+			modifier = {
+				factor = 0.5
+				year = 1200
+			}
+			religion = nestorian
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = messalian
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					religion = apostolic
+					religion = paulician
+					religion = tondrakian
+				}
+			}
+			modifier = {
+				factor = 0.25
+				OR = {
+					religion = orthodox
+					religion = bogomilist
+					religion = monothelite
+					religion = iconoclast
+					religion = miaphysite
+					religion = monophysite
+					religion = maronite
+				}
+			}
+			religion = messalian
+		}
+		25 = {
+			religion = catholic
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_europe_west }
+					event_target:heretic_province = { region = world_europe_south_italy }
+					event_target:heretic_province = { region = world_europe_east }
+				}
+			}
+			modifier = {
+				factor = 2
+				OR = {
+					religion = miaphysite
+					religion = monophysite
+					religion = maronite
+				}
+			}
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_persia }
+					event_target:heretic_province = { region = world_steppe_east }
+					event_target:heretic_province = { region = world_steppe_tarim }
+					event_target:heretic_province = { region = world_middle_east_arabia }
+					trait = sympathy_zoroastrianism
+				}
+			}
+			modifier = {
+				factor = 2
+				OR = {
+					trait = sympathy_zoroastrianism
+					religion = nestorian
+					religion = messalian
+				}
+			}
+			modifier = {
+				factor = 0.5
+				year = 1100
+			}
+			modifier = {
+				factor = 0.5
+				year = 1200
+			}
+			religion = zoroastrian
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_persia }
+					event_target:heretic_province = { region = world_steppe_east }
+					event_target:heretic_province = { region = world_steppe_tarim }
+					event_target:heretic_province = { region = world_middle_east_arabia }
+					trait = sympathy_zoroastrianism
+				}
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_zoroastrianism
+			}
+			modifier = {
+				factor = 0.5
+				year = 1100
+			}
+			modifier = {
+				factor = 0.5
+				year = 1200
+			}
+			religion = manichean
+		}
+		10 = {
+			modifier = {
+				factor = 0.1
+				NOR = {
+					event_target:heretic_province = { region = world_middle_east_jerusalem }
+					culture_group = israelite
+					trait = sympathy_judaism
+				}
+			}
+			modifier = {
+				factor = 2.5
+				trait = sympathy_judaism
+			}
+			religion = jewish
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					trait = sympathy_islam
+					event_target:heretic_province = { region = world_middle_east }
+					event_target:heretic_province = { region = world_steppe }
+					event_target:heretic_province = { region = world_africa }
+					event_target:heretic_province = { region = world_persia }
+				}
+			}
+			modifier = {
+				factor = 2.5
+				trait = sympathy_islam
+			}
+			modifier = {
+				factor = 2.5
+				OR = {
+					religion = miaphysite
+					religion = monophysite
+					religion = maronite
+				}
+			}
+			religion = sunni
+		}
+	}
+	break = yes
+}
+
+emf_muslim_conversion_effect = {
+	random_list = {
+		75 = {
+			modifier = {
+				factor = 0
+				religion = sunni
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					religion = zaydi
+					religion = ismaili
+					religion = druze
+					religion = qarmatian
+				}
+			}
+			modifier = {
+				factor = 0.5
+				OR = {
+					religion = ibadi
+					religion = kharijite
+					religion = haruri
+					religion = shiite
+					religion = waqifi
+					religion = hurufi
+				}
+			}
+			religion = sunni
+		}
+		25 = {
+			modifier = {
+				factor = 0
+				religion = mahdiyya
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					religion = haruri
+					religion = shiite
+					religion = waqifi
+					religion = zaydi
+					religion = hurufi
+					religion = ismaili
+					religion = druze
+					religion = qarmatian
+				}
+			}
+			modifier = {
+				factor = 0.5
+				OR = {
+					religion = ibadi
+					religion = kharijite
+				}
+			}
+			modifier = {
+				factor = 2
+				culture = berber
+			}
+			religion = mahdiyya
+		}
+		25 = {
+			modifier = {
+				factor = 0
+				religion = nabawiyya
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					religion = haruri
+					religion = shiite
+					religion = waqifi
+					religion = zaydi
+					religion = hurufi
+					religion = ismaili
+					religion = druze
+					religion = qarmatian
+				}
+			}
+			modifier = {
+				factor = 0.5
+				OR = {
+					religion = ibadi
+					religion = kharijite
+				}
+			}
+			modifier = {
+				factor = 0
+				culture_group = arabic
+			}
+			religion = nabawiyya
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = yazidi
+			}
+			modifier = {
+				factor = 0
+				NOR = {
+					culture = kurdish
+					event_target:heretic_province = { region = world_asia_minor }
+					trait = sympathy_zoroastrianism
+				}
+			}
+			modifier = {
+				factor = 2
+				culture = kurdish
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_zoroastrianism
+			}
+			modifier = {
+				factor = 0.25
+				NOT = { culture = kurdish }
+			}
+			religion = yazidi
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = ibadi
+			}
+			modifier = {
+				factor = 0.25
+				OR = {
+					religion = sunni
+					religion = mahdiyya
+					religion = nabawiyya
+					religion = shiite
+					religion = waqifi
+					religion = zaydi
+					religion = hurufi
+					religion = ismaili
+					religion = druze
+					religion = qarmatian
+				}
+			}
+			modifier = {
+				factor = 0.5
+				NOR = {
+					event_target:heretic_province = { region = world_africa }
+					event_target:heretic_province = { region = world_middle_east_arabia }
+					culture = bedouin_arabic
+				}
+			}
+			religion = ibadi
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = kharijite
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					religion = shiite
+					religion = waqifi
+					religion = zaydi
+					religion = hurufi
+					religion = ismaili
+					religion = druze
+					religion = qarmatian
+				}
+			}
+			modifier = {
+				factor = 0.5
+				trait = sayyid
+				religion = sunni
+			}
+			religion = kharijite
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = haruri
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					religion = sunni
+					religion = mahdiyya
+					religion = nabawiyya
+					religion = shiite
+					religion = waqifi
+					religion = zaydi
+					religion = hurufi
+					religion = ismaili
+					religion = druze
+					religion = qarmatian
+				}
+			}
+			religion = haruri
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = shiite
+			}
+			modifier = {
+				factor = 0.5
+				OR = {
+					religion = sunni
+					religion = mahdiyya
+					religion = nabawiyya
+					religion = ibadi
+					religion = kharijite
+					religion = haruri
+					religion = druze
+					religion = qarmatian
+				}
+			}
+			modifier = {
+				factor = 0.5
+				trait = sayyid
+				religion = sunni
+			}
+			religion = shiite
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = waqifi
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					religion = sunni
+					religion = mahdiyya
+					religion = nabawiyya
+					religion = ibadi
+					religion = kharijite
+					religion = haruri
+					religion = ismaili
+					religion = druze
+					religion = qarmatian
+				}
+			}
+			religion = waqifi
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = zaydi
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					religion = ibadi
+					religion = kharijite
+					religion = haruri
+					religion = ismaili
+					religion = druze
+					religion = qarmatian
+				}
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { trait = sayyid }
+				religion = sunni
+			}
+			religion = zaydi
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = hurufi
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					religion = sunni
+					religion = mahdiyya
+					religion = nabawiyya
+					religion = ibadi
+					religion = kharijite
+					religion = haruri
+					religion = ismaili
+					religion = druze
+					religion = qarmatian
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOT = { year = 1250 }
+			}
+			religion = hurufi
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = ismaili
+			}
+			modifier = {
+				factor = 0.5
+				OR = {
+					religion = sunni
+					religion = mahdiyya
+					religion = nabawiyya
+					religion = ibadi
+					religion = kharijite
+					religion = haruri
+					religion = waqifi
+					religion = zaydi
+					religion = hurufi
+				}
+			}
+			modifier = {
+				factor = 0.5
+				trait = sayyid
+				religion = sunni
+			}
+			religion = ismaili
+		}
+		50 = {
+			modifier = {
+				factor = 0
+				religion = druze
+			}
+			modifier = {
+				factor = 0
+				NOT = { has_global_flag = druze_activated }
+			}
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_middle_east_jerusalem }
+					culture = levantine_arabic
+				}
+			}
+			modifier = {
+				factor = 0.25
+				culture = levantine_arabic
+				NOT = { event_target:heretic_province = { region = world_middle_east_jerusalem } }
+			}
+			religion = druze
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = qarmatian
+			}
+			modifier = {
+				factor = 0
+				NOT = { has_global_flag = qarmatian_activated }
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					religion = sunni
+					religion = mahdiyya
+					religion = nabawiyya
+					religion = ibadi
+					religion = kharijite
+					religion = haruri
+					religion = shiite
+					religion = waqifi
+					religion = zaydi
+					religion = hurufi
+				}
+			}
+			religion = qarmatian
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_europe_west }
+					event_target:heretic_province = { region = world_europe_south_italy }
+					event_target:heretic_province = { region = world_europe_east }
+				}
+			}
+			modifier = {
+				factor = 2.5
+				trait = sympathy_christendom
+			}
+			religion = catholic
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_europe_south_east }
+					event_target:heretic_province = { region = world_europe_east }
+					event_target:heretic_province = { region = world_asia_minor }
+					event_target:heretic_province = { region = world_middle_east_jerusalem }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = world_europe_south_east }
+					culture_group = byzantine
+					culture_group = east_slavic
+					culture_group = south_slavic
+				}
+			}
+			modifier = {
+				factor = 2.5
+				trait = sympathy_christendom
+			}
+			religion = orthodox
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOT = {
+					event_target:heretic_province = { region = world_middle_east_jerusalem }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = custom_lebanon }
+					culture = assyrian
+				}
+			}
+			modifier = {
+				factor = 2.5
+				trait = sympathy_christendom
+			}
+			religion = maronite
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_middle_east }
+					event_target:heretic_province = { region = world_africa }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					culture = egyptian_arabic
+					culture_group = east_african
+					event_target:heretic_province = { region = world_africa_east }
+				}
+			}
+			modifier = {
+				factor = 2.5
+				trait = sympathy_christendom
+			}
+			religion = miaphysite
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOT = {
+					event_target:heretic_province = { region = world_asia_minor }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOT = { culture = armenian }
+			}
+			modifier = {
+				factor = 2.5
+				trait = sympathy_christendom
+			}
+			religion = apostolic
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_india }
+					event_target:heretic_province = { region = world_steppe }
+					event_target:heretic_province = { region = world_middle_east }
+					event_target:heretic_province = { region = world_asia_minor }
+					event_target:heretic_province = { region = world_persia }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = world_india }
+					event_target:heretic_province = { region = world_steppe }
+					event_target:heretic_province = { region = world_persia }
+				}
+			}
+			modifier = {
+				factor = 0.5
+				year = 1200
+			}
+			modifier = {
+				factor = 2.5
+				trait = sympathy_christendom
+			}
+			religion = nestorian
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_persia }
+					event_target:heretic_province = { region = world_steppe_east }
+					event_target:heretic_province = { region = world_steppe_tarim }
+					event_target:heretic_province = { region = world_middle_east_arabia }
+					trait = sympathy_zoroastrianism
+				}
+			}
+			modifier = {
+				factor = 2.5
+				trait = sympathy_zoroastrianism
+			}
+			modifier = {
+				factor = 2
+				culture = persian
+			}
+			modifier = {
+				factor = 0.5
+				year = 1100
+			}
+			modifier = {
+				factor = 0.5
+				year = 1200
+			}
+			religion = zoroastrian
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_persia }
+					event_target:heretic_province = { region = world_steppe_east }
+					event_target:heretic_province = { region = world_steppe_tarim }
+					event_target:heretic_province = { region = world_middle_east_arabia }
+					trait = sympathy_zoroastrianism
+				}
+			}
+			modifier = {
+				factor = 2.5
+				trait = sympathy_zoroastrianism
+			}
+			modifier = {
+				factor = 0.5
+				year = 1100
+			}
+			modifier = {
+				factor = 0.5
+				year = 1200
+			}
+			religion = manichean
+		}
+		10 = {
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = world_middle_east_jerusalem }
+					culture_group = israelite
+					trait = sympathy_judaism
+				}
+			}
+			modifier = {
+				factor = 2.5
+				trait = sympathy_judaism
+			}
+			religion = jewish
+		}
+	}
+	break = yes
+}
+
+emf_zoroastrian_conversion_effect = {
+	random_list = {
+		75 = {
+			modifier = {
+				factor = 0
+				religion = zoroastrian
+			}
+			modifier = {
+				factor = 0.25
+				OR = {
+					religion = manichean
+					religion = mandaean
+					religion = yazidi
+				}
+			}
+			religion = zoroastrian
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = mazdaki
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					religion = manichean
+					religion = mandaean
+					religion = yazidi
+				}
+			}
+			religion = mazdaki
+		}
+		50 = {
+			modifier = {
+				factor = 0
+				religion = zurvanist
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					religion = manichean
+					religion = mandaean
+					religion = yazidi
+				}
+			}
+			religion = zurvanist
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = manichean
+			}
+			modifier = {
+				factor = 0.25
+				OR = {
+					religion = zoroastrian
+					religion = mazdaki
+					religion = zurvanist
+					religion = yazidi
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = world_persia }
+					event_target:heretic_province = { region = world_steppe_east }
+					event_target:heretic_province = { region = world_steppe_tarim }
+					event_target:heretic_province = { region = world_middle_east_arabia }
+					religion = mandaean
+				}
+			}
+			modifier = {
+				factor = 0.5
+				year = 1100
+			}
+			modifier = {
+				factor = 0.5
+				year = 1200
+			}
+			religion = manichean
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = mandaean
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					religion = zoroastrian
+					religion = mazdaki
+					religion = zurvanist
+					religion = yazidi
+				}
+			}
+			religion = mandaean
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = yazidi
+			}
+			modifier = {
+				factor = 0
+				NOR = {
+					culture = kurdish
+					event_target:heretic_province = { region = world_asia_minor }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOT = { culture = kurdish }
+			}
+			religion = yazidi
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_europe_west }
+					event_target:heretic_province = { region = world_europe_south_italy }
+					event_target:heretic_province = { region = world_europe_east }
+				}
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_christendom
+			}
+			religion = catholic
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_europe_south_east }
+					event_target:heretic_province = { region = world_europe_east }
+					event_target:heretic_province = { region = world_asia_minor }
+					event_target:heretic_province = { region = world_middle_east_jerusalem }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = world_europe_south_east }
+					culture_group = byzantine
+					culture_group = east_slavic
+					culture_group = south_slavic
+				}
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_christendom
+			}
+			religion = orthodox
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOT = {
+					event_target:heretic_province = { region = world_middle_east_jerusalem }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = custom_lebanon }
+					culture = assyrian
+				}
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_christendom
+			}
+			religion = maronite
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_middle_east }
+					event_target:heretic_province = { region = world_africa }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					culture = egyptian_arabic
+					culture_group = east_african
+					event_target:heretic_province = { region = world_africa_east }
+				}
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_christendom
+			}
+			religion = miaphysite
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOT = {
+					event_target:heretic_province = { region = world_asia_minor }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOT = { culture = armenian }
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_christendom
+			}
+			religion = apostolic
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_india }
+					event_target:heretic_province = { region = world_steppe }
+					event_target:heretic_province = { region = world_middle_east }
+					event_target:heretic_province = { region = world_asia_minor }
+					event_target:heretic_province = { region = world_persia }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = world_india }
+					event_target:heretic_province = { region = world_steppe }
+					event_target:heretic_province = { region = world_persia }
+				}
+			}
+			modifier = {
+				factor = 0.5
+				year = 1200
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_christendom
+			}
+			religion = nestorian
+		}
+		10 = {
+			modifier = {
+				factor = 0.1
+				NOR = {
+					event_target:heretic_province = { region = world_middle_east_jerusalem }
+					culture_group = israelite
+					trait = sympathy_judaism
+				}
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_judaism
+			}
+			religion = jewish
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					trait = sympathy_islam
+					event_target:heretic_province = { region = world_middle_east }
+					event_target:heretic_province = { region = world_steppe }
+					event_target:heretic_province = { region = world_africa }
+					event_target:heretic_province = { region = world_persia }
+				}
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_islam
+			}
+			religion = sunni
+		}
+	}
+	break = yes
+}
+
+emf_jewish_conversion_effect = {
+	random_list = {
+		75 = {
+			modifier = {
+				factor = 0
+				religion = jewish
+			}
+			religion = jewish
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = samaritan
+			}
+			modifier = {
+				factor = 0.25
+				culture_group = altaic
+			}
+			religion = samaritan
+		}
+		75 = {
+			modifier = {
+				factor = 0
+				religion = karaite
+			}
+			modifier = {
+				factor = 0.25
+				NOT = { culture_group = altaic }
+			}
+			religion = karaite
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_europe_west }
+					event_target:heretic_province = { region = world_europe_south_italy }
+					event_target:heretic_province = { region = world_europe_east }
+				}
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_christendom
+			}
+			religion = catholic
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_europe_south_east }
+					event_target:heretic_province = { region = world_europe_east }
+					event_target:heretic_province = { region = world_asia_minor }
+					event_target:heretic_province = { region = world_middle_east_jerusalem }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = world_europe_south_east }
+					culture_group = byzantine
+					culture_group = east_slavic
+					culture_group = south_slavic
+				}
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_christendom
+			}
+			religion = orthodox
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOT = {
+					event_target:heretic_province = { region = world_middle_east_jerusalem }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = custom_lebanon }
+					culture = assyrian
+				}
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_christendom
+			}
+			religion = maronite
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_middle_east }
+					event_target:heretic_province = { region = world_africa }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					culture = egyptian_arabic
+					culture_group = east_african
+					event_target:heretic_province = { region = world_africa_east }
+				}
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_christendom
+			}
+			religion = miaphysite
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOT = {
+					event_target:heretic_province = { region = world_asia_minor }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOT = { culture = armenian }
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_christendom
+			}
+			religion = apostolic
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_india }
+					event_target:heretic_province = { region = world_steppe }
+					event_target:heretic_province = { region = world_middle_east }
+					event_target:heretic_province = { region = world_asia_minor }
+					event_target:heretic_province = { region = world_persia }
+				}
+			}
+			modifier = {
+				factor = 0.25
+				NOR = {
+					event_target:heretic_province = { region = world_india }
+					event_target:heretic_province = { region = world_steppe }
+					event_target:heretic_province = { region = world_persia }
+				}
+			}
+			modifier = {
+				factor = 0.5
+				year = 1200
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_christendom
+			}
+			religion = nestorian
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_persia }
+					event_target:heretic_province = { region = world_steppe_east }
+					event_target:heretic_province = { region = world_steppe_tarim }
+					event_target:heretic_province = { region = world_middle_east_arabia }
+					trait = sympathy_zoroastrianism
+				}
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_zoroastrianism
+			}
+			modifier = {
+				factor = 0.5
+				year = 1100
+			}
+			modifier = {
+				factor = 0.5
+				year = 1200
+			}
+			religion = zoroastrian
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:heretic_province = { region = world_persia }
+					event_target:heretic_province = { region = world_steppe_east }
+					event_target:heretic_province = { region = world_steppe_tarim }
+					event_target:heretic_province = { region = world_middle_east_arabia }
+					trait = sympathy_zoroastrianism
+				}
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_zoroastrianism
+			}
+			modifier = {
+				factor = 0.5
+				year = 1100
+			}
+			modifier = {
+				factor = 0.5
+				year = 1200
+			}
+			religion = manichean
+		}
+		10 = {
+			modifier = {
+				factor = 0
+				NOR = {
+					trait = sympathy_islam
+					event_target:heretic_province = { region = world_middle_east }
+					event_target:heretic_province = { region = world_steppe }
+					event_target:heretic_province = { region = world_africa }
+					event_target:heretic_province = { region = world_persia }
+				}
+			}
+			modifier = {
+				factor = 2
+				trait = sympathy_islam
+			}
+			religion = sunni
+		}
+	}
+	break = yes
+}
+
