@@ -955,28 +955,12 @@ narrative_event = {
 			NOT = { character = FROM }
 			has_opinion_modifier = { who = FROM modifier = attending_coronation }
 		}
-		if = {
-			limit = { ai = no }
-			chronicle = {
-				entry = CHRONICLE_NORMAL_CORONATION
-				portrait = [Root.GetID]
-				picture = GFX_evt_coronation
-			}
-		}
 	}
 	option = {
 		name = EVTOPTC_emf_coronation_1215
 		trigger = {
 			NOT = { character = FROM }
 			NOT = { has_opinion_modifier = { who = FROM modifier = attending_coronation } }
-		}
-		if = {
-			limit = { ai = no }
-			chronicle = {
-				entry = CHRONICLE_NORMAL_CORONATION
-				portrait = [Root.GetID]
-				picture = GFX_evt_coronation
-			}
 		}
 	}
 }
@@ -3795,85 +3779,53 @@ character_event = {
 	option = {
 		name = EVTOPTA_emf_coronation_1177 #Excellent, now invite all the lords
 		scaled_wealth = -1.0
+		custom_tooltip = { text = send_invitations }
 		hidden_tooltip = {
-			any_realm_character = {
+			clr_character_flag = wants_coronation
+			set_character_flag = planning_coronation
+			set_character_flag = has_priest_to_perform_coronation
+			reverse_opinion = { who = FROM modifier = attending_coronation months = 12 }
+			opinion = { who = FROM modifier = attending_coronation months = 12 }
+			reverse_opinion = { who = FROM modifier = opinion_performed_coronation months = 120 }
+			opinion = { who = FROM modifier = opinion_performed_coronation months = 120 }
+			any_character = {
 				limit = {
-					has_regent = no
+					is_adult = yes
+					prisoner = no
+					is_within_diplo_range = ROOT
 					OR = {
-						is_ruler = yes
-						spouse = { is_ruler = yes }
+						is_vassal_or_below = ROOT
+						is_liege_or_above = ROOT
+						is_close_relative = ROOT
+						dynasty = ROOT
+						is_allied_with = ROOT
+						has_non_aggression_pact_with = ROOT
+						AND = {
+							same_realm = ROOT
+							higher_tier_than = BARON
+						}
+						AND = {
+							religion = ROOT
+							any_realm_province = {
+								ROOT = {
+									any_realm_province = {
+										NOT = { distance = { where = PREVPREV value = 125 } }
+									}
+								}
+							}
+						}
 					}
-					religion = ROOT
-					NOT = { character = FROM }
-					NOT = { trait = excommunicated }
+					NOR = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						character = ROOT
+						trait = incapable
+						trait = excommunicated
+						has_truce = ROOT
+					}
 				}
-				letter_event = { id = emf_coronation.1323 } # Invitation to coronation
+				letter_event = { id = emf_coronation.1201 }
 			}
 			FROM = { character_event = { id = emf_coronation.1324 } }
-		}
-	}
-}
-
-# Invitation to the coronation
-letter_event = {
-	id = emf_coronation.1323
-	desc = EVTDESC_emf_coronation_1323
-
-	is_triggered_only = yes
-
-	option = {
-		name = EVTOPTA_emf_coronation_1179 # I will attend the ceremony
-		ai_chance = {
-			factor = 80
-			modifier = {
-				factor = 1.2
-				opinion = { who = FROM value = 20 }
-			}
-			modifier = {
-				factor = 1.2
-				opinion = { who = FROM value = 40 }
-			}
-			modifier = {
-				factor = 1.6
-				opinion = { who = FROM value = 60 }
-			}
-			modifier = {
-				factor = 2.0
-				opinion = { who = FROM value = 80 }
-			}
-		}
-		set_character_flag = attend_byzantine_coronation
-	}
-	option = {
-		name = EVTOPTB_emf_coronation_1179 # I have more important things to do
-		ai_chance = {
-			factor = 20
-			modifier = {
-				factor = 4.0
-				is_foe = FROM
-			}
-			modifier = {
-				factor = 1.2
-				NOT = { opinion = { who = FROM value = -20 } }
-			}
-			modifier = {
-				factor = 1.2
-				NOT = { opinion = { who = FROM value = -40 } }
-			}
-			modifier = {
-				factor = 1.5
-				NOT = { opinion = { who = FROM value = -60 } }
-			}
-			modifier = {
-				factor = 1.5
-				NOT = { opinion = { who = FROM value = -80 } }
-			}
-		}
-		if = {
-			limit = { higher_tier_than = COUNT }
-			FROM = {
-				letter_event = { id = emf_coronation.1480 days = 2 random = 8 }
-			}
 		}
 	}
 }
@@ -4231,7 +4183,7 @@ character_event = {
 				}
 			}
 		}
-		FROM = { character_event = { id = emf_coronation.1326 days = 30 } }
+		FROM = { narrative_event = { id = emf_coronation.1326 days = 30 } }
    }
 }
 
@@ -4240,6 +4192,8 @@ narrative_event = {
 	id = emf_coronation.1325
 	title = EVTNAME_emf_coronation_1325
 	picture = GFX_evt_coronation_orthodox
+	border = GFX_event_narrative_frame_religion
+	sound = church_bells
 	
 	desc = {
 		text = EVTDESC_emf_coronation_1325
@@ -4259,30 +4213,60 @@ narrative_event = {
 	}
 	
 	major = yes
+	is_triggered_only = yes
 	hide_from = yes
 	show_ROOT = yes
-
-	is_triggered_only = yes
+	
+	trigger = {
+		has_character_flag = planning_coronation
+	}
 
 	option = {
 		name = EVTOPTA_emf_coronation_1325
 		trigger = {
 			has_landed_title = e_byzantium
 		}
-		prestige = 200
 		piety = 100
+		prestige = 250
 		add_trait = strong_basileus
 		religion_authority = { modifier = strong_emperor_byz }
+		
+		if = {
+			limit = { trait = humble }
+			random = {
+				chance = 50
+				remove_trait = humble
+			}
+		}
+		if = {
+			limit = {
+				NOT = { trait = humble }
+				NOT = { trait = proud }
+			}
+			random = {
+				chance = 50
+				add_trait = proud
+				hidden_tooltip = { character_event = { id = 38261 } } # notify proud
+			}
+		}
+		
+		pf_court_plus2_effect = yes
+		pf_tradition_plus2_effect = yes
+		
 		hidden_tooltip = {
 			if = {
 				limit = { is_ironman = no }
 				e_byzantium = { change_variable = { which = "imperial_decay" value = -5 } }
 			}
 			character_event = { id = emf_imperial.1852 } # change the decay modifier
-			any_realm_character = {
-				limit = { has_character_flag = attend_byzantine_coronation }
-				clr_character_flag = attend_byzantine_coronation
-				opinion = { modifier = opinion_attended_ceremony who = ROOT years = 5 }
+			character_event = { id = emf_coronation.1216 days = 1 } # the feast begins
+		}
+		if = {
+			limit = { ai = no }
+			chronicle = {
+				entry = CHRONICLE_NORMAL_CORONATION
+				portrait = [Root.GetID]
+				picture = GFX_evt_coronation
 			}
 		}
 	}	
@@ -4291,6 +4275,20 @@ narrative_event = {
 		trigger = {
 			NOT = { has_landed_title = e_byzantium }
 			any_liege = { has_landed_title = e_byzantium }
+		}
+		tooltip = {
+			ROOT = {
+				add_trait = strong_basileus
+				religion_authority = { modifier = strong_emperor_byz }
+			}
+		}
+		if = {
+			limit = { ai = no }
+			chronicle = {
+				entry = CHRONICLE_NORMAL_CORONATION
+				portrait = [Root.GetID]
+				picture = GFX_evt_coronation
+			}
 		}
 	}
 	option = {
@@ -4303,40 +4301,67 @@ narrative_event = {
 }
 
 # Weak Basileus ascends
-character_event = {
+narrative_event = {
 	id = emf_coronation.1326
-	desc = EVTDESC_emf_coronation_1326
+	title = EVTNAME_emf_coronation_1325
+	desc = EVTDESC_emf_coronation_1327
 	picture = GFX_evt_coronation_orthodox
+	border = GFX_event_narrative_frame_religion
+	sound = church_bells
 
+	major = yes
 	is_triggered_only = yes
+	hide_from = yes
+	show_ROOT = yes
+	
+	trigger = {
+		has_character_flag = planning_coronation
+	}
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+			same_realm = ROOT
+		}
+	}
 
 	option = {
 		name = EVTOPTA_emf_coronation_1326
+		trigger = {
+			has_landed_title = e_byzantium
+		}
 		piety = 100
 		add_trait = weak_basileus
 		religion_authority = { modifier = weak_emperor_byz }
+		
+		pf_court_plus1_effect = yes
+		pf_tradition_plus1_effect = yes
 		emf_imperial_decay_minus_1_effect = yes
+		
 		hidden_tooltip = {
-			any_realm_character = {
-				limit = { has_character_flag = attend_byzantine_coronation }
-				character_event = { id = emf_coronation.1327 }
+			character_event = { id = emf_coronation.1216 days = 1 } # the feast begins
+		}
+		if = {
+			limit = { ai = no }
+			chronicle = {
+				entry = CHRONICLE_NORMAL_CORONATION
+				portrait = [Root.GetID]
+				picture = GFX_evt_coronation
 			}
 		}
 	}
-}
-
-# Vassals notified of weak basileus's coronation
-character_event = {
-	id = emf_coronation.1327
-	desc = EVTDESC_emf_coronation_1327
-	picture = GFX_evt_coronation_orthodox
-	
-	is_triggered_only = yes
-	
 	option = {
-		name = EVTOPTA_emf_coronation_1327
-		clr_character_flag = attend_byzantine_coronation
-		opinion = { modifier = opinion_attended_ceremony who = FROM years = 5 }
+		name = I_SEE
+		trigger = {
+			NOT = { has_landed_title = e_byzantium }
+		}
+		tooltip = {
+			ROOT = {
+				add_trait = weak_basileus
+				religion_authority = { modifier = weak_emperor_byz }
+			}
+		}
 	}
 }
 
@@ -4403,12 +4428,14 @@ character_event = {
 		}  
 		prestige = -200
 		piety = -350
+		scaled_wealth = -1.0
 		religion_authority = { modifier = deposed_patriarch_byz }
 		FROM = {
 			opinion = { who = ROOT modifier = opinion_basileus_patr_revoking months = 60 }
 			abdicate = yes
 		}
 		set_character_flag = forced_patriarch_to_abdicate  
+		custom_tooltip = { text = send_invitations }
 		if = {
 			limit = { any_vassal = { leads_faction = faction_tradition } }
 			custom_tooltip = { text = TRADITIONFACTIONMOODMINUS }
@@ -4421,27 +4448,54 @@ character_event = {
 			}
 		}
 		hidden_tooltip = {
+			clr_character_flag = wants_coronation
+			set_character_flag = planning_coronation
+			set_character_flag = has_priest_to_perform_coronation
 			religion_head = {
-				opinion = { who = ROOT modifier = opinion_basileus_patr_revoking months = 60 }
-			}
-			any_realm_character = {
-				limit = {
-					has_regent = no
-					OR = {
-						is_ruler = yes
-						spouse = { is_ruler = yes }
-					}
-					religion = ROOT
-					controls_religion = no
-					NOT = { character = FROM }
-					NOT = { trait = excommunicated }
-				}
-				letter_event = { id = emf_coronation.1323 } # Invitation to coronation
-			}
-			religion_head = {
-				character_event = { id = emf_coronation.1324 }
 				opinion = { who = ROOT modifier = opinion_appointed_patriarch months = 120 }
+				reverse_opinion = { who = ROOT modifier = attending_coronation months = 12 }
+				opinion = { who = ROOT modifier = attending_coronation months = 12 }
+				reverse_opinion = { who = ROOT modifier = opinion_performed_coronation months = 120 }
+				opinion = { who = ROOT modifier = opinion_performed_coronation months = 120 }
 			}
+			any_character = {
+				limit = {
+					is_adult = yes
+					prisoner = no
+					is_within_diplo_range = ROOT
+					OR = {
+						is_vassal_or_below = ROOT
+						is_liege_or_above = ROOT
+						is_close_relative = ROOT
+						dynasty = ROOT
+						is_allied_with = ROOT
+						has_non_aggression_pact_with = ROOT
+						AND = {
+							same_realm = ROOT
+							higher_tier_than = BARON
+						}
+						AND = {
+							religion = ROOT
+							any_realm_province = {
+								ROOT = {
+									any_realm_province = {
+										NOT = { distance = { where = PREVPREV value = 125 } }
+									}
+								}
+							}
+						}
+					}
+					NOR = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						character = ROOT
+						trait = incapable
+						trait = excommunicated
+						has_truce = ROOT
+					}
+				}
+				letter_event = { id = emf_coronation.1201 }
+			}
+			religion_head = { character_event = { id = emf_coronation.1324 } }
 		}
 		custom_tooltip = {
 			text = tyrant_custom_tooltip
@@ -4456,7 +4510,7 @@ character_event = {
 				}
 			}
 		}
-	}   
+	}
 	option = {
 		name = EVTOPTB_emf_coronation_1328
 		ai_chance = {
@@ -4519,7 +4573,7 @@ character_event = {
 			}   
 		}
 		prestige = -100       
-		clr_character_flag = during_the_coronation
+		clr_character_flag = wants_coronation
 		religion_head = { set_character_flag = refused_to_coronate }
 		emf_imperial_decay_plus_1_effect = yes
 	}
@@ -4603,7 +4657,7 @@ narrative_event = {
 
 ### HRE CORONATION EVENTS
 
-# Coronation inform Emperor -- triggered by decision: coronation
+# Coronationation decision taken
 character_event = {
 	id = emf_coronation.1475
 	desc = EVTDESC_emf_coronation_1475
@@ -4731,21 +4785,54 @@ letter_event = {
 
 	option = {
 		name = EVTOPTA_emf_coronation_1477 # Excellent, now invite all the lords
+		scaled_wealth = -1.0
+		custom_tooltip = { text = send_invitations }
 		hidden_tooltip = {
-			any_vassal = {
+			clr_character_flag = wants_coronation
+			set_character_flag = planning_coronation
+			set_character_flag = has_priest_to_perform_coronation
+			reverse_opinion = { who = FROM modifier = attending_coronation months = 12 }
+			opinion = { who = FROM modifier = attending_coronation months = 12 }
+			reverse_opinion = { who = FROM modifier = opinion_performed_coronation months = 120 }
+			opinion = { who = FROM modifier = opinion_performed_coronation months = 120 }
+			any_character = {
 				limit = {
 					is_adult = yes
-					is_playable = yes
 					prisoner = no
-					religion = ROOT
+					is_within_diplo_range = ROOT
+					OR = {
+						is_vassal_or_below = ROOT
+						is_liege_or_above = ROOT
+						is_close_relative = ROOT
+						dynasty = ROOT
+						is_allied_with = ROOT
+						has_non_aggression_pact_with = ROOT
+						AND = {
+							same_realm = ROOT
+							higher_tier_than = BARON
+						}
+						AND = {
+							religion = ROOT
+							any_realm_province = {
+								ROOT = {
+									any_realm_province = {
+										NOT = { distance = { where = PREVPREV value = 125 } }
+									}
+								}
+							}
+						}
+					}
 					NOR = {
-						trait = excommunicated
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						character = ROOT
 						trait = incapable
+						trait = excommunicated
+						has_truce = ROOT
 					}
 				}
-				letter_event = { id = emf_coronation.1479 } # Invitation to coronation
+				letter_event = { id = emf_coronation.1201 }
 			}
-			character_event = { id = emf_coronation.1481 days = 60 } # Coronation begins
+			narrative_event = { id = emf_coronation.1481 days = 60 } # Coronation begins
 		}
 	}
 }
@@ -4765,119 +4852,60 @@ letter_event = {
 	}
 }
 
-# Coronation invites to realm lords
-letter_event = {
-	id = emf_coronation.1479
-	desc = EVTDESC_emf_coronation_1479
-
-	is_triggered_only = yes
-
-	option = {
-		name = EVTOPTA_emf_coronation_1479 # I will attend the ceremony
-		ai_chance = {
-			factor = 80
-			modifier = {
-				factor = 1.2
-				opinion = { who = FROM value = 20 }
-			}
-			modifier = {
-				factor = 1.2
-				opinion = { who = FROM value = 40 }
-			}
-			modifier = {
-				factor = 1.6
-				opinion = { who = FROM value = 60 }
-			}
-			modifier = {
-				factor = 2.0
-				opinion = { who = FROM value = 80 }
-			}
-		}
-		set_character_flag = attend_coronation
-	}
-	option = {
-		name = EVTOPTB_emf_coronation_1479 # I have more important things to do
-		ai_chance = {
-			factor = 20
-			modifier = {
-				factor = 4.0
-				is_foe = FROM
-			}
-			modifier = {
-				factor = 1.2
-				NOT = { opinion = { who = FROM value = -20 } }
-			}
-			modifier = {
-				factor = 1.2
-				NOT = { opinion = { who = FROM value = -40 } }
-			}
-			modifier = {
-				factor = 1.2
-				NOT = { opinion = { who = FROM value = -60 } }
-			}
-			modifier = {
-				factor = 1.2
-				NOT = { opinion = { who = FROM value = -80 } }
-			}
-		}
-		FROM = {
-			letter_event = { id = emf_coronation.1480 }
-		}
-	}
-}
-
-# Inform Emperor of NOT attending ceremony
-letter_event = {
-	id = emf_coronation.1480
-	desc = EVTDESC_emf_coronation_1480
-
-	is_triggered_only = yes
-
-	option = {
-		name = EVTOPTA_emf_coronation_1480 # I have no words for such dishonour
-		ROOT = {
-			opinion = {
-				modifier = insulted
-				who = FROM
-				months = 60
-			}
-		}
-	}
-}
-
 # Emperor crowned by pope
-character_event = {
+narrative_event = {
 	id = emf_coronation.1481
-	title = EVTNAME_emf_coronation_1481
-	desc = EVTDESC_emf_coronation_1481
+	title = EVTNAME_emf_coronation_1484
+	desc = EVTDESC_emf_coronation_1484
 	picture = GFX_evt_holy_emperor
+	border = GFX_event_narrative_frame_religion
 	sound = church_bells
-
+	
+	major = yes
 	is_triggered_only = yes
+	hide_from = yes
+	show_ROOT = yes
+	
+	trigger = {
+		has_character_flag = planning_coronation
+	}	
 
 	option = {
 		name = EVTOPTA_emf_coronation_1481 # This is the happiest day of my life
-		clr_character_flag = wants_coronation
+		trigger = {
+			character = ROOT
+		}
+		piety = 100
+		prestige = 250
 		add_trait = crowned_by_pope
-		prestige = 500
-		emf_imperial_decay_minus_2_effect = yes
+		
+		if = {
+			limit = { trait = humble }
+			random = {
+				chance = 50
+				remove_trait = humble
+			}
+		}
+		if = {
+			limit = {
+				NOT = { trait = humble }
+				NOT = { trait = proud }
+			}
+			random = {
+				chance = 50
+				add_trait = proud
+				hidden_tooltip = { character_event = { id = 38261 } } # notify proud
+			}
+		}
+		
 		pf_court_plus2_effect = yes
 		pf_tradition_plus2_effect = yes
+		emf_imperial_decay_minus_2_effect = yes
+		
 		hidden_tooltip = {
-			religion_head = {
-				reverse_opinion = { modifier = opinion_grateful who = ROOT months = 60 }
-			}
-			any_vassal = {
-				limit = { has_character_flag = attend_coronation }
-				character_event = { id = emf_coronation.1482 }
-				opinion = { modifier = opinion_attended_ceremony who = ROOT years = 5 }
-			}
-			any_vassal = {
-				limit = { NOT = { has_character_flag = attend_coronation } }
-				letter_event = { id = emf_coronation.1483 }
-			}
-			narrative_event = { id = emf_coronation.1484 }
+			character_event = { id = emf_coronation.1216 days = 1 } # the feast begins
 		}
+		
 		if = {
 			limit = { ai = no }
 			chronicle = {
@@ -4887,20 +4915,12 @@ character_event = {
 			}
 		}
 	}
-}
-
-# Emperor crowned by pope - attended realm lords informed of ceremony
-character_event = {
-	id = emf_coronation.1482
-	desc = EVTDESC_emf_coronation_1482
-	picture = GFX_evt_holy_emperor
-
-	is_triggered_only = yes
-
 	option = {
-		name = EVTOPTA_emf_coronation_1482 # The coronation was beautiful
-		prestige = 20
-		clr_character_flag = attend_coronation
+		name = EVTOPTA_emf_coronation_1482
+		trigger = {
+			NOT = { character = ROOT }
+			has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+		}
 		if = {
 			limit = { ai = no }
 			chronicle = {
@@ -4910,17 +4930,13 @@ character_event = {
 			}
 		}
 	}
-}
-
-# Emperor crowned by pope - non-attending realm lords informed of ceremony
-letter_event = {
-	id = emf_coronation.1483
-	desc = EVTDESC_emf_coronation_1483
-
-	is_triggered_only = yes
-
 	option = {
-		name = OK
+		name = EVTDESC_emf_coronation_1483
+		trigger = {
+			NOT = { character = ROOT }
+			NOT = { has_opinion_modifier = { who = ROOT modifier = attending_coronation } }
+			same_realm = ROOT
+		}
 		if = {
 			limit = { ai = no }
 			chronicle = {
@@ -4930,22 +4946,13 @@ letter_event = {
 			}
 		}
 	}
-}
-
-# HRE Coronation narrative event
-narrative_event = {
-	id = emf_coronation.1484
-	title = EVTNAME_emf_coronation_1484
-	desc = EVTDESC_emf_coronation_1484
-	picture = GFX_evt_holy_emperor
-	border = GFX_event_narrative_frame_religion
-
-	major = yes
-
-	is_triggered_only = yes
-
 	option = {
 		name = OK
+		trigger = {
+			NOT = { character = ROOT }
+			NOT = { has_opinion_modifier = { who = ROOT modifier = attending_coronation } }
+			NOT = { same_realm = ROOT }
+		}
 	}
 }
 
