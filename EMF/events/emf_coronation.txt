@@ -1,0 +1,4960 @@
+# -*- ck2.events -*-
+
+namespace = emf_coronation
+
+#######################################
+# CORONATION EVENTS
+# Written by Rylock
+#######################################
+
+### MAINTENANCE EVENTS
+
+# Initialization event
+character_event = {
+	id = emf_coronation.1100
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	immediate = {
+		# Add Crowned/Crowned by Pope/Weak Basileus traits
+		any_playable_ruler = {
+			limit = {
+				higher_real_tier_than = DUKE
+				is_adult = yes
+				is_feudal = yes
+				has_horde_culture = no
+				is_nomadic = no
+				primary_title = { is_vice_royalty = no }
+				NOR = {
+					trait = crowned
+					trait = uncrowned
+					trait = crowned_by_pope
+					trait = strong_basileus
+					trait = weak_basileus
+				}
+			}
+			if = {
+				limit = { emf_uses_byzantine_coronation = yes }
+				add_trait = weak_basileus
+			}
+			if = {
+				limit = { emf_uses_hre_coronation = yes }
+				add_trait = crowned_by_pope
+			}
+			if = {
+				limit = {
+					emf_uses_byzantine_coronation = no
+					emf_uses_hre_coronation = no
+				}
+				add_trait = crowned
+			}
+		}
+		
+		# Add Uncrowned to everyone else
+		any_playable_ruler = {
+			limit = {
+				higher_real_tier_than = DUKE
+				is_feudal = yes
+				has_horde_culture = no
+				is_nomadic = no
+				primary_title = { is_vice_royalty = no }
+				NOR = {
+					trait = crowned
+					trait = uncrowned
+					trait = crowned_by_pope
+					trait = strong_basileus
+					trait = weak_basileus
+				}
+			}
+			add_trait = uncrowned
+		}
+		
+		# Initialize Imperial Decay
+		any_playable_ruler = {
+			limit = { emf_uses_imperial_decay_trigger = yes }
+			character_event = { id = emf_imperial.1852 }
+		}
+	}
+}
+
+# Add Uncrowned trait to new kings and emperors
+character_event = {
+	id = emf_coronation.1101
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	trigger = {
+		FROM = {
+			higher_tier_than = DUKE
+			temporary = no
+		}
+		NOT = { has_landed_title = e_hip }
+	}
+	
+	immediate = {
+		# Add Uncrowned trait
+		if = {
+			limit = {
+				is_adult = yes
+				is_feudal = yes
+				has_horde_culture = no
+				is_nomadic = no
+				primary_title = { is_vice_royalty = no }
+				NOR = {
+					trait = crowned
+					trait = uncrowned
+					trait = crowned_by_pope
+					trait = strong_basileus
+					trait = weak_basileus
+				}
+			}
+			add_trait = uncrowned
+		}
+		# Remove old ruler's coronation traits, if necessary
+		FROMFROM = {
+			if = {
+				limit = {
+					is_alive = yes
+					OR = {
+						trait = crowned
+						trait = uncrowned
+						trait = crowned_by_pope
+						trait = strong_basileus
+						trait = weak_basileus
+					}	
+				}
+				if = {
+					limit = {
+						OR = {
+							is_ruler = no
+							lower_real_tier_than = KING
+						}
+					}
+					remove_trait = crowned
+					remove_trait = uncrowned
+					remove_trait = crowned_by_pope
+					remove_trait = strong_basileus
+					remove_trait = weak_basileus
+					break = yes
+				}
+				if = {
+					limit = {
+						trait = crowned_by_pope
+						emf_uses_hre_coronation = no
+					}
+					add_trait = crowned
+				}
+				if = {
+					limit = {
+						OR = {
+							trait = strong_basileus
+							trait = weak_basileus
+						}
+						emf_uses_byzantine_coronation = no
+					}
+					add_trait = crowned
+				}
+			}
+		}
+	}
+}
+
+character_event = {
+	id = emf_coronation.1102
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	trigger = {
+		FROM = {
+			higher_tier_than = DUKE
+		}
+	}
+	
+	immediate = {
+		# Add Uncrowned trait
+		if = {
+			limit = {
+				is_adult = yes
+				is_feudal = yes
+				has_horde_culture = no
+				is_nomadic = no
+				primary_title = { is_vice_royalty = no }
+				NOR = {
+					trait = crowned
+					trait = uncrowned
+					trait = crowned_by_pope
+					trait = strong_basileus
+					trait = weak_basileus
+				}
+			}
+			add_trait = uncrowned
+		}
+	}
+}
+
+
+### CORONATION EVENTS
+
+# Ruler begins planning the coronation
+character_event = {
+	id = emf_coronation.1200
+	desc = EVTDESC_emf_coronation_1200
+	picture = GFX_evt_coronation
+	
+	is_triggered_only = yes
+	hide_from = yes
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1200
+		custom_tooltip = { text = send_invitations }
+		hidden_tooltip = {
+			any_character = {
+				limit = {
+					is_adult = yes
+					prisoner = no
+					is_within_diplo_range = ROOT
+					OR = {
+						is_vassal_or_below = ROOT
+						is_liege_or_above = ROOT
+						is_close_relative = ROOT
+						dynasty = ROOT
+						is_allied_with = ROOT
+						has_non_aggression_pact_with = ROOT
+						AND = {
+							same_realm = ROOT
+							higher_tier_than = BARON
+						}
+						AND = {
+							religion = ROOT
+							any_realm_province = {
+								ROOT = {
+									any_realm_province = {
+										NOT = { distance = { where = PREVPREV value = 125 } }
+									}
+								}
+							}
+						}
+					}
+					NOR = {
+						character = ROOT
+						trait = incapable
+						trait = excommunicated
+						has_truce = ROOT
+					}
+				}
+				letter_event = { id = emf_coronation.1201 }
+			}
+		}
+	}
+}
+
+# Invitation to the coronation
+letter_event = {
+	id = emf_coronation.1201
+	desc = EVTDESC_emf_coronation_1201
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1201 # I will attend
+		trigger = {
+			war = no
+			emf_can_disturb_trigger = yes
+		}
+		ai_chance = {
+			factor = 80
+			modifier = {
+				factor = 0.1
+				trait = in_hiding
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					is_ill = yes
+					is_pregnant = yes
+				}
+			}
+			modifier = {
+				factor = 0.5
+				trait = paranoid
+			}
+			modifier = {
+				factor = 0.5
+				trait = shy
+			}
+			modifier = {
+				factor = 0.5
+				trait = cynical
+			}
+			modifier = {
+				factor = 0.5
+				trait = slothful
+			}
+			modifier = {
+				factor = 1.5
+				trait = diligent
+			}
+			modifier = {
+				factor = 1.5
+				trait = zealous
+			}
+			modifier = {
+				factor = 1.5
+				trait = gregarious
+			}
+			modifier = {
+				factor = 5
+				is_close_relative = FROM
+			}
+			modifier = {
+				factor = 2
+				OR = {
+					dynasty = FROM
+					is_allied_with = FROM
+					has_non_aggression_pact_with = FROM
+					is_theocracy = yes
+				}
+			}
+			modifier = {
+				factor = 1.25
+				opinion = { who = FROM value = 25 }
+			}
+			modifier = {
+				factor = 1.25
+				opinion = { who = FROM value = 50 }
+			}
+			modifier = {
+				factor = 1.25
+				opinion = { who = FROM value = 75 }
+			}
+			modifier = {
+				factor = 0.75
+				NOT = { opinion = { who = FROM value = 0 } }
+			}
+			modifier = {
+				factor = 0.75
+				NOT = { opinion = { who = FROM value = -25 } }
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { opinion = { who = FROM value = -50 } }
+			}
+			modifier = {
+				factor = 0.25
+				NOT = { opinion = { who = FROM value = -75 } }
+			}
+		}
+		if = {
+			limit = {
+				higher_real_tier_than = COUNT
+				NOT = { same_realm = FROM }
+			}
+			FROM = {
+				letter_event = { id = emf_coronation.1202 days = 3 random = 10 tooltip = accept_invitation }
+			}
+		}
+		hidden_tooltip = {
+			if = {
+				limit = { NOT = { has_opinion_modifier = { who = FROM modifier = attending_coronation } } }	
+				reverse_opinion = { who = FROM modifier = attending_coronation months = 12 }
+				opinion = { who = FROM modifier = attending_coronation months = 12 }
+				emf_do_not_disturb_effect = yes
+				emf_stop_hiding_effect = yes
+			}
+			any_spouse = {
+				limit = {
+					is_ill = no
+					is_pregnant = no
+					is_ruler = no
+					war = no
+					NOT = { trait = in_hiding }
+					emf_can_disturb_trigger = yes
+					NOT = { has_opinion_modifier = { who = FROM modifier = attending_coronation } }
+				}
+				reverse_opinion = { who = FROM modifier = attending_coronation months = 12 }
+				opinion = { who = FROM modifier = attending_coronation months = 12 }
+				emf_do_not_disturb_effect = yes
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_coronation_1201 # I will not attend
+		trigger = {
+			war = no
+			emf_can_disturb_trigger = yes
+			OR = {
+				same_realm = FROM
+				is_ruler = no
+			}
+		}
+		ai_chance = {
+			factor = 20
+		}
+		reverse_opinion = { who = FROM modifier = opinion_insulted months = 60 }
+		if = {
+			limit = {
+				higher_real_tier_than = COUNT
+				NOT = { any_spouse = { character = FROM } }
+			}
+			FROM = {
+				letter_event = { id = emf_coronation.1203 days = 3 random = 10 tooltip = decline_invitation }
+			}
+		}
+	}
+	option = {
+		name = EVTOPTC_emf_coronation_1201 # Send an envoy in my stead
+		trigger = {
+			war = no
+			emf_can_disturb_trigger = yes
+			NOT = { same_realm = FROM }
+			is_ruler = yes
+		}
+		ai_chance = {
+			factor = 40
+		}
+		reverse_opinion = { who = FROM modifier = opinion_insulted months = 60 }
+		if = {
+			limit = { higher_real_tier_than = COUNT }
+			FROM = {
+				letter_event = { id = emf_coronation.1204 days = 3 random = 10 tooltip = decline_invitation }
+			}
+		}
+	}
+	option = {
+		name = EVTOPTD_emf_coronation_1201 # I am at war
+		trigger = {
+			war = yes
+		}
+		if = {
+			limit = { higher_real_tier_than = COUNT }
+			FROM = {
+				letter_event = { id = emf_coronation.1205 days = 3 random = 10 tooltip = decline_invitation }
+			}
+		}
+	}
+	option = {
+		name = EVTOPTE_emf_coronation_1201 # I am too busy
+		trigger = {
+			emf_can_disturb_trigger = no
+		}
+		if = {
+			limit = { higher_real_tier_than = COUNT }
+			FROM = {
+				letter_event = { id = emf_coronation.1206 days = 3 random = 10 tooltip = decline_invitation }
+			}
+		}
+	}
+}
+
+# Foreign ruler accepts the invitation
+letter_event = {
+	id = emf_coronation.1202
+	desc = EVTDESC_emf_coronation_1202
+	
+	is_triggered_only = yes
+	
+	trigger = { has_character_flag = planning_coronation }
+	
+	option = {
+		name = EXCELLENT
+	}
+}
+
+# Notification of an invitation declined
+letter_event = {
+	id = emf_coronation.1203
+	desc = EVTDESC_emf_coronation_1203
+	
+	is_triggered_only = yes
+	
+	trigger = { has_character_flag = planning_coronation }
+	
+	option = {
+		name = I_SEE
+	}
+}
+
+# Notification of an invitation declined by foreign ruler
+letter_event = {
+	id = emf_coronation.1204
+	desc = EVTDESC_emf_coronation_1204
+	
+	is_triggered_only = yes
+	
+	trigger = { has_character_flag = planning_coronation }
+	
+	option = {
+		name = I_SEE
+	}
+}
+
+# Notification of an invitation declined due to war
+letter_event = {
+	id = emf_coronation.1205
+	desc = EVTDESC_emf_coronation_1205
+	
+	is_triggered_only = yes
+	
+	trigger = { has_character_flag = planning_coronation }
+	
+	option = {
+		name = I_SEE
+	}
+}
+
+# Notification of an invitation declined due to being busy
+letter_event = {
+	id = emf_coronation.1206
+	desc = EVTDESC_emf_coronation_1206
+	
+	is_triggered_only = yes
+	
+	trigger = { has_character_flag = planning_coronation }
+	
+	option = {
+		name = I_SEE
+	}
+}
+
+# Vassal priest asks to perform the ceremony
+character_event = {
+	id = emf_coronation.1207
+	desc = EVTDESC_emf_coronation_1207
+	picture = GFX_evt_coronation
+	
+	only_rulers = yes
+	min_age = 16
+	capable_only = yes
+	prisoner = no
+	
+	trigger = {
+		capital_holding = { holding_type = temple }
+		has_any_opinion_modifier = attending_coronation
+		any_opinion_modifier_target = {
+			religion = ROOT
+			has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+			reverse_has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+			has_character_flag = planning_coronation
+			NOR = {
+				has_character_flag = has_priest_to_perform_coronation
+				has_character_flag = asked_about_coronation
+				reverse_has_opinion_modifier = { who = ROOT modifier = opinion_insulted }
+			}
+		}
+	}
+	
+	mean_time_to_happen = {
+		days = 15
+		modifier = {
+			factor = 0.75
+			trait = diligent
+		}
+		modifier = {
+			factor = 0.75
+			trait = proud
+		}
+		modifier = {
+			factor = 0.75
+			trait = zealous
+		}
+		modifier = {
+			factor = 0.5
+			trait = ambitious
+		}
+		modifier = {
+			factor = 1.5
+			trait = humble
+		}
+		modifier = {
+			factor = 1.5
+			trait = content
+		}
+		modifier = {
+			factor = 2.0
+			real_tier = BARON
+		}
+		modifier = {
+			factor = 0.5
+			higher_real_tier_than = COUNT
+		}
+		modifier = {
+			factor = 0.5
+			higher_real_tier_than = DUKE
+		}
+		modifier = {
+			factor = 0.75
+			any_opinion_modifier_target = {
+				reverse_has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+				reverse_opinion = { who = ROOT value = 25 }
+			}
+		}
+		modifier = {
+			factor = 0.75
+			any_opinion_modifier_target = {
+				reverse_has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+				reverse_opinion = { who = ROOT value = 50 }
+			}
+		}
+		modifier = {
+			factor = 0.75
+			any_opinion_modifier_target = {
+				reverse_has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+				reverse_opinion = { who = ROOT value = 75 }
+			}
+		}
+		modifier = {
+			factor = 1.5
+			any_opinion_modifier_target = {
+				reverse_has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+				NOT = { reverse_opinion = { who = ROOT value = 0 } }
+			}
+		}
+		modifier = {
+			factor = 1.5
+			any_opinion_modifier_target = {
+				reverse_has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+				NOT = { reverse_opinion = { who = ROOT value = -25 } }
+			}
+		}
+		modifier = {
+			factor = 1.5
+			any_opinion_modifier_target = {
+				reverse_has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+				NOT = { reverse_opinion = { who = ROOT value = -50 } }
+			}
+		}
+		modifier = {
+			factor = 0.5
+			any_opinion_modifier_target = {
+				reverse_has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+				dynasty = ROOT
+			}
+		}
+	}
+
+	immediate = {
+		random_opinion_modifier_target = {
+			limit = {
+				religion = ROOT
+				has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+				reverse_has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+				has_character_flag = planning_coronation
+				NOR = {
+					has_character_flag = has_priest_to_perform_coronation
+					has_character_flag = asked_about_coronation
+					reverse_has_opinion_modifier = { who = ROOT modifier = opinion_insulted }
+				}
+			}
+			save_event_target_as = coronation_liege
+			set_character_flag = asked_about_coronation
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1207 # Make the request
+		event_target:coronation_liege = {
+			letter_event = { id = emf_coronation.1208 tooltip = request_to_perform_coronation }
+		}
+	}
+}
+
+# Liege receives request from priest to perform the coronation
+letter_event = {
+	id = emf_coronation.1208
+	desc = EVTDESC_emf_coronation_1208
+	
+	is_triggered_only = yes
+	
+	trigger = { has_character_flag = planning_coronation }
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1208 # Let him do it
+		clr_character_flag = asked_about_coronation
+		set_character_flag = has_priest_to_perform_coronation
+		reverse_opinion = { who = FROM modifier = opinion_performed_coronation months = 120 }
+		hidden_tooltip = {
+			FROM = { letter_event = { id = emf_coronation.1209 days = 1 } }
+			any_opinion_modifier_target = {
+				limit = {
+					religion = ROOT
+					capital_holding = { holding_type = temple }
+					has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+					reverse_has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+					higher_real_tier_than = FROM
+					prisoner = no
+					NOT = { trait = incapable }
+				}
+				opinion = { who = ROOT modifier = opinion_insulted months = 60 }
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_coronation_1208 # Refuse
+		trigger = {
+			ai = no
+		}
+		clr_character_flag = asked_about_coronation
+		reverse_opinion = { who = FROM modifier = opinion_insulted months = 60 }
+		hidden_tooltip = {
+			FROM = { letter_event = { id = emf_coronation.1210 days = 1 } }
+		}
+	}
+}
+
+# Liege agrees to the request
+letter_event = {
+	id = emf_coronation.1209
+	desc = EVTDESC_emf_coronation_1209
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EXCELLENT
+		reverse_opinion = { who = FROM modifier = opinion_performed_coronation months = 120 }
+	}
+}
+
+# Liege refuses the request
+letter_event = {
+	id = emf_coronation.1210
+	desc = EVTDESC_emf_coronation_1210
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1210
+		prestige = -50
+		tooltip = {
+			opinion = { who = FROM modifier = opinion_insulted months = 60 }
+		}
+	}
+}
+
+# Coronation cancelled due to war
+character_event = {
+	id = emf_coronation.1211
+	desc = EVTDESC_emf_coronation_1211
+	picture = GFX_evt_council
+	
+	only_playable = yes
+	min_age = 16
+	
+	trigger = {
+		war = yes
+		OR = {
+			has_character_flag = planning_coronation
+			has_character_flag = holding_coronation
+		}
+	}
+	
+	mean_time_to_happen = {
+		days = 1
+	}
+	
+	option = {
+		name = CURSES
+		if = {
+			limit = { has_character_flag = planning_coronation }
+			scaled_wealth = 0.8
+		}
+		hidden_tooltip = {
+			emf_can_disturb_effect = yes
+			clr_character_flag = planning_coronation
+			clr_character_flag = holding_coronation
+			clr_character_flag = has_priest_to_perform_coronation
+			clr_character_flag = asked_about_coronation
+			clr_character_flag = coronation_event
+			clr_character_flag = coronation_lover
+			clr_character_flag = coronation_duel
+			clr_character_flag = coronation_poetry
+			clr_character_flag = coronation_friend
+			clr_character_flag = coronation_rival
+			clr_character_flag = coronation_toast
+			clr_character_flag = coronation_badmouth
+			clr_character_flag = coronation_drunkard
+			clr_character_flag = coronation_lunatic
+			any_opinion_modifier_target = {
+				limit = { reverse_has_opinion_modifier = { who = ROOT modifier = attending_coronation } }
+				remove_opinion = { who = ROOT modifier = attending_coronation }
+				reverse_remove_opinion = { who = ROOT modifier = attending_coronation }
+				letter_event = { id = emf_coronation.1212 }
+			}
+		}
+	}
+}
+
+# Receive notification about cancellation of coronation due to war
+letter_event = {
+	id = emf_coronation.1212
+	desc = EVTDESC_emf_coronation_1212
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1212
+		hidden_tooltip = {
+			emf_can_disturb_effect = yes
+			clr_character_flag = coronation_event
+			clr_character_flag = attending_coronation
+			if = {
+				limit = {
+					FROM = {
+						NOR = {
+							trait = crowned
+							trait = crowned_by_pope
+							trait = strong_basileus
+							trait = weak_basileus
+						}
+					}
+					has_opinion_modifier = { who = FROM modifier = opinion_performed_coronation }
+				}
+				remove_opinion = { who = FROM modifier = opinion_performed_coronation }
+				reverse_remove_opinion = { who = FROM modifier = opinion_performed_coronation }
+			}
+		}
+	}
+}
+
+# Ruler dies, the coronation must be canceled
+character_event = {
+	id = emf_coronation.1213
+	desc = EVTDESC_emf_coronation_1213
+	picture = GFX_evt_death
+	
+	is_triggered_only = yes
+	
+	trigger = {
+		OR = {
+			has_character_flag = planning_coronation
+			has_character_flag = holding_coronation
+		}
+	}
+	
+	option = {
+		name = CURSES
+		if = {
+			limit = { has_character_flag = planning_coronation }
+			scaled_wealth = 0.8
+		}
+		hidden_tooltip = {
+			clr_character_flag = planning_coronation
+			clr_character_flag = holding_coronation
+			clr_character_flag = has_priest_to_perform_coronation
+			clr_character_flag = asked_about_coronation
+			clr_character_flag = coronation_event
+			clr_character_flag = coronation_lover
+			clr_character_flag = coronation_duel
+			clr_character_flag = coronation_poetry
+			clr_character_flag = coronation_friend
+			clr_character_flag = coronation_rival
+			clr_character_flag = coronation_toast
+			clr_character_flag = coronation_badmouth
+			clr_character_flag = coronation_drunkard
+			clr_character_flag = coronation_lunatic
+			any_opinion_modifier_target = {
+				limit = { reverse_has_opinion_modifier = { who = ROOT modifier = attending_coronation } }
+				remove_opinion = { who = ROOT modifier = attending_coronation }
+				reverse_remove_opinion = { who = ROOT modifier = attending_coronation }
+				letter_event = { id = emf_coronation.1214 }
+			}
+		}
+	}
+}
+
+# Receive notification about cancellation of coronation due to ruler's death
+letter_event = {
+	id = emf_coronation.1214
+	desc = EVTDESC_emf_coronation_1214
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1212
+		hidden_tooltip = {
+			emf_can_disturb_effect = yes
+			clr_character_flag = coronation_event
+			clr_character_flag = attending_coronation
+		}
+	}
+}
+
+
+### THE CORONATION
+
+# The coronation begins
+narrative_event = {
+	id = emf_coronation.1215
+	title = EVTNAME_emf_coronation_1215
+	desc = EVTDESC_emf_coronation_1215
+	picture = GFX_evt_coronation
+	border = GFX_event_narrative_frame_religion
+	sound = church_bells
+	
+	major = yes
+	is_triggered_only = yes
+	hide_from = yes
+	show_ROOT = yes
+	
+	trigger = {
+		has_character_flag = planning_coronation
+	}
+	
+	major_trigger = {
+		OR = {
+			character = FROM
+			has_opinion_modifier = { who = FROM modifier = attending_coronation }
+			same_realm = FROM
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1215
+		trigger = { character = FROM }
+		piety = 100	
+		add_trait = crowned
+		
+		if = {
+			limit = { trait = humble }
+			random = {
+				chance = 50
+				remove_trait = humble
+			}
+		}
+		if = {
+			limit = {
+				NOT = { trait = humble }
+				NOT = { trait = proud }
+			}
+			random = {
+				chance = 50
+				add_trait = proud
+				hidden_tooltip = { character_event = { id = 38261 } } # notify proud
+			}
+		}
+		
+		pf_tradition_plus2_effect = yes
+		emf_imperial_decay_minus_1_effect = yes
+		
+		hidden_tooltip = {
+			character_event = { id = emf_coronation.1216 days = 1 } # the feast begins
+		}
+		
+		if = {
+			limit = { ai = no }
+			chronicle = {
+				entry = CHRONICLE_NORMAL_CORONATION
+				portrait = [Root.GetID]
+				picture = GFX_evt_coronation
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_coronation_1215
+		trigger = {
+			NOT = { character = FROM }
+			has_opinion_modifier = { who = FROM modifier = attending_coronation }
+		}
+	}
+	option = {
+		name = EVTOPTC_emf_coronation_1215
+		trigger = {
+			NOT = { character = FROM }
+			NOT = { has_opinion_modifier = { who = FROM modifier = attending_coronation } }
+		}
+	}
+}
+
+# The coronation feast follows
+character_event = {
+	id = emf_coronation.1216
+	title = EVTNAME_emf_coronation_1215
+	desc = EVTDESC_emf_coronation_1216
+	picture = GFX_evt_feast
+	
+	major = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		has_character_flag = planning_coronation
+	}
+	
+	major_trigger = {
+		OR = {
+			character = FROM
+			has_opinion_modifier = { who = FROM modifier = attending_coronation }
+		}
+	}
+	
+	immediate = {
+		set_character_flag = holding_coronation
+		clr_character_flag = planning_coronation
+		character_event = { id = emf_coronation.1275 days = 30 } # coronation feast ends
+		character_event = { id = emf_coronation.1250 days = 3 } # coronation events
+	}
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1216
+		trigger = { character = FROM }
+	}
+	option = {
+		name = EVTOPTB_emf_coronation_1216
+		trigger = {
+			NOT = { character = FROM }
+			has_opinion_modifier = { who = FROM modifier = attending_coronation }
+		}
+	}
+}
+
+# Ruler gets along with host at the coronation
+character_event = {
+	id = emf_coronation.1217
+	desc = EVTDESC_emf_coronation_1217
+	picture = GFX_evt_feast
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1217
+		set_character_flag = coronation_event
+		FROM = {
+			set_character_flag = coronation_friend
+			character_event = { id = emf_coronation.1218 tooltip = become_coronation_friends }
+		}
+	}
+}
+
+character_event = {
+	id = emf_coronation.1218
+	desc = EVTDESC_emf_coronation_1218
+	picture = GFX_evt_feast
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1217
+		random_list = {
+			50 = {
+				add_friend = FROM
+			}
+			25 = {
+				opinion = { who = FROM modifier = coronation_friends multiplier = 2 months = 120 }
+				hidden_tooltip = { reverse_opinion = { who = FROM modifier = coronation_friends multiplier = 2 months = 120 } }
+			}
+			25 = {
+				opinion = { who = FROM modifier = coronation_friends months = 60 }
+				hidden_tooltip = { reverse_opinion = { who = FROM modifier = coronation_friends months = 60 } }
+			}
+		}
+	}
+}
+
+# Ruler argues with host over claim
+character_event = {
+	id = emf_coronation.1219
+	desc = EVTDESC_emf_coronation_1219
+	picture = GFX_evt_feast
+	
+	is_triggered_only = yes
+	
+	immediate = {
+		random_claim = {
+			limit = {
+				ROOT = { has_strong_claim = PREV }
+				holder = FROM
+			}
+			save_event_target_as = argue_title
+			break = yes
+		}
+		random_claim = {
+			limit = { holder = FROM }
+			save_event_target_as = argue_title
+		}
+	}
+
+	option = {
+		name = EVTOPTA_emf_coronation_1219
+		set_character_flag = coronation_event
+		FROM = {
+			set_character_flag = coronation_rival
+			character_event = { id = emf_coronation.1220 tooltip = become_coronation_rivals }
+		}
+	}
+}
+
+character_event = {
+	id = emf_coronation.1220
+	desc = EVTDESC_emf_coronation_1220
+	picture = GFX_evt_feast
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1220
+		random_list = {
+			50 = {
+				add_rival = FROM
+			}
+			25 = {
+				opinion = { who = FROM modifier = coronation_rivals multiplier = 2 months = 120 }
+				hidden_tooltip = { reverse_opinion = { who = FROM modifier = coronation_rivals multiplier = 2 months = 120 } }
+			}
+			25 = {
+				opinion = { who = FROM modifier = coronation_rivals months = 60 }
+				hidden_tooltip = { reverse_opinion = { who = FROM modifier = coronation_rivals months = 60 } }
+			}
+		}
+	}
+}
+
+# The Duel - character notified that enemy is present
+character_event = {
+	id = emf_coronation.1222
+	desc = EVTDESC_emf_coronation_1222
+	picture = GFX_evt_feast
+
+	is_triggered_only = yes
+	
+	immediate = {
+		FROM = {
+			random_opinion_modifier_target = {
+				limit = {
+					has_opinion_modifier = { who = PREV modifier = attending_coronation }
+					war = no
+					is_adult = yes
+					is_female = no
+					prisoner = no
+					is_foe = ROOT
+					NOR = {
+						trait = incapable
+						trait = wounded
+						trait = maimed
+						has_character_flag = coronation_event
+					}
+				}
+				save_event_target_as = challenge_target
+			}
+		}
+	}
+	
+	option = {
+		name = EVTOPTA72030 # Challenge to a duel
+		ai_chance = {
+			factor = 70
+			modifier = {
+				factor = 0.5
+				trait = kind
+			}
+			modifier = {
+				factor = 0.5
+				trait = humble
+			}
+			modifier = {
+				factor = 0.5
+				trait = content
+			}
+			modifier = {
+				factor = 0.5
+				trait = patient
+			}
+			modifier = {
+				factor = 0.5
+				trait = slothful
+			}
+		}
+		set_character_flag = coronation_event
+		event_target:challenge_target = {
+			character_event = { id = emf_coronation.1223 tooltip = EVTTOOLTIP72031 }
+		}
+	}
+	option = {
+		ai_chance = {
+			factor = 30
+			modifier = {
+				factor = 0
+				OR = {
+					trait = drunkard
+					trait = possessed
+					trait = lunatic
+					trait = wroth
+					trait = cruel
+					trait = duelist
+				}
+			}
+			modifier = {
+				factor = 0.5
+				trait = brave
+			}
+			modifier = {
+				factor = 0.5
+				trait = proud
+			}
+		}
+		name = EVTOPTB72030 # No challenge
+		prestige = -20
+	}
+}
+
+# The Duel - the challenge is made
+character_event = {
+	id = emf_coronation.1223
+	desc = EVTDESC72031
+	picture = GFX_evt_feast
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA72031 # Accept the duel
+		ai_chance = {
+			factor = 70
+			modifier = {
+				factor = 0
+				trait = craven
+			}
+			modifier = {
+				factor = 0.5
+				trait = kind
+			}
+			modifier = {
+				factor = 0.5
+				trait = humble
+			}
+			modifier = {
+				factor = 0.5
+				trait = content
+			}
+			modifier = {
+				factor = 0.5
+				trait = patient
+			}
+			modifier = {
+				factor = 0.5
+				trait = slothful
+			}
+		}
+		set_character_flag = coronation_event
+		FROMFROM = {
+			set_character_flag = coronation_duel
+			character_event = { id = emf_coronation.1225 tooltip = ask_permission_to_duel }
+		}
+	}
+	option = {
+		name = EVTOPTB72031 # Refuse
+		ai_chance = {
+			factor = 30
+			modifier = {
+				factor = 0
+				OR = {
+					trait = drunkard
+					trait = possessed
+					trait = lunatic
+					trait = wroth
+					trait = cruel
+					trait = duelist
+				}
+				NOT = { trait = craven }
+			}
+			modifier = {
+				factor = 0.5
+				trait = brave
+			}
+			modifier = {
+				factor = 0.5
+				trait = proud
+			}
+		}
+		prestige = -20
+		hidden_tooltip = {
+			FROM = { character_event = { id = emf_coronation.1224 } }
+		}
+	}
+}
+
+# The Duel - the challenged refuses the duel
+character_event = {
+	id = emf_coronation.1224
+	desc = EVTDESC_emf_coronation_1224
+	picture = GFX_evt_feast
+	
+	is_triggered_only = yes
+
+	option = {
+		name = EVTOPTA_emf_coronation_1224
+		prestige = 20
+	}
+}
+
+# The Duel - the host is asked for permission to hold the duel
+character_event = {
+	id = emf_coronation.1225
+	desc = EVTDESC_emf_coronation_1225
+	picture = GFX_evt_feast
+	
+	is_triggered_only = yes
+	
+	immediate = {
+		clr_character_flag = coronation_event
+		set_character_flag = coronation_event
+	}
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1225 # Absolutely not!
+		trigger = { NOT = { diplomacy = 12 } }
+		ai_chance = {
+			factor = 30
+		}
+		FROM = { character_event = { id = emf_coronation.1226 days = 1 tooltip = refused_duel } }
+		FROMFROM = { character_event = { id = emf_coronation.1226 days = 1 tooltip = refused_duel } }
+	}
+	option = {
+		name = EVTOPTB_emf_coronation_1225 # Talk them out of it
+		trigger = { diplomacy = 12 }
+		ai_chance = {
+			factor = 30
+		}
+		tooltip_info = diplomacy
+		FROM = { character_event = { id = emf_coronation.1227 days = 1 tooltip = talked_out_of_duel } }
+		FROMFROM = { character_event = { id = emf_coronation.1227 days = 1 tooltip = talked_out_of_duel } }
+	}
+	option = {
+		name = EVTOPTC_emf_coronation_1225 # Let them fight
+		ai_chance = {
+			factor = 70
+			modifier = {
+				factor = 5
+				OR = {
+					trait = impaler
+					trait = duelist
+					trait = cruel
+					trait = lunatic
+					trait = possessed
+				}
+			}
+			modifier = {
+				factor = 2
+				trait = arbitrary
+			}
+			modifier = {
+				factor = 0.5
+				trait = zealous
+			}
+			modifier = {
+				factor = 0.5
+				trait = kind
+			}
+			modifier = {
+				factor = 0.5
+				trait = just
+			}
+			modifier = {
+				factor = 0.75
+				trait = temperate
+			}
+			modifier = {
+				factor = 0.75
+				trait = charitable
+			}
+			modifier = {
+				factor = 0.75
+				trait = proud
+			}
+		}
+		custom_tooltip = { text = let_the_duel_begin }
+		hidden_tooltip = {			
+			FROMFROM = {
+				character_event = { id = emf_coronation.1228 days = 1 } 
+			}
+		}
+	}
+}
+
+# The Duel - the host refuses to let them fight
+character_event = {
+	id = emf_coronation.1226
+	desc = EVTDESC_emf_coronation_1226
+	picture = GFX_evt_feast
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1226
+		prestige = -20
+		opinion = {
+			who = FROM
+			modifier = opinion_insulted
+			months = 60
+		}
+	}
+}
+
+# The Duel - the host diplomatically talks them out of fighting
+character_event = {
+	id = emf_coronation.1227
+	desc = EVTDESC_emf_coronation_1227
+	picture = GFX_evt_feast
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1226
+		prestige = -20
+		opinion = {
+			who = FROM
+			modifier = opinion_impressed
+			months = 60
+		}
+	}
+}
+
+# The Duel - ping event to start duel
+character_event = {
+	id = emf_coronation.1228	
+
+	hide_window = yes
+	is_triggered_only = yes
+	hide_from = yes
+	
+	immediate = {
+		set_character_flag = coronation_duelist
+		FROMFROM = {
+			character_event = { id = emf_coronation.1229 } 
+		}
+	}	
+}
+
+# The Duel - start duel, call engine
+character_event = {
+	id = emf_coronation.1229	
+
+	hide_window = yes
+	is_triggered_only = yes
+	hide_from = yes
+	
+	immediate = {
+		set_character_flag = coronation_duelist
+		e_hip = { holder_scope = { character_event = { id = DuelEngine.0 } } }
+	}	
+}
+
+# The Duel - loser is alive
+character_event = {
+	id = emf_coronation.1230	
+	picture = GFX_evt_battle
+
+	major = yes
+	is_triggered_only = yes
+	
+	desc = {
+		text = EVTDESC_emf_coronation_1229
+		trigger = {
+			FROMFROM = {
+				NOR = {
+					trait = wounded
+					trait = maimed
+				}
+			}
+		}
+	}
+	
+	desc = {
+		text = EVTDESC_emf_coronation_1230
+		trigger = {
+			FROMFROM = {
+				OR = {
+					trait = wounded
+					trait = maimed
+				}
+			}
+		}
+	}
+	
+	major_trigger = {
+		OR = {
+			character = FROM
+			character = FROMFROM
+			character = event_target:coronation_duel_host
+			has_opinion_modifier = { who = event_target:coronation_duel_host modifier = attending_coronation }
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1229 # There, it is done
+		trigger = { character = event_target:coronation_duel_host }
+	}
+	option = {
+		name = EVTOPTB_emf_coronation_1229 # He must have cheated!
+		trigger = { character = FROMFROM }		
+		if = {
+			limit = { NOT = { trait = scarred } }
+			random = {
+				chance = 30
+				add_trait = scarred
+			}
+		}
+		if = {
+			limit = { NOT = { is_rival = FROM } }
+			add_rival = FROM
+		}
+		opinion = {
+			who = event_target:coronation_duel_host
+			modifier = opinion_grateful
+			months = 60
+		}
+	}
+	option = {
+		name = EVTOPTC_emf_coronation_1229 # Victory is mine!
+		trigger = { character = FROM }
+		prestige = 200
+		if = {
+			limit = { NOT = { trait = scarred } }
+			random = {
+				chance = 30
+				add_trait = scarred
+			}
+		}
+		opinion = {
+			who = event_target:coronation_duel_host
+			modifier = opinion_grateful
+			months = 60
+		}
+	}
+	option = {
+		name = EVTOPTD_emf_coronation_1228 # How scandalous!
+		trigger = {
+			NOR = {
+				character = FROM
+				character = FROMFROM
+				character = event_target:coronation_duel_host
+			}
+			has_opinion_modifier = { who = event_target:coronation_duel_host modifier = attending_coronation }
+		}
+	}
+}
+
+# The Duel - loser is killed
+character_event = {
+	id = emf_coronation.1231
+	desc = EVTDESC_emf_coronation_1231
+	picture = GFX_evt_battle
+
+	major = yes
+	is_triggered_only = yes
+	hide_from = yes
+	
+	major_trigger = {
+		OR = {
+			character = FROM
+			character = FROMFROM
+			character = event_target:coronation_duel_host
+			has_opinion_modifier = { who = event_target:coronation_duel_host modifier = attending_coronation }
+		}
+	}
+	
+	immediate = {
+		log = "emf_coronation.1231: [FromFrom.GetBestName] ([FromFrom.GetID]) has been killed by [From.GetBestName] ([From.GetID]) during a duel at [coronation_duel_host.GetBestName]'s coronation"
+	}
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1228 # Most unfortunate
+		trigger = { character = event_target:coronation_duel_host }
+		opinion = {
+			who = FROM
+			modifier = opinion_disappointed
+			months = 60
+		}
+		hidden_tooltip = {
+			any_character = {
+				limit = {
+					has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+					NOT = { character = FROM }
+					NOT = { character = FROMFROM }
+				}
+				opinion = { who = event_target:coronation_duel_host modifier = coronation_duel months = 24 }
+				opinion = { who = FROM modifier = coronation_duel multiplier = 2 months = 24 }
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_coronation_1228 # The bastard killed me!
+		trigger = { character = FROMFROM }		
+	}
+	option = {
+		name = EVTOPTC_emf_coronation_1228 # Ha! He had it coming!
+		trigger = { character = FROM }
+		prestige = 100
+		piety = -50
+		if = {
+			limit = { NOT = { trait = scarred } }
+			random = {
+				chance = 30
+				add_trait = scarred
+			}
+		}
+		opinion = {
+			who = event_target:coronation_duel_host
+			modifier = opinion_grateful
+			months = 60
+		}
+	}
+	option = {
+		name = EVTOPTD_emf_coronation_1228 # How scandalous!
+		trigger = {
+			NOR = {
+				character = FROM
+				character = FROMFROM
+				character = event_target:coronation_duel_host
+			}
+			has_opinion_modifier = { who = event_target:coronation_duel_host modifier = attending_coronation }
+		}
+	}
+}
+
+# Wife/husband is upset that lover attends the coronation
+character_event = {
+	id = emf_coronation.1232
+	desc = EVTDESC_emf_coronation_1232
+	picture = GFX_evt_feast
+	
+	is_triggered_only = yes
+	
+	trigger = {
+		prisoner = no
+		NOT = { trait = incapable }
+		FROM = {
+			any_lover = {
+				has_opinion_modifier = { who = PREV modifier = attending_coronation }
+				NOR = {
+					is_married = PREV
+					is_consort = PREV
+					has_character_flag = coronation_event
+				}
+			}
+		}
+	}
+	
+	immediate = {
+		FROM = {
+			random_lover = {
+				limit = {
+					has_opinion_modifier = { who = PREV modifier = attending_coronation }
+					NOR = {
+						is_married = PREV
+						is_consort = PREV
+						has_character_flag = coronation_event
+					}
+				}
+				save_event_target_as = lover_coronation
+			}
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1232
+		set_character_flag = coronation_event
+		event_target:lover_coronation = {
+			set_character_flag = coronation_event
+			reverse_opinion = {
+				who = ROOT
+				modifier = opinion_outraged
+				months = 60
+			}
+		}
+		FROM = {
+			character_event = { id = emf_coronation.1233 tooltip = lover_at_coronation }
+		}
+	}
+}
+
+character_event = {
+	id = emf_coronation.1233
+	desc = EVTDESC_emf_coronation_1233
+	picture = GFX_evt_feast
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1233
+		prestige = -20
+		reverse_opinion = {
+			who = FROM
+			modifier = opinion_outraged
+			months = 60
+		}
+	}
+}
+
+# Poet puts on a show at the coronation
+character_event = {
+	id = emf_coronation.1234
+	desc = EVTDESC_emf_coronation_1234
+	picture = GFX_evt_feast
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1234 # I'll do it!
+		set_character_flag = coronation_event
+		FROM = {
+			set_character_flag = coronation_poetry
+			random_list = {
+				40 = {
+					modifier = {
+						factor = 2.0
+						diplomacy = 15
+					}
+					modifier = {
+						factor = 1.5
+						NOT = { diplomacy = 15 }
+						diplomacy = 8
+					}
+					character_event = { id = emf_coronation.1235 tooltip = coronation_poetry_good }
+				}
+				60 = {
+					modifier = {
+						factor = 0.3
+						diplomacy = 15
+					}
+					modifier = {
+						factor = 0.65
+						NOT = { diplomacy = 15 }
+						diplomacy = 8
+					}
+					character_event = { id = emf_coronation.1236 tooltip = coronation_poetry_bad }
+				}
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_coronation_1234 # I'd rather not risk it
+		trigger = { ai = no }
+		random = {
+			chance = 30
+			add_trait = depressed
+		}
+	}
+}
+
+# The poetry goes over well
+character_event = {
+	id = emf_coronation.1235
+	desc = EVTDESC_emf_coronation_1235
+	picture = GFX_evt_feast
+	
+	major = yes
+	is_triggered_only = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			character = FROM
+			has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1235
+		trigger = { character = ROOT }
+		prestige = 50
+		opinion = {
+			who = FROM
+			modifier = opinion_approves
+			months = 60
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_coronation_1235
+		trigger = { character = FROM }
+		prestige = 50
+		change_diplomacy = 1
+	}
+	option = {
+		name = EVTOPTC_emf_coronation_1235
+		trigger = {
+			NOT = { character = ROOT }
+			NOT = { character = FROM }
+			has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+		}
+	}
+}
+
+# The poetry goes over poorly
+character_event = {
+	id = emf_coronation.1236
+	desc = EVTDESC_emf_coronation_1236
+	picture = GFX_evt_feast
+	
+	major = yes
+	is_triggered_only = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			character = FROM
+			has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1236
+		trigger = { character = ROOT }
+		prestige = -20
+		opinion = {
+			who = FROM
+			modifier = opinion_disapprove
+			months = 60
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_coronation_1236
+		trigger = { character = FROM }
+		prestige = -50
+		add_trait = depressed
+	}
+	option = {
+		name = EVTOPTC_emf_coronation_1236
+		trigger = {
+			NOT = { character = ROOT }
+			NOT = { character = FROM }
+			has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+		}
+	}
+}
+
+# Ruler gives a toast at the coronation
+character_event = {
+	id = emf_coronation.1237
+	
+	hide_window = yes
+	is_triggered_only = yes
+
+	immediate = {
+		set_character_flag = coronation_event
+		FROM = {
+			set_character_flag = coronation_toast
+			character_event = { id = emf_coronation.1238 }
+		}
+	}
+}
+
+character_event = {
+	id = emf_coronation.1238
+	desc = EVTDESC_emf_coronation_1238
+	picture = GFX_evt_feast
+	
+	is_triggered_only = yes
+	major = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1238
+		trigger = { character = ROOT }
+		prestige = 10
+		opinion = {
+			who = FROM
+			modifier = opinion_pleased
+			months = 24
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_coronation_1238
+		trigger = { NOT = { character = ROOT } }
+	}
+}
+
+# A dance with the host?
+character_event = {
+	id = emf_coronation.1239
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		set_character_flag = coronation_event
+		FROM = {
+			set_character_flag = coronation_lover
+			character_event = { id = emf_coronation.1240 }
+		}
+	}
+}
+
+character_event = {
+	id = emf_coronation.1240
+	desc = EVTDESC_emf_coronation_1240
+	picture = GFX_evt_courtly_love
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1240 # Pursue him/her
+		add_lover = FROM
+		hidden_tooltip = {
+			if = {
+				limit = {
+					is_female = no
+					fertility = 0.33
+					FROM = {
+						is_female = yes
+						fertility = 0.33
+					}
+				}
+				if = {
+					limit = { FROM = { is_married = no } }
+					random = {
+						chance = 50
+						ROOT = { impregnate = FROM }
+					}
+				}
+				if = {
+					limit = { FROM = { is_married = yes } }
+					random = {
+						chance = 50
+						ROOT = { impregnate_cuckoo = FROM }
+					}
+				}
+			}
+			if = {
+				limit = {
+					NOT = { age = 45 }
+					is_female = yes
+					fertility = 0.33
+					FROM = {
+						is_female = no
+						fertility = 0.33
+					}
+				}
+				if = {
+					limit = { is_married = no }
+					random = {
+						chance = 50
+						FROM = { impregnate = ROOT }
+					}
+				}
+				if = {
+					limit = { is_married = yes }
+					random = {
+						chance = 50
+						FROM = { impregnate_cuckoo = ROOT }
+					}
+				}
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_coronation_1240 # A dance is more than enough
+		trigger = { ai = no }
+		reverse_opinion = {
+			who = FROM
+			modifier = opinion_spurned
+			months = 60
+		}
+	}
+}
+
+# A homosexual guest is interested in the host
+character_event = {
+	id = emf_coronation.1241
+	
+	hide_window = yes	
+	is_triggered_only = yes
+	
+	immediate = {
+		set_character_flag = coronation_event
+		FROM = {
+			set_character_flag = coronation_lover
+			character_event = { id = emf_coronation.1242 }
+		}
+	}
+}
+
+character_event = {
+	id = emf_coronation.1242
+	desc = EVTDESC_emf_coronation_1240
+	picture = GFX_evt_courtly_love
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1240 # Pursue him/her
+		add_lover = FROM
+	}
+	option = {
+		name = EVTOPTB_emf_coronation_1240 # Not interested
+		trigger = { ai = no }
+		reverse_opinion = {
+			who = FROM
+			modifier = opinion_spurned
+			months = 60
+		}
+	}
+}
+
+# Guest is badmouthing the host
+character_event = {
+	id = emf_coronation.1243
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		set_character_flag = coronation_event
+		FROM = {
+			set_character_flag = coronation_badmouth
+			character_event = { id = emf_coronation.1244 }
+		}
+	}
+}
+
+character_event = {
+	id = emf_coronation.1244
+	desc = EVTDESC_emf_coronation_1244
+	picture = GFX_evt_feast
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1244 # Endure it
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 2
+				trait = patient
+			}
+			modifier = {
+				factor = 2
+				trait = kind
+			}
+			modifier = {
+				factor = 1.5
+				trait = craven
+			}
+		}
+		prestige = -20
+		if = {
+			limit = { NOT = { trait = patient } }
+			random = {
+				chance = 20
+				add_trait = patient
+			}
+		}
+		opinion = {
+			who = FROM
+			modifier = opinion_insulted
+			months = 60
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_coronation_1244 # This cannot be endured
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 2
+				trait = wroth
+			}
+			modifier = {
+				factor = 2
+				trait = cruel
+			}
+			modifier = {
+				factor = 1.5
+				trait = brave
+			}
+		}
+		if = {
+			limit = { NOT = { trait = wroth } }
+			random = {
+				chance = 20
+				add_trait = wroth
+			}
+		}
+		random_list = {
+			20 = {
+				reverse_opinion = { who = FROM modifier = opinion_impressed months = 24 }
+			}
+			40 = {
+				reverse_opinion = { who = FROM modifier = opinion_furious months = 60 }
+				hidden_tooltip = { opinion = { who = FROM modifier = opinion_insulted months = 60 } }
+			}
+			40 = {
+				add_rival = FROM
+			}
+		}	
+	}
+}
+
+# Guest overindulges and makes a spectacle of themselves
+character_event = {
+	id = emf_coronation.1245
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		set_character_flag = coronation_event
+		prestige = -20
+		FROM = {
+			set_character_flag = coronation_drunkard
+			character_event = { id = emf_coronation.1246 }
+		}
+	}
+}
+
+character_event = {
+	id = emf_coronation.1246
+	desc = EVTDESC_emf_coronation_1246
+	picture = GFX_evt_feast
+	
+	is_triggered_only = yes
+	major = yes
+	show_ROOT = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			has_opinion_modifier = { who = FROM modifier = attending_coronation }
+		}
+		NOT = { character = FROM }
+	}
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1246
+		opinion = { who = FROM modifier = opinion_feast_scandal months = 24 }
+	}
+}
+
+# Lunatic guest makes a spectacle of themselves
+character_event = {
+	id = emf_coronation.1247
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		set_character_flag = coronation_event
+		prestige = -20
+		FROM = {
+			set_character_flag = coronation_lunatic
+			character_event = { id = emf_coronation.1248 }
+		}
+	}
+}
+
+character_event = {
+	id = emf_coronation.1248
+	desc = EVTDESC_emf_coronation_1248
+	picture = GFX_evt_feast
+	
+	is_triggered_only = yes
+	major = yes
+	show_ROOT = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			has_opinion_modifier = { who = FROM modifier = attending_coronation }
+		}
+		NOT = { character = FROM }
+	}
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1246
+		trigger = { character = ROOT }
+		opinion = {
+			who = FROM
+			modifier = opinion_feast_scandal
+			multiplier = 2
+			months = 24
+		}
+		reverse_opinion = {
+			who = FROM
+			modifier = opinion_insulted
+			months = 60
+		}
+	}
+	option = {
+		name = OK
+		trigger = {
+			NOT = { character = ROOT }
+		}
+		opinion = { who = FROM modifier = opinion_feast_scandal months = 24 }
+	}
+}
+
+# Main event manager for host
+character_event = {
+	id = emf_coronation.1250
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		war = no
+		has_character_flag = holding_coronation
+	}
+	
+	immediate = {
+		repeat_event = { id = emf_coronation.1250 days = 3 }
+		random_list = {
+			10 = { # Possible duel
+				modifier = {
+					factor = 0
+					has_character_flag = coronation_duel
+				}
+				modifier = {
+					factor = 0
+					NOT = {
+						any_opinion_modifier_target = {
+							reverse_has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+							has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+							is_female = no
+							higher_tier_than = BARON
+							OR = {
+								martial = 8
+								trait = duelist
+								trait = lunatic
+								trait = possessed
+							}
+							NOR = {
+								trait = craven
+								trait = wounded
+								trait = maimed
+								has_character_flag = coronation_event
+							}
+							ROOT = {
+								any_opinion_modifier_target = {
+									has_opinion_modifier = { who = PREV modifier = attending_coronation }
+									war = no
+									is_adult = yes
+									is_female = no
+									prisoner = no
+									is_foe = PREVPREV
+									NOR = {
+										trait = incapable
+										trait = wounded
+										trait = maimed
+										has_character_flag = coronation_event
+									}
+								}
+							}
+						}
+					}
+				}
+				clr_character_flag = coronation_event
+				set_character_flag = coronation_event
+				random_opinion_modifier_target = {
+					limit = {
+						reverse_has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						is_female = no
+						higher_tier_than = BARON
+						OR = {
+							martial = 8
+							trait = duelist
+							trait = lunatic
+							trait = possessed
+						}
+						NOR = {
+							trait = craven
+							trait = wounded
+							trait = maimed
+							has_character_flag = coronation_event
+						}
+						ROOT = {
+							any_opinion_modifier_target = {
+								has_opinion_modifier = { who = PREV modifier = attending_coronation }
+								war = no
+								is_adult = yes
+								is_female = no
+								prisoner = no
+								is_foe = PREVPREV
+								NOR = {
+									trait = incapable
+									trait = wounded
+									trait = maimed
+									has_character_flag = coronation_event
+								}
+							}
+						}
+					}
+					character_event = { id = emf_coronation.1222 }
+				}
+			}
+			10 = { # Ruler gets along with host at coronation
+				modifier = {
+					factor = 0
+					has_character_flag = coronation_friend
+					NOT = { had_character_flag = { flag = coronation_friend days = 10 } }
+				}
+				modifier = {
+					factor = 0
+					num_of_friends = 5
+				}
+				modifier = {
+					factor = 0.5
+					trait = shy
+				}
+				modifier = {
+					factor = 0.5
+					trait = paranoid
+				}
+				modifier = {
+					factor = 2.0
+					trait = gregarious
+				}
+				modifier = {
+					factor = 1.5
+					trait = drunkard
+				}
+				modifier = {
+					factor = 0
+					NOT = {
+						any_opinion_modifier_target = {
+							has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+							same_sex = ROOT
+							is_ruler = yes
+							is_adult = yes
+							war = no
+							prisoner = no
+							opinion = { who = ROOT value = 0 }
+							reverse_opinion = { who = ROOT value = 0 }
+							NOR = {
+								trait = incapable
+								is_friend = ROOT
+								num_of_friends = 5
+								has_character_flag = coronation_event
+							}
+						}
+					}
+				}
+				clr_character_flag = coronation_event
+				set_character_flag = coronation_event
+				random_opinion_modifier_target = {
+					limit = {
+						higher_tier_than = COUNT
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						same_sex = ROOT
+						is_ruler = yes
+						is_adult = yes
+						war = no
+						prisoner = no
+						opinion = { who = ROOT value = 0 }
+						reverse_opinion = { who = ROOT value = 0 }
+						NOR = {
+							trait = shy
+							trait = paranoid
+							trait = incapable
+							is_friend = ROOT
+							num_of_friends = 5
+							has_character_flag = coronation_event
+						}
+					}
+					character_event = { id = emf_coronation.1217 }
+					break = yes
+				}
+				random_opinion_modifier_target = {
+					limit = {
+						higher_tier_than = COUNT
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						same_sex = ROOT
+						is_ruler = yes
+						is_adult = yes
+						war = no
+						prisoner = no
+						opinion = { who = ROOT value = 0 }
+						reverse_opinion = { who = ROOT value = 0 }
+						NOR = {
+							trait = incapable
+							is_friend = ROOT
+							num_of_friends = 5
+							has_character_flag = coronation_event
+						}
+					}
+					character_event = { id = emf_coronation.1217 }
+					break = yes
+				}
+				random_opinion_modifier_target = {
+					limit = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						same_sex = ROOT
+						is_ruler = yes
+						is_adult = yes
+						war = no
+						prisoner = no
+						opinion = { who = ROOT value = 0 }
+						reverse_opinion = { who = ROOT value = 0 }
+						NOR = {
+							trait = shy
+							trait = paranoid
+							trait = incapable
+							is_friend = ROOT
+							num_of_friends = 5
+							has_character_flag = coronation_event
+						}
+					}
+					character_event = { id = emf_coronation.1217 }
+					break = yes
+				}
+				random_opinion_modifier_target = {
+					limit = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						same_sex = ROOT
+						is_ruler = yes
+						is_adult = yes
+						war = no
+						prisoner = no
+						opinion = { who = ROOT value = 0 }
+						reverse_opinion = { who = ROOT value = 0 }
+						NOR = {
+							trait = incapable
+							is_friend = ROOT
+							num_of_friends = 5
+							has_character_flag = coronation_event
+						}
+					}
+					character_event = { id = emf_coronation.1217 }
+					break = yes
+				}
+			}
+			10 = { # Ruler argues with host over claim
+				modifier = {
+					factor = 0
+					has_character_flag = coronation_rival
+					NOT = { had_character_flag = { flag = coronation_rival days = 10 } }
+				}
+				modifier = {
+					factor = 0
+					num_of_rivals = 5
+				}
+				modifier = {
+					factor = 0
+					NOT = {
+						any_opinion_modifier_target = {
+							has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+							is_ruler = yes
+							is_adult = yes
+							war = no
+							prisoner = no
+							any_claim = { holder = ROOT }
+							OR = {
+								NOT = { is_close_relative = ROOT }
+								NOT = { opinion = { who = ROOT value = 0 } }
+							}
+							NOR = {
+								trait = content
+								trait = charitable
+								trait = kind
+								trait = incapable
+								is_rival = ROOT
+								num_of_rivals = 5
+								has_character_flag = coronation_event
+							}
+						}
+					}
+				}
+				clr_character_flag = coronation_event
+				set_character_flag = coronation_event
+				random_opinion_modifier_target = {
+					limit = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						is_ruler = yes
+						is_adult = yes
+						war = no
+						prisoner = no
+						any_claim = { holder = ROOT }
+						OR = {
+							NOT = { is_close_relative = ROOT }
+							NOT = { opinion = { who = ROOT value = 0 } }
+						}
+						OR = {
+							trait = envious
+							trait = wroth
+							trait = drunkard
+						}
+						NOR = {
+							trait = content
+							trait = charitable
+							trait = kind
+							trait = incapable
+							is_rival = ROOT
+							num_of_rivals = 5
+							has_character_flag = coronation_event
+						}						
+					}
+					character_event = { id = emf_coronation.1219 }
+					break = yes
+				}
+				random_opinion_modifier_target = {
+					limit = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						is_ruler = yes
+						is_adult = yes
+						war = no
+						prisoner = no
+						any_claim = { holder = ROOT }
+						OR = {
+							NOT = { is_close_relative = ROOT }
+							NOT = { opinion = { who = ROOT value = 0 } }
+						}
+						NOR = {
+							trait = content
+							trait = charitable
+							trait = kind
+							trait = incapable
+							is_rival = ROOT
+							num_of_rivals = 5
+							has_character_flag = coronation_event
+						}						
+					}
+					character_event = { id = emf_coronation.1219 }
+					break = yes
+				}
+			}
+			10 = { # Wife/husband is upset that lover attends the coronation
+				modifier = {
+					factor = 0
+					NOT = {
+						any_lover = {
+							has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+							NOR = {
+								is_married = ROOT
+								is_consort = ROOT
+								has_character_flag = coronation_event
+							}
+						}
+					}
+				}
+				modifier = {
+					factor = 0
+					NOT = {
+						any_spouse = {
+							has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+							NOT = { has_character_flag = coronation_event }
+						}
+					}
+				}
+				modifier = {
+					factor = 2.0
+					any_spouse = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						NOT = { has_character_flag = coronation_event }
+						trait = wroth
+					}
+				}
+				modifier = {
+					factor = 2.0
+					any_spouse = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						NOT = { has_character_flag = coronation_event }
+						trait = proud
+					}
+				}
+				modifier = {
+					factor = 0.5
+					any_spouse = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						NOT = { has_character_flag = coronation_event }
+						trait = patient
+					}
+				}
+				modifier = {
+					factor = 0.5
+					any_spouse = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						NOT = { has_character_flag = coronation_event }
+						trait = humble
+					}
+				}
+				clr_character_flag = coronation_event
+				set_character_flag = coronation_event
+				random_spouse = {
+					limit = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						NOT = { has_character_flag = coronation_event }
+						OR = {
+							trait = wroth
+							trait = proud
+						}
+					}
+					character_event = { id = emf_coronation.1232 }
+					break = yes
+				}
+				random_spouse = {
+					limit = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						NOT = { has_character_flag = coronation_event }						
+					}
+					character_event = { id = emf_coronation.1232 }
+					break = yes
+				}
+			}
+			10 = { # Poet puts on a show at the coronation
+				modifier = {
+					factor = 0
+					has_character_flag = coronation_poetry
+				}
+				modifier = {
+					factor = 0
+					NOT = {
+						any_opinion_modifier_target = {
+							has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+							is_adult = yes
+							prisoner = no
+							war = no
+							trait = poet
+							opinion = { who = ROOT value = 0 }
+							NOR = {
+								trait = incapable
+								trait = depressed
+								trait = stressed
+								trait = humble
+								trait = shy
+								has_character_flag = coronation_event
+							}
+						}
+					}
+				}
+				clr_character_flag = coronation_event
+				set_character_flag = coronation_event
+				random_opinion_modifier_target = {
+					limit = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						is_adult = yes
+						prisoner = no
+						war = no
+						trait = poet
+						opinion = { who = ROOT value = 0 }
+						NOR = {
+							trait = incapable
+							trait = depressed
+							trait = stressed
+							trait = humble
+							trait = shy
+							has_character_flag = coronation_event
+						}
+					}
+					character_event = { id = emf_coronation.1234 }
+				}
+			}
+			10 = { # Ruler gives a toast at the coronation
+				modifier = {
+					factor = 0
+					has_character_flag = coronation_toast
+					NOT = { had_character_flag = { flag = coronation_toast days = 10 } }
+				}
+				modifier = {
+					factor = 0
+					NOT = {
+						any_opinion_modifier_target = {
+							has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+							is_adult = yes
+							prisoner = no
+							war = no
+							ai = yes
+							diplomacy = 8
+							opinion = { who = ROOT value = 0 }
+							NOR = {
+								trait = shy
+								trait = envious
+								trait = cruel
+								has_character_flag = coronation_event
+							}
+						}
+					}
+				}
+				clr_character_flag = coronation_event
+				set_character_flag = coronation_event
+				random_opinion_modifier_target = {
+					limit = {
+						higher_tier_than = COUNT
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						is_adult = yes
+						prisoner = no
+						war = no
+						ai = yes
+						diplomacy = 8
+						opinion = { who = ROOT value = 0 }
+						OR = {
+							trait = gregarious
+							trait = humble
+							trait = kind
+						}
+						NOR = {
+							trait = shy
+							trait = envious
+							trait = cruel
+							has_character_flag = coronation_event
+						}
+					}
+					character_event = { id = emf_coronation.1237 }
+					break = yes
+				}
+				random_opinion_modifier_target = {
+					limit = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						is_adult = yes
+						prisoner = no
+						war = no
+						ai = yes
+						diplomacy = 8
+						opinion = { who = ROOT value = 0 }
+						OR = {
+							trait = gregarious
+							trait = humble
+							trait = kind
+						}
+						NOR = {
+							trait = shy
+							trait = envious
+							trait = cruel
+							has_character_flag = coronation_event
+						}
+					}
+					character_event = { id = emf_coronation.1237 }
+					break = yes
+				}
+				random_opinion_modifier_target = {
+					limit = {
+						higher_tier_than = COUNT
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						is_adult = yes
+						prisoner = no
+						war = no
+						ai = yes
+						diplomacy = 8
+						opinion = { who = ROOT value = 0 }
+						NOR = {
+							trait = shy
+							trait = envious
+							trait = cruel
+							has_character_flag = coronation_event
+						}
+					}
+					character_event = { id = emf_coronation.1237 }
+					break = yes
+				}
+				random_opinion_modifier_target = {
+					limit = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						is_adult = yes
+						prisoner = no
+						war = no
+						ai = yes
+						diplomacy = 8
+						opinion = { who = ROOT value = 0 }
+						NOR = {
+							trait = shy
+							trait = envious
+							trait = cruel
+							has_character_flag = coronation_event
+						}
+					}
+					character_event = { id = emf_coronation.1237 }
+					break = yes
+				}
+			}
+			10 = { # A dance with the host?
+				modifier = {
+					factor = 0
+					has_character_flag = coronation_lover
+				}
+				modifier = {
+					factor = 2.0
+					trait = lustful
+				}
+				modifier = {
+					factor = 2.0
+					trait = hedonist
+				}
+				modifier = {
+					factor = 0
+					is_married = yes
+					trait = chaste
+				}
+				modifier = {
+					factor = 0.5
+					is_married = yes
+				}
+				modifier = {
+					factor = 0
+					has_lover = yes
+					OR = {
+						NOT = { trait = lustful }
+						num_of_lovers = 5
+					}
+				}
+				modifier = {
+					factor = 0
+					OR = {
+						trait = infirm
+						trait = incapable
+						trait = celibate
+						trait = eunuch
+						trait = homosexual
+						trait = chaste
+					}
+				}
+				modifier = {
+					factor = 0
+					NOT = {
+						any_opinion_modifier_target = {
+							has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+							ai = yes
+							is_adult = yes
+							prisoner = no
+							war = no
+							is_pregnant = no
+							reverse_opinion = { who = ROOT value = 0 }
+							opinion = { who = ROOT value = 0 }
+							OR = {
+								is_married = no
+								trait = lustful
+								trait = hedonist
+							}
+							OR = {
+								has_lover = no
+								trait = lustful
+								trait = hedonist
+							}
+							NOR = {
+								same_sex = ROOT
+								is_married = ROOT
+								is_lover = ROOT
+								is_consort = ROOT
+								is_former_lover = ROOT
+								is_rival = ROOT
+								is_close_relative = ROOT
+								trait = infirm
+								trait = celibate
+								trait = eunuch
+								trait = hunchback
+								trait = dwarf
+								trait = ugly
+								trait = homosexual
+								trait = chaste
+								trait = blinded
+								trait = inbred
+								trait = imbecile
+								age = 40
+								num_of_lovers = 5
+								has_character_flag = coronation_event
+							}
+						}
+					}
+				}
+				clr_character_flag = coronation_event
+				set_character_flag = coronation_event
+				random_opinion_modifier_target = {
+					limit = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						ai = yes
+						is_adult = yes
+						prisoner = no
+						war = no
+						is_pregnant = no
+						reverse_opinion = { who = ROOT value = 0 }
+						opinion = { who = ROOT value = 0 }
+						OR = {
+							trait = lustful
+							trait = hedonist
+							trait = fair
+						}
+						OR = {
+							is_married = no
+							trait = lustful
+							trait = hedonist
+						}
+						OR = {
+							has_lover = no
+							trait = lustful
+							trait = hedonist
+						}
+						NOR = {
+							same_sex = ROOT
+							is_married = ROOT
+							is_lover = ROOT
+							is_consort = ROOT
+							is_former_lover = ROOT
+							is_rival = ROOT
+							is_close_relative = ROOT
+							trait = infirm
+							trait = celibate
+							trait = eunuch
+							trait = hunchback
+							trait = dwarf
+							trait = ugly
+							trait = homosexual
+							trait = chaste
+							trait = blinded
+							trait = inbred
+							trait = imbecile
+							age = 20
+							num_of_lovers = 5
+							has_character_flag = coronation_event
+						}
+					}
+					character_event = { id = emf_coronation.1239 }
+					break = yes
+				}
+				random_opinion_modifier_target = {
+					limit = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						ai = yes
+						is_adult = yes
+						prisoner = no
+						war = no
+						is_pregnant = no
+						reverse_opinion = { who = ROOT value = 0 }
+						opinion = { who = ROOT value = 0 }
+						OR = {
+							trait = lustful
+							trait = hedonist
+							trait = fair
+						}
+						OR = {
+							is_married = no
+							trait = lustful
+							trait = hedonist
+						}
+						OR = {
+							has_lover = no
+							trait = lustful
+							trait = hedonist
+						}
+						NOR = {
+							same_sex = ROOT
+							is_married = ROOT
+							is_lover = ROOT
+							is_consort = ROOT
+							is_former_lover = ROOT
+							is_rival = ROOT
+							is_close_relative = ROOT
+							trait = infirm
+							trait = celibate
+							trait = eunuch
+							trait = hunchback
+							trait = dwarf
+							trait = ugly
+							trait = homosexual
+							trait = chaste
+							trait = blinded
+							trait = inbred
+							trait = imbecile
+							age = 40
+							num_of_lovers = 5
+							has_character_flag = coronation_event
+						}
+					}
+					character_event = { id = emf_coronation.1239 }
+					break = yes
+				}
+				random_opinion_modifier_target = {
+					limit = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						ai = yes
+						is_adult = yes
+						prisoner = no
+						war = no
+						is_pregnant = no
+						reverse_opinion = { who = ROOT value = 0 }
+						opinion = { who = ROOT value = 0 }
+						OR = {
+							is_married = no
+							trait = lustful
+							trait = hedonist
+						}
+						OR = {
+							has_lover = no
+							trait = lustful
+							trait = hedonist
+						}
+						NOR = {
+							same_sex = ROOT
+							is_married = ROOT
+							is_lover = ROOT
+							is_consort = ROOT
+							is_former_lover = ROOT
+							is_rival = ROOT
+							is_close_relative = ROOT
+							trait = infirm
+							trait = celibate
+							trait = eunuch
+							trait = hunchback
+							trait = dwarf
+							trait = ugly
+							trait = homosexual
+							trait = chaste
+							trait = blinded
+							trait = inbred
+							trait = imbecile
+							age = 40
+							num_of_lovers = 5
+							has_character_flag = coronation_event
+						}
+					}
+					character_event = { id = emf_coronation.1239 }
+					break = yes
+				}
+			}
+			10 = { # A homosexual guest is interested in the host
+				modifier = {
+					factor = 0
+					has_character_flag = coronation_lover
+				}
+				modifier = {
+					factor = 2.0
+					trait = lustful
+				}
+				modifier = {
+					factor = 2.0
+					trait = hedonist
+				}
+				modifier = {
+					factor = 0
+					has_lover = yes
+					OR = {
+						NOT = { trait = lustful }
+						num_of_lovers = 5
+					}
+				}
+				modifier = {
+					factor = 0
+					OR = {
+						trait = infirm
+						trait = incapable
+						trait = celibate
+						trait = eunuch
+						NOT = { trait = homosexual }
+						trait = chaste
+					}
+				}
+				modifier = {
+					factor = 0
+					NOT = {
+						any_opinion_modifier_target = {
+							has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+							ai = yes
+							is_adult = yes
+							prisoner = no
+							war = no
+							is_pregnant = no
+							trait = homosexual
+							same_sex = ROOT
+							reverse_opinion = { who = ROOT value = 0 }
+							opinion = { who = ROOT value = 0 }
+							OR = {
+								is_married = no
+								trait = lustful
+								trait = hedonist
+							}
+							OR = {
+								has_lover = no
+								trait = lustful
+								trait = hedonist
+							}
+							NOR = {
+								is_married = ROOT
+								is_lover = ROOT
+								is_consort = ROOT
+								is_former_lover = ROOT
+								is_rival = ROOT
+								is_close_relative = ROOT
+								trait = infirm
+								trait = celibate
+								trait = eunuch
+								trait = hunchback
+								trait = dwarf
+								trait = ugly
+								trait = chaste
+								trait = blinded
+								trait = inbred
+								trait = imbecile
+								age = 40
+								num_of_lovers = 5
+								has_character_flag = coronation_event
+							}
+						}
+					}
+				}
+				clr_character_flag = coronation_event
+				set_character_flag = coronation_event
+				random_opinion_modifier_target = {
+					limit = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						ai = yes
+						is_adult = yes
+						prisoner = no
+						war = no
+						is_pregnant = no
+						reverse_opinion = { who = ROOT value = 0 }
+						opinion = { who = ROOT value = 0 }
+						trait = homosexual
+						same_sex = ROOT
+						OR = {
+							trait = lustful
+							trait = hedonist
+							trait = fair
+						}
+						OR = {
+							is_married = no
+							trait = lustful
+							trait = hedonist
+						}
+						OR = {
+							has_lover = no
+							trait = lustful
+							trait = hedonist
+						}
+						NOR = {
+							is_married = ROOT
+							is_lover = ROOT
+							is_consort = ROOT
+							is_former_lover = ROOT
+							is_rival = ROOT
+							is_close_relative = ROOT
+							trait = infirm
+							trait = celibate
+							trait = eunuch
+							trait = hunchback
+							trait = dwarf
+							trait = ugly
+							trait = chaste
+							trait = blinded
+							trait = inbred
+							trait = imbecile
+							age = 20
+							num_of_lovers = 5
+							has_character_flag = coronation_event
+						}
+					}
+					character_event = { id = emf_coronation.1241 }
+					break = yes
+				}
+				random_opinion_modifier_target = {
+					limit = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						ai = yes
+						is_adult = yes
+						prisoner = no
+						war = no
+						is_pregnant = no
+						reverse_opinion = { who = ROOT value = 0 }
+						opinion = { who = ROOT value = 0 }
+						trait = homosexual
+						same_sex = ROOT
+						OR = {
+							trait = lustful
+							trait = hedonist
+							trait = fair
+						}
+						OR = {
+							is_married = no
+							trait = lustful
+							trait = hedonist
+						}
+						OR = {
+							has_lover = no
+							trait = lustful
+							trait = hedonist
+						}
+						NOR = {
+							is_married = ROOT
+							is_lover = ROOT
+							is_consort = ROOT
+							is_former_lover = ROOT
+							is_rival = ROOT
+							is_close_relative = ROOT
+							trait = infirm
+							trait = celibate
+							trait = eunuch
+							trait = hunchback
+							trait = dwarf
+							trait = ugly
+							trait = chaste
+							trait = blinded
+							trait = inbred
+							trait = imbecile
+							age = 40
+							num_of_lovers = 5
+							has_character_flag = coronation_event
+						}
+					}
+					character_event = { id = emf_coronation.1241 }
+					break = yes
+				}
+				random_opinion_modifier_target = {
+					limit = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						ai = yes
+						is_adult = yes
+						prisoner = no
+						war = no
+						is_pregnant = no
+						reverse_opinion = { who = ROOT value = 0 }
+						opinion = { who = ROOT value = 0 }
+						trait = homosexual
+						same_sex = ROOT
+						OR = {
+							is_married = no
+							trait = lustful
+							trait = hedonist
+						}
+						OR = {
+							has_lover = no
+							trait = lustful
+							trait = hedonist
+						}
+						NOR = {
+							is_married = ROOT
+							is_lover = ROOT
+							is_consort = ROOT
+							is_former_lover = ROOT
+							is_rival = ROOT
+							is_close_relative = ROOT
+							trait = infirm
+							trait = celibate
+							trait = eunuch
+							trait = hunchback
+							trait = dwarf
+							trait = ugly
+							trait = chaste
+							trait = blinded
+							trait = inbred
+							trait = imbecile
+							age = 40
+							num_of_lovers = 5
+							has_character_flag = coronation_event
+						}
+					}
+					character_event = { id = emf_coronation.1241 }
+					break = yes
+				}
+			}
+			10 = { # Guest is badmouthing the host
+				modifier = {
+					factor = 0
+					has_character_flag = coronation_badmouth
+					NOT = { had_character_flag = { flag = coronation_badmouth days = 10 } }
+				}
+				modifier = {
+					factor = 0
+					num_of_rivals = 5
+				}
+				modifier = {
+					factor = 0
+					NOT = {
+						any_opinion_modifier_target = {
+							has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+							is_adult = yes
+							prisoner = no
+							war = no
+							ai = yes
+							OR = {
+								trait = cruel
+								trait = envious
+								trait = deceitful
+								trait = wroth
+							}
+							NOR = {
+								opinion = { who = ROOT value = 0 }
+								num_of_rivals = 5
+								has_character_flag = coronation_event
+							}
+						}
+					}
+				}
+				clr_character_flag = coronation_event
+				set_character_flag = coronation_event
+				random_opinion_modifier_target = {
+					limit = {
+						higher_tier_than = COUNT
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						is_adult = yes
+						prisoner = no
+						war = no
+						ai = yes
+						OR = {
+							trait = cruel
+							trait = lunatic
+							trait = possessed
+						}
+						OR = {
+							trait = cruel
+							trait = envious
+							trait = deceitful
+							trait = wroth
+						}
+						NOR = {
+							opinion = { who = ROOT value = 0 }
+							num_of_rivals = 5
+							has_character_flag = coronation_event
+						}
+					}
+					character_event = { id = emf_coronation.1243 }
+					break = yes
+				}
+				random_opinion_modifier_target = {
+					limit = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						is_adult = yes
+						prisoner = no
+						war = no
+						ai = yes
+						OR = {
+							trait = cruel
+							trait = lunatic
+							trait = possessed
+						}
+						OR = {
+							trait = cruel
+							trait = envious
+							trait = deceitful
+							trait = wroth
+						}
+						NOR = {
+							opinion = { who = ROOT value = 0 }
+							num_of_rivals = 5
+							has_character_flag = coronation_event
+						}
+					}
+					character_event = { id = emf_coronation.1243 }
+					break = yes
+				}
+				random_opinion_modifier_target = {
+					limit = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						is_adult = yes
+						prisoner = no
+						war = no
+						ai = yes
+						OR = {
+							trait = cruel
+							trait = envious
+							trait = deceitful
+							trait = wroth
+						}
+						NOR = {
+							opinion = { who = ROOT value = 0 }
+							num_of_rivals = 5
+							has_character_flag = coronation_event
+						}
+					}
+					character_event = { id = emf_coronation.1243 }
+					break = yes
+				}
+			}
+			10 = { # Guest overindulges and makes a spectacle of themselves
+				modifier = {
+					factor = 0
+					has_character_flag = coronation_drunkard
+				}
+				modifier = {
+					factor = 0
+					trait = drunkard
+				}
+				modifier = {
+					factor = 0
+					NOT = {
+						any_opinion_modifier_target = {
+							has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+							is_adult = yes
+							prisoner = no
+							war = no
+							OR = {
+								trait = drunkard
+								trait = depressed
+								trait = imbecile
+								trait = inbred
+							}
+							NOT = { has_character_flag = coronation_event }
+						}
+					}
+				}
+				clr_character_flag = coronation_event
+				set_character_flag = coronation_event
+				random_opinion_modifier_target = {
+					limit = {
+						higher_tier_than = COUNT
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						is_adult = yes
+						prisoner = no
+						war = no
+						OR = {
+							trait = drunkard
+							trait = depressed
+							trait = imbecile
+							trait = inbred
+						}
+						NOT = { has_character_flag = coronation_event }
+					}
+					character_event = { id = emf_coronation.1245 }
+					break = yes
+				}
+				random_opinion_modifier_target = {
+					limit = {
+						is_ruler = yes
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						is_adult = yes
+						prisoner = no
+						war = no
+						OR = {
+							trait = drunkard
+							trait = depressed
+							trait = imbecile
+							trait = inbred
+						}
+						NOT = { has_character_flag = coronation_event }
+					}
+					character_event = { id = emf_coronation.1245 }
+					break = yes
+				}
+				random_opinion_modifier_target = {
+					limit = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						is_adult = yes
+						prisoner = no
+						war = no
+						OR = {
+							trait = drunkard
+							trait = depressed
+							trait = imbecile
+							trait = inbred
+						}
+						NOT = { has_character_flag = coronation_event }
+					}
+					character_event = { id = emf_coronation.1245 }
+					break = yes
+				}
+			}
+			10 = { # Lunatic guest makes a spectacle of themselves
+				modifier = {
+					factor = 0
+					has_character_flag = coronation_lunatic
+				}
+				modifier = {
+					factor = 0
+					NOT = {
+						any_opinion_modifier_target = {
+							has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+							is_adult = yes
+							prisoner = no
+							war = no
+							OR = {
+								trait = lunatic
+								trait = possessed
+							}
+							NOT = { has_character_flag = coronation_event }
+						}
+					}
+				}
+				clr_character_flag = coronation_event
+				set_character_flag = coronation_event
+				random_opinion_modifier_target = {
+					limit = {
+						higher_tier_than = COUNT
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						is_adult = yes
+						prisoner = no
+						war = no
+						OR = {
+							trait = lunatic
+							trait = possessed
+						}
+						NOT = { has_character_flag = coronation_event }
+					}
+					character_event = { id = emf_coronation.1247 }
+					break = yes
+				}
+				random_opinion_modifier_target = {
+					limit = {
+						is_ruler = yes
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						is_adult = yes
+						prisoner = no
+						war = no
+						OR = {
+							trait = lunatic
+							trait = possessed
+						}
+						NOT = { has_character_flag = coronation_event }
+					}
+					character_event = { id = emf_coronation.1247 }
+					break = yes
+				}
+				random_opinion_modifier_target = {
+					limit = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						is_adult = yes
+						prisoner = no
+						war = no
+						OR = {
+							trait = lunatic
+							trait = possessed
+						}
+						NOT = { has_character_flag = coronation_event }
+					}
+					character_event = { id = emf_coronation.1247 }
+					break = yes
+				}
+			}
+			100 = { # No event
+				modifier = {
+					factor = 0.5
+					NOT = { has_character_flag = coronation_event }
+				}
+				modifier = {
+					factor = 0.5
+					had_character_flag = { flag = coronation_event days = 6 }
+				}
+				modifier = {
+					factor = 0.5
+					had_character_flag = { flag = coronation_event days = 12 }
+				}
+				modifier = {
+					factor = 0.5
+					had_character_flag = { flag = coronation_event days = 18 }
+				}
+			}
+		}
+	}
+}
+
+# The coronation feast ends
+character_event = {
+	id = emf_coronation.1275
+	desc = EVTDESC_emf_coronation_1275
+	picture = GFX_evt_feast
+	
+	is_triggered_only = yes
+	major = yes
+	
+	major_trigger = {
+		OR = {
+			character = FROM
+			has_opinion_modifier = { who = FROM modifier = attending_coronation }
+		}
+	}
+	
+	immediate = {
+		clr_character_flag = holding_coronation
+	}
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1275
+		trigger = { character = FROM }
+		prestige = 100
+		pf_court_plus2_effect = yes
+		hidden_tooltip = {
+			emf_can_disturb_effect = yes
+			clr_character_flag = has_priest_to_perform_coronation
+			clr_character_flag = asked_about_coronation
+			clr_character_flag = coronation_event
+			clr_character_flag = coronation_lover
+			clr_character_flag = coronation_duel
+			clr_character_flag = coronation_poetry
+			clr_character_flag = coronation_friend
+			clr_character_flag = coronation_rival
+			clr_character_flag = coronation_toast
+			clr_character_flag = coronation_badmouth
+			clr_character_flag = coronation_drunkard
+			clr_character_flag = coronation_lunatic
+			any_opinion_modifier_target = {
+				limit = { reverse_has_opinion_modifier = { who = ROOT modifier = attending_coronation } }
+				remove_opinion = { who = ROOT modifier = attending_coronation }
+				reverse_remove_opinion = { who = ROOT modifier = attending_coronation }
+				character_event = { id = emf_coronation.1276 }
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_coronation_1275
+		trigger = { NOT = { character = FROM } }
+	}
+}
+
+# clear flags
+character_event = {
+	id = emf_coronation.1276
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		has_character_flag = attending_coronation
+	}
+	
+	immediate = {
+		emf_can_disturb_effect = yes
+		clr_character_flag = coronation_event
+		clr_character_flag = attending_coronation
+		opinion = { who = FROM modifier = opinion_attended_ceremony years = 5 }
+		reverse_opinion = { who = FROM modifier = opinion_attended_ceremony years = 5 }
+	}
+}
+
+
+### BYZANTINE CORONATION EVENTS
+
+# New Byzantine emperor ascends to the throne
+character_event = {
+	id = emf_coronation.1320
+	
+	hide_window = yes
+	is_triggered_only = yes
+
+	trigger = {
+		FROM = {
+			title = e_byzantium
+			is_primary_holder_title = yes
+		}
+		FROMFROM = {
+			is_alive = yes
+			OR = {
+				trait = strong_basileus
+				trait = weak_basileus
+			}
+		}
+	}
+	
+	immediate = {
+		FROMFROM = {
+			if = {
+				limit = { trait = strong_basileus }
+				set_character_flag = was_strong_basileus_byz 
+				remove_trait = strong_basileus 
+			}
+			if = {
+				limit = { trait = weak_basileus }
+				set_character_flag = was_weak_basileus_byz  
+				remove_trait = weak_basileus 
+			}
+		}
+	}
+}
+
+# Patriarch asked to do formal coronation (fired from decision)
+character_event = {
+	id = emf_coronation.1321
+	desc = EVTDESC_emf_coronation_1321
+	picture = GFX_evt_throne_room_byzantine
+
+	is_triggered_only = yes  
+    
+	option = {
+		name = EVTOPTA_emf_coronation_1321 #Patriarch approves
+		ai_chance = {
+			factor = 100     
+			modifier = {
+				factor = 2
+				opinion = { who = FROM value = 75 }
+			}
+			modifier = {
+				factor = 2
+				opinion = { who = FROM value = 50 }
+			}
+			modifier = {
+				factor = 2
+				opinion = { who = FROM value = 25 }
+			}
+			modifier = {
+				factor = 3
+				FROM = { trait = born_in_the_purple }
+			}
+			modifier = {
+				factor = 2
+				FROM = {
+					OR = {
+						father_even_if_dead = { trait = strong_basileus }
+						mother_even_if_dead = { trait = strong_basileus }
+					}
+				}
+			}
+			modifier = {
+				factor = 0.5
+				FROM = {
+					NOR = {
+						father_even_if_dead = { trait = strong_basileus }
+						mother_even_if_dead = { trait = strong_basileus }
+						father_even_if_dead = { trait = weak_basileus }
+						mother_even_if_dead = { trait = weak_basileus }
+					}
+				}
+			}
+			modifier = {
+				factor = 2
+				FROM = { trait = celibate }
+			}
+			modifier = {
+				factor = 1.7
+				FROM = { trait = chaste }
+			}
+			modifier = {
+				factor = 1.5
+				FROM = { trait = humble }
+			}
+			modifier = {
+				factor = 2
+				FROM = { trait = zealous }
+			}
+		}
+		FROM = { character_event = { id = emf_coronation.1322 } }
+	}
+	option = {
+		name = EVTOPTB_emf_coronation_1321 #Patriarch refuses
+		ai_chance = {
+			factor = 20  
+			modifier = {
+				factor = 2
+				NOT = { opinion = { who = FROM value = -40 } }
+			}
+			modifier = {
+				factor = 2
+				NOT = { opinion = { who = FROM value = -60 } }
+			}
+			modifier = {
+				factor = 2
+				NOT = { opinion = { who = FROM value = -80 } }
+			}
+			modifier = {
+				factor = 1.5
+				FROM = { is_female = yes }
+			}
+			modifier = {
+				factor = 2
+				FROM = { NOT = { culture = greek } }
+			}
+			modifier = {
+				factor = 3
+				FROM = { trait = lunatic }
+			}
+			modifier = {
+				factor = 4
+				FROM = { trait = possessed }
+			}
+			modifier = {
+				factor = 2
+				FROM = { trait = infirm }
+			}
+			modifier = {
+				factor = 2
+				FROM = { trait = bastard }
+			}
+			modifier = {
+				factor = 1.5
+				FROM = { trait = legit_bastard }
+			}
+			modifier = {
+				factor = 1.5
+				FROM = { trait = imbecile }
+			}
+			modifier = {
+				factor = 4
+				FROM = { trait = inbred }
+			}
+			modifier = {
+				factor = 1.5
+				FROM = { trait = hedonist }
+			}
+			modifier = {
+				factor = 1.5
+				FROM = { trait = cynical }
+			}
+		}
+		FROM = { character_event = { id = emf_coronation.1328 } }
+   }
+} 
+
+# The Patriarch agrees to the coronation
+character_event = {
+	id = emf_coronation.1322
+	desc = EVTDESC_emf_coronation_1322
+	picture = GFX_evt_bishop_byzantine
+
+	is_triggered_only = yes
+
+	option = {
+		name = EVTOPTA_emf_coronation_1177 #Excellent, now invite all the lords
+		scaled_wealth = -1.0
+		custom_tooltip = { text = send_invitations }
+		hidden_tooltip = {
+			clr_character_flag = wants_coronation
+			set_character_flag = planning_coronation
+			set_character_flag = has_priest_to_perform_coronation
+			reverse_opinion = { who = FROM modifier = attending_coronation months = 12 }
+			opinion = { who = FROM modifier = attending_coronation months = 12 }
+			reverse_opinion = { who = FROM modifier = opinion_performed_coronation months = 120 }
+			opinion = { who = FROM modifier = opinion_performed_coronation months = 120 }
+			any_character = {
+				limit = {
+					is_adult = yes
+					prisoner = no
+					is_within_diplo_range = ROOT
+					OR = {
+						is_vassal_or_below = ROOT
+						is_liege_or_above = ROOT
+						is_close_relative = ROOT
+						dynasty = ROOT
+						is_allied_with = ROOT
+						has_non_aggression_pact_with = ROOT
+						AND = {
+							same_realm = ROOT
+							higher_tier_than = BARON
+						}
+						AND = {
+							religion = ROOT
+							any_realm_province = {
+								ROOT = {
+									any_realm_province = {
+										NOT = { distance = { where = PREVPREV value = 125 } }
+									}
+								}
+							}
+						}
+					}
+					NOR = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						character = ROOT
+						trait = incapable
+						trait = excommunicated
+						has_truce = ROOT
+					}
+				}
+				letter_event = { id = emf_coronation.1201 }
+			}
+			FROM = { character_event = { id = emf_coronation.1324 } }
+		}
+	}
+}
+
+# The Patriarch decides whether the Basileus will be considered strong or weak
+character_event = {
+	id = emf_coronation.1324
+	desc = EVTDESC_emf_coronation_1324
+	picture = GFX_evt_throne_room_byzantine
+
+	is_triggered_only = yes
+
+	option = {
+		name = EVTOPTA_emf_coronation_1324 #Strong
+		ai_chance = {
+			factor = 75
+			modifier = {
+				factor = 2
+				FROM = { martial = 18 }
+			}   
+			modifier = {
+				factor = 2
+				FROM = { martial = 15 }
+			}         
+			modifier = {
+				factor = 2
+				FROM = { martial = 12 }
+			}    
+			modifier = {
+				factor = 2
+				FROM = { diplomacy = 18 }
+			}   
+			modifier = {
+				factor = 2
+				FROM = { diplomacy = 15 }
+			}         
+			modifier = {
+				factor = 2
+				FROM = { diplomacy = 12 }
+			}        
+			modifier = {
+				factor = 2
+				FROM = { stewardship = 15 }
+			}      
+			modifier = {
+				factor = 2
+				FROM = { learning = 18 }
+			}              
+			modifier = {
+				factor = 2
+				FROM = { intrigue = 15 }
+			}            
+			modifier = {
+				factor = 1.5
+				FROM = { religion_authority = 0.8 }
+			}    
+			modifier = {
+				factor = 2
+				FROM = { father_even_if_dead = { trait = strong_basileus } }
+			}
+			modifier = {
+				factor = 1.6
+				FROM = { trait = zealous }
+			}
+			modifier = {
+				factor = 1.3
+				FROM = { trait = just }
+			}
+			modifier = {
+				factor = 1.4
+				FROM = { trait = ambitious }
+			} 
+			modifier = {
+				factor = 1.3
+				FROM = { trait = gregarious }
+			}
+			modifier = {
+				factor = 1.4
+				FROM = { trait = brave }
+			}
+			modifier = {
+				factor = 1.2
+				FROM = { trait = patient }
+			}
+			modifier = {
+				factor = 1.3
+				FROM = { trait = fair }
+			}
+			modifier = {
+				factor = 2
+				FROM = { trait = genius }
+			}
+			modifier = {
+				factor = 1.8
+				FROM = { trait = quick }
+			}
+			modifier = {
+				factor = 1.8
+				FROM = { trait = shrewd }
+			}
+			modifier = {
+				factor = 2
+				FROM = { is_strong_trigger = yes }
+			}
+			modifier = {
+				factor = 1.3
+				FROM = { trait = duelist }
+			}
+			modifier = {
+				factor = 1.3
+				FROM = { trait = hunter }
+			}
+			modifier = {
+				factor = 1.3
+				FROM = { trait = temperate }
+			}
+			modifier = {
+				factor = 1.4
+				FROM = { trait = diligent }
+			}
+			modifier = {
+				factor = 1.8
+				FROM = { trait = born_in_the_purple }
+			}
+		}
+		FROM = { narrative_event = { id = emf_coronation.1325 days = 30 } }
+	}
+	option = {
+		name = EVTOPTB_emf_coronation_1324 #Weak
+		ai_chance = {
+			factor = 100  
+			modifier = {
+				factor = 2
+				FROM = { NOT = { martial = 9 } }
+			}
+			modifier = {
+				factor = 2
+				FROM = { NOT = { martial = 6 } }
+			}
+			modifier = {
+				factor = 2
+				FROM = { NOT = { martial = 3 } }
+			}
+			modifier = {
+				factor = 2
+				FROM = { NOT = { diplomacy = 9 } }
+			}
+			modifier = {
+				factor = 2
+				FROM = { NOT = { diplomacy = 6 } }
+			}
+			modifier = {
+				factor = 2
+				FROM = { NOT = { diplomacy = 3 } }
+			}
+			modifier = {
+				factor = 2
+				FROM = { NOT = { stewardship = 5 } }
+			}
+			modifier = {
+				factor = 2
+				FROM = { NOT = { intrigue = 5 } }
+			}
+			modifier = {
+				factor = 2
+				FROM = { NOT = { learning = 5 } }
+			}
+			modifier = {
+				factor = 1.5
+				FROM = { NOT = { culture = greek } }
+			}
+			modifier = {
+				factor = 2
+				FROM = { is_female = yes }
+			}
+			modifier = {
+				factor = 1.5
+				FROM = { has_character_flag = forced_patriarch_to_abdicate }
+			}    
+			modifier = {
+				factor = 2
+				FROM = { NOT = { religion_authority = 0.4 } }
+			}
+			modifier = {
+				factor = 1.8
+				NOT = { FROM = { owns = 496 } }
+			}
+			modifier = {
+				factor = 1.6
+				FROM = { NOT = { realm_size = 50 } }
+			}
+			modifier = {
+				factor = 1.6
+				FROM = { NOT = { realm_size = 100 } }
+			}
+			modifier = {
+				factor = 1.3  
+				FROM = { NOT = { realm_size = 150 } }
+			}
+			modifier = {
+				factor = 1.3
+				FROM = { age = 50 }
+			}
+			modifier = {
+				factor = 1.5
+				FROM = { age = 60 }
+			}
+			modifier = {
+				factor = 1.7
+				FROM = { age = 70 }
+			}
+			modifier = {
+				factor = 2
+				FROM = { age = 80 }
+			}
+			modifier = {
+				factor = 2.5
+				FROM = { age = 90 }
+			}
+			modifier = {
+				factor = 1.3
+				FROM = { trait = depressed }
+			}
+			modifier = {
+				factor = 2
+				FROM = { trait = lunatic }
+			}
+			modifier = {
+				factor = 2
+				FROM = { trait = possessed }
+			}
+			modifier = {
+				factor = 1.8
+				FROM = { trait = infirm }
+			}
+			modifier = {
+				factor = 1.4
+				FROM = { trait = drunkard }
+			}
+			modifier = {
+				factor = 1.5
+				FROM = { trait = bastard }
+			}
+			modifier = {
+				factor = 1.3
+				FROM = { trait = legit_bastard }
+			}
+			modifier = {
+				factor = 2
+				FROM = { trait = kinslayer }
+			}
+			modifier = {
+				factor = 1.2
+				FROM = { trait = clubfooted }
+			}
+			modifier = {
+				factor = 1.2
+				FROM = { trait = harelip }
+			}
+			modifier = {
+				factor = 1.3
+				FROM = { trait = hunchback }
+			}
+			modifier = {
+				factor = 1.2
+				FROM = { trait = lisp }
+			}
+			modifier = {
+				factor = 1.3
+				FROM = { trait = stutter }
+			}
+			modifier = {
+				factor = 1.2
+				FROM = { trait = ugly }
+			}
+			modifier = {
+				factor = 1.3
+				FROM = { trait = dwarf }
+			}
+			modifier = {
+				factor = 1.8
+				FROM = { trait = slow }
+			}
+			modifier = {
+				factor = 1.8
+				FROM = { trait = dull }
+			}
+			modifier = {
+				factor = 2
+				FROM = { trait = imbecile }
+			}
+			modifier = {
+				factor = 2.5
+				FROM = { trait = inbred }
+			}
+			modifier = {
+				factor = 1.7
+				FROM = { is_weak_trigger = yes }
+			}
+			modifier = {
+				factor = 1.4
+				FROM = { trait = blinded }
+			} 
+			modifier = {
+				factor = 2
+				FROM = { trait = eunuch }
+			}
+			modifier = {
+				factor = 1.4
+				FROM = { trait = trusting }
+			} 
+			modifier = {
+				factor = 1.4
+				FROM = { trait = paranoid }
+			}  
+			modifier = {
+				factor = 1.5
+				FROM = { trait = arbitrary }
+			} 
+			modifier = {
+				factor = 1.6
+				FROM = { trait = content }
+			} 
+			modifier = {
+				factor = 1.4
+				FROM = { trait = shy }
+			} 
+			modifier = {
+				factor = 1.7
+				FROM = { trait = craven }
+			}    
+			modifier = {
+				factor = 1.2
+				FROM = { trait = deceitful }
+			} 
+			modifier = {
+				factor = 1.2
+				FROM = { trait = gluttonous }
+			}      
+			modifier = {
+				factor = 1.2
+				FROM = { trait = greedy }
+			}
+			modifier = {
+				factor = 0
+				FROM = {
+					prestige = 2500
+					piety = 500
+					NOT = {
+						any_vassal = {
+							higher_tier_than = COUNT
+							NOT = { opinion = { who = PREV value = 0 } }
+						}
+					}
+				}
+			}
+		}
+		FROM = { narrative_event = { id = emf_coronation.1326 days = 30 } }
+   }
+}
+
+# Strong Basileus ascends
+narrative_event = {
+	id = emf_coronation.1325
+	title = EVTNAME_emf_coronation_1325
+	picture = GFX_evt_coronation_orthodox
+	border = GFX_event_narrative_frame_religion
+	sound = church_bells
+	
+	desc = {
+		text = EVTDESC_emf_coronation_1325
+		trigger = {
+			ROOT = {
+				capital_scope = { province_id = 496 }
+			}
+		}
+	}
+	desc = {
+		text = EVTDESC_emf_coronation_1325_other
+		trigger = {
+			ROOT = {
+				NOT = { capital_scope = { province_id = 496 } }
+			}
+		}
+	}
+	
+	major = yes
+	is_triggered_only = yes
+	hide_from = yes
+	show_ROOT = yes
+	
+	trigger = {
+		has_character_flag = planning_coronation
+	}
+
+	option = {
+		name = EVTOPTA_emf_coronation_1325
+		trigger = {
+			has_landed_title = e_byzantium
+		}
+		piety = 100
+		prestige = 250
+		add_trait = strong_basileus
+		religion_authority = { modifier = strong_emperor_byz }
+		
+		if = {
+			limit = { trait = humble }
+			random = {
+				chance = 50
+				remove_trait = humble
+			}
+		}
+		if = {
+			limit = {
+				NOT = { trait = humble }
+				NOT = { trait = proud }
+			}
+			random = {
+				chance = 50
+				add_trait = proud
+				hidden_tooltip = { character_event = { id = 38261 } } # notify proud
+			}
+		}
+		
+		pf_court_plus2_effect = yes
+		pf_tradition_plus2_effect = yes
+		
+		hidden_tooltip = {
+			if = {
+				limit = { is_ironman = no }
+				e_byzantium = { change_variable = { which = "imperial_decay" value = -5 } }
+			}
+			character_event = { id = emf_imperial.1852 } # change the decay modifier
+			character_event = { id = emf_coronation.1216 days = 1 } # the feast begins
+		}
+		if = {
+			limit = { ai = no }
+			chronicle = {
+				entry = CHRONICLE_NORMAL_CORONATION
+				portrait = [Root.GetID]
+				picture = GFX_evt_coronation
+			}
+		}
+	}	
+	option = {
+		name = EVTOPTB_emf_coronation_1325
+		trigger = {
+			NOT = { has_landed_title = e_byzantium }
+			any_liege = { has_landed_title = e_byzantium }
+		}
+		tooltip = {
+			ROOT = {
+				add_trait = strong_basileus
+				religion_authority = { modifier = strong_emperor_byz }
+			}
+		}
+		if = {
+			limit = { ai = no }
+			chronicle = {
+				entry = CHRONICLE_NORMAL_CORONATION
+				portrait = [Root.GetID]
+				picture = GFX_evt_coronation
+			}
+		}
+	}
+	option = {
+		name = OK
+		trigger = {
+			NOT = { has_landed_title = e_byzantium }
+			NOT = { any_liege = { has_landed_title = e_byzantium } }
+		}
+	}
+}
+
+# Weak Basileus ascends
+narrative_event = {
+	id = emf_coronation.1326
+	title = EVTNAME_emf_coronation_1325
+	desc = EVTDESC_emf_coronation_1327
+	picture = GFX_evt_coronation_orthodox
+	border = GFX_event_narrative_frame_religion
+	sound = church_bells
+
+	major = yes
+	is_triggered_only = yes
+	hide_from = yes
+	show_ROOT = yes
+	
+	trigger = {
+		has_character_flag = planning_coronation
+	}
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+			same_realm = ROOT
+		}
+	}
+
+	option = {
+		name = EVTOPTA_emf_coronation_1326
+		trigger = {
+			has_landed_title = e_byzantium
+		}
+		piety = 100
+		add_trait = weak_basileus
+		religion_authority = { modifier = weak_emperor_byz }
+		
+		pf_court_plus1_effect = yes
+		pf_tradition_plus1_effect = yes
+		emf_imperial_decay_minus_1_effect = yes
+		
+		hidden_tooltip = {
+			character_event = { id = emf_coronation.1216 days = 1 } # the feast begins
+		}
+		if = {
+			limit = { ai = no }
+			chronicle = {
+				entry = CHRONICLE_NORMAL_CORONATION
+				portrait = [Root.GetID]
+				picture = GFX_evt_coronation
+			}
+		}
+	}
+	option = {
+		name = I_SEE
+		trigger = {
+			NOT = { has_landed_title = e_byzantium }
+		}
+		tooltip = {
+			ROOT = {
+				add_trait = weak_basileus
+				religion_authority = { modifier = weak_emperor_byz }
+			}
+		}
+	}
+}
+
+# The Patriarch has refused to coronate -- do you depose him?
+character_event = {
+	id = emf_coronation.1328
+	desc = EVTDESC_emf_coronation_1328
+	picture = GFX_evt_bishop_byzantine
+
+	is_triggered_only = yes
+
+	option = {
+		name = EVTOPTA_emf_coronation_1328 #Force him to abdicate!
+		ai_chance = {
+			factor = 130  
+			modifier = {
+				factor = 1.8
+				trait = born_in_the_purple
+			}    
+			modifier = {
+				factor = 2
+				trait = lunatic
+			}     
+			modifier = {
+				factor = 2
+				trait = possessed
+			}     
+			modifier = {
+				factor = 1.5
+				trait = paranoid
+			}    
+			modifier = {
+				factor = 1.5
+				trait = greedy
+			}      
+			modifier = {
+				factor = 1.5
+				is_strong_trigger = yes
+			}               
+			modifier = {
+				factor = 1.5
+				trait = deceitful
+			}       
+			modifier = {
+				factor = 2
+				trait = ambitious
+			}       
+			modifier = {
+				factor = 1.7
+				trait = arbitrary
+			}       
+			modifier = {
+				factor = 1.3
+				trait = hedonist
+			}          
+			modifier = {
+				factor = 1.8
+				trait = impaler
+			}           
+			modifier = {
+				factor = 1.6
+				trait = cynical
+			}  
+		}  
+		prestige = -200
+		piety = -350
+		scaled_wealth = -1.0
+		religion_authority = { modifier = deposed_patriarch_byz }
+		FROM = {
+			opinion = { who = ROOT modifier = opinion_basileus_patr_revoking months = 60 }
+			abdicate = yes
+		}
+		set_character_flag = forced_patriarch_to_abdicate  
+		custom_tooltip = { text = send_invitations }
+		if = {
+			limit = { any_vassal = { leads_faction = faction_tradition } }
+			custom_tooltip = { text = TRADITIONFACTIONMOODMINUS }
+			hidden_tooltip = {
+				random_vassal = {
+					limit = { leads_faction = faction_tradition }
+					change_variable = { which = "faction_mood_decrease" value = 6 }
+				}
+				character_event = { id = PlusFaction.200 days = 1 }
+			}
+		}
+		hidden_tooltip = {
+			clr_character_flag = wants_coronation
+			set_character_flag = planning_coronation
+			set_character_flag = has_priest_to_perform_coronation
+			religion_head = {
+				opinion = { who = ROOT modifier = opinion_appointed_patriarch months = 120 }
+				reverse_opinion = { who = ROOT modifier = attending_coronation months = 12 }
+				opinion = { who = ROOT modifier = attending_coronation months = 12 }
+				reverse_opinion = { who = ROOT modifier = opinion_performed_coronation months = 120 }
+				opinion = { who = ROOT modifier = opinion_performed_coronation months = 120 }
+			}
+			any_character = {
+				limit = {
+					is_adult = yes
+					prisoner = no
+					is_within_diplo_range = ROOT
+					OR = {
+						is_vassal_or_below = ROOT
+						is_liege_or_above = ROOT
+						is_close_relative = ROOT
+						dynasty = ROOT
+						is_allied_with = ROOT
+						has_non_aggression_pact_with = ROOT
+						AND = {
+							same_realm = ROOT
+							higher_tier_than = BARON
+						}
+						AND = {
+							religion = ROOT
+							any_realm_province = {
+								ROOT = {
+									any_realm_province = {
+										NOT = { distance = { where = PREVPREV value = 125 } }
+									}
+								}
+							}
+						}
+					}
+					NOR = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						character = ROOT
+						trait = incapable
+						trait = excommunicated
+						has_truce = ROOT
+					}
+				}
+				letter_event = { id = emf_coronation.1201 }
+			}
+			religion_head = { character_event = { id = emf_coronation.1324 } }
+		}
+		custom_tooltip = {
+			text = tyrant_custom_tooltip
+			hidden_tooltip = {
+				any_realm_character = {
+					limit = { controls_religion = no }
+					opinion = {
+						who = PREV
+						modifier = opinion_tyrant
+						months = 120
+					}
+				}
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_coronation_1328
+		ai_chance = {
+			factor = 70  
+			modifier = {
+				factor = 1.7
+				trait = depressed
+			}    
+			modifier = {
+				factor = 1.7
+				trait = stressed
+			}     
+			modifier = {
+				factor = 1.2
+				trait = scholar
+			}     
+			modifier = {
+				factor = 1.8
+				trait = infirm
+			}    
+			modifier = {
+				factor = 1.4
+				trait = chaste
+			}      
+			modifier = {
+				factor = 1.8
+				trait = humble
+			}               
+			modifier = {
+				factor = 1.3
+				trait = slothful
+			}       
+			modifier = {
+				factor = 2
+				is_weak_trigger = yes
+			}       
+			modifier = {
+				factor = 1.6
+				trait = trusting
+			}       
+			modifier = {
+				factor = 2.4
+				trait = zealous
+			}          
+			modifier = {
+				factor = 1.8
+				trait = craven
+			}           
+			modifier = {
+				factor = 1.6
+				trait = shy
+			}            
+			modifier = {
+				factor = 2
+				trait = content
+			}           
+			modifier = {
+				factor = 1.3
+				trait = just
+			}   
+		}
+		prestige = -100       
+		clr_character_flag = wants_coronation
+		religion_head = { set_character_flag = refused_to_coronate }
+		emf_imperial_decay_plus_1_effect = yes
+	}
+}  
+
+### MAINTENANCE EVENTS
+
+# Character becomes Byzantine Emperor once again
+character_event = {
+	id = emf_coronation.1331
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		FROM = {
+			title = e_byzantium
+			is_primary_holder_title = yes
+		}
+		emf_uses_byzantine_coronation = yes
+		OR = {
+			has_character_flag = was_strong_basileus_byz 
+			has_character_flag = was_weak_basileus_byz
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = { has_character_flag = was_weak_basileus_byz }
+			add_trait = weak_basileus
+			clr_character_flag = was_weak_basileus_byz
+		}
+		if = {
+			limit = { has_character_flag = was_strong_basileus_byz }
+			add_trait = strong_basileus 
+			clr_character_flag = was_strong_basileus_byz  
+		}
+    }
+}
+
+# Emperor becomes strong
+narrative_event = {
+	id = emf_coronation.1338
+	title = EVTNAME_emf_coronation_1338
+	desc = EVTDESC_emf_coronation_1338
+	picture = GFX_evt_byzantine_throne
+	
+	is_triggered_only = yes
+	
+	major = yes
+	hide_from = yes
+	show_ROOT = yes
+	
+	major_trigger = {
+		OR = {
+			character = ROOT
+			same_realm = ROOT
+			ai = no
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_coronation_1338
+		trigger = { character = ROOT }
+	}
+	option = {
+		name = EVTOPTA_emf_coronation_1338
+		trigger = {
+			NOT = { character = ROOT }
+			same_realm = ROOT
+		}
+	}
+	option = {
+		name = EVTOPTA_emf_coronation_1338
+		trigger = {
+			NOT = { same_realm = ROOT }
+		}
+	}
+}
+
+
+### HRE CORONATION EVENTS
+
+# Coronationation decision taken
+character_event = {
+	id = emf_coronation.1475
+	desc = EVTDESC_emf_coronation_1475
+	picture = GFX_evt_pope
+
+	is_triggered_only = yes
+
+	option = {
+		name = EVTOPTA_emf_coronation_1475 # I will ask the pope
+		hidden_tooltip = {
+			religion_head = {
+				letter_event = { id = emf_coronation.1476 }
+			}
+		}
+	}
+}
+
+# Asking the pope for coronation
+letter_event = {
+	id = emf_coronation.1476
+	desc = EVTDESC_emf_coronation_1476
+
+	is_triggered_only = yes
+
+	option = {
+		name = EVTOPTA_emf_coronation_1476 # Accept
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 1.2
+				opinion = { who = FROM value = 20 }
+			}
+			modifier = {
+				factor = 1.2
+				opinion = { who = FROM value = 40 }
+			}
+			modifier = {
+				factor = 1.2
+				opinion = { who = FROM value = 60 }
+			}
+			modifier = {
+				factor = 1.2
+				opinion = { who = FROM value = 80 }
+			}
+			modifier = {
+				factor = 2.0
+				FROM = { trait = zealous }
+			}
+			modifier = {
+				factor = 2.0
+				FROM = { trait = crusader }
+			}
+			modifier = {
+				factor = 1.2
+				FROM = { piety = 400 }
+			}
+			modifier = {
+				factor = 1.2
+				FROM = { piety = 600 }
+			}
+			modifier = {
+				factor = 1.2
+				FROM = { piety = 800 }
+			}
+			modifier = {
+				factor = 1.2
+				FROM = { piety = 1000 }
+			}
+		}
+		wealth = 100
+		FROM = {
+			letter_event = { id = emf_coronation.1477 }
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_coronation_1476 # Reject
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 1.2
+				NOT = { opinion = { who = FROM value = -80 } }
+			}
+			modifier = {
+				factor = 1.2
+				NOT = { opinion = { who = FROM value = -60 } }
+			}
+			modifier = {
+				factor = 1.2
+				NOT = { opinion = { who = FROM value = -40 } }
+			}
+			modifier = {
+				factor = 1.2
+				NOT = { opinion = { who = FROM value = -20 } }
+			}
+			modifier = {
+				factor = 1.2
+				NOT = { opinion = { who = FROM value = 0 } }
+			}
+			modifier = {
+				factor = 2.0
+				FROM = { trait = lunatic }
+			}
+			modifier = {
+				factor = 2.0
+				FROM = { trait = kinslayer }
+			}
+			modifier = {
+				factor = 2.0
+				FROM = { trait = cynical }
+			}
+		}
+		FROM = {
+			letter_event = { id = emf_coronation.1478 }
+		}
+		opinion = { who = FROM modifier = coronation_rejected years = 2 }
+	}
+}
+ 
+# Inform emperor that the pope agrees to the coronation & send out the invitations to realm lords
+letter_event = {
+	id = emf_coronation.1477
+	desc = EVTDESC_emf_coronation_1477
+
+	is_triggered_only = yes
+
+	option = {
+		name = EVTOPTA_emf_coronation_1477 # Excellent, now invite all the lords
+		scaled_wealth = -1.0
+		custom_tooltip = { text = send_invitations }
+		hidden_tooltip = {
+			clr_character_flag = wants_coronation
+			set_character_flag = planning_coronation
+			set_character_flag = has_priest_to_perform_coronation
+			reverse_opinion = { who = FROM modifier = attending_coronation months = 12 }
+			opinion = { who = FROM modifier = attending_coronation months = 12 }
+			reverse_opinion = { who = FROM modifier = opinion_performed_coronation months = 120 }
+			opinion = { who = FROM modifier = opinion_performed_coronation months = 120 }
+			any_character = {
+				limit = {
+					is_adult = yes
+					prisoner = no
+					is_within_diplo_range = ROOT
+					OR = {
+						is_vassal_or_below = ROOT
+						is_liege_or_above = ROOT
+						is_close_relative = ROOT
+						dynasty = ROOT
+						is_allied_with = ROOT
+						has_non_aggression_pact_with = ROOT
+						AND = {
+							same_realm = ROOT
+							higher_tier_than = BARON
+						}
+						AND = {
+							religion = ROOT
+							any_realm_province = {
+								ROOT = {
+									any_realm_province = {
+										NOT = { distance = { where = PREVPREV value = 125 } }
+									}
+								}
+							}
+						}
+					}
+					NOR = {
+						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+						character = ROOT
+						trait = incapable
+						trait = excommunicated
+						has_truce = ROOT
+					}
+				}
+				letter_event = { id = emf_coronation.1201 }
+			}
+			narrative_event = { id = emf_coronation.1481 days = 60 } # Coronation begins
+		}
+	}
+}
+
+# Inform emperor that the pope rejects coronation
+letter_event = {
+	id = emf_coronation.1478
+	desc = EVTDESC_emf_coronation_1478
+
+	is_triggered_only = yes
+
+	option = {
+		name = EVTOPTA_emf_coronation_1478 # Maybe we should try again later
+		clr_character_flag = wants_coronation
+		prestige = -50
+		opinion = { who = FROM modifier = coronation_rejected years = 2 }
+	}
+}
+
+# Emperor crowned by pope
+narrative_event = {
+	id = emf_coronation.1481
+	title = EVTNAME_emf_coronation_1484
+	desc = EVTDESC_emf_coronation_1484
+	picture = GFX_evt_holy_emperor
+	border = GFX_event_narrative_frame_religion
+	sound = church_bells
+	
+	major = yes
+	is_triggered_only = yes
+	hide_from = yes
+	show_ROOT = yes
+	
+	trigger = {
+		has_character_flag = planning_coronation
+	}	
+
+	option = {
+		name = EVTOPTA_emf_coronation_1481 # This is the happiest day of my life
+		trigger = {
+			character = ROOT
+		}
+		piety = 100
+		prestige = 250
+		add_trait = crowned_by_pope
+		
+		if = {
+			limit = { trait = humble }
+			random = {
+				chance = 50
+				remove_trait = humble
+			}
+		}
+		if = {
+			limit = {
+				NOT = { trait = humble }
+				NOT = { trait = proud }
+			}
+			random = {
+				chance = 50
+				add_trait = proud
+				hidden_tooltip = { character_event = { id = 38261 } } # notify proud
+			}
+		}
+		
+		pf_court_plus2_effect = yes
+		pf_tradition_plus2_effect = yes
+		emf_imperial_decay_minus_2_effect = yes
+		
+		hidden_tooltip = {
+			character_event = { id = emf_coronation.1216 days = 1 } # the feast begins
+		}
+		
+		if = {
+			limit = { ai = no }
+			chronicle = {
+				entry = CHRONICLE_PAPAL_CORONATION
+				portrait = [Root.GetID]
+				picture = GFX_evt_holy_emperor
+			}
+		}
+	}
+	option = {
+		name = EVTOPTA_emf_coronation_1482
+		trigger = {
+			NOT = { character = ROOT }
+			has_opinion_modifier = { who = ROOT modifier = attending_coronation }
+		}
+		if = {
+			limit = { ai = no }
+			chronicle = {
+				entry = CHRONICLE_PAPAL_CORONATION_NEWS
+				portrait = [From.GetID]
+				picture = GFX_evt_holy_emperor
+			}
+		}
+	}
+	option = {
+		name = EVTDESC_emf_coronation_1483
+		trigger = {
+			NOT = { character = ROOT }
+			NOT = { has_opinion_modifier = { who = ROOT modifier = attending_coronation } }
+			same_realm = ROOT
+		}
+		if = {
+			limit = { ai = no }
+			chronicle = {
+				entry = CHRONICLE_PAPAL_CORONATION_NEWS
+				portrait = [From.GetID]
+				picture = GFX_evt_holy_emperor
+			}
+		}
+	}
+	option = {
+		name = OK
+		trigger = {
+			NOT = { character = ROOT }
+			NOT = { has_opinion_modifier = { who = ROOT modifier = attending_coronation } }
+			NOT = { same_realm = ROOT }
+		}
+	}
+}
+
