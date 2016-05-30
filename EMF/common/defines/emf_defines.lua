@@ -1,16 +1,15 @@
 -- Diplomacy
-NDefines.NDiplomacy.LONG_REIGN_YEARS_START = 15
 NDefines.NDiplomacy.GAVELKIND_MAX_SIZE_BONUS = 0.5
 NDefines.NDiplomacy.TITULAR_TITLES_COUNT_TOWARDS_DUCHY_LIMIT = 0                    -- from 1
 NDefines.NDiplomacy.LAW_CHANGE_PRESTIGE_COST = 150                                  -- from 100
 NDefines.NDiplomacy.CROWN_LAW_CHANGE_PRESTIGE_COST = 300                            -- from 200
 NDefines.NDiplomacy.INTER_MUSLIM_WAR_MONTHLY_PIETY_COST = 0.5
 NDefines.NDiplomacy.MUSLIM_TEMPLE_HOLDING_MONTHLY_PIETY = 0.4
-NDefines.NDiplomacy.BASE_REVOLT_CHANCE_MOD = 200                                    -- from 250
-NDefines.NDiplomacy.TOG_REVOLT_CHANCE_MOD = 80                                      -- from 100
+NDefines.NDiplomacy.BASE_REVOLT_CHANCE_MOD = 175                                    -- from 250
+NDefines.NDiplomacy.TOG_REVOLT_CHANCE_MOD = 70                                      -- from 100
 NDefines.NDiplomacy.MAX_DIPLO_DISTANCE = 600                                        -- from 700
-NDefines.NDiplomacy.MAX_DIPLO_DISTANCE_SAME_CULTURE = 150                           -- from 100
-NDefines.NDiplomacy.MAX_DIPLO_DISTANCE_SAME_CULTURE_GROUP = 150                     -- from 100
+NDefines.NDiplomacy.MAX_DIPLO_DISTANCE_SAME_CULTURE = 100                           -- from 100
+NDefines.NDiplomacy.MAX_DIPLO_DISTANCE_SAME_CULTURE_GROUP = 100                     -- from 100
 NDefines.NDiplomacy.IMPRISON_CHARACTER_INTERACTION_PIETY = 0
 NDefines.NDiplomacy.EXECUTE_IMPRISONED_INTERACTION_PIETY = 10
 NDefines.NDiplomacy.DEMAND_RELIGIOUS_CONVERSION_INTERACTION_PIETY = 25              -- from 0
@@ -33,7 +32,7 @@ NDefines.NInfamy.WAR_REALM_CHANGE_VALUE = 0.5
 NDefines.NInfamy.INDEPENDENCE_REALM_CHANGE_VALUE = 1.0
 NDefines.NInfamy.INHERITANCE_CHANGE_VALUE = 0.05
 NDefines.NInfamy.VASSAL_CHANGE_VALUE = 0
-NDefines.NInfamy.MAX_INFAMY_PER_WAR_PROVINCE = 4
+NDefines.NInfamy.MAX_INFAMY_PER_WAR_PROVINCE = 5
 NDefines.NInfamy.MIN_INFAMY_PER_WAR_PROVINCE = 0
 
 -- Character
@@ -199,8 +198,8 @@ NDefines.NMilitary.MAX_WARSCORE_FROM_BATTLE_DEFENDERS = 150   -- from 100
 -- Technology
 NDefines.NTechnology.POINTS_PER_ATTRIBUTE = 0.03
 NDefines.NTechnology.BASE_NEIGHBOUR_SPREAD_BONUS = 0.075
-NDefines.NTechnology.BASE_DEMESNE_SPREAD_BONUS = 0.15
-NDefines.NTechnology.MAX_DEMESNE_BONUS = 1.0
+NDefines.NTechnology.BASE_DEMESNE_SPREAD_BONUS = 0.1
+NDefines.NTechnology.MAX_DEMESNE_BONUS = 0.5
 NDefines.NTechnology.TRADEPOST_SPREAD_BONUS = 0.01
 
 -- Disease
@@ -210,7 +209,6 @@ NDefines.NDisease.CROWDED_THRESHOLD_MODIFIER = 60
 NDefines.NEngine.EVENT_PROCESS_OFFSET = 30
 
 -- AI
-NDefines.NAI.DOW_AGGRESSION_FACTOR = 1.0
 NDefines.NAI.REVOLT_OTHER_INDEP_RISK = 0
 NDefines.NAI.REVOLT_OTHER_INDEP_RISK_CAP = 0
 NDefines.NAI.RAID_MAX_REALM_SIZE = 18
