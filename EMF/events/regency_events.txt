@@ -25,18 +25,28 @@ character_event = {
 		has_minor_title = title_regent
 		independent = no
 		liege = { wealth = 20 }
-		NOT = { trait = charitable }
-		NOT = { trait = honest }
+		OR = {
+			trait = greedy
+			trait = deceitful
+			trait = envious
+			trait = arbitrary
+			trait = ambitious
+		}
+		NOR = {
+			trait = charitable
+			trait = honest
+			trait = just
+		}
 	}
 	
 	mean_time_to_happen = {
 		months = 280
 		modifier = {
-			factor = 0.25
+			factor = 0.5
 			trait = greedy
 		}
 		modifier = {
-			factor = 0.25
+			factor = 0.75
 			trait = deceitful
 		}
 		modifier = {
@@ -53,7 +63,7 @@ character_event = {
 		}
 		modifier = {
 			factor = 2.0
-			trait = just
+			trait = patient
 		}
 	}
 	
@@ -64,6 +74,10 @@ character_event = {
 		wealth = 20
 		random_list = {
 			50 = {
+				modifier = {
+					factor = 2.0
+					has_job_title = job_treasurer
+				}
 				# Got away with it!
 			}
 			40 = {
@@ -90,6 +104,7 @@ character_event = {
 	}
 }
 
+# The liege suspects the embezzlement
 character_event = {
 	id = 61001
 	desc = EVTDESC61001
@@ -105,6 +120,7 @@ character_event = {
 	}
 }
 
+# The steward suspects the embezzlement
 character_event = {
 	id = 61002
 	desc = EVTDESC61002
@@ -120,6 +136,7 @@ character_event = {
 	}
 }
 
+# Liege has proof of embezzlement
 character_event = {
 	id = 61003
 	desc = EVTDESC61003
@@ -134,6 +151,7 @@ character_event = {
 	}
 }
 
+# Steward has proof of embezzlement
 character_event = {
 	id = 61004
 	desc = EVTDESC61004
@@ -166,21 +184,50 @@ character_event = {
 		is_feudal = yes
 		independent = no
 		NOT = { trait = honest }
-		liege = { 
-			demesne_size = 5
-			age = 16
+
+		liege = {
+			is_feudal = yes
+			OR = {
+				demesne_size = 5
+				over_max_demesne_size = 1
+			}
+			is_adult = yes
 			trait = incapable
+			any_demesne_title = {
+				can_be_given_away = yes
+				NOR = {
+					tier = DUKE
+					tier = KING
+					tier = EMPEROR
+					location = { is_capital = yes }
+				}
+			}
 		}
 	}
 	
 	mean_time_to_happen = {
-		months = 380
+		months = 600
 		modifier = {
-			factor = 0.25
-			trait = greedy
+			factor = 0.5
+			liege = {
+				any_demesne_title = {
+					can_be_given_away = yes
+					NOT = {
+						tier = DUKE
+						tier = KING
+						tier = EMPEROR
+						location = { is_capital = yes }
+					}
+					ROOT = { has_claim = PREV }
+				}
+			}
 		}
 		modifier = {
-			factor = 0.25
+			factor = 0.5
+			trait = ambitious
+		}
+		modifier = {
+			factor = 0.75
 			trait = deceitful
 		}
 		modifier = {
@@ -203,14 +250,41 @@ character_event = {
 	
 	option = {
 		name = EVTOPTA61100 #Grab holding.
-		ai_chance = { factor = 100 }
+		ai_chance = {
+			factor = 90
+			modifier = {
+				factor = 0
+				OR = {
+					trait = just
+					trait = content
+					trait = humble
+					AND = {
+						is_ruler = yes
+						over_max_demesne_size = 1
+					}
+				}
+				NOT = { trait = ambitious }
+			}
+			modifier = {
+				factor = 0.5
+				trait = kind
+				NOT = { trait = ambitious }
+			}
+			modifier = {
+				factor = 0.5
+				trait = charitable
+				NOT = { trait = ambitious }
+			}
+		}
 		liege = {
 			character_event = {	id = 61101 tooltip = EVTTOOLTIP61101 }
 		}
 	}
 	option = {
 		name = EVTOPTB61100 #Do not grab holding.
-		ai_chance = { factor = 0 }
+		ai_chance = {
+			factor = 10
+		}
 		ROOT = { piety = 40 }
 	}
 }
@@ -227,28 +301,44 @@ character_event = {
 		name = EVTOPTA61101
 		random_demesne_title = {
 			limit = {
-				NOT = {	tier = DUKE }
-				NOT = {	tier = KING }
-				NOT = {	tier = EMPEROR }
-				NOT = {
+				can_be_given_away = yes
+				NOR = {
+					tier = DUKE
+					tier = KING
+					tier = EMPEROR
 					location = { is_capital = yes }
 				}
+				FROM = { has_claim = PREV }
 			}
-		grant_title = FROM
+			grant_title = FROM
+			break = yes
 		}
-	}
-	option = {
-		name = EVTOPTB61101
 		random_demesne_title = {
 			limit = {
-				NOT = {	tier = DUKE }
-				NOT = {	tier = KING }
-				NOT = {	tier = EMPEROR }
-				NOT = {
+				can_be_given_away = yes
+				tier = COUNT
+				NOT = { location = { is_capital = yes } }
+				location = {
+					any_neighbor_province = {
+						owner = { character = FROM }
+					}
+				}
+			}
+			grant_title = FROM
+			break = yes
+		}
+		random_demesne_title = {
+			limit = {
+				can_be_given_away = yes
+				NOR = {
+					tier = DUKE
+					tier = KING
+					tier = EMPEROR
 					location = { is_capital = yes }
 				}
 			}
-		grant_title = FROM
+			grant_title = FROM
+			break = yes
 		}
 	}
 }
@@ -267,10 +357,15 @@ character_event = {
 	trigger = {
 		has_minor_title = title_regent
 		independent = no
-		liege = { 
+		liege = {
 			wealth = 50
-			age = 16
+			is_adult = yes
 			trait = incapable
+		}
+		OR = {
+			trait = charitable
+			trait = kind
+			trait = zealous
 		}
 	}
 	
@@ -302,9 +397,9 @@ character_event = {
 		name = EVTOPTA61105 #Give the money.
 		ai_chance = { factor = 100 }
 		ROOT = { piety = 30 }
-			liege = {
-				character_event = {	id = 61106 tooltip = EVTTOOLTIP61106 }
-			}
+		liege = {
+			character_event = {	id = 61106 tooltip = EVTTOOLTIP61106 }
+		}
 	}
 	option = {
 		name = EVTOPTB61105 #Do not give the money.
@@ -341,12 +436,15 @@ character_event = {
 	only_rulers = yes
 	
 	trigger = {
+		trait = incapable
 		any_courtier = {
 			has_minor_title = title_regent
-		stewardship = 13
+			attribute_diff = {
+				character = ROOT
+				attribute = stewardship
+				value = 6
+			}
 		}
-		NOT = { stewardship = 6 }
-		trait = incapable
 	}
 	
 	mean_time_to_happen = {
@@ -382,11 +480,11 @@ character_event = {
 	trigger = {
 		has_minor_title = title_regent
 		independent = no
-		NOR	= {
+		NOR = {
 			opinion = { who = liege value = -30 }
 			has_character_flag = mean_regent
 		}
-		liege = { 
+		liege = {
 			age = 16
 			trait = incapable
 			NOT = { trait = in_hiding }
@@ -400,15 +498,15 @@ character_event = {
 			trait = cruel
 		}
 		modifier = {
-			factor = 0.25
+			factor = 0.5
 			trait = envious
 		}
 		modifier = {
-			factor = 0.50
+			factor = 0.75
 			trait = deceitful
 		}
 		modifier = {
-			factor = 0.50
+			factor = 0.5
 			trait = greedy
 		}
 		modifier = {
@@ -518,16 +616,16 @@ character_event = {
 		name = EVTOPTA61122
 		ai_chance = { factor = 100 }
 		liege = {
-			character_event = {	id = 61123 tooltip = EVTTOOLTIP61123 }
-		hidden_tooltip = {
-			ROOT = { set_character_flag = valiant_vassal }
+			hidden_tooltip = {
+				ROOT = { set_character_flag = valiant_vassal }
 			}
+			character_event = {	id = 61123 tooltip = EVTTOOLTIP61123 }
 		}
 	}
 	option = {
 		name = EVTOPTB61122
 		ai_chance = { factor = 0 }
-		root = { piety = -40 }
+		ROOT = { piety = -40 }
 	}
 }
 
@@ -551,6 +649,7 @@ character_event = {
 		ai_chance = { factor = 0 }
 		random_courtier = {
 			limit = { has_character_flag = valiant_vassal }
+			clr_character_flag = valiant_vassal
 			opinion = {
 				modifier = opinion_disappointed
 				who = ROOT
@@ -637,7 +736,7 @@ character_event = {
 			random_courtier = {
 				limit = {
 					NOT = { has_minor_title = title_regent }
-					prisoner = no 
+					prisoner = no
 					age = 16
 				}
 				give_minor_title = title_regent
@@ -753,8 +852,16 @@ character_event = {
 	prisoner = no
 	
 	trigger = {
-		NOT = { has_character_flag = pushed_regent }
 		is_nomadic = no
+		NOR = {
+			has_character_flag = pushed_regent
+			trait = kind
+			trait = just
+		}
+		any_courtier = {
+			has_minor_title = title_regent
+			ai = yes
+		}
 	}
 	
 	mean_time_to_happen = {
@@ -773,17 +880,17 @@ character_event = {
 		}
 		modifier = {
 			factor = 2.0
-			trait = kind
+			trait = charitable
 		}
 		modifier = {
 			factor = 2.0
-			trait = just
+			trait = patient
 		}
 	}
 	
 	option = {
 		name = EVTOPTA61135
-		ai_chance = { factor = 0 }
+		ai_chance = { factor = 20 }
 		set_character_flag = pushed_regent
 		random_list = {
 			50 = {
@@ -791,10 +898,10 @@ character_event = {
 					limit = { has_minor_title = title_regent }
 					death = {
 						death_reason = death_accident
-						}
+					}
 				}
 			}
-			50 = { 
+			50 = {
 				random_courtier = {
 					limit = { has_minor_title = title_regent }
 					add_trait = wounded
@@ -809,7 +916,13 @@ character_event = {
 	}
 	option = {
 		name = EVTOPTB61135
-		ai_chance = { factor = 100 }
+		ai_chance = {
+			factor = 80
+			modifier = {
+				factor = 0.25
+				trait = cruel
+			}
+		}
 		set_character_flag = pushed_regent
 		piety = 30
 	}
@@ -836,29 +949,40 @@ character_event = {
 		}
 		liege = {
 			age = 5
-			NOT = { 
+			NOT = {
 				trait = lunatic
 				age = 16 
 			}
 		}
-		NOT = {
+		NOR = {
 			has_character_flag = declared_ruler_insane
 			has_minor_title = title_ruler_consort
+		}
+		OR = {
+			trait = envious
+			trait = deceitful
+			trait = ambitious
+			trait = greedy
+		}
+		NOR = {
+			trait = kind
+			trait = just
+			trait = content
 		}
 	}
 	
 	mean_time_to_happen = {
 		months = 340
 		modifier = {
-			factor = 0.25
+			factor = 0.5
 			trait = envious
 		}
 		modifier = {
-			factor = 0.25
+			factor = 0.75
 			trait = deceitful
 		}
 		modifier = {
-			factor = 0.50
+			factor = 0.5
 			trait = ambitious
 		}
 		modifier = {
@@ -867,11 +991,11 @@ character_event = {
 		}
 		modifier = {
 			factor = 2.0
-			trait = kind
+			trait = craven
 		}
 		modifier = {
 			factor = 2.0
-			trait = just
+			trait = humble
 		}
 	}
 	
@@ -885,7 +1009,7 @@ character_event = {
 				hidden_tooltip = {
 					liege = {
 						character_event = {	id = 61151 }
-						}
+					}
 				}
 			}
 			65 = {
@@ -893,7 +1017,7 @@ character_event = {
 				hidden_tooltip = {
 					liege = {
 						character_event = {	id = 61150 }
-						}
+					}
 				}
 			}
 		}
@@ -919,8 +1043,8 @@ character_event = {
 	trigger = {
 		has_minor_title = title_regent
 		independent = no
-		NOR = { 
-			trait = lunatic 
+		NOR = {
+			trait = lunatic
 			has_character_flag = declared_ruler_insane
 		}
 		liege = {
@@ -1003,7 +1127,7 @@ character_event = {
 		name = EVTOPTA61142
 		liege = {
 			add_trait = incapable
-			add_character_modifier = { 
+			add_character_modifier = {
 				name = house_arrest
 				duration = -1
 			}
@@ -1023,10 +1147,10 @@ character_event = {
 		name = EVTOPTA61145
 		liege = {
 			add_trait = incapable
-			add_character_modifier = { 
-					name = house_arrest
-					duration = -1
-				}
+			add_character_modifier = {
+				name = house_arrest
+				duration = -1
+			}
 		}
 		hidden_tooltip = {
 			character_event = {
@@ -1122,6 +1246,8 @@ character_event = {
 	id = 61152
 	desc = EVTDESC61152
 	picture = GFX_evt_emissary
+	
+	only_rulers = yes
 	
 	trigger = {
 		any_courtier = {
@@ -1280,18 +1406,26 @@ character_event = {
 	
 	min_age = 16
 	capable_only = no
+	has_character_flag = imprisoned_by_regent
 	
-	trigger = { has_character_flag = imprisoned_by_regent }
-	
+	trigger = { always = yes }
+
 	mean_time_to_happen = {
 		months = 180
 		modifier = {
 			factor = 0.15
-			is_smart_trigger = yes
+			trait = genius
 		}
 		modifier = {
 			factor = 0.25
 			trait = brave
+		}
+		modifier = {
+			factor = 0.33
+			OR = {
+				trait = quick
+				trait = shrewd
+			}
 		}
 		modifier = {
 			factor = 0.50
@@ -1330,7 +1464,7 @@ character_event = {
 		random_courtier = {
 			limit = { has_minor_title = title_regent }
 			imprison = yes
-			hidden_tooltip = { 
+			hidden_tooltip = {
 				character_event = {	id = 61170 }
 			}
 		}
@@ -1388,34 +1522,46 @@ character_event = {
 	
 	trigger = {
 		has_minor_title = title_regent
-		OR = {
-			is_primary_heir = yes
-			any_child = { is_primary_heir = yes }
-		}
-		NOT = {
-			opinion = { who = liege value = -5 }
-			has_character_flag = regent_schemer
-			has_minor_title = title_queen_mother
-			has_minor_title = title_ruler_consort
-		}
 		liege = {
 			age = 5
 			NOT = { age = 16 }
+			NOR = {
+				is_child_of = ROOT
+				is_mother = ROOT
+				is_father = ROOT
+				is_married = ROOT
+			}
+			ROOT = {
+				OR = {
+					any_heir_title = { holder = PREVPREV }
+					any_child = { any_heir_title = { holder = PREVPREVPREV } }
+				}
+			}
+		}
+		NOR = {
+			trait = kind
+			trait = just
+			trait = honest
+			trait = content
+			trait = patient
+			opinion = { who = liege value = 0 }
+			has_character_flag = no_regent_schemer
+			has_character_flag = regent_schemer
 		}
 	}
 	
 	mean_time_to_happen = {
 		months = 160
 		modifier = {
-			factor = 0.25
+			factor = 0.5
 			trait = envious
 		}
 		modifier = {
-			factor = 0.25
+			factor = 0.75
 			trait = deceitful
 		}
 		modifier = {
-			factor = 0.50
+			factor = 0.5
 			trait = ambitious
 		}
 		modifier = {
@@ -1424,7 +1570,19 @@ character_event = {
 		}
 		modifier = {
 			factor = 2.0
-			trait = kind
+			trait = craven
+		}
+		modifier = {
+			factor = 2.0
+			opinion = { who = liege value = -25 }
+		}
+		modifier = {
+			factor = 2.0
+			opinion = { who = liege value = -50 }
+		}
+		modifier = {
+			factor = 0.5
+			NOT = { opinion = { who = liege value = -75 } }
 		}
 	}
 	
@@ -1439,6 +1597,7 @@ character_event = {
 	option = {
 		name = EVTOPTB61190
 		ai_chance = { factor = 0 }
+		set_character_flag = no_regent_schemer
 		piety = 20
 	}
 }
@@ -1784,7 +1943,7 @@ character_event = {
 		random_courtier = {
 			limit = {
 				NOT = { has_minor_title = title_regent }
-				prisoner = no 
+				prisoner = no
 				age = 16
 			}
 			give_minor_title = title_regent
@@ -1832,72 +1991,138 @@ character_event = {
 	min_age = 16
 	prisoner = no
 	capable_only = yes
-	only_men = yes
-	
+	is_part_of_plot = yes
+
 	trigger = {
-		war = no
-		OR = {
-			liege = {
-				age = 1
-				NOT = { age = 14 }
-			}
-			liege = { trait = incapable }
-		}
-		
-		in_command = no
-		NOT = { has_minor_title = title_regent }
-		host = { character = liege }
+		has_plot = plot_replace_regent
+		plot_power = 0.75
 		is_ill = no
+		in_command = no
+		liege = {
+			has_regent = yes
+			any_courtier = { character = ROOT }
+			NOT = { has_character_flag = regent_replace_attempt }
+		}
+		plot_target_char = {
+			same_liege = ROOT
+			has_minor_title = title_regent
+		}
+		NOT = {
+			trait = in_hiding
+			has_minor_title = title_regent
+			has_character_modifier = replace_regent_timer
+		}
 	}
 	
 	mean_time_to_happen = {
-		months = 480
+		months = 120
 		modifier = {
-			factor = 0.25
-			trait = ambitious
-		}
-		modifier = {
-			factor = 0.25
-			trait = duelist
-		}
-		modifier = {
-			factor = 0.5
-			trait = envious
-		}
-		modifier = {
-			factor = 2.0
-			trait = shy
+			factor = 0.75
+			has_character_flag = speed_up_replace_regent
 		}
 		modifier = {
 			factor = 3.0
-			trait = slothful
+			liege = { trait = in_hiding }
 		}
 		modifier = {
-			factor = 4.0
-			trait = content
-		}
-	}
-	
-	option = { # Challenge to duel
-		name = EVTOPTA61215
-		tooltip_info = duelist
-		trigger = { trait = duelist }
-		ai_chance = { factor = 60 }
-		liege = {
-			random_courtier = {
-				limit = { has_minor_title = title_regent }
-				character_event = {	
-					id = 61221 
-					tooltip = EVTTOOLTIP61221
-					days = 2
-				}
+			factor = 2.0
+			liege = {
+				is_adult = yes
+				NOT = { trait = incapable }
 			}
 		}
+		modifier = {
+			factor = 1.5
+			liege = {
+				NOT = { is_close_relative = ROOT }
+			}
+		}
+		modifier = {
+			factor = 2.0
+			OR = {
+				war = yes
+				liege = { war = yes }
+			}
+		}
+		modifier = {
+			factor = 0.75
+			plot_power = 1.0
+		}
+		modifier = {
+			factor = 0.75
+			plot_power = 1.25
+		}
+		modifier = {
+			factor = 0.75
+			plot_power = 1.50
+		}
+		modifier = {
+			factor = 0.75
+			plot_power = 1.75
+		}
+		modifier = {
+			factor = 0.75
+			plot_power = 2.0
+		}
+		modifier = {
+			factor = 0.9
+			num_of_plot_backers = 2
+		}
+		modifier = {
+			factor = 0.9
+			num_of_plot_backers = 3
+		}
+		modifier = {
+			factor = 0.9
+			num_of_plot_backers = 4
+		}
+		modifier = {
+			factor = 0.9
+			num_of_plot_backers = 5
+		}
+		modifier = {
+			factor = 1.25
+			NOT = { intrigue = 8 }
+		}
+		modifier = {
+			factor = 1.25
+			NOT = { intrigue = 6 }
+		}
+		modifier = {
+			factor = 1.25
+			NOT = { intrigue = 4 }
+		}
+		modifier = {
+			factor = 1.25
+			NOT = { intrigue = 2 }
+		}
+		modifier = {
+			factor = 0.9
+			intrigue = 12
+		}
+		modifier = {
+			factor = 0.9
+			intrigue = 14
+		}
+		modifier = {
+			factor = 0.9
+			intrigue = 16
+		}
+		modifier = {
+			factor = 0.9
+			intrigue = 18
+		}
+		modifier = {
+			factor = 0.9
+			intrigue = 20
+		}
 	}
+
 	option = { # Try to grab Regency
 		name = EVTOPTB61215
-		ai_chance = { factor = 30 }
+		ai_chance = { factor = 100 }
 		liege = {
+			set_character_flag = regent_replace_attempt
 			random_courtier = {
 				limit = { has_minor_title = title_regent }
 				character_event = {	id = 61216 tooltip = EVTTOOLTIP61216 }
@@ -1906,7 +2131,8 @@ character_event = {
 	}
 	option = { # Never mind
 		name = EVTOPTC61215
-		ai_chance = { factor = 10 }
+		ai_chance = { factor = 0 }
+		set_character_flag = abort_plot
 		liege = {
 			random_courtier = {
 				limit = { has_minor_title = title_regent }
@@ -1927,25 +2153,85 @@ character_event = {
 	picture = GFX_evt_emissary
 	
 	is_triggered_only = yes
-	
-	option = {
-		name = EVTOPTA61216
-		tooltip_info = duelist
-		trigger = { trait = duelist }
-		ai_chance = {
-			factor = 80
-		}
-		FROM = {
-			character_event = {	id = 61222 tooltip = EVTTOOLTIP61221 }
-		}
-	}
 	option = {
 		name = EVTOPTB61216
 		ai_chance = {
-			factor = 20
+			factor = 100
 		}
 		random_list = {
 			50 = { # Remains Regent
+				modifier = {
+					factor = 1.25
+					liege = { is_close_relative = ROOT }
+				}
+				modifier = {
+					factor = 0.75
+					liege = { is_close_relative = FROM }
+				}
+				modifier = {
+					factor = 0.8
+					FROM = {
+						OR = {
+							trait = quick
+							trait = shrewd
+						}
+					}
+				}
+				modifier = {
+					factor = 0.6
+					FROM = { trait = genius }
+				}
+				modifier = {
+					factor = 1.2
+					OR = {
+						trait = quick
+						trait = shrewd
+					}
+				}
+				modifier = {
+					factor = 1.65
+					trait = genius
+				}
+				modifier = {
+					factor = 0.8
+					FROM = { attribute_diff = { character = ROOT attribute = intrigue value = 2 } }
+				}
+				modifier = {
+					factor = 0.8
+					FROM = { attribute_diff = { character = ROOT attribute = intrigue value = 4 } }
+				}
+				modifier = {
+					factor = 0.8
+					FROM = { attribute_diff = { character = ROOT attribute = intrigue value = 6 } }
+				}
+				modifier = {
+					factor = 0.8
+					FROM = { attribute_diff = { character = ROOT attribute = intrigue value = 8 } }
+				}
+				modifier = {
+					factor = 0.8
+					FROM = { attribute_diff = { character = ROOT attribute = intrigue value = 10 } }
+				}
+				modifier = {
+					factor = 1.2
+					attribute_diff = { character = FROM attribute = intrigue value = 2 }
+				}
+				modifier = {
+					factor = 1.2
+					attribute_diff = { character = FROM attribute = intrigue value = 4 }
+				}
+				modifier = {
+					factor = 1.2
+					attribute_diff = { character = FROM attribute = intrigue value = 6 }
+				}
+				modifier = {
+					factor = 1.2
+					attribute_diff = { character = FROM attribute = intrigue value = 8 }
+				}
+				modifier = {
+					factor = 1.2
+					attribute_diff = { character = FROM attribute = intrigue value = 10 }
+				}
 				character_event = {	id = 61219 tooltip = EVTTOOLTIP61219 }
 				hidden_tooltip = {
 					FROM = {
@@ -1954,6 +2240,26 @@ character_event = {
 				}
 			}
 			50 = { # Loses Regency
+				modifier = {
+					factor = 1.2
+					FROM = { plot_power = 1.0 }
+				}
+				modifier = {
+					factor = 1.2
+					FROM = { plot_power = 1.25 }
+				}
+				modifier = {
+					factor = 1.2
+					FROM = { plot_power = 1.5 }
+				}
+				modifier = {
+					factor = 1.2
+					FROM = { plot_power = 1.75 }
+				}
+				modifier = {
+					factor = 1.2
+					FROM = { plot_power = 2.0 }
+				}
 				character_event = {	id = 61220 tooltip = EVTTOOLTIP61220 }
 				hidden_tooltip = {
 					FROM = {
@@ -1974,7 +2280,7 @@ character_event = {
 	}
 }
 
-## Courtier informed he/she won the case and is now new regent.	
+## Courtier informed he/she won the case and is now new regent.
 character_event = {
 	id = 61217
 	desc = EVTDESC61217
@@ -1988,12 +2294,13 @@ character_event = {
 		hidden_tooltip = {
 			liege = {
 				character_event = {	id = 61236 }
+				clr_character_flag = regent_replace_attempt
 			}
 		}
 	}
 }
 
-## Courtier informed he/she lost the case at court.	
+## Courtier informed he/she lost the case at court.
 character_event = {
 	id = 61218
 	desc = EVTDESC61218
@@ -2004,6 +2311,7 @@ character_event = {
 	option = {
 		name = EVTOPTA61218
 		prestige = -40
+		set_character_flag = abort_plot
 		liege = {
 			random_courtier = {
 				limit = { has_minor_title = title_regent }
@@ -2041,810 +2349,14 @@ character_event = {
 	
 	option = {
 		name = EVTOPTA61220
-		prestige = -30
-	}
-}
-
-## Regent informed courtier has challenged him to duel over regency.
-character_event = {
-	id = 61221
-	desc = EVTDESC61221
-	picture = GFX_evt_shadowy_cabal
-	
-	is_triggered_only = yes
-	
-	option = { # Accept
-		name = EVTOPTA61221
-		ai_chance = { factor = 80 }
-		FROM = {
-#			character_event = {	id = 61223 tooltip = EVTTOOLTIP61223 }
-			set_character_flag = duelist_courtier
-		}
-		set_character_flag = duelist_courtier
-		set_character_flag = flag_duel_to_the_death
-		e_hip = { holder_scope = { character_event = { id = DuelEngine.0 } } }
-	}
-	option = { # Refuse
-		name = EVTOPTB61221
-		ai_chance = { factor = 0 }
-		prestige = -60
-		liege = {
-			any_courtier = {
-				opinion = {
-					who = ROOT
-					modifier = opinion_coward
-					years = 1
-				}
-			}
-		}
+		prestige = -50
 		hidden_tooltip = {
-			FROM = {
-				character_event = {	id = 61245 }
+			add_character_modifier = {
+				name = replace_regent_timer
+				hidden = yes
+				duration = 1825
 			}
 		}
-	}
-	option = { # Surrender regency
-		name = EVTOPTC61221
-		ai_chance = { factor = 20 }
-		prestige = -20
-		FROM = { give_minor_title = title_regent }
-		hidden_tooltip = {
-			FROM = {
-				character_event = {	id = 61246 }
-			}
-		}
-	}
-}
-
-## Courtier informed Regent challenges to duel.	
-character_event = {
-	id = 61222
-	desc = EVTDESC61222
-	picture = GFX_evt_shadowy_cabal
-	
-	is_triggered_only = yes
-	
-	option = {
-		name = EVTOPTA61222
-		ai_chance = { factor = 100 }
-		set_character_flag = duelist_courtier
-		set_character_flag = flag_duel_to_the_death
-		liege = {
-			random_courtier = {
-				limit = { has_minor_title = title_regent }
-				set_character_flag = duelist_courtier
-			}
-		}
-		e_hip = { holder_scope = { character_event = { id = DuelEngine.0 } } }
-	}
-	option = {
-		name = EVTOPTB61222
-		ai_chance = { factor = 0 }
-		prestige = -40
-	}
-}
-
-## Courtier informed Regent accepts duel, they fight!
-#character_event = {
-#	id = 61223
-#	desc = EVTDESC61223
-#	picture = GFX_evt_melee
-#	
-#	is_triggered_only = yes
-#	
-#	option = {
-#		name = EVTOPTA61224
-#		ai_chance = { factor = 80 }
-#		if = {					#HAS 15+ MARTIAL, OPPONENT HAS 1 - 6
-#		 	limit = { 
-#		 		martial = 15
-#				FROM = {
-#					NOT = { martial = 7 }
-#				}
-#		 	}
-#			random_list = {
-#				10 = {
-#					FROM = {
-#						character_event = {	id = 61225 tooltip = EVTTOOLTIP61225 }
-#					}
-#				}
-#				10 = {
-#					FROM = {
-#						character_event = {	id = 61226 tooltip = EVTTOOLTIP61226 }
-#					}
-#				}
-#				40 = {
-#					character_event = {	id = 61228 tooltip = EVTTOOLTIP61228 }
-#				}
-#				40 = {
-#					character_event = {	id = 61229 tooltip = EVTTOOLTIP61229 }
-#				}
-#			}
-#		}
-#		if = {					#HAS 15+ MARTIAL, OPPONENT HAS 7 - 14
-#		 	limit = { 
-#		 		martial = 15
-#				FROM = {
-#					martial = 7
-#					NOT = { martial = 15 }
-#				}
-#		 	}
-#			random_list = {
-#				17 = {
-#					FROM = {
-#						character_event = {	id = 61225 tooltip = EVTTOOLTIP61225 }
-#					}
-#				}
-#				17 = {
-#					FROM = {
-#						character_event = {	id = 61226 tooltip = EVTTOOLTIP61226 }
-#					}
-#				}
-#				33 = {
-#					character_event = {	id = 61228 tooltip = EVTTOOLTIP61228 }
-#				}
-#				33 = {
-#					character_event = {	id = 61229 tooltip = EVTTOOLTIP61229 }
-#				}
-#			}
-#		}
-#		if = {					#HAS 15+ MARTIAL, OPPONENT HAS 15+
-#		 	limit = { 
-#		 		martial = 15
-#				FROM = {
-#					martial = 15
-#				}
-#		 	}
-#			random_list = {
-#				25 = {
-#					FROM = {
-#						character_event = {	id = 61225 tooltip = EVTTOOLTIP61225 }
-#					}
-#				}
-#				25 = {
-#					FROM = {
-#						character_event = {	id = 61226 tooltip = EVTTOOLTIP61226 }
-#					}
-#				}
-#				25 = {
-#					character_event = {	id = 61228 tooltip = EVTTOOLTIP61228 }
-#				}
-#				25 = {
-#					character_event = {	id = 61229 tooltip = EVTTOOLTIP61229 }
-#				}
-#			}
-#		}
-#		if = {					#HAS 7 - 14 MARTIAL, OPPONENT HAS 1 - 6
-#		 	limit = { 
-#				NOT = { martial = 15 }
-#		 		martial = 7
-#				FROM = {
-#					NOT = { martial = 7 }
-#				}
-#			}
-#			random_list = {
-#				17 = {
-#					FROM = {
-#						character_event = {	id = 61225 tooltip = EVTTOOLTIP61225 }
-#					}
-#				}
-#				17 = {
-#					FROM = {
-#						character_event = {	id = 61226 tooltip = EVTTOOLTIP61226 }
-#					}
-#				}
-#				33 = {
-#					character_event = {	id = 61228 tooltip = EVTTOOLTIP61228 }
-#				}
-#				33 = {
-#					character_event = {	id = 61229 tooltip = EVTTOOLTIP61229 }
-#				}
-#			}
-#		}
-#		if = {					#HAS 7 - 14 MARTIAL, OPPONENT HAS 7 - 14
-#			limit = { 
-#				NOT = { martial = 15 }
-#		 		martial = 7
-#				FROM = {
-#					martial = 7
-#					NOT = { martial = 15 }
-#				}
-#		 	}
-#			random_list = {
-#				25 = {
-#					FROM = {
-#						character_event = {	id = 61225 tooltip = EVTTOOLTIP61225 }
-#					}
-#				}
-#				25 = {
-#					FROM = {
-#						character_event = {	id = 61226 tooltip = EVTTOOLTIP61226 }
-#					}
-#				}
-#				25 = {
-#					character_event = {	id = 61228 tooltip = EVTTOOLTIP61228 }
-#				}
-#				25 = {
-#					character_event = {	id = 61229 tooltip = EVTTOOLTIP61229 }
-#				}
-#			}
-#		}
-#		if = {					#HAS 7 - 14 MARTIAL, OPPONENT HAS 15+
-#		 	limit = { 
-#				NOT = { martial = 15 }
-#		 		martial = 7
-#				FROM = {
-#					martial = 15
-#				}
-#		 	}
-#			random_list = {
-#				33 = {
-#					FROM = {
-#						character_event = {	id = 61225 tooltip = EVTTOOLTIP61225 }
-#					}
-#				}
-#				33 = {
-#					FROM = {
-#						character_event = {	id = 61226 tooltip = EVTTOOLTIP61226 }
-#					}
-#				}
-#				17 = {
-#					character_event = {	id = 61228 tooltip = EVTTOOLTIP61228 }
-#				}
-#				17 = {
-#					character_event = {	id = 61229 tooltip = EVTTOOLTIP61229 }
-#				}
-#			}
-#		}
-#		if = {					#HAS 1 - 6 MARTIAL, OPPONENT HAS 1 - 6
-#		 	limit = { 
-#				NOT = { martial = 7 }
-#				FROM = {
-#					NOT = { martial = 7 }
-#				}
-#		 	}
-#			random_list = {
-#				25 = {
-#					FROM = {
-#						character_event = {	id = 61225 tooltip = EVTTOOLTIP61225 }
-#					}
-#				}
-#				25 = {
-#					FROM = {
-#						character_event = {	id = 61226 tooltip = EVTTOOLTIP61226 }
-#					}
-#				}
-#				25 = {
-#					character_event = {	id = 61228 tooltip = EVTTOOLTIP61228 }
-#				}
-#				25 = {
-#					character_event = {	id = 61229 tooltip = EVTTOOLTIP61229 }
-#				}
-#			}
-#		}
-#		if = {					#HAS 1 - 6 MARTIAL, OPPONENT HAS 7 - 14
-#		 	limit = { 
-#				NOT = { martial = 7 }
-#				FROM = {
-#					martial = 7
-#					NOT = { martial = 15 }
-#				}
-#		 	}
-#			random_list = {
-#				33 = {
-#					FROM = {
-#						character_event = {	id = 61225 tooltip = EVTTOOLTIP61225 }
-#					}
-#				}
-#				33 = {
-#					FROM = {
-#						character_event = {	id = 61226 tooltip = EVTTOOLTIP61226 }
-#					}
-#				}
-#				17 = {
-#					character_event = {	id = 61228 tooltip = EVTTOOLTIP61228 }
-#				}
-#				17 = {
-#					character_event = {	id = 61229 tooltip = EVTTOOLTIP61229 }
-#				}
-#			}
-#		}
-#		if = {					#HAS 1 - 6 MARTIAL, OPPONENT HAS 15+
-#		 	limit = { 
-#				NOT = { martial = 7 }
-#				FROM = {
-#					martial = 15
-#				}
-#		 	}
-#			random_list = {
-#				40 = {
-#					FROM = {
-#						character_event = {	id = 61225 tooltip = EVTTOOLTIP61225 }
-#					}
-#				}
-#				40 = {
-#					FROM = {
-#						character_event = {	id = 61226 tooltip = EVTTOOLTIP61226 }
-#					}
-#				}
-#				10 = {
-#					character_event = {	id = 61228 tooltip = EVTTOOLTIP61228 }
-#				}
-#				10 = {
-#					character_event = {	id = 61229 tooltip = EVTTOOLTIP61229 }
-#				}
-#			}
-#		}
-#	}
-#	option = {
-#		name = EVTOPTB61223
-#		ai_chance = { factor = 20 }
-#		FROM = {
-#			character_event = {	id = 61231 tooltip = EVTTOOLTIP61231 }
-#		}
-#	}
-#}
-#
-## Regent informed courtier accepts duel, they fight!	
-#character_event = {
-#	id = 61224
-#	desc = EVTDESC61224
-#	picture = GFX_evt_melee
-#	
-#	is_triggered_only = yes
-#	
-#	option = {
-#		name = EVTOPTA61224
-#		ai_chance = { factor = 80 }
-#		if = {					#HAS 15+ MARTIAL, OPPONENT HAS 1 - 6
-#		 	limit = { 
-#		 		martial = 15
-#				FROM = {
-#					NOT = { martial = 7 }
-#				}
-#		 	}
-#			random_list = {
-#				10 = {
-#					FROM = {
-#						character_event = {	id = 61228 tooltip = EVTTOOLTIP61225 }
-#					}
-#				}
-#				10 = {
-#					FROM = {
-#						character_event = {	id = 61229 tooltip = EVTTOOLTIP61226 }
-#					}
-#				}
-#				40 = {
-#					character_event = {	id = 61225 tooltip = EVTTOOLTIP61228 }
-#				}
-#				40 = {
-#					character_event = {	id = 61226 tooltip = EVTTOOLTIP61229 }
-#				}
-#			}
-#		}
-#		if = {					#HAS 15+ MARTIAL, OPPONENT HAS 7 - 14
-#		 	limit = { 
-#		 		martial = 15
-#				FROM = {
-#					martial = 7
-#					NOT = { martial = 15 }
-#				}
-#		 	}
-#			random_list = {
-#				17 = {
-#					FROM = {
-#						character_event = {	id = 61228 tooltip = EVTTOOLTIP61225 }
-#					}
-#				}
-#				17 = {
-#					FROM = {
-#						character_event = {	id = 61229 tooltip = EVTTOOLTIP61226 }
-#					}
-#				}
-#				33 = {
-#					character_event = {	id = 61225 tooltip = EVTTOOLTIP61228 }
-#				}
-#				33 = {
-#					character_event = {	id = 61226 tooltip = EVTTOOLTIP61229 }
-#				}
-#			}
-#		}
-#		if = {					#HAS 15+ MARTIAL, OPPONENT HAS 15+
-#		 	limit = { 
-#		 		martial = 15
-#				FROM = {
-#					martial = 15
-#				}
-#		 	}
-#			random_list = {
-#				25 = {
-#					FROM = {
-#						character_event = {	id = 61228 tooltip = EVTTOOLTIP61225 }
-#					}
-#				}
-#				25 = {
-#					FROM = {
-#						character_event = {	id = 61229 tooltip = EVTTOOLTIP61226 }
-#					}
-#				}
-#				25 = {
-#					character_event = {	id = 61225 tooltip = EVTTOOLTIP61228 }
-#				}
-#				25 = {
-#					character_event = {	id = 61226 tooltip = EVTTOOLTIP61229 }
-#				}
-#			}
-#		}
-#		if = {					#HAS 7 - 14 MARTIAL, OPPONENT HAS 1 - 6
-#		 	limit = { 
-#				NOT = { martial = 15 }
-#		 		martial = 7
-#				FROM = {
-#					NOT = { martial = 7 }
-#				}
-#			}
-#			random_list = {
-#				17 = {
-#					FROM = {
-#						character_event = {	id = 61228 tooltip = EVTTOOLTIP61225 }
-#					}
-#				}
-#				17 = {
-#					FROM = {
-#						character_event = {	id = 61229 tooltip = EVTTOOLTIP61226 }
-#					}
-#				}
-#				33 = {
-#					character_event = {	id = 61225 tooltip = EVTTOOLTIP61228 }
-#				}
-#				33 = {
-#					character_event = {	id = 61226 tooltip = EVTTOOLTIP61229 }
-#				}
-#			}
-#		}
-#		if = {					#HAS 7 - 14 MARTIAL, OPPONENT HAS 7 - 14
-#			limit = { 
-#				NOT = { martial = 15 }
-#		 		martial = 7
-#				FROM = {
-#					martial = 7
-#					NOT = { martial = 15 }
-#				}
-#		 	}
-#			random_list = {
-#				25 = {
-#					FROM = {
-#						character_event = {	id = 61228 tooltip = EVTTOOLTIP61225 }
-#					}
-#				}
-#				25 = {
-#					FROM = {
-#						character_event = {	id = 61229 tooltip = EVTTOOLTIP61226 }
-#					}
-#				}
-#				25 = {
-#					character_event = {	id = 61225 tooltip = EVTTOOLTIP61228 }
-#				}
-#				25 = {
-#					character_event = {	id = 61226 tooltip = EVTTOOLTIP61229 }
-#				}
-#			}
-#		}
-#		if = {					#HAS 7 - 14 MARTIAL, OPPONENT HAS 15+
-#		 	limit = { 
-#				NOT = { martial = 15 }
-#		 		martial = 7
-#				FROM = {
-#					martial = 15
-#				}
-#		 	}
-#			random_list = {
-#				33 = {
-#					FROM = {
-#						character_event = {	id = 61228 tooltip = EVTTOOLTIP61225 }
-#					}
-#				}
-#				33 = {
-#					FROM = {
-#						character_event = {	id = 61229 tooltip = EVTTOOLTIP61226 }
-#					}
-#				}
-#				17 = {
-#					character_event = {	id = 61225 tooltip = EVTTOOLTIP61228 }
-#				}
-#				17 = {
-#					character_event = {	id = 61226 tooltip = EVTTOOLTIP61229 }
-#				}
-#			}
-#		}
-#		if = {					#HAS 1 - 6 MARTIAL, OPPONENT HAS 1 - 6
-#		 	limit = { 
-#				NOT = { martial = 7 }
-#				FROM = {
-#					NOT = { martial = 7 }
-#				}
-#		 	}
-#			random_list = {
-#				25 = {
-#					FROM = {
-#						character_event = {	id = 61228 tooltip = EVTTOOLTIP61225 }
-#					}
-#				}
-#				25 = {
-#					FROM = {
-#						character_event = {	id = 61229 tooltip = EVTTOOLTIP61226 }
-#					}
-#				}
-#				25 = {
-#					character_event = {	id = 61225 tooltip = EVTTOOLTIP61228 }
-#				}
-#				25 = {
-#					character_event = {	id = 61226 tooltip = EVTTOOLTIP61229 }
-#				}
-#			}
-#		}
-#		if = {					#HAS 1 - 6 MARTIAL, OPPONENT HAS 7 - 14
-#		 	limit = { 
-#				NOT = { martial = 7 }
-#				FROM = {
-#					martial = 7
-#					NOT = { martial = 15 }
-#				}
-#		 	}
-#			random_list = {
-#				33 = {
-#					FROM = {
-#						character_event = {	id = 61228 tooltip = EVTTOOLTIP61225 }
-#					}
-#				}
-#				33 = {
-#					FROM = {
-#						character_event = {	id = 61229 tooltip = EVTTOOLTIP61226 }
-#					}
-#				}
-#				17 = {
-#					character_event = {	id = 61225 tooltip = EVTTOOLTIP61228 }
-#				}
-#				17 = {
-#					character_event = {	id = 61226 tooltip = EVTTOOLTIP61229 }
-#				}
-#			}
-#		}
-#		if = {					#HAS 1 - 6 MARTIAL, OPPONENT HAS 15+
-#		 	limit = { 
-#				NOT = { martial = 7 }
-#				FROM = {
-#					martial = 15
-#				}
-#		 	}
-#			random_list = {
-#				40 = {
-#					FROM = {
-#						character_event = {	id = 61228 tooltip = EVTTOOLTIP61225 }
-#					}
-#				}
-#				40 = {
-#					FROM = {
-#						character_event = {	id = 61229 tooltip = EVTTOOLTIP61226 }
-#					}
-#				}
-#				10 = {
-#					character_event = {	id = 61225 tooltip = EVTTOOLTIP61228 }
-#				}
-#				10 = {
-#					character_event = {	id = 61226 tooltip = EVTTOOLTIP61229 }
-#				}
-#			}
-#		}
-#	}
-#	option = {
-#		name = EVTOPTB61224
-#		ai_chance = { factor = 20 }
-#		FROM = {
-#			character_event = {	id = 61231 tooltip = EVTTOOLTIP61231 }
-#		}
-#	}
-#}
-
-## Regent informed he wins.
-character_event = {
-	id = 61225
-	desc = EVTDESC61225
-	picture = GFX_evt_bloody_man
-	
-	is_triggered_only = yes
-	
-	option = {
-		name = EVTOPTA61225
-		liege = {
-			random_courtier = {
-				limit = { has_character_flag = duelist_courtier }
-				character_event = {	id = 61232 tooltip = EVTTOOLTIP61232 }
-				clr_character_flag = duelist_courtier
-			}
-		}
-		prestige = 20
-	}
-}
-
-## Regent informed he wins, courtier maimed.
-character_event = {
-	id = 61226
-	desc = EVTDESC61226
-	picture = GFX_evt_bloody_man
-	
-	is_triggered_only = yes
-	
-	option = {
-		name = EVTOPTA61226 #Spare opponent
-		ai_chance = { factor = 80 }
-		liege = {
-			random_courtier = {
-				limit = { has_character_flag = duelist_courtier }
-				character_event = {	id = 61230 tooltip = EVTTOOLTIP61230 }
-				clr_character_flag = duelist_courtier
-			}
-		}
-		piety = 40
-	}
-	option = {
-		name = EVTOPTB61226 #Kill opponent
-		ai_chance = { factor = 20 }
-		liege = {
-			random_courtier = {
-				limit = { has_character_flag = duelist_courtier }
-				character_event = {	id = 61232 tooltip = EVTTOOLTIP61232 }
-				clr_character_flag = duelist_courtier
-			}
-		}
-		prestige = 20
-	}
-}
-
-## Regent loses, is maimed.
-character_event = {
-	id = 61227
-	desc = EVTDESC61227
-	picture = GFX_evt_bloody_man
-	
-	is_triggered_only = yes
-	
-	option = {
-		name = EVTOPTA61227
-		add_trait = maimed
-		prestige = -20
-	}
-}
-
-## Courtier informed he wins.
-character_event = {
-	id = 61228
-	desc = EVTDESC61225
-	picture = GFX_evt_bloody_man
-	
-	is_triggered_only = yes
-	
-	option = {
-		name = EVTOPTA61228
-		liege = {
-			random_courtier = {
-				limit = { has_minor_title = title_regent }
-				character_event = {	id = 61232 tooltip = EVTTOOLTIP61232 }
-			}
-		}
-		hidden_tooltip = {
-			liege = {
-				character_event = {	id = 61235 }
-			}
-		}
-		give_minor_title = title_regent
-		clr_character_flag = duelist_courtier
-		prestige = 20
-	}
-}
-
-## Courtier informed he wins, regent maimed.
-character_event = {
-	id = 61229
-	desc = EVTDESC61226
-	picture = GFX_evt_bloody_man
-	
-	is_triggered_only = yes
-	
-	option = {
-		name = EVTOPTA61229 #Spare opponent
-		ai_chance = { factor = 80 }
-		liege = {
-			random_courtier = {
-				limit = { has_minor_title = title_regent }
-				character_event = {	id = 61227 tooltip = EVTTOOLTIP61230 }
-			}
-		}
-		hidden_tooltip = {
-			liege = {
-				character_event = {	id = 61235 }
-			}
-		}
-		give_minor_title = title_regent
-		clr_character_flag = duelist_courtier
-		piety = 40
-	}
-	option = {
-		name = EVTOPTB61229 #Kill opponent
-		ai_chance = { factor = 20 }
-		liege = {
-			random_courtier = {
-				limit = { has_minor_title = title_regent }
-				character_event = {	id = 61232 tooltip = EVTTOOLTIP61232 }
-			}
-		}
-		hidden_tooltip = {
-			liege = {
-				character_event = {	id = 61235 }
-			}
-		}
-		give_minor_title = title_regent
-		clr_character_flag = duelist_courtier
-		prestige = 20
-	}
-}
-
-## Courtier loses, is maimed.
-character_event = {
-	id = 61230
-	desc = EVTDESC61230
-	picture = GFX_evt_bloody_man
-	
-	is_triggered_only = yes
-	
-	option = {
-		name = EVTOPTA61230
-		add_trait = maimed
-		prestige = -20
-	}
-}
-
-## Opponent doesn't show up for duel.
-#character_event = {
-#	id = 61231
-#	desc = EVTDESC61231
-#	picture = GFX_evt_shadowy_cabal
-#	
-#	is_triggered_only = yes
-#	
-#	option = {
-#		name = EVTOPTA61231
-#		prestige = 20
-#	}
-#}
-
-## Is killed in duel.
-character_event = {
-	id = 61232
-	desc = EVTDESC61232
-	picture = GFX_evt_bloody_man
-	
-	is_triggered_only = yes
-	
-	option = {
-		name = EVTOPTA61232
-		death = {
-			death_reason = death_duel
-			killer = FROM
-		}
-	}
-}
-
-## Ruler informed about the new Regent after duel.
-character_event = {
-	id = 61235
-	desc = EVTDESC61235
-	picture = GFX_evt_melee
-	
-	is_triggered_only = yes
-	
-	option = {
-		name = EVTOPTA4017
 	}
 }
 
@@ -2858,175 +2370,6 @@ character_event = {
 	
 	option = {
 		name = EVTOPTA4017
-	}
-}
-
-## Courtier informed Regent refuses challenge.
-character_event = {
-	id = 61245
-	desc = EVTDESC61245
-	picture = GFX_evt_shadowy_cabal
-	
-	is_triggered_only = yes
-	
-	option = {
-		name = EVTOPTA61245
-		prestige = 20
-	}
-}
-
-## Courtier informed Regent voluntarily abdicates title.
-character_event = {
-	id = 61246
-	desc = EVTDESC61246
-	picture = GFX_evt_shadowy_cabal
-	
-	is_triggered_only = yes
-	
-	option = {
-		name = EVTOPTA61246
-		prestige = 20
-	}
-}
-
-## Queen or Queen Mother takes over Regency ##
-
-## Queen takes over regency.
-character_event = {
-	id = 61237
-	desc = EVTDESC61237
-	picture = GFX_evt_courtiers_talking
-	
-	min_age = 16
-	prisoner = no
-	capable_only = yes
-	only_women = yes
-	
-	trigger = {
-		NOT = { has_minor_title = title_regent }
-		has_minor_title = title_ruler_consort
-		is_married = yes
-		spouse = {
-			prisoner = no
-			is_alive = yes
-			is_abroad = no
-			is_ruler = yes
-		}
-		spouse = {
-			OR = {
-				NOT = { age = 15 }
-				trait = incapable
-			}
-		}
-	}
-	
-	mean_time_to_happen = {
-		months = 240
-		modifier = {
-			factor = 0.25
-			trait = ambitious
-		}
-		modifier = {
-			factor = 0.5
-			trait = diligent
-		}
-		modifier = {
-			factor = 3.0
-			trait = slothful
-		}
-		modifier = {
-			factor = 5.0
-			trait = content
-		}
-	}
-	
-	option = {
-		name = EVTOPTA61237
-		give_minor_title = title_regent
-		hidden_tooltip = {
-			spouse = {
-				character_event = { id = 61239 }
-			}
-		}
-	}
-}
-
-## Queen Mother takes over regency.
-character_event = {
-	id = 61238
-	desc = EVTDESC61238
-	picture = GFX_evt_courtiers_talking
-	
-	min_age = 16
-	prisoner = no
-	capable_only = yes
-	only_women = yes
-	
-	trigger = {
-		NOT = { has_minor_title = title_regent }
-		has_minor_title = title_queen_mother
-		liege = {
-			OR = {
-				NOT = { age = 15 }
-				trait = incapable
-			}
-		}
-	}
-
-	mean_time_to_happen = {
-		months = 240
-		modifier = {
-			factor = 0.25
-			trait = ambitious
-		}
-		modifier = {
-			factor = 0.5
-			trait = diligent
-		}
-		modifier = {
-			factor = 3.0
-			trait = slothful
-		}
-		modifier = {
-			factor = 5.0
-			trait = content
-		}
-	}
-	
-	option = {
-		name = EVTOPTA61238
-		give_minor_title = title_regent
-		hidden_tooltip = {
-			liege = {
-				character_event = { id = 61240 }
-			}
-		}
-	}
-}
-
-## Ruler informed that Queen takes over regency.
-character_event = {
-	id = 61239
-	desc = EVTDESC61239
-	picture = GFX_evt_courtiers_talking
-	
-	is_triggered_only = yes
-	
-	option = {
-		name = EVTOPTB61239
-	}
-}
-
-## Ruler informed that Queen Mother is taking over regency.
-character_event = {
-	id = 61240
-	desc = EVTDESC61240
-	picture = GFX_evt_courtiers_talking
-	
-	is_triggered_only = yes
-	
-	option = {
-		name = OK
 	}
 }
 
