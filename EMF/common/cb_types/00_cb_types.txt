@@ -3923,10 +3923,7 @@ bid_for_independence = {
 		hidden_tooltip = {
 			ROOT = {
 				prestige = 100
-				any_demesne_title = {
-					limit = { controls_religion = no }
-					add_pressed_claim = FROM
-				}
+				reverse_opinion = { who = FROM modifier = opinion_rightful_subjugation }
 			}
 		}
 		any_attacker = {
@@ -5492,53 +5489,18 @@ cb_faction_independence = {
 		emf_cb_victory_effect = yes
 		emf_imperial_decay_victory_effect = yes
 		FROM = { pf_prosperity_minus2_effect = yes }
-		if = {
-			limit = { FROM = { independent = yes } }
-			any_attacker = {
-				limit = {
-					OR = {
-						vassal_of = FROM
-						liege_before_war = { character = FROM }
-					}
-				}
-				set_defacto_liege = THIS
-				emf_liege_change_effect = yes
-				hidden_tooltip = {
-					prestige = 100
-					any_demesne_title = {
-						limit = {
-							controls_religion = no
-							higher_tier_than = BARON
-							FROM = { # If the old liege can use the subjugation CB, give no claims
-								NOT = { religion_group = pagan_group }
-							}
-						}
-						add_weak_pressed_claim = FROM
-					}
+		any_attacker = {
+			limit = {
+				OR = {
+					vassal_of = FROM
+					liege_before_war = { character = FROM }
 				}
 			}
-		}
-		if = {
-			limit = { FROM = { independent = no } }
-			any_attacker = {
-				limit = {
-					OR = {
-						vassal_of = FROM
-						liege_before_war = { character = FROM }
-					}
-				}
-				FROM = { liege = { set_defacto_vassal = PREVPREV } }
-				emf_liege_change_effect = yes
-				hidden_tooltip = {
-					prestige = 100
-					any_demesne_title = {
-						limit = {
-							controls_religion = no
-							higher_tier_than = BARON
-						}
-						add_weak_pressed_claim = FROM
-					}
-				}
+			set_defacto_liege = THIS
+			emf_liege_change_effect = yes
+			hidden_tooltip = {
+				prestige = 100
+				reverse_opinion = { who = FROM modifier = opinion_rightful_subjugation }
 			}
 		}
 		any_attacker = {
@@ -18271,6 +18233,196 @@ emf_subjugation = {
 		}
 		modifier = {
 			factor = 10 # Could reach 66, which is perfectly fine
+			FROM = { ai = no }
+			had_global_flag = {
+				flag = EMF
+				days = 730
+			}
+		}
+	}
+}
+
+emf_revassalize = {
+	name = CB_NAME_EMF_REVASSALIZE
+	war_name = WAR_NAME_EMF_REVASSALIZE
+	sprite = 8
+	truce_days = 1825
+	is_permanent = yes
+	can_ask_to_join_war = no
+	
+	allowed_to_target_tributaries = yes
+	allowed_to_target_suzerains = no
+	
+	infamy_modifier = 0.85
+	
+	can_use_gui = { emf_cb_can_use_gui_trigger = yes }
+
+	can_use = {
+		emf_cb_can_use_trigger = yes
+		ROOT = {
+			OR = {
+				independent = yes
+				same_liege = FROM
+			}
+			higher_tier_than = FROM
+			has_opinion_modifier = { who = FROM modifier = opinion_rightful_subjugation }
+			in_revolt = no
+			mercenary = no
+			is_landed = yes
+		}
+		FROM = {
+			in_revolt = no
+			OR = {
+				is_merchant_republic = yes
+				is_patrician = no
+			}
+			is_landed = yes
+			OR = {
+				religion = ROOT
+				NOR = {
+					controls_religion = yes
+					holy_order = yes
+				}
+			}
+			any_realm_province = {
+				any_neighbor_province = {
+					OR = {
+						owner_under_ROOT = yes
+						any_neighbor_province = { owner_under_ROOT = yes }
+					}
+				}
+			}
+		}
+	}
+
+	is_valid = {
+		ROOT = {
+			OR = {
+				independent = yes
+				same_liege = FROM
+			}
+			higher_tier_than = FROM
+			in_revolt = no
+			mercenary = no
+			is_landed = yes
+		}
+		FROM = {
+			in_revolt = no
+			OR = {
+				is_merchant_republic = yes
+				is_patrician = no
+			}
+			is_landed = yes
+			OR = {
+				religion = ROOT
+				NOR = {
+					controls_religion = yes
+					holy_order = yes
+				}
+			}
+		}
+	}
+
+	on_add = {
+		log = "CB(emf_revassalize): START: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+		# Cancel any suzerainty status, as this CB allows targeting tributaries.
+		FROM = { emf_remove_suzerain_under_ROOT = yes }
+	}
+
+	on_success = {
+		log = "CB(emf_revassalize): VICTORY: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+		emf_cb_victory_effect = yes
+		emf_imperial_decay_victory_effect = yes
+		any_attacker = {
+			limit = { character = ROOT }
+			participation_scaled_prestige = 50
+		}
+		any_attacker = {
+			limit = { NOT = { character = ROOT } }
+			hidden_tooltip = { participation_scaled_prestige = 50 }
+		}
+		FROM = { emf_ROOT_subjugate_ruler_effect = yes }
+		hidden_tooltip = {
+			ROOT = { remove_opinion = { who = FROM modifier = opinion_rightful_subjugation } }
+		}
+	}
+
+	on_success_posttitle = { emf_cb_on_success_posttitle_effect = yes }
+
+	on_fail = {
+		log = "CB(emf_revassalize): WHITEPEACE: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+		ROOT = { prestige = -50 }
+		FROM = { prestige = 50 }
+	}
+
+	on_reverse_demand = {
+		log = "CB(emf_revassalize): DEFEAT: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+		emf_cb_defeat_effect = yes
+		ROOT = {
+			transfer_scaled_wealth = {
+				to = FROM
+				value = 4.0
+			}
+			prestige = -200
+		}
+		FROM = { prestige = 100 }
+		any_defender = {
+			limit = { character = FROM }
+			participation_scaled_prestige = 200
+		}
+		any_defender = {
+			limit = { NOT = { character = FROM } }
+			hidden_tooltip = { participation_scaled_prestige = 200 }
+		}
+		hidden_tooltip = {
+			ROOT = { remove_opinion = { who = FROM modifier = opinion_rightful_subjugation } }
+		}
+	}
+
+	on_invalidation = {
+		log = "CB(emf_revassalize): INVALIDATED: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+	}
+
+	attacker_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+
+	attacker_ai_defeat_worth = {
+		factor = 100
+	}
+
+	defender_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+
+	defender_ai_defeat_worth = {
+		factor = 100
+	}
+
+	ai_will_do = {
+		factor = 1
+		modifier = {
+			factor = 1.3
+			FROM = {
+				any_realm_province = {
+					any_neighbor_province = { owner_under_ROOT = yes }
+				}
+			}
+		}
+		modifier = {
+			factor = 1.2
+			FROM = {
+				religion_group = ROOT
+				culture_group = ROOT
+			}
+		}
+		modifier = {
+			factor = 3
+			FROM = { opinion = { who = ROOT value = 0 } }
+			ROOT = { opinion = { who = FROM value = 0 } }
+		}
+		modifier = {
+			factor = 10
 			FROM = { ai = no }
 			had_global_flag = {
 				flag = EMF
