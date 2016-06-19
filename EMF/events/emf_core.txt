@@ -195,19 +195,15 @@ character_event = {
 	trigger = {
 		mother = {
 			any_claim = {
+				has_holder = yes
 				higher_tier_than = BARON
-				holder_scope = {
-					NOT = { character = ROOT }
-				}
-				ROOT = {
-					NOT = { has_claim = PREV }
-					mother = {
-						has_strong_claim = PREVPREV
-					}
-				}
-				NOT = {
-					succ_law_title = {
-						has_law = true_cognatic_succession
+				ROOT = { mother = { has_strong_claim = PREVPREV } }
+				NOT = { claimed_by = ROOT }
+				NOT = { holder = ROOT }
+				succ_law_title = {
+					OR = {
+						has_law = agnatic_succession
+						has_law = cognatic_succession
 					}
 				}
 			}
@@ -218,19 +214,15 @@ character_event = {
 		mother = {
 			any_claim = {
 				limit = {
+					has_holder = yes
 					higher_tier_than = BARON
-					holder_scope = {
-						NOT = { character = ROOT }
-					}
-					ROOT = {
-						NOT = { has_claim = PREV }
-						mother = {
-							has_strong_claim = PREVPREV
-						}
-					}
-					NOT = {
-						succ_law_title = {
-							has_law = true_cognatic_succession
+					ROOT = { mother = { has_strong_claim = PREVPREV } }
+					NOT = { claimed_by = ROOT }
+					NOT = { holder = ROOT }
+					succ_law_title = {
+						OR = {
+							has_law = agnatic_succession
+							has_law = cognatic_succession
 						}
 					}
 				}
@@ -329,29 +321,22 @@ character_event = {
 			k_orthodox = { grant_title = PREV }
 			b_hagiasophia = {
 				if = {
-					limit = {
-						holder_scope = {
-							OR = {
-								character = ROOT
-								is_liege_or_above = ROOT
-								AND = {
-									ai = yes
-									NOT = { any_liege = { ai = no } }
-								}
-							}
-						}
-					}
+					limit = { owner_under_ROOT = yes }
 					grant_title = PREV
 				}
 			}
 			set_defacto_liege = ROOT
 		}
 		if = {
-			limit = { religion_group = muslim }
-			set_government_type = muslim_government
+			limit = { is_feudal = yes }
 			break = yes
 		}
-		set_government_type = feudal_government
+		if = {
+			limit = { primary_title = { has_law = administration_2 } }
+			emf_switch_to_imperial_effect = yes
+			break = yes
+		}
+		emf_switch_to_feudal_gov_effect = yes
 	}
 }
 
@@ -444,7 +429,6 @@ character_event = {
 
 # For emf_core.50, see emf_core_map.txt (SWMH only)
 
-
 # emf_core.60
 # AI automatically abandons NAPs on appropriate characters (adapted from a dummy decision written by Rylock)
 character_event = {
@@ -479,24 +463,7 @@ character_event = {
 			}
 		}
 		any_non_aggression_pact_character = {
-			any_demesne_title = {
-				claimed_by = ROOT
-				OR = {
-					ROOT = { has_strong_claim = PREV }
-					AND = {
-						ROOT = { has_weak_claim = PREV }
-						OR = {
-							is_pretender = yes # Checks vs ROOT character
-							holder_scope = { has_regent = yes }
-							AND = {
-								ROOT = { is_female = no }
-								holder_scope = { is_female = yes }
-							}
-							is_contested = yes # Is already being contested in some form of Claim or Succession War
-						}
-					}
-				}
-			}
+			any_demesne_title = { emf_cb_can_press_claim = yes }
 			OR = {
 				NOT = { reverse_opinion = { who = ROOT value = 25 } }
 				AND = {
@@ -530,24 +497,7 @@ character_event = {
 	immediate = {
 		random_non_aggression_pact_character = {
 			limit = {
-				any_demesne_title = {
-					claimed_by = ROOT
-					OR = {
-						ROOT = { has_strong_claim = PREV }
-						AND = {
-							ROOT = { has_weak_claim = PREV }
-							OR = {
-								is_pretender = yes # Checks vs ROOT character
-								holder_scope = { has_regent = yes }
-								AND = {
-									ROOT = { is_female = no }
-									holder_scope = { is_female = yes }
-								}
-								is_contested = yes # Is already being contested in some form of Claim or Succession War
-							}
-						}
-					}
-				}
+				any_demesne_title = { emf_cb_can_press_claim = yes }
 				OR = {
 					NOT = { reverse_opinion = { who = ROOT value = 25 } }
 					AND = {
@@ -578,188 +528,96 @@ character_event = {
 }
 
 # emf_core.65
-# Feudalize a province by whatever means necessary, preferring historical castle-holders,
-# but without flipping counties between (sub)realms. As last resort, try to build a new castle.
+# Recalculate capital-contiguous provinces for an independent realm
 #
-# NOTE: when referring to the "count" or "baron" below, literal title holder is meant-- _nothing at all_ is
-# assumed about the tier of these character(s) -- in fact, they might even be the same dude [somehow].
-province_event = {
+# Called on annual maintenance throughout the year as well as explicitly
+# from all CBs' on_success_posttitle -> emf_cb_on_success_posttitle_effect -> here
+# specifically for the realms affected by territory change due to the war.
+character_event = {
 	id = emf_core.65
 	
 	is_triggered_only = yes
 	hide_window = yes
 	
+	only_independent = yes # Note that this filters-out revolt top realms too, which is intentional
+	
 	trigger = {
-		NOT = { capital_holding = { holding_type = castle } }
+		capital_scope = { owner = { character = ROOT } }
 	}
 	
 	immediate = {
-		owner = { save_event_target_as = emf_count }
-		random_province_holding = { # A feudal castle-holder of COUNT+ tier over/under county holder
-			limit = {
-				holding_type = castle
-				owner = {
-					higher_tier_than = BARON
-					is_feudal = yes
-					OR = {
-						character = event_target:emf_count
-						is_liege_or_above = event_target:emf_count
-						is_vassal_or_below = event_target:emf_count
-					}
-				}
+		any_realm_province = { clr_province_flag = emf_capital_connected }
+		capital_scope = {
+			set_province_flag = emf_capital_connected
+			any_neighbor_province = {
+				limit = { owner = { same_realm = ROOT } }
+				set_province_flag = emf_capital_connected
 			}
-			save_event_target_as = emf_castle
-			owner = { save_event_target_as = emf_baron }
-			break = yes
 		}
-		random_province_holding = { # A historical feudal castle-holder over/under county holder
-			limit = {
-				holding_type = castle
-				owner = {
-					historical = yes
-					is_feudal = yes
-					OR = {
-						character = event_target:emf_count
-						is_liege_or_above = event_target:emf_count
-						is_vassal_or_below = event_target:emf_count
-					}
-				}
+		character_event = { id = emf_core.66 }
+	}
+}
+
+# emf_core.66
+# Recursive component of emf_core.65 -- spread the contagion
+#
+# Note that this *isn't* the same sort of design as the old CK2+ implementation
+# of whole-world recursive province marking, which was _dramatically_ more
+# computationally complex. [Note that CK2Plus no longer calculates in that way either.]
+character_event = {
+	id = emf_core.66
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	trigger = {
+		any_realm_province = {
+			NOT = { has_province_flag = emf_capital_connected }
+			any_neighbor_province = {
+				owner = { same_realm = ROOT }
+				has_province_flag = emf_capital_connected
 			}
-			save_event_target_as = emf_castle
-			owner = { save_event_target_as = emf_baron }
-			break = yes
-		}
-		random_province_holding = { # Any feudal castle-holder over/under county holder
-			limit = {
-				holding_type = castle
-				owner = {
-					is_feudal = yes
-					OR = {
-						character = event_target:emf_count
-						is_liege_or_above = event_target:emf_count
-						is_vassal_or_below = event_target:emf_count
-					}
-				}
-			}
-			save_event_target_as = emf_castle
-			owner = { save_event_target_as = emf_baron }
-			break = yes
-		}
-		random_province_holding = { # Steal the castle from a non-feudal over/under county holder
-			limit = {
-				holding_type = castle
-				owner = {
-					OR = {
-						character = event_target:emf_count
-						is_liege_or_above = event_target:emf_count
-						is_vassal_or_below = event_target:emf_count
-					}
-				}
-			}
-			save_event_target_as = emf_castle
-			break = yes
-		}
-		if = {
-			limit = { NOT = { has_empty_holding = yes } }
-			break = yes # No hope
-		}
-		# Build the castle ourselves
-		build_holding = { type = castle }
-		random_province_holding = {
-			limit = { holding_type = castle }
-			save_event_target_as = emf_castle
 		}
 	}
 	
-	option = {
-		name = OK
-		if = {
-			limit = { NOT = { event_target:emf_castle = { always = yes } } }
-			break = yes # No hope
-		}
-		if = {
-			limit = { NOT = { event_target:emf_baron = { always = yes } } }
-			owner = {
-				create_character = {
-					random_traits = yes
-					dynasty = random
-					female = no
-					religion = THIS
-					culture = THIS
-				}
-				new_character = {
-					save_event_target_as = emf_baron
-					if = {
-						limit = { religion_group = indian_group }
-						add_trait = kshatriya
-						character_event = { id = RoI.30121 }
-					}
-					grant_title_no_opinion = event_target:emf_castle
-					if = {
-						limit = { NOT = { religion_group = muslim } }
-						set_government_type = feudal_government
-					}
-					if = {
-						limit = { religion_group = muslim }
-						set_government_type = muslim_government
-					}
+	immediate = {
+		any_realm_province = {
+			limit = {
+				NOT = { has_province_flag = emf_capital_connected }
+				any_neighbor_province = {
+					owner = { same_realm = ROOT }
+					has_province_flag = emf_capital_connected
 				}
 			}
+			set_province_flag = emf_capital_connected
 		}
-		owner = {
-			liege = { save_event_target_as = emf_count_liege }
-		}
-		# Flip province capital holding to the castle & give the county title to its baron
-		event_target:emf_castle = {
-			make_capital_holding = yes
-			dejure_liege_title = {
-				save_event_target_as = emf_county
-				grant_title_no_opinion = event_target:emf_baron
-			}
-		}
-		# Try to vassalize the new county holder to the original liege of the prior county holder, who may of course
-		# actually be their own liege (and if this doesn't work due to relative tier after granting the county, then
-		# that's WAD too by design)
-		event_target:emf_baron = {
-			if = {
-				limit = { lower_tier_than = event_target:emf_count_liege }
-				set_defacto_liege = event_target:emf_count_liege
-				emf_liege_change_effect = yes
-			}
-		}
-		# If the old county holder [now] only has titles which are de jure vassal to the county, then vassalize him
-		# to the new county holder. If he has no titles at all, vassalize him to his original liege in case he
-		# randomly jumped courts to some count in Mozambique or something.
-		event_target:emf_count = {
-			if = {
-				limit = { is_ruler = no }
-				if = {
-					limit = { character = event_target:emf_count_liege } # Was already independent, so
-					set_defacto_liege = event_target:emf_baron # ... assign him to the new county holder
-					emf_liege_change_effect = yes
-					break = yes
+		any_realm_province = {
+			limit = {
+				NOT = { has_province_flag = emf_capital_connected }
+				any_neighbor_province = {
+					owner = { same_realm = ROOT }
+					has_province_flag = emf_capital_connected
 				}
-				set_defacto_liege = event_target:emf_count_liege # Should already be in this court, but JIC
-				break = yes
 			}
-			if = {
-				limit = {
-					NOT = {
-						any_demesne_title = {
-							NOT = { de_jure_liege = event_target:emf_county }
-						}
-					}
-				}
-				set_defacto_liege = event_target:emf_baron
-				emf_liege_change_effect = yes
-			}
+			set_province_flag = emf_capital_connected
 		}
+		any_realm_province = {
+			limit = {
+				NOT = { has_province_flag = emf_capital_connected }
+				any_neighbor_province = {
+					owner = { same_realm = ROOT }
+					has_province_flag = emf_capital_connected
+				}
+			}
+			set_province_flag = emf_capital_connected
+		}
+		repeat_event = { id = emf_core.66 }
 	}
 }
 
 
 # emf_core.1000
-# Toggle global EMF debug flag
+# Toggle EMF debug mode
 character_event = {
 	id = emf_core.1000
 
