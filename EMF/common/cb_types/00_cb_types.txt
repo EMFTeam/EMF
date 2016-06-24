@@ -4766,14 +4766,14 @@ coastal_county_republic = {
 		tier = COUNT
 		location = {
 			port = yes
-			county = {
-				any_direct_de_jure_vassal_title = {
-					holder_scope = {
-						OR = {
-							character = ROOT
-							is_liege_or_above = ROOT
-						}
-					}
+			any_province_holding = {
+				holding_type = city
+				owner_under_ROOT = yes
+			}
+			FROM = {
+				OR = {
+					is_merchant_republic = no
+					capital_scope = { NOT = { province = PREVPREV } }
 				}
 			}
 		}
@@ -4786,6 +4786,9 @@ coastal_county_republic = {
 				is_merchant_republic = yes
 				is_patrician = yes
 			}
+			NOT = { is_liege_or_above = FROM }
+			NOT = { is_vassal_or_below = FROM }
+			NOT = { same_liege = FROM }
 		}
 	}
 
@@ -4793,14 +4796,14 @@ coastal_county_republic = {
 		tier = COUNT
 		location = {
 			port = yes
-			county = {
-				any_direct_de_jure_vassal_title = {
-					holder_scope = {
-						OR = {
-							character = ROOT
-							is_liege_or_above = ROOT
-						}
-					}
+			any_province_holding = {
+				holding_type = city
+				owner_under_ROOT = yes
+			}
+			FROM = {
+				OR = {
+					is_merchant_republic = no
+					capital_scope = { NOT = { province = PREVPREV } }
 				}
 			}
 		}
@@ -4824,24 +4827,6 @@ coastal_county_republic = {
 		log = "CB(coastal_county_republic): VICTORY: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
 		emf_cb_victory_effect = yes
 		ROOT = { pf_prosperity_plus2_effect = yes }
-	}
-
-	on_success_title = {
-		if = {
-			limit = { location = { any_province_holding = { holder_scope = { character = ROOT } } } }
-			usurp_title = ROOT
-		}
-		if = {
-			limit = { NOT = { location = { any_province_holding = { holder_scope = { character = ROOT } } } } }
-			any_de_jure_vassal_title = {
-				limit = { holder_scope = { is_liege_or_above = ROOT } }
-				holder_scope = {
-					usurp_title = PREVPREV
-					set_defacto_liege = ROOT
-					emf_liege_change_effect = yes
-				}
-			}
-		}
 		any_attacker = {
 			limit = { character = ROOT }
 			participation_scaled_prestige = 100
@@ -4850,6 +4835,31 @@ coastal_county_republic = {
 			limit = { NOT = { character = ROOT } }
 			hidden_tooltip = { participation_scaled_prestige = 100 }
 		}
+	}
+
+	on_success_title = {
+		if = { # If a TP is attached to our city, prefer to give the county to the TP owner (and city overlord)
+			limit = {
+				location = {
+					trade_post_owner = {
+						under_ROOT = yes
+						any_realm_title = {
+							tier = BARON
+							holding_type = city
+							location = { province = PREVPREVPREV }
+						}
+					}
+				}
+			}
+			location = {
+				trade_post_owner = {
+					usurp_title = { target = PREVPREV type = invasion }
+					break = yes
+				}
+			}
+		}
+		# Else, give the county to ROOT (if the above didn't already)
+		usurp_title = { target = ROOT type = invasion }
 	}
 
 	on_success_posttitle = { emf_cb_on_success_posttitle_effect = yes }
