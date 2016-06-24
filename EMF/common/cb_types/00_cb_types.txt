@@ -4524,21 +4524,16 @@ coastal_republic = {
 		holding_type = city
 		location = {
 			port = yes
-			# Must have a trade post there already
+			# Must have a trade post there already, or city is under rival merchant republic
 			OR = {
+				trade_post_owner = { under_ROOT = yes }
 				PREV = {
 					holder_scope = {
 						NOT = { same_realm = ROOT }
 						OR = {
-							is_patrician = yes
 							is_merchant_republic = yes
+							any_liege = { is_merchant_republic = yes }
 						}
-					}
-				}
-				trade_post_owner = {
-					OR = {
-						character = ROOT
-						is_liege_or_above = ROOT
 					}
 				}
 			}
@@ -4546,11 +4541,9 @@ coastal_republic = {
 			ROOT = {
 				OR = {
 					AND = { # For vassal patricians
-						liege = {
+						is_merchant_republic = no
+						any_liege = {
 							is_merchant_republic = yes
-							NOT = { character = PREV }
-						}
-						liege = {
 							any_realm_title = {
 								tier = COUNT
 								location = {
@@ -4584,7 +4577,7 @@ coastal_republic = {
 			FROM = {
 				OR = {
 					is_merchant_republic = no
-					capital_scope = { NOT = { province_id = PREVPREV } }
+					capital_scope = { NOT = { province = PREVPREV } }
 				}
 			}
 		}
@@ -4596,6 +4589,21 @@ coastal_republic = {
 			OR = {
 				is_merchant_republic = yes
 				is_patrician = yes
+			}
+			NOT = { is_liege_or_above = FROM }
+			NOT = { is_vassal_or_below = FROM }
+			NOT = { same_liege = FROM }
+		}
+	}
+	
+	is_valid_title = {
+		location = {
+			# Not allowed to use this CB to take cities in the capital province of a rival merchant republic
+			FROM = {
+				OR = {
+					is_merchant_republic = no
+					capital_scope = { NOT = { province = PREVPREV } }
+				}
 			}
 		}
 	}
@@ -4618,27 +4626,6 @@ coastal_republic = {
 		log = "CB(coastal_republic): VICTORY: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
 		emf_cb_victory_effect = yes
 		ROOT = { pf_prosperity_plus2_effect = yes }
-	}
-
-	on_success_title = {
-		if = {
-			limit = { NOT = { location = { trade_post_owner = { is_liege_or_above = ROOT } } } }
-			usurp_title = {
-				target = ROOT
-				type = invasion
-			}
-		}
-		if = {
-			limit = { location = { trade_post_owner = { is_liege_or_above = ROOT } } }
-			location = {
-				trade_post_owner = {
-					usurp_title = {
-						target = PREVPREV
-						type = invasion
-					}
-				}
-			}
-		}
 		any_attacker = {
 			limit = { character = ROOT }
 			participation_scaled_prestige = 100
@@ -4647,6 +4634,23 @@ coastal_republic = {
 			limit = { NOT = { character = ROOT } }
 			hidden_tooltip = { participation_scaled_prestige = 100 }
 		}
+	}
+
+	on_success_title = {
+		if = {
+			limit = {
+				location = {
+					trade_post_owner = { is_liege_or_above = ROOT }
+				}
+			}
+			location = {
+				trade_post_owner = {
+					usurp_title = { target = PREVPREV type = invasion }
+					break = yes
+				}
+			}
+		}
+		usurp_title = { target = ROOT type = invasion }
 	}
 
 	on_success_posttitle = { emf_cb_on_success_posttitle_effect = yes }
