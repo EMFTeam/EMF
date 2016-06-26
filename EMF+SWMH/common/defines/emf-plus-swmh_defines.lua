@@ -11,7 +11,7 @@ NDefines.NDiplomacy.MAX_PREP_INV_TARGET_HOLDINGS = 60   -- up from 40
 NDefines.NDiplomacy.MAX_PREP_INV_ATTACKER_HOLDINGS = 60 -- up from 40
 
 -- Infamy
-NDefines.NInfamy.REALM_SIZE_BASE_MODIFIER = 0.5   -- down from 1
+NDefines.NInfamy.REALM_SIZE_BASE_MODIFIER = 0.8   -- down from 1
 
 -- Character
 NDefines.NCharacter.TRIBAL_EMPTY_HOLDING_TAX_MULTIPLIER = 0.7   -- up from 0.5
