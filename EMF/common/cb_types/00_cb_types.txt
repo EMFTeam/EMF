@@ -260,6 +260,16 @@ other_claim = {
 				any_spouse = { character = ROOT }
 			}
 		}
+		ROOT = {
+			in_revolt = no
+			OR = {
+				AND = {
+					is_ruler = yes
+					is_merchant_republic = yes
+				}
+				is_patrician = no
+			}
+		}
 		OR = { # AI will only press something that will gain it territory, unless target is player
 			FROMFROM = { ai = no } # Player pressers can do whatever they want
 			# AI can always press an anti-pope's claim
@@ -295,7 +305,10 @@ other_claim = {
 						independent = yes
 						FROM = { independent = yes }
 					}
-					same_liege = FROM
+					liege = {
+						NOT = { character = PREV }
+						FROM = { liege = { character = PREVPREV } }
+					}
 				}
 				is_allied_with = FROM
 			}
@@ -306,8 +319,6 @@ other_claim = {
 			}
 		}
 		emf_cb_can_press_claim = yes
-		# Cannot press others' claims for holy orders
-		holy_order = no
 		emf_cb_thirdparty_can_use_title_trigger = yes
 	}
 
@@ -359,7 +370,7 @@ other_claim = {
 						lower_tier_than = PREV
 					}
 					random = {
-						chance = 50
+						chance = 33
 						give_nickname = nick_the_usurper
 					}
 				}
@@ -401,14 +412,12 @@ other_claim = {
 		}
 		if = {
 			limit = {
-				OR = {
-					controls_religion = no
-					NOT = {
-						holder_scope = {
-							OR = {
-								religion = catholic
-								religion = fraticelli
-							}
+				NAND = {
+					controls_religion = yes
+					holder_scope = {
+						OR = {
+							religion = catholic
+							religion = fraticelli
 						}
 					}
 				}
@@ -458,23 +467,21 @@ other_claim = {
 			}
 			if = {
 				limit = {
-					NOT = {
-						AND = {
-							FROMFROM = {
-								primary_title = { higher_tier_than = PREVPREV } # Presser can bind target title
+					NAND = {
+						FROMFROM = {
+							primary_title = { higher_tier_than = PREVPREV } # Presser can bind target title
+						}
+						OR = {
+							ROOT = { # Claimant is vassal ruler of presser
+								is_ruler = yes
+								is_liege_or_above = FROMFROM
 							}
-							OR = {
-								ROOT = { # Claimant is vassal ruler of presser
-									is_ruler = yes
-									is_liege_or_above = FROMFROM
-								}
-								FROMFROM = {
-									OR = {
-										any_demesne_title = { # Presser is de jure liege of target title, or...
-											de_jure_vassal_or_below = PREVPREV
-										}
-										dynasty = ROOT # Presser is same dynasty as claimant
+							FROMFROM = {
+								OR = {
+									any_demesne_title = { # Presser is de jure liege of target title, or...
+										de_jure_vassal_or_below = PREVPREV
 									}
+									dynasty = ROOT # Presser is same dynasty as claimant
 								}
 							}
 						}
@@ -486,7 +493,7 @@ other_claim = {
 						holder_scope = {
 							liege = {
 								NOT = { character = PREV }
-								higher_tier_than = ROOT
+								higher_real_tier_than = ROOT
 							}
 						}
 					}
@@ -503,7 +510,7 @@ other_claim = {
 							holder_scope = {
 								liege = {
 									NOT = { character = PREV }
-									higher_tier_than = ROOT
+									higher_real_tier_than = ROOT
 								}
 							}
 						}
@@ -3242,11 +3249,8 @@ religious = {
 					OR = {
 						religion_group = muslim
 						religion_group = pagan_group
+						religion = paulician
 					}
-					NOT = { religion = FROM }
-				}
-				AND = {
-					FROM = { religion = paulician }
 					NOT = { religion = FROM }
 				}
 			}
@@ -3369,11 +3373,8 @@ religious = {
 					OR = {
 						religion_group = muslim
 						religion_group = pagan_group
+						religion = paulician
 					}
-					NOT = { religion = FROM }
-				}
-				AND = {
-					FROM = { religion = paulician }
 					NOT = { religion = FROM }
 				}
 				NOT = { is_reformed_religion = FROM }
@@ -4056,7 +4057,6 @@ depose_liege = {
 			limit = { NOT = { character = FROM } }
 			hidden_tooltip = { participation_scaled_prestige = 50 }
 		}
-		FROM = { clr_character_flag = autonomy_faction_revolt }
 	}
 
 	attacker_ai_victory_worth = {
@@ -4099,7 +4099,6 @@ overthrow_ruler = {
 	is_tyranny_cb = yes
 
 	can_use = {
-		emf_cb_can_use_trigger = yes
 		ROOT = { de_facto_liege = FROM }
 	}
 
@@ -4120,6 +4119,11 @@ overthrow_ruler = {
 			any_demesne_title = {
 				NOT = { lower_tier_than = ROOT }
 				temporary = no
+			}
+			in_revolt = no
+			liege_before_war = {
+				in_revolt = no
+				liege_before_war = { in_revolt = no }
 			}
 		}
 	}
@@ -4530,21 +4534,16 @@ coastal_republic = {
 		holding_type = city
 		location = {
 			port = yes
-			# Must have a trade post there already
+			# Must have a trade post there already, or city is under rival merchant republic
 			OR = {
+				trade_post_owner = { under_ROOT = yes }
 				PREV = {
 					holder_scope = {
 						NOT = { same_realm = ROOT }
 						OR = {
-							is_patrician = yes
 							is_merchant_republic = yes
+							any_liege = { is_merchant_republic = yes }
 						}
-					}
-				}
-				trade_post_owner = {
-					OR = {
-						character = ROOT
-						is_liege_or_above = ROOT
 					}
 				}
 			}
@@ -4552,11 +4551,9 @@ coastal_republic = {
 			ROOT = {
 				OR = {
 					AND = { # For vassal patricians
-						liege = {
+						is_merchant_republic = no
+						any_liege = {
 							is_merchant_republic = yes
-							NOT = { character = PREV }
-						}
-						liege = {
 							any_realm_title = {
 								tier = COUNT
 								location = {
@@ -4590,7 +4587,7 @@ coastal_republic = {
 			FROM = {
 				OR = {
 					is_merchant_republic = no
-					capital_scope = { NOT = { province_id = PREVPREV } }
+					capital_scope = { NOT = { province = PREVPREV } }
 				}
 			}
 		}
@@ -4602,6 +4599,21 @@ coastal_republic = {
 			OR = {
 				is_merchant_republic = yes
 				is_patrician = yes
+			}
+			NOT = { is_liege_or_above = FROM }
+			NOT = { is_vassal_or_below = FROM }
+			NOT = { same_liege = FROM }
+		}
+	}
+	
+	is_valid_title = {
+		location = {
+			# Not allowed to use this CB to take cities in the capital province of a rival merchant republic
+			FROM = {
+				OR = {
+					is_merchant_republic = no
+					capital_scope = { NOT = { province = PREVPREV } }
+				}
 			}
 		}
 	}
@@ -4624,27 +4636,6 @@ coastal_republic = {
 		log = "CB(coastal_republic): VICTORY: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
 		emf_cb_victory_effect = yes
 		ROOT = { pf_prosperity_plus2_effect = yes }
-	}
-
-	on_success_title = {
-		if = {
-			limit = { NOT = { location = { trade_post_owner = { is_liege_or_above = ROOT } } } }
-			usurp_title = {
-				target = ROOT
-				type = invasion
-			}
-		}
-		if = {
-			limit = { location = { trade_post_owner = { is_liege_or_above = ROOT } } }
-			location = {
-				trade_post_owner = {
-					usurp_title = {
-						target = PREVPREV
-						type = invasion
-					}
-				}
-			}
-		}
 		any_attacker = {
 			limit = { character = ROOT }
 			participation_scaled_prestige = 100
@@ -4653,6 +4644,23 @@ coastal_republic = {
 			limit = { NOT = { character = ROOT } }
 			hidden_tooltip = { participation_scaled_prestige = 100 }
 		}
+	}
+
+	on_success_title = {
+		if = {
+			limit = {
+				location = {
+					trade_post_owner = { is_liege_or_above = ROOT }
+				}
+			}
+			location = {
+				trade_post_owner = {
+					usurp_title = { target = PREVPREV type = invasion }
+					break = yes
+				}
+			}
+		}
+		usurp_title = { target = ROOT type = invasion }
 	}
 
 	on_success_posttitle = { emf_cb_on_success_posttitle_effect = yes }
@@ -4768,14 +4776,14 @@ coastal_county_republic = {
 		tier = COUNT
 		location = {
 			port = yes
-			county = {
-				any_direct_de_jure_vassal_title = {
-					holder_scope = {
-						OR = {
-							character = ROOT
-							is_liege_or_above = ROOT
-						}
-					}
+			any_province_holding = {
+				holding_type = city
+				owner_under_ROOT = yes
+			}
+			FROM = {
+				OR = {
+					is_merchant_republic = no
+					capital_scope = { NOT = { province = PREVPREV } }
 				}
 			}
 		}
@@ -4788,6 +4796,9 @@ coastal_county_republic = {
 				is_merchant_republic = yes
 				is_patrician = yes
 			}
+			NOT = { is_liege_or_above = FROM }
+			NOT = { is_vassal_or_below = FROM }
+			NOT = { same_liege = FROM }
 		}
 	}
 
@@ -4795,14 +4806,14 @@ coastal_county_republic = {
 		tier = COUNT
 		location = {
 			port = yes
-			county = {
-				any_direct_de_jure_vassal_title = {
-					holder_scope = {
-						OR = {
-							character = ROOT
-							is_liege_or_above = ROOT
-						}
-					}
+			any_province_holding = {
+				holding_type = city
+				owner_under_ROOT = yes
+			}
+			FROM = {
+				OR = {
+					is_merchant_republic = no
+					capital_scope = { NOT = { province = PREVPREV } }
 				}
 			}
 		}
@@ -4826,24 +4837,6 @@ coastal_county_republic = {
 		log = "CB(coastal_county_republic): VICTORY: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
 		emf_cb_victory_effect = yes
 		ROOT = { pf_prosperity_plus2_effect = yes }
-	}
-
-	on_success_title = {
-		if = {
-			limit = { location = { any_province_holding = { holder_scope = { character = ROOT } } } }
-			usurp_title = ROOT
-		}
-		if = {
-			limit = { NOT = { location = { any_province_holding = { holder_scope = { character = ROOT } } } } }
-			any_de_jure_vassal_title = {
-				limit = { holder_scope = { is_liege_or_above = ROOT } }
-				holder_scope = {
-					usurp_title = PREVPREV
-					set_defacto_liege = ROOT
-					emf_liege_change_effect = yes
-				}
-			}
-		}
 		any_attacker = {
 			limit = { character = ROOT }
 			participation_scaled_prestige = 100
@@ -4852,6 +4845,31 @@ coastal_county_republic = {
 			limit = { NOT = { character = ROOT } }
 			hidden_tooltip = { participation_scaled_prestige = 100 }
 		}
+	}
+
+	on_success_title = {
+		if = { # If a TP is attached to our city, prefer to give the county to the TP owner (and city overlord)
+			limit = {
+				location = {
+					trade_post_owner = {
+						under_ROOT = yes
+						any_realm_title = {
+							tier = BARON
+							holding_type = city
+							location = { province = PREVPREVPREV }
+						}
+					}
+				}
+			}
+			location = {
+				trade_post_owner = {
+					usurp_title = { target = PREVPREV type = invasion }
+					break = yes
+				}
+			}
+		}
+		# Else, give the county to ROOT (if the above didn't already)
+		usurp_title = { target = ROOT type = invasion }
 	}
 
 	on_success_posttitle = { emf_cb_on_success_posttitle_effect = yes }
@@ -7297,6 +7315,10 @@ duchy_adventure = {
 		emf_cb_can_use_trigger = yes
 		ROOT = { has_character_flag = duchy_adventurer }
 	}
+	
+	can_use_title = {
+		emf_cb_can_use_de_jure_title_trigger = yes
+	}
 
 	is_valid = { always = yes }
 
@@ -9109,8 +9131,14 @@ depose_antipope = {
 			piety = -500
 			prestige = -250
 			rightful_religious_head_scope = {
-				remove_claim = k_papal_state
-				remove_claim = d_fraticelli
+				if = {
+					limit = { has_claim = k_papal_state }
+					remove_claim = k_papal_state
+				}
+				if = {
+					limit = { has_claim = d_fraticelli }
+					remove_claim = d_fraticelli
+				}
 			}
 		}
 	}
@@ -9199,7 +9227,9 @@ cb_install_antiking = {
 		}
 	}
 
-	is_valid_title = { NOT = { holder_scope = { character = ROOT } } }
+	is_valid_title = {
+		holder_scope = { NOT = { character = ROOT } }
+	}
 
 	is_valid = {
 		ROOT = {
@@ -9289,22 +9319,51 @@ cb_install_antiking = {
 		FROM = {
 			piety = -500
 			prestige = -250
-			hidden_tooltip = {
-				rightful_religious_head_scope = {
+			rightful_religious_head_scope = {
+				if = {
+					limit = { has_claim = k_papal_state }
 					remove_claim = k_papal_state
+				}
+				if = {
+					limit = { has_claim = d_fraticelli }
 					remove_claim = d_fraticelli
 				}
 			}
 			primary_title = {
-				usurp_title = {
+				# If the antiking has the wrong government type, take care of that first.
+				if = {
+					limit = {
+						higher_tier_than = ROOT
+						holder_scope = { is_feudal = yes }
+						ROOT = {
+							is_ruler = yes
+							OR = {
+								is_theocracy = yes
+								is_republic = yes
+							}
+						}
+					}
+					ROOT = { abdicate = yes }
+				}
+				usurp_title_plus_barony_if_unlanded_and_vassals_no_adj = {
 					target = ROOT
 					type = revolt
 				}
+				if = {
+					limit = { has_law = investiture_law_1 }
+					add_law = investiture_law_0
+				}
 			}
 		}
-		if = {
-			limit = { primary_title = { has_law = investiture_law_1 } }
-			primary_title = { add_law_w_cooldown = investiture_law_0 }
+		hidden_tooltip = {
+			ROOT = {
+				primary_title = {
+					if = {
+						limit = { has_law = investiture_law_1 }
+						add_law = investiture_law_0
+					}
+				}
+			}
 		}
 		emf_cb_dynlevy_end_effect = yes
 	}
@@ -12911,7 +12970,9 @@ cb_faction_overthrow_ruler = {
 			# enforce any rebel demands that prompted the civil war
 			if = {
 				limit = { ROOT = { has_character_flag = demands_revert_succession } }
+				set_character_flag = emf_no_law_penalties # Don't punish the liege for succ. law change he didn't make
 				primary_title = { pf_revert_succession_law_effect = yes }
+				clr_character_flag = emf_no_law_penalties
 			}
 			if = {
 				limit = { ROOT = { has_character_flag = demands_lower_feudal_obligations } }
@@ -16405,11 +16466,8 @@ emf_religious_reconquest = {
 					OR = {
 						religion_group = muslim
 						religion_group = pagan_group
+						religion = paulician
 					}
-					NOT = { religion = FROM }
-				}
-				AND = {
-					FROM = { religion = paulician }
 					NOT = { religion = FROM }
 				}
 			}
@@ -16553,11 +16611,8 @@ emf_religious_reconquest = {
 					OR = {
 						religion_group = muslim
 						religion_group = pagan_group
+						religion = paulician
 					}
-					NOT = { religion = FROM }
-				}
-				AND = {
-					FROM = { religion = paulician }
 					NOT = { religion = FROM }
 				}
 				NOT = { is_reformed_religion = FROM }
@@ -17602,11 +17657,8 @@ emf_special_religious = {
 					OR = {
 						religion_group = muslim
 						religion_group = pagan_group
+						religion = paulician
 					}
-					NOT = { religion = FROM }
-				}
-				AND = {
-					FROM = { religion = paulician }
 					NOT = { religion = FROM }
 				}
 			}
@@ -17739,11 +17791,8 @@ emf_special_religious = {
 					OR = {
 						religion_group = muslim
 						religion_group = pagan_group
+						religion = paulician
 					}
-					NOT = { religion = FROM }
-				}
-				AND = {
-					FROM = { religion = paulician }
 					NOT = { religion = FROM }
 				}
 				NOT = { is_reformed_religion = FROM }
