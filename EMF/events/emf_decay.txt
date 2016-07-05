@@ -218,7 +218,9 @@ character_event = {
 	picture = GFX_evt_council
 	
 	is_triggered_only = yes
+	
 	notification = yes
+	hide_from = yes
 	
 	trigger = {
 		is_ironman = no
@@ -429,6 +431,61 @@ character_event = {
 	
 	option = {
 		name = "OK"
+	}
+}
+
+# emf_imperial.1853 -- Always explicitly initialize imperial_decay to 0 when an empire title is formed
+#
+# Triggered by on_new_holder; always do this so that the now always-available Lower Imperial Decay decision never, ever
+# shows a blank value for Imperial Decay. [This also prevents old imperial_decay values from affecting newly-created
+# titles.]
+character_event = {
+	id = emf_imperial.1853
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	only_independent = yes
+	
+	trigger = {
+		FROM = {
+			tier = EMPEROR
+			temporary = no
+		}
+		NOT = { FROMFROM = { always = yes } }
+	}
+	
+	immediate = {
+		FROM = { set_variable = { which = "imperial_decay" value = 0 } }
+	}
+}
+
+# emf_imperial.1854 -- Always ensure existing empire titles w/ zero decay actually have imperial_decay=0 in RAM (on_startup)
+character_event = {
+	id = emf_imperial.1854
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	only_independent = yes
+	culture = hip_culture
+	
+	trigger = {
+		has_landed_title = e_hip
+	}
+	
+	immediate = {
+		# Ensure every empire title has an explicitly-set imperial_decay value, even if 0 or never to be used
+		# If we are reloading saves, 0-values for imperial_decay will be null (appear blank) and not be 0 until fixed
+		any_landed_title = {
+			limit = {
+				tier = EMPEROR
+				has_holder = yes
+				temporary = no
+				NOT = { check_variable = { which = "imperial_decay" value = 0.1 } } # Supposed to be 0
+			}
+			set_variable = { which = "imperial_decay" value = 0 }
+		}
 	}
 }
 

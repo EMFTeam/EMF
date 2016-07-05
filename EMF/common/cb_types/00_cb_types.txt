@@ -8672,31 +8672,25 @@ other_dejure_county_claim = {
 
 	can_use_title = {
 		tier = COUNT
-		dejure_liege_title = {
-			has_holder = yes
-			ROOT = { has_landed_title = PREV }
-		}
-		NAND = {
-			FROMFROM = { rightful_religious_head = FROM }
-			title = c_roma
-		}
-		holder_scope = {
-			NOR = {
-				character = ROOT
-				character = FROMFROM
-				is_liege_or_above = ROOT
-				is_liege_or_above = FROMFROM
-			}
-		}
-		NOT = {
-			OR = {
-				ROOT = { has_landed_title = PREV }
-				holder_scope = { is_liege_or_above = ROOT }
-			}
-		}
 		OR = {
 			FROM = { has_landed_title = PREV }
 			holder_scope = { is_liege_or_above = FROM }
+		}
+		dejure_liege_title = {
+			ROOT = { has_landed_title = PREV }
+		}
+		owner_under_FROMFROM = no
+		owner_under_ROOT = no
+		# "Catholics" may not press de jure claims for Rome vs. their rightful religious head (i.e., antipope > pope)
+		NAND = {
+			title = c_roma
+			FROMFROM = {
+				rightful_religious_head = ROOT_FROM
+				OR = {
+					religion = catholic
+					religion = fraticelli
+				}
+			}
 		}
 		emf_cb_thirdparty_can_use_title_trigger = yes
 	}
@@ -8714,6 +8708,11 @@ other_dejure_county_claim = {
 
 	on_success = {
 		log = "CB(other_dejure_county_claim): VICTORY: title=[FromFrom.GetID]: [This.GetTitledFirstName] of [This.PrimaryTitle.GetBaseName] ([This.GetID]/[This.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID]) on behalf of [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID])"
+		# TODO: Setup a scripted effect CB helper for these emf_capital_connected optimizations later
+		if = { # Base scope is attacker (unlike in the can_use_title, FROMFROM is NOT the attacker here)
+			limit = { same_realm = FROM } # As far as top realm goes, provinces can't change connectedness
+			ROOT = { set_character_flag = skip_capconnect_chk_tmp }
+		}
 		emf_cb_victory_other_effect = yes
 		ROOT = {
 			opinion = {
@@ -8759,14 +8758,8 @@ other_dejure_county_claim = {
 			}
 			any_de_jure_vassal_title = { # take all baronies under the one we're fighting for
 				limit = {
-					has_holder = yes
 					NOT = { de_facto_liege = PREV }
-					holder_scope = {
-						OR = {
-							character = FROM
-							is_liege_or_above = FROM
-						}
-					}
+					owner_under_FROM = yes
 				}
 				usurp_title_plus_barony_if_unlanded = {
 					target = ROOT
