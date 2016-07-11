@@ -441,7 +441,6 @@ character_event = {
 		}
 	}
 
-
 	is_triggered_only = yes
 	notification = yes
 
