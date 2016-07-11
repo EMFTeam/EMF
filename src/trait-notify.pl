@@ -378,6 +378,10 @@ character_event = {
 	picture = GFX_evt_emissary
 
 	desc = {
+		text = $evt_id.desc_self
+		trigger = { character = FROM }
+	}
+	desc = {
 		text = $evt_id.desc_w_relation
 		trigger = {
 			NOT = { character = FROM }
@@ -421,6 +425,10 @@ character_event = {
 	picture = GFX_evt_emissary
 
 	desc = {
+		text = $evt_id.desc_self
+		trigger = { character = FROM }
+	}
+	desc = {
 		text = $evt_id.desc_w_relation
 		trigger = {
 			NOT = { character = FROM }
@@ -432,6 +440,7 @@ character_event = {
 			}
 		}
 	}
+
 
 	is_triggered_only = yes
 	notification = yes
@@ -454,8 +463,9 @@ sub print_localisation {
 		my $id = $t->{id} + $EVT_ID_OFFSET_GAIN_BOUNCED;
 		my $evt_id = 'emf_notify.'.$id;
 
-		print "$evt_id.desc;[From.GetDynName] has gained the trait §Y$t->{name}§!.$eol";
-		print "$evt_id.desc_w_relation;Your [GetFromRelation], [From.GetDynName], has gained the trait §Y$t->{name}§!.$eol";
+		print "$evt_id.desc;[From.GetDynName] gained the trait §Y$t->{name}§!.$eol";
+		print "$evt_id.desc_self;You gained the trait §Y$t->{name}§!.$eol";
+		print "$evt_id.desc_w_relation;Your [GetFromRelation], [From.GetDynName], gained the trait §Y$t->{name}§!.$eol";
 	}
 
 	for my $tag (@sorted_tags) {
@@ -463,7 +473,8 @@ sub print_localisation {
 		my $id = $t->{id} + $EVT_ID_OFFSET_LOSS_BOUNCED;
 		my $evt_id = 'emf_notify.'.$id;
 
-		print "$evt_id.desc;[From.GetDynName] has lost the trait §Y$t->{name}§!.$eol";
-		print "$evt_id.desc_w_relation;Your [GetFromRelation], [From.GetDynName], has lost the trait §Y$t->{name}§!.$eol";
+		print "$evt_id.desc;[From.GetDynName] lost the trait §Y$t->{name}§!.$eol";
+		print "$evt_id.desc_self;You lost the trait §Y$t->{name}§!.$eol";
+		print "$evt_id.desc_w_relation;Your [GetFromRelation], [From.GetDynName], lost the trait §Y$t->{name}§!.$eol";
 	}
 }
