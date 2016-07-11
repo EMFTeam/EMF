@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-my $VERSION = '1.0';
+my $VERSION = '1.01';
 
 use strict;
 use warnings;
@@ -188,8 +188,8 @@ EOS
 		my $gain_effect = "emf_notify_add_${tag}_effect";
 		my $loss_effect = "emf_notify_remove_${tag}_effect";
 
-		my $gain_id = $t->{id} + $EVT_ID_OFFSET_GAIN;
-		my $loss_id = $t->{id} + $EVT_ID_OFFSET_LOSS;
+		my $gain_evt = 'emf_notify.'.($t->{id} + $EVT_ID_OFFSET_GAIN);
+		my $loss_evt = 'emf_notify.'.($t->{id} + $EVT_ID_OFFSET_LOSS);
 
 		print <<EOS;
 
@@ -204,7 +204,7 @@ $gain_effect = {
 	if = {
 		limit = { NOT = { trait = $tag } }
 		add_trait = $tag
-		hidden_tooltip = { character_event = { id = emf_trait.$gain_id } }
+		hidden_tooltip = { character_event = { id = $gain_evt } }
 	}
 }
 $loss_effect = {
@@ -217,7 +217,7 @@ $loss_effect = {
 	if = {
 		limit = { trait = $tag }
 		remove_trait = $tag
-		hidden_tooltip = { character_event = { id = emf_trait.$loss_id } }
+		hidden_tooltip = { character_event = { id = $loss_evt } }
 	}
 }
 EOS
@@ -228,6 +228,7 @@ sub print_events {
 	my $traits = shift;
 
 	print "# -*- ck2.events -*-\n";
+	print "# Audax Validator EnableCommentMetadata\n\n";
 	print_params();
 
 	print <<EOS;
@@ -264,6 +265,7 @@ EOS
 		print <<EOS;
 
 # $evt_id -- added $tag ($t->{name})
+# Audax Validator "." Ignore_1005
 character_event = {
 	id = $evt_id
 
@@ -272,7 +274,11 @@ character_event = {
 
 	trigger = {
 		OR = {
+			ai = no
+			# Audax Validator "." Ignore_NEXT
 			FROM = { ai = no }
+			# Audax Validator "." Ignore_NEXT
+			FROMFROM = { ai = no }
 			event_target:emf_notify_receiver = { ai = no }
 		}
 	}
@@ -283,17 +289,40 @@ character_event = {
 			limit = { event_target:emf_notify_receiver = { ai = no } }
 			event_target:emf_notify_receiver = { character_event = { id = $bounced_evt_id } }
 		}
-		# If FROM is a player, send notification about ROOT's trait gain to FROM.
+		# If ROOT is a player, notify them.
 		if = {
 			limit = {
-				# Don't duplicate to FROM -- we can only send 2 notification events if FROM and emf_notify_receiver are
-				# two different player characters.
-				FROM = {
-					ai = no
-					NOT = { character = event_target:emf_notify_receiver }
-				}
+				ai = no
+				NOT = { character = event_target:emf_notify_receiver } # De-duplicate
 			}
-			FROM = { character_event = { id = $bounced_evt_id } }
+			character_event = { id = $bounced_evt_id }
+		}
+		# Audax Validator "." Ignore_NEXT
+		FROM = { # If FROM is a player, notify them.
+			if = {
+				limit = {
+					ai = no
+					NOR = { # De-duplicate
+						character = event_target:emf_notify_receiver
+						character = ROOT
+					}
+				}
+				character_event = { id = $bounced_evt_id }
+			}
+		}
+		# Audax Validator "." Ignore_NEXT
+		FROMFROM = { # If FROMFROM is a player, notify them.
+			if = {
+				limit = {
+					ai = no
+					NOR = { # De-duplicate
+						character = event_target:emf_notify_receiver
+						character = ROOT
+						character = ROOT_FROM
+					}
+				}
+				character_event = { id = $bounced_evt_id }
+			}
 		}
 	}
 }
@@ -319,6 +348,7 @@ EOS
 		print <<EOS;
 
 # $evt_id -- removed $tag ($t->{name})
+# Audax Validator "." Ignore_1005
 character_event = {
 	id = $evt_id
 
@@ -327,7 +357,11 @@ character_event = {
 
 	trigger = {
 		OR = {
+			ai = no
+			# Audax Validator "." Ignore_NEXT
 			FROM = { ai = no }
+			# Audax Validator "." Ignore_NEXT
+			FROMFROM = { ai = no }
 			event_target:emf_notify_receiver = { ai = no }
 		}
 	}
@@ -338,17 +372,40 @@ character_event = {
 			limit = { event_target:emf_notify_receiver = { ai = no } }
 			event_target:emf_notify_receiver = { character_event = { id = $bounced_evt_id } }
 		}
-		# If FROM is a player, send notification about ROOT's trait loss to FROM.
+		# If ROOT is a player, notify them.
 		if = {
 			limit = {
-				# Don't duplicate to FROM -- we can only send 2 notification events if FROM and emf_notify_receiver are
-				# two different player characters.
-				FROM = {
-					ai = no
-					NOT = { character = event_target:emf_notify_receiver }
-				}
+				ai = no
+				NOT = { character = event_target:emf_notify_receiver } # De-duplicate
 			}
-			FROM = { character_event = { id = $bounced_evt_id } }
+			character_event = { id = $bounced_evt_id }
+		}
+		# Audax Validator "." Ignore_NEXT
+		FROM = { # If FROM is a player, notify them.
+			if = {
+				limit = {
+					ai = no
+					NOR = { # De-duplicate
+						character = event_target:emf_notify_receiver
+						character = ROOT
+					}
+				}
+				character_event = { id = $bounced_evt_id }
+			}
+		}
+		# Audax Validator "." Ignore_NEXT
+		FROMFROM = { # If FROMFROM is a player, notify them.
+			if = {
+				limit = {
+					ai = no
+					NOR = { # De-duplicate
+						character = event_target:emf_notify_receiver
+						character = ROOT
+						character = ROOT_FROM
+					}
+				}
+				character_event = { id = $bounced_evt_id }
+			}
 		}
 	}
 }
@@ -372,6 +429,7 @@ EOS
 		print <<EOS;
 
 # $evt_id -- added $tag ($t->{name}) to FROM [notification]
+# Audax Validator "." Ignore_1005
 character_event = {
 	id = $evt_id
 	desc = $evt_id.desc
@@ -419,6 +477,7 @@ EOS
 		print <<EOS;
 
 # $evt_id -- removed $tag ($t->{name}) from FROM [notification]
+# Audax Validator "." Ignore_1005
 character_event = {
 	id = $evt_id
 	desc = $evt_id.desc
