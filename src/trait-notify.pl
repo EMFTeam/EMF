@@ -272,22 +272,29 @@ character_event = {
 
 	trigger = {
 		OR = {
-			event_target:emf_notify_receiver = { ai = no }
 			FROM = { ai = no }
+			event_target:emf_notify_receiver = { ai = no }
 		}
 	}
 
 	immediate = {
-		# If the target emf_notify_receiver is defined, send notifications about ROOT's trait gain to them.
+		# If the target emf_notify_receiver is defined (and player), send notifications about ROOT's trait gain to them.
 		if = {
-			limit = { event_target:emf_notify_receiver = { always = yes } }
-			event_target:emf_notify_receiver = {
-				character_event = { id = $bounced_evt_id }
-				break = yes
-			}
+			limit = { event_target:emf_notify_receiver = { ai = no } }
+			event_target:emf_notify_receiver = { character_event = { id = $bounced_evt_id } }
 		}
-		# Otherwise, we send notifications about ROOT's trait gain to FROM.
-		FROM = { character_event = { id = $bounced_evt_id } }
+		# If FROM is a player, send notification about ROOT's trait gain to FROM.
+		if = {
+			limit = {
+				# Don't duplicate to FROM -- we can only send 2 notification events if FROM and emf_notify_receiver are
+				# two different player characters.
+				FROM = {
+					ai = no
+					NOT = { character = event_target:emf_notify_receiver }
+				}
+			}
+			FROM = { character_event = { id = $bounced_evt_id } }
+		}
 	}
 }
 EOS
@@ -320,22 +327,29 @@ character_event = {
 
 	trigger = {
 		OR = {
-			event_target:emf_notify_receiver = { ai = no }
 			FROM = { ai = no }
+			event_target:emf_notify_receiver = { ai = no }
 		}
 	}
 
 	immediate = {
-		# If the target emf_notify_receiver is defined, send notifications about ROOT's trait loss to them.
+		# If the target emf_notify_receiver is defined (and player), send notifications about ROOT's trait loss to them.
 		if = {
-			limit = { event_target:emf_notify_receiver = { always = yes } }
-			event_target:emf_notify_receiver = {
-				character_event = { id = $bounced_evt_id }
-				break = yes
-			}
+			limit = { event_target:emf_notify_receiver = { ai = no } }
+			event_target:emf_notify_receiver = { character_event = { id = $bounced_evt_id } }
 		}
-		# Otherwise, we send notifications about ROOT's trait loss to FROM.
-		FROM = { character_event = { id = $bounced_evt_id } }
+		# If FROM is a player, send notification about ROOT's trait loss to FROM.
+		if = {
+			limit = {
+				# Don't duplicate to FROM -- we can only send 2 notification events if FROM and emf_notify_receiver are
+				# two different player characters.
+				FROM = {
+					ai = no
+					NOT = { character = event_target:emf_notify_receiver }
+				}
+			}
+			FROM = { character_event = { id = $bounced_evt_id } }
+		}
 	}
 }
 EOS
