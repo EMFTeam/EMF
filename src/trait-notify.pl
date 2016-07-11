@@ -380,8 +380,8 @@ character_event = {
 	desc = {
 		text = $evt_id.desc_w_relation
 		trigger = {
+			NOT = { character = FROM }
 			OR = {
-				dynasty = FROM
 				is_close_relative = FROM
 				is_married = FROM
 				any_ward = { character = FROM }
@@ -423,8 +423,8 @@ character_event = {
 	desc = {
 		text = $evt_id.desc_w_relation
 		trigger = {
+			NOT = { character = FROM }
 			OR = {
-				dynasty = FROM
 				is_close_relative = FROM
 				is_married = FROM
 				any_ward = { character = FROM }
