@@ -12,7 +12,7 @@ use warnings;
 use Carp;
 use Getopt::Long qw(:config gnu_getopt);
 
-my $VERSION = "1.3.1";
+my $VERSION = "1.3.2";
 
 my $DEFAULT_N      = 64;
 my $DEFAULT_STRIDE = 5;
@@ -121,11 +121,16 @@ sub print_params {
 
 
 sub print_effects {
-	print "# emf_dynlevy_effects\n";
-	print "# Dynamic levy law scaling with realm_size (demesne laws): internal support effects\n";
-	print "# Also, see emf_cb_effects.txt for some CB helpers related to major revolts.\n\n";
-	
 	print <<EOS;
+# -*- ck2.scripted_effects -*-
+
+################################
+##  DYNLEVY SCRIPTED EFFECTS  ##
+################################
+
+# Dynamic levy law scaling with realm_size (event-driven demesne laws): internal support effects
+# Also, see emf_cb_effects.txt for some CB helpers related to major revolts.
+
 emf_dynlevy_update_effect = {
 	hidden_tooltip = { character_event = { id = emf_dynlevy.20 } }
 }
@@ -149,8 +154,17 @@ EOS
 ####
 	
 sub print_laws {
-	print "# emf_dynlevy_laws\n";
-	print "# Dynamic levy law scaling with realm_size (demesne laws)\n\n";
+	print <<EOS;
+# -*- ck2.laws -*-
+
+################################
+##        DYNLEVY LAWS        ##
+################################
+
+# Dynamic levy law scaling with realm_size (event-driven demesne laws)
+
+EOS
+
 	print_params();
 
 	print "law_groups = {\n";
@@ -188,7 +202,7 @@ EOS
 			NOT = { tier = BARON }
 			temporary = no
 			OR = {
-				tier = count # Counts always use the default law
+				tier = COUNT # Counts always use the default law
 				has_law = $law
 				holder_scope = { has_law = $law } # Even if title doesn't have the law, allow it to be copied
 			}
@@ -242,7 +256,17 @@ EOS
 ####
 
 sub print_events {
-	print "# Dynamic levy law scaling events (code-generated)\n";
+	print <<EOS;
+# -*- ck2.events -*-
+
+########################################
+##      DYNLEVY EVENTS (CODEGEN)      ##
+########################################
+
+# Dynamic levy law scaling with realm_size (event-driven demesne laws)
+
+EOS
+
 	print_params();
 	print <<EOS;
 namespace = emf_dynlevy
@@ -260,6 +284,10 @@ namespace = emf_dynlevy
 # Currently it takes at most log2 64 = 6 realm_size calls to reach the
 # correct effect to execute. Uses the new break syntax in CKII 2.3 to
 # optimistically exit the search once the correct realm_size range is found.
+#
+# TODO: In CKII 2.6, we should be able to use a simple export_to_variable of
+# realm_size here, although we will still have to do a binary search of the
+# variable's value to find the right law to apply for a given realm_size.
 character_event = {
 	id = emf_dynlevy.20
 	
