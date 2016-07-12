@@ -1,10 +1,9 @@
 #!/usr/bin/bash
 
-
 set -e
 set -x
-
 cd "${EMF_ROOT:-/cygdrive/c/cygwin64/home/ziji/g/EMF}"
+
 # Map-independent
 ./src/dynlevy.pl -t effects -N64 > ./EMF/common/scripted_effects/emf_dynlevy_effects.txt
 # Vanila map
