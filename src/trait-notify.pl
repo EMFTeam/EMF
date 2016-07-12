@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-my $VERSION = '1.01';
+my $VERSION = '1.02';
 
 use strict;
 use warnings;
@@ -440,12 +440,19 @@ character_event = {
 		trigger = { character = FROM }
 	}
 	desc = {
-		text = $evt_id.desc_w_relation
+		text = $evt_id.desc_councillor
+		trigger = {
+			is_liege_of = FROM
+			FROM = { is_councillor = yes }
+		}
+	}
+	desc = {
+		text = $evt_id.desc_relation
 		trigger = {
 			NOT = { character = FROM }
 			OR = {
 				is_close_relative = FROM
-				is_married = FROM
+				any_spouse = { character = FROM }
 				any_ward = { character = FROM }
 				guardian = { character = FROM }
 			}
@@ -488,12 +495,19 @@ character_event = {
 		trigger = { character = FROM }
 	}
 	desc = {
-		text = $evt_id.desc_w_relation
+		text = $evt_id.desc_councillor
+		trigger = {
+			is_liege_of = FROM
+			FROM = { is_councillor = yes }
+		}
+	}
+	desc = {
+		text = $evt_id.desc_relation
 		trigger = {
 			NOT = { character = FROM }
 			OR = {
 				is_close_relative = FROM
-				is_married = FROM
+				any_spouse = { character = FROM }
 				any_ward = { character = FROM }
 				guardian = { character = FROM }
 			}
@@ -521,9 +535,10 @@ sub print_localisation {
 		my $id = $t->{id} + $EVT_ID_OFFSET_GAIN_BOUNCED;
 		my $evt_id = 'emf_notify.'.$id;
 
-		print "$evt_id.desc;[From.GetDynName] gained the trait §Y$t->{name}§!.$eol";
+		print "$evt_id.desc;§Y[From.GetTitledFirstName]§! gained the trait §Y$t->{name}§!.$eol";
+		print "$evt_id.desc_councillor;Your [From.GetJobTitle], §Y[From.GetTitledFirstName]§!, gained the trait §Y$t->{name}§!.$eol";
+		print "$evt_id.desc_relation;Your [GetFromRelation], §Y[From.GetDynName]§!, gained the trait §Y$t->{name}§!.$eol";
 		print "$evt_id.desc_self;You gained the trait §Y$t->{name}§!.$eol";
-		print "$evt_id.desc_w_relation;Your [GetFromRelation], [From.GetDynName], gained the trait §Y$t->{name}§!.$eol";
 	}
 
 	for my $tag (@sorted_tags) {
@@ -531,8 +546,9 @@ sub print_localisation {
 		my $id = $t->{id} + $EVT_ID_OFFSET_LOSS_BOUNCED;
 		my $evt_id = 'emf_notify.'.$id;
 
-		print "$evt_id.desc;[From.GetDynName] lost the trait §Y$t->{name}§!.$eol";
+		print "$evt_id.desc;§Y[From.GetTitledFirstName]§! lost the trait §Y$t->{name}§!.$eol";
+		print "$evt_id.desc_councillor;Your [From.GetJobTitle], §Y[From.GetTitledFirstName]§!, lost the trait §Y$t->{name}§!.$eol";
+		print "$evt_id.desc_relation;Your [GetFromRelation], §Y[From.GetDynName]§!, lost the trait §Y$t->{name}§!.$eol";
 		print "$evt_id.desc_self;You lost the trait §Y$t->{name}§!.$eol";
-		print "$evt_id.desc_w_relation;Your [GetFromRelation], [From.GetDynName], lost the trait §Y$t->{name}§!.$eol";
 	}
 }
