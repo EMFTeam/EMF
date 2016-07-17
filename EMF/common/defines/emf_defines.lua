@@ -1,8 +1,10 @@
 -- Diplomacy
 NDefines.NDiplomacy.GAVELKIND_MAX_SIZE_BONUS = 0.5
+NDefines.NDiplomacy.VASSAL_LIMIT_LEVY_MULTIPLIER = 0
 NDefines.NDiplomacy.TITULAR_TITLES_COUNT_TOWARDS_DUCHY_LIMIT = 0                    -- from 1
 NDefines.NDiplomacy.LAW_CHANGE_PRESTIGE_COST = 150                                  -- from 100
 NDefines.NDiplomacy.CROWN_LAW_CHANGE_PRESTIGE_COST = 300                            -- from 200
+NDefines.NDiplomacy.INTER_MUSLIM_WAR_MONTHLY_PIETY_COST = 1
 NDefines.NDiplomacy.MUSLIM_TEMPLE_HOLDING_MONTHLY_PIETY = 0.4
 NDefines.NDiplomacy.BASE_REVOLT_CHANCE_MOD = 175                                    -- from 250
 NDefines.NDiplomacy.TOG_REVOLT_CHANCE_MOD = 70                                      -- from 100
