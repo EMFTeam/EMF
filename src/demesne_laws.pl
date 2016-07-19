@@ -357,7 +357,20 @@ EOS
 			print <<EOS;
 			modifier = {
 				factor = 0
-				NOT = { any_vassal = { is_tribal = yes } }
+				holder_scope = {
+					NOT = { any_vassal = { is_tribal = yes } }
+				}
+			}
+EOS
+		}
+
+		if ($ai_will_do && $type eq 'temple') {
+			print <<EOS;
+			modifier = {
+				factor = 0
+				holder_scope = {
+					NOT = { any_vassal = { is_theocracy = yes } }
+				}
 			}
 EOS
 		}
