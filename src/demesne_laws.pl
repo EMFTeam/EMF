@@ -6,7 +6,7 @@
 # without modification, of this program OR its output is
 # expressly forbidden without the consent of the author.
 
-my $VERSION = "1.3.4";
+my $VERSION = "1.3.5";
 
 my $opt = {
 	min_total_levy      => -0.2,
@@ -73,7 +73,7 @@ sub print_params {
 	print "# Code generation parameters:\r\n";
 	print "#   min_total_levy=$opt->{min_total_levy}\r\n";
 	print "#   max_total_levy=$opt->{max_total_levy}\r\n";
-	for my $t ( qw( castle temple city iqta tribal ) ) {
+	for my $t ( qw( iqta castle city temple tribal ) ) {
 		print "#   ${t}_tax_per_levy=".$opt->{"${t}_tax_per_levy"}."\r\n";
 	}
 	print "#   opinion_offset=$opt->{opinion_offset}\r\n";
@@ -95,7 +95,7 @@ EOS
 
 	print "law_groups = {\r\n";
 	
-	for my $type ( qw( castle temple city iqta tribal ) ) {
+	for my $type ( qw( iqta castle city temple tribal ) ) {
 		my $lg_base = (($type eq 'castle') ? 'feudal' : $type);
 		my $lg_focus = $lg_base.'_slider';
 		my $lg_ob = $lg_base.'_obligations';
@@ -119,7 +119,7 @@ EOS
 	
 	print "laws = {";
 
-	for my $type ( qw( castle temple city iqta tribal ) ) {
+	for my $type ( qw( iqta castle city temple tribal ) ) {
 
 		my $tax_per_levy = $opt->{ "${type}_tax_per_levy" };
 		
@@ -151,7 +151,7 @@ sub print_summary {
 
 	print "# Law modifier summary (max_levy/tax):\r\n#\r\n";
 
-	for my $type ( qw( castle temple city iqta tribal ) ) {
+	for my $type ( qw( iqta castle city temple tribal ) ) {
 
 		my $tax_per_levy = $opt->{ "${type}_tax_per_levy" };
 		
