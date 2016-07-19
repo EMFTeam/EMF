@@ -85,6 +85,7 @@ sub print_params {
 
 sub print_laws {
 	print <<EOS;
+# -*- ck2.laws -*-
 # demesne_laws (set upon primary title, apply to whole demesne)
 # Vassal levy/tax focus/obligations sliders
 #
