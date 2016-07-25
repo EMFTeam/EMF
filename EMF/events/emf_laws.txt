@@ -122,18 +122,8 @@ character_event = {
 				if = {
 					limit = { NOT = { has_dlc = "Zeus" } }
 					if = {
-						limit = {
-							NOT = { has_law = succ_feudal_elective }
-							NOT = { has_law = revokation_2 }
-						}
+						limit = { NOT = { has_law = revokation_2 } }
 						add_law = revokation_2
-					}
-					if = {
-						limit = {
-							has_law = succ_feudal_elective
-							NOT = { has_law = revokation_1 }
-						}
-						add_law = revokation_1
 					}
 					if = {
 						limit = { NOT = { has_law = king_peace_1 } }
@@ -159,18 +149,8 @@ character_event = {
 				if = {
 					limit = { NOT = { has_dlc = "Zeus" } }
 					if = {
-						limit = {
-							NOT = { has_law = succ_feudal_elective }
-							NOT = { has_law = revokation_2 }
-						}
+						limit = { NOT = { has_law = revokation_2 } }
 						add_law = revokation_2
-					}
-					if = {
-						limit = {
-							has_law = succ_feudal_elective
-							NOT = { has_law = revokation_1 }
-						}
-						add_law = revokation_1
 					}
 					if = {
 						limit = { NOT = { has_law = king_peace_1 } }
@@ -185,18 +165,8 @@ character_event = {
 					add_law = ze_revokation_2
 				}
 				if = {
-					limit = {
-						NOT = { has_law = succ_feudal_elective }
-						NOT = { has_law = inheritance_1 }
-					}
+					limit = { NOT = { has_law = inheritance_1 } }
 					add_law = inheritance_1
-				}
-				if = {
-					limit = {
-						has_law = succ_feudal_elective
-						NOT = { has_law = inheritance_0 }
-					}
-					add_law = inheritance_0
 				}
 			} # END: High CA
 			
@@ -205,32 +175,12 @@ character_event = {
 				if = {
 					limit = { NOT = { has_dlc = "Zeus" } }
 					if = {
-						limit = {
-							NOT = { has_law = succ_feudal_elective }
-							NOT = { has_law = revokation_2 }
-						}
+						limit = { NOT = { has_law = revokation_2 } }
 						add_law = revokation_2
 					}
 					if = {
-						limit = {
-							has_law = succ_feudal_elective
-							NOT = { has_law = revokation_1 }
-						}
-						add_law = revokation_1
-					}
-					if = {
-						limit = {
-							NOT = { has_law = succ_feudal_elective }
-							NOT = { has_law = king_peace_2 }
-						}
+						limit = { NOT = { has_law = king_peace_2 } }
 						add_law = king_peace_2
-					}
-					if = {
-						limit = {
-							has_law = succ_feudal_elective
-							NOT = { has_law = king_peace_1 }
-						}
-						add_law = king_peace_1
 					}
 				}
 				if = {
@@ -241,18 +191,8 @@ character_event = {
 					add_law = ze_revokation_2
 				}
 				if = {
-					limit = {
-						NOT = { has_law = succ_feudal_elective }
-						NOT = { has_law = inheritance_1 }
-					}
+					limit = { NOT = { has_law = inheritance_1 } }
 					add_law = inheritance_1
-				}
-				if = {
-					limit = {
-						has_law = succ_feudal_elective
-						NOT = { has_law = inheritance_0 }
-					}
-					add_law = inheritance_0
 				}
 			} # END: Max CA
 		}
@@ -262,40 +202,13 @@ character_event = {
 }
 
 
-# emf_laws.2 [Holder]
-#
-# Clear the emf_ca_change title flag on a [potential] crown law title whenever
-# it changes hands.
-#
-# Listens to:
-# - on_new_holder_inheritance
-#
-# FROM = title
-character_event = {
-	id = emf_laws.2
-	hide_window = yes
-	is_triggered_only = yes
-	
-	only_playable = yes
-	
-	trigger = {
-		FROM = { higher_tier_than = DUKE }
-	}
-	
-	immediate = {
-		FROM = {
-			clr_title_flag = emf_ca_change
-			clr_title_flag = emf_inv_change
-		}
-	}
-}
-
-
 # emf_laws.3 [Holder]
 #
-# Upon crown title creation, copy the emf_ca_change flag from either the primary title of the
-# holder, OR if this is now the primary title (e.g., due to creating an empire title as a king)
-# copy it from any of the kingdom titles of the holder.
+# Upon crown title creation, copy-over crown law cooldowns appropriately. Copy the cooldown from either the primary title of
+# the holder, or if this is now the primary title (e.g., due to creating an empire title as a king) and a cooldown exists
+# upon another crown title in demesne, copy it too. [Second case is a compromise due to the fact that there's no, e.g.,
+# `previous_primary_title` scope or an on_action for primary title change, while first case is simply because the prior
+# changed law has already been copied to FROM.
 #
 # Listens to:
 # - on_new_holder
@@ -310,48 +223,60 @@ character_event = {
 	
 	trigger = {
 		FROM = { higher_tier_than = DUKE }
+		NOT = { FROMFROM = { is_alive = yes } }
 	}
 	
 	immediate = {
-		FROM = {
-			clr_title_flag = emf_ca_change
-			clr_title_flag = emf_inv_change
-		}
-		
+		# Crown Authority
 		if = {
-			limit = { FROMFROM = { is_alive = yes } } # Title grant or likewise
-			break = yes
-		}
-		
-		# Title creation
-		if = {
-			limit = {
-				FROM = { tier = EMPEROR }
-				any_demesne_title = {
-					higher_tier_than = DUKE
-					has_title_flag = emf_ca_change
-				}
-			}
-			FROM = { set_title_flag = emf_ca_change }
-			break = yes
-		}
-		if = {
-			limit = {
-				FROM = { tier = KING }
+			limit = { # A secondary crown title creation where primary title has cooldown
 				primary_title = {
 					higher_tier_than = DUKE
-					has_title_flag = emf_ca_change
+					NOT = { title = FROM }
+					ROOT = { has_character_flag = emf_ca_cooldown_@PREV }
 				}
 			}
-			FROM = { set_title_flag = emf_ca_change }
+			set_character_flag = emf_ca_cooldown_@FROM
 		}
+		if = {
+			limit = { # A primary title creation (can only be an empire) where there is a prior cooldown
+				FROM = { is_primary_holder_title = yes }
+				any_demesne_title = {
+					higher_tier_than = DUKE
+					ROOT = { has_character_flag = emf_ca_cooldown_@PREV }
+				}
+			}
+			set_character_flag = emf_ca_cooldown_@FROM
+		}
+		# Investiture
+		if = {
+			limit = { # A secondary crown title creation where primary title has cooldown
+				primary_title = {
+					higher_tier_than = DUKE
+					NOT = { title = FROM }
+					ROOT = { has_character_flag = emf_inv_cooldown_@PREV }
+				}
+			}
+			set_character_flag = emf_inv_cooldown_@FROM
+		}
+		if = {
+			limit = { # A primary title creation (can only be an empire) where there is a prior cooldown
+				FROM = { is_primary_holder_title = yes }
+				any_demesne_title = {
+					higher_tier_than = DUKE
+					ROOT = { has_character_flag = emf_inv_cooldown_@PREV }
+				}
+			}
+			set_character_flag = emf_inv_cooldown_@FROM
+		}
+		# NOTE: Imperial Kingdom Creation law does not need to copy cooldowns upon creation
 	}
 }
 
 
 # emf_laws.4 [Holder]
 #
-# Upon crown title usurpation, always drop crown authority by 1 slider
+# Upon crown title usurpation, always drop Crown Authority by 1 slider
 # increment. Do NOT apply a cooldown to the title, however.
 #
 # Listens to:
@@ -370,10 +295,9 @@ character_event = {
 	}
 	
 	immediate = {
+		# NOTE: Don't technically need emf_no_law_penalties because we're lowering CA. One SHOULD generally make no
+		# assumptions about whether an `add_law` will incur penalties as if the player had passed it himself, though.
 		FROM = {
-			clr_title_flag = emf_ca_change
-			clr_title_flag = emf_inv_change
-			
 			if = {
 				limit = { has_law = crown_authority_1 }
 				add_law = crown_authority_0
@@ -1237,7 +1161,6 @@ character_event = {
 	hide_window = yes
 	
 	only_independent = yes
-	only_women = yes
 	culture = hip_culture
 	
 	trigger = {
@@ -1246,20 +1169,48 @@ character_event = {
 	}
 	
 	immediate = {
-		# Protected Appointments
-		any_title = {
+		# De Jure Vassal Kingdom Creation
+		any_landed_title = {
 			limit = {
-				higher_tier_than = COUNT
+				tier = EMPEROR
 				has_holder = yes
-				is_primary_holder_title = yes
 				NOR = {
-					has_law = protected_appointment_0
-					has_law = protected_appointment_1
+					has_law = imperial_kingdom_creation_0
+					has_law = imperial_kingdom_creation_1
+					has_law = imperial_kingdom_creation_2
 				}
 			}
 			owner = { set_character_flag = emf_no_law_penalties }
-			add_law = protected_appointment_0
+			if = {
+				limit = { title = e_byzantium }
+				add_law = imperial_kingdom_creation_0
+			}
+			if = {
+				limit = { NOT = { title = e_byzantium } }
+				add_law = imperial_kingdom_creation_1
+			}
 			owner = { clr_character_flag = emf_no_law_penalties }
+		}
+		# Crown law cooldown flags
+		any_landed_title = {
+			limit = {
+				higher_tier_than = DUKE
+				has_title_flag = emf_ca_change
+			}
+			holder_scope = {
+				set_character_flag = emf_ca_cooldown_@PREV
+			}
+			clr_title_flag = emf_ca_change
+		}
+		any_landed_title = {
+			limit = {
+				higher_tier_than = DUKE
+				has_title_flag = emf_inv_change
+			}
+			holder_scope = {
+				set_character_flag = emf_inv_cooldown_@PREV
+			}
+			clr_title_flag = emf_inv_change
 		}
 	}
 }

@@ -1,8 +1,10 @@
 -- Diplomacy
 NDefines.NDiplomacy.GAVELKIND_MAX_SIZE_BONUS = 0.5
+NDefines.NDiplomacy.VASSAL_LIMIT_LEVY_MULTIPLIER = 0
 NDefines.NDiplomacy.TITULAR_TITLES_COUNT_TOWARDS_DUCHY_LIMIT = 0                    -- from 1
 NDefines.NDiplomacy.LAW_CHANGE_PRESTIGE_COST = 150                                  -- from 100
 NDefines.NDiplomacy.CROWN_LAW_CHANGE_PRESTIGE_COST = 300                            -- from 200
+NDefines.NDiplomacy.INTER_MUSLIM_WAR_MONTHLY_PIETY_COST = 1
 NDefines.NDiplomacy.MUSLIM_TEMPLE_HOLDING_MONTHLY_PIETY = 0.4
 NDefines.NDiplomacy.BASE_REVOLT_CHANCE_MOD = 175                                    -- from 250
 NDefines.NDiplomacy.TOG_REVOLT_CHANCE_MOD = 70                                      -- from 100
@@ -92,6 +94,7 @@ NDefines.NReligion.AUTHORITY_FROM_RELHEAD_HOLY_SITE = 0
 NDefines.NReligion.AUTHORITY_FROM_ORG_RELIGION = 0.3
 NDefines.NReligion.DIVINE_BLOOD_FERTILITY_MULT = 1.0
 NDefines.NReligion.ELECTOR_FAMOUS_DYNASTY_FACTOR = 0.005
+NDefines.NReligion.HERESY_TAKEOVER_PROVINCES = 10
 
 -- Economy
 NDefines.NEconomy.MUSLIM_MUSLIM_PROVINCE_TAX_MOD = 0
@@ -213,8 +216,9 @@ NDefines.NEngine.EVENT_PROCESS_OFFSET = 30
 -- AI
 NDefines.NAI.REVOLT_OTHER_INDEP_RISK = 0
 NDefines.NAI.REVOLT_OTHER_INDEP_RISK_CAP = 0
-NDefines.NAI.RAID_MAX_REALM_SIZE = 18
-NDefines.NAI.RAID_AGGRESSION = 22
+NDefines.NAI.AI_EMPEROR_CREATES_KINGDOMS = 1     -- only now a good idea due to Imperial Kingdom Creation law
+NDefines.NAI.RAID_MAX_REALM_SIZE = 12
+NDefines.NAI.RAID_AGGRESSION = 24
 NDefines.NAI.COALITION_DISTANCE_MULTIPLIER = -1.25
 
 -- RulerDesigner
