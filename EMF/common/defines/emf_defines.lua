@@ -74,7 +74,6 @@ NDefines.NTitle.EMPEROR_DESTRUCTION_PRESTIGE_COST = 500
 NDefines.NTitle.NORMAL_LAW_CHANGE_COUNCIL_MONTHS = 48 -- from 60
 NDefines.NTitle.NORMAL_LAW_CHANGE_ABSOLUTISM_MONTHS = 120
 NDefines.NTitle.MAX_CROWN_LAW_CHANGES = 64  -- intention is "unlimited" due to the way EMF CA sub-laws are designed & existence of its soft-coded cooldowns
-NDefines.NTitle.DE_JURE_ASSIMILATION_YEARS = 75
 NDefines.NTitle.EMPIRE_DE_JURE_ASSIMILATION_YEARS = 50
 NDefines.NTitle.REQ_KINGDOMS_FOR_EMPIRE_CREATION = 3 -- from 2
 NDefines.NTitle.MAX_REPUBLIC_COUNTIES_IN_REALM = 0.2
