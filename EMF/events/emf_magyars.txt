@@ -13,8 +13,8 @@ namespace = emf_adventurer
 # Magyar Migration Event - Start
 character_event = {
 	id = emf_adventurer.3000
-	desc = EVTDESC_emf_adventurer_3000
-	picture = GFX_evt_magyars
+
+	hide_window = yes
 	
 	culture = hungarian
 	religion = tengri_pagan
@@ -63,7 +63,7 @@ character_event = {
 	}
 	
 	mean_time_to_happen = {
-		months = 12
+		months = 6
 		modifier = {
 			factor = 0.5
 			year = 900
@@ -148,10 +148,7 @@ character_event = {
 				}
 			}
 		}
-	}
-	
-	option = {
-		name = EVTOPTA_emf_adventurer_3000 # Do it
+
 		# Pick largest valid target in Hungary
 		random_independent_ruler = {
 			limit = {
@@ -246,7 +243,7 @@ character_event = {
 					title = PREV
 					enemy = ROOT
 					is_crusade = yes
-					type = holy_war
+					type = invasion
 				}
 			}
 		}
@@ -261,7 +258,6 @@ character_event = {
 		trigger = {
 			OR = {
 				capital_scope = { kingdom = { title = k_hungary } }
-				realm_levy_diff = { who = FROM value = 100 }
 				ai = no
 			}
 		}
@@ -286,6 +282,13 @@ character_event = {
 	
 	immediate = {
 		set_global_flag = emf_magyar_migration_completed
+		any_playable_ruler = {
+			limit = {
+				NOT = { character = ROOT }
+				is_within_diplo_range = ROOT
+			}
+			narrative_event = { id = emf_adventurer.3005 }
+		}
 	}
 	
 	option = {
@@ -388,6 +391,13 @@ character_event = {
 				# Then apply culture/religion change
 				culture = event_target:neighbor_province
 				religion = event_target:neighbor_province
+			}
+			
+			# Refill levies of newly-acquired provinces
+			character_event = { id = emf_crusades.1 days = 1 }
+			any_demesne_title = {
+				limit = { tier = BARON }
+				set_title_flag = refill_levy
 			}
 		}
 	}
@@ -505,6 +515,13 @@ character_event = {
 				culture = event_target:neighbor_province
 				religion = event_target:neighbor_province
 			}
+			
+			# Refill levies of newly-acquired provinces
+			character_event = { id = emf_crusades.1 days = 1 }
+			any_demesne_title = {
+				limit = { tier = BARON }
+				set_title_flag = refill_levy
+			}
 		}
 	}
 }
@@ -599,11 +616,404 @@ narrative_event = {
 	picture = GFX_evt_magyars
 	
 	is_triggered_only = yes
-	major = yes
 	
 	option = {
 		name = I_SEE
 	}
 }
 
+### POST-MIGRATION EVENTS
+
+# Unlanded Magyar noble passes on vassal_khan flag
+character_event = {
+	id = emf_adventurer.3010
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		has_character_flag = vassal_khan
+		NOT = { num_of_count_titles = 1 }
+	}
+	
+	immediate = {
+		if = {
+			limit = {
+				is_ruler = yes
+				is_nomadic = yes
+			}
+			current_heir = {
+				if = {
+					limit = { NOT = { is_liege_of = ROOT } }
+					set_character_flag = vassal_khan
+				}
+			}
+			break = yes
+		}
+		random_child = {
+			limit = {
+				is_ruler = no
+				is_female = no
+				dynasty = ROOT
+				same_realm = ROOT
+				NOT = {
+					any_sibling = {
+						is_female = no
+						dynasty = ROOT
+						is_older_than = PREV
+					}
+				}
+			}
+			set_character_flag = vassal_khan
+		}
+	}
+}
+
+# Unlanded Magyar noble is imprisoned by liege
+character_event = {
+	id = emf_adventurer.3011
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		has_character_flag = vassal_khan
+		FROM = { is_liege_of = ROOT }
+	}
+
+	immediate = {
+		clr_character_flag = vassal_khan
+		if = {
+			limit = {
+				is_nomadic = yes
+				NOT = { num_of_count_titles = 1 }
+			}
+			set_character_flag = raiding_adventurer
+			set_defacto_liege = THIS
+			hidden_tooltip = {
+				clan_title = {
+					set_title_adventurer = { title = THIS status = yes }
+					set_title_landless = { title = THIS status = yes }
+					set_defacto_liege = THIS
+				}
+				character_event = { id = HL.110 days = 1095 } # Ping to see if he's ready to settle, repeating every 3 years.
+			}
+		}
+	}
+}
+
+# Unlanded Magyar noble requests land from their liege
+character_event = {
+	id = emf_adventurer.3012
+	
+	hide_window = yes
+	
+	has_character_flag = vassal_khan
+	culture = hungarian
+	min_age = 16
+	capable_only = yes
+	prisoner = no
+	
+	trigger = {
+		NOT = { num_of_count_titles = 1 }
+		liege = {
+			war = no
+			culture = ROOT
+			religion = ROOT
+			any_demesne_title = {
+				tier = COUNT
+				count = 4
+			}
+			any_demesne_title = {
+				tier = COUNT
+				can_be_given_away = yes
+				NOT = { title = c_pest }
+				NOT = { location = { is_capital = yes } }
+			}
+			NOT = { has_character_flag = vassal_khan_request }
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 3
+		modifier = {
+			factor = 0.1
+			liege = { ai = yes }
+		}
+		modifier = {
+			factor = 0.5
+			trait = ambitious
+		}
+		modifier = {
+			factor = 0.5
+			trait = proud
+		}
+		modifier = {
+			factor = 2
+			trait = content
+		}
+		modifier = {
+			factor = 2
+			trait = humble
+		}		
+	}
+	
+	immediate = {
+		liege = {
+			set_character_flag = vassal_khan_request
+			random_demesne_title = {
+				limit = {
+					tier = COUNT
+					can_be_given_away = yes
+					NOT = { title = c_pest }
+					NOT = { location = { is_capital = yes } }
+				}
+				save_event_target_as = requested_title
+			}
+			letter_event = { id = emf_adventurer.3013 }
+		}
+	}
+}
+
+# Liege considers whether to grant the request
+letter_event = {
+	id = emf_adventurer.3013
+	desc = EVTDESC_emf_adventurer_3013
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_adventurer_3013 # Agree
+		clr_character_flag = vassal_khan_request
+		event_target:requested_title = {
+			grant_title = FROM
+			any_direct_de_jure_vassal_title = {
+				limit = { holder = ROOT }
+				grant_title = FROM
+			}
+		}
+		FROM = {
+			opinion = { who = ROOT modifier = opinion_grateful multiplier = 2 years = 10 }
+			hidden_tooltip = {
+				if = {
+					limit = { is_nomadic = no }
+					any_spouse = {
+						limit = { is_ruler = no }
+						move_character = PREV
+					}
+					any_child = {
+						limit = {
+							is_adult = yes
+							is_ruler = no
+						}
+						move_character = PREV
+					}
+				}
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_adventurer_3013 # Refuse
+		clr_character_flag = vassal_khan_request
+		prestige = -100
+		add_rival = FROM
+		primary_title = { add_pressed_claim = FROM }
+		FROM = {
+			clr_character_flag = vassal_khan
+			if = {
+				limit = { is_nomadic = yes }
+				set_character_flag = raiding_adventurer
+				set_defacto_liege = THIS
+				hidden_tooltip = {
+					clan_title = {
+						set_title_adventurer = { title = THIS status = yes }
+						set_title_landless = { title = THIS status = yes }
+						set_defacto_liege = THIS
+					}
+					character_event = { id = HL.110 days = 1095 } # Ping to see if he's ready to settle, repeating every 3 years.
+				}
+			}
+		}
+	}
+}
+
+# Avar province converts to Hungarian
+province_event = {
+	id = emf_adventurer.3014
+	desc = EVTDESC_emf_adventurer_3014
+	picture = GFX_evt_magyars2
+	
+	trigger = {
+		culture = avar
+		county = { is_occupied = no }
+		owner = {
+			culture = hungarian
+			top_liege = { culture = PREV }
+		}
+		has_global_flag = emf_magyar_migration_completed
+		NOT = { has_province_flag = hungarian_conversion }
+	}
+	
+	mean_time_to_happen = {
+		years = 10
+		modifier = {
+			factor = 0.1
+			is_capital = yes
+			owner = { independent = yes }
+		}
+		modifier = {
+			factor = 0.5
+			any_neighbor_province = { culture = hungarian }
+		}
+	}
+	
+	option = {
+		name = EXCELLENT
+		set_province_flag = hungarian_conversion
+		culture = hungarian
+		owner = {
+			if = {
+				limit = { culture = avar }
+				culture = hungarian
+			}
+			hidden_tooltip = {
+				any_courtier = {
+					limit = {
+						is_ruler = no
+						culture = avar
+					}
+					culture = hungarian
+				}
+			}
+		}
+		county = {
+			any_direct_de_jure_vassal_title = {
+				limit = { owner = { culture = avar } }
+				owner = {
+					culture = hungarian
+					hidden_tooltip = {
+						any_courtier = {
+							limit = {
+								is_ruler = no
+								culture = avar
+							}
+							culture = hungarian
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+# Appearance of Szekely culture
+province_event = {
+	id = emf_adventurer.3015
+	desc = EVTDESC_emf_adventurer_3015
+	picture = GFX_evt_magyars2
+	
+	trigger = {
+		county = {
+			is_occupied = no
+			OR = {
+				title = c_bihar
+				title = c_szekelyfold
+			}
+		}
+		OR = {
+			culture = avar
+			culture = hungarian
+		}
+		owner = {
+			culture = hungarian
+			top_liege = {
+				culture = PREV
+				num_of_count_titles_in_realm = 10
+				any_realm_province = {
+					culture = hungarian
+					count = 3
+				}
+			}
+		}
+		has_global_flag = SWMH
+		has_global_flag = emf_magyar_migration_completed
+		NOT = { has_province_flag = szekely_conversion }
+	}
+	
+	mean_time_to_happen = {
+		years = 10
+		modifier = {
+			factor = 0.5
+			any_neighbor_province = { culture = szekely }
+		}
+	}
+
+	option = {
+		name = I_SEE
+		set_province_flag = szekely_conversion
+		culture = szekely
+		hidden_tooltip = {
+			owner = {
+				create_random_soldier = {
+					random_traits = yes
+					dynasty = none
+					religion = ROOT
+					culture = szekely
+					female = no
+					age = 25
+				}
+				create_random_soldier = {
+					random_traits = yes
+					dynasty = none
+					religion = ROOT
+					culture = szekely
+					female = no
+					age = 28
+				}
+				create_character = {
+					random_traits = yes
+					dynasty = none
+					religion = ROOT
+					culture = szekely
+					female = no
+					age = 30
+				}
+				create_character = {
+					random_traits = yes
+					dynasty = none
+					religion = ROOT
+					culture = szekely
+					female = yes
+					age = 16
+				}
+				liege = {
+					create_random_soldier = {
+						random_traits = yes
+						dynasty = none
+						religion = ROOT
+						culture = szekely
+						female = no
+						age = 25
+					}
+					create_character = {
+						random_traits = yes
+						dynasty = none
+						religion = ROOT
+						culture = szekely
+						female = no
+						age = 22
+					}
+					create_character = {
+						random_traits = yes
+						dynasty = none
+						religion = ROOT
+						culture = szekely
+						female = yes
+						age = 16
+					}
+				}
+			}
+		}
+	}
+}
 
