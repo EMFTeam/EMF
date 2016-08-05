@@ -867,6 +867,10 @@ province_event = {
 			factor = 0.5
 			any_neighbor_province = { culture = hungarian }
 		}
+		modifier = {
+			factor = 0.5
+			has_global_flag = emf_conquest_hungary_completed
+		}
 	}
 	
 	option = {
@@ -1082,5 +1086,184 @@ character_event = {
 	}
 }
 
+### SETTLING IN CARPATHIA
 
+# Magyars have conquered enough of Hungary
+character_event = {
+	id = emf_adventurer.3020
+	desc = EVTDESC_emf_adventurer_3020
+	picture = GFX_evt_magyars
+	
+	culture = hungarian
+	only_playable = yes
+	only_independent = yes
+	capable_only = yes
+	prisoner = no
+	min_age = 16
+	
+	trigger = {
+		war = no
+		completely_controls_region = emf_region_carpathia
+		capital_scope = { kingdom = { title = k_hungary } }
+		has_global_flag = emf_magyar_migration_completed
+		NOT = { has_global_flag = emf_conquest_hungary_completed }
+	}
+	
+	option = {
+		name = EXCELLENT
+		set_global_flag = emf_conquest_hungary_completed
+		disband_event_forces = magyar_migration_troops
+		prestige = 500
+		if = {
+			limit = {
+				ai = yes
+				is_nomadic = yes
+			}
+			character_event = { id = emf_adventurer.3021 }
+		}
+	}
+}
+
+# AI Magyar nomads will settle as tribal at this point
+character_event = {
+	id = emf_adventurer.3021
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		# Change culture and religion of capital province and possibly more provinces depending on nomad population_and_manpower
+		capital_scope = {
+			culture = ROOT
+			religion = ROOT
+		}
+		# Change name of Avaria to Hungary if relevant.
+		set_global_flag = avar_khaganate_renamed
+		if = {
+			limit = { NOT = { is_title_active = k_hungary } }
+			activate_title = { title = k_hungary status = yes }
+		}
+		# Create the Kingdom of Hungary
+		k_hungary = {
+			reset_coa = THIS
+			set_name = ""
+			adjective = ""
+			grant_title = {
+				target = ROOT
+				type = created
+			}
+		}
+		# Usurp any king-tier titles belonging to vassals
+		any_vassal = {
+			limit = { is_nomadic = no }
+			any_demesne_title = {
+				limit = {
+					higher_tier_than = DUKE
+					temporary = no
+				}
+				usurp_title = ROOT
+			}
+		}
+		# Convert all clans to tribal government
+		any_vassal = {
+			limit = { is_nomadic = yes }
+			set_government_type = tribal_government
+			capital_scope = {
+				culture = PREV
+				religion = PREV
+			}
+		}
+		# Usurp capital's duchy, if owned by someone in the realm
+		capital_scope = {
+			duchy = {
+				if = {
+					limit = {
+						owner = {
+							same_realm = ROOT
+							NOT = { character = ROOT }
+						}
+					}
+					usurp_title = ROOT
+				}
+			}
+		}
+		# Convert to tribal government
+		set_government_type = tribal_government
+		primary_title = {
+			add_law = tribal_organization_0
+			add_law = centralization_0
+		}
+		set_character_flag = emf_context_nomadic_to_tribal
+		# Notify players
+		any_playable_ruler = {
+			limit = {
+				NOT = { character = ROOT }
+				ai = no
+			}
+			narrative_event = { id = HL.2 }
+		}
+	}
+}
+
+# Feudal Hungarian king prompted to become Christian
+narrative_event = {
+	id = emf_adventurer.3022
+	title = EVTNAME_emf_adventurer_3022
+	desc = EVTDESC_emf_adventurer_3022
+	picture = GFX_evt_magyars2
+	
+	major = yes
+	
+	culture = hungarian
+	religion = tengri_pagan
+	only_playable = yes
+	only_independent = yes
+	capable_only = yes
+	prisoner = no
+	min_age = 16
+
+	trigger = {
+		ai = yes
+		is_feudal = yes
+		has_landed_title = k_hungary
+		has_global_flag = emf_conquest_hungary_completed
+		NOR = {
+			trait = zealous
+			k_hungary = { has_title_flag = ai_converted_catholic }
+		}	
+	}
+	
+	mean_time_to_happen = {
+		months = 12
+	}
+	
+	immediate = {
+		piety = 250
+		set_character_flag = king_converted
+		religion_authority = { modifier = ruler_converted_from }
+		religion = catholic
+		religion_authority = { modifier = ruler_converted_to }
+		any_courtier = {
+			limit = {
+				OR = {
+					dynasty = ROOT
+					is_close_relative = ROOT
+				}
+				is_ruler = no
+			}
+			religion = ROOT
+		}	
+	}
+	
+	option = {
+		name = EVTOPTA_emf_adventurer_3022
+		trigger = { religion_group = christian }
+	}
+	option = {
+		name = EVTOPTB_emf_adventurer_3022
+		trigger = { NOT = { religion_group = christian } }
+	}
+}
+
+	
 
