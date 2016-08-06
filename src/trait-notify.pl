@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-my $VERSION = '1.03';
+my $VERSION = '1.03.1';
 
 use strict;
 use warnings;
@@ -82,8 +82,6 @@ sub read_trait_dir {
 
 		my $is_vanilla = 0;
 		$is_vanilla = 1 if $f =~ $VAN_TRAIT_FILE_RE;
-
-		#print "trait file".( ($is_vanilla) ? " (vanilla)" : "" ).": $p\n";
 
 		my $state = $STATE_WAIT_OPEN;
 
@@ -195,12 +193,12 @@ EOS
 
 #### [$t->{id}] $t->{name}: $tag ####
 $gain_effect = {
-	hidden_tooltip = {
-		if = {
-			limit = { trait = $tag }
-			log = "WARNING: $gain_effect: [This.GetBestName] ([This.GetID]) already has the trait to be added!"
-		}
-	}
+	#hidden_tooltip = {
+	#	if = {
+	#		limit = { trait = $tag }
+	#		log = "WARNING: $gain_effect: [This.GetBestName] ([This.GetID]) already has the trait to be added!"
+	#	}
+	#}
 	if = {
 		limit = { NOT = { trait = $tag } }
 		add_trait = $tag
@@ -238,12 +236,12 @@ $gain_effect = {
 	}
 }
 $loss_effect = {
-	hidden_tooltip = {
-		if = {
-			limit = { NOT = { trait = $tag } }
-			log = "WARNING: $loss_effect: [This.GetBestName] ([This.GetID]) doesn't have the trait to be removed!"
-		}
-	}
+	#hidden_tooltip = {
+	#	if = {
+	#		limit = { NOT = { trait = $tag } }
+	#		log = "WARNING: $loss_effect: [This.GetBestName] ([This.GetID]) doesn't have the trait to be removed!"
+	#	}
+	#}
 	if = {
 		limit = { trait = $tag }
 		remove_trait = $tag
