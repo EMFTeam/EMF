@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-my $VERSION = '1.02';
+my $VERSION = '1.03.1';
 
 use strict;
 use warnings;
@@ -82,8 +82,6 @@ sub read_trait_dir {
 
 		my $is_vanilla = 0;
 		$is_vanilla = 1 if $f =~ $VAN_TRAIT_FILE_RE;
-
-		#print "trait file".( ($is_vanilla) ? " (vanilla)" : "" ).": $p\n";
 
 		my $state = $STATE_WAIT_OPEN;
 
@@ -195,29 +193,89 @@ EOS
 
 #### [$t->{id}] $t->{name}: $tag ####
 $gain_effect = {
-	hidden_tooltip = {
-		if = {
-			limit = { trait = $tag }
-			log = "WARNING: $gain_effect: [This.GetBestName] ([This.GetID]) already has the trait to be added ($tag)!"
-		}
-	}
+	#hidden_tooltip = {
+	#	if = {
+	#		limit = { trait = $tag }
+	#		log = "WARNING: $gain_effect: [This.GetBestName] ([This.GetID]) already has the trait to be added!"
+	#	}
+	#}
 	if = {
 		limit = { NOT = { trait = $tag } }
 		add_trait = $tag
-		hidden_tooltip = { character_event = { id = $gain_evt } }
+		hidden_tooltip = {
+			if = {
+				limit = { ai = no }
+				save_event_target_as = emf_notify_char
+				character_event = { id = $gain_evt }
+				clear_event_target = emf_notify_char
+			}
+			ROOT = {
+				if = {
+					limit = {
+						ai = no
+						NOT = { character = PREV }
+					}
+					save_event_target_as = emf_notify_char
+					PREV = { character_event = { id = $gain_evt } }
+					clear_event_target = emf_notify_char
+				}
+			}
+			event_target:emf_notify_receiver = {
+				if = {
+					limit = {
+						ai = no
+						NOT = { character = PREV }
+						NOT = { character = ROOT }
+					}
+					save_event_target_as = emf_notify_char
+					PREV = { character_event = { id = $gain_evt } }
+					clear_event_target = emf_notify_char
+				}
+			}
+		}
 	}
 }
 $loss_effect = {
-	hidden_tooltip = {
-		if = {
-			limit = { NOT = { trait = $tag } }
-			log = "WARNING: $loss_effect: [This.GetBestName] ([This.GetID]) doesn't have the trait to be removed ($tag)!"
-		}
-	}
+	#hidden_tooltip = {
+	#	if = {
+	#		limit = { NOT = { trait = $tag } }
+	#		log = "WARNING: $loss_effect: [This.GetBestName] ([This.GetID]) doesn't have the trait to be removed!"
+	#	}
+	#}
 	if = {
 		limit = { trait = $tag }
 		remove_trait = $tag
-		hidden_tooltip = { character_event = { id = $loss_evt } }
+		hidden_tooltip = {
+			if = {
+				limit = { ai = no }
+				save_event_target_as = emf_notify_char
+				character_event = { id = $loss_evt }
+				clear_event_target = emf_notify_char
+			}
+			ROOT = {
+				if = {
+					limit = {
+						ai = no
+						NOT = { character = PREV }
+					}
+					save_event_target_as = emf_notify_char
+					PREV = { character_event = { id = $loss_evt } }
+					clear_event_target = emf_notify_char
+				}
+			}
+			event_target:emf_notify_receiver = {
+				if = {
+					limit = {
+						ai = no
+						NOT = { character = PREV }
+						NOT = { character = ROOT }
+					}
+					save_event_target_as = emf_notify_char
+					PREV = { character_event = { id = $loss_evt } }
+					clear_event_target = emf_notify_char
+				}
+			}
+		}
 	}
 }
 EOS
@@ -272,58 +330,8 @@ character_event = {
 	is_triggered_only = yes
 	hide_window = yes
 
-	trigger = {
-		OR = {
-			ai = no
-			# Audax Validator "." Ignore_NEXT
-			FROM = { ai = no }
-			# Audax Validator "." Ignore_NEXT
-			FROMFROM = { ai = no }
-			event_target:emf_notify_receiver = { ai = no }
-		}
-	}
-
 	immediate = {
-		# If the target emf_notify_receiver is defined (and player), send notifications about ROOT's trait gain to them.
-		if = {
-			limit = { event_target:emf_notify_receiver = { ai = no } }
-			event_target:emf_notify_receiver = { character_event = { id = $bounced_evt_id } }
-		}
-		# If ROOT is a player, notify them.
-		if = {
-			limit = {
-				ai = no
-				NOT = { character = event_target:emf_notify_receiver } # De-duplicate
-			}
-			character_event = { id = $bounced_evt_id }
-		}
-		# Audax Validator "." Ignore_NEXT
-		FROM = { # If FROM is a player, notify them.
-			if = {
-				limit = {
-					ai = no
-					NOR = { # De-duplicate
-						character = event_target:emf_notify_receiver
-						character = ROOT
-					}
-				}
-				character_event = { id = $bounced_evt_id }
-			}
-		}
-		# Audax Validator "." Ignore_NEXT
-		FROMFROM = { # If FROMFROM is a player, notify them.
-			if = {
-				limit = {
-					ai = no
-					NOR = { # De-duplicate
-						character = event_target:emf_notify_receiver
-						character = ROOT
-						character = ROOT_FROM
-					}
-				}
-				character_event = { id = $bounced_evt_id }
-			}
-		}
+		event_target:emf_notify_char = { character_event = { id = $bounced_evt_id } }
 	}
 }
 EOS
@@ -355,58 +363,8 @@ character_event = {
 	is_triggered_only = yes
 	hide_window = yes
 
-	trigger = {
-		OR = {
-			ai = no
-			# Audax Validator "." Ignore_NEXT
-			FROM = { ai = no }
-			# Audax Validator "." Ignore_NEXT
-			FROMFROM = { ai = no }
-			event_target:emf_notify_receiver = { ai = no }
-		}
-	}
-
 	immediate = {
-		# If the target emf_notify_receiver is defined (and player), send notifications about ROOT's trait loss to them.
-		if = {
-			limit = { event_target:emf_notify_receiver = { ai = no } }
-			event_target:emf_notify_receiver = { character_event = { id = $bounced_evt_id } }
-		}
-		# If ROOT is a player, notify them.
-		if = {
-			limit = {
-				ai = no
-				NOT = { character = event_target:emf_notify_receiver } # De-duplicate
-			}
-			character_event = { id = $bounced_evt_id }
-		}
-		# Audax Validator "." Ignore_NEXT
-		FROM = { # If FROM is a player, notify them.
-			if = {
-				limit = {
-					ai = no
-					NOR = { # De-duplicate
-						character = event_target:emf_notify_receiver
-						character = ROOT
-					}
-				}
-				character_event = { id = $bounced_evt_id }
-			}
-		}
-		# Audax Validator "." Ignore_NEXT
-		FROMFROM = { # If FROMFROM is a player, notify them.
-			if = {
-				limit = {
-					ai = no
-					NOR = { # De-duplicate
-						character = event_target:emf_notify_receiver
-						character = ROOT
-						character = ROOT_FROM
-					}
-				}
-				character_event = { id = $bounced_evt_id }
-			}
-		}
+		event_target:emf_notify_char = { character_event = { id = $bounced_evt_id } }
 	}
 }
 EOS
@@ -432,7 +390,6 @@ EOS
 # Audax Validator "." Ignore_1005
 character_event = {
 	id = $evt_id
-	desc = $evt_id.desc
 	picture = GFX_evt_emissary
 
 	desc = {
@@ -442,19 +399,52 @@ character_event = {
 	desc = {
 		text = $evt_id.desc_councillor
 		trigger = {
-			is_liege_of = FROM
-			FROM = { is_councillor = yes }
+			FROM = {
+				is_councillor = yes
+				vassal_of = ROOT
+			}
+			NOR = {
+				character = FROM
+				is_close_relative = FROM
+				any_spouse = { character = FROM }
+				any_ward = { character = FROM }
+				guardian = { character = FROM }
+			}
 		}
 	}
 	desc = {
 		text = $evt_id.desc_relation
 		trigger = {
-			NOT = { character = FROM }
 			OR = {
 				is_close_relative = FROM
 				any_spouse = { character = FROM }
 				any_ward = { character = FROM }
 				guardian = { character = FROM }
+			}
+			NOR = {
+				character = FROM
+				FROM = {
+					is_councillor = yes
+					vassal_of = ROOT
+				}
+			}
+		}
+	}
+	desc = {
+		text = $evt_id.desc
+		trigger = {
+			NOR = {
+				character = FROM
+				FROM = {
+					is_councillor = yes
+					vassal_of = ROOT
+				}
+				OR = {
+					is_close_relative = FROM
+					any_spouse = { character = FROM }
+					any_ward = { character = FROM }
+					guardian = { character = FROM }
+				}
 			}
 		}
 	}
@@ -487,7 +477,6 @@ EOS
 # Audax Validator "." Ignore_1005
 character_event = {
 	id = $evt_id
-	desc = $evt_id.desc
 	picture = GFX_evt_emissary
 
 	desc = {
@@ -497,19 +486,52 @@ character_event = {
 	desc = {
 		text = $evt_id.desc_councillor
 		trigger = {
-			is_liege_of = FROM
-			FROM = { is_councillor = yes }
+			FROM = {
+				is_councillor = yes
+				vassal_of = ROOT
+			}
+			NOR = {
+				character = FROM
+				is_close_relative = FROM
+				any_spouse = { character = FROM }
+				any_ward = { character = FROM }
+				guardian = { character = FROM }
+			}
 		}
 	}
 	desc = {
 		text = $evt_id.desc_relation
 		trigger = {
-			NOT = { character = FROM }
 			OR = {
 				is_close_relative = FROM
 				any_spouse = { character = FROM }
 				any_ward = { character = FROM }
 				guardian = { character = FROM }
+			}
+			NOR = {
+				character = FROM
+				FROM = {
+					is_councillor = yes
+					vassal_of = ROOT
+				}
+			}
+		}
+	}
+	desc = {
+		text = $evt_id.desc
+		trigger = {
+			NOR = {
+				character = FROM
+				FROM = {
+					is_councillor = yes
+					vassal_of = ROOT
+				}
+				OR = {
+					is_close_relative = FROM
+					any_spouse = { character = FROM }
+					any_ward = { character = FROM }
+					guardian = { character = FROM }
+				}
 			}
 		}
 	}
