@@ -89,7 +89,7 @@ sub read_trait_dir {
 
 		while (<$fh>) {
 			if ($state == $STATE_WAIT_OPEN) {
-				if (/^(\w+)\s*=\s*[{]\s*$/) {
+				if (/^(\w+)\s*=\s*[{]\s*(\#.*)?$/) {
 					croak "multiply-defined trait tag: $1!" if exists $traits{$1};
 
 					++$n;
@@ -126,11 +126,11 @@ sub localise_traits {
 	my @tags_missing_loc = map { $_->{tag} } grep { (!exists $_->{name}) || !$_->{name} } values %$traits;
 
 	if (@tags_missing_loc) {
-		print STDERR "fatal: the following traits are missing localisation:\n";
+		print STDERR "WARNING: these traits are missing localisation and will be disregarded:\n";
 		for my $tag (@tags_missing_loc) {
 			print STDERR "  $tag\n";
+			delete $traits->{$tag};
 		}
-		exit 3;
 	}
 }
 
