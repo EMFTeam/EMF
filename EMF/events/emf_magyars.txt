@@ -85,8 +85,19 @@ character_event = {
 	
 	immediate = {
 		set_global_flag = emf_magyar_migration_started
+		disband_event_forces = start_troops
 		capital_scope = {
 			ROOT = {
+				spawn_unit = {
+					province = PREV
+					owner = THIS
+					troops = {
+						horse_archers = { 1350 1350 }
+						light_cavalry = { 800 800 }
+					}
+					attrition = 0.25
+					earmark = magyar_migration_troops
+				}
 				spawn_unit = {
 					province = PREV
 					owner = THIS
@@ -296,6 +307,17 @@ character_event = {
 		name = EVTOPTA_emf_adventurer_3002
 		trigger = { is_nomadic = yes }
 		custom_tooltip = { text = WILL_MIGRATE_TO_HUNGARY }
+		
+		# Remove tributary statuses
+		if = {
+			limit = { is_tributary = yes }
+			suzerain = { remove_tributary = ROOT }
+		}
+		any_playable_ruler = {
+			limit = { pays_tribute_to = ROOT }
+			ROOT = { remove_tributary = PREV }
+		}
+		
 		hidden_tooltip = {
 			# All non-nomadic (and player) vassals of Count+ tier go free
 			any_vassal = {
@@ -1083,6 +1105,120 @@ character_event = {
 		clr_character_flag = tribal_organize_raid_troops
 		set_character_flag = tribal_organize_raid_troops
 		character_event = { id = 20223 days = 30 }
+	}
+}
+
+# Event to prompt the Magyars to spread across Hungary
+character_event = {
+	id = emf_adventurer.3016
+	
+	hide_window = yes
+	
+	culture = hungarian
+	religion = tengri_pagan
+	only_playable = yes
+	only_independent = yes
+	capable_only = yes
+	prisoner = no
+	min_age = 16
+	
+	trigger = {
+		ai = yes
+		war = no
+		wealth = 0
+		capital_scope = { region = emf_region_carpathia }
+		OR = {
+			is_tribal = yes
+			is_nomadic = yes
+		}
+		has_global_flag = emf_magyar_migration_completed
+		NOT = { has_global_flag = emf_conquest_hungary_completed }
+		any_independent_ruler = {
+			in_revolt = no
+			reverse_realm_levy_diff = { who = ROOT value = 3000 }
+			any_realm_province = {
+				region = emf_region_carpathia
+				any_neighbor_province = { owner_under_ROOT = yes }
+			}
+			OR = {
+				NOR = {
+					is_allied_with = ROOT
+					has_non_aggression_pact_with = ROOT
+				}
+				ai = yes
+			}
+			NOR = {
+				reverse_has_truce = ROOT
+				pays_tribute_to = ROOT
+				ROOT = { pays_tribute_to = PREV }
+			}
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 12
+		modifier = {
+			factor = 0.5
+			trait = ambitious
+		}
+		modifier = {
+			factor = 2
+			trait = humble
+		}
+	}
+	
+	immediate = {
+		set_character_flag = received_event
+		random_independent_ruler = {
+			limit = {
+				in_revolt = no
+				reverse_realm_levy_diff = { who = ROOT value = 3000 }
+				any_realm_province = {
+					region = emf_region_carpathia
+					any_neighbor_province = { owner_under_ROOT = yes }
+				}
+				OR = {
+					NOR = {
+						is_allied_with = ROOT
+						has_non_aggression_pact_with = ROOT
+					}
+					ai = yes
+				}
+				NOR = {
+					reverse_has_truce = ROOT
+					pays_tribute_to = ROOT
+					ROOT = { pays_tribute_to = PREV }
+				}
+			}
+			if = {
+				limit = { is_allied_with = ROOT }
+				ROOT = { break_alliance = PREV }
+			}
+			if = {
+				limit = { has_non_aggression_pact_with = ROOT }
+				reverse_remove_opinion = { modifier = in_non_aggression_pact who = ROOT }
+				opinion = { modifier = broken_non_aggression_pact who = ROOT years = 3 }
+			}
+			random_realm_title = {
+				limit = {
+					tier = DUKE
+					any_direct_de_jure_vassal_title = {
+						location = {
+							region = emf_region_carpathia
+							any_neighbor_province = { owner_under_ROOT = yes }
+						}
+					}
+				}
+				ROOT = {
+					war = {
+						casus_belli = emf_magyar_conquest_hungary
+						target = PREVPREV
+						thirdparty_title = PREV
+						infamy = 0
+					}
+				}
+			}
+		}
 	}
 }
 
