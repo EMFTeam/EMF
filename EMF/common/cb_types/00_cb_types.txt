@@ -1497,15 +1497,6 @@ other_claim_on_liege = {
 		emf_cb_dynlevy_other_end_effect = yes
 		prestige = -100
 		imprison = FROM
-		#if = { # Issue CKTWO-233
-		#	limit = {
-		#		OR = {
-		#			is_liege_of = ROOT
-		#			ROOT = { is_liege_or_above = FROM }
-		#		}
-		#	}
-		#	ROOT = { imprison = FROM }
-		#}
 		any_defender = {
 			limit = { character = FROM }
 			participation_scaled_prestige = 50
@@ -1525,15 +1516,6 @@ other_claim_on_liege = {
 		emf_cb_dynlevy_other_end_effect = yes
 		prestige = -200
 		imprison = FROM
-		#if = { # Issue CKTWO-233
-		#	limit = {
-		#		OR = {
-		#			is_liege_of = ROOT
-		#			ROOT = { is_liege_or_above = FROM }
-		#		}
-		#	}
-		#	ROOT = { imprison = FROM }
-		#}
 		any_defender = {
 			limit = { character = FROM }
 			participation_scaled_prestige = 100
@@ -6651,6 +6633,15 @@ pagan_subjugation = {
 			FROM = { ai = no }
 			had_global_flag = { flag = EMF days = 730 }
 		}
+		modifier = {
+			factor = 0
+			ROOT = {
+				culture = hungarian
+				capital_scope = { kingdom = { title = k_hungary } }
+			}
+			NOT = { has_global_flag = emf_conquest_hungary_completed }
+			has_global_flag = emf_magyar_migration_completed
+		}
 	}
 }
 
@@ -7047,7 +7038,6 @@ liberation_revolt = {
 	hostile_against_others = yes
 	is_permanent = yes
 	defender_can_call_allies = no
-	#check_all_titles = yes # if permanent, setting this to true will check against all of someones titles, including vassal held titles
 	check_de_jure_tier = KING # this scans all dejure duchies for the counties which are held by or vassals(or below) of selected character. Only valid if is_permanent = yes
 	press_claim = yes
 	can_ask_to_join_war = no
@@ -10712,6 +10702,15 @@ tributary_cb = {
 				NOT = { religion_group = muslim }
 			}
 		}
+		modifier = {
+			factor = 0
+			ROOT = {
+				culture = hungarian
+				capital_scope = { kingdom = { title = k_hungary } }
+			}
+			has_global_flag = emf_magyar_migration_completed
+			NOT = { has_global_flag = emf_conquest_hungary_completed }
+		}
 	}
 }
 
@@ -11760,6 +11759,15 @@ nomad_subjugation = {
 				flag = EMF
 				days = 730
 			}
+		}
+		modifier = {
+			factor = 0
+			ROOT = {
+				culture = hungarian
+				capital_scope = { kingdom = { title = k_hungary } }
+			}
+			NOT = { has_global_flag = emf_conquest_hungary_completed }
+			has_global_flag = emf_magyar_migration_completed
 		}
 	}
 }
@@ -15399,197 +15407,6 @@ emf_liberate_nomad_county = {
 	}
 }
 
-#88
-emf_magyar867_invasion = {
-	name = CB_NAME_INVASION
-	war_name = WAR_NAME_INVASION
-	sprite = 8
-	truce_days = 1825
-	hostile_against_others = yes
-	is_permanent = yes
-	can_ask_to_join_war = no
-	attacker_can_call_allies = yes
-	defender_can_call_allies = no
-	apply_short_occ_mod = no
-	check_de_jure_tier = KING # this scans all de jure kingdoms for the counties which are held by or vassals(or below) of selected character. Only valid if is_permanent = yes
-	infamy_modifier = 0
-
-	can_use = { always = no }
-
-	is_valid_title = { FROM = { any_realm_title = { de_jure_liege_or_above = PREVPREV } } }
-
-	on_add_title = {
-		log = "CB(emf_magyar867_invasion): START: title=[This.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
-	}
-
-	on_success = {
-		emf_cb_victory_effect = yes
-		ROOT = { prestige = 200 }
-		any_attacker = {
-			limit = { character = ROOT }
-			participation_scaled_prestige = 200
-		}
-		any_attacker = {
-			limit = { NOT = { character = ROOT } }
-			hidden_tooltip = { participation_scaled_prestige = 200 }
-		}
-		FROM = { prestige = -200 }
-	}
-
-	on_success_title = {
-		log = "CB(emf_magyar867_invasion): VICTORY: title=[This.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
-		emf_cb_latb_effect = yes
-		custom_tooltip = {
-			text = emf_cb_ctt_magyar867_invasion_success
-			hidden_tooltip = {
-				ROOT = {
-					gain_settlements_under_title = {
-						title = PREV
-						enemy = FROM
-						is_crusade = yes # Even if the title holder is not participating in the war, gain holdings occupied by all Crusade participants
-						type = invasion
-					}
-				}
-				# Handle revolters ... (note that if any of these hold nomadic provinces, we're not converting them to tribal)
-				save_event_target_as = emf_title
-				any_direct_de_jure_vassal_title = {
-					any_direct_de_jure_vassal_title = {
-						limit = {
-							holder_scope = {
-								top_liege = { liege_before_war = { character = FROM } }
-							}
-						}
-						holder_scope = {
-							top_liege = {
-								ROOT = {
-									gain_settlements_under_title = {
-										title = event_target:emf_title
-										enemy = PREV
-										is_crusade = yes # Even if the title holder is not participating in the war, gain holdings occupied by all Crusade participants
-										type = invasion
-									}
-								}
-							}
-						}
-					}
-				}
-				clear_event_target = emf_title
-				if = {
-					limit = { has_dlc = "Horse Lords" }
-					ROOT = { character_event = { id = emf_historical.0 } }
-				}
-			}
-		}
-	}
-
-	on_fail = {
-		FROM = {
-			prestige = 100
-			hidden_tooltip = {
-				if = {
-					limit = { has_nickname = no }
-					random_list = {
-						10 = { give_nickname = nick_the_great }
-						10 = { give_nickname = nick_the_hammer }
-						10 = { give_nickname = nick_the_avenger }
-						10 = { give_nickname = nick_the_lion }
-						10 = { give_nickname = nick_the_bold }
-					}
-				}
-			}
-		}
-		any_defender = {
-			limit = { character = FROM }
-			participation_scaled_prestige = 100
-		}
-		any_defender = {
-			limit = { NOT = { character = FROM } }
-			hidden_tooltip = { participation_scaled_prestige = 100 }
-		}
-		ROOT = { prestige = -200 }
-		hidden_tooltip = {
-			if = {
-				limit = { has_dlc = "Horse Lords" }
-				ROOT = { disband_event_forces = start_troops }
-			}
-		}
-	}
-
-	on_fail_title = {
-		log = "CB(emf_magyar867_invasion): WHITEPEACE: title=[This.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
-	}
-
-	on_reverse_demand = {
-		emf_cb_defeat_effect = yes
-		ROOT = {
-			prestige = -200
-			transfer_scaled_wealth = {
-				to = FROM
-				value = 4.0
-			}
-		}
-		FROM = {
-			prestige = 200
-			hidden_tooltip = {
-				if = {
-					limit = { has_nickname = no }
-					random_list = {
-						10 = { give_nickname = nick_the_great }
-						10 = { give_nickname = nick_the_hammer }
-						10 = { give_nickname = nick_the_avenger }
-						10 = { give_nickname = nick_the_lion }
-						10 = { give_nickname = nick_the_bold }
-					}
-				}
-			}
-		}
-		any_defender = {
-			limit = { character = FROM }
-			participation_scaled_prestige = 200
-		}
-		any_defender = {
-			limit = { NOT = { character = FROM } }
-			hidden_tooltip = { participation_scaled_prestige = 200 }
-		}
-		hidden_tooltip = {
-			if = {
-				limit = { has_dlc = "Horse Lords" }
-				ROOT = { disband_event_forces = start_troops }
-			}
-		}
-	}
-
-	on_reverse_demand_title = {
-		log = "CB(emf_magyar867_invasion): DEFEAT: title=[This.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
-	}
-
-	on_invalidation = {
-		log = "CB(emf_magyar867_invasion): INVALIDATED: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
-		hidden_tooltip = {
-			if = {
-				limit = { has_dlc = "Horse Lords" }
-				ROOT = { disband_event_forces = start_troops }
-			}
-		}
-	}
-
-	attacker_ai_victory_worth = {
-		factor = -1 # always accept
-	}
-
-	attacker_ai_defeat_worth = {
-		factor = 100
-	}
-
-	defender_ai_victory_worth = {
-		factor = -1 # always accept
-	}
-
-	defender_ai_defeat_worth = {
-		factor = 100
-	}
-}
-
 #89
 emf_muslim_county_conquest_religious = {
 	name = CB_NAME_COUNTY_CONQUEST
@@ -17043,12 +16860,10 @@ emf_resist_viceroy_revocation = {
 	sprite = 12
 	truce_days = 3650
 	
-	is_revolt_cb = yes
 	can_call_vassals = yes
 	defender_can_call_allies = no
 	can_ask_to_join_war = yes
 	major_revolt = yes
-	is_tyranny_cb = yes
 
 	can_use = {
 		emf_cb_can_use_trigger = yes
@@ -19257,3 +19072,463 @@ subjugation_duke = {
 		factor = 100
 	}
 }
+
+#105
+emf_magyar_invasion = {
+	name = CB_NAME_MAGYAR_INVASION
+	war_name = WAR_NAME_MAGYAR_INVASION
+	sprite = 8
+	truce_days = 3650
+	hostile_against_others = yes
+	is_permanent = yes
+	can_ask_to_join_war = no
+	check_de_jure_tier = KING # this scans all de jure kingdoms for the counties which are held by or vassals(or below) of selected character. Only valid if is_permanent = yes
+	infamy_modifier = 0
+
+	can_use = {
+		emf_cb_can_use_trigger = yes
+		ROOT = {
+			culture = hungarian
+			higher_real_tier_than = DUKE
+			independent = yes
+			OR = {
+				is_nomadic = yes
+				is_tribal = yes
+			}
+			any_realm_province = { region = emf_region_etelkoz }
+			has_global_flag = emf_magyar_migration_started
+			NOR = {
+				has_global_flag = emf_magyar_migration_completed
+				any_realm_title = { de_jure_liege_or_above = k_hungary }
+				num_of_count_titles_in_realm = 12
+			}
+		}
+		FROM = {
+			any_realm_province = {
+				county = { is_occupied = no }
+				region = emf_region_lower_carpathia
+			}
+			NOR = {
+				reverse_has_truce = ROOT
+				is_allied_with = ROOT
+				has_non_aggression_pact_with = ROOT
+				pays_tribute_to = ROOT
+			}
+		}
+	}
+	
+	can_use_title = {
+		title = k_hungary
+	}
+	
+	is_valid = {
+		FROM = {
+			independent = yes
+			any_realm_province = {
+				county = { is_occupied = no }
+				region = emf_region_lower_carpathia
+			}
+		}
+	}
+
+	on_add = {
+		log = "CB(emf_magyar_invasion): START: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+	}
+
+	on_success_title = {
+		log = "CB(emf_magyar_invasion): VICTORY: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+		emf_cb_victory_effect = yes
+		FROM = {
+			prestige = -250
+		}
+		ROOT = {
+			prestige = 250
+			gain_settlements_under_title = {
+				title = PREV
+				enemy = FROM
+				is_crusade = yes
+				type = holy_war
+			}
+			custom_tooltip = {
+				text = WILL_MIGRATE_TO_HUNGARY
+				hidden_tooltip = {
+					character_event = { id = emf_adventurer.3002 }
+				}
+			}
+		}
+	}
+
+	on_success_posttitle = { emf_cb_on_success_posttitle_effect = yes }
+
+	on_fail = {
+		log = "CB(emf_magyar_invasion): WHITEPEACE: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+		ROOT = { prestige = -100 }
+	}
+
+	on_reverse_demand = {
+		log = "CB(emf_magyar_invasion): DEFEAT: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+		emf_cb_defeat_effect = yes
+		ROOT = {
+			prestige = -250
+			transfer_scaled_wealth = {
+				to = FROM
+				value = 2.0
+			}
+		}
+		FROM = { prestige = 250 }
+	}
+
+	on_invalidation = {
+		log = "CB(emf_magyar_invasion): INVALIDATED: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+	}
+
+	attacker_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+
+	attacker_ai_defeat_worth = {
+		factor = 100
+	}
+
+	defender_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+
+	defender_ai_defeat_worth = {
+		factor = 100
+	}
+
+	ai_will_do = {
+		factor = 1
+		modifier = {
+			factor = 0
+			FROM = {
+				NOT = {
+					any_realm_title = {
+						tier = COUNT
+						de_jure_liege_or_above = k_hungary
+						is_occupied = no
+						count = 3
+					}
+				}
+			}
+		}
+	}
+}
+
+emf_magyar_conquest_hungary = {
+	name = CB_NAME_MAGYAR_CONQUEST
+	war_name = WAR_NAME_MAGYAR_CONQUEST
+	sprite = 8
+	truce_days = 3650
+	is_permanent = yes
+	can_ask_to_join_war = yes
+	check_de_jure_tier = DUKE # this scans all dejure duchies for the counties which are held by or vassals(or below) of selected character. Only valid if is_permanent = yes
+	allowed_to_target_tributaries = no
+	allowed_to_target_suzerains = no
+
+	can_use = {
+		emf_cb_can_use_trigger = yes
+		has_global_flag = emf_magyar_migration_completed
+		NOT = { has_global_flag = emf_conquest_hungary_completed }
+		ROOT = {
+			culture = hungarian
+			independent = yes
+			capital_scope = { region = emf_region_carpathia }
+			OR = {
+				is_tribal = yes
+				is_nomadic = yes
+			}
+		}
+	}
+
+	can_use_title = {
+		capital_scope = { region = emf_region_carpathia }
+		emf_cb_can_use_de_jure_title_trigger = yes
+		# The attacker needs at least one county in the target duchy, or a land border
+		any_direct_de_jure_vassal_title = {
+			OR = {
+				owner_under_ROOT = yes
+				location = {
+					owner_under_FROM = yes
+					any_neighbor_province = { owner_under_ROOT = yes }
+				}
+			}
+		}
+	}
+
+	is_valid_title = {
+		any_de_jure_vassal_title = { owner_under_FROM = yes }
+	}
+
+	on_add = {
+		log = "CB(emf_magyar_conquest_hungary): START: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+	}
+
+	on_success = {
+		log = "CB(emf_magyar_conquest_hungary): VICTORY: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+		emf_cb_victory_effect = yes
+		any_attacker = {
+			limit = { character = ROOT }
+			participation_scaled_prestige = 150
+		}
+		any_attacker = {
+			limit = { NOT = { character = ROOT } }
+			hidden_tooltip = { participation_scaled_prestige = 150 }
+		}
+		FROM = { prestige = -150 }
+	}
+
+	on_success_title = {
+		emf_cb_latb_effect = yes
+		pf_liege_change_under_title_begin_effect = yes
+		custom_tooltip = {
+			text = emf_cb_ctt_vassalize_or_take_under_title_same_religion
+			hidden_tooltip = {
+				ROOT = {
+					vassalize_or_take_under_title = {
+						title = PREV
+						enemy = FROM
+						same_religion = yes # Only vassalize rulers of my religion
+						is_religious = yes
+						type = holy_war
+					}
+				}
+			}
+		}
+		pf_liege_change_under_title_end_effect = yes
+	}
+
+	on_success_posttitle = { emf_cb_on_success_posttitle_effect = yes }
+
+	on_fail = {
+		log = "CB(emf_magyar_conquest_hungary): WHITEPEACE: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+		ROOT = {
+			prestige = -100
+		}
+	}
+
+	on_reverse_demand = {
+		log = "CB(emf_magyar_conquest_hungary): DEFEAT: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+		emf_cb_defeat_effect = yes
+		emf_imperial_decay_loss_effect = yes
+		ROOT = {
+			transfer_scaled_wealth = {
+				to = FROM
+				value = 4.0
+			}
+			ROOT = { prestige = -250 }
+		}
+		any_defender = {
+			limit = { character = FROM }
+			participation_scaled_prestige = 250
+		}
+		any_defender = {
+			limit = { NOT = { character = FROM } }
+			hidden_tooltip = { participation_scaled_prestige = 250 }
+		}
+	}
+
+	on_invalidation = {
+		log = "CB(emf_magyar_conquest_hungary): INVALIDATED: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+	}
+
+	attacker_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+
+	attacker_ai_defeat_worth = {
+		factor = 100
+	}
+
+	defender_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+
+	defender_ai_defeat_worth = {
+		factor = 100
+	}
+
+	# ai importance placed on this CB: scope is the targeted title, ROOT is the attacking character, FROM is the defending character
+	ai_will_do = {
+		factor = 5
+		modifier = { # Prefer direct land borders
+			factor = 1.5
+			any_direct_de_jure_vassal_title = {
+				owner_under_FROM = yes
+				location = { any_neighbor_province = { owner_under_ROOT = yes } }
+			}
+		}
+	}
+}
+
+emf_magyar_raid = {
+	name = CB_NAME_MAGYAR_RAID
+	war_name = WAR_NAME_MAGYAR_RAID
+	sprite = 8
+	truce_days = 3650
+	allowed_to_target_tributaries = no
+	allowed_to_target_suzerains = no
+	is_permanent = yes
+	can_ask_to_join_war = no
+	
+	can_use_gui = {
+		emf_cb_can_use_gui_trigger = yes
+		ROOT = {
+			is_adult = yes
+			NOT = { trait = incapable }
+			prisoner = no
+		}
+	}
+
+	can_use = {
+		emf_cb_can_use_trigger = yes
+		has_global_flag = emf_conquest_hungary_completed
+		ROOT = {
+			culture = hungarian
+			capital_scope = { region = emf_region_carpathia }
+			religion_group = pagan_group
+		}
+		FROM = {
+			independent = yes
+		}
+	}
+
+	is_valid = {
+		ROOT = {
+			culture = hungarian
+			capital_scope = { region = emf_region_carpathia }
+			religion_group = pagan_group
+		}
+		FROM = {
+			independent = yes
+		}
+	}
+
+	on_add = {
+		log = "CB(emf_magyar_raid): START: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+	}
+
+	on_success = {
+		log = "CB(emf_magyar_raid): VICTORY: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+		emf_cb_victory_effect = yes
+		emf_imperial_decay_victory_effect = yes
+		any_attacker = {
+			limit = { character = ROOT }
+			participation_scaled_prestige = 250
+		}
+		any_attacker = {
+			limit = { NOT = { character = ROOT } }
+			hidden_tooltip = {
+				participation_scaled_prestige = 250
+				add_character_modifier = {
+					name = emf_victory_timer
+					duration = 1
+					hidden = yes
+				}
+			}
+		}
+		FROM = {
+			prestige = -250
+			transfer_scaled_wealth = {
+				to = ROOT
+				value = 2.0
+			}
+			any_realm_lord = {
+				limit = { capital_holding = { controlled_by = ROOT } }
+				transfer_scaled_wealth = {
+					to = ROOT
+					value = 2.0
+				}
+			}
+		}
+	}
+
+	on_success_posttitle = { emf_cb_on_success_posttitle_effect = yes }
+
+	on_fail = {
+		log = "CB(emf_magyar_raid): WHITEPEACE: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+		ROOT = { prestige = -125 }
+		FROM = { prestige = 50 }
+	}
+
+	on_reverse_demand = {
+		log = "CB(emf_magyar_raid): DEFEAT: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+		emf_cb_defeat_effect = yes
+		emf_imperial_decay_loss_effect = yes
+		any_defender = {
+			limit = { character = FROM }
+			participation_scaled_prestige = 250
+			hidden_tooltip = {
+				add_character_modifier = {
+					name = emf_victory_timer
+					duration = 1
+					hidden = yes
+				}
+			}
+		}
+		any_defender = {
+			limit = { NOT = { character = FROM } }
+			hidden_tooltip = {
+				participation_scaled_prestige = 250
+				add_character_modifier = {
+					name = emf_victory_timer
+					duration = 1
+					hidden = yes
+				}
+			}
+		}
+		ROOT = {
+			prestige = -250
+			imprison = FROM
+			transfer_scaled_wealth = {
+				to = ROOT
+				value = 4.0
+			}
+		}
+	}
+
+	on_invalidation = {
+		log = "CB(emf_magyar_raid): INVALIDATED: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+	}
+
+	attacker_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+
+	attacker_ai_defeat_worth = {
+		factor = 100
+	}
+
+	defender_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+
+	defender_ai_defeat_worth = {
+		factor = 100
+	}
+
+	ai_will_do = {
+		factor = 1
+		modifier = {
+			factor = 0.5
+			NOT = { has_global_flag = emf_conquest_hungary_completed }
+		}
+		modifier = {
+			factor = 0
+			ROOT = {
+				OR = {
+					trait = content
+					trait = craven
+					NOT = { martial = 8 }
+				}
+			}
+		}
+		modifier = {
+			factor = 0
+			capital_scope = { region = emf_region_carpathia }
+		}
+	}
+}
+
+
