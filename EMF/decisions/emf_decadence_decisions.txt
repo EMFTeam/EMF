@@ -122,31 +122,26 @@ targetted_decisions = {
 }
 
 decisions = {
-	# Muslims can start a new dynasty if they are a realm dynasty head
+	# Muslims can start a new dynasty if there are playable ruler dynasty members not in their subrealm
 	start_dynasty_decadence = {
-		is_high_prio = yes
-		
 		potential = {
 			is_playable = yes
 			religion_group = muslim
-			is_female = no
 			is_adult = yes
-			OR = {
-				is_tribal = yes
-				is_feudal = yes
-				is_merchant_republic = yes
-				is_patrician = yes
+			is_female = no
+			NAND = {
+				is_nomadic = no
+				primary_title = { is_landless_type_title = no }
 			}
-			holy_order = no
-			mercenary = no
-			NOR = {
-				has_character_flag = started_new_dynasty
-				any_dynasty_member = { is_vassal_or_below = ROOT }
-				dynasty_head = { character = ROOT }
+			NOT = { has_character_flag = started_new_dynasty }
+			any_dynasty_member = {
+				is_playable = yes
+				NOT = { is_liege_or_above = ROOT }
 			}
 		}
 		allow = {
 			war = no
+			in_revolt = no
 			has_regent = no
 			ruled_years = 1
 			OR = {
@@ -178,7 +173,13 @@ decisions = {
 				}
 			}
 			hidden_tooltip = {
-				dynasty_head = { save_event_target_as = old_dynasty_head }
+				random_dynasty_member = {
+					limit = {
+						is_playable = yes
+						NOT = { is_liege_or_above = ROOT }
+					}
+					save_event_target_as = old_dynasty_head # Bit of a misnomer now
+				}
 				character_event = { id = emf_decadence.2512 } # Notification for players
 				any_child_even_if_dead = {
 					limit = { dynasty = ROOT }
@@ -202,21 +203,11 @@ decisions = {
 							is_close_relative = ROOT
 							vassal_of = ROOT
 						}
-					}
+					} 
 					set_character_flag = no_chronicle_update
 					character_event = { id = emf_decadence.2511 days = 2 }
 				}
-				if = {
-					limit = {
-						mother_even_if_dead = { dynasty = ROOT }
-						father_even_if_dead = { NOT = { dynasty = ROOT } }
-					}
-					dynasty = mother_bastard
-				}
-				if = {
-					limit = { father_even_if_dead = { dynasty = ROOT } }
-					dynasty = father_bastard
-				}
+				dynasty = father_bastard
 			}
 			if = {
 				limit = { ai = no }
@@ -232,6 +223,10 @@ decisions = {
 			modifier = {
 				factor = 0.01
 				always = yes
+			}
+			modifier = {
+				factor = 0 # AI won't break away if they're a realm dynasty head
+				NOT = { any_liege = { dynasty = ROOT } }
 			}
 			modifier = {
 				factor = 2.5
