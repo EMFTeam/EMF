@@ -2,13 +2,237 @@
 
 namespace = emf_decadence
 
+#reserved: emf_decadence.0
 #reserved: emf_decadence.2500 to emf_decadence.2599
 
 #######################################
 # MUSLIM DECADENCE EVENTS
 #######################################
 
-# Add decadent dynasty trait
+# Calculate & adjust realm dynastic decadence -- triggered on_yearly_pulse
+character_event = {
+	id = emf_decadence.0
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	only_playable = yes
+	religion_group = muslim
+	
+	trigger = {
+		NOT = { any_liege = { dynasty = ROOT } }
+		is_nomadic = no
+		primary_title = { is_landless_type_title = no }
+	}
+	
+	immediate = {
+		# Init vars, just in case some other code has leaked them -- we always clear them immediately after usage
+		set_variable = { which = dmax value = 0 }
+		set_variable = { which = d value = 0 }
+		
+		# Add realm-dynasty-head to "decadence potential" var
+		if = {
+			limit = { tier = BARON }
+			change_variable = { which = dmax value = 2 }
+		}
+		if = {
+			limit = { tier = COUNT }
+			change_variable = { which = dmax value = 3 }
+		}
+		if = {
+			limit = { higher_tier_than = COUNT }
+			change_variable = { which = dmax value = 4 }
+		}
+		# Add rest of dynasty to "decadence potential"
+		any_dynasty_member = {
+			limit = {
+				is_liege_or_above = ROOT
+				is_female = no
+				is_adult = yes
+				religion_group = muslim
+			}
+			if = {
+				limit = { is_ruler = no }
+				ROOT = { change_variable = { which = dmax value = 1 } }
+			}
+			if = {
+				limit = { is_ruler = yes }
+				if = {
+					limit = { tier = BARON }
+					ROOT = { change_variable = { which = dmax value = 2 } }
+				}
+				if = {
+					limit = { tier = COUNT }
+					ROOT = { change_variable = { which = dmax value = 3 } }
+				}
+				if = {
+					limit = { higher_tier_than = COUNT }
+					ROOT = { change_variable = { which = dmax value = 4 } }
+				}
+			}
+		}
+		
+		# Add realm-dynasty-head to "actual decadence" var
+		if = {
+			limit = { trait = decadent }
+			if = {
+				limit = { tier = BARON }
+				change_variable = { which = d value = 2 }
+			}
+			if = {
+				limit = { tier = COUNT }
+				change_variable = { which = d value = 3 }
+			}
+			if = {
+				limit = { higher_tier_than = COUNT }
+				change_variable = { which = d value = 4 }
+			}
+		}
+		# Add rest of dynasty to "actual decadence"
+		any_dynasty_member = {
+			limit = {
+				trait = decadent
+				is_liege_or_above = ROOT
+			}
+			if = {
+				limit = { is_ruler = no }
+				ROOT = { change_variable = { which = d value = 1 } }
+			}
+			if = {
+				limit = { is_ruler = yes }
+				if = {
+					limit = { tier = BARON }
+					ROOT = { change_variable = { which = d value = 2 } }
+				}
+				if = {
+					limit = { tier = COUNT }
+					ROOT = { change_variable = { which = d value = 3 } }
+				}
+				if = {
+					limit = { higher_tier_than = COUNT }
+					ROOT = { change_variable = { which = d value = 4 } }
+				}
+			}
+		}
+		
+		# Turn var `d` into "percentage of decadence potential realized"
+		multiply_variable = { which = d value = 100 }
+		divide_variable = { which = d which = dmax }
+		
+		# If the realm dynasty head is decadent themselves, then effective realm decadence is doubled
+		if = {
+			limit = { trait = decadent }
+			multiply_variable = { which = d value = 2 }
+		}
+		
+		# Remove any realm decadence state which needed to persist due to cooperation
+		# with an MTTH event for reducing perceived realm decadence (emf_decadence.2501)
+		clr_character_flag = emf_dec_reducing
+		clr_character_flag = emf_dec_low
+		clr_character_flag = emf_dec_med
+		
+		# Classify current realm decadence
+		if = {
+			limit = {
+				check_variable = { which = d value = 8 }
+				NOT = { check_variable = { which = d value = 16 } }
+			}
+			set_character_flag = emf_dec_low
+		}
+		if = {
+			limit = {
+				check_variable = { which = d value = 16 }
+				NOT = { check_variable = { which = d value = 24 } }
+			}
+			set_character_flag = emf_dec_med
+		}
+		if = {
+			limit = {
+				check_variable = { which = d value = 24 }
+			}
+			set_character_flag = emf_dec_high
+		}
+		
+		# Clear variables
+		set_variable = { which = dmax value = 0 }
+		set_variable = { which = d value = 0 }
+		
+		if = { # Adding realm decadence anew, if we are realm-decadent now
+			limit = {
+				NOR = {
+					trait = dynasty_decadence_low
+					trait = dynasty_decadence_med
+					trait = dynasty_decadence_high
+				}
+			}
+			if = {
+				limit = { has_character_flag = emf_dec_low }
+				clr_character_flag = emf_dec_low
+				add_trait = dynasty_decadence_low
+				character_event = { id = emf_decadence.2500 }
+				break = yes
+			}
+			if = {
+				limit = { has_character_flag = emf_dec_med }
+				clr_character_flag = emf_dec_med
+				add_trait = dynasty_decadence_med
+				character_event = { id = emf_decadence.2500 }
+				break = yes
+			}
+			if = {
+				limit = { has_character_flag = emf_dec_high }
+				clr_character_flag = emf_dec_high
+				add_trait = dynasty_decadence_high
+				character_event = { id = emf_decadence.2500 }
+				break = yes
+			}
+			break = yes # Still not decadent
+		}
+		if = { # No change in realm decadence
+			limit = {
+				OR = {
+					AND = {
+						trait = dynasty_decadence_low
+						has_character_flag = emf_dec_low
+					}
+					AND = {
+						trait = dynasty_decadence_med
+						has_character_flag = emf_dec_med
+					}
+					AND = {
+						trait = dynasty_decadence_high
+						has_character_flag = emf_dec_high
+					}
+				}
+			}
+			clr_character_flag = emf_dec_low
+			clr_character_flag = emf_dec_med
+			clr_character_flag = emf_dec_high
+			break = yes
+		}
+		if = { # Raising preexisting realm decadence
+			limit = {
+				OR = {
+					AND = {
+						trait = dynasty_decadence_low
+						has_character_flag = emf_dec_med
+					}
+					has_character_flag = emf_dec_high
+				}
+			}
+			character_event = { id = emf_decadence.2502 }
+			clr_character_flag = emf_dec_med
+			clr_character_flag = emf_dec_high
+			break = yes
+		}
+		# If we reach here, we must be reducing existing realm decadence. Since the memories of decadence
+		# take time to fade, we allow an MTTH event (emf_decadence.2501) to lower it, using our set flags
+		# as the "true" decadence class and preexisting traits as the "perceived" decadence class.
+		set_character_flag = emf_dec_reducing
+	}
+}
+
+# Add decadent dynasty trait -- triggered immediately by emf_decadence.0
 character_event = {
 	id = emf_decadence.2500
 	picture = GFX_evt_throne_room
@@ -26,93 +250,11 @@ character_event = {
 		trigger = { trait = dynasty_decadence_high }
 	}
 	
-	religion_group = muslim
-	only_playable = yes
-	
+	is_triggered_only = yes
 	notification = yes
-	
-	trigger = {
-		num_of_dynasty_members = 10 #does not apply to tiny dynasties
-		OR = {
-			independent = yes
-			NOT = { any_dynasty_member = { is_vassal_or_below = ROOT } }
-		}
-		OR = {
-			trait = decadent
-			any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 3 }
-		}
-		NOR = {
-			trait = dynasty_decadence_low
-			trait = dynasty_decadence_med
-			trait = dynasty_decadence_high
-		}
-	}
-	
-	mean_time_to_happen = {
-		days = 30
-	}
 	
 	immediate = {
 		set_character_flag = has_dynasty_decadence
-		if = {
-			limit = {
-				OR = {
-					AND = {
-						trait = decadent
-						any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 8 }
-					}
-					AND = {
-						NOT = { trait = decadent }
-						any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 15 }
-					}
-				}
-			}
-			add_trait = dynasty_decadence_high
-		}
-		if = {
-			limit = {
-				OR = {
-					AND = {
-						trait = decadent
-						any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 3 }
-					}
-					AND = {
-						NOT = { trait = decadent }
-						any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 8 }
-					}
-				}
-				NOR = {
-					AND = {
-						trait = decadent
-						any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 8 }
-					}
-					AND = {
-						NOT = { trait = decadent }
-						any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 15 }
-					}
-				}
-			}
-			add_trait = dynasty_decadence_med
-		}
-		if = {
-			limit = {
-				OR = {
-					trait = decadent
-					any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 3 }
-				}
-				NOR = {
-					AND = {
-						trait = decadent
-						any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 3 }
-					}
-					AND = {
-						NOT = { trait = decadent }
-						any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 8 }
-					}
-				}
-			}
-			add_trait = dynasty_decadence_low
-		}
 	}
 	
 	option = {
@@ -120,59 +262,54 @@ character_event = {
 	}
 }
 
-# Lower decadent dynasty trait
+# Lower decadent dynasty trait -- MTTH gated by emf_decadence.0
 character_event = {
 	id = emf_decadence.2501
 	desc = EVTDESC_emf_decadence_2501
 	picture = GFX_evt_throne_room
 	
-	religion_group = muslim
 	only_playable = yes
-	has_character_flag = has_dynasty_decadence
+	religion_group = muslim
+	has_character_flag = emf_dec_reducing
 	
 	trigger = {
-		OR = {
-			independent = yes
-			NOT = { any_dynasty_member = { is_vassal_or_below = ROOT } }
-		}
-		OR = {
-			AND = {
-				trait = dynasty_decadence_low
-				NOT = { trait = decadent }
-				NOT = { any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 3 } }
-			}
-			AND = {
-				trait = dynasty_decadence_med
-				NOT = { trait = decadent }
-				NOT = { any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 8 } }
-			}
-			AND = {
-				trait = dynasty_decadence_med
-				trait = decadent
-				NOT = { any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 3 } }
-			}
-			AND = {
-				trait = dynasty_decadence_high
-				NOT = { trait = decadent }
-				NOT = { any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 15 } }
-			}
-			AND = {
-				trait = dynasty_decadence_high
-				trait = decadent
-				NOT = { any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 8 } }
-			}
-		}
+		NOT = { any_liege = { dynasty = ROOT } }
+		is_nomadic = no
+		primary_title = { is_landless_type_title = no }
 	}
 	
 	mean_time_to_happen = {
 		months = 60
 		modifier = {
 			factor = 1.5
-			trait = dynasty_decadence_med
+			OR = {
+				AND = { # "High" reduced by 2 tiers or entirely eliminated
+					trait = dynasty_decadence_high
+					NOT = { has_character_flag = emf_dec_med }
+				}
+				AND = { # "Medium" reduced by 1 tier
+					trait = dynasty_decadence_med
+					has_character_flag = emf_dec_low
+				}
+			}
 		}
-		modifier = {
+		modifier = { # "High" reduced by 1 tier
 			factor = 2
 			trait = dynasty_decadence_high
+			has_character_flag = emf_dec_med
+		}
+	}
+	
+	immediate = {
+		clr_character_flag = emf_dec_reducing
+		if = {
+			limit = {
+				NOR = {
+					has_character_flag = emf_dec_low
+					has_character_flag = emf_dec_med
+				}
+			}
+			clr_character_flag = has_dynasty_decadence
 		}
 	}
 	
@@ -191,93 +328,25 @@ character_event = {
 			remove_trait = dynasty_decadence_high
 		}
 		if = {
-			limit = {
-				NOR = {
-					trait = decadent
-					any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 3 }
-				}
-			}
-			clr_character_flag = has_dynasty_decadence
-		}
-		if = {
-			limit = {
-				OR = {
-					trait = decadent
-					any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 3 }
-				}
-				NOR = {
-					AND = {
-						trait = decadent
-						any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 3 }
-					}
-					AND = {
-						NOT = { trait = decadent }
-						any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 8 }
-					}
-				}
-			}
+			limit = { has_character_flag = emf_dec_low }
+			clr_character_flag = emf_dec_low
 			add_trait = dynasty_decadence_low
 		}
 		if = {
-			limit = {
-				OR = {
-					AND = {
-						trait = decadent
-						any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 3 }
-					}
-					AND = {
-						NOT = { trait = decadent }
-						any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 8 }
-					}
-				}
-			}
+			limit = { has_character_flag = emf_dec_med }
+			clr_character_flag = emf_dec_med
 			add_trait = dynasty_decadence_med
 		}
 	}
 }
 
-# Raise decadent dynasty trait
+# Raise decadent dynasty trait -- triggered immediately by emf_decadence.0
 character_event = {
 	id = emf_decadence.2502
 	desc = EVTDESC_emf_decadence_2502
 	picture = GFX_evt_throne_room
 	
-	religion_group = muslim
-	only_playable = yes
-	has_character_flag = has_dynasty_decadence
-	
-	trigger = {
-		OR = {
-			independent = yes
-			NOT = { any_dynasty_member = { is_vassal_or_below = ROOT } }
-		}
-		OR = {
-			AND = {
-				trait = dynasty_decadence_low
-				NOT = { trait = decadent }
-				any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 8 }
-			}
-			AND = {
-				trait = dynasty_decadence_low
-				trait = decadent
-				any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 3 }
-			}
-			AND = {
-				trait = dynasty_decadence_med
-				NOT = { trait = decadent }
-				any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 15 }
-			}
-			AND = {
-				trait = dynasty_decadence_med
-				trait = decadent
-				any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 8 }
-			}
-		}
-	}
-	
-	mean_time_to_happen = {
-		days = 30
-	}
+	is_triggered_only = yes
 	
 	option = {
 		name = EVTOPTA_emf_decadence_2502
@@ -294,86 +363,48 @@ character_event = {
 			remove_trait = dynasty_decadence_high
 		}
 		if = {
-			limit = {
-				OR = {
-					AND = {
-						trait = decadent
-						any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 3 }
-					}
-					AND = {
-						NOT = { trait = decadent }
-						any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 8 }
-					}
-				}
-				NOR = {
-					AND = {
-						trait = decadent
-						any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 8 }
-					}
-					AND = {
-						NOT = { trait = decadent }
-						any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 15 }
-					}
-				}
-			}
+			limit = { has_character_flag = emf_dec_med }
 			add_trait = dynasty_decadence_med
+			break = yes
 		}
 		if = {
-			limit = {
-				OR = {
-					AND = {
-						trait = decadent
-						any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 8 }
-					}
-					AND = {
-						NOT = { trait = decadent }
-						any_dynasty_member = { trait = decadent is_liege_or_above = ROOT count = 15 }
-					}
-				}
-			}
+			limit = { has_character_flag = emf_dec_high }
 			add_trait = dynasty_decadence_high
+			break = yes
 		}
 	}
 }
 
-# Remove decadent dynasty trait
+# Remove realm decadence state if it's become invalid -- triggered on_yearly_pulse
 character_event = {
 	id = emf_decadence.2503
 	
+	is_triggered_only = yes
 	hide_window = yes
 	
 	has_character_flag = has_dynasty_decadence
 	
 	trigger = {
-		OR = {
-			NOT = { religion_group = muslim }
-			NOR = {
-				independent = yes
-				NOT = { any_dynasty_member = { is_vassal_or_below = ROOT } }
-			}
-			NOT = { num_of_dynasty_members = 10 }
-			is_playable = no
+		NAND = {
+			NOT = { any_liege = { dynasty = ROOT } }
+			is_nomadic = no
+			primary_title = { is_landless_type_title = no }
+			is_playable = yes
+			religion_group = muslim
 		}
-	}
-	
-	mean_time_to_happen = {
-		days = 1
 	}
 	
 	immediate = {
+		remove_trait = dynasty_decadence_low
+		remove_trait = dynasty_decadence_med
+		remove_trait = dynasty_decadence_high
+		if = {
+			limit = { has_character_flag = emf_dec_reducing }
+			clr_character_flag = emf_dec_reducing
+			clr_character_flag = emf_dec_low
+			clr_character_flag = emf_dec_med
+		}
 		clr_character_flag = has_dynasty_decadence
-		if = {
-			limit = { trait = dynasty_decadence_low }
-			remove_trait = dynasty_decadence_low
-		}
-		if = {
-			limit = { trait = dynasty_decadence_med }
-			remove_trait = dynasty_decadence_med
-		}
-		if = {
-			limit = { trait = dynasty_decadence_high }
-			remove_trait = dynasty_decadence_high
-		}
 	}
 }
 
