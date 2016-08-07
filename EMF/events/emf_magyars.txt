@@ -326,6 +326,17 @@ character_event = {
 	
 	immediate = {
 		set_global_flag = emf_magyar_migration_completed
+		any_province = {
+			limit = {
+				culture = hungarian
+				NOT = { kingdom = { title = k_hungary } }
+				owner = {
+					NOT = { culture = hungarian }
+					owner_under_ROOT = no
+				}
+			}
+			province_event = { id = emf_adventurer.3006 days = 1 }
+		}		
 		any_playable_ruler = {
 			limit = {
 				NOT = { character = ROOT }
@@ -720,6 +731,23 @@ narrative_event = {
 	}
 }
 
+# Hungarian provinces will join the migration
+province_event = {
+	id = emf_adventurer.3006
+	desc = EVTDESC_emf_adventurer_3006
+	picture = GFX_evt_magyars
+
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_adventurer_3006
+		owner = {
+			reverse_culture = ROOT
+			reverse_religion = ROOT
+		}
+	}
+}
+	
 ### POST-MIGRATION EVENTS
 
 # Unlanded Magyar noble passes on vassal_khan flag
@@ -827,6 +855,7 @@ character_event = {
 				can_be_given_away = yes
 				NOT = { title = c_pest }
 				NOT = { location = { is_capital = yes } }
+				location = { has_empty_holding = yes }
 			}
 			NOT = { has_character_flag = vassal_khan_request }
 		}
@@ -865,6 +894,7 @@ character_event = {
 					can_be_given_away = yes
 					NOT = { title = c_pest }
 					NOT = { location = { is_capital = yes } }
+					location = { has_empty_holding = yes }
 				}
 				save_event_target_as = requested_title
 			}
@@ -1328,6 +1358,7 @@ character_event = {
 			is_adult = yes
 			is_female = no
 			is_ill = no
+			prisoner = no
 			fertility = 0.33
 			emf_can_inherit_trigger = yes
 			opinion = { who = ROOT value = 20 }
@@ -1357,10 +1388,7 @@ character_event = {
 				trait = imbecile
 			}
 		}
-		NOR = {
-			any_vassal = { has_character_flag = vassal_khan }
-			any_vassal = { is_nomadic = yes count = 6 }
-		}
+		NOT = { any_vassal = { has_character_flag = vassal_khan } }
 		has_global_flag = emf_magyar_migration_completed
 	}
 	
@@ -1369,12 +1397,14 @@ character_event = {
 	}
 	
 	immediate = {
+		clan_title = { save_event_target_as = liege_clan }
 		random_courtier = {
 			limit = {
 				is_ruler = no
 				is_adult = yes
 				is_female = no
 				is_ill = no
+				prisoner = no
 				fertility = 0.33
 				emf_can_inherit_trigger = yes
 				opinion = { who = ROOT value = 20 }
@@ -1425,14 +1455,34 @@ character_event = {
 		}
 		event_target:new_clan_leader = {
 			if = {
-				limit = { is_nomadic = no }
+				limit = {
+					is_nomadic = no
+					capital_scope = { has_empty_holding = yes }
+					ROOT = {
+						NOT = {
+							any_vassal = {
+								count = 5
+								is_nomadic = yes
+							}
+						}
+					}
+				}
 				set_government_type = nomadic_government
 			}
-			any_demesne_title = {
-				limit = { tier = EMPEROR }
-				unsafe_destroy_landed_title = THIS
+			if = {
+				limit = { is_nomadic = yes }
+				clan_title = {
+					clan_opinion = {
+						who = event_target:liege_clan
+						modifier = opinion_support_migration
+						years = 20
+					}
+				}
 			}
-			add_friend = ROOT
+			if = {
+				limit = { NOT = { has_opinion_modifier = { who = ROOT modifier = opinion_loyal_servant } } }
+				opinion = { who = ROOT modifier = opinion_loyal_servant }
+			}
 			set_defacto_liege = ROOT
 		}
 	}
