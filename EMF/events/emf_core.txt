@@ -280,13 +280,163 @@ character_event = {
 	}
 
 	mean_time_to_happen = {
-		days = 1
+		days = 0
 	}
 
 	immediate = {
 		set_variable = { which = years_of_peace value = 0 }
 	}
 }
+
+
+# emf_core.13 -- Acquisition of a secondary empire title
+character_event = {
+	id = emf_core.13
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	only_independent = yes
+	only_playable = yes
+	
+	trigger = {
+		is_nomadic = no
+		FROM = {
+			tier = EMPEROR
+			is_primary_holder_title = no
+			temporary = no
+		}
+		any_demesne_title = {
+			tier = EMPEROR
+			temporary = no
+			NOT = { title = FROM }
+		}
+	}
+	
+	immediate = {
+		primary_title = {
+			if = {
+				limit = {
+					tier = EMPEROR
+					temporary = no
+					NOT = { title = FROM }
+				}
+				save_event_target_as = emf_current_title
+				break = yes
+			}
+		}
+		random_demesne_title = {
+			limit = {
+				tier = EMPEROR
+				temporary = no
+				NOT = { title = FROM }
+			}
+			save_event_target_as = emf_current_title
+			break = yes
+		}
+	}
+	
+	option = {
+		name = OK
+		log = "INFO: emf_core.13: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) acquired secondary empire title [From.GetBaseName] ([From.GetID]) -- will have to choose between it and [emf_current_title.GetBaseName] ([emf_current_title.GetID])"
+		character_event = { id = emf_core.14 days = 1 } # Force them to choose
+	}
+}
+
+
+character_event = {
+	id = emf_core.14
+	desc = emf_core.14.desc
+	picture = GFX_evt_coronation
+	
+	is_triggered_only = yes
+	
+	trigger = {
+		has_landed_title = event_target:emf_current_title
+		has_landed_title = FROMFROM
+	}
+	
+	option = {
+		name = emf_core.14.opt.keep_current
+		ai_chance = {
+			factor = 10
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:emf_current_title = { is_de_jure_title = yes }
+					FROMFROM = { is_de_jure_title = no }
+				}
+			}
+		}
+		hidden_tooltip = {
+			if = {
+				limit = { FROMFROM = { is_primary_holder_title = yes } }
+				event_target:emf_current_title = { make_primary_title = yes }
+			}
+			any_vassal = { set_defacto_liege = ROOT }
+		}
+		FROMFROM = {
+			if = {
+				limit = { is_landless_type_title = no }
+				emf_destroy_title_effect = yes
+			}
+			if = {
+				limit = { is_landless_type_title = yes }
+				emf_destroy_title_unsafe_effect = yes
+			}
+		}
+	}
+	
+	option = {
+		name = emf_core.14.opt.assume_new
+		ai_chance = {
+			factor = 10
+			modifier = {
+				factor = 0
+				OR = {
+					event_target:emf_current_title = { is_de_jure_title = yes }
+					FROMFROM = { is_de_jure_title = no }
+				}
+			}
+		}
+		hidden_tooltip = {
+			FROMFROM = { make_primary_title = yes }
+			any_vassal = { set_defacto_liege = ROOT }
+			# When assuming new title, ensure that the new title's ID rating is at least as high
+			# as any held empire titles
+			any_demesne_title = {
+				limit = {
+					tier = EMPEROR
+					NOT = { title = FROMFROM }
+					check_variable = { which = "imperial_decay" which = FROMFROM }
+				}
+				ROOT = { set_character_flag = decay_change_tmp }
+				set_variable = { which = "imperial_decay_change" which = "imperial_decay" }
+				FROMFROM = {
+					set_variable = { which = "imperial_decay_change" which = PREV }
+					subtract_variable = { which = "imperial_decay_change" which = "imperial_decay" }
+				}
+				set_variable = { which = "imperial_decay_change" value = 0 }
+			}
+			if = {
+				limit = { has_character_flag = decay_change_tmp }
+				clr_character_flag = decay_change_tmp
+				character_event = { id = emf_imperial.1852 } # Update modifiers & notify
+			}
+		}
+		event_target:emf_current_title = {
+			if = {
+				limit = { is_landless_type_title = no }
+				emf_destroy_title_effect = yes
+			}
+			if = {
+				limit = { is_landless_type_title = yes }
+				emf_destroy_title_unsafe_effect = yes
+			}
+		}
+	}
+}
+
 
 
 # emf_core.25
