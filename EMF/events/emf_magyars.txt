@@ -597,6 +597,18 @@ character_event = {
 		set_global_flag = emf_magyar_migration_completed
 		wealth = 250
 		prestige = 250
+		
+		# Remove tributary statuses
+		if = {
+			limit = { is_tributary = yes }
+			suzerain = { remove_tributary = ROOT }
+		}
+		any_playable_ruler = {
+			limit = { pays_tribute_to = ROOT }
+			ROOT = { remove_tributary = PREV }
+		}
+		
+		# Hungarian provinces no longer in the realm lose Hungarian culture
 		any_province = {
 			limit = {
 				culture = hungarian
@@ -607,7 +619,9 @@ character_event = {
 				}
 			}
 			province_event = { id = emf_magyar.3006 days = 1 }
-		}		
+		}
+		
+		# Inform players
 		any_playable_ruler = {
 			limit = {
 				NOT = { character = ROOT }
@@ -622,29 +636,62 @@ character_event = {
 		trigger = { is_nomadic = yes }
 		custom_tooltip = { text = WILL_MIGRATE_TO_HUNGARY }
 		
-		# Remove tributary statuses
-		if = {
-			limit = { is_tributary = yes }
-			suzerain = { remove_tributary = ROOT }
-		}
-		any_playable_ruler = {
-			limit = { pays_tribute_to = ROOT }
-			ROOT = { remove_tributary = PREV }
-		}
-		
 		hidden_tooltip = {
-			clan_title = { save_event_target_as = liege_clan }			
-			# All non-nomadic (and player) vassals of Count+ tier go free
-			any_vassal = {
+			clan_title = { save_event_target_as = liege_clan }
+			# Deal with khazar vassals (SWMH only)
+			if = {
+				limit = { has_global_flag = SWMH }
+				any_realm_lord = {
+					limit = {
+						ai = yes
+						is_playable = yes
+						culture = khazar
+					}
+					opinion = { who = ROOT modifier = opinion_support_migration years = 25 }
+					# Destroy any titles of Duke+
+					any_demesne_title = {
+						limit = { higher_tier_than = COUNT }
+						unsafe_destroy_landed_title = THIS
+					}
+					set_defacto_liege = ROOT
+					# Move their courtiers to the liege's court
+					any_courtier = {
+						limit = {
+							is_ruler = no
+							OR = {
+								is_close_relative = PREV
+								dynasty = PREV
+								martial = 10
+							}
+						}
+						move_character = ROOT
+					}
+					# Gain all their remaining titles
+					any_demesne_title = { grant_title = ROOT }
+					# Move them to the liege's court
+					move_character = ROOT
+				}
+			}
+			
+			# All non-Hungarian or player vassals in the realm go free
+			any_realm_lord = {
 				limit = {
+					is_playable = yes
 					OR = {
-						is_nomadic = no
+						NOT = { culture = hungarian }
 						ai = no
 					}
-					is_playable = yes
 				}
 				set_defacto_liege = THIS
 			}
+			
+			# Switch over to Tribal government
+			any_vassal = {
+				limit = { is_nomadic = yes }
+				set_government_type = tribal_government
+				set_defacto_liege = ROOT
+			}
+			set_government_type = tribal_government
 			
 			# Destroy any duchies
 			any_demesne_title = {
@@ -655,60 +702,45 @@ character_event = {
 				destroy_landed_title = THIS
 			}
 			
-			# Deal with nomadic vassals
-			any_vassal = {
-				limit = { is_nomadic = yes }
-				# Remove negative opinions
-				remove_opinion = { who = ROOT modifier = opinion_absorbed_my_clan }
-				opinion = { who = ROOT modifier = opinion_support_migration years = 20 }
-				clan_title = {
-					clan_opinion = { who = event_target:liege_clan modifier = opinion_support_migration multiplier = 5 years = 100 }
-					clan_remove_opinion = { who = event_target:liege_clan modifier = clan_opinion_absorbed_clan }
-					clan_remove_opinion = { who = event_target:liege_clan modifier = clan_opinion_absorbed_my_clan }
-					stop_feud = event_target:liege_clan
+			# Deal with hungarian vassals in the realm
+			any_playable_ruler = {
+				limit = {
+					same_realm = ROOT
+					culture = hungarian
 				}
-				
-				# Give them some extra event troops
-				capital_scope = {
-					PREV = {
-						spawn_unit = {
-							province = PREV
-							owner = THIS
-							troops = {
-								horse_archers = { 500 500 }
-								light_cavalry = { 250 250 }
-							}
-							attrition = 0.25
-							earmark = magyar_migration_troops
+				opinion = { who = ROOT modifier = opinion_support_migration years = 25 }
+				# Destroy any titles of Duke+
+				any_demesne_title = {
+					limit = { higher_tier_than = COUNT }
+					unsafe_destroy_landed_title = THIS
+				}
+				set_defacto_liege = ROOT
+				# Move their courtiers to the liege's court
+				any_courtier = {
+					limit = {
+						is_ruler = no
+						OR = {
+							is_close_relative = PREV
+							dynasty = PREV
+							martial = 10
 						}
 					}
+					move_character = ROOT
 				}
-				# Destroy any duchies
-				any_demesne_title = {
-					limit = {
-						tier = DUKE
-						is_titular = no
-					}
-					destroy_landed_title = THIS
-				}
-				# Release their own vassals
-				any_vassal = {
-					limit = { higher_tier_than = BARON }
-					set_defacto_liege = THIS
-				}
-				# Mark them to not use the regular unlanded on_action event
+				# Mark them so they prompt to get land later
 				set_character_flag = vassal_khan
-				# Gain all their provinces
-				any_demesne_title = {
-					limit = { lower_tier_than = DUKE }
-					grant_title = ROOT
-				}
+				# Gain all their remaining titles
+				any_demesne_title = { grant_title = ROOT }
+				# Move them to the liege's court
+				move_character = ROOT
 			}
 			
 			# Hungarian and Khazar provinces in the Etelkoz are lost
 			any_realm_province = {
 				limit = {
-					kingdom = { NOT = { title = k_hungary } }
+					kingdom = {
+						NOT = { title = k_hungary }
+					}
 				}
 				# Build a tribal holding if it's empty
 				if = {
@@ -718,11 +750,16 @@ character_event = {
 				# Mark any existing settlements so they don't get destroyed
 				any_province_holding = { set_title_flag = do_not_destroy }
 				# Find a neighboring province of a different culture, if one is available
-				random_neighbor_province = {
-					limit = {
-						NOT = { culture = hungarian }
-					}
+				if = {
+					limit = { NOT = { culture = hungarian } }
 					save_event_target_as = neighbor_province
+				}
+				if = {
+					limit = { NOT = { event_target:neighbor_province = { always = yes } } }
+					random_neighbor_province = {
+						limit = { NOT = { culture = hungarian } }
+						save_event_target_as = neighbor_province
+					}
 				}
 				if = {
 					limit = { NOT = { event_target:neighbor_province = { always = yes } } }
@@ -778,10 +815,45 @@ character_event = {
 		trigger = { is_tribal = yes }
 		custom_tooltip = { text = WILL_MIGRATE_TO_HUNGARY }
 		hidden_tooltip = {
+			# Deal with khazar vassals (SWMH only)
+			if = {
+				limit = { has_global_flag = SWMH }
+				any_realm_lord = {
+					limit = {
+						ai = yes
+						is_playable = yes
+						culture = khazar
+					}
+					opinion = { who = ROOT modifier = opinion_support_migration years = 25 }
+					# Destroy any titles of Duke+
+					any_demesne_title = {
+						limit = { higher_tier_than = COUNT }
+						unsafe_destroy_landed_title = THIS
+					}
+					set_defacto_liege = ROOT
+					# Move their courtiers to the liege's court
+					any_courtier = {
+						limit = {
+							is_ruler = no
+							OR = {
+								is_close_relative = PREV
+								dynasty = PREV
+								martial = 10
+							}
+						}
+						move_character = ROOT
+					}
+					# Gain all their remaining titles
+					any_demesne_title = { grant_title = ROOT }
+					# Move them to the liege's court
+					move_character = ROOT
+				}
+			}
+			
 			# All non-Hungarian or player vassals in the realm go free
-			any_playable_ruler = {
+			any_realm_lord = {
 				limit = {
-					same_realm = ROOT
+					is_playable = yes
 					OR = {
 						NOT = { culture = hungarian }
 						ai = no
@@ -805,18 +877,11 @@ character_event = {
 					same_realm = ROOT
 					culture = hungarian
 				}
-				opinion = {
-					who = ROOT
-					modifier = opinion_support_migration
-					years = 20
-				}
-				# Destroy any duchies
+				opinion = { who = ROOT modifier = opinion_support_migration years = 25 }
+				# Destroy any titles of Duke+
 				any_demesne_title = {
-					limit = {
-						tier = DUKE
-						is_titular = no
-					}
-					destroy_landed_title = THIS
+					limit = { higher_tier_than = COUNT }
+					unsafe_destroy_landed_title = THIS
 				}
 				set_defacto_liege = ROOT
 				# Move their courtiers to the liege's court
@@ -833,15 +898,8 @@ character_event = {
 				}
 				# Mark them so they prompt to get land later
 				set_character_flag = vassal_khan
-				# Destroy any titles of Duke+
-				any_demesne_title = {
-					limit = { higher_tier_than = COUNT }
-					unsafe_destroy_landed_title = THIS
-				}
 				# Gain all their remaining titles
-				any_demesne_title = {
-					grant_title = ROOT
-				}
+				any_demesne_title = { grant_title = ROOT }
 				# Move them to the liege's court
 				move_character = ROOT
 			}
@@ -919,82 +977,6 @@ character_event = {
 				set_title_flag = refill_levy
 			}
 		}
-	}
-}
-
-# Magyar nomad vassals preparing for migration
-character_event = {
-	id = emf_magyar.3003
-	
-	hide_window = yes
-	is_triggered_only = yes
-	
-	trigger = {
-		has_game_started = yes
-		is_alive = yes
-		is_dying = no
-		is_nomadic = yes
-		prisoner = no
-		NOT = { trait = incapable }
-		has_character_flag = vassal_khan
-	}
-	
-	immediate = {
-		clan_title = {
-			capital_scope = {
-				save_event_target_as = last_province
-				
-				holder_scope = {
-					top_liege = {
-						save_event_target_as = former_liege
-						reverse_opinion = {
-							modifier = forbidden_raid_target
-							who = ROOT
-							months = 2400
-						}
-					}
-				}
-			}
-		}
-
-		set_defacto_liege = THIS
-			
-		clan_title = {
-			set_title_adventurer = { title = THIS status = yes }
-			set_title_landless = { title = THIS status = yes }
-			set_defacto_liege = THIS
-		}
-		
-		any_army = {
-			set_can_toggle_looting = yes
-			set_looting = yes
-			set_can_toggle_looting = no
-		}
-		
-		if = {
-			limit = { NOT = { unused_manpower = 250 } }
-			manpower = 250
-		}
-		
-		character_event = { id = HL.132 } # Convert unused manpower into raiding troops
-		character_event = { id = emf_magyar.3004 days = 1 } # Re-vassalize to ruler after one day
-	}
-}
-
-# Re-vassalize to the Magyar ruler after one day
-character_event = {
-	id = emf_magyar.3004
-	
-	is_triggered_only = yes
-	hide_window = yes
-	
-	immediate = {
-		clan_title = { set_title_adventurer = { title = THIS status = no } }
-		any_demesne_title = {
-			limit = { tier = EMPEROR }
-			unsafe_destroy_landed_title = THIS
-		}
-		set_defacto_liege = event_target:former_liege
 	}
 }
 
@@ -1107,22 +1089,6 @@ character_event = {
 
 	immediate = {
 		clr_character_flag = vassal_khan
-		if = {
-			limit = {
-				is_nomadic = yes
-				NOT = { num_of_count_titles = 1 }
-			}
-			set_character_flag = raiding_adventurer
-			set_defacto_liege = THIS
-			hidden_tooltip = {
-				clan_title = {
-					set_title_adventurer = { title = THIS status = yes }
-					set_title_landless = { title = THIS status = yes }
-					set_defacto_liege = THIS
-				}
-				character_event = { id = HL.110 days = 1095 } # Ping to see if he's ready to settle, repeating every 3 years.
-			}
-		}
 	}
 }
 
@@ -1242,22 +1208,7 @@ letter_event = {
 		prestige = -100
 		add_rival = FROM
 		primary_title = { add_pressed_claim = FROM }
-		FROM = {
-			clr_character_flag = vassal_khan
-			if = {
-				limit = { is_nomadic = yes }
-				set_character_flag = raiding_adventurer
-				set_defacto_liege = THIS
-				hidden_tooltip = {
-					clan_title = {
-						set_title_adventurer = { title = THIS status = yes }
-						set_title_landless = { title = THIS status = yes }
-						set_defacto_liege = THIS
-					}
-					character_event = { id = HL.110 days = 1095 } # Ping to see if he's ready to settle, repeating every 3 years.
-				}
-			}
-		}
+		FROM = { clr_character_flag = vassal_khan }
 	}
 }
 
@@ -1355,10 +1306,7 @@ character_event = {
 	trigger = {
 		ai = yes
 		martial = 10
-		OR = {
-			is_tribal = yes
-			is_nomadic = yes
-		}
+		is_tribal = yes
 		war = no
 		liege = { war = no }
 		capital_scope = {
@@ -1534,10 +1482,7 @@ character_event = {
 		capital_scope = {
 			kingdom = { title = k_hungary }
 		}
-		OR = {
-			is_tribal = yes
-			is_nomadic = yes
-		}
+		is_tribal = yes
 		has_global_flag = emf_magyar_migration_completed
 		NOT = { has_global_flag = emf_conquest_hungary_completed }
 		any_independent_ruler = {
@@ -1651,10 +1596,7 @@ character_event = {
 	trigger = {
 		ai = yes
 		war = no
-		OR = {
-			is_nomadic = yes
-			is_tribal = yes
-		}
+		is_tribal = yes
 		capital_scope = {
 			kingdom = { title = k_hungary }
 		}
@@ -1703,8 +1645,7 @@ character_event = {
 				trait = imbecile
 			}
 		}
-		NOR = {
-			any_vassal = { has_character_flag = vassal_khan }
+		NOT = {
 			any_courtier = { has_character_flag = vassal_khan }
 		}
 		has_global_flag = emf_magyar_migration_completed
@@ -1715,10 +1656,6 @@ character_event = {
 	}
 	
 	immediate = {
-		if = {
-			limit = { is_nomadic = yes }
-			clan_title = { save_event_target_as = liege_clan }
-		}
 		random_courtier = {
 			limit = {
 				is_ruler = no
@@ -1776,55 +1713,7 @@ character_event = {
 		}
 		event_target:new_clan_leader = {
 			if = {
-				limit = {
-					is_nomadic = no
-					capital_scope = { has_empty_holding = yes }
-					ROOT = {
-						is_nomadic = yes
-						num_of_count_titles_in_realm  = 7
-						NOT = { any_vassal = { count = 2 is_nomadic = yes } }
-					}
-				}
-				set_government_type = nomadic_government
-			}
-			if = {
-				limit = {
-					is_nomadic = no
-					capital_scope = { has_empty_holding = yes }
-					ROOT = {
-						is_nomadic = yes
-						num_of_count_titles_in_realm  = 10
-						NOT = { any_vassal = { count = 3 is_nomadic = yes } }
-					}
-				}
-				set_government_type = nomadic_government
-			}
-			if = {
-				limit = {
-					is_nomadic = no
-					capital_scope = { has_empty_holding = yes }
-					ROOT = {
-						is_nomadic = yes
-						num_of_count_titles_in_realm  = 13
-						NOT = { any_vassal = { count = 4 is_nomadic = yes } }
-					}
-				}
-				set_government_type = nomadic_government
-			}
-			if = {
-				limit = {
-					ROOT = { is_nomadic = yes }
-					is_nomadic = yes
-				}
-				clan_title = {
-					clan_opinion = { who = event_target:liege_clan modifier = opinion_support_migration multiplier = 5 years = 100 }
-				}
-			}
-			if = {
-				limit = {
-					is_nomadic = no
-					is_tribal = no
-				}
+				limit = { is_tribal = no }
 				if = {
 					limit = {
 						capital_scope = {
@@ -1988,125 +1877,35 @@ character_event = {
 		disband_event_forces = magyar_migration_troops
 		prestige = 500
 		wealth = 500
-		if = {
-			limit = {
-				ai = yes
-				is_nomadic = yes
-			}
-			character_event = { id = emf_magyar.3021 }
-		}
-		if = {
-			limit = { is_tribal = yes }
-			# Change name of Avaria to Hungary if relevant.
-			set_global_flag = avar_khaganate_renamed
-			if = {
-				limit = { NOT = { is_title_active = k_hungary } }
-				activate_title = { title = k_hungary status = yes }
-			}
-			# Create the Kingdom of Hungary
-			k_hungary = {
-				reset_coa = THIS
-				set_name = ""
-				adjective = ""
-				if = {
-					limit = { NOT = { holder = ROOT } }
-					grant_title = {
-						target = ROOT
-						type = created
-					}
-				}
-			}
-			# Destroy magyar title
-			any_demesne_title = {
-				limit = { title = k_magyar }
-				k_hungary = {
-					copy_title_laws = PREV
-					copy_title_history = PREV
-				}
-				destroy_landed_title = THIS
-				activate_title = { title = THIS status = no }
-			}
-		}
-	}
-}
 
-# AI Magyar nomads will settle as tribal at this point
-character_event = {
-	id = emf_magyar.3021
-	
-	hide_window = yes
-	is_triggered_only = yes
-	
-	immediate = {
-		# Change culture and religion of capital province and possibly more provinces depending on nomad population_and_manpower
-		capital_scope = {
-			culture = ROOT
-			religion = ROOT
-		}
 		# Change name of Avaria to Hungary if relevant.
 		set_global_flag = avar_khaganate_renamed
 		if = {
 			limit = { NOT = { is_title_active = k_hungary } }
 			activate_title = { title = k_hungary status = yes }
 		}
+		
+		# Copy laws of Magyar title to Hungary, if owned
+		any_demesne_title = {
+			limit = { title = k_magyar }
+			k_hungary = {
+				copy_title_laws = PREV
+				copy_title_history = PREV
+			}
+		}
+		
 		# Create the Kingdom of Hungary
 		k_hungary = {
 			reset_coa = THIS
 			set_name = ""
 			adjective = ""
-			grant_title = {
-				target = ROOT
-				type = created
-			}
-		}
-		# Usurp any king-tier titles belonging to vassals
-		any_vassal = {
-			limit = { is_nomadic = no }
-			any_demesne_title = {
-				limit = {
-					higher_tier_than = DUKE
-					temporary = no
-				}
-				usurp_title = ROOT
-			}
-		}
-		# Convert all clans to tribal government
-		any_vassal = {
-			limit = { is_nomadic = yes }
-			set_government_type = tribal_government
-			capital_scope = {
-				culture = PREV
-				religion = PREV
-			}
-		}
-		# Usurp capital's duchy, if owned by someone in the realm
-		capital_scope = {
-			duchy = {
-				if = {
-					limit = {
-						owner = {
-							same_realm = ROOT
-							NOT = { character = ROOT }
-						}
-					}
-					usurp_title = ROOT
+			if = {
+				limit = { NOT = { holder = ROOT } }
+				grant_title = {
+					target = ROOT
+					type = created
 				}
 			}
-		}
-		# Convert to tribal government
-		set_government_type = tribal_government
-		primary_title = {
-			add_law = tribal_organization_0
-			add_law = centralization_0
-		}
-		set_character_flag = emf_context_nomadic_to_tribal
-		# Notify players
-		any_playable_ruler = {
-			limit = {
-				NOT = { character = ROOT }
-				ai = no
-			}
-			narrative_event = { id = 62911 }
 		}
 	}
 }
