@@ -388,7 +388,6 @@ character_event = {
 						}
 						attrition = 0.25
 						reinforces = yes
-						earmark = magyar_migration_troops
 					}
 					spawn_unit = {
 						province = PREV
@@ -1508,7 +1507,7 @@ character_event = {
 	}
 	
 	mean_time_to_happen = {
-		months = 48
+		months = 60
 		modifier = {
 			factor = 0.5
 			trait = ambitious
@@ -1879,7 +1878,7 @@ character_event = {
 		name = EXCELLENT
 		set_global_flag = emf_conquest_hungary_completed
 		disband_event_forces = magyar_migration_troops
-		prestige = 500
+		prestige = 1000
 		wealth = 500
 
 		# Change name of Avaria to Hungary if relevant.
@@ -1888,7 +1887,17 @@ character_event = {
 			limit = { NOT = { is_title_active = k_hungary } }
 			activate_title = { title = k_hungary status = yes }
 		}
-				
+		
+		# Move capital to Pest
+		if = {
+			limit = { has_landed_title = c_pest }
+			c_pest = {
+				location = {
+					ROOT = { capital = PREV }
+				}
+			}
+		}
+		
 		# Create the Kingdom of Hungary
 		k_hungary = {
 			if = {
@@ -1897,6 +1906,72 @@ character_event = {
 					target = ROOT
 					type = created
 				}
+			}
+		}
+	}
+}
+
+# Hungary title name change
+character_event = {
+	id = emf_magyar.3021
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	trigger = {
+		FROM = { title = k_hungary }
+		OR = {
+			has_landed_title = k_magyar
+			AND = {
+				culture = hungarian
+				k_hungary = { NOT = { has_title_flag = hungary_name_change } }
+			}
+			k_magyar = {
+				is_title_active = THIS
+				has_holder = no
+			}
+		}
+	}
+	
+	immediate = {
+		if = {
+			limit = {
+				culture = hungarian
+				k_hungary = { NOT = { has_title_flag = hungary_name_change } }
+			}
+			k_hungary = {
+				set_title_flag = hungary_name_change
+				set_name = ""
+				adjective = ""
+			}
+		}
+		
+		# If title receiver also owns the Magyar tribal title, then
+		# we can safely destroy and deactivate that title now.
+		k_magyar = { # Magyar
+			if = {
+				limit = { holder = ROOT }
+				k_hungary = {
+					copy_title_laws = PREV
+					copy_title_history = PREV
+					make_primary_title = yes
+				}
+			}
+			if = {
+				limit = {
+					is_title_active = THIS
+					OR = {
+						has_holder = no
+						holder = ROOT
+					}
+				}
+				hidden_tooltip = {
+					# If it somehow became non-titular, then we must be sure
+					# to transfer its de jure territory to k_hungary first.
+					any_direct_de_jure_vassal_title = { de_jure_liege = k_hungary }
+				}
+				destroy_landed_title = THIS
+				activate_title = { title = THIS status = no }
 			}
 		}
 	}
