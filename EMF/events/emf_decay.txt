@@ -2,6 +2,8 @@
 
 namespace = emf_imperial
 
+# file range: emf_imperial.1850-1899
+
 #######################################
 # IMPERIAL DECAY EVENTS
 # Written by Rylock
@@ -48,6 +50,7 @@ character_event = {
 	}
 }
 
+# emf_imperial.1851 -- deferred calculation of decay rating change due to primary imperial title transfer
 character_event = {
 	id = emf_imperial.1851
 	
@@ -504,7 +507,8 @@ character_event = {
 	}
 }
 
-# Event for imperial decay change and adding the proper decay modifier
+# emf_imperial.1852 -- Event for actually changing imperial decay rating by title variable `imperial_decay_change`
+# All dynamic (i.e., everything but history effects) changes to imperial decay should use this event -- do not bypass it
 character_event = {
 	id = emf_imperial.1852
 	
@@ -790,45 +794,6 @@ character_event = {
 			}
 		}
 	}
-}
-
-# emf_imperial.1880 -- Notification of imperial decay change for ROOT, FROM should be the same as ROOT for portrait
-character_event = {
-	id = emf_imperial.1880
-	picture = GFX_evt_council
-	
-	is_triggered_only = yes
-	notification = yes
-	
-	trigger = { ai = no }
-	
-	desc = {
-		text = EVTDESC_emf_imperial_1880_decrease
-		trigger = {
-			primary_title = {
-				NOT = { check_variable = { which = "imperial_decay_change" value = 0 } }
-			}
-		}
-	}
-	desc = {
-		text = EVTDESC_emf_imperial_1880_increase
-		trigger = {
-			primary_title = {
-				check_variable = { which = "imperial_decay_change" value = 0 }
-				NOT = { is_variable_equal = { which = "imperial_decay_change" value = 0 } }
-			}
-		}
-	}
-	desc = { # Fallback case should there actually have been no change
-		text = EVTDESC_emf_imperial_1880
-		trigger = {
-			primary_title = {
-				is_variable_equal = { which = "imperial_decay_change" value = 0 }
-			}
-		}
-	}
-	
-	option = { name = OK }
 }
 
 # emf_imperial.1853 -- Always explicitly initialize imperial_decay to 0 when an empire title is formed
@@ -2369,3 +2334,198 @@ narrative_event = {
 	}
 }
 
+###########################
+
+# emf_imperial.1880 -- Notification of imperial decay change for ROOT, FROM must also be ROOT
+# Note that this is only for players and that all decay changes should be routed through emf_imperial.1852
+character_event = {
+	id = emf_imperial.1880
+	picture = GFX_evt_council
+	
+	is_triggered_only = yes
+	notification = yes
+	
+	trigger = { ai = no }
+	
+	desc = {
+		text = emf_imperial.1880.desc_decrease
+		trigger = {
+			primary_title = {
+				NOT = { check_variable = { which = "imperial_decay_change" value = 0 } }
+			}
+		}
+	}
+	desc = {
+		text = emf_imperial.1880.desc_increase
+		trigger = {
+			primary_title = {
+				check_variable = { which = "imperial_decay_change" value = 0 }
+				NOT = { is_variable_equal = { which = "imperial_decay_change" value = 0 } }
+			}
+		}
+	}
+	desc = { # Fallback case should there actually have been no change
+		text = emf_imperial.1880.desc_same
+		trigger = {
+			primary_title = {
+				is_variable_equal = { which = "imperial_decay_change" value = 0 }
+			}
+		}
+	}
+	
+	option = { name = OK }
+}
+
+# emf_imperial.1885 -- Acquisition of a secondary empire title (not for nomads)
+character_event = {
+	id = emf_imperial.1885
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	only_independent = yes
+	only_playable = yes
+	
+	trigger = {
+		is_nomadic = no
+		FROM = {
+			tier = EMPEROR
+			is_primary_holder_title = no
+			temporary = no
+		}
+		any_demesne_title = {
+			tier = EMPEROR
+			temporary = no
+			NOT = { title = FROM }
+		}
+	}
+	
+	immediate = {
+		primary_title = {
+			if = {
+				limit = {
+					tier = EMPEROR
+					temporary = no
+					NOT = { title = FROM }
+				}
+				save_event_target_as = emf_current_title
+				break = yes
+			}
+		}
+		random_demesne_title = {
+			limit = {
+				tier = EMPEROR
+				temporary = no
+				NOT = { title = FROM }
+			}
+			save_event_target_as = emf_current_title
+			break = yes
+		}
+	}
+	
+	option = {
+		name = OK
+		log = "INFO: emf_imperial.1885: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) acquired secondary empire title [From.GetBaseName] ([From.GetID]) -- will have to choose between it and [emf_current_title.GetBaseName] ([emf_current_title.GetID])"
+		character_event = { id = emf_imperial.1886 days = 1 } # Force them to choose
+	}
+}
+
+
+character_event = {
+	id = emf_imperial.1886
+	desc = emf_imperial.1886.desc
+	picture = GFX_evt_coronation
+	
+	is_triggered_only = yes
+	
+	trigger = {
+		has_landed_title = event_target:emf_current_title
+		has_landed_title = FROMFROM
+	}
+	
+	option = {
+		name = emf_imperial.1886.opt.keep_current
+		ai_chance = {
+			factor = 10
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:emf_current_title = { is_de_jure_title = yes }
+					FROMFROM = { is_de_jure_title = no }
+				}
+			}
+		}
+		hidden_tooltip = {
+			if = {
+				limit = { FROMFROM = { is_primary_holder_title = yes } }
+				event_target:emf_current_title = { make_primary_title = yes }
+			}
+			# TODO in 2.6: check the de_facto_liege_title of vassals before using set_defacto_liege,
+			# as this seems to boot the entire council and all minor titles. Only vassals whose liege
+			# is the empire which we're to destroy need this effect.
+			any_vassal = { set_defacto_liege = ROOT }
+		}
+		FROMFROM = {
+			if = {
+				limit = { is_landless_type_title = no }
+				emf_destroy_title_effect = yes
+			}
+			if = {
+				limit = { is_landless_type_title = yes }
+				emf_destroy_title_unsafe_effect = yes
+			}
+		}
+	}
+	
+	option = {
+		name = emf_imperial.1886.opt.assume_new
+		ai_chance = {
+			factor = 10
+			modifier = {
+				factor = 0
+				OR = {
+					event_target:emf_current_title = { is_de_jure_title = yes }
+					FROMFROM = { is_de_jure_title = no }
+				}
+			}
+		}
+		hidden_tooltip = {
+			FROMFROM = { make_primary_title = yes }
+			# TODO in 2.6: check the de_facto_liege_title of vassals before using set_defacto_liege,
+			# as this seems to boot the entire council and all minor titles. Only vassals whose liege
+			# is the empire which we're to destroy need this effect.
+			any_vassal = { set_defacto_liege = ROOT }
+			# When assuming new title, ensure that the new title's ID rating is at least as high
+			# as any held empire titles
+			any_demesne_title = {
+				limit = {
+					tier = EMPEROR
+					NOT = { title = FROMFROM }
+					check_variable = { which = "imperial_decay" which = FROMFROM }
+				}
+				ROOT = { set_character_flag = decay_change_tmp }
+				set_variable = { which = "imperial_decay_change" which = "imperial_decay" }
+				FROMFROM = {
+					set_variable = { which = "imperial_decay_change" which = PREV }
+					subtract_variable = { which = "imperial_decay_change" which = "imperial_decay" }
+				}
+				set_variable = { which = "imperial_decay_change" value = 0 }
+			}
+			if = {
+				limit = { has_character_flag = decay_change_tmp }
+				clr_character_flag = decay_change_tmp
+				character_event = { id = emf_imperial.1852 } # Update modifiers & notify
+			}
+		}
+		event_target:emf_current_title = {
+			if = {
+				limit = { is_landless_type_title = no }
+				emf_destroy_title_effect = yes
+			}
+			if = {
+				limit = { is_landless_type_title = yes }
+				emf_destroy_title_unsafe_effect = yes
+			}
+		}
+	}
+}
