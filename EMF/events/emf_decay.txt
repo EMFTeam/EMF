@@ -2,6 +2,8 @@
 
 namespace = emf_imperial
 
+# file range: emf_imperial.1850-1899
+
 #######################################
 # IMPERIAL DECAY EVENTS
 # Written by Rylock
@@ -19,10 +21,10 @@ character_event = {
 	trigger = {
 		FROM = {
 			tier = EMPEROR
+			is_primary_holder_title = yes
 			temporary = no
 			is_tribal = no
 			is_nomadic = no
-			is_primary_holder_title = yes
 		}
 		FROMFROM = { always = yes }
 		NOT = { uses_decadence = yes }
@@ -40,7 +42,7 @@ character_event = {
 			if = {
 				limit = {
 					is_alive = yes
-					lower_tier_than = EMPEROR
+					lower_real_tier_than = EMPEROR
 				}
 				emf_remove_decay_mods_effect = yes
 			}
@@ -48,82 +50,92 @@ character_event = {
 	}
 }
 
+# emf_imperial.1851 -- deferred calculation of decay rating change due to primary imperial title transfer
 character_event = {
 	id = emf_imperial.1851
 	
-	hide_window = yes
 	is_triggered_only = yes
+	hide_window = yes
 	
 	trigger = {
-		has_landed_title = FROMFROM
+		primary_title = { title = FROMFROM }
 		NOT = { uses_decadence = yes }
 		is_ironman = no
 		is_nomadic = no
 	}
 	
 	immediate = {
-		# First look for other held imperial titles which have higher decadence, and copy their value over
-		any_demesne_title = {
-			limit = {
-				tier = EMPEROR
-				is_primary_holder_title = no
-				check_variable = { which = "imperial_decay" which = FROMFROM }
-			}
-			FROMFROM = { set_variable = { which = "imperial_decay" which = PREV } }
-		}
 		
-		FROMFROM = {
+		primary_title = {
 			# Skip the increase if title was overthrown
 			if = {
-				limit = { has_title_flag = skip_decay_gain }
-				clr_title_flag = skip_decay_gain
+				limit = { has_title_flag = emf_decay_overthrow }
+				clr_title_flag = emf_decay_overthrow
+				set_variable = { which = "imperial_decay_change" value = -10 }
 				ROOT = { character_event = { id = emf_imperial.1852 } }
 				break = yes
 			}
-			
-			# Then reset the decay value to 0, in case it's negative
-			if = {
-				limit = { NOT = { check_variable = { which = "imperial_decay" value = 0.5 } } }
-				set_variable = { which = "imperial_decay" value = 0 }
-			}
-			
-			# Then increase the variable by 1 (the base minimum)
-			change_variable = { which = "imperial_decay" value = 1 }
-			
+			# The base decay change is 1
+			set_variable = { which = "imperial_decay_change" value = 1 }
 			# Reset dynasty count if this is a new dynasty
 			if = {
-				limit = {
-					ROOT = { NOT = { dynasty = event_target:former_owner } }
-				}
+				limit = { NOT = { ROOT = { dynasty = event_target:former_owner } } }
 				set_variable = { which = "imperial_dynasty_count" value = 0 }
 			}
-			
 			# Increase dynasty count if this is an ongoing dynasty
 			if = {
-				limit = {
-					ROOT = { dynasty = event_target:former_owner }
-				}
+				limit = { ROOT = { dynasty = event_target:former_owner } }
 				change_variable = { which = "imperial_dynasty_count" value = 1 }
 			}
-			
-			# Decay value goes higher for long-running dynasties	
+			# Decay value goes higher for long-running dynasties, curve is pseudo-logarithmic
 			if = {
-				limit = { check_variable = { which = "imperial_dynasty_count" value = 0.5 } }
-				change_variable = { which = "imperial_decay" value = 1 }
+				limit = { check_variable = { which = "imperial_dynasty_count" value = 1 } }
+				change_variable = { which = "imperial_decay_change" value = 1 }
 			}
 			if = {
-				limit = { check_variable = { which = "imperial_dynasty_count" value = 3.5 } }
-				change_variable = { which = "imperial_decay" value = 1 }
+				limit = { check_variable = { which = "imperial_dynasty_count" value = 2 } }
+				change_variable = { which = "imperial_decay_change" value = 0.5 }
 			}
 			if = {
-				limit = { check_variable = { which = "imperial_dynasty_count" value = 6.5 } }
-				change_variable = { which = "imperial_decay" value = 1 }
+				limit = { check_variable = { which = "imperial_dynasty_count" value = 3 } }
+				change_variable = { which = "imperial_decay_change" value = 0.5 }
 			}
 			if = {
-				limit = { check_variable = { which = "imperial_dynasty_count" value = 9.5 } }
-				change_variable = { which = "imperial_decay" value = 1 }
+				limit = { check_variable = { which = "imperial_dynasty_count" value = 4 } }
+				change_variable = { which = "imperial_decay_change" value = 0.25 }
 			}
-			
+			if = {
+				limit = { check_variable = { which = "imperial_dynasty_count" value = 5 } }
+				change_variable = { which = "imperial_decay_change" value = 0.25 }
+			}
+			if = {
+				limit = { check_variable = { which = "imperial_dynasty_count" value = 6 } }
+				change_variable = { which = "imperial_decay_change" value = 0.25 }
+			}
+			if = {
+				limit = { check_variable = { which = "imperial_dynasty_count" value = 7 } }
+				change_variable = { which = "imperial_decay_change" value = 0.25 }
+			}
+			if = {
+				limit = { check_variable = { which = "imperial_dynasty_count" value = 8 } }
+				change_variable = { which = "imperial_decay_change" value = 0.2 }
+			}
+			if = {
+				limit = { check_variable = { which = "imperial_dynasty_count" value = 9 } }
+				change_variable = { which = "imperial_decay_change" value = 0.2 }
+			}
+			if = {
+				limit = { check_variable = { which = "imperial_dynasty_count" value = 10 } }
+				change_variable = { which = "imperial_decay_change" value = 0.2 }
+			}
+			if = {
+				limit = { check_variable = { which = "imperial_dynasty_count" value = 11 } }
+				change_variable = { which = "imperial_decay_change" value = 0.2 }
+			}
+			if = {
+				limit = { check_variable = { which = "imperial_dynasty_count" value = 12 } }
+				change_variable = { which = "imperial_decay_change" value = 0.2 }
+			}
 			# Increase more if this is an usurpation
 			if = {
 				limit = {
@@ -132,59 +144,14 @@ character_event = {
 						has_claim = FROMFROM
 					}
 				}
-				change_variable = { which = "imperial_decay" value = 2 }
+				change_variable = { which = "imperial_decay_change" value = 2 }
 			}
-			
 			# Imperial Administration gets an additional +1
 			if = {
-				limit = {
-					FROMFROM = { has_law = administration_2 }
-				}
-				change_variable = { which = "imperial_decay" value = 1 }
+				limit = { has_law = administration_2 }
+				change_variable = { which = "imperial_decay_change" value = 1 }
 			}
-			
-			# Then determine how much the realm size should change it
-			set_variable = { which = "imperial_realm_size" value = 0 }
-			if = {
-				limit = { ROOT = { has_horde_culture = yes } }
-				change_variable = { which = "imperial_realm_size" value = -2 }
-			}
-			if = {
-				limit = { ROOT = { NOT = { realm_size = 100 } } }
-				change_variable = { which = "imperial_realm_size" value = -1 }
-			}
-			if = {
-				limit = { NOT = { ROOT = { realm_size = 150 } } }
-				change_variable = { which = "imperial_realm_size" value = -1 }
-			}
-			if = {
-				limit = { ROOT = { realm_size = 200 } }
-				change_variable = { which = "imperial_realm_size" value = 1 }
-			}
-			if = {
-				limit = { ROOT = { realm_size = 250 } }
-				change_variable = { which = "imperial_realm_size" value = 1 }
-			}
-			if = {
-				limit = { ROOT = { realm_size = 300 } }
-				change_variable = { which = "imperial_realm_size" value = 1 }
-			}
-			if = {
-				limit = { ROOT = { realm_size = 350 } }
-				change_variable = { which = "imperial_realm_size" value = 1 }
-			}
-			if = {
-				limit = { ROOT = { realm_size = 400 } }
-				change_variable = { which = "imperial_realm_size" value = 1 }
-			}
-			if = {
-				limit = { ROOT = { realm_size = 450 } }
-				change_variable = { which = "imperial_realm_size" value = 1 }
-			}
-			if = {
-				limit = { ROOT = { realm_size = 500 } }
-				change_variable = { which = "imperial_realm_size" value = 1 }
-			}
+			# Then determine how much CA should change it
 			if = {
 				limit = {
 					NOR = {
@@ -193,25 +160,355 @@ character_event = {
 						has_law = crown_authority_4
 					}
 				}
-				change_variable = { which = "imperial_realm_size" value = 3 }
+				change_variable = { which = "imperial_decay_change" value = 3 }
 			}
 			if = {
 				limit = { has_law = crown_authority_2 }
-				change_variable = { which = "imperial_realm_size" value = 2 }
+				change_variable = { which = "imperial_decay_change" value = 2 }
 			}
 			if = {
 				limit = { has_law = crown_authority_3 }
-				change_variable = { which = "imperial_realm_size" value = 1 }
+				change_variable = { which = "imperial_decay_change" value = 1 }
 			}
-			change_variable = { which = "imperial_decay" which = "imperial_realm_size" }
+			# Increase less if we have a horde culture
+			if = {
+				limit = { ROOT = { has_horde_culture = yes } }
+				change_variable = { which = "imperial_decay_change" value = -2 }
+			}
+			# Adjust according to realm size and map
+			if = {
+				limit = { NOT = { has_global_flag = SWMH } }
+				if = {
+					limit = { NOT = { ROOT = { realm_size = 100 } } }
+					change_variable = { which = "imperial_decay_change" value = -1 }
+				}
+				if = {
+					limit = { NOT = { ROOT = { realm_size = 125 } } }
+					change_variable = { which = "imperial_decay_change" value = -0.5 }
+				}
+				if = {
+					limit = { NOT = { ROOT = { realm_size = 150 } } }
+					change_variable = { which = "imperial_decay_change" value = -0.5 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 175 } }
+					change_variable = { which = "imperial_decay_change" value = 0.5 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 200 } }
+					change_variable = { which = "imperial_decay_change" value = 0.5 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 225 } }
+					change_variable = { which = "imperial_decay_change" value = 0.5 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 250 } }
+					change_variable = { which = "imperial_decay_change" value = 0.5 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 275 } }
+					change_variable = { which = "imperial_decay_change" value = 0.5 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 300 } }
+					change_variable = { which = "imperial_decay_change" value = 0.5 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 325 } }
+					change_variable = { which = "imperial_decay_change" value = 0.5 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 350 } }
+					change_variable = { which = "imperial_decay_change" value = 0.5 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 375 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 400 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 425 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 450 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 475 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 500 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 525 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 550 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 575 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 600 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 625 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 650 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+			}
+			# For SWMH, we use a realm size factor of 8/5 vs. vanilla
+			if = {
+				limit = { has_global_flag = SWMH }
+				if = {
+					limit = { NOT = { ROOT = { realm_size = 160 } } }
+					change_variable = { which = "imperial_decay_change" value = -1 }
+				}
+				if = {
+					limit = { NOT = { ROOT = { realm_size = 200 } } }
+					change_variable = { which = "imperial_decay_change" value = -0.5 }
+				}
+				if = {
+					limit = { NOT = { ROOT = { realm_size = 240 } } }
+					change_variable = { which = "imperial_decay_change" value = -0.5 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 280 } }
+					change_variable = { which = "imperial_decay_change" value = 0.5 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 320 } }
+					change_variable = { which = "imperial_decay_change" value = 0.5 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 360 } }
+					change_variable = { which = "imperial_decay_change" value = 0.5 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 400 } }
+					change_variable = { which = "imperial_decay_change" value = 0.5 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 440 } }
+					change_variable = { which = "imperial_decay_change" value = 0.5 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 480 } }
+					change_variable = { which = "imperial_decay_change" value = 0.5 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 520 } }
+					change_variable = { which = "imperial_decay_change" value = 0.5 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 560 } }
+					change_variable = { which = "imperial_decay_change" value = 0.5 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 600 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 640 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 680 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 720 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 760 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 800 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 840 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 880 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 920 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 960 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 1000 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { ROOT = { realm_size = 1040 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+			}
+			# Wrap this up...
+			# If AI, apply a handicap
+			if = {
+				limit = { ROOT = { ai = yes } }
+				multiply_variable = { which = "imperial_decay_change" value = 0.75 }
+			}
+			# Round imperial_decay_change to nearest integer
+			# Since we have a limited range of possible change that could've been induced in this event,
+			# this is actually tractable, though still very annoying, in CK2script (oh my!).
+			# Range from dynastic continuity: [0,4]
+			# Range from usurpation [0,2]
+			# Range from imperial admin [0,1]
+			# Range from crown authority [0,3]
+			# Range from horde culture [-2,0]
+			# Range from realm size [-2,7]
+			# Max. range: [-4,17] --> [1,17] after enforcing minimum gain rule
+			if = {
+				limit = { # Minimum gain rule
+					NOT = { check_variable = { which = "imperial_decay_change" value = 1.5 } }
+				}
+				set_variable = { which = "imperial_decay_change" value = 1 }
+			}
+			if = {
+				limit = {
+					check_variable = { which = "imperial_decay_change" value = 1.5 }
+					NOT = { check_variable = { which = "imperial_decay_change" value = 2.5 } }
+				}
+				set_variable = { which = "imperial_decay_change" value = 2 }
+			}
+			if = {
+				limit = {
+					check_variable = { which = "imperial_decay_change" value = 2.5 }
+					NOT = { check_variable = { which = "imperial_decay_change" value = 3.5 } }
+				}
+				set_variable = { which = "imperial_decay_change" value = 3 }
+			}
+			if = {
+				limit = {
+					check_variable = { which = "imperial_decay_change" value = 3.5 }
+					NOT = { check_variable = { which = "imperial_decay_change" value = 4.5 } }
+				}
+				set_variable = { which = "imperial_decay_change" value = 4 }
+			}
+			if = {
+				limit = {
+					check_variable = { which = "imperial_decay_change" value = 4.5 }
+					NOT = { check_variable = { which = "imperial_decay_change" value = 5.5 } }
+				}
+				set_variable = { which = "imperial_decay_change" value = 5 }
+			}
+			if = {
+				limit = {
+					check_variable = { which = "imperial_decay_change" value = 5.5 }
+					NOT = { check_variable = { which = "imperial_decay_change" value = 6.5 } }
+				}
+				set_variable = { which = "imperial_decay_change" value = 6 }
+			}
+			if = {
+				limit = {
+					check_variable = { which = "imperial_decay_change" value = 6.5 }
+					NOT = { check_variable = { which = "imperial_decay_change" value = 7.5 } }
+				}
+				set_variable = { which = "imperial_decay_change" value = 7 }
+			}
+			if = {
+				limit = {
+					check_variable = { which = "imperial_decay_change" value = 7.5 }
+					NOT = { check_variable = { which = "imperial_decay_change" value = 8.5 } }
+				}
+				set_variable = { which = "imperial_decay_change" value = 8 }
+			}
+			if = {
+				limit = {
+					check_variable = { which = "imperial_decay_change" value = 8.5 }
+					NOT = { check_variable = { which = "imperial_decay_change" value = 9.5 } }
+				}
+				set_variable = { which = "imperial_decay_change" value = 9 }
+			}
+			if = {
+				limit = {
+					check_variable = { which = "imperial_decay_change" value = 9.5 }
+					NOT = { check_variable = { which = "imperial_decay_change" value = 10.5 } }
+				}
+				set_variable = { which = "imperial_decay_change" value = 10 }
+			}
+			if = {
+				limit = {
+					check_variable = { which = "imperial_decay_change" value = 10.5 }
+					NOT = { check_variable = { which = "imperial_decay_change" value = 11.5 } }
+				}
+				set_variable = { which = "imperial_decay_change" value = 11 }
+			}
+			if = {
+				limit = {
+					check_variable = { which = "imperial_decay_change" value = 11.5 }
+					NOT = { check_variable = { which = "imperial_decay_change" value = 12.5 } }
+				}
+				set_variable = { which = "imperial_decay_change" value = 12 }
+			}
+			if = {
+				limit = {
+					check_variable = { which = "imperial_decay_change" value = 12.5 }
+					NOT = { check_variable = { which = "imperial_decay_change" value = 13.5 } }
+				}
+				set_variable = { which = "imperial_decay_change" value = 13 }
+			}
+			if = {
+				limit = {
+					check_variable = { which = "imperial_decay_change" value = 13.5 }
+					NOT = { check_variable = { which = "imperial_decay_change" value = 14.5 } }
+				}
+				set_variable = { which = "imperial_decay_change" value = 14 }
+			}
+			if = {
+				limit = {
+					check_variable = { which = "imperial_decay_change" value = 14.5 }
+					NOT = { check_variable = { which = "imperial_decay_change" value = 15.5 } }
+				}
+				set_variable = { which = "imperial_decay_change" value = 15 }
+			}
+			if = {
+				limit = {
+					check_variable = { which = "imperial_decay_change" value = 15.5 }
+					NOT = { check_variable = { which = "imperial_decay_change" value = 16.5 } }
+				}
+				set_variable = { which = "imperial_decay_change" value = 16 }
+			}
+			if = {
+				limit = {
+					check_variable = { which = "imperial_decay_change" value = 16.5 }
+				}
+				set_variable = { which = "imperial_decay_change" value = 17 }
+			}
 		}
 		
-		# Change the decadence modifier
+		# Commit the change
 		character_event = { id = emf_imperial.1852 }
 	}
 }
 
-# Event for imperial decay change and adding the proper decay modifier
+# emf_imperial.1852 -- Event for actually changing imperial decay rating by title variable `imperial_decay_change`
+# All dynamic (i.e., everything but history effects) changes to imperial decay should use this event -- do not bypass it
 character_event = {
 	id = emf_imperial.1852
 	
@@ -223,10 +520,17 @@ character_event = {
 	}
 	
 	immediate = {
-		# reset the decay value to 0, in case it's negative
-		if = {
-			limit = { primary_title = { NOT = { check_variable = { which = "imperial_decay" value = 0.5 } } } }
-			primary_title = { set_variable = { which = "imperial_decay" value = 0 } }
+		primary_title = {
+			# Clamp imperial_decay to the range [0,100] while changing it by imperial_decay_change
+			change_variable = { which = "imperial_decay" which = "imperial_decay_change" }
+			if = {
+				limit = { NOT = { check_variable = { which = "imperial_decay" value = 0 } } }
+				set_variable = { which = "imperial_decay" value = 0 }
+			}
+			if = {
+				limit = { check_variable = { which = "imperial_decay" value = 100 } }
+				set_variable = { which = "imperial_decay" value = 100 }
+			}
 		}
 		
 		# Remove old decay modifier
@@ -264,11 +568,13 @@ character_event = {
 			break = yes
 		}
 		
+		character_event = { id = emf_imperial.1880 } # Notify (also shows the amount by which ID changed, if any)
+		
 		if = {
 			limit = {
 				primary_title = {
 					check_variable = { which = "imperial_decay" value = 10 }
-					NOT = { check_variable = { which = "imperial_decay" value = 21 } }
+					NOT = { check_variable = { which = "imperial_decay" value = 20 } }
 				}
 			}
 			add_character_modifier = {
@@ -295,8 +601,8 @@ character_event = {
 		if = {
 			limit = {
 				primary_title = {
-					check_variable = { which = "imperial_decay" value = 21 }
-					NOT = { check_variable = { which = "imperial_decay" value = 31 } }
+					check_variable = { which = "imperial_decay" value = 20 }
+					NOT = { check_variable = { which = "imperial_decay" value = 30 } }
 				}
 			}
 			add_character_modifier = {
@@ -323,8 +629,8 @@ character_event = {
 		if = {
 			limit = {
 				primary_title = {
-					check_variable = { which = "imperial_decay" value = 31 }
-					NOT = { check_variable = { which = "imperial_decay" value = 41 } }
+					check_variable = { which = "imperial_decay" value = 30 }
+					NOT = { check_variable = { which = "imperial_decay" value = 40 } }
 				}
 			}
 			add_character_modifier = {
@@ -351,8 +657,8 @@ character_event = {
 		if = {
 			limit = {
 				primary_title = {
-					check_variable = { which = "imperial_decay" value = 41 }
-					NOT = { check_variable = { which = "imperial_decay" value = 51 } }
+					check_variable = { which = "imperial_decay" value = 40 }
+					NOT = { check_variable = { which = "imperial_decay" value = 50 } }
 				}
 			}
 			add_character_modifier = {
@@ -379,8 +685,8 @@ character_event = {
 		if = {
 			limit = {
 				primary_title = {
-					check_variable = { which = "imperial_decay" value = 51 }
-					NOT = { check_variable = { which = "imperial_decay" value = 61 } }
+					check_variable = { which = "imperial_decay" value = 50 }
+					NOT = { check_variable = { which = "imperial_decay" value = 60 } }
 				}
 			}
 			add_character_modifier = {
@@ -407,8 +713,8 @@ character_event = {
 		if = {
 			limit = {
 				primary_title = {
-					check_variable = { which = "imperial_decay" value = 61 }
-					NOT = { check_variable = { which = "imperial_decay" value = 71 } }
+					check_variable = { which = "imperial_decay" value = 60 }
+					NOT = { check_variable = { which = "imperial_decay" value = 70 } }
 				}
 			}
 			add_character_modifier = {
@@ -435,8 +741,8 @@ character_event = {
 		if = {
 			limit = {
 				primary_title = {
-					check_variable = { which = "imperial_decay" value = 71 }
-					NOT = { check_variable = { which = "imperial_decay" value = 81 } }
+					check_variable = { which = "imperial_decay" value = 70 }
+					NOT = { check_variable = { which = "imperial_decay" value = 80 } }
 				}
 			}
 			add_character_modifier = {
@@ -463,7 +769,7 @@ character_event = {
 		if = {
 			limit = {
 				primary_title = {
-					check_variable = { which = "imperial_decay" value = 81 }
+					check_variable = { which = "imperial_decay" value = 80 }
 				}             
 			}
 			add_character_modifier = {
@@ -487,27 +793,6 @@ character_event = {
 				}
 			}
 		}
-		
-		# Notification
-		if = {
-			limit = { ai = no }
-			character_event = { id = emf_imperial.1880 }
-		}
-	}
-}
-
-# Notification display for players
-character_event = {
-	id = emf_imperial.1880
-	desc = EVTDESC_emf_imperial_1852
-	picture = GFX_evt_council
-	
-	is_triggered_only = yes
-	
-	notification = yes
-	
-	option = {
-		name = OK
 	}
 }
 
@@ -1969,7 +2254,7 @@ narrative_event = {
 				trait = strong_basileus
 			}
 			hidden_tooltip = {
-				e_byzantium = { change_variable = { which = "imperial_decay" value = -10 } }
+				e_byzantium = { set_variable = { which = "imperial_decay_change" value = -10 } }
 			}
 		}
 		# Change the decadence modifier
@@ -2005,7 +2290,7 @@ narrative_event = {
 				trait = strong_basileus
 			}
 			hidden_tooltip = {
-				e_byzantium = { change_variable = { which = "imperial_decay" value = -10 } }
+				e_byzantium = { set_variable = { which = "imperial_decay_change" value = -10 } }
 			}
 		}
 		# Change the decadence modifier
@@ -2041,7 +2326,7 @@ narrative_event = {
 				trait = strong_basileus
 			}
 			hidden_tooltip = {
-				e_byzantium = { change_variable = { which = "imperial_decay" value = -10 } }
+				e_byzantium = { set_variable = { which = "imperial_decay_change" value = -10 } }
 			}
 		}
 		# Change the decadence modifier
@@ -2049,3 +2334,198 @@ narrative_event = {
 	}
 }
 
+###########################
+
+# emf_imperial.1880 -- Notification of imperial decay change for ROOT, FROM must also be ROOT
+# Note that this is only for players and that all decay changes should be routed through emf_imperial.1852
+character_event = {
+	id = emf_imperial.1880
+	picture = GFX_evt_council
+	
+	is_triggered_only = yes
+	notification = yes
+	
+	trigger = { ai = no }
+	
+	desc = {
+		text = emf_imperial.1880.desc_decrease
+		trigger = {
+			primary_title = {
+				NOT = { check_variable = { which = "imperial_decay_change" value = 0 } }
+			}
+		}
+	}
+	desc = {
+		text = emf_imperial.1880.desc_increase
+		trigger = {
+			primary_title = {
+				check_variable = { which = "imperial_decay_change" value = 0 }
+				NOT = { is_variable_equal = { which = "imperial_decay_change" value = 0 } }
+			}
+		}
+	}
+	desc = { # Fallback case should there actually have been no change
+		text = emf_imperial.1880.desc_same
+		trigger = {
+			primary_title = {
+				is_variable_equal = { which = "imperial_decay_change" value = 0 }
+			}
+		}
+	}
+	
+	option = { name = OK }
+}
+
+# emf_imperial.1885 -- Acquisition of a secondary empire title (not for nomads)
+character_event = {
+	id = emf_imperial.1885
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	only_independent = yes
+	only_playable = yes
+	
+	trigger = {
+		is_nomadic = no
+		FROM = {
+			tier = EMPEROR
+			is_primary_holder_title = no
+			temporary = no
+		}
+		any_demesne_title = {
+			tier = EMPEROR
+			temporary = no
+			NOT = { title = FROM }
+		}
+	}
+	
+	immediate = {
+		primary_title = {
+			if = {
+				limit = {
+					tier = EMPEROR
+					temporary = no
+					NOT = { title = FROM }
+				}
+				save_event_target_as = emf_current_title
+				break = yes
+			}
+		}
+		random_demesne_title = {
+			limit = {
+				tier = EMPEROR
+				temporary = no
+				NOT = { title = FROM }
+			}
+			save_event_target_as = emf_current_title
+			break = yes
+		}
+	}
+	
+	option = {
+		name = OK
+		log = "INFO: emf_imperial.1885: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) acquired secondary empire title [From.GetBaseName] ([From.GetID]) -- will have to choose between it and [emf_current_title.GetBaseName] ([emf_current_title.GetID])"
+		character_event = { id = emf_imperial.1886 days = 1 } # Force them to choose
+	}
+}
+
+
+character_event = {
+	id = emf_imperial.1886
+	desc = emf_imperial.1886.desc
+	picture = GFX_evt_coronation
+	
+	is_triggered_only = yes
+	
+	trigger = {
+		has_landed_title = event_target:emf_current_title
+		has_landed_title = FROMFROM
+	}
+	
+	option = {
+		name = emf_imperial.1886.opt.keep_current
+		ai_chance = {
+			factor = 10
+			modifier = {
+				factor = 0
+				NOR = {
+					event_target:emf_current_title = { is_de_jure_title = yes }
+					FROMFROM = { is_de_jure_title = no }
+				}
+			}
+		}
+		hidden_tooltip = {
+			if = {
+				limit = { FROMFROM = { is_primary_holder_title = yes } }
+				event_target:emf_current_title = { make_primary_title = yes }
+			}
+			# TODO in 2.6: check the de_facto_liege_title of vassals before using set_defacto_liege,
+			# as this seems to boot the entire council and all minor titles. Only vassals whose liege
+			# is the empire which we're to destroy need this effect.
+			any_vassal = { set_defacto_liege = ROOT }
+		}
+		FROMFROM = {
+			if = {
+				limit = { is_landless_type_title = no }
+				emf_destroy_title_effect = yes
+			}
+			if = {
+				limit = { is_landless_type_title = yes }
+				emf_destroy_title_unsafe_effect = yes
+			}
+		}
+	}
+	
+	option = {
+		name = emf_imperial.1886.opt.assume_new
+		ai_chance = {
+			factor = 10
+			modifier = {
+				factor = 0
+				OR = {
+					event_target:emf_current_title = { is_de_jure_title = yes }
+					FROMFROM = { is_de_jure_title = no }
+				}
+			}
+		}
+		hidden_tooltip = {
+			FROMFROM = { make_primary_title = yes }
+			# TODO in 2.6: check the de_facto_liege_title of vassals before using set_defacto_liege,
+			# as this seems to boot the entire council and all minor titles. Only vassals whose liege
+			# is the empire which we're to destroy need this effect.
+			any_vassal = { set_defacto_liege = ROOT }
+			# When assuming new title, ensure that the new title's ID rating is at least as high
+			# as any held empire titles
+			any_demesne_title = {
+				limit = {
+					tier = EMPEROR
+					NOT = { title = FROMFROM }
+					check_variable = { which = "imperial_decay" which = FROMFROM }
+				}
+				ROOT = { set_character_flag = decay_change_tmp }
+				set_variable = { which = "imperial_decay_change" which = "imperial_decay" }
+				FROMFROM = {
+					set_variable = { which = "imperial_decay_change" which = PREV }
+					subtract_variable = { which = "imperial_decay_change" which = "imperial_decay" }
+				}
+				set_variable = { which = "imperial_decay_change" value = 0 }
+			}
+			if = {
+				limit = { has_character_flag = decay_change_tmp }
+				clr_character_flag = decay_change_tmp
+				character_event = { id = emf_imperial.1852 } # Update modifiers & notify
+			}
+		}
+		event_target:emf_current_title = {
+			if = {
+				limit = { is_landless_type_title = no }
+				emf_destroy_title_effect = yes
+			}
+			if = {
+				limit = { is_landless_type_title = yes }
+				emf_destroy_title_unsafe_effect = yes
+			}
+		}
+	}
+}

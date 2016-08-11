@@ -1,0 +1,2019 @@
+# -*- ck2.events -*-
+
+namespace = emf_magyar
+
+#######################################
+# MAGYAR EVENTS
+# Written by Rylock
+#######################################
+
+### MAGYAR PRE-MIGRATION EVENTS
+
+# Neighboring realms turn against the Magyars
+character_event = {
+	id = emf_magyar.2000
+
+	hide_window = yes
+
+	culture = hungarian
+	religion = tengri_pagan
+	only_playable = yes
+	only_independent = yes
+
+	trigger = {
+		year = 890
+		has_landed_title = k_magyar
+		is_tribal = yes
+		any_independent_ruler = {
+			ai = yes
+			war = no
+			OR = {
+				culture = bulgarian
+				culture = pecheneg
+				realm_levy_diff = { who = ROOT value = 1000 }
+			}
+			any_realm_province = { any_neighbor_province = { owner_under_ROOT = yes } }
+			OR = {
+				NOR = {
+					is_allied_with = ROOT
+					has_non_aggression_pact_with = ROOT
+				}
+				ROOT = { ai = yes }
+			}
+			NOR = {
+				is_rival = ROOT
+				has_truce = ROOT
+				pays_tribute_to = ROOT
+				ROOT = { pays_tribute_to = PREV }
+			}
+		}
+		# We are still at the point where we will remain in Etelkoz
+		OR = {
+			AND = {
+				has_global_flag = SWMH
+				num_of_count_titles_in_realm = 10
+			}
+			AND = {
+				NOT = { has_global_flag = SWMH }
+				num_of_count_titles_in_realm = 8
+			}
+		}
+		# We are not already in 2 or more wars
+		NOT = {
+			any_war = {
+				defender = { character = ROOT }
+				count = 2
+			}
+		}
+		NOT = { has_global_flag = emf_magyar_migration_completed }
+		NOT = { year = 920 }
+	}
+	
+	mean_time_to_happen = {
+		months = 6
+		modifier = {
+			factor = 0.25
+			war = yes
+		}
+		modifier = {
+			factor = 2
+			OR = {
+				culture = bulgarian
+				culture = pecheneg
+			}
+		}
+		modifier = {
+			factor = 2
+			NOT = { culture = bulgarian }
+			NOT = { culture = pecheneg }
+		}
+	}
+	
+	immediate = {
+		random_independent_ruler = {
+			limit = {
+				ai = yes
+				war = no
+				OR = {
+					culture = bulgarian
+					culture = pecheneg
+					realm_levy_diff = { who = ROOT value = 1000 }
+				}
+				any_realm_province = { any_neighbor_province = { owner_under_ROOT = yes } }
+				OR = {
+					NOR = {
+						is_allied_with = ROOT
+						has_non_aggression_pact_with = ROOT
+					}
+					ROOT = { ai = yes }
+				}
+				NOR = {
+					is_rival = ROOT
+					has_truce = ROOT
+					pays_tribute_to = ROOT
+					ROOT = { pays_tribute_to = PREV }
+				}
+			}
+			save_event_target_as = claim_ruler
+			add_rival = ROOT
+			
+			# Break any existing alliances/NAP's (AI only)
+			if = {
+				limit = { is_allied_with = ROOT }
+				break_alliance = ROOT
+			}
+			if = {
+				limit = { has_non_aggression_pact_with = ROOT }
+				reverse_remove_opinion = { modifier = in_non_aggression_pact who = ROOT }
+				remove_opinion = { modifier = in_non_aggression_pact who = ROOT }
+				reverse_opinion = { modifier = broken_non_aggression_pact who = ROOT years = 35 }
+			}
+			
+			# Give them a claim on a neighboring province
+			random_realm_province = {
+				limit = {
+					any_neighbor_province = {
+						owner_under_ROOT = yes
+						county = {
+							NOT = { claimed_by = PREVPREVPREV }
+						}
+					}
+				}
+				random_neighbor_province = {
+					limit = {
+						owner_under_ROOT = yes
+						county = {
+							NOT = { claimed_by = PREVPREVPREV }
+						}
+					}
+					county = {
+						add_claim = PREVPREVPREV
+						save_event_target_as = claim_title
+					}
+				}
+			}
+			
+			# Start the claim war if they have more levies than us
+			if = {
+				limit = {
+					OR = {
+						realm_levy_diff = { who = ROOT value = 2000 }
+						AND = {
+							ROOT = { ai = yes }
+							realm_levy_diff = { who = ROOT value = 1000 }
+						}
+					}
+				}
+				event_target:claim_title = {
+					event_target:claim_ruler = {
+						war = {
+							casus_belli = claim
+							target = ROOT
+							thirdparty_title = PREV
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+# Add the Magyar Divisions building
+character_event = {
+	id = emf_magyar.2001
+
+	hide_window = yes
+
+	culture = hungarian
+	religion = tengri_pagan
+	only_playable = yes
+
+	trigger = {
+		is_tribal = yes
+		any_demesne_title = {
+			tier = BARON
+			holding_type = tribal
+			NOT = { has_building = tb_emf_magyar_1 }
+		}
+		NOT = { has_global_flag = emf_magyar_migration_completed }
+		NOT = { year = 920 }
+	}
+	
+	mean_time_to_happen = {
+		days = 1
+	}
+	
+	immediate = {
+		any_demesne_title = {
+			limit = {
+				tier = BARON
+				holding_type = tribal
+				NOT = { has_building = tb_emf_magyar_1 }
+			}
+			add_building = tb_emf_magyar_1
+		}
+	}
+}
+
+# Magyar tribal ruler unlanded prior to the migration
+character_event = {
+	id = emf_magyar.2003
+
+	hide_window = yes
+	is_triggered_only = yes
+
+	trigger = {
+		culture = hungarian
+		has_game_started = yes
+		is_alive = yes
+		is_dying = no
+		prisoner = no
+		is_nomadic = no
+		NOT = { trait = incapable }
+		NOT = { year = 920 }
+		NOT = { has_global_flag = emf_magyar_migration_completed }
+	}
+	
+	immediate = {
+		set_character_flag = vassal_khan
+		k_magyar = {
+			holder_scope = {
+				ROOT = {
+					move_character = PREV
+					any_spouse = { move_character = PREV }
+					any_child = {
+						limit = {
+							OR = {
+								is_adult = no
+								AND = {
+									is_ruler = no
+									is_councillor = no
+									in_command = no
+								}
+							}
+						}
+						move_character = PREV
+					}
+				}
+			}
+		}
+	}
+}
+
+
+### MAGYAR MIGRATION TO CARPATHIA
+
+# Magyar Migration Event - Start
+character_event = {
+	id = emf_magyar.3000
+
+	hide_window = yes
+	
+	culture = hungarian
+	religion = tengri_pagan
+	only_playable = yes
+	only_independent = yes
+	capable_only = yes
+	prisoner = no
+	min_age = 16
+	
+	trigger = {
+		ai = yes
+		war = no
+		in_revolt = no
+		OR = {
+			is_nomadic = yes
+			AND = {
+				is_tribal = yes
+				has_landed_title = k_magyar
+			}
+		}
+		OR = {
+			AND = {
+				has_global_flag = SWMH
+				NOT = { num_of_count_titles_in_realm = 7 }
+			}
+			AND = {
+				NOT = { has_global_flag = SWMH }
+				NOT = { num_of_count_titles_in_realm = 5 }
+			}
+			year = 895
+		}
+		any_realm_province = { region = emf_region_etelkoz }
+		NOR = {
+			has_global_flag = emf_magyar_migration_started
+			any_realm_title = { de_jure_liege_or_above = k_hungary }
+			AND = {
+				has_global_flag = SWMH
+				num_of_count_titles_in_realm = 10
+			}
+			AND = {
+				NOT = { has_global_flag = SWMH }
+				num_of_count_titles_in_realm = 8
+			}
+		}
+		any_independent_ruler = {
+			in_revolt = no
+			any_realm_title = {
+				tier = COUNT
+				de_jure_liege_or_above = k_hungary
+				is_occupied = no
+				count = 3
+			}
+			any_realm_province = {
+				county = {
+					is_occupied = no
+					is_contested = no
+				}
+				region = emf_region_lower_carpathia
+			}
+			NOR = {
+				reverse_has_truce = ROOT
+				is_allied_with = ROOT
+				has_non_aggression_pact_with = ROOT
+				pays_tribute_to = ROOT
+			}
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 6
+		modifier = {
+			factor = 0.5
+			year = 900
+		}
+		modifier = {
+			factor = 0.1
+			year = 905
+		}
+		modifier = {
+			factor = 0.1
+			has_global_flag = SWMH
+			NOT = { num_of_count_titles_in_realm = 7 }
+		}
+		modifier = {
+			factor = 0.01
+			has_global_flag = SWMH
+			NOT = { num_of_count_titles_in_realm = 5 }
+		}
+		modifier = {
+			factor = 0.1
+			NOT = { has_global_flag = SWMH }
+			NOT = { num_of_count_titles_in_realm = 5 }
+		}
+		modifier = {
+			factor = 0.01
+			NOT = { has_global_flag = SWMH }
+			NOT = { num_of_count_titles_in_realm = 3 }
+		}
+	}
+	
+	immediate = {
+		set_global_flag = emf_magyar_migration_started
+		disband_event_forces = start_troops
+		if = {
+			limit = {
+				k_hungary = { NOT = { has_title_flag = migration_troops_received } }
+			}
+			capital_scope = {
+				ROOT = {
+					spawn_unit = {
+						province = PREV
+						owner = THIS
+						troops = {
+							horse_archers = { 1350 1350 }
+							light_cavalry = { 800 800 }
+							light_infantry = { 270 270 }
+							knights = { 130 130 }
+						}
+						attrition = 0.25
+						reinforces = yes
+					}
+					spawn_unit = {
+						province = PREV
+						owner = THIS
+						troops = {
+							horse_archers = { 1350 1350 }
+							light_cavalry = { 800 800 }
+							light_infantry = { 270 270 }
+							knights = { 130 130 }
+						}
+						attrition = 0.25
+						reinforces = yes
+						earmark = magyar_migration_troops
+					}
+					spawn_unit = {
+						province = PREV
+						owner = THIS
+						troops = {
+							horse_archers = { 1350 1350 }
+							light_cavalry = { 800 800 }
+							light_infantry = { 270 270 }
+							knights = { 130 130 }
+						}
+						attrition = 0.25
+						earmark = magyar_migration_troops
+					}
+					spawn_unit = {
+						province = PREV
+						owner = THIS
+						troops = {
+							horse_archers = { 1350 1350 }
+							light_cavalry = { 800 800 }
+							light_infantry = { 270 270 }
+							knights = { 130 130 }
+						}
+						attrition = 0.25
+						earmark = magyar_migration_troops
+					}
+					if = {
+						limit = { has_global_flag = SWMH }
+						spawn_unit = {
+							province = PREV
+							owner = THIS
+							troops = {
+								horse_archers = { 1350 1350 }
+								light_cavalry = { 800 800 }
+								light_infantry = { 270 270 }
+								knights = { 130 130 }
+							}
+							attrition = 0.25
+							earmark = magyar_migration_troops
+						}
+						spawn_unit = {
+							province = PREV
+							owner = THIS
+							troops = {
+								horse_archers = { 1350 1350 }
+								light_cavalry = { 800 800 }
+								light_infantry = { 270 270 }
+								knights = { 130 130 }
+							}
+							attrition = 0.25
+							earmark = magyar_migration_troops
+						}
+					}
+				}
+			}
+			k_hungary = { set_title_flag = migration_troops_received }
+		}
+		
+		# Pick largest valid target in Hungary
+		random_independent_ruler = {
+			limit = {
+				in_revolt = no
+				any_realm_title = {
+					tier = COUNT
+					de_jure_liege_or_above = k_hungary
+					is_occupied = no
+					count = 7
+				}
+				any_realm_province = {
+					county = {
+						is_occupied = no
+						is_contested = no
+					}
+					region = emf_region_lower_carpathia
+				}
+				NOR = {
+					reverse_has_truce = ROOT
+					is_allied_with = ROOT
+					has_non_aggression_pact_with = ROOT
+					pays_tribute_to = ROOT
+				}
+			}
+			character_event = { id = emf_magyar.3001 }
+			break = yes
+		}
+		random_independent_ruler = {
+			limit = {
+				in_revolt = no
+				any_realm_title = {
+					tier = COUNT
+					de_jure_liege_or_above = k_hungary
+					is_occupied = no
+					count = 5
+				}
+				any_realm_province = {
+					county = { is_occupied = no }
+					region = emf_region_lower_carpathia
+				}
+				NOR = {
+					reverse_has_truce = ROOT
+					is_allied_with = ROOT
+					has_non_aggression_pact_with = ROOT
+					pays_tribute_to = ROOT
+				}
+			}
+			character_event = { id = emf_magyar.3001 }
+			break = yes
+		}
+		random_independent_ruler = {
+			limit = {
+				in_revolt = no
+				any_realm_title = {
+					tier = COUNT
+					de_jure_liege_or_above = k_hungary
+					is_occupied = no
+					count = 3
+				}
+				any_realm_province = {
+					county = { is_occupied = no }
+					region = emf_region_lower_carpathia
+				}
+				NOR = {
+					reverse_has_truce = ROOT
+					is_allied_with = ROOT
+					has_non_aggression_pact_with = ROOT
+					pays_tribute_to = ROOT
+				}
+			}
+			character_event = { id = emf_magyar.3001 }
+		}
+	}
+}
+
+# Target realm must decide whether to oppose the migration
+character_event = {
+	id = emf_magyar.3001
+	desc = EVTDESC_emf_magyar_3001
+	picture = GFX_evt_magyars
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_magyar_3001 # Let them be
+		trigger = {
+			OR = {
+				NOT = { capital_scope = { kingdom = { title = k_hungary } } }
+				ai = no
+			}
+		}
+		k_hungary = {
+			FROM = {
+				gain_settlements_under_title = {
+					title = PREV
+					enemy = ROOT
+					is_crusade = yes
+					type = invasion
+				}
+			}
+		}
+		hidden_tooltip = {
+			FROM = {
+				character_event = { id = emf_magyar.3002 } # Begin migration
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_magyar_3001 # Fight them!
+		trigger = {
+			OR = {
+				capital_scope = { kingdom = { title = k_hungary } }
+				ai = no
+			}
+		}
+		reverse_war = {
+			casus_belli = emf_magyar_invasion
+			target = FROM
+			thirdparty_title = k_hungary
+			infamy = 0
+		}
+	}
+}
+
+# Migration takes place
+# NOTE: this is fired either from the event (if the target agrees to allow the migration to happen peacefully)
+# or from the on_success condition in the emf_magyar_invasion cb
+character_event = {
+	id = emf_magyar.3002
+	desc = EVTDESC_emf_magyar_3002
+	picture = GFX_evt_magyars
+	
+	is_triggered_only = yes
+	
+	immediate = {
+		set_global_flag = emf_magyar_migration_completed
+		wealth = 250
+		prestige = 250
+		
+		# Remove tributary statuses
+		if = {
+			limit = { is_tributary = yes }
+			suzerain = { remove_tributary = ROOT }
+		}
+		any_playable_ruler = {
+			limit = { pays_tribute_to = ROOT }
+			ROOT = { remove_tributary = PREV }
+		}
+		
+		# Hungarian provinces no longer in the realm lose Hungarian culture
+		any_province = {
+			limit = {
+				culture = hungarian
+				NOT = { kingdom = { title = k_hungary } }
+				owner = {
+					NOT = { culture = hungarian }
+					owner_under_ROOT = no
+				}
+			}
+			province_event = { id = emf_magyar.3006 days = 1 }
+		}
+		
+		# Inform players
+		any_playable_ruler = {
+			limit = {
+				NOT = { character = ROOT }
+				is_within_diplo_range = ROOT
+			}
+			narrative_event = { id = emf_magyar.3005 }
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_magyar_3002
+		trigger = { is_nomadic = yes }
+		custom_tooltip = { text = WILL_MIGRATE_TO_HUNGARY }
+		
+		hidden_tooltip = {
+			clan_title = { save_event_target_as = liege_clan }
+			# Deal with khazar vassals (SWMH only)
+			if = {
+				limit = { has_global_flag = SWMH }
+				any_realm_lord = {
+					limit = {
+						ai = yes
+						is_playable = yes
+						culture = khazar
+					}
+					opinion = { who = ROOT modifier = opinion_support_migration years = 25 }
+					# Destroy any titles of Duke+
+					any_demesne_title = {
+						limit = { higher_tier_than = COUNT }
+						unsafe_destroy_landed_title = THIS
+					}
+					set_defacto_liege = ROOT
+					# Move their courtiers to the liege's court
+					any_courtier = {
+						limit = {
+							is_ruler = no
+							OR = {
+								is_close_relative = PREV
+								dynasty = PREV
+								martial = 10
+							}
+						}
+						move_character = ROOT
+					}
+					# Gain all their remaining titles
+					any_demesne_title = { grant_title = ROOT }
+					# Move them to the liege's court
+					move_character = ROOT
+				}
+			}
+			
+			# All non-Hungarian or player vassals in the realm go free
+			any_realm_lord = {
+				limit = {
+					is_playable = yes
+					OR = {
+						NOT = { culture = hungarian }
+						ai = no
+					}
+				}
+				set_defacto_liege = THIS
+			}
+			
+			# Switch over to Tribal government
+			any_vassal = {
+				limit = { is_nomadic = yes }
+				set_government_type = tribal_government
+				set_defacto_liege = ROOT
+			}
+			set_government_type = tribal_government
+			
+			# Destroy any duchies
+			any_demesne_title = {
+				limit = {
+					tier = DUKE
+					is_titular = no
+				}
+				destroy_landed_title = THIS
+			}
+			
+			# Deal with hungarian vassals in the realm
+			any_playable_ruler = {
+				limit = {
+					same_realm = ROOT
+					culture = hungarian
+				}
+				opinion = { who = ROOT modifier = opinion_support_migration years = 25 }
+				# Destroy any titles of Duke+
+				any_demesne_title = {
+					limit = { higher_tier_than = COUNT }
+					unsafe_destroy_landed_title = THIS
+				}
+				set_defacto_liege = ROOT
+				# Move their courtiers to the liege's court
+				any_courtier = {
+					limit = {
+						is_ruler = no
+						OR = {
+							is_close_relative = PREV
+							dynasty = PREV
+							martial = 10
+						}
+					}
+					move_character = ROOT
+				}
+				# Mark them so they prompt to get land later
+				set_character_flag = vassal_khan
+				# Gain all their remaining titles
+				any_demesne_title = { grant_title = ROOT }
+				# Move them to the liege's court
+				move_character = ROOT
+			}
+			
+			# Hungarian and Khazar provinces in the Etelkoz are lost
+			any_realm_province = {
+				limit = {
+					kingdom = {
+						NOT = { title = k_hungary }
+					}
+				}
+				# Build a tribal holding if it's empty
+				if = {
+					limit = { NOT = { num_of_settlements  = 1 } }
+					build_holding = { type = tribal }
+				}
+				# Mark any existing settlements so they don't get destroyed
+				any_province_holding = { set_title_flag = do_not_destroy }
+				# Find a neighboring province of a different culture, if one is available
+				if = {
+					limit = { NOT = { culture = hungarian } }
+					save_event_target_as = neighbor_province
+				}
+				if = {
+					limit = { NOT = { event_target:neighbor_province = { always = yes } } }
+					random_neighbor_province = {
+						limit = { NOT = { culture = hungarian } }
+						save_event_target_as = neighbor_province
+					}
+				}
+				if = {
+					limit = { NOT = { event_target:neighbor_province = { always = yes } } }
+					ROOT = { save_event_target_as = neighbor_province }
+				}
+				# Now create a peasant leader of the new culture/religion
+				county = {
+					create_character = {
+						random_traits = yes
+						dynasty = RANDOM
+						religion = event_target:neighbor_province
+						culture = event_target:neighbor_province
+						female = no
+						age = 25
+						trait = peasant_leader
+					}
+					new_character = { save_event_target_as = new_province_owner }
+					grant_title = event_target:new_province_owner
+					any_direct_de_jure_vassal_title = {
+						limit = { holder = ROOT }
+						grant_title = event_target:new_province_owner
+					}
+					event_target:new_province_owner = {
+						set_government_type = tribal_government
+						set_defacto_liege = THIS
+					}
+				}
+				# Then remove any new tribal holdings which have been built via the process
+				any_province_holding = {
+					limit = { NOT = { has_title_flag = do_not_destroy } }
+					destroy_settlement = THIS
+				}
+				any_province_holding = {
+					limit = { has_title_flag = do_not_destroy }
+					clr_title_flag = do_not_destroy
+				}
+				# Then apply culture/religion change
+				culture = event_target:neighbor_province
+				religion = event_target:neighbor_province
+			}
+			
+			# Refill levies of newly-acquired provinces
+			character_event = { id = emf_crusades.1 days = 3 }
+			any_demesne_title = {
+				limit = { tier = BARON }
+				set_title_flag = refill_levy
+			}
+			
+		}
+	}
+	option = {
+		name = EVTOPTA_emf_magyar_3002
+		trigger = { is_tribal = yes }
+		custom_tooltip = { text = WILL_MIGRATE_TO_HUNGARY }
+		hidden_tooltip = {
+			# Deal with khazar vassals (SWMH only)
+			if = {
+				limit = { has_global_flag = SWMH }
+				any_realm_lord = {
+					limit = {
+						ai = yes
+						is_playable = yes
+						culture = khazar
+					}
+					opinion = { who = ROOT modifier = opinion_support_migration years = 25 }
+					# Destroy any titles of Duke+
+					any_demesne_title = {
+						limit = { higher_tier_than = COUNT }
+						unsafe_destroy_landed_title = THIS
+					}
+					set_defacto_liege = ROOT
+					# Move their courtiers to the liege's court
+					any_courtier = {
+						limit = {
+							is_ruler = no
+							OR = {
+								is_close_relative = PREV
+								dynasty = PREV
+								martial = 10
+							}
+						}
+						move_character = ROOT
+					}
+					# Gain all their remaining titles
+					any_demesne_title = { grant_title = ROOT }
+					# Move them to the liege's court
+					move_character = ROOT
+				}
+			}
+			
+			# All non-Hungarian or player vassals in the realm go free
+			any_realm_lord = {
+				limit = {
+					is_playable = yes
+					OR = {
+						NOT = { culture = hungarian }
+						ai = no
+					}
+				}
+				set_defacto_liege = THIS
+			}
+			
+			# Destroy any duchies
+			any_demesne_title = {
+				limit = {
+					tier = DUKE
+					is_titular = no
+				}
+				destroy_landed_title = THIS
+			}
+			
+			# Deal with hungarian vassals in the realm
+			any_playable_ruler = {
+				limit = {
+					same_realm = ROOT
+					culture = hungarian
+				}
+				opinion = { who = ROOT modifier = opinion_support_migration years = 25 }
+				# Destroy any titles of Duke+
+				any_demesne_title = {
+					limit = { higher_tier_than = COUNT }
+					unsafe_destroy_landed_title = THIS
+				}
+				set_defacto_liege = ROOT
+				# Move their courtiers to the liege's court
+				any_courtier = {
+					limit = {
+						is_ruler = no
+						OR = {
+							is_close_relative = PREV
+							dynasty = PREV
+							martial = 10
+						}
+					}
+					move_character = ROOT
+				}
+				# Mark them so they prompt to get land later
+				set_character_flag = vassal_khan
+				# Gain all their remaining titles
+				any_demesne_title = { grant_title = ROOT }
+				# Move them to the liege's court
+				move_character = ROOT
+			}
+			
+			# Hungarian and Khazar provinces in the Etelkoz are lost
+			any_realm_province = {
+				limit = {
+					kingdom = {
+						NOT = { title = k_hungary }
+					}
+				}
+				# Build a tribal holding if it's empty
+				if = {
+					limit = { NOT = { num_of_settlements  = 1 } }
+					build_holding = { type = tribal }
+				}
+				# Mark any existing settlements so they don't get destroyed
+				any_province_holding = { set_title_flag = do_not_destroy }
+				# Find a neighboring province of a different culture, if one is available
+				if = {
+					limit = { NOT = { culture = hungarian } }
+					save_event_target_as = neighbor_province
+				}
+				if = {
+					limit = { NOT = { event_target:neighbor_province = { always = yes } } }
+					random_neighbor_province = {
+						limit = { NOT = { culture = hungarian } }
+						save_event_target_as = neighbor_province
+					}
+				}
+				if = {
+					limit = { NOT = { event_target:neighbor_province = { always = yes } } }
+					ROOT = { save_event_target_as = neighbor_province }
+				}
+				# Now create a peasant leader of the new culture/religion
+				county = {
+					create_character = {
+						random_traits = yes
+						dynasty = RANDOM
+						religion = event_target:neighbor_province
+						culture = event_target:neighbor_province
+						female = no
+						age = 25
+						trait = peasant_leader
+					}
+					new_character = { save_event_target_as = new_province_owner }
+					grant_title = event_target:new_province_owner
+					any_direct_de_jure_vassal_title = {
+						limit = { holder = ROOT }
+						grant_title = event_target:new_province_owner
+					}
+					event_target:new_province_owner = {
+						set_government_type = tribal_government
+						set_defacto_liege = THIS
+					}
+				}
+				# Then remove any new tribal holdings which have been built via the process
+				any_province_holding = {
+					limit = { NOT = { has_title_flag = do_not_destroy } }
+					destroy_settlement = THIS
+				}
+				any_province_holding = {
+					limit = { has_title_flag = do_not_destroy }
+					clr_title_flag = do_not_destroy
+				}
+				# Then apply culture/religion change
+				culture = event_target:neighbor_province
+				religion = event_target:neighbor_province
+			}
+			
+			# Refill levies of newly-acquired provinces
+			character_event = { id = emf_crusades.1 days = 1 }
+			any_demesne_title = {
+				limit = { tier = BARON }
+				set_title_flag = refill_levy
+			}
+		}
+	}
+}
+
+# Notice to the rest of the world that the migration has occurred
+narrative_event = {
+	id = emf_magyar.3005
+	title = EVTNAME_emf_magyar_3005
+	desc = EVTDESC_emf_magyar_3005
+	picture = GFX_evt_magyars
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = I_SEE
+	}
+}
+
+# Hungarian provinces will join the migration
+province_event = {
+	id = emf_magyar.3006
+	desc = EVTDESC_emf_magyar_3006
+	picture = GFX_evt_magyars
+
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_magyar_3006
+		owner = {
+			reverse_culture = ROOT
+			reverse_religion = ROOT
+		}
+	}
+}
+
+
+### POST-MIGRATION EVENTS
+
+# Unlanded Magyar noble passes on vassal_khan flag
+character_event = {
+	id = emf_magyar.3010
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		has_character_flag = vassal_khan
+		NOT = { num_of_count_titles = 1 }
+	}
+	
+	immediate = {
+		if = {
+			limit = {
+				is_ruler = yes
+				is_nomadic = yes
+			}
+			current_heir = {
+				if = {
+					limit = { NOT = { is_liege_of = ROOT } }
+					set_character_flag = vassal_khan
+				}
+			}
+			break = yes
+		}
+		random_child = {
+			limit = {
+				is_ruler = no
+				is_female = no
+				dynasty = ROOT
+				same_realm = ROOT
+				NOT = {
+					any_sibling = {
+						is_female = no
+						dynasty = ROOT
+						is_older_than = PREV
+					}
+				}
+			}
+			set_character_flag = vassal_khan
+			break = yes
+		}
+		random_dynasty_member = {
+			limit = {
+				is_ruler = no
+				is_female = no
+				same_realm = ROOT
+				NOT = {
+					any_dynasty_member = {
+						is_ruler = no
+						is_female = no
+						is_older_than = PREV
+					}
+				}
+			}
+			set_character_flag = vassal_khan
+		}
+	}
+}
+
+# Unlanded Magyar noble is imprisoned by liege
+character_event = {
+	id = emf_magyar.3011
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		has_character_flag = vassal_khan
+		FROM = { is_liege_of = ROOT }
+	}
+
+	immediate = {
+		clr_character_flag = vassal_khan
+	}
+}
+
+# Unlanded Magyar noble requests land from their liege
+character_event = {
+	id = emf_magyar.3012
+	
+	hide_window = yes
+	
+	has_character_flag = vassal_khan
+	min_age = 16
+	capable_only = yes
+	prisoner = no
+	
+	trigger = {
+		NOT = { num_of_count_titles = 1 }
+		liege = {
+			war = no
+			culture = ROOT
+			religion = ROOT
+			num_of_count_titles = 4
+			any_demesne_title = {
+				tier = COUNT
+				can_be_given_away = yes
+				NOT = { title = c_pest }
+				NOT = { location = { is_capital = yes } }
+				location = { has_empty_holding = yes }
+			}
+			NOT = { has_character_flag = vassal_khan_request }
+		}
+		has_global_flag = emf_magyar_migration_completed
+	}
+	
+	mean_time_to_happen = {
+		months = 6
+		modifier = {
+			factor = 0.1
+			liege = { ai = yes }
+		}
+		modifier = {
+			factor = 0.5
+			trait = ambitious
+		}
+		modifier = {
+			factor = 0.5
+			trait = proud
+		}
+		modifier = {
+			factor = 2
+			trait = content
+		}
+		modifier = {
+			factor = 2
+			trait = humble
+		}		
+	}
+	
+	immediate = {
+		liege = {
+			set_character_flag = vassal_khan_request
+			random_demesne_title = {
+				limit = {
+					tier = COUNT
+					can_be_given_away = yes
+					NOT = { title = c_pest }
+					NOT = { location = { is_capital = yes } }
+					location = { has_empty_holding = yes }
+				}
+				save_event_target_as = requested_title
+			}
+			letter_event = { id = emf_magyar.3013 }
+		}
+	}
+}
+
+# Liege considers whether to grant the request
+letter_event = {
+	id = emf_magyar.3013
+	desc = EVTDESC_emf_magyar_3013
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_magyar_3013 # Agree
+		clr_character_flag = vassal_khan_request
+		event_target:requested_title = {
+			grant_title = FROM
+			any_direct_de_jure_vassal_title = {
+				limit = { holder = ROOT }
+				grant_title = FROM
+			}
+		}
+		FROM = {
+			opinion = { who = ROOT modifier = opinion_grateful multiplier = 2 years = 10 }
+			hidden_tooltip = {
+				if = {
+					limit = { is_nomadic = no }
+					any_spouse = {
+						limit = { is_ruler = no }
+						move_character = PREV
+					}
+					any_child = {
+						limit = {
+							is_adult = yes
+							is_ruler = no
+						}
+						move_character = PREV
+					}
+				}
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_magyar_3013 # Refuse
+		trigger = { ai = no }
+		clr_character_flag = vassal_khan_request
+		prestige = -100
+		add_rival = FROM
+		primary_title = { add_pressed_claim = FROM }
+		FROM = { clr_character_flag = vassal_khan }
+	}
+}
+
+# Avar province converts to Hungarian
+province_event = {
+	id = emf_magyar.3014
+	desc = EVTDESC_emf_magyar_3014
+	picture = GFX_evt_magyars2
+	
+	trigger = {
+		culture = avar
+		county = { is_occupied = no }
+		owner = {
+			culture = hungarian
+			top_liege = { culture = PREV }
+		}
+		has_global_flag = emf_magyar_migration_completed
+		NOT = { has_province_flag = hungarian_conversion }
+	}
+	
+	mean_time_to_happen = {
+		years = 10
+		modifier = {
+			factor = 0.1
+			is_capital = yes
+			owner = { independent = yes }
+		}
+		modifier = {
+			factor = 2
+			is_capital = no
+		}
+		modifier = {
+			factor = 0.5
+			any_neighbor_province = { culture = hungarian }
+		}
+		modifier = {
+			factor = 0.5
+			has_global_flag = emf_conquest_hungary_completed
+		}
+	}
+	
+	option = {
+		name = EXCELLENT
+		set_province_flag = hungarian_conversion
+		culture = hungarian
+		owner = {
+			if = {
+				limit = { culture = avar }
+				culture = hungarian
+			}
+			hidden_tooltip = {
+				any_courtier = {
+					limit = {
+						is_ruler = no
+						culture = avar
+					}
+					culture = hungarian
+				}
+			}
+		}
+		county = {
+			any_direct_de_jure_vassal_title = {
+				limit = { owner = { culture = avar } }
+				owner = {
+					culture = hungarian
+					hidden_tooltip = {
+						any_courtier = {
+							limit = {
+								is_ruler = no
+								culture = avar
+							}
+							culture = hungarian
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+# Magyar ruler raises a force of raiders
+character_event = {
+	id = emf_magyar.3016
+	
+	hide_window = yes
+	
+	culture = hungarian
+	religion = tengri_pagan
+	only_playable = yes
+	capable_only = yes
+	only_men = yes
+	prisoner = no
+	min_age = 16
+	
+	trigger = {
+		ai = yes
+		martial = 10
+		is_tribal = yes
+		war = no
+		liege = { war = no }
+		capital_scope = {
+			kingdom = { title = k_hungary }
+		}
+		top_liege = { culture = ROOT }
+		has_global_flag = emf_magyar_migration_completed
+		OR = {
+			NOT = { has_character_flag = tribal_organize_raid_troops }
+			had_character_flag = { flag = tribal_organize_raid_troops days = 3650 }
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 120
+		modifier = {
+			factor = 2
+			tier = COUNT
+		}
+		modifier = {
+			factor = 0.8
+			martial = 11
+		}
+		modifier = {
+			factor = 0.75
+			martial = 12
+		}
+		modifier = {
+			factor = 0.75
+			martial = 13
+		}
+		modifier = {
+			factor = 0.8
+			martial = 14
+		}
+		modifier = {
+			factor = 0.9
+			martial = 15
+		}
+		modifier = {
+			factor = 0.9
+			martial = 16
+		}
+		modifier = {
+			factor = 0.9
+			martial = 17
+		}
+		modifier = {
+			factor = 0.95
+			martial = 18
+		}
+		modifier = {
+			factor = 0.95
+			martial = 19
+		}
+		modifier = {
+			factor = 0.95
+			martial = 20
+		}
+		modifier = {
+			factor = 0.95
+			martial = 21
+		}
+		modifier = {
+			factor = 0.95
+			martial = 22
+		}
+		modifier = {
+			factor = 0.95
+			martial = 23
+		}
+		modifier = {
+			factor = 0.95
+			martial = 24
+		}
+		modifier = {
+			factor = 0.95
+			martial = 25
+		}
+		modifier = {
+			factor = 0.965
+			martial = 26
+		}
+		modifier = {
+			factor = 0.965
+			martial = 27
+		}
+		modifier = {
+			factor = 0.965
+			martial = 28
+		}
+		modifier = {
+			factor = 0.965
+			martial = 29
+		}
+		modifier = {
+			factor = 0.965
+			martial = 30
+		}
+	}
+	
+	immediate = {
+		capital_scope = {
+			ROOT = {
+				spawn_unit = {
+					province = PREV
+					home = PREV
+					owner = THIS
+					match_character = THIS
+					match_mult = 0.025
+					match_min = 100
+					match_max = 3000
+					attrition = 1.0
+					cannot_inherit = yes
+					earmark = tribal_organize_raid
+					is_looter = yes
+					can_toggle_looting = no
+				}
+				spawn_unit = {
+					province = PREV
+					home = PREV
+					owner = THIS
+					match_character = THIS
+					match_mult = 0.025
+					match_min = 100
+					match_max = 3000
+					attrition = 1.0
+					cannot_inherit = yes
+					earmark = tribal_organize_raid
+					is_looter = yes
+					can_toggle_looting = no
+				}
+				spawn_unit = {
+					province = PREV
+					home = PREV
+					owner = THIS
+					match_character = THIS
+					match_mult = 0.025
+					match_min = 100
+					match_max = 3000
+					attrition = 1.0
+					cannot_inherit = yes
+					earmark = tribal_organize_raid
+					is_looter = yes
+					can_toggle_looting = no
+				}
+			}
+		}
+		clr_character_flag = tribal_organize_raid_troops
+		set_character_flag = tribal_organize_raid_troops
+		character_event = { id = 20223 days = 30 }
+	}
+}
+
+# Event to prompt the Magyars to spread across Hungary
+character_event = {
+	id = emf_magyar.3017
+	
+	hide_window = yes
+	
+	culture = hungarian
+	religion = tengri_pagan
+	only_playable = yes
+	only_independent = yes
+	capable_only = yes
+	prisoner = no
+	min_age = 16
+	
+	trigger = {
+		ai = yes
+		war = no
+		wealth = 0
+		capital_scope = {
+			kingdom = { title = k_hungary }
+		}
+		is_tribal = yes
+		has_global_flag = emf_magyar_migration_completed
+		NOT = { has_global_flag = emf_conquest_hungary_completed }
+		any_independent_ruler = {
+			in_revolt = no
+			reverse_realm_levy_diff = { who = ROOT value = 3000 }
+			any_realm_province = {
+				region = emf_region_carpathia
+				any_neighbor_province = { owner_under_ROOT = yes }
+			}
+			OR = {
+				NOR = {
+					is_allied_with = ROOT
+					has_non_aggression_pact_with = ROOT
+				}
+				ai = yes
+			}
+			NOR = {
+				reverse_has_truce = ROOT
+				pays_tribute_to = ROOT
+				ROOT = { pays_tribute_to = PREV }
+			}
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 60
+		modifier = {
+			factor = 0.5
+			trait = ambitious
+		}
+		modifier = {
+			factor = 2
+			trait = humble
+		}
+		modifier = {
+			factor = 0.5
+			year = 950
+		}
+		modifier = {
+			factor = 0.5
+			year = 1000
+		}
+	}
+	
+	immediate = {
+		set_character_flag = received_event
+		random_independent_ruler = {
+			limit = {
+				in_revolt = no
+				reverse_realm_levy_diff = { who = ROOT value = 3000 }
+				any_realm_province = {
+					region = emf_region_carpathia
+					any_neighbor_province = { owner_under_ROOT = yes }
+				}
+				OR = {
+					NOR = {
+						is_allied_with = ROOT
+						has_non_aggression_pact_with = ROOT
+					}
+					ai = yes
+				}
+				NOR = {
+					reverse_has_truce = ROOT
+					pays_tribute_to = ROOT
+					ROOT = { pays_tribute_to = PREV }
+				}
+			}
+			if = {
+				limit = { is_allied_with = ROOT }
+				ROOT = { break_alliance = PREV }
+			}
+			if = {
+				limit = { has_non_aggression_pact_with = ROOT }
+				reverse_remove_opinion = { modifier = in_non_aggression_pact who = ROOT }
+				opinion = { modifier = broken_non_aggression_pact who = ROOT years = 3 }
+			}
+			random_realm_title = {
+				limit = {
+					tier = COUNT
+					location = {
+						region = emf_region_carpathia
+						any_neighbor_province = { owner_under_ROOT = yes }
+					}
+				}
+				ROOT = {
+					war = {
+						casus_belli = emf_magyar_conquest_hungary
+						target = PREVPREV
+						thirdparty_title = PREV
+						infamy = 0
+					}
+				}
+			}
+		}
+	}
+}
+
+# AI Magyar ruler creates a new clan/vassal
+character_event = {
+	id = emf_magyar.3018
+	
+	hide_window = yes
+	
+	culture = hungarian
+	only_playable = yes
+	only_independent = yes
+	capable_only = yes
+	prisoner = no
+	min_age = 16
+	
+	trigger = {
+		ai = yes
+		war = no
+		is_tribal = yes
+		capital_scope = {
+			kingdom = { title = k_hungary }
+		}
+		any_demesne_title = {
+			tier = COUNT
+			count = 5
+		}
+		any_demesne_title = {
+			tier = COUNT
+			can_be_given_away = yes
+			NOT = { title = c_pest }
+			NOT = { location = { is_capital = yes } }
+		}
+		any_courtier = {
+			is_ruler = no
+			is_adult = yes
+			is_female = no
+			is_ill = no
+			prisoner = no
+			fertility = 0.33
+			emf_can_inherit_trigger = yes
+			opinion = { who = ROOT value = 20 }
+			calc_true_if = {
+				amount = 2
+				martial = 12
+				martial = 16
+				diplomacy = 12
+				stewardship = 12
+				trait = strong
+				is_smart_trigger = yes
+			}
+			OR = {
+				dynasty = none
+				ROOT = { NOT = { any_vassal = { dynasty = PREVPREV } } }
+			}
+			NOR = {
+				age = 40
+				dynasty = ROOT
+				trait = in_hiding
+				trait = weak
+				trait = inbred
+				trait = incapable
+				trait = maimed
+				trait = lunatic
+				trait = possessed
+				trait = imbecile
+			}
+		}
+		NOT = {
+			any_courtier = { has_character_flag = vassal_khan }
+		}
+		has_global_flag = emf_magyar_migration_completed
+	}
+	
+	mean_time_to_happen = {
+		days = 0
+	}
+	
+	immediate = {
+		random_courtier = {
+			limit = {
+				is_ruler = no
+				is_adult = yes
+				is_female = no
+				is_ill = no
+				prisoner = no
+				fertility = 0.33
+				emf_can_inherit_trigger = yes
+				opinion = { who = ROOT value = 20 }
+				calc_true_if = {
+					amount = 2
+					martial = 12
+					martial = 16
+					diplomacy = 12
+					stewardship = 12
+					trait = strong
+					is_smart_trigger = yes
+				}
+				OR = {
+					dynasty = none
+					ROOT = { NOT = { any_vassal = { dynasty = PREVPREV } } }
+				}
+				NOR = {
+					age = 40
+					dynasty = ROOT
+					trait = in_hiding
+					trait = weak
+					trait = inbred
+					trait = incapable
+					trait = maimed
+					trait = lunatic
+					trait = possessed
+					trait = imbecile
+				}
+			}
+			if = {
+				limit = { dynasty = none }
+				dynasty = father_bastard
+			}
+			save_event_target_as = new_clan_leader
+		}
+		random_demesne_title = {
+			limit = {
+				tier = COUNT
+				can_be_given_away = yes
+				NOT = { title = c_pest }
+				NOT = { location = { is_capital = yes } }
+			}
+			grant_title = event_target:new_clan_leader
+			any_direct_de_jure_vassal_title = {
+				limit = { holder = ROOT }
+				grant_title = event_target:new_clan_leader
+			}
+		}
+		event_target:new_clan_leader = {
+			if = {
+				limit = { is_tribal = no }
+				if = {
+					limit = {
+						capital_scope = {
+							has_empty_holding = yes
+							NOT = { any_province_holding = { holding_type = tribal } }
+						}
+					}
+					capital_scope = {
+						build_holding = { type = tribal }
+					}
+				}
+				capital_scope = {
+					random_province_holding = {
+						limit = { holding_type = tribal }
+						make_capital_holding = yes
+					}
+				}
+				if = {
+					limit = {
+						capital_scope = {
+							any_province_holding = { holding_type = tribal }
+						}
+					}
+					set_government_type = tribal_government
+				}
+			}
+			if = {
+				limit = { NOT = { has_opinion_modifier = { who = ROOT modifier = opinion_loyal_servant } } }
+				opinion = { who = ROOT modifier = opinion_loyal_servant }
+			}
+			set_defacto_liege = ROOT
+		}
+	}
+}
+
+# Extra Magyar adventurers appear
+character_event = {
+	id = emf_magyar.3019
+	
+	hide_window = yes
+	
+	culture = hungarian
+	religion = tengri_pagan
+	only_playable = yes
+	
+	trigger = {
+		war = no
+		capital_scope = {
+			kingdom = { title = k_hungary }
+		}
+		has_global_flag = emf_magyar_migration_completed
+		NOR = {
+			has_character_flag = received_extra_magyar_adventurer
+			any_courtier = {
+				is_ruler = no
+				has_character_flag = extra_magyar_adventurer
+			}
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 24
+		modifier = {
+			factor = 2
+			has_global_flag = emf_conquest_hungary_completed
+		}
+		modifier = {
+			factor = 0.5
+			independent = yes
+		}
+		modifier = {
+			factor = 0.5
+			is_nomadic = yes
+		}
+	}
+	
+	immediate = {
+		if = {
+			limit = { independent = no }
+			set_character_flag = received_extra_magyar_adventurer
+		}
+		create_random_soldier = {
+			random_traits = yes
+			dynasty = none
+			religion = tengri_pagan
+			culture = hungarian
+			female = no
+			age = 25
+			health = 6
+			attributes = {
+				martial = 8
+			}
+			trait = skilled_tactician
+			trait = ambitious
+		}
+		new_character = {
+			set_character_flag = extra_magyar_adventurer
+			opinion = { who = ROOT modifier = opinion_loyal_servant }
+			set_defacto_liege = ROOT
+			remove_trait = humble
+			remove_trait = depressed
+			remove_trait = imbecile
+			remove_trait = weak
+			remove_trait = feeble
+			remove_trait = blinded
+			remove_trait = celibate
+			remove_trait = craven
+			random = {
+				chance = 50
+				remove_trait = skilled_tactician
+				add_trait = brilliant_strategist
+			}
+			random_list = {
+				50 = { add_trait = brave }
+				50 = { add_trait = strong }
+				50 = {}
+			}
+		}
+	}
+}
+
+### SETTLING IN CARPATHIA
+
+# Magyars have conquered enough of Hungary
+character_event = {
+	id = emf_magyar.3020
+	desc = EVTDESC_emf_magyar_3020
+	picture = GFX_evt_magyars
+	
+	culture = hungarian
+	only_playable = yes
+	only_independent = yes
+	capable_only = yes
+	prisoner = no
+	min_age = 16
+	
+	trigger = {
+		war = no
+		capital_scope = {
+			kingdom = { title = k_hungary }
+		}
+		k_hungary = {
+			NOT = {
+				any_direct_de_jure_vassal_title = {
+					any_direct_de_jure_vassal_title = {
+						location = {
+							region = emf_region_carpathia
+							owner_under_ROOT = no
+						}
+					}
+				}
+			}
+		}
+		has_global_flag = emf_magyar_migration_completed
+		NOT = { has_global_flag = emf_conquest_hungary_completed }
+	}
+	
+	mean_time_to_happen = {
+		days = 1
+	}
+	
+	option = {
+		name = EXCELLENT
+		set_global_flag = emf_conquest_hungary_completed
+		disband_event_forces = magyar_migration_troops
+		prestige = 1000
+		wealth = 500
+
+		if = {
+			limit = { NOT = { is_title_active = k_hungary } }
+			activate_title = { title = k_hungary status = yes }
+		}
+	}
+}
+
+# Hungary title name change
+character_event = {
+	id = emf_magyar.3021
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	trigger = {
+		FROM = { title = k_hungary }
+		OR = {
+			has_landed_title = k_magyar
+			AND = {
+				culture = hungarian
+				k_hungary = { NOT = { has_title_flag = hungary_name_change } }
+			}
+			k_magyar = {
+				is_title_active = THIS
+				has_holder = no
+			}
+		}
+	}
+	
+	immediate = {
+		if = {
+			limit = {
+				culture = hungarian
+				k_hungary = { NOT = { has_title_flag = hungary_name_change } }
+			}
+			set_global_flag = avar_khaganate_renamed
+			k_hungary = {
+				set_title_flag = hungary_name_change
+				set_name = ""
+				adjective = ""
+			}
+		}
+		
+		# If title receiver also owns the Magyar tribal title, then
+		# we can safely destroy and deactivate that title now.
+		k_magyar = { # Magyar
+			if = {
+				limit = { holder = ROOT }
+				k_hungary = {
+					copy_title_laws = PREV
+					copy_title_history = PREV
+					make_primary_title = yes
+				}
+			}
+			if = {
+				limit = {
+					is_title_active = THIS
+					OR = {
+						has_holder = no
+						holder = ROOT
+					}
+				}
+				hidden_tooltip = {
+					# If it somehow became non-titular, then we must be sure
+					# to transfer its de jure territory to k_hungary first.
+					any_direct_de_jure_vassal_title = { de_jure_liege = k_hungary }
+				}
+				destroy_landed_title = THIS
+				activate_title = { title = THIS status = no }
+			}
+		}
+	}
+}
+
+# Feudal Hungarian king prompted to become Catholic
+narrative_event = {
+	id = emf_magyar.3022
+	title = EVTNAME_emf_magyar_3022
+	desc = EVTDESC_emf_magyar_3022
+	picture = GFX_evt_magyars2
+	
+	major = yes
+	
+	culture = hungarian
+	religion = tengri_pagan
+	only_playable = yes
+	only_independent = yes
+	capable_only = yes
+	prisoner = no
+	min_age = 16
+
+	trigger = {
+		ai = yes
+		is_feudal = yes
+		has_landed_title = k_hungary
+		has_global_flag = emf_conquest_hungary_completed
+		NOR = {
+			trait = zealous
+			k_hungary = { has_title_flag = ai_converted_catholic }
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 12
+	}
+	
+	immediate = {
+		piety = 250
+		set_character_flag = king_converted
+		religion_authority = { modifier = ruler_converted_from }
+		religion = catholic
+		religion_authority = { modifier = ruler_converted_to }
+		any_courtier = {
+			limit = {
+				OR = {
+					dynasty = ROOT
+					is_close_relative = ROOT
+				}
+				is_ruler = no
+			}
+			religion = ROOT
+		}	
+	}
+	
+	option = {
+		name = EVTOPTA_emf_magyar_3022
+		trigger = { religion_group = christian }
+	}
+	option = {
+		name = EVTOPTB_emf_magyar_3022
+		trigger = { NOT = { religion_group = christian } }
+	}
+}
+
+	
+
