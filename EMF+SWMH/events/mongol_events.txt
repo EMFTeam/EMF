@@ -2024,80 +2024,143 @@ narrative_event = {
 	}
 }
 
+
 ##################################
 # Rise of the Seljuks
 ##################################
 
-# Seljuk distinguishes himself in a Turkish court
+# Seljuk appears and begins his first adventure
 character_event = {
 	id = 60200
 	desc = EVTDESC60200
-	
 	picture = GFX_evt_mongols
 	border = GFX_event_normal_frame_war
 	
 	only_playable = yes
 	culture_group = altaic
-	
+
 	trigger = {
 		year = 960
 		NOT = { year = 980 }
-
-		# Don't spawn somewhere from where you won't be able to launch an
-		# invasion, silly Seljuk
+		
 		OR = {
-			630 = { # Merv
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-			631 = { # Dihistan
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-			632 = { # Tus
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
+			culture = turkish
+			culture = turkmen
+			culture = oghuz
+		}
+		OR = {
+			is_nomadic = yes
+			AND = {
+				is_tribal = yes
+				NOT = { has_dlc = "Horse Lords" }
 			}
 		}
-
-		higher_real_tier_than = COUNT
-		primary_title = { is_primary_type_title = no }
-		
+		OR = {
+			independent = yes
+			NOT = { any_liege = { culture = ROOT } }
+		}
+		any_independent_ruler = {
+			war = no
+			in_revolt = no
+			is_nomadic = no
+			is_tribal = no
+			NOR = {
+				is_tributary = yes
+				same_realm = ROOT
+				any_allied_character = { higher_tier_than = DUKE }
+			}
+			OR = {
+				c_merv = { owner_under_PREV = yes }
+				c_dihistan = { owner_under_PREV = yes }
+				c_tus = { owner_under_PREV = yes }
+			}
+		}
 		NOT = { has_global_flag = seljuk_spawned }
 	}
 	
 	mean_time_to_happen = {
 		months = 24
-
 		modifier = {
-			factor = 4
-			NOR = {
-				culture = turkish
-				culture = turkmen
-			}
+			factor = 0.5
+			year = 970
+		}
+		modifier = {
+			factor = 0.5
+			year = 975
 		}
 	}
-	
+
 	immediate = {
+		set_global_flag = seljuk_spawned
+		# Pick the target
+		random_independent_ruler = {
+			limit = {
+				war = no
+				in_revolt = no
+				is_nomadic = no
+				is_tribal = no
+				NOR = {
+					is_tributary = yes
+					same_realm = ROOT
+					any_allied_character = { higher_tier_than = DUKE }
+				}
+				c_tus = { owner_under_PREV = yes }
+			}
+			save_event_target_as = seljuk_target_ruler
+			c_tus = { location = { save_event_target_as = seljuk_target_province } }
+		}
+		random_independent_ruler = {
+			limit = {
+				war = no
+				in_revolt = no
+				is_nomadic = no
+				is_tribal = no
+				NOR = {
+					is_tributary = yes
+					same_realm = ROOT
+					any_allied_character = { higher_tier_than = DUKE }
+				}
+				c_merv = { owner_under_PREV = yes }
+				NOT = { event_target:seljuk_target_ruler = { always = yes } }
+			}
+			save_event_target_as = seljuk_target_ruler
+			c_merv = { location = { save_event_target_as = seljuk_target_province } }
+		}
+		random_independent_ruler = {
+			limit = {
+				war = no
+				in_revolt = no
+				is_nomadic = no
+				is_tribal = no
+				NOR = {
+					is_tributary = yes
+					same_realm = ROOT
+					any_allied_character = { higher_tier_than = DUKE }
+				}
+				c_dihistan = { owner_under_PREV = yes }
+				NOT = { event_target:seljuk_target_ruler = { always = yes } }
+			}
+			save_event_target_as = seljuk_target_ruler
+			c_dihistan = { location = { save_event_target_as = seljuk_target_province } }
+		}
+		
+		# Now create Seljuk
 		create_random_soldier = {
 			random_traits = no
+			historical = yes
 			dynasty = 613 # Seljuk
-			name = Seljuk
-			culture = turkmen
-			religion = ROOT
-			age = 18
+			name = "Seljuk"
+			culture = oghuz
+			religion = sunni
+			age = 30
 			attributes = {
-				martial = 8
-				diplomacy = 4
+				martial = 12
+				diplomacy = 8
 				stewardship = 5
 				intrigue = 4
 				learning = 3
 			}
 			health = 7
-			fertility = 0.8
 			trait = brilliant_strategist
 			trait = wroth
 			trait = cruel
@@ -2107,590 +2170,287 @@ character_event = {
 			trait = adventurer
 		}
 		new_character = {
-			character_event = {
-				id = 60201
-				days = 3285
-				random = 730
-			}
 			set_character_flag = seljuk_himself
-			log = "60200: INFO: Seljuk ([This.GetID]) spawned in the court of [Root.GetTitledName] ([Root.PrimaryTitle.GetFullBaseName])"
-		}
-	}
-	
-	option = { # A most capable young man
-		name = EVTOPTA60200
-		
-		set_global_flag = seljuk_spawned
-		set_global_flag = seljuk_spawned_by_event
-		
-		tooltip = {
-			create_random_soldier = {
-				random_traits = no
-				dynasty = 613 # Seljuk
-				name = Seljuk
-				culture = turkish
-				religion = ROOT
-				age = 18
-				attributes = {
-					martial = 8
-					diplomacy = 4
-					stewardship = 5
-					intrigue = 4
-					learning = 3
-				}
-				health = 7
-				fertility = 0.8
-				trait = brilliant_strategist
-				trait = wroth
-				trait = cruel
-				trait = proud
-				trait = zealous
-				trait = ambitious
+			save_event_target_as = seljuk
+			log = "60200: INFO: Seljuk ([This.GetID]) spawned in the court of [Root.GetBestName] ([Root.PrimaryTitle.GetID])"
+			wealth = 500
+			prestige = 500
+			if = {
+				limit = { ROOT = { is_nomadic = yes } }
+				set_character_flag = will_be_nomadic
 			}
-		}
-	}
-}
-
-# Seljuk and his men consider starting an adventure
-character_event = {
-	id = 60201
-	desc = EVTDESC60201
-	
-	picture = GFX_evt_mongols
-	border = GFX_event_normal_frame_war
-	
-	is_triggered_only = yes
-	
-	prisoner = no
-	only_capable = yes
-	
-	trigger = {
-		is_alive = yes
-		NOT = { trait = blinded }
-		NOT = { trait = eunuch }
-		NOT = { trait = infirm }
-		lower_tier_than = KING
-		
-		OR = {
-			630 = { # Merv
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-			631 = { # Dihistan
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-			632 = { # Tus
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-		}
-	}
-	
-	option = { # Merv it is!
-		name = EVTOPTA60201
-		trigger = {
-			630 = { # Merv
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-		}
-		
-		ai_chance = {
-			factor = 10000
-		}
-		
-		630 = {
-			province_event = {
-				id = 60202
-				days = 2
-			}
-		}
-	}
-	option = { # Khorasan
-		name = EVTOPTB60201
-		trigger = {
-			632 = { # Tus
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-		}
-		
-		ai_chance = {
-			factor = 1000
-		}
-		
-		632 = {
-			province_event = {
-				id = 60202
-				days = 2
-			}
-		}
-	}
-	option = { # Dihistan
-		name = EVTOPTC60201
-		trigger = {
-			631 = { # Dihistan
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-		}
-		
-		ai_chance = {
-			factor = 100
-		}
-		
-		631 = {
-			province_event = {
-				id = 60202
-				days = 2
-			}
-		}
-	}
-}
-
-# Ping the target province
-province_event = {
-	id = 60202
-	hide_window = yes
-	
-	is_triggered_only = yes
-	
-	immediate = {
-		if = {
-			limit = {
-				FROM = {
-					is_ruler = yes
-				}
-			}
-			FROM = {
-				character_event = {
-					id = 60204
-				}
-			}
-		}
-		if = {
-			limit = {
-				FROM = {
-					is_ruler = no
-				}
-			}
-			FROM = {
-				character_event = {
-					id = 60203
-				}
-			}
-		}
-	}
-}
-
-# The landless Seljuk and his men start an adventure
-character_event = {
-	id = 60203
-	hide_window = yes
-	
-	is_triggered_only = yes
-	
-	prisoner = no
-	only_capable = yes
-	
-	trigger = {
-		is_alive = yes
-		NOT = { trait = blinded }
-		NOT = { trait = eunuch }
-		NOT = { trait = infirm }
-		lower_tier_than = KING
-	}
-	
-	immediate = {
-		wealth = 500
-		
-		any_liege = {
-			character_event = {
-				id = 60205
-				days = 1
-			}
-		}
-		
-		liege = {
-			capital_scope = {
-				FROM = {
-					owner = {
-						top_liege = {
-							ROOT = {
-								set_defacto_liege = ROOT
-								emf_liege_change_effect = yes
-								create_title = {
-									tier = DUKE
-									landless = yes
-									temporary = yes
-									culture = ROOT
-									name = "CLAIMANT_ADVENTURE"
-									holder = ROOT
-								}
-								
-								set_character_flag = duchy_adventurer
-							
-								spawn_unit = {
-									province = PREVPREVPREVPREV
-									home = PREVPREVPREVPREV
-									owner = THIS
-									#leader = THIS
-									match_character = PREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = seljuk_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREVPREVPREVPREV
-									home = PREVPREVPREVPREV
-									owner = THIS
-									match_character = PREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = seljuk_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREVPREVPREVPREV
-									home = PREVPREVPREVPREV
-									owner = THIS
-									match_character = PREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = seljuk_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREVPREVPREVPREV
-									home = PREVPREVPREVPREV
-									owner = THIS
-									match_character = PREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = seljuk_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREVPREVPREVPREV
-									home = PREVPREVPREVPREV
-									owner = THIS
-									match_character = PREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = seljuk_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREVPREVPREVPREV
-									home = PREVPREVPREVPREV
-									owner = THIS
-									match_character = PREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = seljuk_duchy_adventure
-								}
-								war = {
-									target = PREV
-									casus_belli = duchy_adventure
-									thirdparty_title = PREVPREVPREV
-									tier = DUKE
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		
-		if = {
-			limit = {
-				NOT = { religion_group = muslim }
-			}
-			religion = sunni
-		}
-
-		if = {
-			limit = {
-				NOT = { culture = turkmen }
-			}
-			culture = turkmen
-		}
-		
-		# Create some characters
-		create_random_soldier = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 30
-		}
-		create_random_soldier = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 25
-		}
-		create_random_soldier = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 22
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = yes
-			age = 16
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = yes
-			age = 17
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = yes
-			age = 18
-		}
-		
-		log = "60203: Seljuk starts his first war as a landless character!"
-	}
-}
-
-# The landed Seljuk and his men start an adventure
-character_event = {
-	id = 60204
-	desc = EVTDESC60204
-	
-	picture = GFX_evt_mongols
-	border = GFX_event_normal_frame_war
-	
-	is_triggered_only = yes
-	
-	prisoner = no
-	only_capable = yes
-	
-	trigger = {
-		is_alive = yes
-		NOT = { trait = blinded }
-		NOT = { trait = eunuch }
-		NOT = { trait = infirm }
-		lower_tier_than = KING
-	}
-	
-	immediate = {
-		wealth = 500
-		
-		any_liege = {
-			character_event = {
-				id = 60205
-				days = 1
-			}
-		}
-		
-		FROM = {
-			owner = {
-				top_liege = {
-					ROOT = {
-						capital_scope = {
-							ROOT = {
-								set_character_flag = duchy_adventurer
-								spawn_unit = {
-									province = PREV
-									home = PREV
-									owner = THIS
-									#leader = THIS
-									match_character = PREVPREVPREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = seljuk_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREV
-									home = PREV
-									owner = THIS
-									match_character = PREVPREVPREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = seljuk_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREV
-									home = PREV
-									owner = THIS
-									match_character = PREVPREVPREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = seljuk_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREV
-									home = PREV
-									owner = THIS
-									match_character = PREVPREVPREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = seljuk_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREV
-									home = PREV
-									owner = THIS
-									match_character = PREVPREVPREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = seljuk_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREV
-									home = PREV
-									owner = THIS
-									match_character = PREVPREVPREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = seljuk_duchy_adventure
-								}
-							}
-						}
-						
-						war = {
-							target = PREV
-							casus_belli = duchy_adventure
-							thirdparty_title = PREVPREVPREV
+			# Give adventurer title and start war
+			ROOT = {
+				capital_scope = {
+					event_target:seljuk = {
+						set_defacto_liege = THIS
+						create_title = {
 							tier = DUKE
+							landless = yes
+							temporary = yes
+							culture = THIS
+							name = "CLAIMANT_ADVENTURE"
+							holder = THIS
+						}
+						if = {
+							limit = { NOT = { has_character_flag = will_be_nomadic } }
+							set_government_type = tribal_government
+						}
+						if = {
+							limit = { has_character_flag = will_be_nomadic }
+							clr_character_flag = will_be_nomadic
+							set_government_type = nomadic_government
+							population = 5000
+						}
+						set_character_flag = duchy_adventurer
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							troops = {
+								horse_archers = { 2700 2700 }
+								light_cavalry = { 1600 1600 }
+								light_infantry = { 541 541 }
+								heavy_infantry = { 210 210 }
+								knights = { 47 47 }
+							}
+							attrition = 0.25
+							cannot_inherit = yes
+							maintenance_multiplier = 0
+							earmark = seljuk_event_troops
+						}
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							match_character = event_target:seljuk_target_ruler
+							match_mult = 0.33
+							match_min = 500
+							match_max = 10000
+							attrition = 0.25
+							disband_on_peace = yes
+							earmark = seljuk_duchy_adventure
+						}
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							match_character = event_target:seljuk_target_ruler
+							match_mult = 0.33
+							match_min = 500
+							match_max = 10000
+							attrition = 0.25
+							disband_on_peace = yes
+							earmark = seljuk_duchy_adventure
+						}
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							match_character = event_target:seljuk_target_ruler
+							match_mult = 0.33
+							match_min = 500
+							match_max = 10000
+							attrition = 0.25
+							disband_on_peace = yes
+							earmark = seljuk_duchy_adventure
+						}
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							match_character = event_target:seljuk_target_ruler
+							match_mult = 0.33
+							match_min = 500
+							match_max = 10000
+							attrition = 0.25
+							disband_on_peace = yes
+							earmark = seljuk_duchy_adventure
+						}
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							match_character = event_target:seljuk_target_ruler
+							match_mult = 0.33
+							match_min = 500
+							match_max = 10000
+							attrition = 0.25
+							disband_on_peace = yes
+							earmark = seljuk_duchy_adventure
+						}
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							match_character = event_target:seljuk_target_ruler
+							match_mult = 0.33
+							match_min = 500
+							match_max = 10000
+							attrition = 0.25
+							disband_on_peace = yes
+							earmark = seljuk_duchy_adventure
+						}
+						event_target:seljuk_target_ruler = {
+							event_target:seljuk_target_province = {
+								event_target:seljuk = {		
+									war = {
+										target = PREVPREV
+										casus_belli = duchy_adventure
+										thirdparty_title = PREV
+										tier = DUKE
+										infamy = 0
+									}
+								}
+							}
 						}
 					}
 				}
 			}
+			character_event = { id = 60201 }
 		}
-		
-		if = {
-			limit = {
-				NOT = { religion_group = muslim }
-			}
-			religion = sunni
-		}
-		
-		if = {
-			limit = {
-				NOT = { culture = turkmen }
-			}
-			culture = turkmen
-		}
+	}
 
-		# Create some characters
-		create_random_soldier = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 30
-		}
-		create_random_soldier = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 25
-		}
-		create_random_soldier = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 22
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = yes
-			age = 16
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = yes
-			age = 17
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = yes
-			age = 18
-		}
-		
-		log = "60204: Seljuk starts his first war as a landed character!"
-	}
-	
-	option = {
-		name = EVTOPTA60204
-	}
-}
-
-# Notify Seljuk's old liege
-character_event = {
-	id = 60205
-	desc = EVTDESC60205
-	picture = GFX_evt_mongols
-	border = GFX_event_normal_frame_war
-	
-	is_triggered_only = yes
-	
-	trigger = {
-		FROM = { is_ruler = yes } # The DoW worked and the adventurer has a temporary title
-	}
-	
 	option = {
 		name = EVTOPTA60205
+	}
+}
+
+# Spawn Seljuk's children and extra courtiers
+character_event = {
+	id = 60201
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		# Create his sons
+		create_character = {
+			name="Arslan Esra'íl"
+			random_traits = yes
+			dynasty = ROOT
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 5
+		}
+		new_character = {
+			set_father = ROOT
+		}
+		create_character = {
+			name="Yunus"
+			random_traits = yes
+			dynasty = ROOT
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 1
+		}
+		new_character = {
+			set_father = ROOT
+		}
+		create_character = {
+			name="Miká'íl"
+			random_traits = yes
+			dynasty = ROOT
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 0
+		}
+		new_character = {
+			set_father = ROOT
+		}
+		
+		# Create some extra courtiers
+		create_random_diplomat = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 30
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
+		create_random_priest = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 35
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
+		create_random_soldier = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 30
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
+		create_random_soldier = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 25
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
+		create_random_soldier = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 22
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
+		create_character = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = yes
+			age = 16
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
+		create_character = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = yes
+			age = 17
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
+		create_character = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = yes
+			age = 18
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
 	}
 }
 
@@ -2708,31 +2468,17 @@ narrative_event = {
 	major = yes
 	
 	immediate = {
+		set_character_flag = seljuk_reinforcements
+		set_defacto_liege = ROOT
+
+		prestige = 500
+		piety = 100
+		
 		if = {
-			limit = {
-				OR = {
-					independent = yes
-					liege = {
-						ai = yes
-					}
-				}
-			}
+			limit = { independent = no }
 			set_defacto_liege = ROOT
 			emf_liege_change_effect = yes
-			activate_title = { title = e_seljuk_turks status = yes }
-			e_seljuk_turks = {
-				grant_title = ROOT
-			}
 		}
-		
-		if = {
-			limit = {
-				uses_decadence = yes
-			}
-			decadence = -25
-		}
-		
-		prestige = 1000
 		
 		capital_scope = {
 			ROOT = {
@@ -2747,7 +2493,9 @@ narrative_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = seljuk_initial_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = seljuk_event_troops
 				}
 				spawn_unit = {
 					province = PREV
@@ -2760,7 +2508,9 @@ narrative_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = seljuk_initial_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = seljuk_event_troops
 				}
 				spawn_unit = {
 					province = PREV
@@ -2773,7 +2523,9 @@ narrative_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = seljuk_initial_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = seljuk_event_troops
 				}
 				spawn_unit = {
 					province = PREV
@@ -2786,7 +2538,9 @@ narrative_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = seljuk_initial_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = seljuk_event_troops
 				}
 				spawn_unit = {
 					province = PREV
@@ -2799,7 +2553,9 @@ narrative_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = seljuk_initial_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = seljuk_event_troops
 				}
 				spawn_unit = {
 					province = PREV
@@ -2812,7 +2568,9 @@ narrative_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = seljuk_initial_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = seljuk_event_troops
 				}
 			}
 		}
@@ -2833,6 +2591,7 @@ narrative_event = {
 			OR = {
 				culture = turkish
 				culture = turkmen
+				culture = oghuz
 				culture = karluk
 				culture = cuman
 				culture = pecheneg
@@ -2847,6 +2606,7 @@ narrative_event = {
 				OR = {
 					culture = turkish
 					culture = turkmen
+					culture = oghuz
 					culture = karluk
 					culture = cuman
 					culture = pecheneg
@@ -2860,27 +2620,38 @@ narrative_event = {
 character_event = {
 	id = 60207
 	desc = EVTDESC60207
-	
 	picture = GFX_evt_mongols
 	border = GFX_event_normal_frame_war
 	
 	only_playable = yes
 	only_independent = yes
+	religion_group = muslim
 	
 	trigger = {
-		year = 980
-		NOT = { year = 1100 }
-		uses_decadence = yes
-		
 		dynasty = 613 # Seljuk
+		war = no
+		year = 980
 		
-		higher_tier_than = DUKE
+		higher_tier_than = duke
 		
 		martial = 7
+		NOT = { has_earmarked_regiments = seljuk_event_troops }
 		
-		has_global_flag = seljuk_spawned_by_event
-		NOT = { has_character_flag = seljuk_himself }
-		NOT = { has_character_flag = seljuk_reinforcements }
+		has_global_flag = seljuk_spawned
+
+		NOR = {
+			year = 1100
+			realm_size = 150
+			trait = blinded
+			trait = eunuch
+			trait = infirm
+			trait = content
+			trait = craven
+			trait = depressed
+			trait = imbecile
+			has_character_flag = seljuk_himself
+			has_character_flag = seljuk_reinforcements
+		}
 	}
 	
 	mean_time_to_happen = {
@@ -2902,7 +2673,7 @@ character_event = {
 	immediate = {
 		set_character_flag = seljuk_reinforcements
 		
-		decadence = -75
+		piety = 250
 		
 		capital_scope = {
 			ROOT = {
@@ -2917,7 +2688,10 @@ character_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = seljuk_renewed_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = seljuk_event_troops
+					cannot_inherit = yes
 				}
 				spawn_unit = {
 					province = PREV
@@ -2930,7 +2704,10 @@ character_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = seljuk_renewed_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = seljuk_event_troops
+					cannot_inherit = yes
 				}
 				spawn_unit = {
 					province = PREV
@@ -2943,7 +2720,10 @@ character_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = seljuk_renewed_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = seljuk_event_troops
+					cannot_inherit = yes
 				}
 				spawn_unit = {
 					province = PREV
@@ -2956,7 +2736,10 @@ character_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = seljuk_renewed_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = seljuk_event_troops
+					cannot_inherit = yes
 				}
 				if = {
 					limit = {
@@ -2973,7 +2756,10 @@ character_event = {
 							heavy_infantry = { 210 210 }
 							knights = { 47 47 }
 						}
-						earmark = seljuk_renewed_success
+						attrition = 0.25
+						maintenance_multiplier = 0
+						earmark = seljuk_event_troops
+						cannot_inherit = yes
 					}
 				}
 				if = {
@@ -2991,7 +2777,10 @@ character_event = {
 							heavy_infantry = { 210 210 }
 							knights = { 47 47 }
 						}
-						earmark = seljuk_renewed_success
+						attrition = 0.25
+						maintenance_multiplier = 0
+						earmark = seljuk_event_troops
+						cannot_inherit = yes
 					}
 				}
 				if = {
@@ -3009,7 +2798,10 @@ character_event = {
 							heavy_infantry = { 210 210 }
 							knights = { 47 47 }
 						}
-						earmark = seljuk_renewed_success
+						attrition = 0.25
+						maintenance_multiplier = 0
+						earmark = seljuk_event_troops
+						cannot_inherit = yes
 					}
 				}
 			}
@@ -3021,42 +2813,578 @@ character_event = {
 	}
 }
 
-##################################
-# Rise of the Timurids
-##################################
-
-# Timur distinguishes himself at a Mongol court
+# Event troops no longer needed
 character_event = {
-	id = 60300
-	desc = EVTDESC60300
-	
+	id = 60208
+	desc = EVTDESC60208
 	picture = GFX_evt_mongols
 	border = GFX_event_normal_frame_war
-	
+
 	only_playable = yes
-	culture_group = altaic
+	has_character_flag = seljuk_reinforcements
 	
 	trigger = {
-		year = 1350
-		NOT = { year = 1370 }
-		
-		culture = mongol
-		higher_tier_than = COUNT
-		
-		NOT = { has_global_flag = timur_spawned }
-		
-		any_realm_province = {
-			region = world_persia
+		war = no
+		has_earmarked_regiments = seljuk_event_troops
+		tier = EMPEROR
+		realm_size = 150
+	}
+	
+	mean_time_to_happen = {
+		years = 5
+	}
+	
+	option = {
+		name = EVTOPTA60208
+		disband_event_forces = seljuk_event_troops
+	}
+}
+
+# Prompt AI to use the manifest destiny CB
+character_event = {
+	id = 60209
+	
+	hide_window = yes
+	
+	only_playable = yes
+	only_independent = yes
+	min_age = 16
+	capable_only = yes
+	prisoner = no
+	
+	trigger = {
+		ai = yes
+		OR = {
+			AND = {
+				dynasty = 613 # Seljuks
+				NOT = { year = 1200 }
+			}
+			dynasty = 800 # Timurids
+		}
+		war = no
+		wealth = 0
+		mercenary = no
+		is_tributary = no
+		is_ill = no
+		has_regent = no
+		NOR = {
+			realm_size = 150
+			trait = content
+			trait = humble
+			trait = craven
+			trait = maimed
+			trait = depressed
+			trait = infirm
+			trait = in_hiding
+		}
+		any_independent_ruler = {
+			is_merchant_republic = no
+			reverse_realm_levy_diff = { who = ROOT value = 10000 }
+			any_realm_title = {
+				tier = COUNT
+				location = {
+					region = emf_region_manifest_destiny
+					any_neighbor_province = { owner_under_ROOT = yes }
+				}
+			}
+			NOR = {
+				dynasty = ROOT
+				same_realm = ROOT
+				reverse_has_truce = ROOT
+				is_allied_with = ROOT
+				has_non_aggression_pact_with = ROOT
+				reverse_opinion = { who = ROOT value = 25 }
+				pays_tribute_to = ROOT
+				ROOT = { pays_tribute_to = PREV }
+			}
 		}
 	}
 	
 	mean_time_to_happen = {
-		months = 24
+		months = 12
 	}
 	
 	immediate = {
-		create_character = {
+		# First priority
+		random_independent_ruler = {
+			limit = {
+				is_merchant_republic = no
+				reverse_realm_levy_diff = { who = ROOT value = 10000 }
+				any_realm_title = {
+					tier = COUNT
+					location = {
+						region = emf_region_manifest_destiny_tier_1
+						any_neighbor_province = { owner_under_ROOT = yes }
+					}
+				}
+				NOR = {
+					dynasty = ROOT
+					same_realm = ROOT
+					reverse_has_truce = ROOT
+					is_allied_with = ROOT
+					has_non_aggression_pact_with = ROOT
+					reverse_opinion = { who = ROOT value = 25 }
+					pays_tribute_to = ROOT
+					ROOT = { pays_tribute_to = PREV }
+				}
+			}
+			save_event_target_as = target_ruler
+			random_realm_title = {
+				limit = {
+					tier = COUNT
+					location = {
+						region = emf_region_manifest_destiny_tier_1
+						any_neighbor_province = { owner_under_ROOT = yes }
+					}
+				}
+				kingdom = {
+					ROOT = {
+						war = {
+							casus_belli = manifest_destiny_invasion
+							target = PREVPREVPREV
+							thirdparty_title = PREV
+							infamy = 0
+						}
+					}
+				}
+				break = yes
+			}
+		}
+		# Second priority
+		random_independent_ruler = {
+			limit = {
+				is_merchant_republic = no
+				reverse_realm_levy_diff = { who = ROOT value = 10000 }
+				any_realm_title = {
+					tier = COUNT
+					location = {
+						region = emf_region_manifest_destiny_tier_2
+						any_neighbor_province = { owner_under_ROOT = yes }
+					}
+				}
+				NOR = {
+					dynasty = ROOT
+					same_realm = ROOT
+					reverse_has_truce = ROOT
+					is_allied_with = ROOT
+					has_non_aggression_pact_with = ROOT
+					reverse_opinion = { who = ROOT value = 25 }
+					pays_tribute_to = ROOT
+					ROOT = { pays_tribute_to = PREV }
+				}
+			}
+			save_event_target_as = target_ruler
+			random_realm_title = {
+				limit = {
+					tier = COUNT
+					location = {
+						region = emf_region_manifest_destiny_tier_2
+						any_neighbor_province = { owner_under_ROOT = yes }
+					}
+				}
+				kingdom = {
+					ROOT = {
+						war = {
+							casus_belli = manifest_destiny_invasion
+							target = PREVPREVPREV
+							thirdparty_title = PREV
+							infamy = 0
+						}
+					}
+				}
+				break = yes
+			}
+		}
+		# Third priority
+		random_independent_ruler = {
+			limit = {
+				is_merchant_republic = no
+				reverse_realm_levy_diff = { who = ROOT value = 10000 }
+				any_realm_title = {
+					tier = COUNT
+					location = {
+						region = emf_region_manifest_destiny_tier_3
+						any_neighbor_province = { owner_under_ROOT = yes }
+					}
+				}
+				NOR = {
+					dynasty = ROOT
+					same_realm = ROOT
+					reverse_has_truce = ROOT
+					is_allied_with = ROOT
+					has_non_aggression_pact_with = ROOT
+					reverse_opinion = { who = ROOT value = 25 }
+					pays_tribute_to = ROOT
+					ROOT = { pays_tribute_to = PREV }
+				}
+			}
+			save_event_target_as = target_ruler
+			random_realm_title = {
+				limit = {
+					tier = COUNT
+					location = {
+						region = emf_region_manifest_destiny_tier_3
+						any_neighbor_province = { owner_under_ROOT = yes }
+					}
+				}
+				kingdom = {
+					ROOT = {
+						war = {
+							casus_belli = manifest_destiny_invasion
+							target = PREVPREVPREV
+							thirdparty_title = PREV
+							infamy = 0
+						}
+					}
+				}
+				break = yes
+			}
+		}
+	}
+}
+
+# Oghuz ruler becomes Turkmen after becoming non-nomadic
+character_event = {
+	id = 60220
+	desc = EVTDESC60220
+	picture = GFX_evt_mongols
+	
+	only_playable = yes
+	culture = oghuz
+	min_age = 16
+	prisoner = no
+	capable_only = yes
+	
+	trigger = {
+		war = no
+		is_nomadic = no
+		OR = {
+			independent = yes
+			liege = { culture = turkmen }
+			liege = { culture = turkish }
+			NOT = {
+				any_liege = {
+					OR = {
+						culture = turkish
+						culture = turkmen
+						culture = oghuz
+					}
+				}
+			}
+		}
+		NOR = {
+			trait = in_hiding
+			has_character_flag = refuse_culture_conversion
+			any_liege = { has_character_flag = refuse_culture_conversion }
+		}
+	}
+	
+	mean_time_to_happen = {
+		years = 25
+		modifier = {
+			factor = 2.0
+			NOT = { age = 30 }
+		}
+		modifier = {
+			factor = 0.5
+			liege = { culture = turkmen }
+		}
+		modifier = {
+			factor = 0.5
+			capital_scope = { culture = turkmen }
+		}
+		modifier = {
+			factor = 0.5
+			independent = no
+			liege = { independent = no }
+			NOT = { any_liege = { NOT = { culture = turkmen } } }
+		}
+	}
+	
+	option = {
+		name = EVTOPTA60220 # Convert
+		culture = turkmen
+		capital_scope = {
+			if = {
+				limit = {
+					ROOT = { higher_tier_than = BARON }
+					culture = oghuz
+				}
+				culture = turkmen
+			}
+		}
+		hidden_tooltip = {
+			any_courtier = {
+				limit = {
+					is_ruler = no
+					culture = oghuz
+					prisoner = no
+					NOT = { trait = incapable }
+				}
+				culture = turkmen
+			}
+			any_vassal = {
+				limit = {
+					is_playable = no
+					culture = oghuz
+					prisoner = no
+					NOT = { trait = incapable }
+				}
+				culture = turkmen
+				any_courtier = {
+					limit = {
+						is_ruler = no
+						culture = oghuz
+						prisoner = no
+						NOT = { trait = incapable }
+					}
+					culture = turkmen
+				}
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB60220 # Refuse
+		trigger = { ai = no }
+		set_character_flag = refuse_culture_conversion
+	}
+}
+
+# Turkmen ruler becomes Turkish if in Anatolia
+character_event = {
+	id = 60221
+	desc = EVTDESC60221
+	picture = GFX_evt_mongols
+	
+	only_playable = yes
+	culture = turkmen
+	min_age = 16
+	prisoner = no
+	capable_only = yes
+	
+	trigger = {
+		year = 1200
+		war = no
+		is_nomadic = no
+		is_tribal = no
+		capital_scope = { region = world_asia_minor }
+		OR = {
+			liege = { culture = turkish }
+			independent = yes
+			NOT = { any_liege = { culture = turkmen } }
+		}
+		NOR = {
+			trait = in_hiding
+			has_character_flag = refuse_culture_conversion
+			any_liege = { has_character_flag = refuse_culture_conversion }
+		}
+	}
+	
+	mean_time_to_happen = {
+		years = 25
+		modifier = {
+			factor = 2.0
+			NOT = { age = 30 }
+		}
+		modifier = {
+			factor = 0.5
+			liege = { culture = turkish }
+		}
+		modifier = {
+			factor = 0.5
+			capital_scope = { culture = turkish }
+		}
+		modifier = {
+			factor = 0.5
+			independent = no
+			liege = { independent = no }
+			NOT = { any_liege = { NOT = { culture = turkish } } }
+		}
+	}
+	
+	option = {
+		name = EVTOPTA60220 # Convert
+		culture = turkish
+		capital_scope = {
+			if = {
+				limit = {
+					ROOT = { higher_tier_than = BARON }
+					culture = turkmen
+				}
+				culture = turkish
+			}
+		}
+		hidden_tooltip = {
+			any_courtier = {
+				limit = {
+					is_ruler = no
+					culture = turkmen
+					prisoner = no
+					NOT = { trait = incapable }
+				}
+				culture = turkish
+			}
+			any_vassal = {
+				limit = {
+					is_playable = no
+					culture = turkmen
+					prisoner = no
+					NOT = { trait = incapable }
+				}
+				culture = turkish
+				any_courtier = {
+					limit = {
+						is_ruler = no
+						culture = turkmen
+						prisoner = no
+						NOT = { trait = incapable }
+					}
+					culture = turkish
+				}
+			}
+		}
+	}
+	option = {
+		name = EVTOPTB60220 # Refuse
+		trigger = { ai = no }
+		set_character_flag = refuse_culture_conversion
+	}
+}
+	
+
+##################################
+# Rise of the Timurids
+##################################
+
+# Timur appears and begins his first adventure
+character_event = {
+	id = 60300
+	desc = EVTDESC60300
+	picture = GFX_evt_mongols
+	border = GFX_event_normal_frame_war
+	
+	only_playable = yes
+	culture = mongol
+
+	trigger = {
+		year = 1350
+		NOT = { year = 1370 }
+		
+		OR = {
+			independent = yes
+			NOT = { any_liege = { culture = ROOT } }
+		}
+		any_realm_province = {
+			OR = {
+				region = world_persia
+				region = world_middle_east
+				region = world_steppe_tarim
+			}
+		}
+		any_independent_ruler = {
+			war = no
+			in_revolt = no
+			is_nomadic = no
+			is_tribal = no
+			NOR = {
+				is_tributary = yes
+				same_realm = ROOT
+				any_allied_character = { higher_tier_than = DUKE }
+			}
+			OR = {
+				c_samarqand = { owner_under_PREV = yes }
+				c_balkh = { owner_under_PREV = yes }
+				c_merv = { owner_under_PREV = yes }
+				c_dihistan = { owner_under_PREV = yes }
+				c_tus = { owner_under_PREV = yes }
+			}
+		}
+		NOT = { has_global_flag = timur_spawned }
+	}
+	
+	mean_time_to_happen = {
+		months = 24
+		modifier = {
+			factor = 0.5
+			year = 1360
+		}
+		modifier = {
+			factor = 0.5
+			year = 1365
+		}
+	}
+
+	immediate = {
+		set_global_flag = timur_spawned
+		# Pick the target
+		random_independent_ruler = {
+			limit = {
+				war = no
+				in_revolt = no
+				is_nomadic = no
+				is_tribal = no
+				NOR = {
+					is_tributary = yes
+					same_realm = ROOT
+					any_allied_character = { higher_tier_than = DUKE }
+				}
+				c_merv = { owner_under_PREV = yes }
+			}
+			save_event_target_as = timur_target_ruler
+			c_merv = { location = { save_event_target_as = timur_target_province } }
+		}
+		random_independent_ruler = {
+			limit = {
+				war = no
+				in_revolt = no
+				is_nomadic = no
+				is_tribal = no
+				NOR = {
+					is_tributary = yes
+					same_realm = ROOT
+					any_allied_character = { higher_tier_than = DUKE }
+				}
+				c_tus = { owner_under_PREV = yes }
+				NOT = { event_target:timur_target_ruler = { always = yes } }
+			}
+			save_event_target_as = timur_target_ruler
+			c_tus = { location = { save_event_target_as = timur_target_province } }
+		}
+		random_independent_ruler = {
+			limit = {
+				war = no
+				in_revolt = no
+				is_nomadic = no
+				is_tribal = no
+				NOR = {
+					is_tributary = yes
+					same_realm = ROOT
+					any_allied_character = { higher_tier_than = DUKE }
+				}
+				OR = {
+					c_samarqand = { owner_under_PREV = yes }
+					c_balkh = { owner_under_PREV = yes }
+					c_dihistan = { owner_under_PREV = yes }
+				}
+				NOT = { event_target:timur_target_ruler = { always = yes } }
+			}
+			save_event_target_as = timur_target_ruler
+			random_realm_province = {
+				limit = {
+					OR = {
+						county = { title = c_samarqand }
+						county = { title = c_balkh }
+						county = { title = c_dihistan }
+					}
+				}
+				save_event_target_as = timur_target_province
+			}
+		}
+		
+		# Now create Timur
+		create_random_soldier = {
 			random_traits = no
+			historical = yes
 			name = "Timur"
 			dynasty = 800
 			religion = ROOT
@@ -3071,7 +3399,6 @@ character_event = {
 				learning = 6
 			}
 			health = 6
-			fertility = 0.8
 			trait = brilliant_strategist
 			trait = diligent
 			trait = ambitious
@@ -3080,688 +3407,234 @@ character_event = {
 			trait = clubfooted
 			trait = adventurer
 		}
-		
 		new_character = {
 			set_character_flag = timur_himself
-			character_event = {
-				id = 60301
-				days = 3285
-				random = 730
+			save_event_target_as = timur
+			log = "60300: INFO: Timur ([This.GetID]) spawned in the court of [Root.GetBestName] ([Root.PrimaryTitle.GetID])"
+			wealth = 500
+			prestige = 500
+			if = {
+				limit = { ROOT = { is_nomadic = yes } }
+				set_character_flag = will_be_nomadic
 			}
-		}
-	}
-	
-	option = { # A most capable young man
-		name = EVTOPTA60300
-		
-		set_global_flag = timur_spawned
-		set_global_flag = timur_spawned_by_event
-		
-		tooltip = {
-			create_character = {
-				random_traits = no
-				name = "Timur"
-				dynasty = 800
-				religion = ROOT
-				culture = ROOT
-				female = no
-				age = 18
-				attributes = {
-					martial = 12
-					diplomacy = 8
-					stewardship = 9
-					intrigue = 9
-					learning = 6
-				}
-				health = 6
-				fertility = 0.8
-				trait = brilliant_strategist
-				trait = diligent
-				trait = ambitious
-				trait = proud
-				trait = quick
-				trait = clubfooted
-			}
-		}
-	}
-}
-
-# Timur and his men consider starting an adventure
-character_event = {
-	id = 60301
-	desc = EVTDESC60201
-	
-	picture = GFX_evt_mongols
-	border = GFX_event_normal_frame_war
-	
-	is_triggered_only = yes
-	
-	prisoner = no
-	only_capable = yes
-	
-	trigger = {
-		is_alive = yes
-		NOT = { trait = blinded }
-		NOT = { trait = eunuch }
-		NOT = { trait = infirm }
-		lower_tier_than = KING
-		
-		OR = {
-			903 = { # Samarkand
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-			904 = { # Balkh
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-			630 = { # Merv
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-			631 = { # Dihistan
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-			632 = { # Tus
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-		}
-	}
-	
-	option = { # Merv it is!
-		name = EVTOPTA60201
-		trigger = {
-			630 = { # Merv
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-		}
-		
-		ai_chance = {
-			factor = 10000
-		}
-		
-		630 = {
-			province_event = {
-				id = 60302
-				days = 2
-			}
-		}
-	}
-	option = { # Khorasan
-		name = EVTOPTB60201
-		trigger = {
-			632 = { # Tus
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-		}
-		
-		ai_chance = {
-			factor = 1000
-		}
-		
-		632 = {
-			province_event = {
-				id = 60302
-				days = 2
-			}
-		}
-	}
-	option = { # Dihistan
-		name = EVTOPTC60201
-		trigger = {
-			631 = { # Dihistan
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-		}
-		
-		ai_chance = {
-			factor = 100
-		}
-		
-		631 = {
-			province_event = {
-				id = 60302
-				days = 2
-			}
-		}
-	}
-	option = { # Samarkand
-		name = EVTOPTD60201
-		trigger = {
-			903 = { # Samarkand
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-		}
-		
-		ai_chance = {
-			factor = 100
-		}
-		
-		903 = {
-			province_event = {
-				id = 60302
-				days = 2
-			}
-		}
-	}
-	option = { # Balkh
-		name = EVTOPTE60201
-		trigger = {
-			904 = { # Balkh
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-		}
-		
-		ai_chance = {
-			factor = 100
-		}
-		
-		904 = {
-			province_event = {
-				id = 60302
-				days = 2
-			}
-		}
-	}
-}
-
-# Ping the target province
-province_event = {
-	id = 60302
-	hide_window = yes
-	
-	is_triggered_only = yes
-	
-	immediate = {
-		if = {
-			limit = {
-				FROM = {
-					is_ruler = yes
-				}
-			}
-			FROM = {
-				character_event = {
-					id = 60304
-				}
-			}
-		}
-		if = {
-			limit = {
-				FROM = {
-					is_ruler = no
-				}
-			}
-			FROM = {
-				character_event = {
-					id = 60303
-				}
-			}
-		}
-	}
-}
-
-# The landless Timur and his men start an adventure
-character_event = {
-	id = 60303
-	hide_window = yes
-	
-	is_triggered_only = yes
-	
-	prisoner = no
-	only_capable = yes
-	
-	trigger = {
-		is_alive = yes
-		NOT = { trait = blinded }
-		NOT = { trait = eunuch }
-		NOT = { trait = infirm }
-		lower_tier_than = KING
-	}
-	
-	immediate = {
-		wealth = 500
-		
-		any_liege = {
-			character_event = {
-				id = 60305
-				days = 1
-			}
-		}
-		
-		liege = {
-			capital_scope = {
-				FROM = {
-					owner = {
-						top_liege = {
-							ROOT = {
-								set_defacto_liege = ROOT
-								create_title = {
-									tier = DUKE
-									landless = yes
-									temporary = yes
-									culture = ROOT
-									name = "CLAIMANT_ADVENTURE"
-									holder = ROOT
-								}
-								
-								set_character_flag = duchy_adventurer
-							
-								spawn_unit = {
-									province = PREVPREVPREVPREV
-									home = PREVPREVPREVPREV
-									owner = THIS
-									#leader = THIS
-									match_character = PREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = timur_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREVPREVPREVPREV
-									home = PREVPREVPREVPREV
-									owner = THIS
-									match_character = PREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = timur_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREVPREVPREVPREV
-									home = PREVPREVPREVPREV
-									owner = THIS
-									match_character = PREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = timur_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREVPREVPREVPREV
-									home = PREVPREVPREVPREV
-									owner = THIS
-									match_character = PREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = timur_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREVPREVPREVPREV
-									home = PREVPREVPREVPREV
-									owner = THIS
-									match_character = PREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = timur_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREVPREVPREVPREV
-									home = PREVPREVPREVPREV
-									owner = THIS
-									match_character = PREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = timur_duchy_adventure
-								}
-								war = {
-									target = PREV
-									casus_belli = duchy_adventure
-									thirdparty_title = PREVPREVPREV
-									tier = DUKE
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		
-		# Create some characters
-		create_character = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 28
-			attributes = {
-				martial = 12
-			}
-			trait = brilliant_strategist
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 24
-			attributes = {
-				martial = 12
-			}
-			trait = brilliant_strategist
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 23
-			attributes = {
-				martial = 12
-			}
-			trait = brilliant_strategist
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 30
-			attributes = {
-				martial = 12
-			}
-			trait = brilliant_strategist
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 30
-			attributes = {
-				martial = 12
-			}
-			trait = brilliant_strategist
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = yes
-			age = 16
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = yes
-			age = 17
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = yes
-			age = 18
-		}
-		
-		log = "60303: Timur starts his first war (landless)!"
-	}
-}
-
-# The landed Timur and his men start an adventure
-character_event = {
-	id = 60304
-	desc = EVTDESC60304
-	
-	picture = GFX_evt_mongols
-	border = GFX_event_normal_frame_war
-	
-	is_triggered_only = yes
-	
-	prisoner = no
-	only_capable = yes
-	
-	trigger = {
-		is_alive = yes
-		NOT = { trait = blinded }
-		NOT = { trait = eunuch }
-		NOT = { trait = infirm }
-		lower_tier_than = KING
-	}
-	
-	immediate = {
-		wealth = 500
-		
-		any_liege = {
-			character_event = {
-				id = 60305
-				days = 1
-			}
-		}
-		
-		FROM = {
-			owner = {
-				top_liege = {
-					ROOT = {
-						capital_scope = {
-							ROOT = {
-								set_character_flag = duchy_adventurer
-								spawn_unit = {
-									province = PREV
-									home = PREV
-									owner = THIS
-									#leader = THIS
-									match_character = PREVPREVPREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = timur_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREV
-									home = PREV
-									owner = THIS
-									match_character = PREVPREVPREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = timur_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREV
-									home = PREV
-									owner = THIS
-									match_character = PREVPREVPREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = timur_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREV
-									home = PREV
-									owner = THIS
-									match_character = PREVPREVPREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = timur_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREV
-									home = PREV
-									owner = THIS
-									match_character = PREVPREVPREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = timur_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREV
-									home = PREV
-									owner = THIS
-									match_character = PREVPREVPREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = timur_duchy_adventure
-								}
-							}
-						}
-						
-						war = {
-							target = PREV
-							casus_belli = duchy_adventure
-							thirdparty_title = PREVPREVPREV
+			# Give adventurer title and start war
+			ROOT = {
+				capital_scope = {
+					event_target:timur = {
+						set_defacto_liege = THIS
+						create_title = {
 							tier = DUKE
+							landless = yes
+							temporary = yes
+							culture = THIS
+							name = "CLAIMANT_ADVENTURE"
+							holder = THIS
+						}
+						if = {
+							limit = { has_character_flag = will_be_nomadic }
+							clr_character_flag = will_be_nomadic
+							set_government_type = nomadic_government
+							population = 5000
+						}
+						set_character_flag = duchy_adventurer
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							troops = {
+								horse_archers = { 2700 2700 }
+								light_cavalry = { 1600 1600 }
+								light_infantry = { 541 541 }
+								heavy_infantry = { 210 210 }
+								knights = { 47 47 }
+							}
+							attrition = 0.25
+							cannot_inherit = yes
+							maintenance_multiplier = 0
+							earmark = timur_event_troops
+						}
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							match_character = event_target:timur_target_ruler
+							match_mult = 0.33
+							match_min = 500
+							match_max = 10000
+							attrition = 0.25
+							disband_on_peace = yes
+							earmark = timur_duchy_adventure
+						}
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							match_character = event_target:timur_target_ruler
+							match_mult = 0.33
+							match_min = 500
+							match_max = 10000
+							attrition = 0.25
+							disband_on_peace = yes
+							earmark = timur_duchy_adventure
+						}
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							match_character = event_target:timur_target_ruler
+							match_mult = 0.33
+							match_min = 500
+							match_max = 10000
+							attrition = 0.25
+							disband_on_peace = yes
+							earmark = timur_duchy_adventure
+						}
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							match_character = event_target:timur_target_ruler
+							match_mult = 0.33
+							match_min = 500
+							match_max = 10000
+							attrition = 0.25
+							disband_on_peace = yes
+							earmark = timur_duchy_adventure
+						}
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							match_character = event_target:timur_target_ruler
+							match_mult = 0.33
+							match_min = 500
+							match_max = 10000
+							attrition = 0.25
+							disband_on_peace = yes
+							earmark = timur_duchy_adventure
+						}
+						event_target:timur_target_ruler = {
+							event_target:timur_target_province = {
+								event_target:timur = {		
+									war = {
+										target = PREVPREV
+										casus_belli = duchy_adventure
+										thirdparty_title = PREV
+										tier = DUKE
+										infamy = 0
+									}
+								}
+							}
 						}
 					}
 				}
 			}
+			character_event = { id = 60301 }
 		}
-		
-		# Create some characters
-		create_character = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 28
-			attributes = {
-				martial = 12
-			}
-			trait = brilliant_strategist
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 24
-			attributes = {
-				martial = 12
-			}
-			trait = brilliant_strategist
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 23
-			attributes = {
-				martial = 12
-			}
-			trait = brilliant_strategist
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 30
-			attributes = {
-				martial = 12
-			}
-			trait = brilliant_strategist
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 30
-			attributes = {
-				martial = 12
-			}
-			trait = brilliant_strategist
-		}
-		
-		create_character = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = yes
-			age = 16
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = yes
-			age = 17
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = yes
-			age = 18
-		}
-		
-		log = "60303: Timur starts his first war (landed)!"
 	}
-	
-	option = {
-		name = EVTOPTA60204
-	}
-}
 
-# Notify Timur's old liege
-character_event = {
-	id = 60305
-	desc = EVTDESC60205
-	picture = GFX_evt_mongols
-	border = GFX_event_normal_frame_war
-	
-	is_triggered_only = yes
-	
-	trigger = {
-		FROM = { is_ruler = yes } # The DoW worked and the adventurer has a temporary title
-	}
-	
 	option = {
 		name = EVTOPTA60305
+	}
+}
+
+# Spawn Timur's extra courtiers
+character_event = {
+	id = 60301
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		# Create some extra courtiers
+		create_random_diplomat = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 30
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
+		create_random_priest = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 35
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
+		create_random_soldier = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 30
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
+		create_random_soldier = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 25
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
+		create_random_soldier = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 22
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
+		create_character = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = yes
+			age = 16
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
+		create_character = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = yes
+			age = 17
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
+		create_character = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = yes
+			age = 18
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
 	}
 }
 
@@ -3779,30 +3652,16 @@ narrative_event = {
 	major = yes
 	
 	immediate = {
+		set_character_flag = timur_reinforcements
+		set_defacto_liege = ROOT
+
+		prestige = 500
+		piety = 100
+		
 		if = {
-			limit = {
-				OR = {
-					independent = yes
-					liege = {
-						ai = yes
-					}
-				}
-			}
+			limit = { independent = no }
 			set_defacto_liege = ROOT
 			emf_liege_change_effect = yes
-			activate_title = { title = e_timurids status = yes }
-			e_timurids = {
-				grant_title = ROOT
-			}
-		}
-		
-		prestige = 1000
-		
-		if = {
-			limit = {
-				uses_decadence = yes
-			}
-			decadence = -25
 		}
 		
 		capital_scope = {
@@ -3818,7 +3677,9 @@ narrative_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = timur_initial_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = timur_event_troops
 				}
 				spawn_unit = {
 					province = PREV
@@ -3831,7 +3692,9 @@ narrative_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = timur_initial_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = timur_event_troops
 				}
 				spawn_unit = {
 					province = PREV
@@ -3844,7 +3707,9 @@ narrative_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = timur_initial_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = timur_event_troops
 				}
 				spawn_unit = {
 					province = PREV
@@ -3857,7 +3722,9 @@ narrative_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = timur_initial_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = timur_event_troops
 				}
 				spawn_unit = {
 					province = PREV
@@ -3870,7 +3737,9 @@ narrative_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = timur_initial_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = timur_event_troops
 				}
 				spawn_unit = {
 					province = PREV
@@ -3883,7 +3752,9 @@ narrative_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = timur_initial_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = timur_event_troops
 				}
 				spawn_unit = {
 					province = PREV
@@ -3896,7 +3767,9 @@ narrative_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = timur_initial_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = timur_event_troops
 				}
 				spawn_unit = {
 					province = PREV
@@ -3909,104 +3782,84 @@ narrative_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = timur_initial_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = timur_event_troops
 				}
-				
-				random = {
-					chance = 50
-					spawn_unit = {
-						province = PREV
-						home = PREV
-						owner = THIS
-						troops = {
-							horse_archers = { 2700 2700 }
-							light_cavalry = { 1600 1600 }
-							light_infantry = { 541 541 }
-							heavy_infantry = { 210 210 }
-							knights = { 47 47 }
-						}
-						earmark = timur_initial_success
+				spawn_unit = {
+					province = PREV
+					home = PREV
+					owner = THIS
+					troops = {
+						horse_archers = { 2700 2700 }
+						light_cavalry = { 1600 1600 }
+						light_infantry = { 541 541 }
+						heavy_infantry = { 210 210 }
+						knights = { 47 47 }
 					}
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = timur_event_troops
 				}
-				random = {
-					chance = 50
-					spawn_unit = {
-						province = PREV
-						home = PREV
-						owner = THIS
-						troops = {
-							horse_archers = { 2700 2700 }
-							light_cavalry = { 1600 1600 }
-							light_infantry = { 541 541 }
-							heavy_infantry = { 210 210 }
-							knights = { 47 47 }
-						}
-						earmark = timur_initial_success
+				spawn_unit = {
+					province = PREV
+					home = PREV
+					owner = THIS
+					troops = {
+						horse_archers = { 2700 2700 }
+						light_cavalry = { 1600 1600 }
+						light_infantry = { 541 541 }
+						heavy_infantry = { 210 210 }
+						knights = { 47 47 }
 					}
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = timur_event_troops
 				}
-				random = {
-					chance = 50
-					spawn_unit = {
-						province = PREV
-						home = PREV
-						owner = THIS
-						troops = {
-							horse_archers = { 2700 2700 }
-							light_cavalry = { 1600 1600 }
-							light_infantry = { 541 541 }
-							heavy_infantry = { 210 210 }
-							knights = { 47 47 }
-						}
-						earmark = timur_initial_success
+				spawn_unit = {
+					province = PREV
+					home = PREV
+					owner = THIS
+					troops = {
+						horse_archers = { 2700 2700 }
+						light_cavalry = { 1600 1600 }
+						light_infantry = { 541 541 }
+						heavy_infantry = { 210 210 }
+						knights = { 47 47 }
 					}
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = timur_event_troops
 				}
-				random = {
-					chance = 50
-					spawn_unit = {
-						province = PREV
-						home = PREV
-						owner = THIS
-						troops = {
-							horse_archers = { 2700 2700 }
-							light_cavalry = { 1600 1600 }
-							light_infantry = { 541 541 }
-							heavy_infantry = { 210 210 }
-							knights = { 47 47 }
-						}
-						earmark = timur_initial_success
+				spawn_unit = {
+					province = PREV
+					home = PREV
+					owner = THIS
+					troops = {
+						horse_archers = { 2700 2700 }
+						light_cavalry = { 1600 1600 }
+						light_infantry = { 541 541 }
+						heavy_infantry = { 210 210 }
+						knights = { 47 47 }
 					}
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = timur_event_troops
 				}
-				random = {
-					chance = 50
-					spawn_unit = {
-						province = PREV
-						home = PREV
-						owner = THIS
-						troops = {
-							horse_archers = { 2700 2700 }
-							light_cavalry = { 1600 1600 }
-							light_infantry = { 541 541 }
-							heavy_infantry = { 210 210 }
-							knights = { 47 47 }
-						}
-						earmark = timur_initial_success
+				spawn_unit = {
+					province = PREV
+					home = PREV
+					owner = THIS
+					troops = {
+						horse_archers = { 2700 2700 }
+						light_cavalry = { 1600 1600 }
+						light_infantry = { 541 541 }
+						heavy_infantry = { 210 210 }
+						knights = { 47 47 }
 					}
-				}
-				random = {
-					chance = 50
-					spawn_unit = {
-						province = PREV
-						home = PREV
-						owner = THIS
-						troops = {
-							horse_archers = { 2700 2700 }
-							light_cavalry = { 1600 1600 }
-							light_infantry = { 541 541 }
-							heavy_infantry = { 210 210 }
-							knights = { 47 47 }
-						}
-						earmark = timur_initial_success
-					}
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = timur_event_troops
 				}
 			}
 		}
@@ -4036,11 +3889,10 @@ narrative_event = {
 	}
 }
 
-# Timur's successors revitalize the state
+# Timur's successor revitalizes the new state
 character_event = {
 	id = 60307
 	desc = EVTDESC60307
-	
 	picture = GFX_evt_mongols
 	border = GFX_event_normal_frame_war
 	
@@ -4048,22 +3900,34 @@ character_event = {
 	only_independent = yes
 	
 	trigger = {
-		year = 1370
-		NOT = { year = 1500 }
-		
 		dynasty = 800 # Timurid
+		war = no
+		year = 1370
 		
-		higher_tier_than = DUKE
+		higher_tier_than = duke
 		
 		martial = 7
+		NOT = { has_earmarked_regiments = timur_event_troops }
 		
-		has_global_flag = timur_spawned_by_event
-		NOT = { has_character_flag = timur_himself }
-		NOT = { has_character_flag = timur_reinforcements }
+		has_global_flag = timur_spawned
+
+		NOR = {
+			year = 1500
+			realm_size = 150
+			trait = blinded
+			trait = eunuch
+			trait = infirm
+			trait = content
+			trait = craven
+			trait = depressed
+			trait = imbecile
+			has_character_flag = timur_himself
+			has_character_flag = timur_reinforcements
+		}
 	}
 	
 	mean_time_to_happen = {
-		months = 360
+		months = 240
 		modifier = {
 			factor = 0.5
 			martial = 9
@@ -4081,14 +3945,9 @@ character_event = {
 	immediate = {
 		set_character_flag = timur_reinforcements
 		
-		if = {
-			limit = {
-				uses_decadence = yes
-			}
-			decadence = -75
-		}
+		piety = 250
 		
-		capital_scope = { 
+		capital_scope = {
 			ROOT = {
 				spawn_unit = {
 					province = PREV
@@ -4101,7 +3960,10 @@ character_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = timur_renewed_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = timur_event_troops
+					cannot_inherit = yes
 				}
 				spawn_unit = {
 					province = PREV
@@ -4114,7 +3976,10 @@ character_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = timur_renewed_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = timur_event_troops
+					cannot_inherit = yes
 				}
 				spawn_unit = {
 					province = PREV
@@ -4127,7 +3992,10 @@ character_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = timur_renewed_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = timur_event_troops
+					cannot_inherit = yes
 				}
 				spawn_unit = {
 					province = PREV
@@ -4140,7 +4008,10 @@ character_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = timur_renewed_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = timur_event_troops
+					cannot_inherit = yes
 				}
 				spawn_unit = {
 					province = PREV
@@ -4153,7 +4024,10 @@ character_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = timur_renewed_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = timur_event_troops
+					cannot_inherit = yes
 				}
 				spawn_unit = {
 					province = PREV
@@ -4166,7 +4040,10 @@ character_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = timur_renewed_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = timur_event_troops
+					cannot_inherit = yes
 				}
 				spawn_unit = {
 					province = PREV
@@ -4179,7 +4056,10 @@ character_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = timur_renewed_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = timur_event_troops
+					cannot_inherit = yes
 				}
 				if = {
 					limit = {
@@ -4196,20 +4076,10 @@ character_event = {
 							heavy_infantry = { 210 210 }
 							knights = { 47 47 }
 						}
-						earmark = timur_renewed_success
-					}
-					spawn_unit = {
-						province = PREV
-						home = PREV
-						owner = THIS
-						troops = {
-							horse_archers = { 2700 2700 }
-							light_cavalry = { 1600 1600 }
-							light_infantry = { 541 541 }
-							heavy_infantry = { 210 210 }
-							knights = { 47 47 }
-						}
-						earmark = timur_renewed_success
+						attrition = 0.25
+						maintenance_multiplier = 0
+						earmark = seljuk_event_troops
+						cannot_inherit = yes
 					}
 				}
 				if = {
@@ -4227,20 +4097,10 @@ character_event = {
 							heavy_infantry = { 210 210 }
 							knights = { 47 47 }
 						}
-						earmark = timur_renewed_success
-					}
-					spawn_unit = {
-						province = PREV
-						home = PREV
-						owner = THIS
-						troops = {
-							horse_archers = { 2700 2700 }
-							light_cavalry = { 1600 1600 }
-							light_infantry = { 541 541 }
-							heavy_infantry = { 210 210 }
-							knights = { 47 47 }
-						}
-						earmark = timur_renewed_success
+						attrition = 0.25
+						maintenance_multiplier = 0
+						earmark = seljuk_event_troops
+						cannot_inherit = yes
 					}
 				}
 				if = {
@@ -4258,20 +4118,10 @@ character_event = {
 							heavy_infantry = { 210 210 }
 							knights = { 47 47 }
 						}
-						earmark = timur_renewed_success
-					}
-					spawn_unit = {
-						province = PREV
-						home = PREV
-						owner = THIS
-						troops = {
-							horse_archers = { 2700 2700 }
-							light_cavalry = { 1600 1600 }
-							light_infantry = { 541 541 }
-							heavy_infantry = { 210 210 }
-							knights = { 47 47 }
-						}
-						earmark = timur_renewed_success
+						attrition = 0.25
+						maintenance_multiplier = 0
+						earmark = seljuk_event_troops
+						cannot_inherit = yes
 					}
 				}
 			}
@@ -4283,48 +4133,107 @@ character_event = {
 	}
 }
 
+# Event troops no longer needed
+character_event = {
+	id = 60308
+	desc = EVTDESC60208
+	picture = GFX_evt_mongols
+	border = GFX_event_normal_frame_war
+
+	only_playable = yes
+	has_character_flag = timur_reinforcements
+	
+	trigger = {
+		war = no
+		has_earmarked_regiments = timur_event_troops
+		tier = EMPEROR
+		realm_size = 150
+	}
+	
+	mean_time_to_happen = {
+		years = 5
+	}
+	
+	option = {
+		name = EVTOPTA60208
+		disband_event_forces = timur_event_troops
+	}
+}
+
 
 ##########################################
 # Rise of the Ghaznavids under Sabuktigin
 ##########################################
 
-# Sabuktigin distinguishes himself at a Mongol court
+# Sabuktigin appears and begins his first adventure
 character_event = {
 	id = 60400
 	desc = EVTDESC60400
-	
 	picture = GFX_evt_mongols
 	border = GFX_event_normal_frame_war
 	
 	only_playable = yes
 	religion_group = muslim
-	
+
 	trigger = {
 		year = 965
 		NOT = { year = 1010 }
+		c_bukhara = { owner_under_ROOT = yes }
 		
-		higher_tier_than = COUNT
-		
-		NOT = { has_global_flag = sabuktigin_spawned }
-		
-		1547 = { # SWMH: equiv to Ghazna
-			owner = {
-				same_realm = ROOT
+		any_independent_ruler = {
+			war = no
+			in_revolt = no
+			is_nomadic = no
+			is_tribal = no
+			NOR = {
+				is_tributary = yes
+				any_allied_character = { higher_tier_than = DUKE }
 			}
+			c_ghazna = { owner_under_PREV = yes }
 		}
+		NOT = { has_global_flag = sabuktigin_spawned }
 	}
 	
 	mean_time_to_happen = {
 		months = 24
+		modifier = {
+			factor = 0.5
+			year = 990
+		}
+		modifier = {
+			factor = 0.5
+			year = 1000
+		}
 	}
-	
+
 	immediate = {
-		create_character = {
+		set_global_flag = sabuktigin_spawned
+		c_bukhara = { location = { save_event_target_as = sabuktigin_origin } }
+		
+		# Pick the target
+		random_independent_ruler = {
+			limit = {
+				war = no
+				in_revolt = no
+				is_nomadic = no
+				is_tribal = no
+				NOR = {
+					is_tributary = yes
+					any_allied_character = { higher_tier_than = DUKE }
+				}
+				c_ghazna = { owner_under_PREV = yes }
+			}
+			save_event_target_as = sabuktigin_target_ruler
+			c_ghazna = { location = { save_event_target_as = sabuktigin_target_province } }
+		}
+		
+		# Now create Sabuktigin
+		create_random_soldier = {
 			random_traits = no
 			name = "Sabuktigin"
 			dynasty = 790
-			religion = ROOT
-			culture = ROOT
+			religion = event_target:sabuktigin_origin
+			culture = event_target:sabuktigin_origin
 			female = no
 			age = 18
 			attributes = {
@@ -4334,8 +4243,7 @@ character_event = {
 				intrigue = 9
 				learning = 6
 			}
-			health = 6
-			fertility = 0.8
+			health = 7
 			trait = brilliant_strategist
 			trait = diligent
 			trait = ambitious
@@ -4343,661 +4251,234 @@ character_event = {
 			trait = quick
 			trait = adventurer
 		}
-		
 		new_character = {
 			set_character_flag = sabuktigin_himself
-			character_event = {
-				id = 60401
-				days = 3285
-				random = 730
+			save_event_target_as = sabuktigin
+			log = "60400: INFO: Sabuktigin ([This.GetID]) spawned in the court of [Root.GetBestName] ([Root.PrimaryTitle.GetID])"
+			wealth = 500
+			prestige = 500
+			if = {
+				limit = { ROOT = { is_nomadic = yes } }
+				set_character_flag = will_be_nomadic
 			}
-		}
-	}
-	
-	option = { # A most capable young man
-		name = EVTOPTA60300
-		
-		set_global_flag = sabuktigin_spawned
-		set_global_flag = sabuktigin_spawned_by_event
-		
-		tooltip = {
-			create_character = {
-				random_traits = no
-				name = "Sabuktigin"
-				dynasty = 790
-				religion = ROOT
-				culture = ROOT
-				female = no
-				age = 18
-				attributes = {
-					martial = 12
-					diplomacy = 8
-					stewardship = 9
-					intrigue = 9
-					learning = 6
-				}
-				health = 6
-				fertility = 0.8
-				trait = brilliant_strategist
-				trait = diligent
-				trait = ambitious
-				trait = proud
-				trait = quick
-			}
-		}
-	}
-}
-
-# Sabuktigin and his men consider starting an adventure
-character_event = {
-	id = 60401
-	desc = EVTDESC60201
-	
-	picture = GFX_evt_mongols
-	border = GFX_event_normal_frame_war
-	
-	is_triggered_only = yes
-	
-	prisoner = no
-	only_capable = yes
-	
-	trigger = {
-		is_alive = yes
-		NOT = { trait = blinded }
-		NOT = { trait = eunuch }
-		NOT = { trait = infirm }
-		lower_tier_than = KING
-		
-		OR = {
-			1627 = { # SWMH: equiv to Nandana in Gandhara
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-			1615 = { # SWMH: equiv to Multan
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-			1620 = { # SWMH: equiv to Lahore
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-			1606 = { # SWMH: equiv to Bhakkar
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-		}
-	}
-	
-	option = { # Gandhara it is!
-		name = EVTOPTA60401
-		trigger = {
-			1627 = { # SWMH: equiv to Nandana
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-		}
-		
-		ai_chance = {
-			factor = 10000
-		}
-		
-		1627 = { # SWMH: equiv to Nandana
-			province_event = {
-				id = 60402
-				days = 2
-			}
-		}
-	}
-	option = { # Multan
-		name = EVTOPTB60401
-		trigger = {
-			1615 = { # SWMH: equiv to Multan
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-		}
-		
-		ai_chance = {
-			factor = 1000
-		}
-		
-		1615 = { # SWMH: equiv to Multan
-			province_event = {
-				id = 60402
-				days = 2
-			}
-		}
-	}
-	option = { # Lahore
-		name = EVTOPTC60401
-		trigger = {
-			1620 = { # SWMH: equiv to Lahore
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-		}
-		
-		ai_chance = {
-			factor = 100
-		}
-		
-		1620 = { # SWMH: equiv to Lahore
-			province_event = {
-				id = 60402
-				days = 2
-			}
-		}
-	}
-	option = { # Bhakkar
-		name = EVTOPTD60401
-		trigger = {
-			1606 = { # SWMH: equiv to Bhakkar
-				owner = {
-					NOT = { same_realm = ROOT }
-				}
-			}
-		}
-		
-		ai_chance = {
-			factor = 100
-		}
-		
-		1606 = { # SWMH: equiv to Bhakkar
-			province_event = {
-				id = 60402
-				days = 2
-			}
-		}
-	}
-}
-
-# Ping the target province
-province_event = {
-	id = 60402
-	hide_window = yes
-	
-	is_triggered_only = yes
-	
-	immediate = {
-		if = {
-			limit = {
-				FROM = {
-					is_ruler = yes
-				}
-			}
-			FROM = {
-				character_event = {
-					id = 60404
-				}
-			}
-		}
-		if = {
-			limit = {
-				FROM = {
-					is_ruler = no
-				}
-			}
-			FROM = {
-				character_event = {
-					id = 60403
-				}
-			}
-		}
-	}
-}
-
-# The landless Sabuktigin and his men start an adventure
-character_event = {
-	id = 60403
-	hide_window = yes
-	
-	is_triggered_only = yes
-	
-	prisoner = no
-	only_capable = yes
-	
-	trigger = {
-		is_alive = yes
-		NOT = { trait = blinded }
-		NOT = { trait = eunuch }
-		NOT = { trait = infirm }
-		lower_tier_than = KING
-	}
-	
-	immediate = {
-		wealth = 500
-		
-		any_liege = {
-			character_event = {
-				id = 60405
-				days = 1
-			}
-		}
-		
-		liege = {
-			capital_scope = {
-				FROM = {
-					owner = {
-						top_liege = {
-							ROOT = {
-								set_defacto_liege = ROOT
-								create_title = {
-									tier = DUKE
-									landless = yes
-									temporary = yes
-									culture = ROOT
-									name = "CLAIMANT_ADVENTURE"
-									holder = ROOT
-								}
-								
-								set_character_flag = duchy_adventurer
-							
-								spawn_unit = {
-									province = PREVPREVPREVPREV
-									home = PREVPREVPREVPREV
-									owner = THIS
-									#leader = THIS
-									match_character = PREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = sabuktigin_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREVPREVPREVPREV
-									home = PREVPREVPREVPREV
-									owner = THIS
-									match_character = PREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = sabuktigin_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREVPREVPREVPREV
-									home = PREVPREVPREVPREV
-									owner = THIS
-									match_character = PREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = sabuktigin_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREVPREVPREVPREV
-									home = PREVPREVPREVPREV
-									owner = THIS
-									match_character = PREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = sabuktigin_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREVPREVPREVPREV
-									home = PREVPREVPREVPREV
-									owner = THIS
-									match_character = PREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = sabuktigin_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREVPREVPREVPREV
-									home = PREVPREVPREVPREV
-									owner = THIS
-									match_character = PREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = sabuktigin_duchy_adventure
-								}
-								war = {
-									target = PREV
-									casus_belli = duchy_adventure
-									thirdparty_title = PREVPREVPREV
-									tier = DUKE
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		
-		# Create some characters
-		create_character = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 28
-			attributes = {
-				martial = 12
-			}
-			trait = brilliant_strategist
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 24
-			attributes = {
-				martial = 12
-			}
-			trait = brilliant_strategist
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 23
-			attributes = {
-				martial = 12
-			}
-			trait = brilliant_strategist
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 30
-			attributes = {
-				martial = 12
-			}
-			trait = brilliant_strategist
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 30
-			attributes = {
-				martial = 12
-			}
-			trait = brilliant_strategist
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = yes
-			age = 16
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = yes
-			age = 17
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = yes
-			age = 18
-		}
-		
-		log = "60403: Sabuktigin starts his first war (landless)!"
-	}
-}
-
-# The landed Sabuktigin and his men start an adventure
-character_event = {
-	id = 60404
-	desc = EVTDESC60304
-	
-	picture = GFX_evt_mongols
-	border = GFX_event_normal_frame_war
-	
-	is_triggered_only = yes
-	
-	prisoner = no
-	only_capable = yes
-	
-	trigger = {
-		is_alive = yes
-		NOT = { trait = blinded }
-		NOT = { trait = eunuch }
-		NOT = { trait = infirm }
-		lower_tier_than = KING
-	}
-	
-	immediate = {
-		wealth = 500
-		
-		any_liege = {
-			character_event = {
-				id = 60405
-				days = 1
-			}
-		}
-		
-		FROM = {
-			owner = {
-				top_liege = {
-					ROOT = {
-						capital_scope = {
-							ROOT = {
-								set_character_flag = duchy_adventurer
-								spawn_unit = {
-									province = PREV
-									home = PREV
-									owner = THIS
-									#leader = THIS
-									match_character = PREVPREVPREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = sabuktigin_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREV
-									home = PREV
-									owner = THIS
-									match_character = PREVPREVPREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = sabuktigin_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREV
-									home = PREV
-									owner = THIS
-									match_character = PREVPREVPREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = sabuktigin_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREV
-									home = PREV
-									owner = THIS
-									match_character = PREVPREVPREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = sabuktigin_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREV
-									home = PREV
-									owner = THIS
-									match_character = PREVPREVPREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = sabuktigin_duchy_adventure
-								}
-								spawn_unit = {
-									province = PREV
-									home = PREV
-									owner = THIS
-									match_character = PREVPREVPREV
-									match_mult = 0.33
-									match_min = 500
-									match_max = 10000
-									attrition = 0.25
-									earmark = sabuktigin_duchy_adventure
-								}
-							}
-						}
-						
-						war = {
-							target = PREV
-							casus_belli = duchy_adventure
-							thirdparty_title = PREVPREVPREV
+			# Give adventurer title and start war
+			ROOT = {
+				event_target:sabuktigin_origin = {
+					event_target:sabuktigin = {
+						set_defacto_liege = THIS
+						create_title = {
 							tier = DUKE
+							landless = yes
+							temporary = yes
+							culture = THIS
+							name = "CLAIMANT_ADVENTURE"
+							holder = THIS
+						}
+						if = {
+							limit = { has_character_flag = will_be_nomadic }
+							clr_character_flag = will_be_nomadic
+							set_government_type = nomadic_government
+							population = 5000
+						}
+						set_character_flag = duchy_adventurer
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							troops = {
+								horse_archers = { 2700 2700 }
+								light_cavalry = { 1600 1600 }
+								light_infantry = { 541 541 }
+								heavy_infantry = { 210 210 }
+								knights = { 47 47 }
+							}
+							attrition = 0.25
+							cannot_inherit = yes
+							maintenance_multiplier = 0
+							earmark = sabuktigin_event_troops
+						}
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							match_character = event_target:sabuktigin_target_ruler
+							match_mult = 0.33
+							match_min = 500
+							match_max = 10000
+							attrition = 0.25
+							disband_on_peace = yes
+							earmark = sabuktigin_duchy_adventure
+						}
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							match_character = event_target:sabuktigin_target_ruler
+							match_mult = 0.33
+							match_min = 500
+							match_max = 10000
+							attrition = 0.25
+							disband_on_peace = yes
+							earmark = sabuktigin_duchy_adventure
+						}
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							match_character = event_target:sabuktigin_target_ruler
+							match_mult = 0.33
+							match_min = 500
+							match_max = 10000
+							attrition = 0.25
+							disband_on_peace = yes
+							earmark = sabuktigin_duchy_adventure
+						}
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							match_character = event_target:sabuktigin_target_ruler
+							match_mult = 0.33
+							match_min = 500
+							match_max = 10000
+							attrition = 0.25
+							disband_on_peace = yes
+							earmark = sabuktigin_duchy_adventure
+						}
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							match_character = event_target:sabuktigin_target_ruler
+							match_mult = 0.33
+							match_min = 500
+							match_max = 10000
+							attrition = 0.25
+							disband_on_peace = yes
+							earmark = sabuktigin_duchy_adventure
+						}
+						event_target:sabuktigin_target_ruler = {
+							event_target:sabuktigin_target_province = {
+								event_target:sabuktigin = {		
+									war = {
+										target = PREVPREV
+										casus_belli = duchy_adventure
+										thirdparty_title = PREV
+										tier = DUKE
+										infamy = 0
+									}
+								}
+							}
 						}
 					}
 				}
 			}
+			character_event = { id = 60401 }
 		}
-		
-		# Create some characters
-		create_character = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 28
-			attributes = {
-				martial = 12
-			}
-			trait = brilliant_strategist
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 24
-			attributes = {
-				martial = 12
-			}
-			trait = brilliant_strategist
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 23
-			attributes = {
-				martial = 12
-			}
-			trait = brilliant_strategist
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 30
-			attributes = {
-				martial = 12
-			}
-			trait = brilliant_strategist
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 30
-			attributes = {
-				martial = 12
-			}
-			trait = brilliant_strategist
-		}
-		
-		create_character = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = yes
-			age = 16
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = yes
-			age = 17
-		}
-		create_character = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = yes
-			age = 18
-		}
-		
-		log = "60404: Sabuktigin starts his first war (landed)!"
 	}
-	
-	option = {
-		name = EVTOPTA60204
-	}
-}
 
-# Notify Sabuktigin's old liege
-character_event = {
-	id = 60405
-	desc = EVTDESC60205
-	picture = GFX_evt_mongols
-	border = GFX_event_normal_frame_war
-	
-	is_triggered_only = yes
-	
-	trigger = {
-		FROM = { is_ruler = yes } # The DoW worked and the adventurer has a temporary title
-	}
-	
 	option = {
 		name = EVTOPTA60305
+	}
+}
+
+# Spawn Sabuktigin's extra courtiers
+character_event = {
+	id = 60401
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		# Create some extra courtiers
+		create_random_diplomat = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 30
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
+		create_random_priest = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 35
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
+		create_random_soldier = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 30
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
+		create_random_soldier = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 25
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
+		create_random_soldier = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = no
+			age = 22
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
+		create_character = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = yes
+			age = 16
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
+		create_character = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = yes
+			age = 17
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
+		create_character = {
+			random_traits = yes
+			dynasty = none
+			religion = ROOT
+			culture = ROOT
+			female = yes
+			age = 18
+		}
+		new_character = {
+			opinion = { who = ROOT modifier = opinion_loyal_servant multiplier = 2 }
+		}
 	}
 }
 
@@ -5015,32 +4496,19 @@ narrative_event = {
 	major = yes
 	
 	immediate = {
+		set_character_flag = sabuktigin_reinforcements
+		set_defacto_liege = ROOT
+
+		prestige = 500
+		piety = 100
+		
 		if = {
-			limit = {
-				OR = {
-					independent = yes
-					liege = {
-						ai = yes
-					}
-				}
-			}
+			limit = { independent = no }
 			set_defacto_liege = ROOT
 			emf_liege_change_effect = yes
 		}
 		
-		prestige = 1000
-		
-		if = {
-			limit = {
-				uses_decadence = yes
-			}
-			decadence = -25
-		}
-		
 		capital_scope = {
-			religion = ROOT
-			culture = ROOT
-			
 			ROOT = {
 				spawn_unit = {
 					province = PREV
@@ -5053,7 +4521,9 @@ narrative_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = sabuktigin_initial_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = sabuktigin_event_troops
 				}
 				spawn_unit = {
 					province = PREV
@@ -5066,7 +4536,9 @@ narrative_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = sabuktigin_initial_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = sabuktigin_event_troops
 				}
 				spawn_unit = {
 					province = PREV
@@ -5079,7 +4551,9 @@ narrative_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = sabuktigin_initial_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = sabuktigin_event_troops
 				}
 				spawn_unit = {
 					province = PREV
@@ -5092,7 +4566,9 @@ narrative_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = sabuktigin_initial_success
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = sabuktigin_event_troops
 				}
 				spawn_unit = {
 					province = PREV
@@ -5105,40 +4581,9 @@ narrative_event = {
 						heavy_infantry = { 210 210 }
 						knights = { 47 47 }
 					}
-					earmark = sabuktigin_initial_success
-				}
-				
-				random = {
-					chance = 50
-					spawn_unit = {
-						province = PREV
-						home = PREV
-						owner = THIS
-						troops = {
-							horse_archers = { 2700 2700 }
-							light_cavalry = { 1600 1600 }
-							light_infantry = { 541 541 }
-							heavy_infantry = { 210 210 }
-							knights = { 47 47 }
-						}
-						earmark = sabuktigin_initial_success
-					}
-				}
-				random = {
-					chance = 50
-					spawn_unit = {
-						province = PREV
-						home = PREV
-						owner = THIS
-						troops = {
-							horse_archers = { 2700 2700 }
-							light_cavalry = { 1600 1600 }
-							light_infantry = { 541 541 }
-							heavy_infantry = { 210 210 }
-							knights = { 47 47 }
-						}
-						earmark = sabuktigin_initial_success
-					}
+					attrition = 0.25
+					maintenance_multiplier = 0
+					earmark = sabuktigin_event_troops
 				}
 				random = {
 					chance = 50
@@ -5153,21 +4598,48 @@ narrative_event = {
 							heavy_infantry = { 210 210 }
 							knights = { 47 47 }
 						}
-						earmark = sabuktigin_initial_success
+						attrition = 0.25
+						maintenance_multiplier = 0
+						earmark = sabuktigin_event_troops
+					}
+				}
+				random = {
+					chance = 50
+					spawn_unit = {
+						province = PREV
+						home = PREV
+						owner = THIS
+						troops = {
+							horse_archers = { 2700 2700 }
+							light_cavalry = { 1600 1600 }
+							light_infantry = { 541 541 }
+							heavy_infantry = { 210 210 }
+							knights = { 47 47 }
+						}
+						attrition = 0.25
+						maintenance_multiplier = 0
+						earmark = sabuktigin_event_troops
+					}
+				}
+				random = {
+					chance = 50
+					spawn_unit = {
+						province = PREV
+						home = PREV
+						owner = THIS
+						troops = {
+							horse_archers = { 2700 2700 }
+							light_cavalry = { 1600 1600 }
+							light_infantry = { 541 541 }
+							heavy_infantry = { 210 210 }
+							knights = { 47 47 }
+						}
+						attrition = 0.25
+						maintenance_multiplier = 0
+						earmark = sabuktigin_event_troops
 					}
 				}
 			}
-		}
-		
-		random_realm_province = {
-			limit = {
-				OR = {
-					NOT = { culture = ROOT }
-					NOT = { religion = ROOT }
-				}
-			}
-			religion = ROOT
-			culture = ROOT
 		}
 		
 		log = "60406: Sabuktigin wins his first war!"
@@ -5186,6 +4658,38 @@ narrative_event = {
 		}
 	}
 }
+
+# Event troops no longer needed
+character_event = {
+	id = 60408
+	desc = EVTDESC60208
+	picture = GFX_evt_mongols
+	border = GFX_event_normal_frame_war
+
+	only_playable = yes
+	has_character_flag = sabuktigin_reinforcements
+	
+	trigger = {
+		war = no
+		has_earmarked_regiments = sabuktigin_event_troops
+		tier = EMPEROR
+		realm_size = 150
+	}
+	
+	mean_time_to_happen = {
+		years = 5
+	}
+	
+	option = {
+		name = EVTOPTA60208
+		disband_event_forces = sabuktigin_event_troops
+	}
+}
+
+
+##########################################
+# New Mongol Events
+##########################################
 
 # Mongol horde starts forming
 narrative_event = {

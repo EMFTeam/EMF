@@ -2,7 +2,7 @@
 
 namespace = emf_decadence
 
-#reserved: emf_decadence.0
+#reserved: emf_decadence.0-9
 #reserved: emf_decadence.2500 to emf_decadence.2599
 
 #######################################
@@ -72,85 +72,101 @@ character_event = {
 			}
 		}
 		
-		# Add realm-dynasty-head to "actual decadence" var
-		if = {
-			limit = { trait = decadent }
-			if = {
-				limit = { tier = BARON }
-				change_variable = { which = d value = 2 }
-			}
-			if = {
-				limit = { tier = COUNT }
-				change_variable = { which = d value = 3 }
-			}
-			if = {
-				limit = { higher_tier_than = COUNT }
-				change_variable = { which = d value = 4 }
-			}
-		}
-		# Add rest of dynasty to "actual decadence"
-		any_dynasty_member = {
-			limit = {
-				trait = decadent
-				is_liege_or_above = ROOT
-			}
-			if = {
-				limit = { is_ruler = no }
-				ROOT = { change_variable = { which = d value = 1 } }
-			}
-			if = {
-				limit = { is_ruler = yes }
-				if = {
-					limit = { tier = BARON }
-					ROOT = { change_variable = { which = d value = 2 } }
-				}
-				if = {
-					limit = { tier = COUNT }
-					ROOT = { change_variable = { which = d value = 3 } }
-				}
-				if = {
-					limit = { higher_tier_than = COUNT }
-					ROOT = { change_variable = { which = d value = 4 } }
-				}
-			}
-		}
-		
-		# Turn var `d` into "percentage of decadence potential realized"
-		multiply_variable = { which = d value = 100 }
-		divide_variable = { which = d which = dmax }
-		
-		# If the realm dynasty head is decadent themselves, then effective realm decadence is doubled
-		if = {
-			limit = { trait = decadent }
-			multiply_variable = { which = d value = 2 }
-		}
-		
 		# Remove any realm decadence state which needed to persist due to cooperation
 		# with an MTTH event for reducing perceived realm decadence (emf_decadence.2501)
 		clr_character_flag = emf_dec_reducing
 		clr_character_flag = emf_dec_low
 		clr_character_flag = emf_dec_med
 		
-		# Classify current realm decadence
+		# Ensure there is enough "decadence potential" for scaled decadence to make sense
 		if = {
-			limit = {
-				check_variable = { which = d value = 12 }
-				NOT = { check_variable = { which = d value = 22 } }
+			limit = { check_variable = { which = dmax value = 15 } }
+			# Add realm-dynasty-head to "actual decadence" var
+			if = {
+				limit = { trait = decadent }
+				if = {
+					limit = { tier = BARON }
+					change_variable = { which = d value = 2 }
+				}
+				if = {
+					limit = { tier = COUNT }
+					change_variable = { which = d value = 3 }
+				}
+				if = {
+					limit = { higher_tier_than = COUNT }
+					change_variable = { which = d value = 4 }
+				}
 			}
-			set_character_flag = emf_dec_low
+			
+			# Add rest of dynasty to "actual decadence" var
+			any_dynasty_member = {
+				limit = {
+					trait = decadent
+					is_liege_or_above = ROOT
+				}
+				if = {
+					limit = { is_ruler = no }
+					ROOT = { change_variable = { which = d value = 1 } }
+				}
+				if = {
+					limit = { is_ruler = yes }
+					if = {
+						limit = { tier = BARON }
+						ROOT = { change_variable = { which = d value = 2 } }
+					}
+					if = {
+						limit = { tier = COUNT }
+						ROOT = { change_variable = { which = d value = 3 } }
+					}
+					if = {
+						limit = { higher_tier_than = COUNT }
+						ROOT = { change_variable = { which = d value = 4 } }
+					}
+				}
+			}
+			
+			# Turn var `d` into "percentage of decadence potential realized"
+			multiply_variable = { which = d value = 100 }
+			divide_variable = { which = d which = dmax }
+			
+			# If the realm dynasty head is decadent themselves, then effective realm decadence is +50%
+			if = {
+				limit = { trait = decadent }
+				multiply_variable = { which = d value = 1.5 }
+			}
+			
+			# Classify current realm decadence
+			if = {
+				limit = {
+					check_variable = { which = d value = 12 }
+					NOT = { check_variable = { which = d value = 22 } }
+				}
+				set_character_flag = emf_dec_low
+			}
+			if = {
+				limit = {
+					check_variable = { which = d value = 22 }
+					NOT = { check_variable = { which = d value = 32 } }
+				}
+				set_character_flag = emf_dec_med
+			}
+			if = {
+				limit = {
+					check_variable = { which = d value = 32 }
+				}
+				set_character_flag = emf_dec_high
+			}
 		}
+		
+		# If there wasn't enough "decadence potential" for scaled decadence to make much sense, then
+		# either give them a low-grade Decadent Dynasty trait if the dynasty head is decadent and otherwise give
+		# them no Decadent Dynasty trait.
 		if = {
-			limit = {
-				check_variable = { which = d value = 22 }
-				NOT = { check_variable = { which = d value = 32 } }
+			limit = { NOT = { check_variable = { which = dmax value = 15 } } }
+			if = {
+				limit = { trait = decadent }
+				set_character_flag = emf_dec_low
 			}
-			set_character_flag = emf_dec_med
-		}
-		if = {
-			limit = {
-				check_variable = { which = d value = 32 }
-			}
-			set_character_flag = emf_dec_high
 		}
 		
 		# Clear variables
@@ -229,6 +245,18 @@ character_event = {
 		# take time to fade, we allow an MTTH event (emf_decadence.2501) to lower it, using our set flags
 		# as the "true" decadence class and preexisting traits as the "perceived" decadence class.
 		set_character_flag = emf_dec_reducing
+	}
+}
+
+# emf_decadence.1 -- bounce event for notifying that ROOT has become decadent
+character_event = {
+	id = emf_decadence.1
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	immediate = {
+		emf_decadence_become_decadent_effect = yes
 	}
 }
 

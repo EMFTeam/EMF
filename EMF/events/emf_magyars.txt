@@ -236,11 +236,22 @@ character_event = {
 	
 	immediate = {
 		set_character_flag = vassal_khan
+		character_event = { id = emf_magyar.2004 days = 1 }
+	}
+}
+
+character_event = {
+	id = emf_magyar.2004
+
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
 		k_magyar = {
 			holder_scope = {
 				ROOT = {
 					move_character = PREV
-					any_spouse = { move_character = PREV }
+					any_spouse = { move_character = PREVPREV }
 					any_child = {
 						limit = {
 							OR = {
@@ -249,10 +260,15 @@ character_event = {
 									is_ruler = no
 									is_councillor = no
 									in_command = no
+									NOT = { any_spouse = { is_ruler = yes } }
+									OR = {
+										is_female = no
+										is_married = no
+									}
 								}
 							}
 						}
-						move_character = PREV
+						move_character = PREVPREV
 					}
 				}
 			}
@@ -400,7 +416,6 @@ character_event = {
 						}
 						attrition = 0.25
 						reinforces = yes
-						earmark = magyar_migration_troops
 					}
 					spawn_unit = {
 						province = PREV
@@ -1984,7 +1999,7 @@ narrative_event = {
 	}
 	
 	mean_time_to_happen = {
-		months = 12
+		months = 60
 	}
 	
 	immediate = {
@@ -1993,16 +2008,19 @@ narrative_event = {
 		religion_authority = { modifier = ruler_converted_from }
 		religion = catholic
 		religion_authority = { modifier = ruler_converted_to }
-		any_courtier = {
+		save_event_target_as = king_hungary
+		random_realm_character = {
 			limit = {
+				ai = yes
+				religion_group = pagan_group
 				OR = {
 					dynasty = ROOT
 					is_close_relative = ROOT
+					vassal_of = ROOT
 				}
-				is_ruler = no
 			}
-			religion = ROOT
-		}	
+			character_event = { id = emf_magyar.3023 days = 1 }
+		}
 	}
 	
 	option = {
@@ -2015,5 +2033,62 @@ narrative_event = {
 	}
 }
 
+# Recursive conversion event for all AI vassals in Hungary
+character_event = {
+	id = emf_magyar.3023
 	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		set_character_flag = considered_conversion
+		random = {
+			chance = 50
+			modifier = {
+				factor = 2
+				OR = {
+					opinion = { who = event_target:king_hungary value = 25 }
+					trait = sympathy_christendom
+					any_heir_title = { holder = event_target:king_hungary }
+					AND = {
+						is_ruler = no
+						host = { character = event_target:king_hungary }
+					}
+				}
+			}
+			modifier = {
+				factor = 0
+				OR = {
+					NOT = { opinion = { who = event_target:king_hungary value = -25 } }
+					trait = zealous
+				}
+			}
+			religion = catholic
+			any_child = {
+				limit = {
+					is_adult = no
+					host = { character = PREVPREV }
+				}
+				religion = catholic
+			}
+		}
+		event_target:king_hungary = {
+			random_realm_character = {
+				limit = {
+					ai = yes
+					religion_group = pagan_group
+					NOT = { has_character_flag = considered_conversion }
+					OR = {
+						dynasty = PREV
+						is_close_relative = PREV
+						vassal_of = PREV
+					}
+				}
+				character_event = { id = emf_magyar.3023 }
+			}
+		}
+	}
+}
+
+
 
