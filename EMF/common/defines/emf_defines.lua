@@ -40,9 +40,8 @@ NDefines.NInfamy.MIN_INFAMY_PER_WAR_PROVINCE = 0
 -- Character
 NDefines.NCharacter.CHANGE_AMBITION_YEARS = 1
 NDefines.NCharacter.CHANGE_FOCUS_YEARS = 3
-NDefines.NCharacter.PRESTIGE_FROM_DYNASTY_ON_BIRTH_DIV = 15       -- from 10 in EMF 5.02 (vanilla = 5)
-NDefines.NCharacter.PRESTIGE_FROM_DYNASTY_ON_MARRIAGE_DIV = 15    -- from 10
-NDefines.NCharacter.NEED_GUARDIAN_AT_AGE = 5                      -- from 6, obviously
+NDefines.NCharacter.PRESTIGE_FROM_DYNASTY_ON_BIRTH_DIV = 15
+NDefines.NCharacter.PRESTIGE_FROM_DYNASTY_ON_MARRIAGE_DIV = 15
 NDefines.NCharacter.ASSIGN_ACTION_DAYS = 92
 NDefines.NCharacter.RAISED_TROOPS_VASSAL_OPINION_DAYS = 42
 NDefines.NCharacter.MAX_JOINED_FACTIONS = 4
@@ -74,7 +73,14 @@ NDefines.NTitle.EMPEROR_DESTRUCTION_PRESTIGE_COST = 500
 NDefines.NTitle.NORMAL_LAW_CHANGE_COUNCIL_MONTHS = 48 -- from 60
 NDefines.NTitle.NORMAL_LAW_CHANGE_ABSOLUTISM_MONTHS = 120
 NDefines.NTitle.MAX_CROWN_LAW_CHANGES = 64  -- intention is "unlimited" due to the way EMF CA sub-laws are designed & existence of its soft-coded cooldowns
+NDefines.NTitle.CROWN_LAW_CHANGE_TIMER = 0
 NDefines.NTitle.EMPIRE_DE_JURE_ASSIMILATION_YEARS = 50
+NDefines.NTitle.GAME_RULES_DEJURE_LONG = 200
+NDefines.NTitle.GAME_RULES_DEJURE_LONG_EMPIRE = 100
+NDefines.NTitle.GAME_RULES_DEJURE_SHORT = 70
+NDefines.NTitle.GAME_RULES_DEJURE_SHORT_EMPIRE = 35
+NDefines.NTitle.GAME_RULES_DEJURE_SHORTEST = 20
+NDefines.NTitle.GAME_RULES_DEJURE_SHORTEST_EMPIRE = 10
 NDefines.NTitle.REQ_KINGDOMS_FOR_EMPIRE_CREATION = 3 -- from 2
 NDefines.NTitle.MAX_REPUBLIC_COUNTIES_IN_REALM = 0.2
 NDefines.NTitle.MAX_THEOCRACY_COUNTIES_IN_REALM = 0.2
@@ -105,7 +111,7 @@ NDefines.NEconomy.BUILDING_COST_MULT = 0.2
 
 -- Nomad
 NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 1500
-NDefines.NNomad.MAX_CLANS = 12 -- *
+NDefines.NNomad.MAX_CLANS = 12
 NDefines.NNomad.STARTING_HORDE_MAX_FRACTION = 1
 
 -- Military
@@ -206,7 +212,7 @@ NDefines.NTechnology.MAX_DEMESNE_BONUS = 0.5
 NDefines.NTechnology.TRADEPOST_SPREAD_BONUS = 0.01
 
 -- Disease
-NDefines.NDisease.CROWDED_THRESHOLD_MODIFIER = 60
+NDefines.NDisease.CROWDED_THRESHOLD_MODIFIER = 30
 
 -- Engine
 NDefines.NEngine.EVENT_PROCESS_OFFSET = 30
