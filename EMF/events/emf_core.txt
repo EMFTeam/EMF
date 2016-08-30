@@ -532,7 +532,8 @@ character_event = {
 #
 # Called on annual maintenance throughout the year as well as explicitly
 # from all CBs' on_success_posttitle -> emf_cb_on_success_posttitle_effect -> here
-# specifically for the realms affected by territory change due to the war.
+# specifically for the realms potentially affected by territory change due to the war.
+# Also called on_startup.
 character_event = {
 	id = emf_core.65
 	
@@ -547,72 +548,35 @@ character_event = {
 	
 	immediate = {
 		# log = "DEBUG: emf_core.65: calculating emf_capital_connected for [This.GetTitledFirstName] of [This.PrimaryTitle.GetBaseName] ([This.GetID]/[This.PrimaryTitle.GetID])"
-		any_realm_province = { clr_province_flag = emf_capital_connected }
-		capital_scope = {
+		any_realm_province = { clr_province_flag = emf_capital_connected } # Remove old state
+		capital_scope = { # Seed the capital
 			set_province_flag = emf_capital_connected
-			any_neighbor_province = {
+			any_neighbor_province = { # Handle near-OPMs quickly (loop below makes it technically redundant)
 				limit = { owner = { same_realm = ROOT } }
 				set_province_flag = emf_capital_connected
 			}
 		}
-		character_event = { id = emf_core.66 }
-	}
-}
-
-# emf_core.66
-# Recursive component of emf_core.65 -- spread the contagion
-#
-# Note that this *isn't* the same sort of design as the old CK2+ implementation
-# of whole-world recursive province marking, which was _dramatically_ more
-# computationally complex. [Note that CK2Plus no longer calculates in that way either.]
-character_event = {
-	id = emf_core.66
-	
-	is_triggered_only = yes
-	hide_window = yes
-	
-	trigger = {
-		any_realm_province = {
-			NOT = { has_province_flag = emf_capital_connected }
-			any_neighbor_province = {
-				owner = { same_realm = ROOT }
-				has_province_flag = emf_capital_connected
-			}
-		}
-	}
-	
-	immediate = {
-		any_realm_province = {
+		while = {
 			limit = {
-				NOT = { has_province_flag = emf_capital_connected }
-				any_neighbor_province = {
-					owner = { same_realm = ROOT }
-					has_province_flag = emf_capital_connected
+				any_realm_province = {
+					NOT = { has_province_flag = emf_capital_connected }
+					any_neighbor_province = {
+						owner = { same_realm = ROOT }
+						has_province_flag = emf_capital_connected
+					}
 				}
 			}
-			set_province_flag = emf_capital_connected
-		}
-		any_realm_province = {
-			limit = {
-				NOT = { has_province_flag = emf_capital_connected }
-				any_neighbor_province = {
-					owner = { same_realm = ROOT }
-					has_province_flag = emf_capital_connected
+			any_realm_province = {
+				limit = {
+					NOT = { has_province_flag = emf_capital_connected }
+					any_neighbor_province = {
+						owner = { same_realm = ROOT }
+						has_province_flag = emf_capital_connected
+					}
 				}
+				set_province_flag = emf_capital_connected
 			}
-			set_province_flag = emf_capital_connected
 		}
-		any_realm_province = {
-			limit = {
-				NOT = { has_province_flag = emf_capital_connected }
-				any_neighbor_province = {
-					owner = { same_realm = ROOT }
-					has_province_flag = emf_capital_connected
-				}
-			}
-			set_province_flag = emf_capital_connected
-		}
-		repeat_event = { id = emf_core.66 }
 	}
 }
 
