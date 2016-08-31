@@ -9,28 +9,21 @@ namespace = emf_laws
 
 # emf_laws.0 [Isis]
 # 
-# Scenario startup event to ensure that specific CA laws are
+# Scenario startup event to ensure that a) specific CA sub-laws are
 # at their maximum values given every crown title's historic
-# crown_authority setting. Most titles default to crown_authority_0,
-# but some default to other values (e.g., the ERE is at
-# crown_authority_2 in 1066). Ideally, far more titles would
-# have history overrides for crown authority.
-#
-# Also may eventually contain logic to dynamically adjust startup
-# laws in general based upon certain rules.
+# crown_authority setting, and b) correct any gender succession
+# laws forced via title history when Full Gender Equality is enabled.
 character_event = {
 	id = emf_laws.0
-	hide_window = yes
-	is_triggered_only = yes
 	
-	only_independent = yes
-	only_playable = yes
-	religion = hip_religion
+	is_triggered_only = yes
+	hide_window = yes
 	
 	trigger = { has_landed_title = e_hip }
 	
 	immediate = {
-		any_playable_ruler = {
+		character_event = { id = emf_laws.5 } # full gender equality support
+		any_playable_ruler = { # crown laws
 			limit = {
 				higher_real_tier_than = DUKE
 				is_tribal = no
@@ -274,7 +267,6 @@ character_event = {
 	}
 }
 
-
 # emf_laws.4 [Holder]
 #
 # Upon crown title usurpation, always drop Crown Authority by 1 slider
@@ -315,6 +307,42 @@ character_event = {
 				limit = { has_law = crown_authority_4 }
 				add_law = crown_authority_3
 			}
+		}
+	}
+}
+
+# emf_laws.5 -- Full Gender Equality: correct gender succession on titles with incorrect law forced via title history
+# Separate event from emf_laws.0 (caller) to allow application via console.
+character_event = {
+	id = emf_laws.5
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		has_game_rule = { name = gender value = all }
+	}
+
+	immediate = {
+		# First, find all the base succession law titles that can be Absolute Cognatic but aren't
+		any_landed_title = {
+			limit = {
+				has_holder = yes
+				succ_law_title = {
+					NOT = { has_law = true_cognatic_succession }
+					is_law_potential = true_cognatic_succession
+				}
+				NOT = { holder = ROOT }
+			}
+			succ_law_title = { set_title_flag = emf_not_feminist_enough }
+		}
+		# Then, flip those titles
+		any_landed_title = {
+			limit = { has_title_flag = emf_not_feminist_enough }
+			clr_title_flag = emf_not_feminist_enough
+			holder_scope = { set_character_flag = emf_no_law_penalties }
+			add_law = true_cognatic_succession
+			holder_scope = { clr_character_flag = emf_no_law_penalties }
 		}
 	}
 }
