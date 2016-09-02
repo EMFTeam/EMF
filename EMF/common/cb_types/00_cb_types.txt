@@ -1995,6 +1995,11 @@ invasion = {
 		log = "CB(invasion): VICTORY: title=[This.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
 		emf_cb_latb_effect = yes
 		
+		# Mark all of FROM's vassals
+		FROM = {
+			any_vassal = { set_character_flag = cb_subjugate_@ROOT }
+		}
+		
 		# Save ROOT's current primary title's succession laws
 		save_event_target_as = new_title
 		ROOT = {
@@ -2076,6 +2081,14 @@ invasion = {
 					emf_set_viceroy_exemption_effect = yes
 					set_defacto_liege = ROOT
 					emf_liege_change_effect = yes
+					if = {
+						limit = { religion = ROOT }
+						opinion = { who = ROOT modifier = opinion_subjugated }
+					}
+					if = {
+						limit = { NOT = { religion = ROOT } }
+						opinion = { who = ROOT modifier = opinion_subjugated_other_rel }
+					}
 				}
 				if = {
 					limit = { FROM = { is_liege_or_above = ROOT } }
@@ -2090,8 +2103,26 @@ invasion = {
 				hidden_tooltip = { conquest_culture = ROOT }
 			}
 		}
+		
+		# Subjugate all new vassals
+		any_character = {
+			limit = { has_character_flag = cb_subjugate_@ROOT }
+			clr_character_flag = cb_subjugate_@ROOT
+			if = {
+				limit = { vassal_of = ROOT }
+				if = {
+					limit = { religion = ROOT }
+					opinion = { who = ROOT modifier = opinion_subjugated }
+				}
+				if = {
+					limit = { NOT = { religion = ROOT } }
+					opinion = { who = ROOT modifier = opinion_subjugated_other_rel }
+				}
+			}
+		}
 
 		# Set new title to former primary title's succession law
+		ROOT = { set_character_flag = emf_no_law_penalties }
 		if = {
 			limit = {
 				has_title_flag = set_elective_gavelkind
@@ -2188,6 +2219,7 @@ invasion = {
 		clr_title_flag = set_cognatic_succession
 		clr_title_flag = set_agnatic_succession
 		clr_title_flag = set_true_cognatic_succession
+		ROOT = { clr_character_flag = emf_no_law_penalties }
 	}
 
 	on_success_posttitle = { emf_cb_on_success_posttitle_effect = yes }
