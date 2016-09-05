@@ -116,11 +116,11 @@ NDefines.NNomad.STARTING_HORDE_MAX_FRACTION = 1
 
 -- Military
 NDefines.NMilitary.NUMBER_OF_TROOPS_PER_GALLEY = 200
-NDefines.NMilitary.LEVY_MAINTENANCE_FACTOR = 2.2
+NDefines.NMilitary.LEVY_MAINTENANCE_FACTOR = 2.5                  -- changed in EMF 6.01 from 2.2 since EMF 5.07 (Zeus8)
 NDefines.NMilitary.HOLDING_LEVY_SIZE_OWNER_MARTIAL_BASE = 0.75
 NDefines.NMilitary.HOLDING_LEVY_SIZE_OWNER_MARTIAL_MULT = 0.025
 NDefines.NMilitary.BATTLE_WARSCORE_DEFENDER_MULTIPLIER = 1.6
-NDefines.NMilitary.BATTLE_WARSCORE_WORTH_MULTIPLIER = 1.333
+NDefines.NMilitary.BATTLE_WARSCORE_HOSTS_MULTIPLIER = 1.25        -- from vanilla factor of 2.0 to vanilla's normal factor
 NDefines.NMilitary.MIN_LEVY_RAISE_OPINION_THRESHOLD = -50
 NDefines.NMilitary.ATTACKER_SIEGE_DAMAGE = 0
 NDefines.NMilitary.DEFENDER_SIEGE_DAMAGE = 0
