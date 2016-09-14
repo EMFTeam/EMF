@@ -10,7 +10,7 @@ namespace = emf_tournament
 ### TOURNAMENT PREPARATION
 
 # Ruler announces the tournament
-character_event = {
+long_character_event = {
 	id = emf_tournament.100
 	picture = GFX_evt_tournament
 	
@@ -34,7 +34,7 @@ character_event = {
 	desc = {
 		text = EVTDESC_emf_tournament_100_nomad
 		picture = GFX_evt_horsemanship
-		trigger = { emf_uses_regular_tournament = yes }
+		trigger = { emf_uses_nomad_tournament = yes }
 	}
 	desc = {
 		text = EVTDESC_emf_tournament_100_muslim
@@ -48,6 +48,7 @@ character_event = {
 		emf_do_not_disturb_effect = yes
 		emf_clear_tournament_flags = yes
 		set_character_flag = emf_planning_tournament
+		save_event_target_as = tournament_host
 		narrative_event = { id = emf_tournament.120 days = 60 } #Start the tournament
 	}
 	
@@ -71,9 +72,11 @@ character_event = {
 					age = 14
 					prisoner = no
 					OR = {
-						any_spouse = { is_lowborn = no }
-						is_lowborn = no
+						NOT = { dynasty = none }
+						any_spouse = { NOT = { dynasty = none } }
 						liege = { character = ROOT }
+						trait = fair
+						trait = ambitious
 					}
 				}
 				character_event = { id = emf_tournament.101 } #Hears announcement
@@ -203,6 +206,13 @@ character_event = {
 			modifier = {
 				factor = 0
 				NOT = { combat_rating = 0 }
+			}
+			modifier = {
+				factor = 0
+				FROM = {
+					is_nomadic = yes
+					NOT = { culture_group = ROOT }
+				}
 			}
 		}
 		custom_tooltip = {
@@ -697,6 +707,7 @@ character_event = {
 # The tournament events get underway
 narrative_event = {
 	id = emf_tournament.120
+	picture = GFX_evt_tournament
 	
 	title = {
 		text = EVTNAME_emf_tournament_120
@@ -732,6 +743,28 @@ narrative_event = {
 	
 	trigger = {
 		has_character_flag = emf_planning_tournament
+	}
+	
+	immediate = {
+		clr_character_flag = emf_planning_tournament
+		set_character_flag = emf_holding_tournament
+		if = {
+			limit = { ai = no }
+			if = {
+				limit = { emf_uses_regular_tournament = yes }
+				chronicle = {
+					entry = CHRONICLE_GRAND_TOURNAMENT
+					picture = GFX_evt_joust
+				}
+			}
+			if = {
+				limit = { emf_uses_muslim_tournament = yes }
+				chronicle = {
+					entry = CHRONICLE_FURUSIYYA
+					picture = GFX_evt_joust
+				}
+			}
+		}
 	}
 	
 	option = {
@@ -800,8 +833,20 @@ narrative_event = {
 		set_character_flag = emf_fighting_in_tournament
 		hidden_tooltip = {
 			set_variable = { which = "tournament_fighter" value = 0 }
-			character_event = { id = emf_tournament.249 days = 50 } #Calculate tournament score
+			character_event = { id = emf_tournament.249 days = 50 } #Calculate personal tournament score
 		}
+		
+		#Send start event to all attendees
+		any_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = attending_tournament } }
+			narrative_event = { id = emf_tournament.121 }
+		}
+		
+		#Prompt events during the tournament
+		character_event = { id = emf_tournament.130 days = 1 random = 15 }
+		character_event = { id = emf_tournament.200 days = 45 } #New realm beauty
+		character_event = { id = emf_tournament.250 days = 51 } #Pick tournament winners
+		character_event = { id = emf_tournament.300 days = 55 } #Tournament ends
 	}
 	option = {
 		name = EVTOPTB_emf_tournament_120 #I shall watch from the stands
@@ -839,42 +884,15 @@ narrative_event = {
 			}
 		}
 		set_character_flag = emf_spectator_at_tournament
-	}
-	after = {
-		clr_character_flag = emf_planning_tournament
-		set_character_flag = emf_holding_tournament
+		
+		#Send start event to all attendees
 		any_opinion_modifier_target = {
 			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = attending_tournament } }
 			narrative_event = { id = emf_tournament.121 }
 		}
 		
-		if = {
-			limit = { ai = no }
-			if = {
-				limit = { emf_uses_regular_tournament = yes }
-				chronicle = {
-					entry = CHRONICLE_GRAND_TOURNAMENT
-					picture = GFX_evt_joust
-				}
-			}
-			if = {
-				limit = { emf_uses_muslim_tournament = yes }
-				chronicle = {
-					entry = CHRONICLE_FURUSIYYA
-					picture = GFX_evt_joust
-				}
-			}
-		}
-		
 		#Prompt events during the tournament
-		if = {
-			limit = { has_character_flag = emf_fighting_in_tournament }
-			character_event = { id = emf_tournament.130 days = 1 random = 15 }
-		}
-		if = {
-			limit = { has_character_flag = emf_spectator_at_tournament }
-			character_event = { id = emf_tournament.140 days = 1 random = 15 }
-		}
+		character_event = { id = emf_tournament.140 days = 1 random = 15 }
 		character_event = { id = emf_tournament.200 days = 45 } #New realm beauty
 		character_event = { id = emf_tournament.250 days = 51 } #Pick tournament winners
 		character_event = { id = emf_tournament.300 days = 55 } #Tournament ends
@@ -883,6 +901,7 @@ narrative_event = {
 
 narrative_event = {
 	id = emf_tournament.121
+	picture = GFX_evt_tournament
 	
 	title = {
 		text = EVTNAME_emf_tournament_120
@@ -1659,7 +1678,12 @@ character_event = {
 				}
 				character_event = { id = emf_tournament.175 days = 1 random = 25 }
 			}
-			1000 = {}
+			1000 = {
+				modifier = {
+					factor = 0.1
+					ai = no
+				}
+			}
 		}
 	}
 }
@@ -1682,7 +1706,11 @@ character_event = {
 	
 	immediate = {
 		random_list = {
-			500 = {	#no event 
+			500 = {	#no event
+				modifier = {
+					factor = 0.1
+					ai = no
+				}
 			}			
 			2 = { #gain syphilitic
 				modifier = {
@@ -2649,7 +2677,7 @@ character_event = {
 		emf_find_tournament_opponent_for_ROOT = yes
 		event_target:tournament_opponent = {
 			prestige = 25
-			change_variable = { which = "tournament_fighter" value = 1 }
+			change_variable = { which = "tournament_fighter" value = 3 }
 		}
 		any_player = {
 			limit = {
@@ -2731,6 +2759,7 @@ character_event = {
 	option = {
 		name = EVTOPTA_emf_tournament_151
 		trigger = { NOT = { character = event_target:tournament_opponent } }
+		opinion = { who = event_target:tournament_opponent modifier = opinion_impressed multiplier = 3 months = 12 }
 	}
 	option = {
 		name = EVTOPTB_emf_tournament_151
@@ -2797,7 +2826,7 @@ character_event = {
 		emf_find_tournament_opponent_for_ROOT = yes
 		event_target:tournament_opponent = {
 			prestige = 10
-			change_variable = { which = "tournament_fighter" value = 1 }
+			change_variable = { which = "tournament_fighter" value = 2 }
 		}
 		any_player = {
 			limit = {
@@ -2893,6 +2922,7 @@ character_event = {
 	option = {
 		name = EVTOPTA_emf_tournament_153
 		trigger = { NOT = { character = event_target:tournament_opponent } }
+		opinion = { who = event_target:tournament_opponent modifier = opinion_impressed multiplier = 2 months = 12 }
 	}
 	option = {
 		name = EVTOPTB_emf_tournament_153
@@ -3055,6 +3085,7 @@ character_event = {
 	option = {
 		name = EVTOPTA_emf_tournament_155
 		trigger = { NOT = { character = event_target:tournament_opponent } }
+		opinion = { who = event_target:tournament_opponent modifier = opinion_impressed months = 12 }
 	}
 	option = {
 		name = EVTOPTB_emf_tournament_153
@@ -3418,7 +3449,7 @@ character_event = {
 		remove_trait = brilliant_strategist
 		add_trait = skilled_tactician
 		hidden_tooltip = {
-			change_variable = { which = "tournament_fighter" value = -1 }
+			change_variable = { which = "tournament_fighter" value = -2 }
 		}
 	}
 }
@@ -3479,7 +3510,7 @@ character_event = {
 		remove_trait = skilled_tactician
 		add_trait = tough_soldier
 		hidden_tooltip = {
-			change_variable = { which = "tournament_fighter" value = -1 }
+			change_variable = { which = "tournament_fighter" value = -2 }
 		}
 	}
 }
@@ -3542,7 +3573,7 @@ character_event = {
 		remove_trait = tough_soldier
 		add_trait = misguided_warrior
 		hidden_tooltip = {
-			change_variable = { which = "tournament_fighter" value = -1 }
+			change_variable = { which = "tournament_fighter" value = -2 }
 		}
 	}
 }
@@ -5445,6 +5476,12 @@ character_event = {
 	
 	trigger = {
 		top_liege = { has_character_flag = emf_holding_tournament }
+		OR = {
+			has_unattractive_trait_trigger = no
+			higher_real_tier_than = COUNT
+			is_strong_trigger = yes
+			trait = brave
+		}
 		NOR = {
 			has_lover = yes
 			trait = celibate
@@ -5454,13 +5491,16 @@ character_event = {
 			has_injury_trigger = yes
 			is_maimed_trigger = yes
 			has_disability_trigger = yes
-			has_unattractive_trait_trigger = yes
 			has_character_flag = emf_tournament_romance
 		}
 	}
 	
 	mean_time_to_happen = {
-		days = 120
+		days = 60
+		modifier = {
+			factor = 0.5
+			ai = no
+		}
 		modifier = {
 			factor = 0.5
 			OR = {
@@ -5504,6 +5544,10 @@ character_event = {
 			NOT = { age = 24 }
 		}
 		modifier = {
+			factor = 0.75
+			NOT = { age = 20 }
+		}
+		modifier = {
 			factor = 1.5
 			age = 30
 		}
@@ -5519,75 +5563,77 @@ character_event = {
 
 	immediate = {
 		set_character_flag = emf_tournament_romance
-		top_liege = {
-			save_event_target_as = tournament_host
-			random_realm_character = {
-				limit = {
-					root_mutual_attraction_trigger = yes
-					is_attractive_trigger = yes
-					is_adult = yes
-					has_lover = no
-					is_consort = no
-					is_pregnant = no
-					is_ill = no
-					religion = ROOT
-					OR = {
-						has_character_flag = emf_fighting_in_tournament
-						has_character_flag = emf_spectator_at_tournament 
-					}
-					NOR = {
-						AND = {
-							is_female = yes
-							is_older_than = ROOT
-						}
-						trait = celibate
-						is_inaccessible_trigger = yes
-						has_injury_trigger = yes
-						is_maimed_trigger = yes
-						has_disability_trigger = yes
-						is_close_relative = ROOT
-						is_former_lover = ROOT
-						is_rival = ROOT
-						has_character_flag = emf_tournament_romance 
-					}
+		top_liege = { save_event_target_as = tournament_host }
+		random_character = {
+			limit = {
+				same_realm = event_target:tournament_host
+				root_mutual_attraction_trigger = yes
+				is_attractive_trigger = yes
+				is_adult = yes
+				has_lover = no
+				is_consort = no
+				is_pregnant = no
+				is_ill = no
+				religion = ROOT
+				OR = {
+					has_character_flag = emf_fighting_in_tournament
+					has_character_flag = emf_spectator_at_tournament 
 				}
-				set_character_flag = emf_tournament_romance 
-				character_event = { id = emf_tournament.211 }
-				break = yes
-			}
-			random_realm_character = {
-				limit = {
-					root_mutual_attraction_trigger = yes
-					is_adult = yes
-					has_lover = no
-					is_consort = no
-					is_pregnant = no
-					is_ill = no
-					religion = ROOT
-					OR = {
-						has_character_flag = emf_fighting_in_tournament
-						has_character_flag = emf_spectator_at_tournament 
+				NOR = {
+					AND = {
+						is_female = yes
+						is_older_than = ROOT
+						age_diff = { who = ROOT years = 2 }
 					}
-					NOR = {
-						AND = {
-							is_female = yes
-							is_older_than = ROOT
-						}
-						trait = celibate
-						is_inaccessible_trigger = yes
-						has_unattractive_trait_trigger = yes
-						has_injury_trigger = yes
-						is_maimed_trigger = yes
-						has_disability_trigger = yes
-						is_close_relative = ROOT
-						is_former_lover = ROOT
-						is_rival = ROOT
-						has_character_flag = emf_tournament_romance 
-					}
+					trait = celibate
+					is_inaccessible_trigger = yes
+					has_injury_trigger = yes
+					is_maimed_trigger = yes
+					has_disability_trigger = yes
+					is_close_relative = ROOT
+					is_former_lover = ROOT
+					is_rival = ROOT
+					has_character_flag = emf_tournament_romance 
 				}
-				set_character_flag = emf_tournament_romance 
-				character_event = { id = emf_tournament.211 }
 			}
+			set_character_flag = emf_tournament_romance 
+			character_event = { id = emf_tournament.211 }
+			break = yes
+		}
+		random_character = {
+			limit = {
+				same_realm = event_target:tournament_host
+				root_mutual_attraction_trigger = yes
+				is_adult = yes
+				has_lover = no
+				is_consort = no
+				is_pregnant = no
+				is_ill = no
+				religion = ROOT
+				OR = {
+					has_character_flag = emf_fighting_in_tournament
+					has_character_flag = emf_spectator_at_tournament 
+				}
+				NOR = {
+					AND = {
+						is_female = yes
+						is_older_than = ROOT
+						age_diff = { who = ROOT years = 2 }
+					}
+					trait = celibate
+					is_inaccessible_trigger = yes
+					has_unattractive_trait_trigger = yes
+					has_injury_trigger = yes
+					is_maimed_trigger = yes
+					has_disability_trigger = yes
+					is_close_relative = ROOT
+					is_former_lover = ROOT
+					is_rival = ROOT
+					has_character_flag = emf_tournament_romance 
+				}
+			}
+			set_character_flag = emf_tournament_romance 
+			character_event = { id = emf_tournament.211 }
 		}
 	}
 }
@@ -5628,6 +5674,10 @@ character_event = {
 		name = EVTOPTA_emf_tournament_211 #Send him a signal
 		ai_chance = {
 			factor = 50
+			modifier = {
+				factor = 2
+				FROM = { ai = no }
+			}
 			modifier = {
 				factor = 3
 				trait = homosexual
@@ -5708,11 +5758,11 @@ character_event = {
 				opinion = { who = FROM value = 20 }
 			}
 			modifier = {
-				factor = 1.25
+				factor = 1.5
 				opinion = { who = FROM value = 40 }
 			}
 			modifier = {
-				factor = 1.25
+				factor = 1.75
 				opinion = { who = FROM value = 60 }
 			}
 			modifier = {
@@ -5736,7 +5786,7 @@ character_event = {
 			modifier = {
 				factor = 0
 				is_married = yes
-				spouse = { reverse_opinion = { who = ROOT value = 20 } }
+				spouse = { reverse_opinion = { who = ROOT value = 25 } }
 			}
 			modifier = {
 				factor = 0.5
@@ -5764,7 +5814,7 @@ character_event = {
 			}
 			modifier = {
 				factor = 0
-				NOT = { opinion = { who = FROM value = 0 } }
+				NOT = { opinion = { who = FROM value = -20 } }
 			}
 		}
 		FROM = {
@@ -5782,6 +5832,13 @@ character_event = {
 		}
 		hidden_tooltip = {
 			FROM = { clr_character_flag = emf_tournament_romance }
+			if = {
+				limit = { ai = yes }
+				random = {
+					chance = 50
+					clr_character_flag = emf_tournament_romance
+				}
+			}
 		}
 	}
 }
@@ -6887,6 +6944,7 @@ character_event = {
 							has_opinion_modifier = { who = ROOT modifier = attending_tournament }
 						}
 						NOR = {
+							character = PREV
 							is_ill = yes
 							is_pregnant = yes
 							has_injury_trigger = yes
@@ -6925,6 +6983,7 @@ character_event = {
 								has_opinion_modifier = { who = ROOT modifier = attending_tournament }
 							}
 							NOR = {
+								character = PREV
 								is_ill = yes
 								is_pregnant = yes
 								has_injury_trigger = yes
@@ -6961,6 +7020,7 @@ character_event = {
 								has_opinion_modifier = { who = ROOT modifier = attending_tournament }
 							}
 							NOR = {
+								character = PREV
 								is_ill = yes
 								is_pregnant = yes
 								has_injury_trigger = yes
@@ -7112,6 +7172,20 @@ character_event = {
 					character_event = { id = emf_tournament.253 days = 3 }
 				}
 			}
+			if = {
+				limit = { religion_group = muslim }
+				any_dynasty_member = {
+					limit = { 
+						OR = {
+							ai = no
+							dynasty_head = { character = PREV }
+						}
+						NOT = { character = ROOT }
+						NOT = { character = event_target:tournament_host }
+					}
+					character_event = { id = emf_tournament.252 }
+				}
+			}
 		}
 	}
 	option = {
@@ -7138,6 +7212,20 @@ character_event = {
 						has_opinion_modifier = { who = PREV modifier = attending_tournament }
 					}
 					character_event = { id = emf_tournament.254 days = 2 }
+				}
+			}
+			if = {
+				limit = { religion_group = muslim }
+				any_dynasty_member = {
+					limit = { 
+						OR = {
+							ai = no
+							dynasty_head = { character = PREV }
+						}
+						NOT = { character = ROOT }
+						NOT = { character = event_target:tournament_host }
+					}
+					character_event = { id = emf_tournament.252 }
 				}
 			}
 		}
@@ -7168,21 +7256,19 @@ character_event = {
 					character_event = { id = emf_tournament.255 days = 1 }
 				}
 			}
-		}
-	}
-	after = {
-		if = {
-			limit = { religion_group = muslim }
-			any_dynasty_member = {
-				limit = { 
-					OR = {
-						ai = no
-						dynasty_head = { character = PREV }
+			if = {
+				limit = { religion_group = muslim }
+				any_dynasty_member = {
+					limit = { 
+						OR = {
+							ai = no
+							dynasty_head = { character = PREV }
+						}
+						NOT = { character = ROOT }
+						NOT = { character = event_target:tournament_host }
 					}
-					NOT = { character = ROOT }
-					NOT = { character = event_target:tournament_host }
+					character_event = { id = emf_tournament.252 }
 				}
-				character_event = { id = emf_tournament.252 }
 			}
 		}
 	}
@@ -7764,12 +7850,72 @@ character_event = {
 		if = {
 			limit = { NOT = { has_character_flag = emf_placed_in_tournament } }
 			random_list = {
-				10 = { set_character_flag = tournament_result_1 }
-				10 = { set_character_flag = tournament_result_2 }
-				10 = { set_character_flag = tournament_result_3 }
-				10 = { set_character_flag = tournament_result_4 }
-				10 = { set_character_flag = tournament_result_5 }
-				10 = { set_character_flag = tournament_result_6 }
+				10 = {
+					modifier = {
+						factor = 2
+						check_variable = { which = "tournament_fighter" value = 5.0 }
+					}
+					set_character_flag = tournament_result_1 #Good
+				}
+				10 = {
+					modifier = {
+						factor = 2
+						check_variable = { which = "tournament_fighter" value = 5.0 }
+					}
+					modifier = {
+						factor = 2
+						check_variable = { which = "tournament_fighter" value = 8.0 }
+					}
+					set_character_flag = tournament_result_2 #Great
+				}
+				10 = {
+					modifier = {
+						factor = 2
+						NOT = { check_variable = { which = "tournament_fighter" value = 2.0 } }
+					}
+					modifier = {
+						factor = 0.5
+						check_variable = { which = "tournament_fighter" value = 8.0 }
+					}
+					set_character_flag = tournament_result_3 #Poor
+				}
+				10 = {
+					modifier = {
+						factor = 2
+						NOT = { check_variable = { which = "tournament_fighter" value = 2.0 } }
+					}
+					modifier = {
+						factor = 2
+						NOT = { check_variable = { which = "tournament_fighter" value = 0 } }
+					}
+					modifier = {
+						factor = 0.5
+						check_variable = { which = "tournament_fighter" value = 5.0 }
+					}
+					modifier = {
+						factor = 0.5
+						check_variable = { which = "tournament_fighter" value = 8.0 }
+					}
+					set_character_flag = tournament_result_4 #Awful
+				}
+				10 = {
+					modifier = {
+						factor = 2
+						check_variable = { which = "tournament_fighter" value = 5.0 }
+					}
+					set_character_flag = tournament_result_5 #Good
+				}
+				10 = {
+					modifier = {
+						factor = 2
+						NOT = { check_variable = { which = "tournament_fighter" value = 2.0 } }
+					}
+					modifier = {
+						factor = 0.5
+						check_variable = { which = "tournament_fighter" value = 8.0 }
+					}
+					set_character_flag = tournament_result_6 #Poor
+				}
 			}
 		}
 	}
