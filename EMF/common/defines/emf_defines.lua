@@ -8,7 +8,6 @@ NDefines.NDiplomacy.INTER_MUSLIM_WAR_MONTHLY_PIETY_COST = 1
 NDefines.NDiplomacy.MUSLIM_TEMPLE_HOLDING_MONTHLY_PIETY = 0.4
 NDefines.NDiplomacy.BASE_REVOLT_CHANCE_MOD = 175                                    -- from 250
 NDefines.NDiplomacy.TOG_REVOLT_CHANCE_MOD = 70                                      -- from 100
-NDefines.NDiplomacy.MAX_DIPLO_DISTANCE = 600                                        -- from 700
 NDefines.NDiplomacy.DUKE_POWERFUL_VASSAL_COUNT = 3
 NDefines.NDiplomacy.KING_POWERFUL_VASSAL_COUNT = 4
 NDefines.NDiplomacy.EMPEROR_POWERFUL_VASSAL_COUNT = 5
@@ -104,7 +103,6 @@ NDefines.NEconomy.BISHOP_TAX_TO_POPE_FACTOR = 0.25
 NDefines.NEconomy.TRADE_POST_COST_INC_DIST = 0.0045
 NDefines.NEconomy.PATRICIAN_CITY_TAX_MULT = 0.25
 NDefines.NEconomy.OVER_MAX_DEMESNE_TAX_PENALTY = 0.05
-NDefines.NEconomy.POPULATION_TO_LOOT_MULTIPLIER = 0.01
 NDefines.NEconomy.BUILDING_COST_MULT = 0.2
 
 -- Nomad
