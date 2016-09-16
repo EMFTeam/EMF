@@ -8,7 +8,6 @@ NDefines.NDiplomacy.INTER_MUSLIM_WAR_MONTHLY_PIETY_COST = 1
 NDefines.NDiplomacy.MUSLIM_TEMPLE_HOLDING_MONTHLY_PIETY = 0.4
 NDefines.NDiplomacy.BASE_REVOLT_CHANCE_MOD = 175                                    -- from 250
 NDefines.NDiplomacy.TOG_REVOLT_CHANCE_MOD = 70                                      -- from 100
-NDefines.NDiplomacy.MAX_DIPLO_DISTANCE = 600                                        -- from 700
 NDefines.NDiplomacy.DUKE_POWERFUL_VASSAL_COUNT = 3
 NDefines.NDiplomacy.KING_POWERFUL_VASSAL_COUNT = 4
 NDefines.NDiplomacy.EMPEROR_POWERFUL_VASSAL_COUNT = 5
@@ -19,8 +18,6 @@ NDefines.NDiplomacy.DEMAND_RELIGIOUS_CONVERSION_INTERACTION_PRESTIGE = 50       
 NDefines.NDiplomacy.DEMAND_RELIGIOUS_CONVERSION_INTERACTION_THRESHOLD_FOR_YES = 35  -- from 25
 NDefines.NDiplomacy.INVITE_TO_COURT_INTERACTION_MONEY = 10                          -- from 0
 NDefines.NDiplomacy.ASK_FOR_INVASION_INTERACTION_THRESHOLD_FOR_YES = 100
-NDefines.NDiplomacy.ASK_FOR_CLAIM_INTERACTION_PIETY = 50
-NDefines.NDiplomacy.ASK_FOR_CLAIM_INTERACTION_THRESHOLD_FOR_YES = 50
 NDefines.NDiplomacy.DEFENSIVE_PACT_THREAT_LIMIT = 0.15
 NDefines.NDiplomacy.DEFENSIVE_PACT_MAX_RANGE = 300
 
@@ -31,7 +28,7 @@ NDefines.NCouncil.LAW_VOTE_CHANGE_TIME_LIMIT = 2
 -- Infamy
 NDefines.NInfamy.REALM_SIZE_GROWTH_MODIFIER = 0.0
 NDefines.NInfamy.WAR_REALM_CHANGE_VALUE = 0.5
-NDefines.NInfamy.INDEPENDENCE_REALM_CHANGE_VALUE = 1.0
+NDefines.NInfamy.INDEPENDENCE_REALM_CHANGE_VALUE = 0.1
 NDefines.NInfamy.INHERITANCE_CHANGE_VALUE = 0.05
 NDefines.NInfamy.VASSAL_CHANGE_VALUE = 0
 NDefines.NInfamy.MAX_INFAMY_PER_WAR_PROVINCE = 5
@@ -99,14 +96,13 @@ NDefines.NReligion.AUTHORITY_FROM_RELHEAD_HOLY_SITE = 0
 NDefines.NReligion.AUTHORITY_FROM_ORG_RELIGION = 0.3
 NDefines.NReligion.DIVINE_BLOOD_FERTILITY_MULT = 1.0
 NDefines.NReligion.ELECTOR_FAMOUS_DYNASTY_FACTOR = 0.005
-NDefines.NReligion.HERESY_TAKEOVER_PROVINCES = 10
+NDefines.NReligion.HERESY_TAKEOVER_PROVINCES = 5
 
 -- Economy
 NDefines.NEconomy.BISHOP_TAX_TO_POPE_FACTOR = 0.25
 NDefines.NEconomy.TRADE_POST_COST_INC_DIST = 0.0045
 NDefines.NEconomy.PATRICIAN_CITY_TAX_MULT = 0.25
 NDefines.NEconomy.OVER_MAX_DEMESNE_TAX_PENALTY = 0.05
-NDefines.NEconomy.POPULATION_TO_LOOT_MULTIPLIER = 0.01
 NDefines.NEconomy.BUILDING_COST_MULT = 0.2
 
 -- Nomad
@@ -132,8 +128,8 @@ NDefines.NMilitary.RETINUE_FROM_REALMSIZE = 1.5
 NDefines.NMilitary.RETINUE_INCREASE_PER_TECH = 0.5
 NDefines.NMilitary.RETINUE_HIRE_COST_MULTIPLIER = 0.2
 NDefines.NMilitary.MAX_COMMANDERS_DUKE = 5                   -- from 4
-NDefines.NMilitary.MAX_COMMANDERS_KING = 8                   -- from 6
-NDefines.NMilitary.MAX_COMMANDERS_EMPEROR = 10               -- from 8
+NDefines.NMilitary.MAX_COMMANDERS_KING = 7                   -- from 6
+NDefines.NMilitary.MAX_COMMANDERS_EMPEROR = 9                -- from 8
 NDefines.NMilitary.LIEGE_LEVY_REINF_RATE = 0.03
 NDefines.NMilitary.LIEGE_LEVY_COST_MULTIPLIER = 0.3
 NDefines.NMilitary.LIGHT_INFANTRY_MORALE = 3
@@ -204,7 +200,7 @@ NDefines.NMilitary.SHATTERED_RETREAT_MAX_PROVINCES = 6
 NDefines.NMilitary.MAX_WARSCORE_FROM_BATTLE_DEFENDERS = 150   -- from 100
 
 -- Technology
-NDefines.NTechnology.POINTS_PER_ATTRIBUTE = 0.03
+NDefines.NTechnology.POINTS_PER_ATTRIBUTE = 0.02
 NDefines.NTechnology.BASE_NEIGHBOUR_SPREAD_BONUS = 0.075
 NDefines.NTechnology.BASE_DEMESNE_SPREAD_BONUS = 0.1
 NDefines.NTechnology.MAX_DEMESNE_BONUS = 0.5
@@ -222,7 +218,7 @@ NDefines.NAI.REVOLT_OTHER_INDEP_RISK_CAP = 0
 NDefines.NAI.AI_EMPEROR_CREATES_KINGDOMS = 1     -- only now a good idea due to Imperial Kingdom Creation law
 NDefines.NAI.RAID_MAX_REALM_SIZE = 12
 NDefines.NAI.RAID_AGGRESSION = 24
-NDefines.NAI.COALITION_DISTANCE_MULTIPLIER = -1.25
+-- NDefines.NAI.COALITION_DISTANCE_MULTIPLIER = -1.25
 
 -- RulerDesigner
 NDefines.NRulerDesigner.COST_ATTRIB = 0.0
