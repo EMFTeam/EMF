@@ -120,6 +120,22 @@ character_event = {
 	}
 }
 
+# Establish new dynasty
+character_event = {
+	id = emf_mongol.102
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	immediate = {
+		any_child_even_if_dead = {
+			limit = { dynasty = ROOT }
+			character_event = { id = emf.mongol.102 }
+		}
+		dynasty = event_target:new_dynasty_head
+	}
+}
+
 ### MONGOL EMPIRE SPLITS UP
 
 # Khan dies with a large enough empire to split up among sons/brothers
@@ -232,14 +248,7 @@ narrative_event = {
 			}
 		}
 		if = {
-			limit = {
-				OR = {
-					has_character_flag = line_of_jochi
-					has_character_flag = line_of_chagatai
-					has_character_flag = line_of_ogodei
-					has_character_flag = line_of_tolui
-				}
-			}
+			limit = { NOT = { event_target:first_mongol_heir = { is_alive = yes } } }
 			random_dynasty_member = {
 				limit = {
 					NOT = { event_target:first_mongol_heir = { is_alive = yes } }
@@ -256,6 +265,9 @@ narrative_event = {
 				}
 				save_event_target_as = first_mongol_heir
 			}
+		}
+		if = {
+			limit = { NOT = { event_target:second_mongol_heir = { is_alive = yes } } }
 			random_dynasty_member = {
 				limit = {
 					ROOT = { NOT = { has_character_flag = line_of_tolui } }
@@ -271,6 +283,9 @@ narrative_event = {
 				}
 				save_event_target_as = second_mongol_heir
 			}
+		}
+		if = {
+			limit = { NOT = { event_target:third_mongol_heir = { is_alive = yes } } }
 			random_dynasty_member = {
 				limit = {
 					ROOT = { NOT = { has_character_flag = line_of_chagatai } }
@@ -988,7 +1003,7 @@ character_event = {
 			if = {
 				limit = { has_dlc = "Horse Lords" }
 				set_government_type = nomadic_government
-				steal_population_scaled = { target = ROOT percentage = 0.40 }
+				steal_population_scaled = { target = ROOT percentage = 0.80 }
 			}
 			if = {
 				limit = { NOT = { has_dlc = "Horse Lords" } }
@@ -1006,7 +1021,7 @@ character_event = {
 			if = {
 				limit = { has_dlc = "Horse Lords" }
 				set_government_type = nomadic_government
-				steal_population_scaled = { target = ROOT percentage = 0.10 }
+				steal_population_scaled = { target = ROOT percentage = 1.00 }
 			}
 			if = {
 				limit = { NOT = { has_dlc = "Horse Lords" } }
@@ -1023,21 +1038,25 @@ character_event = {
 	
 		# Divvy up the vassals
 		any_vassal = {
-			limit = { capital_scope = { emf_golden_holde_province = yes } }
-			set_defacto_liege = event_target:first_mongol_heir
-			opinion = { who = event_target:first_mongol_heir modifier = opinion_loyal_vassal years = 10 }
-		}
-		any_vassal = {
-			limit = { capital_scope = { emf_il_khanate_province = yes } }
-			set_defacto_liege = event_target:second_mongol_heir
-			opinion = { who = event_target:second_mongol_heir modifier = opinion_loyal_vassal years = 10 }
-		}
-		any_vassal = {
-			limit = { capital_scope = { region = emf_region_mongol_east } }
-			set_defacto_liege = event_target:third_mongol_heir
-			opinion = { who = event_target:third_mongol_heir modifier = opinion_loyal_vassal years = 10 }
+			limit = { higher_tier_than = BARON }
+			character_event = { id = emf_mongol.202 }
 		}
 		
+		# Any generals and close relatives will be asked to serve a son
+		any_courtier = {
+			limit = {
+				culture = FROM
+				OR = {
+					is_close_relative = FROM
+					martial = 12
+				}
+				NOT = { character = event_target:first_mongol_heir }
+				NOT = { character = event_target:second_mongol_heir }
+				NOT = { character = event_target:third_mongol_heir }
+			}
+			character_event = { id = emf_mongol.203 }
+		}
+
 		# If the main heir is not one of the three mongol heirs, give up non-empire tier titles now
 		if = {
 			limit = {
@@ -1050,43 +1069,15 @@ character_event = {
 			emf_grant_chagatai_titles = yes
 		}
 		
-		# Any remaining children will be asked to swear to a son
-		FROM = {
-			any_child = {
-				limit = {
-					is_ruler = no
-					prisoner = no
-					is_adult = yes
-					NOT = { character = event_target:first_mongol_heir }
-					NOT = { character = event_target:second_mongol_heir }
-					NOT = { character = event_target:third_mongol_heir }
-				}
-				#character_event = { id = 60003 days = 1 }
-			}
-		}
-		
-		# Any mongol generals will be asked to serve a son
-		any_courtier = {
-			limit = {
-				culture = FROM
-				is_ruler = no
-				is_female = no
-				NOT = { character = event_target:first_mongol_heir }
-				NOT = { character = event_target:second_mongol_heir }
-				NOT = { character = event_target:third_mongol_heir }
-				NOT = { is_child_of = FROM }
-				OR = {
-					trait = brilliant_strategist
-					martial = 12
-				}
-			}
-			#character_event = { id = 60003 days = 1 }
-		}
-		
 		# Send events to heirs
-		#event_target:first_mongol_heir = { character_event = { id = 60004 } }
-		#event_target:second_mongol_heir = { character_event = { id = 60004 } }
-		#event_target:third_mongol_heir = { character_event = { id = 60004 } }
+		event_target:first_mongol_heir = { character_event = { id = emf_mongol.204 } }
+		event_target:second_mongol_heir = { character_event = { id = emf_mongol.204 } }
+		event_target:third_mongol_heir = { character_event = { id = emf_mongol.204 } }
+
+		e_mongol_empire = {
+			unsafe_destroy_landed_title = THIS
+			activate_title = { title = THIS status = no }
+		}
 		
 		if = {
 			limit = {
@@ -1094,13 +1085,352 @@ character_event = {
 				NOT = { character = event_target:second_mongol_heir }
 				NOT = { character = event_target:third_mongol_heir }
 			}
-			set_defacto_liege = event_target:first_mongol_heir
-		}
-		
-		e_mongol_empire = {
-			unsafe_destroy_landed_title = THIS
-			activate_title = { title = THIS status = no }
+			character_event = { id = emf_mongol.203 }
 		}
 	}
 }
 
+# Mongol vassals receive notification of liege change
+character_event = {
+	id = emf_mongol.202
+	picture = GFX_evt_mongols
+	
+	desc = {
+		text = EVTDESC_emf_mongol_202_GHD
+		trigger = { capital_scope = { emf_golden_holde_province = yes } }
+	}
+	desc = {
+		text = EVTDESC_emf_mongol_202_IKH
+		trigger = { capital_scope = { emf_il_khanate_province = yes } }
+	}
+	desc = {
+		text = EVTDESC_emf_mongol_202_CHA
+		trigger = { capital_scope = { region = emf_region_mongol_east } }
+	}
+	
+	is_triggered_only = yes
+	hide_from = yes
+	
+	option = {
+		name = EVTOPTA_emf_mongol_202_GHD
+		trigger = { capital_scope = { emf_golden_holde_province = yes } }
+		if = {
+			limit = {
+				FROM = {
+					NOT = { is_liege_of = ROOT }
+					OR = {
+						character = event_target:first_mongol_heir
+						any_liege = { character = event_target:first_mongol_heir }
+					}
+				}
+			}
+			set_defacto_liege = FROM
+		}
+		if = {
+			limit = {
+				FROM = {
+					NOR = {
+						character = event_target:first_mongol_heir
+						any_liege = { character = event_target:first_mongol_heir }
+					}
+				}
+			}
+			set_defacto_liege = event_target:first_mongol_heir
+		}
+		if = {
+			limit = { ai = yes }
+			opinion = { who = event_target:first_mongol_heir modifier = opinion_loyal_vassal years = 10 }
+		}
+		any_claim = {
+			limit = { capital_scope = { emf_il_khanate_province = yes } }
+			remove_claim = ROOT
+		}
+		any_claim = {
+			limit = { capital_scope = { region = emf_region_mongol_east } }
+			remove_claim = ROOT
+		}
+		hidden_tooltip = {
+			any_courtier = {
+				limit = { is_ruler = no }
+				any_claim = {
+					limit = { capital_scope = { emf_il_khanate_province = yes } }
+					remove_claim = PREV
+				}
+				any_claim = {
+					limit = { capital_scope = { region = emf_region_mongol_east } }
+					remove_claim = PREV
+				}
+			}
+			any_vassal = {
+				limit = { tier = BARON }
+				any_claim = {
+					limit = { capital_scope = { emf_il_khanate_province = yes } }
+					remove_claim = PREV
+				}
+				any_claim = {
+					limit = { capital_scope = { region = emf_region_mongol_east } }
+					remove_claim = PREV
+				}
+			}
+		}
+	}
+	option = {
+		name = EVTOPTA_emf_mongol_202_IKH
+		trigger = { capital_scope = { emf_il_khanate_province = yes } }
+		if = {
+			limit = {
+				FROM = {
+					NOT = { is_liege_of = ROOT }
+					OR = {
+						character = event_target:second_mongol_heir
+						any_liege = { character = event_target:second_mongol_heir }
+					}
+				}
+			}
+			set_defacto_liege = FROM
+		}
+		if = {
+			limit = {
+				FROM = {
+					NOR = {
+						character = event_target:second_mongol_heir
+						any_liege = { character = event_target:second_mongol_heir }
+					}
+				}
+			}
+			set_defacto_liege = event_target:second_mongol_heir
+		}
+		if = {
+			limit = { ai = yes }
+			opinion = { who = event_target:second_mongol_heir modifier = opinion_loyal_vassal years = 10 }
+		}
+		any_claim = {
+			limit = { capital_scope = { emf_golden_holde_province = yes } }
+			remove_claim = ROOT
+		}
+		any_claim = {
+			limit = { capital_scope = { region = emf_region_mongol_east } }
+			remove_claim = ROOT
+		}
+		hidden_tooltip = {
+			any_courtier = {
+				limit = { is_ruler = no }
+				any_claim = {
+					limit = { capital_scope = { emf_golden_holde_province = yes } }
+					remove_claim = PREV
+				}
+				any_claim = {
+					limit = { capital_scope = { region = emf_region_mongol_east } }
+					remove_claim = PREV
+				}
+			}
+			any_vassal = {
+				limit = { tier = BARON }
+				any_claim = {
+					limit = { capital_scope = { emf_golden_holde_province = yes } }
+					remove_claim = PREV
+				}
+				any_claim = {
+					limit = { capital_scope = { region = emf_region_mongol_east } }
+					remove_claim = PREV
+				}
+			}
+		}
+	}
+	option = {
+		name = EVTOPTA_emf_mongol_202_CHA
+		trigger = { capital_scope = { region = emf_region_mongol_east } }
+		if = {
+			limit = {
+				FROM = {
+					NOT = { is_liege_of = ROOT }
+					OR = {
+						character = event_target:third_mongol_heir
+						any_liege = { character = event_target:third_mongol_heir }
+					}
+				}
+			}
+			set_defacto_liege = FROM
+		}
+		if = {
+			limit = {
+				FROM = {
+					NOR = {
+						character = event_target:third_mongol_heir
+						any_liege = { character = event_target:third_mongol_heir }
+					}
+				}
+			}
+			set_defacto_liege = event_target:third_mongol_heir
+		}
+		if = {
+			limit = { ai = yes }
+			opinion = { who = event_target:third_mongol_heir modifier = opinion_loyal_vassal years = 10 }
+		}
+		any_claim = {
+			limit = { capital_scope = { emf_golden_holde_province = yes } }
+			remove_claim = ROOT
+		}
+		any_claim = {
+			limit = { capital_scope = { emf_il_khanate_province = yes } }
+			remove_claim = ROOT
+		}
+		hidden_tooltip = {
+			any_courtier = {
+				limit = { is_ruler = no }
+				any_claim = {
+					limit = { capital_scope = { emf_golden_holde_province = yes } }
+					remove_claim = PREV
+				}
+				any_claim = {
+					limit = { capital_scope = { emf_il_khanate_province = yes } }
+					remove_claim = PREV
+				}
+			}
+			any_vassal = {
+				limit = { tier = BARON }
+				any_claim = {
+					limit = { capital_scope = { emf_golden_holde_province = yes } }
+					remove_claim = PREV
+				}
+				any_claim = {
+					limit = { capital_scope = { emf_il_khanate_province = yes } }
+					remove_claim = PREV
+				}
+			}
+		}
+	}
+	after = {
+		any_vassal = {
+			limit = { higher_tier_than = BARON }
+			character_event = { id = emf_mongol.202 }
+		}		
+	}
+}
+
+# Courtiers are given the option to serve one of the heirs
+character_event = {
+	id = emf_mongol.203
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	trigger = {
+		is_adult = yes
+		is_ruler = no
+		prisoner = no
+		OR = {
+			is_female = no
+			is_married_matrilineally = yes
+		}
+	}
+	
+	immediate = {
+		random_list = {
+			200 = {
+				modifier = {
+					factor = 0.1
+					opinion_diff = { first = second_mongol_heir second = first_mongol_heir value = 10 as_if_liege = yes }
+				}
+				modifier = {
+					factor = 0.1
+					opinion_diff = { first = third_mongol_heir second = first_mongol_heir value = 10 as_if_liege = yes }
+				}
+				move_character = event_target:first_mongol_heir
+				opinion = { who = event_target:first_mongol_heir modifier = opinion_loyal_vassal years = 10 }
+			}
+			150 = {
+				modifier = {
+					factor = 0.1
+					opinion_diff = { first = first_mongol_heir second = second_mongol_heir value = 10 as_if_liege = yes }
+				}
+				modifier = {
+					factor = 0.1
+					opinion_diff = { first = third_mongol_heir second = second_mongol_heir value = 10 as_if_liege = yes }
+				}
+				move_character = event_target:second_mongol_heir
+				opinion = { who = event_target:second_mongol_heir modifier = opinion_loyal_vassal years = 10 }
+			}
+			100 = {
+				modifier = {
+					factor = 0.1
+					opinion_diff = { first = first_mongol_heir second = third_mongol_heir value = 10 as_if_liege = yes }
+				}
+				modifier = {
+					factor = 0.1
+					opinion_diff = { first = second_mongol_heir second = third_mongol_heir value = 10 as_if_liege = yes }
+				}
+				move_character = event_target:third_mongol_heir
+				opinion = { who = event_target:third_mongol_heir modifier = opinion_loyal_vassal years = 10 }
+			}
+		}
+		
+	}
+}
+
+# New mongol heirs are informed
+character_event = {
+	id = emf_mongol.204
+	desc = EVTDESC_emf_mongol_204
+	picture = GFX_evt_tengri_throneroom_oldgods
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_mongol_204
+		trigger = { has_landed_title = e_golden_horde }
+		custom_tooltip = { text = ESTABLISH_CADET_BRANCH }
+		any_claim = {
+			limit = { capital_scope = { emf_il_khanate_province = yes } }
+			remove_claim = ROOT
+		}
+		any_claim = {
+			limit = { capital_scope = { region = emf_region_mongol_east } }
+			remove_claim = ROOT
+		}
+		emf_create_courtiers_for_ROOT = yes
+		capital_scope = { save_event_target_as = emf_target_province }
+		emf_empires_spawn_mongol_unit_effect = yes
+		emf_empires_spawn_mongol_unit_effect = yes
+		emf_empires_spawn_mongol_unit_effect = yes
+		emf_empires_spawn_mongol_unit_effect = yes
+		emf_empires_spawn_mongol_unit_effect = yes
+		emf_empires_spawn_mongol_unit_effect = yes
+	}
+	option = {
+		name = EVTOPTA_emf_mongol_204
+		trigger = { has_landed_title = e_il-khanate }
+		custom_tooltip = { text = ESTABLISH_CADET_BRANCH }
+		any_claim = {
+			limit = { capital_scope = { emf_golden_holde_province = yes } }
+			remove_claim = ROOT
+		}
+		any_claim = {
+			limit = { capital_scope = { region = emf_region_mongol_east } }
+			remove_claim = ROOT
+		}
+		emf_create_courtiers_for_ROOT = yes
+		capital_scope = { save_event_target_as = emf_target_province }
+		emf_empires_spawn_mongol_unit_effect = yes
+		emf_empires_spawn_mongol_unit_effect = yes
+		emf_empires_spawn_mongol_unit_effect = yes
+		emf_empires_spawn_mongol_unit_effect = yes
+	}
+	option = {
+		name = EVTOPTA_emf_mongol_204
+		trigger = { has_landed_title = e_chagatai }
+		custom_tooltip = { text = ESTABLISH_CADET_BRANCH }
+		any_claim = {
+			limit = { capital_scope = { emf_il_khanate_province = yes } }
+			remove_claim = ROOT
+		}
+		any_claim = {
+			limit = { capital_scope = { emf_golden_holde_province = yes } }
+			remove_claim = ROOT
+		}
+		emf_create_courtiers_for_ROOT = yes
+		capital_scope = { save_event_target_as = emf_target_province }
+		emf_empires_spawn_mongol_unit_effect = yes
+		emf_empires_spawn_mongol_unit_effect = yes
+	}
+}
