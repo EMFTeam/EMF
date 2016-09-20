@@ -112,7 +112,6 @@ NDefines.NNomad.STARTING_HORDE_MAX_FRACTION = 1
 
 -- Military
 NDefines.NMilitary.NUMBER_OF_TROOPS_PER_GALLEY = 200
-NDefines.NMilitary.LEVY_MAINTENANCE_FACTOR = 2.5                  -- changed in EMF 6.01 from 2.2 since EMF 5.07 (Zeus8)
 NDefines.NMilitary.HOLDING_LEVY_SIZE_OWNER_MARTIAL_BASE = 0.75
 NDefines.NMilitary.HOLDING_LEVY_SIZE_OWNER_MARTIAL_MULT = 0.025
 NDefines.NMilitary.BATTLE_WARSCORE_DEFENDER_MULTIPLIER = 1.6
@@ -131,7 +130,7 @@ NDefines.NMilitary.MAX_COMMANDERS_DUKE = 5                   -- from 4
 NDefines.NMilitary.MAX_COMMANDERS_KING = 7                   -- from 6
 NDefines.NMilitary.MAX_COMMANDERS_EMPEROR = 9                -- from 8
 NDefines.NMilitary.LIEGE_LEVY_REINF_RATE = 0.03
-NDefines.NMilitary.LIEGE_LEVY_COST_MULTIPLIER = 0.3
+NDefines.NMilitary.LIEGE_LEVY_COST_MULTIPLIER = 0.5
 NDefines.NMilitary.LIGHT_INFANTRY_MORALE = 3
 NDefines.NMilitary.LIGHT_INFANTRY_MAINTENANCE = 1
 NDefines.NMilitary.LIGHT_INFANTRY_PHASE_SKIRMISH_ATTACK = 1
