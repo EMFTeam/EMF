@@ -1,5 +1,4 @@
 -- Diplomacy
-NDefines.NDiplomacy.GAVELKIND_MAX_SIZE_BONUS = 0.5
 NDefines.NDiplomacy.VASSAL_LIMIT_LEVY_MULTIPLIER = 0
 NDefines.NDiplomacy.TITULAR_TITLES_COUNT_TOWARDS_DUCHY_LIMIT = 0                    -- from 1
 NDefines.NDiplomacy.LAW_CHANGE_PRESTIGE_COST = 150                                  -- from 100
