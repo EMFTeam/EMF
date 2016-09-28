@@ -1,5 +1,4 @@
 -- Diplomacy
-NDefines.NDiplomacy.GAVELKIND_MAX_SIZE_BONUS = 0.5
 NDefines.NDiplomacy.VASSAL_LIMIT_LEVY_MULTIPLIER = 0
 NDefines.NDiplomacy.TITULAR_TITLES_COUNT_TOWARDS_DUCHY_LIMIT = 0                    -- from 1
 NDefines.NDiplomacy.LAW_CHANGE_PRESTIGE_COST = 150                                  -- from 100
@@ -103,7 +102,6 @@ NDefines.NEconomy.BISHOP_TAX_TO_POPE_FACTOR = 0.25
 NDefines.NEconomy.TRADE_POST_COST_INC_DIST = 0.0045
 NDefines.NEconomy.PATRICIAN_CITY_TAX_MULT = 0.25
 NDefines.NEconomy.OVER_MAX_DEMESNE_TAX_PENALTY = 0.05
-NDefines.NEconomy.BUILDING_COST_MULT = 0.2
 
 -- Nomad
 NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 1500
@@ -112,7 +110,6 @@ NDefines.NNomad.STARTING_HORDE_MAX_FRACTION = 1
 
 -- Military
 NDefines.NMilitary.NUMBER_OF_TROOPS_PER_GALLEY = 200
-NDefines.NMilitary.LEVY_MAINTENANCE_FACTOR = 2.5                  -- changed in EMF 6.01 from 2.2 since EMF 5.07 (Zeus8)
 NDefines.NMilitary.HOLDING_LEVY_SIZE_OWNER_MARTIAL_BASE = 0.75
 NDefines.NMilitary.HOLDING_LEVY_SIZE_OWNER_MARTIAL_MULT = 0.025
 NDefines.NMilitary.BATTLE_WARSCORE_DEFENDER_MULTIPLIER = 1.6
@@ -131,7 +128,7 @@ NDefines.NMilitary.MAX_COMMANDERS_DUKE = 5                   -- from 4
 NDefines.NMilitary.MAX_COMMANDERS_KING = 7                   -- from 6
 NDefines.NMilitary.MAX_COMMANDERS_EMPEROR = 9                -- from 8
 NDefines.NMilitary.LIEGE_LEVY_REINF_RATE = 0.03
-NDefines.NMilitary.LIEGE_LEVY_COST_MULTIPLIER = 0.3
+NDefines.NMilitary.LIEGE_LEVY_COST_MULTIPLIER = 0.5
 NDefines.NMilitary.LIGHT_INFANTRY_MORALE = 3
 NDefines.NMilitary.LIGHT_INFANTRY_MAINTENANCE = 1
 NDefines.NMilitary.LIGHT_INFANTRY_PHASE_SKIRMISH_ATTACK = 1

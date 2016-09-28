@@ -266,9 +266,6 @@ character_event = {
 				}
 			}
 		}
-		event_target:child_heir = {
-			custom_tooltip = { text = CRUSADE_ADD_ALLIANCE }
-		}
 	}
 	option = {
 		name = {
@@ -298,9 +295,6 @@ character_event = {
 				}
 			}
 		}
-		event_target:sibling_heir = {
-			custom_tooltip = { text = CRUSADE_ADD_ALLIANCE }
-		}
 	}
 	option = {
 		name = EVTOPTC_emf_crusades_2 #To a capable relative
@@ -322,9 +316,6 @@ character_event = {
 					character_event = { id = emf_crusades.3 }
 				}
 			}
-		}
-		event_target:relative_heir = {
-			custom_tooltip = { text = CRUSADE_ADD_ALLIANCE }
 		}
 	}
 	option = {
@@ -355,9 +346,6 @@ character_event = {
 					}
 				}
 			}
-			event_target:courtier_heir = {
-				custom_tooltip = { text = CRUSADE_ADD_ALLIANCE }
-			}
 		}
 		if = {
 			limit = { NOT = { event_target:courtier_heir = { always = yes } } }
@@ -379,6 +367,7 @@ character_event = {
 					}
 					new_character = {
 						add_friend = ROOT
+						emf_new_character_effect = yes
 						character_event = { id = emf_crusades.3 }
 					}
 				}
@@ -549,7 +538,6 @@ character_event = {
 		prestige = 200
 		piety = 100
 		set_defacto_liege = THIS
-		add_alliance = { who = event_target:crusade_victor years = 50 }
 
 		# Improve the new ruler
 		random_list = {
@@ -670,88 +658,7 @@ character_event = {
 		}
 		
 		# Ensure some decent councilors/generals
-		create_random_soldier = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 30
-			attributes = {
-				martial = 12
-			}
-		}
-		new_character = {
-			opinion = { who = ROOT modifier = opinion_loyal_servant }
-		}
-		create_random_soldier = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 30
-			attributes = {
-				martial = 12
-			}
-		}
-		new_character = {
-			opinion = { who = ROOT modifier = opinion_loyal_servant }
-		}
-		create_random_soldier = {
-			random_traits = yes
-			dynasty = random
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 30
-			attributes = {
-				martial = 12
-			}
-		}
-		new_character = {
-			opinion = { who = ROOT modifier = opinion_loyal_servant }
-		}
-		create_random_priest = {
-			random_traits = yes
-			dynasty = random
-			female = no
-			religion = ROOT
-			culture = ROOT
-		}
-		new_character = {
-			opinion = { who = ROOT modifier = opinion_loyal_servant }
-		}
-		create_random_steward = {
-			random_traits = yes
-			dynasty = random
-			female = no
-			religion = ROOT
-			culture = ROOT
-		}
-		new_character = {
-			opinion = { who = ROOT modifier = opinion_loyal_servant }
-		}
-		create_random_intriguer = {
-			random_traits = yes
-			dynasty = random
-			female = no
-			religion = ROOT
-			culture = ROOT
-		}
-		new_character = {
-			opinion = { who = ROOT modifier = opinion_loyal_servant }
-		}
-		create_random_diplomat = {
-			random_traits = yes
-			dynasty = random
-			female = no
-			religion = ROOT
-			culture = ROOT
-		}
-		new_character = {
-			opinion = { who = ROOT modifier = opinion_loyal_servant }
-		}
+		emf_create_courtiers_for_ROOT = yes
 		
 		# Fire follow-up events
 		character_event = { id = emf_crusades.5 } # Grant fiefs to crusade participants
@@ -1410,18 +1317,30 @@ character_event = {
 	is_triggered_only = yes
 	
 	trigger = {
+		ai = yes
 		can_call_crusade = yes
 		ROOT = { religion_group = christian }
 	}
 	
 	immediate = {
 		ROOT = {
+			set_variable = { which = crusade_karma value = 0 }
+			set_variable = { which = crusade_cash value = 0 }
+			
 			# Recursively subtract chunks of piety until the Pope has < 50 points.  Keep
 			# track of how much was taken so that it can be faithfully restored in full.
-			character_event = { id = emf_crusades.7 }
+			while = {
+				limit = { piety = 50 }
+				piety = -50
+				change_variable = { which = crusade_karma value = 1 }
+			}
 			
 			# Do the same for cash.
-			character_event = { id = emf_crusades.9 }
+			while = {
+				limit = { wealth = 100 }
+				wealth = -100
+				change_variable = { which = crusade_cash value = 1 }
+			}
 		
 			# Restore the Pope's piety (and thus ability to hire holy orders) in 2 months,
 			# which should be long enough to give other rulers a chance to join the crusade,
@@ -1433,24 +1352,6 @@ character_event = {
 			# way of Catholic rulers asking for money)
 			character_event = { id = emf_crusades.10 days = 30 }
 		}
-	}
-}
-
-# Recursively subtract piety from ROOT and save it in a karmic debt counter.
-character_event = {
-	id = emf_crusades.7
-
-	hide_window = yes
-	is_triggered_only = yes
-	
-	trigger = {
-		piety = 50
-	}
-	
-	immediate = {
-		piety = -50
-		change_variable = { which = crusade_karma value = 1 }
-		character_event = { id = emf_crusades.7 }
 	}
 }
 
@@ -1472,24 +1373,6 @@ character_event = {
 		piety = 50
 		change_variable = { which = crusade_karma value = -1 }
 		character_event = { id = emf_crusades.8 }
-	}
-}
-
-# Recursively subtract cash from ROOT and save it in a debt counter.
-character_event = {
-	id = emf_crusades.9
-
-	hide_window = yes
-	is_triggered_only = yes
-	
-	trigger = {
-		wealth = 100
-	}
-	
-	immediate = {
-		wealth = -100
-		change_variable = { which = crusade_cash value = 1 }
-		character_event = { id = emf_crusades.9 }
 	}
 }
 
@@ -1522,11 +1405,14 @@ character_event = {
 	hide_window = yes
 	
 	only_playable = yes
-	religion = catholic
-	has_global_flag = christian_crusades_unlocked # Unlocked at same time as jihad and before GHWs
+	religion = hip_religion
 	
 	trigger = {
-		has_landed_title = k_papal_state
+		has_landed_title = e_hip
+		OR = {
+			has_global_flag = christian_crusades_unlocked
+			has_global_flag = muslim_jihads_unlocked
+		}
 		NOT = { has_global_flag = emf_crusades_unlocked }
 	}
 	
@@ -2008,30 +1894,7 @@ character_event = {
 		}
 		
 		# Create some courtiers
-		create_random_soldier = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 30
-		}
-		create_random_soldier = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 25
-		}
-		create_random_soldier = {
-			random_traits = yes
-			dynasty = none
-			religion = ROOT
-			culture = ROOT
-			female = no
-			age = 29
-		}
+		emf_create_courtiers_for_ROOT = yes
 		
 		# Join the crusade
 		religion_head = {
