@@ -2345,12 +2345,9 @@ character_event = {
 	ai = yes
 
 	trigger = {
-		has_landed_title = e_mongol_empire
+		emf_mongol_invasion_mission = yes
 		is_landed = yes
 		has_regent = no
-
-		# We haven't yet failed in an emf_mongol_invasion
-		NOT = { has_global_flag = emf_mongol_invasion_defeat }
 
 		# Not if we're over our vassal limit
 		NOT = { over_vassal_limit = 0 }
@@ -2414,18 +2411,56 @@ character_event = {
 			wealth = 50
 		}
 
+		# Ensure we have the nomadic lucky ruler (+mongols) building
+		capital_holding = {
+			if = {
+				limit = {
+					NOR = {
+						has_building = no_lucky_1
+						year = 1300
+					}
+				}
+				add_building = no_lucky_1
+			}
+		}
+		
 		# Pick a random available target from the core conquest region...
+		# Prefer those in the same de jure kingdom as our last launched war(s) for troop locality
 
 		random_realm_province = {
 			limit = {
+				event_target:emf_mongol_invasion_last_king_title = { tier = THIS }
 				has_province_flag = emf_capital_connected
 				any_neighbor_province = {
-					emf_mongol_invasion_core_province = yes
+					kingdom = { title = event_target:emf_mongol_invasion_last_king_title }
+					region = emf_region_mongol_core
+					emf_mongol_invasion_valid_target_province = yes
 				}
 			}
 			random_neighbor_province = {
 				limit = {
-					emf_mongol_invasion_core_province = yes
+					kingdom = { title = event_target:emf_mongol_invasion_last_king_title }
+					region = emf_region_mongol_core
+					emf_mongol_invasion_valid_target_province = yes
+				}
+				kingdom = {
+					save_event_target_as = emf_king_title
+					break = yes
+				}
+			}
+		}
+		random_realm_province = {
+			limit = {
+				has_province_flag = emf_capital_connected
+				any_neighbor_province = {
+					region = emf_region_mongol_core
+					emf_mongol_invasion_valid_target_province = yes
+				}
+			}
+			random_neighbor_province = {
+				limit = {
+					region = emf_region_mongol_core
+					emf_mongol_invasion_valid_target_province = yes
 				}
 				kingdom = {
 					save_event_target_as = emf_king_title
@@ -2434,25 +2469,53 @@ character_event = {
 			}
 		}
 
-		# If we're still here, there were no available targets in core conquest region
+		# If we're still here, there were no available targets in core conquest region.
 
 		if = {
-			limit = { NOT = { has_global_flag = emf_mongols_in_persia } }
+			limit = { NOT = { has_global_flag = emf_mongol_invasion_in_persia } }
 			break = yes
 		}
 
-		# If we're still here, we're allowed to look for a target in the extended region
+		# If we're still here, there were no targets in the core region and we have already penetrated
+		# Persia to a reasonable degree, so we're now allowed to look for further targets in the extended
+		# conquest zone.
+		#
+		# As before, prefer those in the same de jure kingdom as our last launched war(s) for troop locality
 
 		random_realm_province = {
 			limit = {
+				event_target:emf_mongol_invasion_last_king_title = { tier = THIS }
 				has_province_flag = emf_capital_connected
 				any_neighbor_province = {
-					emf_mongol_invasion_ext_province = yes
+					kingdom = { title = event_target:emf_mongol_invasion_last_king_title }
+					region = emf_region_mongol_extended
+					emf_mongol_invasion_valid_target_province = yes
 				}
 			}
 			random_neighbor_province = {
 				limit = {
-					emf_mongol_invasion_ext_province = yes
+					kingdom = { title = event_target:emf_mongol_invasion_last_king_title }
+					region = emf_region_mongol_extended
+					emf_mongol_invasion_valid_target_province = yes
+				}
+				kingdom = {
+					save_event_target_as = emf_king_title
+					break = yes
+				}
+			}
+		}
+		random_realm_province = {
+			limit = {
+				has_province_flag = emf_capital_connected
+				any_neighbor_province = {
+					region = emf_region_mongol_extended
+					emf_mongol_invasion_valid_target_province = yes
+				}
+			}
+			random_neighbor_province = {
+				limit = {
+					region = emf_region_mongol_extended
+					emf_mongol_invasion_valid_target_province = yes
 				}
 				kingdom = {
 					save_event_target_as = emf_king_title
@@ -2468,44 +2531,15 @@ character_event = {
 			event_target:emf_king_title = { always = yes }
 		}
 
-		# Ensure we have the nomadic lucky ruler (+mongols) building
-		capital_holding = {
-			if = {
-				limit = {
-					NOR = {
-						has_building = no_lucky_1
-						year = 1300
-					}
-				}
-				add_building = no_lucky_1
-			}
-		}
-
-		# Declare war on everybody we can within the target kingdom at once (more risky,
-		# but it allows the Mongols to take advantage of locality of their event troops).
-		# Of course, it's also consistent with the pillage-burn philosophy.
-
+		# Declare war on everybody we can within the target kingdom that has a border with us
+		# at once (allows the Mongols to take advantage of locality of their event troops, to
+		# some degree).
 		any_playable_ruler = {
 			limit = {
-				liege = { character = PREV }
-				NOR = {
-					character = ROOT
-					reverse_has_truce = ROOT
-					AND = {
-						ai = no
-						ROOT = { pays_tribute_to = PREV }
-					}
-					is_allied_with = ROOT
-					has_non_aggression_pact_with = ROOT
-					any_war = {
-						attacker = { character = PREV }
-						defender = { character = ROOT }
-					}
-				}
+				emf_mongol_invasion_valid_target = yes
 				any_realm_province = {
-					kingdom = {
-						title = event_target:emf_king_title
-					}
+					kingdom = { title = event_target:emf_king_title }
+					any_neighbor_province = { owner_under_ROOT = yes }
 				}
 			}
 			ROOT = {
@@ -2517,7 +2551,10 @@ character_event = {
 					infamy = 0
 				}
 			}
+			character_event = { id = emf_mongol.1001 } # Verify war happened
 		}
+		
+		event_target:emf_king_title = { save_global_event_target_as = emf_mongol_invasion_last_king_title }
 	}
 
 	option = {
@@ -2540,7 +2577,7 @@ character_event = {
 
 	trigger = {
 		has_landed_title = e_mongol_empire
-		NOT = { has_global_flag = emf_mongols_in_persia }
+		NOT = { has_global_flag = emf_mongol_invasion_in_persia }
 		any_realm_province = {
 			region = emf_region_mongol_core_fringe
 			has_province_flag = emf_capital_connected
@@ -2552,7 +2589,7 @@ character_event = {
 	}
 
 	immediate = {
-		set_global_flag = emf_mongols_in_persia
+		set_global_flag = emf_mongol_invasion_in_persia
 	}
 }
 
