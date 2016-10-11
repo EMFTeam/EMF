@@ -17,9 +17,7 @@ character_event = {
 	border = GFX_event_normal_frame_war
 	
 	only_independent = yes
-	only_playable = yes
 	war = no
-	has_global_flag = EMF
 	
 	trigger = {
 		tier = EMPEROR
@@ -31,7 +29,7 @@ character_event = {
 	}
 	
 	mean_time_to_happen = {
-		days = 1
+		days = 0
 	}
 	
 	immediate = {
@@ -60,6 +58,21 @@ character_event = {
 		
 		# Then we will try to find one...
 		
+		# Since we'll be checking is_landed_title_allowed on these kingdoms, we must first ensure that our
+		# empire title, if de jure, allows de jure vassal kingdom creation. Since we're going to destroy
+		# the title anyhow, we don't need to remember the previous setting for the law. NOTE: This part of
+		# the AED code assumes the "one emperor, one empire" rule is in place.
+		
+		set_character_flag = emf_no_law_penalties
+		any_demesne_title = {
+			limit = {
+				tier = EMPEROR
+				is_de_jure_title = yes
+			}
+			add_law = imperial_kingdom_creation_1
+		}
+		clr_character_flag = emf_no_law_penalties
+		
 		# First, check capital kingdom for availability
 		if = {
 			limit = {
@@ -67,6 +80,7 @@ character_event = {
 					kingdom = {
 						has_holder = no
 						is_title_active = THIS
+						ROOT = { is_landed_title_allowed = PREV }
 					}
 				}
 			}
@@ -89,6 +103,7 @@ character_event = {
 					is_de_jure_title = yes
 					has_holder = no
 					is_title_active = THIS
+					ROOT = { is_landed_title_allowed = PREV }
 				}
 				save_event_target_as = emf_king_title
 				ROOT = { character_event = { id = emf_empires.4 } } # Check 50% rule
@@ -107,6 +122,7 @@ character_event = {
 				is_de_jure_title = yes
 				has_holder = no
 				is_title_active = THIS
+				ROOT = { is_landed_title_allowed = PREV }
 			}
 			save_event_target_as = emf_king_title
 			ROOT = { character_event = { id = emf_empires.4 } } # Check 50% rule
@@ -150,6 +166,24 @@ character_event = {
 		name = emf_empires.0.opt.a
 
 		hidden_tooltip = { set_variable = { which = king_county value = 0 } }
+		
+		if = {
+			limit = {
+				NOT = {
+					any_demesne_title = {
+						tier = EMPEROR
+						NOT = { title = event_target:emf_empire_title }
+						temporary = no
+					}
+				}
+			}
+			# We will not be able to bind king-tier vassals after the empire is destroyed
+			any_vassal = {
+				limit = { tier = KING }
+				set_defacto_liege = THIS
+				emf_liege_change_effect = yes
+			}
+		}
 		if = {
 			limit = { event_target:emf_new_title = { always = yes } }
 			# We'll be creating or have created a fallback kingdom title
@@ -205,7 +239,6 @@ character_event = {
 	hide_window = yes
 	
 	only_independent = yes
-	only_playable = yes
 	only_capable = yes
 	min_age = 16
 	
@@ -221,6 +254,7 @@ character_event = {
 						title = e_golden_horde
 						title = e_il-khanate
 						title = e_mongol_empire
+						title = e_chagatai
 					}
 				}
 				title = e_timurids
@@ -272,6 +306,7 @@ character_event = {
 					has_landed_title = e_golden_horde
 					has_landed_title = e_il-khanate
 					has_landed_title = e_mongol_empire
+					has_landed_title = e_chagatai
 				}
 				OR = {
 					year = 1300
@@ -337,7 +372,6 @@ character_event = {
 	hide_window = yes
 	
 	only_independent = yes
-	only_playable = yes
 	
 	trigger = {
 		FROM = { tier = EMPEROR }
@@ -353,361 +387,6 @@ character_event = {
 			# flag into a cumulative title variable for "years spent disintegrated," but the applications for
 			# that don't currently exist (mostly contextual stuff).
 			change_variable = { which = emf_aed_restored value = 1 }
-		}
-	}
-}
-
-# emf_empires.10 [Mongol Emperor]
-#
-# Fired from on_fail or on_reverse_demand of emf_horde_invasion CB.
-# ROOT is the attacker, FROMFROM is the defender.
-character_event = {
-	id = emf_empires.10
-	hide_window = yes
-	is_triggered_only = yes
-
-	trigger = {
-		has_landed_title = e_mongol_empire
-	}
-
-	immediate = {
-		set_global_flag = emf_mongols_defeated
-	}
-}
-
-# emf_empires.11 [Mongol Emperor]
-#
-# emf_horde_invasion war tick for e_mongol_empire
-character_event = {
-	id = emf_empires.11
-	
-	hide_window = yes
-	
-	only_independent = yes
-	only_playable = yes
-	culture = mongol
-	only_capable = yes
-	min_age = 16
-	war = no
-
-	trigger = {
-		has_landed_title = e_mongol_empire
-		ai = yes
-		is_landed = yes
-		has_regent = no
-
-		# We haven't yet failed in an emf_horde_invasion
-		NOT = { has_global_flag = emf_mongols_defeated }
-
-		# Not if we're over our vassal limit
-		NOT = { over_vassal_limit = 0 }
-
-		# Don't consider invasion until it's been awhile since last successful invasion ended
-		OR = {
-			NOT = { has_character_flag = emf_horde_invasion }
-			NOT = { # No cooldown during first 30yr
-				had_global_flag = {
-					flag = mongol_empire_arrival
-					days = 10950
-				}
-			}
-			AND = {
-				NOT = { # Minimal cooldown during first 30-60yrs
-					had_global_flag = {
-						flag = mongol_empire_arrival
-						days = 21900
-					}
-				}
-				had_character_flag = {
-					flag = emf_horde_invasion
-					days = 180
-				}
-			}
-			had_character_flag = { # Larger cooldown thereafter
-				flag = emf_horde_invasion
-				days = 730
-			}
-		}
-
-		# Only if we still have our initial event troops
-		# IMPORTANT: we do need to start with such earmarked troops, or else this will never fire, the mongols will
-		# never be "defeated," and their all-CBs block will never be lifted (i.e., they'll just sit there forever)
-		OR = {
-			has_earmarked_regiments = horde_invasion
-			has_earmarked_regiments = start_troops
-		}
-
-		# Minimum gold to fire a scripted invasion
-		OR = {
-			wealth = 50
-			NOT = {
-				had_global_flag = {
-					flag = mongol_empire_arrival
-					days = 14600 # 40yr
-				}
-			}
-		}
-	}
-
-	mean_time_to_happen = {
-		days = 0
-	}
-
-	immediate = {
-		# If they're particularly low on cash, give them a little, but only support them
-		# in this way for awhile after their arrival (duration enforced by event trigger).
-		if = {
-			limit = { NOT = { wealth = 50 } }
-			wealth = 256
-		}
-
-		# Pick a random available target from the core conquest region...
-
-		random_realm_province = {
-			limit = {
-				OR = { # Not a totally-isolated county, unless it's our capital
-					ROOT = {
-						capital_scope = {
-							province = PREVPREV
-						}
-					}
-					any_neighbor_province = {
-						owner = { same_realm = ROOT }
-					}
-				}
-				any_neighbor_province = {
-					emf_empires_mongol_core_prov_trigger = yes
-				}
-			}
-			random_neighbor_province = {
-				limit = {
-					emf_empires_mongol_core_prov_trigger = yes
-				}
-				kingdom = {
-					save_event_target_as = emf_king_title
-					break = yes
-				}
-			}
-		}
-
-		# If we're still here, there were no available targets in core conquest region
-
-		if = {
-			limit = { NOT = { has_global_flag = emf_mongols_in_persia } }
-			break = yes
-		}
-
-		# If we're still here, we're allowed to look for a target in the extended region
-
-		random_realm_province = {
-			limit = {
-				any_neighbor_province = { # Not a totally-isolated county
-					owner = { same_realm = ROOT }
-				}
-				any_neighbor_province = {
-					emf_empires_mongol_extended_prov_trigger = yes
-				}
-			}
-			random_neighbor_province = {
-				limit = {
-					emf_empires_mongol_extended_prov_trigger = yes
-				}
-				kingdom = {
-					save_event_target_as = emf_king_title
-					break = yes
-				}
-			}
-		}
-	}
-
-	option = {
-		name = OK
-		trigger = {
-			wealth = 50
-			event_target:emf_king_title = { always = yes }
-		}
-
-		# Ensure we have the nomadic lucky ruler (+mongols) building
-		capital_holding = {
-			if = {
-				limit = {
-					NOT = { has_building = no_lucky_1 }
-					NOT = { year = 1300 }
-				}
-				add_building = no_lucky_1
-			}
-		}
-
-		# Declare war on everybody we can within the target kingdom at once (more risky,
-		# but it allows the Mongols to take advantage of locality of their event troops).
-		# Of course, it's also consistent with the pillage-burn philosophy.
-
-		any_independent_ruler = {
-			limit = {
-				NOR = {
-					character = ROOT # For completeness (any_independent_ruler excludes ROOT)
-					reverse_has_truce = ROOT
-					ROOT = { pays_tribute_to = PREV }
-					is_allied_with = ROOT
-					has_non_aggression_pact_with = ROOT
-				}
-				any_realm_province = {
-					kingdom = {
-						title = event_target:emf_king_title
-					}
-				}
-			}
-			ROOT = {
-				set_character_flag = emf_horde_invasion_pass
-				war = {
-					casus_belli = emf_horde_invasion
-					target = PREV
-					thirdparty_title = event_target:emf_king_title
-					infamy = 0
-				}
-			}
-		}
-	}
-
-	option = {
-		name = CANCEL
-		trigger = {
-			OR = {
-				NAND = {
-					wealth = 50
-					event_target:emf_king_title = { always = yes }
-				}
-				ai = no
-			}
-		}
-	}
-}
-
-# emf_empires.12 [Mongol Emperor]
-#
-# Set a global flag when e_mongol_empire can unlock their full conquest zone.
-character_event = {
-	id = emf_empires.12
-	hide_window = yes
-	
-	only_independent = yes
-	only_playable = yes
-	culture = mongol
-
-	trigger = {
-		has_landed_title = e_mongol_empire
-		NOT = { has_global_flag = emf_mongols_in_persia }
-
-		any_realm_province = {
-			region = emf_region_mongol_core_fringe
-			# That isn't a totally-isolated county
-			any_neighbor_province = {
-				owner = { same_realm = ROOT }
-			}
-		}
-	}
-
-	mean_time_to_happen = {
-		days = 0
-	}
-
-	immediate = {
-		set_global_flag = emf_mongols_in_persia
-	}
-}
-
-# emf_empires.13 [Mongol Emperor]
-#
-# Called from on_success_title of emf_horde_invasion CB
-#
-# ROOT is the attacker, event_target:emf_defender is the defending character,
-# and event_target:emf_king_title is the CB's de jure target kingdom.
-character_event = {
-	id = emf_empires.13
-	hide_window = yes
-	is_triggered_only = yes
-
-	trigger = {
-		has_landed_title = e_mongol_empire
-	}
-
-	immediate = {
-		# Small independents fully-contained within the de jure target kingdom simply swear
-		# fealty rather than face the destructive wrath that their neighbors did. They're
-		# already at war with the Mongols (AI-only).
-
-		any_independent_ruler = {
-			limit = {
-				# Are currently at war with us via this CB
-				any_war = {
-					defender = { character = PREV }
-					attacker = { character = ROOT }
-					using_cb = emf_horde_invasion
-					# TODO: don't do this when warscore is significantly in favor of defender
-				}
-				lower_tier_than = ROOT # Can be vassalized
-				# Not the guy who lost the war prompting this potential subjugation
-				NOT = { character = event_target:emf_defender }
-				# Not weird folks
-				mercenary = no
-				holy_order = no
-				controls_religion = no
-				primary_title = { is_primary_type_title = no }
-				ai = yes
-				# Share a border presently
-				any_realm_province = {
-					any_neighbor_province = {
-						owner = {
-							same_realm = ROOT
-						}
-					}
-				}
-				# Realm provinces are completely within the de jure target kingdom
-				NOT = {
-					any_realm_title = {
-						tier = COUNT
-						NOT = { de_jure_liege_or_above = event_target:emf_king_title }
-					}
-				}
-			}
-			emf_ROOT_subjugate_ruler_effect = yes
-		}
-	}
-}
-
-# emf_empires.14 [Horde Invader]
-#
-# Handles the initial declaration of war when the Mongols first arrive.
-# Could also be used for any such emf_horde_invasion.
-# Target province is event_target:emf_target_province.
-character_event = {
-	id = emf_empires.14
-	hide_window = yes
-	is_triggered_only = yes
-
-	immediate = {
-		event_target:emf_target_province = {
-			owner = {
-				top_liege = {
-					save_event_target_as = emf_defender
-				}
-			}
-			kingdom = {
-				save_event_target_as = emf_title
-			}
-		}
-	}
-
-	option = {
-		name = OK
-
-		set_character_flag = emf_horde_invasion_pass
-
-		war = {
-			casus_belli = emf_horde_invasion
-			target = event_target:emf_defender
-			thirdparty_title = event_target:emf_title
-			infamy = 0
 		}
 	}
 }
