@@ -768,6 +768,148 @@ character_event = {
 	}
 }
 
+# emf_core.80
+# Handle mercenary companies gaining non-mercenary titles -- on_new_holder and on_new_holder_usurpation
+character_event = {
+	id = emf_core.80
+	
+	hide_window = yes
+	is_triggered_only = yes
+	
+	only_rulers = yes
+	ai = yes
+	
+	trigger = {
+		NOT = { has_character_flag = skip_titular_duchy }
+		any_demesne_title = { mercenary = yes }
+		FROM = {
+			mercenary = no
+			NOT = { has_title_flag = emf_check_mercenary_titles }
+		}
+	}
+	
+	immediate = {
+		add_trait = adventurer
+		primary_title = {
+			save_event_target_as = mercenary_title
+			set_title_flag = emf_check_mercenary_titles
+		}
+		# They have 5 years before they must surrender the mercenary title
+		isis = {
+			character_event = { id = emf_core.81 days = 1825 }
+		}
+	}
+}
+
+character_event = {
+	id = emf_core.81
+	
+	hide_window = yes
+	is_triggered_only = yes
+
+	immediate = {
+		# First check if the mercenary holder is at war
+		if = {
+			limit = {
+				event_target:mercenary_title = {
+					has_holder = yes
+					has_title_flag = emf_check_mercenary_titles
+					holder_scope = {
+						ai = yes
+						war = yes
+						any_demesne_title = { mercenary = no }
+					}
+				}
+			}
+			repeat_event = { id = emf_core.81 days = 365 } # Check again in a year
+			break = yes
+		}
+		# The mercenary holder is still a mercenary, not at war, and still has non-mercenary titles
+		if = {
+			limit = {
+				event_target:mercenary_title = {
+					has_holder = yes
+					has_title_flag = emf_check_mercenary_titles
+					holder_scope = {
+						ai = yes
+						any_demesne_title = { mercenary = no }
+					}
+				}
+			}
+			event_target:mercenary_title = {
+				clr_title_flag = emf_check_mercenary_titles
+				# First check if I need to give him a Duke-tier title to replace the mecenary company
+				holder_scope = {
+					save_event_target_as = current_merc
+					if = {
+						limit = {
+							# Mercenary is landed, has vassals of Count+ tier
+							# and currently has no titles of equal or higher rank than the mercenary company
+							is_landed = yes
+							any_vassal = { higher_tier_than = BARON }
+							NOT = {
+								any_demesne_title = {
+									NOT = { title = event_target:mercenary_title }
+									OR = {
+										tier = event_target:mercenary_title
+										higher_tier_than = event_target:mercenary_title
+									}
+								}
+							}
+						}
+						# In this case, give him the capital county's de jure duchy if it has no current holder
+						# Otherwise, create a titular duchy based on that capital county
+						capital_scope = {
+							duchy = {
+								if = {
+									limit = { has_holder = no }
+									event_target:current_merc = { set_character_flag = skip_titular_duchy }
+									grant_title = event_target:current_merc
+								}
+							}
+							if = {
+								limit = {
+									event_target:current_merc = { NOT = { has_character_flag = skip_titular_duchy } }
+								}
+								county = {
+									create_title = {
+										tier = DUKE
+										landless = no
+										temporary = no
+										custom_created = yes
+										culture = event_target:current_merc
+										holder = event_target:current_merc
+										base_title = THIS
+										copy_title_laws = yes
+									}
+								}
+							}
+							event_target:current_merc = { clr_character_flag = skip_titular_duchy }
+						}
+					}
+				}
+				# Hand off the mercenary company to the current heir
+				current_heir = {
+					usurp_title_only = PREV
+					# Vassalize to the former holder, in case they're high enough tier
+					if = {
+						limit = { lower_tier_than = event_target:current_merc }
+						set_defacto_liege = event_target:current_merc
+					}
+				}
+				# Remove any claims to the company by the former holder
+				event_target:current_merc = {
+					remove_claim = PREV
+					recalc_succession = yes
+				}
+			}
+			break = yes
+		}
+		event_target:mercenary_title = {
+			clr_title_flag = emf_check_mercenary_titles
+		}
+	}
+}
 
 
 # emf_core.1000
