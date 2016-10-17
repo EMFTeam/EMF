@@ -2032,67 +2032,38 @@ narrative_event = {
 # Seljuk appears and begins his first adventure
 character_event = {
 	id = 60200
-	desc = EVTDESC60200
-	picture = GFX_evt_mongols
-	border = GFX_event_normal_frame_war
+
+	hide_window = yes
 	
 	only_playable = yes
-	culture_group = altaic
+	religion = catholic
 
 	trigger = {
-		NOT = {
-			has_game_rule = {
-				name = turkic_invasions
-				value = off
-			}
+		controls_religion = yes
+
+		NOR = {
+			has_game_rule = { name = turkic_invasions value = off }
+			has_game_rule = { name = adventurers value = none }
 		}
 		OR = {
 			AND = {
-				has_game_rule = {
-					name = turkic_invasions
-					value = historical
-				}
+				has_game_rule = { name = turkic_invasions value = historical }
 				year = 960
 				NOT = { year = 980 }
 			}
 			AND = {
-				has_game_rule = {
-					name = turkic_invasions
-					value = random
-				}
+				has_game_rule = { name = turkic_invasions value = random }
 				year = 809
 				NOT = { year = 1200 }
 			}
-		}
-		NOT = { has_game_rule = { name = adventurers value = none } }
+		}	
 		
-		OR = {
-			is_nomadic = yes
-			AND = {
-				is_tribal = yes
-				NOT = { has_dlc = "Horse Lords" }
-			}
-		}
-		OR = {
-			independent = yes
-			NOT = { any_liege = { culture = ROOT } }
-		}
-		any_realm_province = {
-			OR = {
-				region = world_persia
-				region = world_steppe
-			}
-		}
 		any_independent_ruler = {
 			war = no
 			in_revolt = no
 			is_nomadic = no
 			is_tribal = no
-			NOR = {
-				is_tributary = yes
-				same_realm = ROOT
-				any_allied_character = { higher_tier_than = DUKE }
-			}
+			is_tributary = no
 			OR = {
 				c_merv = { owner_under_PREV = yes }
 				c_dihistan = { owner_under_PREV = yes }
@@ -2123,11 +2094,7 @@ character_event = {
 				in_revolt = no
 				is_nomadic = no
 				is_tribal = no
-				NOR = {
-					is_tributary = yes
-					same_realm = ROOT
-					any_allied_character = { higher_tier_than = DUKE }
-				}
+				is_tributary = no
 				c_tus = { owner_under_PREV = yes }
 			}
 			save_event_target_as = seljuk_target_ruler
@@ -2139,11 +2106,7 @@ character_event = {
 				in_revolt = no
 				is_nomadic = no
 				is_tribal = no
-				NOR = {
-					is_tributary = yes
-					same_realm = ROOT
-					any_allied_character = { higher_tier_than = DUKE }
-				}
+				is_tributary = no
 				c_merv = { owner_under_PREV = yes }
 				NOT = { event_target:seljuk_target_ruler = { always = yes } }
 			}
@@ -2156,16 +2119,26 @@ character_event = {
 				in_revolt = no
 				is_nomadic = no
 				is_tribal = no
-				NOR = {
-					is_tributary = yes
-					same_realm = ROOT
-					any_allied_character = { higher_tier_than = DUKE }
-				}
+				is_tributary = no
 				c_dihistan = { owner_under_PREV = yes }
 				NOT = { event_target:seljuk_target_ruler = { always = yes } }
 			}
 			save_event_target_as = seljuk_target_ruler
 			c_dihistan = { location = { save_event_target_as = seljuk_target_province } }
+		}
+
+		# Select origin
+		random_province = {
+			limit = { culture = turkish }
+			save_event_target_as = seljuk_origin
+		}
+		if = {
+			limit = {
+				NOT = { event_target:seljuk_origin = { always = yes } }
+			}
+			c_usturt = {
+				location = { save_event_target_as = seljuk_origin }
+			}
 		}
 		
 		# Now create Seljuk
@@ -2201,131 +2174,141 @@ character_event = {
 			wealth = 500
 			prestige = 500
 			if = {
-				limit = { ROOT = { is_nomadic = yes } }
+				limit = { has_dlc = "Horse Lords" }
 				set_character_flag = will_be_nomadic
 			}
 			# Give adventurer title and start war
-			ROOT = {
-				capital_scope = {
-					event_target:seljuk = {
-						set_defacto_liege = THIS
-						create_title = {
-							tier = DUKE
-							landless = yes
-							temporary = yes
-							culture = THIS
-							name = "CLAIMANT_ADVENTURE"
-							holder = THIS
+			event_target:seljuk_origin = {
+				event_target:seljuk = {
+					set_defacto_liege = THIS
+					create_title = {
+						tier = DUKE
+						landless = yes
+						temporary = yes
+						culture = THIS
+						name = "CLAIMANT_ADVENTURE"
+						holder = THIS
+					}
+					if = {
+						limit = { NOT = { has_character_flag = will_be_nomadic } }
+						set_government_type = tribal_government
+					}
+					if = {
+						limit = { has_character_flag = will_be_nomadic }
+						clr_character_flag = will_be_nomadic
+						set_government_type = nomadic_government
+						population = 5000
+					}
+					set_character_flag = duchy_adventurer
+					spawn_unit = {
+						province = PREV
+						home = PREV
+						owner = THIS
+						troops = {
+							horse_archers = { 2700 2700 }
+							light_cavalry = { 1600 1600 }
+							light_infantry = { 541 541 }
+							heavy_infantry = { 210 210 }
+							knights = { 47 47 }
 						}
-						if = {
-							limit = { NOT = { has_character_flag = will_be_nomadic } }
-							set_government_type = tribal_government
-						}
-						if = {
-							limit = { has_character_flag = will_be_nomadic }
-							clr_character_flag = will_be_nomadic
-							set_government_type = nomadic_government
-							population = 5000
-						}
-						set_character_flag = duchy_adventurer
-						spawn_unit = {
-							province = PREV
-							home = PREV
-							owner = THIS
-							troops = {
-								horse_archers = { 2700 2700 }
-								light_cavalry = { 1600 1600 }
-								light_infantry = { 541 541 }
-								heavy_infantry = { 210 210 }
-								knights = { 47 47 }
-							}
-							attrition = 0.25
-							cannot_inherit = yes
-							maintenance_multiplier = 0
-							earmark = seljuk_event_troops
-						}
-						spawn_unit = {
-							province = PREV
-							home = PREV
-							owner = THIS
-							match_character = event_target:seljuk_target_ruler
-							match_mult = 0.33
-							match_min = 500
-							match_max = 10000
-							attrition = 0.25
-							disband_on_peace = yes
-							earmark = seljuk_duchy_adventure
-						}
-						spawn_unit = {
-							province = PREV
-							home = PREV
-							owner = THIS
-							match_character = event_target:seljuk_target_ruler
-							match_mult = 0.33
-							match_min = 500
-							match_max = 10000
-							attrition = 0.25
-							disband_on_peace = yes
-							earmark = seljuk_duchy_adventure
-						}
-						spawn_unit = {
-							province = PREV
-							home = PREV
-							owner = THIS
-							match_character = event_target:seljuk_target_ruler
-							match_mult = 0.33
-							match_min = 500
-							match_max = 10000
-							attrition = 0.25
-							disband_on_peace = yes
-							earmark = seljuk_duchy_adventure
-						}
-						spawn_unit = {
-							province = PREV
-							home = PREV
-							owner = THIS
-							match_character = event_target:seljuk_target_ruler
-							match_mult = 0.33
-							match_min = 500
-							match_max = 10000
-							attrition = 0.25
-							disband_on_peace = yes
-							earmark = seljuk_duchy_adventure
-						}
-						spawn_unit = {
-							province = PREV
-							home = PREV
-							owner = THIS
-							match_character = event_target:seljuk_target_ruler
-							match_mult = 0.33
-							match_min = 500
-							match_max = 10000
-							attrition = 0.25
-							disband_on_peace = yes
-							earmark = seljuk_duchy_adventure
-						}
-						spawn_unit = {
-							province = PREV
-							home = PREV
-							owner = THIS
-							match_character = event_target:seljuk_target_ruler
-							match_mult = 0.33
-							match_min = 500
-							match_max = 10000
-							attrition = 0.25
-							disband_on_peace = yes
-							earmark = seljuk_duchy_adventure
-						}
-						event_target:seljuk_target_ruler = {
-							event_target:seljuk_target_province = {
-								event_target:seljuk = {		
-									war = {
-										target = PREVPREV
-										casus_belli = duchy_adventure
-										thirdparty_title = PREV
-										tier = DUKE
-										infamy = 0
-									}
+						attrition = 0.25
+						cannot_inherit = yes
+						maintenance_multiplier = 0
+						earmark = seljuk_event_troops
+					}
+					spawn_unit = {
+						province = PREV
+						home = PREV
+						owner = THIS
+						match_character = event_target:seljuk_target_ruler
+						match_mult = 0.33
+						match_min = 500
+						match_max = 10000
+						attrition = 0.25
+						disband_on_peace = yes
+						earmark = seljuk_duchy_adventure
+					}
+					spawn_unit = {
+						province = PREV
+						home = PREV
+						owner = THIS
+						match_character = event_target:seljuk_target_ruler
+						match_mult = 0.4
+						match_min = 500
+						match_max = 10000
+						attrition = 0.25
+						disband_on_peace = yes
+						earmark = seljuk_duchy_adventure
+					}
+					spawn_unit = {
+						province = PREV
+						home = PREV
+						owner = THIS
+						match_character = event_target:seljuk_target_ruler
+						match_mult = 0.4
+						match_min = 500
+						match_max = 10000
+						attrition = 0.25
+						disband_on_peace = yes
+						earmark = seljuk_duchy_adventure
+					}
+					spawn_unit = {
+						province = PREV
+						home = PREV
+						owner = THIS
+						match_character = event_target:seljuk_target_ruler
+						match_mult = 0.4
+						match_min = 500
+						match_max = 10000
+						attrition = 0.25
+						disband_on_peace = yes
+						earmark = seljuk_duchy_adventure
+					}
+					spawn_unit = {
+						province = PREV
+						home = PREV
+						owner = THIS
+						match_character = event_target:seljuk_target_ruler
+						match_mult = 0.4
+						match_min = 500
+						match_max = 10000
+						attrition = 0.25
+						disband_on_peace = yes
+						earmark = seljuk_duchy_adventure
+					}
+					spawn_unit = {
+						province = PREV
+						home = PREV
+						owner = THIS
+						match_character = event_target:seljuk_target_ruler
+						match_mult = 0.4
+						match_min = 500
+						match_max = 10000
+						attrition = 0.25
+						disband_on_peace = yes
+						earmark = seljuk_duchy_adventure
+					}
+					spawn_unit = {
+						province = PREV
+						home = PREV
+						owner = THIS
+						match_character = event_target:seljuk_target_ruler
+						match_mult = 0.4
+						match_min = 500
+						match_max = 10000
+						attrition = 0.25
+						disband_on_peace = yes
+						earmark = seljuk_duchy_adventure
+					}
+					event_target:seljuk_target_ruler = {
+						event_target:seljuk_target_province = {
+							event_target:seljuk = {		
+								war = {
+									target = PREVPREV
+									casus_belli = duchy_adventure
+									thirdparty_title = PREV
+									tier = DUKE
+									infamy = 0
 								}
 							}
 						}
@@ -2334,10 +2317,6 @@ character_event = {
 			}
 			character_event = { id = 60201 }
 		}
-	}
-
-	option = {
-		name = EVTOPTA60205
 	}
 }
 
@@ -3029,7 +3008,6 @@ character_event = {
 			NOR = {
 				is_tributary = yes
 				same_realm = ROOT
-				any_allied_character = { higher_tier_than = DUKE }
 			}
 			OR = {
 				c_samarkand = { owner_under_PREV = yes }
@@ -3066,7 +3044,6 @@ character_event = {
 				NOR = {
 					is_tributary = yes
 					same_realm = ROOT
-					any_allied_character = { higher_tier_than = DUKE }
 				}
 				c_merv = { owner_under_PREV = yes }
 			}
@@ -3082,7 +3059,6 @@ character_event = {
 				NOR = {
 					is_tributary = yes
 					same_realm = ROOT
-					any_allied_character = { higher_tier_than = DUKE }
 				}
 				c_tus = { owner_under_PREV = yes }
 				NOT = { event_target:timur_target_ruler = { always = yes } }
@@ -3099,7 +3075,6 @@ character_event = {
 				NOR = {
 					is_tributary = yes
 					same_realm = ROOT
-					any_allied_character = { higher_tier_than = DUKE }
 				}
 				OR = {
 					c_samarkand = { owner_under_PREV = yes }
@@ -3193,6 +3168,18 @@ character_event = {
 							cannot_inherit = yes
 							maintenance_multiplier = 0
 							earmark = timur_event_troops
+						}
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							match_character = event_target:timur_target_ruler
+							match_mult = 0.33
+							match_min = 500
+							match_max = 10000
+							attrition = 0.25
+							disband_on_peace = yes
+							earmark = timur_duchy_adventure
 						}
 						spawn_unit = {
 							province = PREV
@@ -3839,10 +3826,7 @@ character_event = {
 			in_revolt = no
 			is_nomadic = no
 			is_tribal = no
-			NOR = {
-				is_tributary = yes
-				any_allied_character = { higher_tier_than = DUKE }
-			}
+			is_tributary = no
 			c_ghazna = { owner_under_PREV = yes }
 		}
 		NOT = { has_global_flag = sabuktigin_spawned }
@@ -3871,10 +3855,7 @@ character_event = {
 				in_revolt = no
 				is_nomadic = no
 				is_tribal = no
-				NOR = {
-					is_tributary = yes
-					any_allied_character = { higher_tier_than = DUKE }
-				}
+				is_tributary = no
 				c_ghazna = { owner_under_PREV = yes }
 			}
 			save_event_target_as = sabuktigin_target_ruler
@@ -3951,6 +3932,18 @@ character_event = {
 							cannot_inherit = yes
 							maintenance_multiplier = 0
 							earmark = sabuktigin_event_troops
+						}
+						spawn_unit = {
+							province = PREV
+							home = PREV
+							owner = THIS
+							match_character = event_target:sabuktigin_target_ruler
+							match_mult = 0.33
+							match_min = 500
+							match_max = 10000
+							attrition = 0.25
+							disband_on_peace = yes
+							earmark = sabuktigin_duchy_adventure
 						}
 						spawn_unit = {
 							province = PREV
