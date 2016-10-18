@@ -6531,7 +6531,7 @@ pagan_subjugation = {
 		ROOT = {
 			add_character_modifier = {
 				name = launched_subjugation
-				days = -1
+				years = 100
 				hidden = yes
 			}
 		}
@@ -7292,7 +7292,9 @@ duchy_adventure = {
 		emf_cb_can_use_de_jure_title = yes
 	}
 
-	is_valid = { always = yes }
+	is_valid_title = {
+		any_de_jure_vassal_title = { owner_under_FROM = yes }
+	}
 
 	on_add = {
 		log = "CB(duchy_adventure): START: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
@@ -7322,6 +7324,17 @@ duchy_adventure = {
 						title = PREV
 						enemy = FROM
 						type = host
+					}
+					# Usurp a county if ROOT ended up vassalizing everyone
+					if = {
+						limit = { is_landed = no }
+						random_realm_title = {
+							limit = {
+								tier = COUNT
+								de_jure_liege_or_above = PREVPREV
+							}
+							usurp_title_plus_barony_if_unlanded = { target = ROOT type = host }
+						}
 					}
 				}
 			}
@@ -7413,16 +7426,6 @@ duchy_adventure = {
 	}
 
 	on_attacker_leader_death = {
-		ROOT = {
-			hidden_tooltip = {
-				disband_event_forces = duchy_adventure
-				disband_event_forces = raiding_adventure
-				disband_event_forces = seljuk_duchy_adventure
-				disband_event_forces = timur_duchy_adventure
-				disband_event_forces = sabuktigin_duchy_adventure
-				clr_character_flag = duchy_adventurer
-			}
-		}
 		end_war = invalid
 	}
 
@@ -9709,7 +9712,7 @@ indian_subjugation = {
 				}
 				add_character_modifier = {
 					name = launched_subjugation
-					days = -1
+					years = 100
 					hidden = yes
 				}
 			}
@@ -11586,9 +11589,21 @@ nomad_subjugation = {
 					ROOT = { population = 2500 }
 				}
 				ROOT = { population = 10000 }
+				reverse_has_opinion_modifier = { # Note: my best interpretation of nonsense in 2.6.2
+					who = ROOT
+					modifier = declared_independence_nomad
+				}
 			}
 		}
-		ROOT = { prestige = 500 }
+		ROOT = {
+			OR = {
+				prestige = 500
+				has_opinion_modifier = {
+					who = FROM
+					modifier = declared_independence_nomad
+				}
+			}
+		}
 	}
 
 	can_use = {
@@ -11598,7 +11613,13 @@ nomad_subjugation = {
 			NOT = { same_realm = FROM }
 			NOT = { is_liege_or_above = FROM }
 			mercenary = no
-			NOT = { has_character_modifier = launched_subjugation }
+			OR = {
+				NOT = { has_character_modifier = launched_subjugation }
+				has_opinion_modifier = {
+					who = FROM
+					modifier = declared_independence_nomad
+				}
+			}
 		}
 		FROM = {
 			in_revolt = no
@@ -11622,12 +11643,22 @@ nomad_subjugation = {
 	on_add = {
 		log = "CB(nomad_subjugation): START: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
 		ROOT = {
-			add_character_modifier = {
-				name = launched_subjugation
-				days = -1
-				hidden = yes
+			if = {
+				limit = {
+					NOT = {
+						has_opinion_modifier = {
+							who = FROM
+							modifier = declared_independence_nomad
+						}
+					}
+				}
+				add_character_modifier = {
+					name = launched_subjugation
+					years = 100
+					hidden = yes
+				}
+				prestige = -500
 			}
-			prestige = -500
 		}
 	}
 
@@ -11846,8 +11877,18 @@ nomad_subjugation = {
 	on_invalidation = {
 		log = "CB(nomad_subjugation): INVALIDATED: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
 		ROOT = {
-			remove_character_modifier = launched_subjugation
-			prestige = 500
+			if = {
+				limit = {
+					NOT = {
+						has_opinion_modifier = {
+							who = FROM
+							modifier = declared_independence_nomad
+						}
+					}
+				}
+				remove_character_modifier = launched_subjugation
+				prestige = 500
+			}
 		}
 	}
 
