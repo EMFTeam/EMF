@@ -623,6 +623,7 @@ character_event = {
 	}
 }
 
+
 # emf_core.70
 # If a ruler's held titles have become / are inactive for whatever reason, then reactivate them and log the occurrence.
 # on_yearly_pulse & on_startup on_action
@@ -647,6 +648,7 @@ character_event = {
 		}
 	}
 }
+
 
 # emf_core.75
 # Handle playable-tier external inheritances -- on_death
@@ -808,6 +810,7 @@ character_event = {
 	}
 }
 
+
 # emf_core.80
 # Handle mercenary companies gaining non-mercenary titles -- on_new_holder and on_new_holder_usurpation
 character_event = {
@@ -950,6 +953,335 @@ character_event = {
 		}
 	}
 }
+
+
+# emf_core.90
+# Prompt tributes to either declare independence or continue as tributes after overlord's death
+
+# Ruler dies who has tributes
+character_event = {
+	id = emf_core.90
+	
+	hide_window = yes
+	is_triggered_only = yes
+
+	only_independent = yes
+	only_playable = yes
+	
+	trigger = {
+		is_playable = yes
+		mercenary = no
+		is_tributary = no
+		any_independent_ruler = {
+			pays_tribute_to = ROOT
+			any_realm_province = { any_neighbor_province = { owner_under_ROOT = yes } }
+			NOR = {
+				rightful_religious_head_scope = { character = ROOT }
+				AND = {
+					holy_order = yes
+					religion = ROOT
+				}
+			}
+		}
+	}
+	
+	immediate = {
+		current_heir = { save_event_target_as = new_suzerain }
+		any_independent_ruler = {
+			limit = {
+				NOT = { character = event_target:new_suzerain }
+				pays_tribute_to = ROOT
+			}
+			character_event = { id = emf_core.93 days = 1 } # renew tribute status
+		}
+	}
+}
+
+# Tribute accepted
+character_event = {
+	id = emf_core.91
+	desc = EVTDESC_emf_core_91
+	picture = GFX_evt_emissary
+
+	is_triggered_only = yes
+	
+	option = {
+		name = EXCELLENT
+	}
+}
+
+# Tribute refused
+character_event = {
+	id = emf_core.92
+	desc = EVTDESC_emf_core_92
+	picture = GFX_evt_emissary
+
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_core_92
+	}
+}
+
+# Tributes decide whether or not to break tribute with heir
+character_event = {
+	id = emf_core.93
+	desc = EVTDESC_emf_core_93
+	picture = GFX_evt_emissary
+	
+	is_triggered_only = yes
+	
+	trigger = {
+		event_target:new_suzerain = {
+			ROOT = { NOT = { higher_tier_than = PREV } }
+			NOT = { war_with = ROOT }
+		}
+	}
+	
+	option = {
+		name = EVTOPTA_emf_core_93 # Accept tribute status
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 3
+				war = yes
+				is_primary_war_defender = yes
+			}
+			modifier = {
+				factor = 1.5
+				event_target:new_suzerain = {
+					any_realm_province = { any_neighbor_province = { owner = { same_realm = ROOT } } }
+				}
+			}
+			modifier = {
+				factor = 1.5
+				trait = craven
+			}
+			modifier = {
+				factor = 1.5
+				trait = content
+			}
+			modifier = {
+				factor = 1.5
+				trait = humble
+			}
+			modifier = {
+				factor = 2
+				event_target:new_suzerain = {
+					OR = {
+						dynasty = ROOT
+						is_allied_with = ROOT
+						has_non_aggression_pact_with = ROOT
+						is_friend = ROOT
+					}
+				}
+			}
+		}
+		event_target:new_suzerain = {
+			tooltip = { make_tributary = { who = ROOT percentage = 0.4 } }
+			hidden_tooltip = { character_event = { id = emf_core.94 } }
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_core_93 # Break tribute status
+		trigger = {
+			is_adult = yes
+			NOT = { trait = incapable }
+			prisoner = no
+		}
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 0
+				event_target:new_suzerain = {
+					any_realm_province = { any_neighbor_province = { owner = { same_realm = ROOT } } }
+					realm_levy_diff = { who = ROOT value = 5000 }
+				}
+			}
+			modifier = {
+				factor = 2
+				event_target:new_suzerain = {
+					is_rival = ROOT
+				}
+			}
+			modifier = {
+				factor = 1.5
+				event_target:new_suzerain = {
+					NOT = {
+						any_realm_province = { any_neighbor_province = { owner = { same_realm = ROOT } } }
+					}
+				}
+			}
+			modifier = {
+				factor = 1.5
+				trait = brave
+			}
+			modifier = {
+				factor = 1.5
+				trait = ambitious
+			}
+			modifier = {
+				factor = 1.5
+				trait = proud
+			}
+			modifier = {
+				factor = 1.5
+				event_target:new_suzerain = { reverse_realm_levy_diff = { who = ROOT value = 10000 } }
+			}
+			modifier = {
+				factor = 1.5
+				event_target:new_suzerain = { reverse_realm_levy_diff = { who = ROOT value = 7500 } }
+			}
+			modifier = {
+				factor = 1.5
+				event_target:new_suzerain = { reverse_realm_levy_diff = { who = ROOT value = 5000 } }
+			}
+			modifier = {
+				factor = 1.25
+				event_target:new_suzerain = { reverse_realm_levy_diff = { who = ROOT value = 1000 } }
+			}
+			modifier = {
+				factor = 0.5
+				event_target:new_suzerain = { realm_levy_diff = { who = ROOT value = 5000 } }
+			}
+			modifier = {
+				factor = 0.5
+				event_target:new_suzerain = { realm_levy_diff = { who = ROOT value = 7500 } }
+			}
+			modifier = {
+				factor = 0.5
+				event_target:new_suzerain = { realm_levy_diff = { who = ROOT value = 10000 } }
+			}
+		}
+		event_target:new_suzerain = {
+			character_event = { id = emf_core.95 tooltip = BREAK_TRIBUTE_STATUS }
+		}
+	}
+}
+
+# Former tribute offers to become tribute of heir
+character_event = {
+	id = emf_core.94
+	desc = EVTDESC_emf_core_94
+	picture = GFX_evt_emissary
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_core_94 # Accept tribute
+		make_tributary = { who = FROM percentage = 0.4 }
+		FROM = {
+			hidden_tooltip = { character_event = { id = emf_core.91 } }
+		}
+	}
+	option = {
+		name = EVTOPTB_emf_core_94 # Refuse tribute
+		trigger = { ai = no }
+		FROM = {
+			character_event = { id = emf_core.92 tooltip = REFUSE_TRIBUTE_STATUS }
+		}
+	}
+}
+
+# Former tribute refuses to become tribute of heir
+character_event = {
+	id = emf_core.95
+	desc = EVTDESC_emf_core_95
+	picture = GFX_evt_emissary
+
+	is_triggered_only = yes
+	
+	option = {
+		name = EVTOPTA_emf_core_95 # Let them go
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 3
+				war = yes
+			}
+			modifier = {
+				factor = 2
+				NOT = { any_realm_province = { any_neighbor_province = { owner = { same_realm = FROM } } } }
+			}
+			modifier = {
+				factor = 2
+				reverse_realm_levy_diff = { who = FROM value = 100 }
+			}
+			modifier = {
+				factor = 2
+				reverse_realm_levy_diff = { who = FROM value = 2500 }
+			}
+			modifier = {
+				factor = 1.25
+				trait = patient
+			}
+			modifier = {
+				factor = 1.25
+				trait = humble
+			}
+			modifier = {
+				factor = 1.25
+				trait = content
+			}
+			modifier = {
+				factor = 1.25
+				trait = kind
+			}
+			modifier = {
+				factor = 1.25
+				trait = craven
+			}
+		}
+		opinion = { who = FROM modifier = opinion_outraged years = 10 }
+	}
+	option = {
+		name = EVTOPTB_emf_core_95 # Attack them
+		trigger = {
+			FROM = { NOT = { higher_tier_than = ROOT } }
+		}
+		ai_chance = {
+			factor = 50
+			modifier = {
+				factor = 1.5
+				realm_levy_diff = { who = FROM value = 2500 }
+			}
+			modifier = {
+				factor = 1.5
+				realm_levy_diff = { who = FROM value = 5000 }
+			}
+			modifier = {
+				factor = 2
+				realm_levy_diff = { who = FROM value = 10000 }
+			}
+			modifier = {
+				factor = 0
+				reverse_realm_levy_diff = { who = FROM value = 5000 }
+			}
+			modifier = {
+				factor = 1.25
+				trait = wroth
+			}
+			modifier = {
+				factor = 1.25
+				trait = proud
+			}
+			modifier = {
+				factor = 1.25
+				trait = ambitious
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { any_realm_province = { any_neighbor_province = { owner = { same_realm = FROM } } } }
+			}
+		}
+		war = {
+			target = FROM
+			casus_belli = tributary_cb
+		}
+	}
+}
+
+
 
 # emf_core.1000
 # Toggle EMF debug mode
