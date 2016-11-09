@@ -8,7 +8,7 @@ use File::Spec;
 
 my $ROOT_PATH = File::Spec->catdir(qw( /cygdrive c cygwin64 home ), $ENV{USER}, 'g');
 my $LOC_PATH = File::Spec->catdir($ROOT_PATH, qw( EMF EMF localisation ));
-my $LOC_FILE = File::Spec->catfile($LOC_PATH, 'zz~emf_cost_tooltips_codegen.csv');
+my $LOC_FILE = File::Spec->catfile($LOC_PATH, '1_emf_cost_tooltips_codegen.csv');
 
 my $CSV_HDR = "#CODE;ENGLISH;FRENCH;GERMAN;;SPANISH;;;;;;;;;x\r\n";
 my $CSV_EOL = ";;;;;;;;;;;;;x\r\n";
@@ -34,12 +34,12 @@ $fh->print($CSV_HDR);
 
 for my $cost (sort { $a <=> $b } keys %cost) {
 	my $dec_cost = $cost.'.0';
-	$fh->print("emf_ctt_requires_${cost}_gold_cost;Can afford cost of §R${dec_cost}§!¤\\n$CSV_EOL") or croak "print: $!: $LOC_FILE";
-	$fh->print("emf_ctt_requires_${cost}_gold_cost_holder;Holder can afford cost of §R${dec_cost}§!¤\\n$CSV_EOL") or croak "print: $!: $LOC_FILE";
-	$fh->print("emf_ctt_requires_${cost}_piety_cost;Can afford cost of §R${dec_cost}§! [This.Religion.GetPietyName]\\n$CSV_EOL") or croak "print: $!: $LOC_FILE";
-	$fh->print("emf_ctt_requires_${cost}_piety_cost_holder;Holder can afford cost of §R${dec_cost}§! [This.Holder.Religion.GetPietyName]\\n$CSV_EOL") or croak "print: $!: $LOC_FILE";
-	$fh->print("emf_ctt_requires_${cost}_prestige_cost;Can afford cost of §R${dec_cost}§! Prestige\\n$CSV_EOL") or croak "print: $!: $LOC_FILE";
-	$fh->print("emf_ctt_requires_${cost}_prestige_cost_holder;Holder can afford cost of §R${dec_cost}§! Prestige\\n$CSV_EOL") or croak "print: $!: $LOC_FILE";
+	$fh->print("NEEDS_${cost}_GOLD_COST;Can afford cost of §R${dec_cost}§!¤\\n$CSV_EOL") or croak "print: $!: $LOC_FILE";
+	$fh->print("HOLDER_NEEDS_${cost}_GOLD_COST;Holder can afford cost of §R${dec_cost}§!¤\\n$CSV_EOL") or croak "print: $!: $LOC_FILE";
+	$fh->print("NEEDS_${cost}_PIETY_COST;Can afford cost of §R${dec_cost}§! [This.Religion.GetPietyName]\\n$CSV_EOL") or croak "print: $!: $LOC_FILE";
+	$fh->print("HOLDER_NEEDS_${cost}_PIETY_COST;Holder can afford cost of §R${dec_cost}§! [This.Holder.Religion.GetPietyName]\\n$CSV_EOL") or croak "print: $!: $LOC_FILE";
+	$fh->print("NEEDS_${cost}_PRESTIGE_COST;Can afford cost of §R${dec_cost}§! Prestige\\n$CSV_EOL") or croak "print: $!: $LOC_FILE";
+	$fh->print("HOLDER_NEEDS_${cost}_PRESTIGE_COST;Holder can afford cost of §R${dec_cost}§! Prestige\\n$CSV_EOL") or croak "print: $!: $LOC_FILE";
 }
 
 close $fh or croak "close: $!: $LOC_FILE";
