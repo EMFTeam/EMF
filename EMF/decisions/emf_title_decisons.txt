@@ -133,4 +133,456 @@ title_decisions = {
 			factor = 0
 		}
 	}
+
+	adopt_tribalism = {
+		only_playable = yes
+		filter = sub_realm_owned
+		ai_target_filter = sub_realm_owned
+		is_high_prio = yes
+		
+		from_potential = {
+			is_playable = yes
+			is_nomadic = yes
+			is_landed = yes
+			OR = {
+				ai = yes
+				AND = {
+					OR = {
+						has_dlc = "The Sword of Islam"
+						NOT = { religion_group = muslim }
+					}
+					OR = {
+						has_dlc = "The Old Gods"
+						NOR = {
+							religion_group = pagan_group
+							religion_group = zoroastrian_group
+						}
+					}
+					OR = {
+						has_dlc = "Sons of Abraham"
+						NOT = { religion_group = jewish_group }
+					}
+					OR = {
+						has_dlc = "Rajas of India"
+						NOT = { religion_group = indian_group }
+					}
+				}
+			}
+		}
+		
+		potential = {
+			tier = COUNT
+			holder_scope = {
+				OR = {
+					character = FROM
+					AND = {
+						FROM = { ai = yes }
+						ai = yes
+						is_liege_or_above = FROM
+						NOR = {
+							is_nomadic = yes
+							any_liege = {
+								NOT = { character = FROM }
+								is_nomadic = yes
+							}
+						}
+					}
+				}
+			}
+		}
+
+		allow = {
+			FROM = {
+				independent = yes
+				war = no
+			}
+			location = {
+				OR = {
+					custom_tooltip = {
+						text = CONTAINS_TRIBAL_HOLDING
+						hidden_tooltip = {
+							any_province_holding = { holding_type = tribal }
+						}
+					}
+					custom_tooltip = {
+						text = MAY_BUILD_TRIBAL_HOLDING
+						hidden_tooltip = {
+							AND = {
+								has_empty_holding = yes
+								OR = {
+									FROM = { 
+										capital_holding = { has_building = no_baghatur_council_2 }
+									}
+									any_province_holding = { holding_type = castle }
+									AND = {
+										FROM = { religion_group = muslim }
+										any_province_holding = { holding_type = temple }
+									}
+								}
+							}
+						}
+					}
+					custom_tooltip = {
+						text = IS_CAPITAL_BAGHATUR_COUNCIL_2
+						hidden_tooltip = {
+							any_province_holding = {
+								holding_type = nomad
+								has_building = no_baghatur_council_2
+							}
+						}
+					}
+				}
+			}
+		}
+
+		effect = {
+			save_event_target_as = new_base_title
+			FROM = { capital_holding = { save_event_target_as = current_capital } }
+			
+			# Change culture and religion of new capital province and possibly more provinces depending on nomad population_and_manpower
+			location = {
+				if = {
+					limit = { NOT = { culture = FROM } }
+					culture = FROM
+				}
+				if = {
+					limit = { NOT = { religion = FROM } }
+					religion = FROM
+				}
+			}
+			if = {
+				limit = { FROM = { population_and_manpower = 5000 } }
+				custom_tooltip = { text = nomad_settle_conversion_tooltip }
+			}
+			hidden_tooltip = { # Pre-settlement accounting
+				FROM = { character_event = { id = emf_nomad.0 } }
+			}
+
+			# Change name of Avaria to Hungary if relevant.
+			if = {
+				limit = {
+					FROM = { culture = hungarian }
+					location = { kingdom = { title = k_hungary } }
+					k_hungary = {
+						OR = {
+							has_holder = no
+							holder = FROM
+						}
+					}
+				}
+				set_global_flag = avar_khaganate_renamed
+				if = {
+					limit = { NOT = { is_title_active = k_hungary } }
+					activate_title = { title = k_hungary status = yes }
+				}
+				k_hungary = {
+					reset_coa = THIS
+					set_name = ""
+					adjective = ""
+					grant_title = {
+						target = FROM
+						type = created
+					}
+				}
+			}
+			
+			# Spawn event troops based on amount of empty holdings abandoned.
+			custom_tooltip = {
+				text = NOMAD_CONVERSION_TROOP_SPAWN
+				hidden_tooltip = {
+					location = {
+						save_event_target_as = emf_new_capital
+						FROM = { character_event = { id = emf_nomad.5 } }
+						clear_event_target = emf_new_capital
+					}
+				}
+			}
+
+			# Usurp any vassal king titles, plus the county and its duchy
+			hidden_tooltip = {
+				# Usurp any tribal/feudal vassals with king titles
+				FROM = {
+					any_vassal = {
+						limit = {
+							OR = {
+								is_feudal = yes
+								is_tribal = yes
+							}
+						}
+						any_demesne_title = {
+							limit = {
+								higher_tier_than = DUKE
+								temporary = no
+							}
+							usurp_title = PREVPREV
+						}
+					}
+				}
+				# Usurp duchy of target title, if in realm
+				location = {
+					duchy = {
+						if = {
+							limit = { owner_under_FROM = yes }
+							usurp_title = FROM
+						}
+					}
+				}
+				# Usurp the county
+				if = {
+					limit = { NOT = { holder = FROM } }
+					usurp_title = FROM
+				}
+			}
+			
+			custom_tooltip = { text = TT_BUILD_TRIBAL_HOLDINGS }
+			
+			# Switch capital to the new province, creating a tribal holding if necessary
+			hidden_tooltip = {
+				location = {
+					random_province_holding = {
+						limit = { holding_type = nomad }
+						save_event_target_as = new_capital
+					}
+					if = {
+						limit = { NOT = { event_target:new_capital = { always = yes } } }
+						random_province_holding = {
+							limit = {
+								holding_type = tribal
+								is_capital = yes
+							}
+							save_event_target_as = new_capital
+						}
+						random_province_holding = {
+							limit = {
+								holding_type = tribal
+								is_capital = no
+								NOT = { event_target:new_capital = { always = yes } }
+							}
+							make_capital_holding = yes
+							save_event_target_as = new_capital
+						}
+						if = {
+							limit = { NOT = { event_target:new_capital = { always = yes } } }
+							build_holding = {
+								type = tribal
+								holder = FROM
+							}
+							random_province_holding = {
+								limit = { holding_type = tribal }
+								make_capital_holding = yes
+								save_event_target_as = new_capital
+								emf_transfer_nomad_buildings_effect = yes
+							}
+						}
+					}
+				}
+			}
+			
+			FROM = {
+				if = {
+					limit = { ai = no }
+					chronicle = {
+						entry = CHRONICLE_ADOPTED_TRIBALISM
+						picture = GFX_evt_tribal_lands
+					}
+				}
+				hidden_tooltip = {
+					any_vassal = {
+						limit = { is_nomadic = yes }
+						character_event = { id = emf_nomad.100 days = 1 }
+					}
+				}
+				set_government_type = tribal_government
+				set_character_flag = emf_no_law_penalties
+				hidden_tooltip = {
+					if = {
+						limit = { lower_tier_than = KING }
+						create_title = {
+							tier = KING
+							landless = no
+							temporary = no
+							custom_created = yes
+							culture = FROM
+							holder = FROM
+							name = "TRIBAL_CUSTOM"
+							base_title = event_target:new_base_title
+							copy_title_laws = yes
+						}
+					}
+					if = {
+						limit = {
+							religion_group = pagan_group
+							is_reformed_religion = no
+						}
+						primary_title = {
+							add_law = tribal_organization_1
+							add_law = centralization_0
+						}
+					}
+					if = {
+						limit = {
+							OR = {
+								NOT = { religion_group = pagan_group }
+								is_reformed_religion = yes
+							}
+							capital_scope = { NOT = { any_province_holding = { holding_type = castle } } }
+						}
+						primary_title = {
+							add_law = tribal_organization_2
+							add_law = centralization_0
+						}
+					}
+					if = {
+						limit = {
+							OR = {
+								NOT = { religion_group = pagan_group }
+								is_reformed_religion = yes
+							}
+							capital_scope = { any_province_holding = { holding_type = castle } }
+						}
+						primary_title = {
+							add_law = tribal_organization_3
+							add_law = centralization_0
+						}
+					}
+					set_character_flag = emf_context_nomadic_to_tribal
+					# Post-settlement effects / adjustments (incl. culture
+					# settlement and anti-border-gore measures) ...
+					character_event = { id = emf_nomad.1 }
+				}
+				clr_character_flag = emf_no_law_penalties
+			}
+			
+			hidden_tooltip = {
+				event_target:new_capital = {
+					FROM = { capital = PREV }
+				}
+				any_player = {
+					limit = { NOT = { character = FROM } }
+					narrative_event = { id = HL.2 }
+				}
+			}
+		}
+		revoke_allowed = {
+			always = no
+		}
+		ai_will_do = {
+			factor = 0.1 # On average ca 1 year before taken
+			
+			modifier = {
+				factor = 0
+				location = {
+					NOR = {
+						kingdom = { capital_scope = { province = PREVPREV } }
+						any_province_holding = { holding_type = nomad }
+						any_province_holding = { count = 5 }
+					}
+				}
+			}
+			modifier = {
+				factor = 0
+				location = {
+					any_province_holding = { holding_type = nomad }
+				}
+				FROM = {
+					any_realm_province = {
+						owner_under_PREV = yes
+						owner = {
+							OR = {
+								is_nomadic = no
+								character = PREVPREV
+							}
+							OR = {
+								any_liege = { character = PREVPREVPREV }
+								NOT = { any_liege = { is_nomadic = yes } }
+							}
+						}
+						OR = {
+							kingdom = { capital_scope = { province = PREVPREV } }
+							any_province_holding = { count = 5 }
+						}
+					}
+				}
+			}
+			modifier = {
+				factor = 0
+				location = {
+					any_province_holding = { count = 5 }
+				}
+				FROM = {
+					any_realm_province = {
+						owner_under_PREV = yes
+						owner = {
+							OR = {
+								is_nomadic = no
+								character = PREVPREV
+							}
+							OR = {
+								any_liege = { character = PREVPREVPREV }
+								NOT = { any_liege = { is_nomadic = yes } }
+							}
+						}
+						kingdom = { capital_scope = { province = PREVPREV } }
+						NOT = { county = { title = ROOT } }
+					}
+				}
+			}
+			modifier = {
+				factor = 0
+				FROM = {
+					NOT = { num_of_subrealm_castles = 20 }
+					population_and_manpower = 5000
+				}
+			}
+			modifier = {
+				factor = 0
+				FROM = {
+					NOT = { num_of_subrealm_castles = 10 }
+				}
+			}
+			modifier = {
+				factor = 0
+				FROM = {
+					OR = {
+						trait = ambitious
+						trait = stubborn
+						trait = proud
+					}
+				}
+			}
+			modifier = {
+				factor = 0
+				FROM = {
+					NOT = {
+						holding_diff = {
+							first_type = castle
+							first_count_vassals = yes
+							second_type = none
+							value = 1.5
+						}
+					}
+				}
+			}
+			modifier = {
+				factor = 0
+				FROM = {
+					OR = {
+						has_landed_title = e_mongol_empire
+						has_landed_title = e_golden_horde
+						has_landed_title = e_chagatai
+					}
+				}
+			}
+			modifier = {
+				factor = 0
+				has_global_flag = emf_magyar_migration_completed
+				NOT = { has_global_flag = emf_conquest_hungary_completed }
+				FROM = {
+					culture = hungarian
+					capital_scope = { kingdom = { title = k_hungary } }
+				}
+			}
+		}
+	}
 }
+
