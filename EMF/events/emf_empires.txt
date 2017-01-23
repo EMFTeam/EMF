@@ -628,3 +628,101 @@ character_event = {
 		}
 	}
 }
+
+
+# emf_empires.50 -- on_death handler for feudal elective emperors whose heir has waived the nomination in advance.
+# from here, we intend to find an alternative heir before inheritance is allowed to happen.
+character_event = {
+	id = emf_empires.50
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	only_independent = yes
+	
+	trigger = {
+		tier = EMPEROR
+		is_nomadic = no
+		any_demesne_title = {
+			tier = EMPEROR
+			temporary = no
+			has_law = succ_feudal_elective
+			current_heir = {
+				has_character_flag = emf_empires_decline_election
+			}
+		}
+	}
+	
+	immediate = {
+		# NOTE: we assume only one such empire w/ a waived current_heir is held by ROOT
+		random_demesne_title = {
+			limit = {
+				tier = EMPEROR
+				temporary = no
+				has_law = succ_feudal_elective
+				current_heir = {
+					has_character_flag = emf_empires_decline_election
+				}
+			}
+			save_event_target_as = emf_empire
+			current_heir = {
+				save_event_target_as = emf_heir
+			}
+		}
+		
+		event_target:emf_heir = {
+			log = "DEBUG: emf_empires.50: [This.GetTitledName] (#[This.GetID]) waives elective inheritance of the [emf_empire.GetFullBaseName] ([emf_empire.GetID])"
+			add_trait = eunuch
+		}
+		
+		recalc_succession = yes
+		
+		event_target:emf_heir = { remove_trait = eunuch }
+		
+		event_target:emf_empire = {
+			current_heir = {
+				log = "--> new heir is [This.GetTitledName] (#[This.GetID])"
+			}
+		}
+	}
+}
+
+
+character_event = {
+	id = emf_empires.51
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	trigger = {
+		e_hre = {
+			is_titular = no
+			has_law = succ_feudal_elective
+			holder_scope = {
+				is_vassal_or_below = ROOT
+			}
+		}
+		any_demesne_title = {
+			higher_tier_than = COUNT
+			de_jure_liege_or_above = e_hre
+		}
+	}
+	
+	immediate = {
+		# for the vassal opinion
+		add_trait = lucky_ruler
+		add_trait = content
+		add_trait = strong
+		add_trait = commander4
+		
+		prestige = 5000
+		
+		e_hre = {
+			owner = {
+				recalc_succession = yes
+			}
+		}
+		
+		set_character_flag = emf_empires_decline_election
+	}
+}
