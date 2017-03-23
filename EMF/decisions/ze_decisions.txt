@@ -12,38 +12,37 @@ targetted_decisions = {
 			mercenary = no
 			holy_order = no
 			has_dlc = "Zeus"
+		
 			OR = {
 				ai = no
 				AND = {
 					OR = {
 						trait = brilliant_strategist
-						trait = midas_touched
+						trait = fortune_builder
 					}
 					OR = {
-						higher_real_tier_than = COUNT
+						higher_tier_than = COUNT
 						AND = {
 							is_republic = yes
 							higher_tier_than = BARON
 						}
 					}
-					NOT = {
-						any_war = {
-							OR = {
-								defender = { character = PREV }
-								attacker = { character = PREV }
-							}
-						}
+					NOR = {
+						is_primary_war_attacker = yes
+						is_primary_war_defender = yes
 					}
 				}
 			}
 			NOR = {
-				is_nomadic = yes
+				government = nomadic_government
 				has_character_modifier = mercenary_traditions
 			}
 		}
+		
 		potential = {
 			can_be_mercenary_leader_potential_trigger = yes
 		}
+		
 		allow = {
 			can_be_mercenary_leader_allow_trigger = yes
 			FROM = {
@@ -94,6 +93,7 @@ targetted_decisions = {
 		}
 		ai_will_do = {
 			factor = 0.001
+			
 			modifier = { 
 				factor = 0
 				controls_religion = yes
@@ -134,7 +134,6 @@ targetted_decisions = {
 
 	dissolve_mercenary_company_feudal = {
 		only_playable = yes
-		filter = dynasty
 		ai_target_filter = dynasty
 		
 		from_potential = {
@@ -162,11 +161,11 @@ targetted_decisions = {
 	change_council_job = {
 		only_rulers = yes
 		filter = realm
-		ai_target_filter = self # Todo: proper ai filter
+		ai_target_filter = self 
 		
 		from_potential = {
-			ai = no
 			has_dlc = "Zeus"
+			is_ruler = yes
 		}
 		potential = {
 			change_council_job_potential_trigger = yes
@@ -191,8 +190,8 @@ targetted_decisions = {
 	
 	ask_wards_liege_to_allow_culture_religion_swap = {
 		only_playable = yes
-		filter = home_court
-		ai_target_filter = home_court
+		filter = sub_realm
+		ai_target_filter = court
 		
 		from_potential = {
 			is_playable = yes
@@ -202,13 +201,20 @@ targetted_decisions = {
 		potential = {
 			prisoner = no
 			is_adult = no
+			is_landed = no
 			NOR = { 
 				has_character_flag = guardian_asked_to_change_focus
 				has_focus = focus_ch_heritage
 				character = FROM
-				liege = { character = FROM }
 			}
-			host = { character = FROM }
+			
+			host = {
+				OR = {
+					character = FROM
+					is_liege_or_above = FROM
+				}
+			}
+			NOT = { liege = { character = FROM } }
 			NOT = {
 				educator = {
 					culture = ROOT
@@ -225,12 +231,20 @@ targetted_decisions = {
 		
 		effect = {
 			set_character_flag = guardian_asked_to_change_focus
-			liege = {
-				if = {
-					limit = { FROM = { holds_favor_on = PREV } }
-					tooltip = { reverse_remove_favor = FROM }
+			if = {
+				limit = {
+					liege = { character = FROM }
 				}
-				letter_event = { id = ZE.2130 days = 5 }
+				hidden_tooltip = {
+					clear_focus = yes
+				}
+				set_focus = focus_ch_heritage
+				break = yes
+			}
+			hidden_tooltip = {
+				liege = {
+					letter_event = { id = ZE.2130 days = 5 }
+				}
 			}
 		}
 		revoke_allowed = {
@@ -239,7 +253,8 @@ targetted_decisions = {
 		ai_will_do = {
 			factor = 1
 			modifier = {
-				factor = 0.025
+				factor = 0
+				NOT = { host = { character = FROM } }
 			}
 			modifier = {
 				factor = 4
@@ -284,6 +299,82 @@ targetted_decisions = {
 					}
 				}
 			}
+			modifier = {
+				factor = 0.05
+			}
+		}
+	}
+	
+	change_wards_focus_to_heritage  = {
+		only_playable = yes
+		filter = court
+		ai_target_filter = court
+		
+		from_potential = {
+			is_playable = yes
+			has_dlc = "Zeus"
+		}
+		
+		potential = {
+			is_adult = no
+			NOR = { 
+				has_character_flag = guardian_asked_to_change_focus
+				has_focus = focus_ch_heritage
+				character = FROM
+			}
+			host = { character = FROM }
+			OR = {
+				liege = { character = FROM }
+				prisoner = yes
+			}
+			OR = {
+				is_landed = no
+				is_liege_or_above = FROM
+				prisoner = yes
+			}
+			NOT = {
+				educator = {
+					culture = ROOT
+					religion = ROOT
+				}
+			}
+		}
+		
+		allow = { 
+			NOT = { 
+				age = 10
+			}
+		}
+		
+		effect = {
+			set_character_flag = guardian_asked_to_change_focus
+			if = {
+				limit = {
+					OR = {
+						liege = { character = FROM }
+						prisoner = yes
+					}
+				}
+				hidden_tooltip = {
+					clear_focus = yes
+				}
+				set_focus = focus_ch_heritage
+				break = yes
+			}
+			hidden_tooltip = {
+				liege = {
+					letter_event = { id = ZE.2130 days = 5 }
+				}
+			}
+		}
+		revoke_allowed = {
+			always = no
+		}
+		ai_will_do = {
+			factor = 1
+			modifier = {
+				factor = 0.05
+			}
 		}
 	}
 
@@ -304,10 +395,6 @@ targetted_decisions = {
 		allow = {
 			ROOT = {
 				OR = {
-					# TODO: Many more of EMF's opinion modifiers than those in vanilla are crimes, so
-					# we probably want to add those too to this list. That is, those OMs are `crime=yes`,
-					# which enables `is_foe` on that character and gives reason to imprison, IIRC. Need
-					# to be sure that fits with the ask_for_pardon sentiment, however.
 					has_opinion_modifier = { who = FROM modifier = declared_war } 
 					has_opinion_modifier = { who = FROM modifier = opinion_dishonorable } 
 					has_opinion_modifier = { who = FROM modifier = opinion_traitor } 
@@ -341,13 +428,12 @@ targetted_decisions = {
 			always = no
 		}
 		ai_will_do = {
-			factor = 2
+			factor = 1000
 		}
 	}
 	
 	change_composition_mercenary_company_feudal = {
 		only_playable = yes
-		filter = dynasty
 		ai_target_filter = dynasty
 		
 		from_potential = {
@@ -378,7 +464,6 @@ targetted_decisions = {
 	
 	send_troops_mercenary_company_feudal = {
 		only_playable = yes
-		filter = dynasty
 		ai_target_filter = dynasty
 		
 		from_potential = {
@@ -485,8 +570,8 @@ targetted_decisions = {
 	
 	ask_wards_liege_to_allow_faith_focus = {
 		only_playable = yes
-		filter = home_court
-		ai_target_filter = home_court
+		filter = sub_realm
+		ai_target_filter = court
 		
 		from_potential = {
 			is_playable = yes
@@ -496,17 +581,21 @@ targetted_decisions = {
 		potential = {
 			prisoner = no
 			is_adult = no
+			is_landed = no
 			NOR = {
 				has_character_flag = guardian_asked_to_change_focus
 				has_focus = focus_ch_faith
 				character = FROM
 			}
-			host = { character = FROM }
-			NOT = { liege = { character = FROM } }
-			OR = {
-				is_landed = no
-				liege = { character = FROM }
+			
+			host = {
+				OR = {
+					character = FROM
+					is_liege_or_above = FROM
+				}
 			}
+			NOT = { liege = { character = FROM } }
+			
 			NOT = {
 				educator = {
 					religion = ROOT
@@ -544,6 +633,18 @@ targetted_decisions = {
 		ai_will_do = {
 			factor = 1
 			modifier = {
+				factor = 0
+				NOT = { host = { character = FROM } }
+			}
+			modifier = {
+				factor = 0
+				NOT = {
+					educator = {
+						religion = FROM
+					}
+				}
+			}
+			modifier = {
 				factor = 0.05
 			}
 		}
@@ -551,8 +652,8 @@ targetted_decisions = {
 	
 	change_wards_focus_to_faith  = {
 		only_playable = yes
-		filter = home_court
-		ai_target_filter = home_court
+		filter = court
+		ai_target_filter = court
 		
 		from_potential = {
 			is_playable = yes
@@ -560,7 +661,6 @@ targetted_decisions = {
 		}
 		
 		potential = {
-			prisoner = no
 			is_adult = no
 			NOR = {
 				has_character_flag = guardian_asked_to_change_focus
@@ -568,10 +668,14 @@ targetted_decisions = {
 				character = FROM
 			}
 			host = { character = FROM }
-			liege = { character = FROM }
+			OR = {
+				liege = { character = FROM }
+				prisoner = yes
+			}
 			OR = {
 				is_landed = no
-				liege = { character = FROM }
+				is_liege_or_above = FROM
+				prisoner = yes
 			}
 			NOT = {
 				educator = {
@@ -590,7 +694,10 @@ targetted_decisions = {
 			set_character_flag = guardian_asked_to_change_focus
 			if = {
 				limit = {
-					liege = { character = FROM }
+					OR = {
+						liege = { character = FROM }
+						prisoner = yes
+					}
 				}
 				hidden_tooltip = {
 					clear_focus = yes
@@ -615,4 +722,3 @@ targetted_decisions = {
 		}
 	}
 }
-
