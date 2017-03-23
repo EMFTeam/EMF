@@ -4,6 +4,8 @@
 
 # Supported types:
 # character, spouse, rivals, friends, liege_titles, vassal_titles, realm_titles, realm_characters, realm_characters_plus, independent_rulers
+# Special: society_plot. When trigger fulfilled, anyone within the society can be invited. ROOT is the plotter. FROM is the target. FROMFROM is the society
+# Note that "player_allow" has the target as ROOT, and the plotter (the player) as FROM!
 
 ###############
 # PLOTS
@@ -120,8 +122,8 @@ plot_gain_title = {
 			factor = 0.2
 			FROM = {
 				OR = {
-					trait = slow
 					trait = dull
+					trait = slow
 				}
 			}
 		}
@@ -305,12 +307,15 @@ plot_gain_vassal_title = {
 		}
 		NOT = { trait = incapable }
 		NOT = { trait = imbecile }
+		
 		OR = {
 			ai = no
 			war = no
 		}
 	}
+	
 	target_potential = {
+		# No barony titles
 		higher_tier_than = BARON
 		is_primary_type_title = no
 		is_landless_type_title = no
@@ -318,6 +323,7 @@ plot_gain_vassal_title = {
 		is_merchant_republic = no
 		mercenary = no
 	}
+	
 	allow = {
 		is_recent_grant = no
 		OR = {
@@ -420,6 +426,7 @@ plot_gain_vassal_title = {
 			NOT = { has_non_aggression_pact_with = FROM }
 			NOT = { reverse_has_truce = FROM }
 		}
+		FROM = { in_revolt = no }
 	}
 	
 	chance = {
@@ -440,8 +447,8 @@ plot_gain_vassal_title = {
 			factor = 0.2
 			FROM = {
 				OR = {
-					trait = slow
 					trait = dull
+					trait = slow
 				}
 			}
 		}
@@ -534,6 +541,7 @@ plot_gain_vassal_title = {
 			FROM = { trait = ambitious }
 		}
 	}
+	
 	success = {
 		holder = FROM
 	}
@@ -664,9 +672,27 @@ plot_gain_vassal_title = {
 
 # Get a character killed
 plot_kill_character = {
-	type = realm_characters_plus # All characters in the same realm, plus rivals and relatives of self, parents, children and spouse
+	type = realm_characters_plus # All characters in the same realm, plus rivals and relatives of self, parents, children and spouse, and quest target
 	intrigue_plot = yes
 	murder_plot = yes
+	society_plot = {
+		ROOT = {
+			society_member_of = the_assassins
+			society_rank >= 2
+		}
+		OR = {
+			FROM = { 
+				NOR = {
+					religion = ismaili
+					trait = secretly_ismaili
+				}
+			}
+			ROOT = {
+				has_quest = quest_the_assassins_assassination
+				quest_target = { character = FROM }
+			}
+		}
+	}
 	
 	# Plotter scope
 	potential = {
@@ -746,13 +772,17 @@ plot_kill_character = {
 	
 	# Target allow trigger for when players target a specific character in the GUI
 	player_allow = {
+		NOT = { is_child_of = FROM } # Not my own children
 		is_within_diplo_range = FROM
 		NOT = { has_blood_oath_with = FROM }
 	}
 	
+	target_potential = {
+		NOT = { any_spouse = { character = FROM } } # This case is covered by another plot
+	}
+	
 	# Target character scope
 	allow = {
-		NOT = { is_married = FROM } # This case is covered by another plot
 		NOT = { is_child_of = FROM } # Not my own children
 		NOT = { father = { is_child_of = FROM } } # Not my own grandchildren
 		NOT = { mother = { is_child_of = FROM } } # Not my own grandchildren
@@ -767,15 +797,6 @@ plot_kill_character = {
 		OR = {
 			NOT = { character = FROM }
 			FROM = { trait = lunatic }
-		}		
-		
-		# Not against children unless they're your liege or you're lunatic/possessed/cruel
-		OR = {
-			is_adult = yes
-			is_liege_or_above = FROM
-			FROM = { trait = lunatic }
-			FROM = { trait = possessed }
-			FROM = { trait = cruel }
 		}
 		
 		# Don't kill my lovers, or their children
@@ -939,7 +960,10 @@ plot_kill_character = {
 				# Go nuts...
 				AND = {
 					same_liege = ROOT
-					trait = lunatic
+					OR = {
+						trait = lunatic
+						trait = possessed
+					}
 				}
 				
 				# Rivals
@@ -950,7 +974,16 @@ plot_kill_character = {
 					ROOT = { job_spymaster = { character = FROM } }
 					NOT = { opinion = { who = ROOT value = 0 } }
 				}
+
+				ROOT = { is_murder_quest_target_of_prev_trigger = yes }
 			}
+		}
+	}
+	
+	# ROOT = target FROM = joiner FROMFROM = plotter
+	allow_join = {
+		ROOT = {
+			NOT = { is_child_of = FROM } # Not my own children
 		}
 	}
 	
@@ -1030,23 +1063,23 @@ plot_kill_character = {
 			FROM = { trait = possessed }
 		}
 		modifier = {
-			factor = 0.1
+			factor = 0
 			their_opinion = { who = FROM value = 25 }
+			NOT = {
+				FROM = { ROOT = { is_murder_quest_target_of_prev_trigger = yes } } #MNM murder missions
+			}
 		}
 		modifier = {
-			factor = 0.5
+			factor = 0
 			their_opinion = { who = FROM value = 0 }
-			FROM = {
-				NOR = {
-					trait = envious
-					trait = deceitful
-					trait = ambitious
-					trait = cruel
-					trait = arbitrary
-					trait = lunatic
-					trait = possessed
+			NOT = {
+				OR = {
+					FROM = { trait = envious }
+					FROM = { trait = deceitful }
+					FROM = { trait = ambitious }
+					FROM = { ROOT = { is_murder_quest_target_of_prev_trigger = yes } } #MNM murder missions
 				}
-			}
+			}		
 		}
 		modifier = {
 			factor = 1.5
@@ -1113,29 +1146,12 @@ plot_kill_character = {
 				top_liege = { character = father }
 			}
 		}
-		modifier = {
-			factor = 0.25
-			FROM = { NOT = { intrigue = 8 } }
-		}
-		modifier = {
-			factor = 2
-			FROM = { intrigue = 15 }
-		}
-		modifier = {
-			factor = 2
-			FROM = { intrigue = 20 }
-		}
 	}
 	
 	success = {
 		is_alive = no
 		hidden_tooltip = {
-			FROM = {
-				OR = {
-					has_character_flag = murder_in_motion
-					has_character_flag = hiding_murder_in_motion
-				}
-			}
+			FROM = { has_character_flag = murder_in_motion }
 		}
 	}
 	abort = {
@@ -1274,6 +1290,24 @@ plot_kill_spouse = {
 	type = spouse
 	intrigue_plot = yes
 	murder_plot = yes
+	society_plot = {
+		ROOT = {
+			society_member_of = the_assassins
+			society_rank >= 2
+		}
+		OR = {
+			FROM = { 
+				NOR = {
+					religion = ismaili
+					trait = secretly_ismaili
+				}
+			}
+			ROOT = {
+				has_quest = quest_the_assassins_assassination
+				quest_target = { character = FROM }
+			}
+		}
+	}
 	
 	# Plotter scope
 	potential = {
@@ -1298,7 +1332,7 @@ plot_kill_spouse = {
 	# Target character scope
 	allow = {
 		NOT = { is_lover = FROM }
-				
+		
 		OR = {
 			# Human
 			FROM = { ai = no }
@@ -1462,7 +1496,7 @@ plot_kill_spouse = {
 			FROM = { trait = lunatic }
 		}
 		modifier = {
-			factor = 10
+			factor = 1.25
 			FROM = { trait = possessed }
 		}
 		modifier = {
@@ -1486,6 +1520,11 @@ plot_kill_spouse = {
 					}
 				}
 			}
+		}
+		modifier = {
+			factor = 50
+			FROM = { has_quest = quest_the_assassins_assassination }
+			is_quest_target_of = FROM
 		}
 		modifier = {
 			factor = 0.25
@@ -1680,8 +1719,8 @@ plot_weaken_fellow_vassal = {
 			factor = 0.2
 			FROM = {
 				OR = {
-					trait = slow
 					trait = dull
+					trait = slow
 				}
 			}
 		}
@@ -1955,8 +1994,8 @@ plot_gain_liege_title = {
 			factor = 0.2
 			FROM = {
 				OR = {
-					trait = slow
 					trait = dull
+					trait = slow
 				}
 			}
 		}
@@ -2080,7 +2119,7 @@ plot_gain_liege_title = {
 				character = FROM
 			}
 			has_holder = no
-			FROM = { is_playable = no }
+			holder_scope = { is_playable = no }
 		}
 	}
 	abort_effect = {
@@ -2186,8 +2225,8 @@ plot_gain_fellow_vassal_title = {
 			factor = 0.2
 			FROM = {
 				OR = {
-					trait = slow
 					trait = dull
+					trait = slow
 				}
 			}
 		}
@@ -2392,8 +2431,8 @@ plot_seize_trade_post = {
 			factor = 0.2
 			FROM = {
 				OR = {
-					trait = slow
 					trait = dull
+					trait = slow
 				}
 			}
 		}
@@ -2531,5 +2570,82 @@ plot_seize_trade_post = {
 	effect = {
 		seize_trade_post = FROM
 		FROM = { emf_remove_plot_assisted_spying_effect = yes }
+	}
+}
+
+
+###SOCIETIES PLOTS###
+
+###Assassins###
+
+plot_assassins_collect_debt = {
+	type = realm_characters_plus # All characters in the same realm, plus rivals and relatives of self, parents, children and spouse, and quest target
+	intrigue_plot = yes
+	
+	# Plotter scope
+	potential = {
+		prisoner = no
+		is_adult = yes
+		NOT = { trait = incapable }
+		society_member_of = the_assassins
+		has_quest = quest_the_assassins_collect_debt
+	}
+	
+	# Targe scope scope
+	player_allow = {
+		FROM = { has_quest = quest_the_assassins_collect_debt }
+	}
+	
+	#Target scope
+	target_potential = {
+		FROM = {
+			has_quest = quest_the_assassins_collect_debt
+			quest_target = { character = ROOT }
+		}
+	}
+	
+	# Target character scope
+	allow = {
+		custom_tooltip = {
+			text = plot_assassins_collect_debt_allow_tt
+			FROM = {
+				has_quest = quest_the_assassins_collect_debt
+				quest_target = { character = ROOT }
+			}
+		}
+	}
+	
+	chance = {
+		factor = 50
+	}
+	
+	success = { #From is plotter, root is target
+		custom_tooltip = {
+			text = plot_assassins_collect_debt_success
+			FROM = { has_character_flag = collected_debt_success }
+		}
+	}
+
+	#From is plotter, root is target
+	abort = {	
+		OR = {
+			is_alive = no
+			FROM = {
+				OR = {
+					is_alive = no
+					has_character_flag = collected_debt_failure
+				}
+			}
+		}
+	}
+
+	#From is plotter, root is target
+	abort_effect = {
+		FROM = { clr_character_flag = collected_debt_failure }
+	}
+
+	#From is plotter, root is target
+	effect = {
+		FROM = { clr_character_flag = collected_debt_success }
 	}
 }
