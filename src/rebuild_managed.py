@@ -19,7 +19,7 @@ version_path = rootpath / 'EMF/EMF/version.txt'
 scons_bin_path = Path('/usr/bin/scons')
 mapcut_bin_path_default = Path('/usr/local/bin/mapcut')
 mapcut_path = rootpath / 'ck2utils/mapcut'
-cut_titles = ['e_rajastan', 'e_mali', 'k_sahara', 'k_fezzan', 'k_kanem', 'k_hausaland']
+cut_titles = ['e_rajastan', 'e_mali', 'k_sahara', 'k_fezzan', 'k_kanem', 'k_hausaland', 'k_canarias']
 
 def build_mapcut():
     print(">> attempting to build mapcut from source...")
