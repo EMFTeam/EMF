@@ -130,6 +130,7 @@ secret_{0}_community = {{
 		print_effect_add_religion_char_flag(f)
 		print_effect_clr_religion_char_flag(f)
 		print_effect_event_target_old_religion_from_flag(f)
+		print_effect_flip_secret_religious_community_provinces(f)
 
 	return 0
 
@@ -199,13 +200,32 @@ emf_sr_event_target_old_religion_from_flag = {
 	for rel in all_religions:
 		print('''\
 		character_was_{0} = {{
-			random_character = {{
-				limit = {{ religion = {0} }}
-				save_event_target_as = old_religion
+			random_character = {{ limit = {{ religion = {0} }} save_event_target_as = old_religion }}
+		}}'''.format(rel), file=f)
+
+	print('\t}\n}', file=f)
+
+
+def print_effect_flip_secret_religious_community_provinces(f):
+	print('''
+emf_sr_flip_secret_religious_community_provinces = {
+	trigger_switch = {
+		on_trigger = society_member_of''', file=f)
+
+	for rel in all_religions:
+		print('''\
+		secret_religious_society_{0} = {{
+			ROOT = {{
+				any_demesne_province = {{
+					limit = {{ has_province_modifier = secret_{0}_community }}
+					religion = {0}
+					remove_province_modifier = secret_{0}_community
+				}}
 			}}
 		}}'''.format(rel), file=f)
 
-	print('}', file=f)
+	print('\t}\n}', file=f)
+
 
 if __name__ == '__main__':
 	sys.exit(main())
