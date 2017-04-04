@@ -170,17 +170,14 @@ emf_sr_set_sr_and_clear_its_flag = {''', file=f)
 
 def print_effect_add_religion_char_flag(f):
 	print('''
-emf_sr_add_religion_char_flag = {''', file=f)
+emf_sr_add_religion_char_flag = {
+	trigger_switch = {
+		on_trigger = religion''', file=f)
 
 	for rel in all_religions:
-		print('''\
-	if = {{
-		limit = {{ religion = {0} }}
-		set_character_flag = character_was_{0}
-		break = yes
-	}}'''.format(rel), file=f)
+		print('\t\t{0} = {{ set_character_flag = character_was_{0} }}'.format(rel), file=f)
 
-	print('}', file=f)
+	print('\t}\n}', file=f)
 
 
 def print_effect_clr_religion_char_flag(f):
@@ -195,15 +192,18 @@ emf_sr_clr_religion_char_flag = {''', file=f)
 
 def print_effect_event_target_old_religion_from_flag(f):
 	print('''
-emf_sr_event_target_old_religion_from_flag = {''', file=f)
+emf_sr_event_target_old_religion_from_flag = {
+	trigger_switch = {
+		on_trigger = has_character_flag''', file=f)
 
 	for rel in all_religions:
 		print('''\
-	if = {{
-		limit = {{ has_character_flag = character_was_{0} }}
-		random_character = {{ limit = {{ religion = {0} }} save_event_target_as = old_religion }}
-		break = yes
-	}}'''.format(rel), file=f)
+		character_was_{0} = {{
+			random_character = {{
+				limit = {{ religion = {0} }}
+				save_event_target_as = old_religion
+			}}
+		}}'''.format(rel), file=f)
 
 	print('}', file=f)
 
