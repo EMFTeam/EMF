@@ -1,97 +1,36 @@
 #!/usr/bin/env python3
 
 import sys
-from pathlib import Path
+import pprint
+import ck2parser
 
-from localpaths import rootpath
-
-emf_path = rootpath / 'EMF/EMF'
-sr_modifier_path = emf_path / 'common/event_modifiers/emf_sr_modifiers.txt'
+emf_path = ck2parser.rootpath / 'EMF/EMF'
+sr_modifier_path = emf_path / 'common/event_modifiers/emf_sr_codegen_modifiers.txt'
 sr_effect_path = emf_path / 'common/scripted_effects/emf_sr_codegen_effects.txt'
 sr_trigger_path = emf_path / 'common/scripted_triggers/emf_sr_codegen_triggers.txt'
 
-# TODO: learn escalona's python parser interface (unless I create python bindings for my C++ parser)
-# and grab this information (e.g., religions) automatically.  learning that was slower than just
-# writing it out for now, but in the long-term, the code should change when the religion files change
-# automatically.
-
-# NOTE: religions without secret-religion cults are not included: ((hellenic_)?pagan)|hip_religion
-
-vanilla_religions = [
-	'catholic',
-	'cathar',
-	'fraticelli',
-	'waldensian',
-	'lollard',
-	'orthodox',
-	'bogomilist',
-	'monothelite',
-	'iconoclast',
-	'miaphysite',
-	'monophysite',
-	'paulician',
-	'nestorian',
-	'messalian',
-	'sunni',
-	'zikri',
-	'ibadi',
-	'kharijite',
-	'shiite',
-	'hurufi',
-	'druze',
-	'norse_pagan_reformed',
-	'norse_pagan',
-	'tengri_pagan_reformed',
-	'tengri_pagan',
-	'baltic_pagan_reformed',
-	'baltic_pagan',
-	'finnish_pagan_reformed',
-	'finnish_pagan',
-	'aztec_reformed',
-	'aztec',
-	'slavic_pagan_reformed',
-	'slavic_pagan',
-	'west_african_pagan_reformed',
-	'west_african_pagan',
-	'zun_pagan_reformed',
-	'zun_pagan',
-	'zoroastrian',
-	'mazdaki',
-	'manichean',
-	'yazidi',
-	'jewish',
-	'samaritan',
-	'karaite',
-	'hindu',
-	'buddhist',
-	'jain',
-]
-
-emf_religions = [
-	'adoptionist',
-	'arian',
-	'syriac',
-	'maronite',
-	'apostolic',
-	'tondrakian',
-	'mahdiyya',
-	'nabawiyya',
-	'haruri',
-	'waqifi',
-	'zaydi',
-	'ismaili',
-	'qarmatian',
-	'east_african_pagan',
-	'east_african_pagan_reformed',
-	'zurvanist',
-	'mandaean',
-]
-
-all_religions = vanilla_religions + emf_religions
+###
 
 
 def main():
-	# create extra event modifiers
+	global g_religions
+	g_religions = []
+	parser = ck2parser.SimpleParser(emf_path)
+
+	for _, tree in parser.parse_files('common/religions/*.txt'):
+		for n, v in tree:
+			if isinstance(n, ck2parser.String) and n.val.endswith('_trigger'):
+				continue
+			for n2, v2 in v:
+				if isinstance(v2, ck2parser.Obj) and n2.val not in ['color', 'male_names', 'female_names']:
+					try:
+						if v2['secret_religion'].val == 'no':
+							continue
+					except KeyError:
+						pass
+					g_religions.append(n2.val)
+
+	# create SR community event modifiers
 	with sr_modifier_path.open('w', encoding='cp1252') as f:
 		print('''\
 # -*- ck2.event_modifiers -*-
@@ -99,7 +38,7 @@ def main():
 # For available modifier icons, see: common/event_modifiers/REFERENCE_emf_modifier_icons.txt
 ''', file=f)
 
-		for r in emf_religions:
+		for r in g_religions:
 			print('''\
 secret_{0}_community = {{
 	icon = 18
@@ -139,7 +78,7 @@ def print_trigger_has_any_sr_flag(f):
 emf_sr_has_any_sr_flag = {
 	OR = {''', file=f)
 
-	for r in all_religions:
+	for r in g_religions:
 		print('\t\thas_character_flag = character_was_' + r, file=f)
 
 	print('\t}\n}', file=f)
@@ -149,7 +88,7 @@ def print_effect_set_sr_and_clear_its_flag(f):
 	print('''
 emf_sr_set_sr_and_clear_its_flag = {''', file=f)
 
-	for rel in all_religions:
+	for rel in g_religions:
 		print('''\
 	if = {{
 		limit = {{
@@ -175,7 +114,7 @@ emf_sr_add_religion_char_flag = {
 	trigger_switch = {
 		on_trigger = religion''', file=f)
 
-	for rel in all_religions:
+	for rel in g_religions:
 		print('\t\t{0} = {{ set_character_flag = character_was_{0} }}'.format(rel), file=f)
 
 	print('\t}\n}', file=f)
@@ -185,7 +124,7 @@ def print_effect_clr_religion_char_flag(f):
 	print('''
 emf_sr_clr_religion_char_flag = {''', file=f)
 
-	for rel in all_religions:
+	for rel in g_religions:
 		print('\tclr_character_flag = character_was_{}'.format(rel), file=f)
 
 	print('}', file=f)
@@ -197,7 +136,7 @@ emf_sr_event_target_old_religion_from_flag = {
 	trigger_switch = {
 		on_trigger = has_character_flag''', file=f)
 
-	for rel in all_religions:
+	for rel in g_religions:
 		print('''\
 		character_was_{0} = {{
 			random_character = {{ limit = {{ religion = {0} }} save_event_target_as = old_religion }}
@@ -212,7 +151,7 @@ emf_sr_flip_secret_religious_community_provinces = {
 	trigger_switch = {
 		on_trigger = society_member_of''', file=f)
 
-	for rel in all_religions:
+	for rel in g_religions:
 		print('''\
 		secret_religious_society_{0} = {{
 			ROOT = {{
