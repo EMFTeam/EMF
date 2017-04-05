@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import sys
-import pprint
 import ck2parser
 
 emf_path = ck2parser.rootpath / 'EMF/EMF'
@@ -19,21 +18,20 @@ def main():
 
 	for _, tree in parser.parse_files('common/religions/*.txt'):
 		for n, v in tree:
-			if isinstance(n, ck2parser.String) and n.val.endswith('_trigger'):
+			if n.val.endswith('_trigger'):
 				continue
 			for n2, v2 in v:
 				if isinstance(v2, ck2parser.Obj) and n2.val not in ['color', 'male_names', 'female_names']:
-					try:
-						if v2['secret_religion'].val == 'no':
-							continue
-					except KeyError:
-						pass
+					if v2.has_pair('secret_religion', 'no'):
+						continue
 					g_religions.append(n2.val)
 
 	# create SR community event modifiers
 	with sr_modifier_path.open('w', encoding='cp1252') as f:
 		print('''\
 # -*- ck2.event_modifiers -*-
+
+# NOTE: This file is code-generated. Ideally, do NOT modify this file by hand.
 
 # For available modifier icons, see: common/event_modifiers/REFERENCE_emf_modifier_icons.txt
 ''', file=f)
@@ -55,7 +53,7 @@ secret_{0}_community = {{
 
 # These are code-generated & used as implementation for vanilla scripted triggers. Ideally, don't modify by hand.
 ''', file=f)
-		print_trigger_has_any_sr_flag(f)
+		print_trigger_has_any_religion_char_flag(f)
 
 	# generate SR scripted effects
 	with sr_effect_path.open('w', encoding='cp1252') as f:
@@ -65,7 +63,7 @@ secret_{0}_community = {{
 # These are code-generated & used as implementation for vanilla scripted effects. Ideally, don't modify by hand.
 ''', file=f)
 
-		print_effect_set_sr_and_clear_its_flag(f)
+		print_effect_set_sr_and_clr_religion_char_flag(f)
 		print_effect_add_religion_char_flag(f)
 		print_effect_clr_religion_char_flag(f)
 		print_effect_event_target_old_religion_from_flag(f)
@@ -73,9 +71,9 @@ secret_{0}_community = {{
 
 	return 0
 
-def print_trigger_has_any_sr_flag(f):
+def print_trigger_has_any_religion_char_flag(f):
 	print('''
-emf_sr_has_any_sr_flag = {
+emf_sr_has_any_religion_char_flag = {
 	OR = {''', file=f)
 
 	for r in g_religions:
@@ -84,9 +82,9 @@ emf_sr_has_any_sr_flag = {
 	print('\t}\n}', file=f)
 
 
-def print_effect_set_sr_and_clear_its_flag(f):
+def print_effect_set_sr_and_clr_religion_char_flag(f):
 	print('''
-emf_sr_set_sr_and_clear_its_flag = {''', file=f)
+emf_sr_set_sr_and_clr_religion_char_flag = {''', file=f)
 
 	for rel in g_religions:
 		print('''\
@@ -96,7 +94,7 @@ emf_sr_set_sr_and_clear_its_flag = {''', file=f)
 				has_character_flag = character_was_{0}
 				AND = {{
 					religion = {0}
-					emf_sr_has_any_sr_flag = no
+					emf_sr_has_any_religion_char_flag = no
 				}}
 			}}
 		}}
