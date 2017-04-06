@@ -301,7 +301,7 @@ def print_secretly_convert_to_holy_site_decisions(f):
 	print('title_decisions = {', file=f)
 
 	for rel in g_religions:
-		print('''
+		print('''\
 	secretly_convert_to_{0}_holy_site = {{
 		only_playable = yes
 		
@@ -350,8 +350,7 @@ def print_secretly_convert_to_holy_site_decisions(f):
 		ai_will_do = {{
 			factor = 0
 		}}
-	}}
-'''.format(rel), file=f)
+	}}'''.format(rel), file=f)
 
 	print('}', file=f)
 
