@@ -7,6 +7,7 @@ emf_path = ck2parser.rootpath / 'EMF/EMF'
 sr_modifier_path = emf_path / 'common/event_modifiers/emf_sr_codegen_modifiers.txt'
 sr_effect_path = emf_path / 'common/scripted_effects/emf_sr_codegen_effects.txt'
 sr_trigger_path = emf_path / 'common/scripted_triggers/emf_sr_codegen_triggers.txt'
+sr_holy_site_decisions_path = emf_path / 'decisions/emf_secretly_convert_to_holy_site_decisions.txt'
 
 ###
 
@@ -55,6 +56,8 @@ secret_{0}_community = {{
 		print_trigger_has_any_religion_char_flag(f)
 		print_trigger_is_in_PREVs_interesting_society(f)
 		print_trigger_has_any_char_old_religion(f)
+		print_trigger_has_secret_religious_community_of_ROOT(f)
+		print_trigger_can_have_new_secret_religious_community_of_FROM(f)
 
 	# generate SR scripted effects
 	with sr_effect_path.open('w', encoding='cp1252') as f:
@@ -64,6 +67,13 @@ secret_{0}_community = {{
 		print_effect_clr_religion_char_flag(f)
 		print_effect_event_target_old_religion_from_flag(f)
 		print_effect_flip_secret_religious_community_provinces(f)
+		print_effect_flip_secret_religious_community_provinces_of_PREV(f)
+		print_effect_flip_secret_religious_community_provinces_to_my_religion(f)
+
+	with sr_holy_site_decisions_path.open('w', encoding='cp1252') as f:
+		print_file_header(f, 'ck2.decisions')
+		print_secretly_convert_to_holy_site_decisions(f)
+
 
 	return 0
 
@@ -113,6 +123,43 @@ emf_sr_has_any_char_old_religion = {
 		AND = {{
 			has_character_flag = character_was_{0}
 			any_character = {{ religion = {0} }}
+		}}'''.format(r), file=f)
+
+	print('\t}\n}', file=f)
+
+
+def print_trigger_has_secret_religious_community_of_ROOT(f):
+	print('''
+# THIS = province, ROOT is in a society which correspond to a secret religious community in THIS
+emf_sr_has_secret_religious_community_of_ROOT = {
+	OR = {''', file=f)
+
+	for r in g_religions:
+		print('''\
+		AND = {{
+			has_province_modifier = secret_{0}_community
+			ROOT = {{ society_member_of = secret_religious_society_{0} }}
+		}}'''.format(r), file=f)
+
+	print('\t}\n}', file=f)
+
+
+def print_trigger_can_have_new_secret_religious_community_of_FROM(f):
+	print('''
+# THIS = county title, FROM's secret religious society is used
+emf_sr_can_have_new_secret_religious_community_of_FROM = {
+	OR = {''', file=f)
+
+	for r in g_religions:
+		print('''\
+		AND = {{
+			FROM = {{ society_member_of = secret_religious_society_{0} }}
+			location = {{
+				NOR = {{
+					religion = {0}
+					has_province_modifier = secret_{0}_community
+				}}
+			}}
 		}}'''.format(r), file=f)
 
 	print('\t}\n}', file=f)
@@ -184,6 +231,7 @@ emf_sr_event_target_old_religion_from_flag = {
 
 def print_effect_flip_secret_religious_community_provinces(f):
 	print('''
+# ROOT is assumed to own the provinces which may need flipping
 emf_sr_flip_secret_religious_community_provinces = {
 	trigger_switch = {
 		on_trigger = society_member_of''', file=f)
@@ -201,6 +249,111 @@ emf_sr_flip_secret_religious_community_provinces = {
 		}}'''.format(rel), file=f)
 
 	print('\t}\n}', file=f)
+
+
+def print_effect_flip_secret_religious_community_provinces_of_PREV(f):
+	print('''
+# THIS = society member, PREV = owner of provinces in question
+emf_sr_flip_secret_religious_community_provinces_of_PREV = {
+	trigger_switch = {
+		on_trigger = society_member_of''', file=f)
+
+	for rel in g_religions:
+		print('''\
+		secret_religious_society_{0} = {{
+			PREV = {{
+				any_demesne_province = {{
+					limit = {{ has_province_modifier = secret_{0}_community }}
+					religion = {0}
+					remove_province_modifier = secret_{0}_community
+				}}
+			}}
+		}}'''.format(rel), file=f)
+
+	print('\t}\n}', file=f)
+
+
+def print_effect_flip_secret_religious_community_provinces_to_my_religion(f):
+	print('''
+# THIS owns the provinces which may need flipping, and we base the flip on THIS's religion
+# NOTE: for some reason, we don't remove the secret_X_community province modifiers, however. (?!)
+emf_sr_flip_secret_religious_community_provinces_to_my_religion = {
+	trigger_switch = {
+		on_trigger = religion''', file=f)
+
+	for rel in g_religions:
+		print('''\
+		{0} = {{
+			any_demesne_province = {{
+				limit = {{ has_province_modifier = secret_{0}_community }}
+				religion = {0}
+				# remove_province_modifier = secret_{0}_community
+			}}
+		}}'''.format(rel), file=f)
+
+	print('\t}\n}', file=f)
+
+
+#### DECISIONS ####
+
+
+def print_secretly_convert_to_holy_site_decisions(f):
+	print('title_decisions = {', file=f)
+
+	for rel in g_religions:
+		print('''
+	secretly_convert_to_{0}_holy_site = {{
+		only_playable = yes
+		
+		filter = demesne
+		ai_target_filter = self
+		
+		from_potential = {{
+			ai = no
+			NOT = {{ trait = incapable }}
+			NOT = {{ secret_religion = {0} }}
+			NOT = {{ religion = {0} }}
+			NOT = {{ controls_religion = yes }}
+		}}
+		potential = {{
+			tier = COUNT
+			holder = FROM
+			NOT = {{ location = {{ religion = {0} }} }}
+			OR = {{
+				is_holy_site = {0}
+				any_de_jure_vassal_title = {{
+					is_holy_site = {0}
+				}}
+			}}
+		}}
+		allow = {{
+			FROM = {{
+				custom_tooltip = {{
+					text = NEEDS_250_PIETY_COST
+					hidden_tooltip = {{ piety = 250 }}
+				}}
+				prisoner = no
+				NOT = {{ trait = incapable }}
+				NOT = {{ is_inaccessible_trigger = yes }}
+				NOT = {{ society_member_of = secret_religious_cult }}
+			}}
+		}}
+		effect = {{
+			FROM = {{
+				piety = -250
+				set_secret_religion = {0}
+			}}
+		}}
+		revoke_allowed = {{
+			always = no
+		}}
+		ai_will_do = {{
+			factor = 0
+		}}
+	}}
+'''.format(rel), file=f)
+
+	print('}', file=f)
 
 
 if __name__ == '__main__':
