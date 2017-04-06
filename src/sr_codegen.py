@@ -2,6 +2,8 @@
 
 import sys
 import datetime
+import pprint
+from collections import defaultdict
 import ck2parser
 
 emf_path = ck2parser.rootpath / 'EMF/EMF'
@@ -28,7 +30,10 @@ g_codegen_file_hdr = '''
 
 def main():
 	global g_religions
+	global g_rg_religions_map
 	g_religions = []
+	g_rg_religions_map = defaultdict(list)
+
 	parser = ck2parser.SimpleParser(emf_path)
 
 	for _, tree in parser.parse_files('common/religions/*.txt'):
@@ -40,11 +45,12 @@ def main():
 					if v2.has_pair('secret_religion', 'no'):
 						continue
 					g_religions.append(n2.val)
+					g_rg_religions_map[n.val].append(n2.val)
 
 	# create SR community event modifiers
 	with sr_modifier_path.open('w', encoding='cp1252', newline='\r\n') as f:
 		print_file_header(f, 'ck2.event_modifiers')
-		print_secret_community_modifiers(f)
+		print_modifiers_secret_community(f)
 
 	# generate SR scripted triggers
 	with sr_trigger_path.open('w', encoding='cp1252', newline='\r\n') as f:
@@ -54,6 +60,10 @@ def main():
 		print_trigger_has_any_char_old_religion(f)
 		print_trigger_has_secret_community_of_ROOT(f)
 		print_trigger_can_have_new_secret_community_of_FROM(f)
+		print_trigger_has_not_religion_or_community_of_ROOT_sr(f)
+		print_triggers_event_desc(f)
+		print_triggers_does_cult_need_DLC(f)
+		print_trigger_old_religion_is_liege_sr(f)
 
 	# generate SR scripted effects
 	with sr_effect_path.open('w', encoding='cp1252', newline='\r\n') as f:
@@ -65,11 +75,17 @@ def main():
 		print_effect_flip_secret_community_provinces(f)
 		print_effect_flip_secret_community_provinces_of_PREV(f)
 		print_effect_flip_secret_community_provinces_to_my_religion(f)
+		print_effect_set_adopt_faith_flag_of_my_cult_on_ROOT(f)
+		print_effect_adopt_faith_from_flag(f)
+		print_effect_clr_adopt_faith_flag(f)
+		print_effect_set_prov_flip_char_flag_of_my_cult_on_ROOT(f)
+		print_effect_flip_secret_community_provinces_by_prov_flip_char_flag(f)
+		print_effect_add_secret_community_to_target_province(f)
 
+	# generate "secretly convert to this holy site's religion" decisions
 	with sr_holy_site_decisions_path.open('w', encoding='cp1252', newline='\r\n') as f:
 		print_file_header(f, 'ck2.decisions')
-		print_secretly_convert_to_holy_site_decisions(f)
-
+		print_decisions_secretly_convert_to_holy_site(f)
 
 	return 0
 
@@ -83,7 +99,7 @@ def print_file_header(f, spec=None):
 #### MODIFIERS ####
 
 
-def print_secret_community_modifiers(f):
+def print_modifiers_secret_community(f):
 	for r in g_religions:
 		print('''\
 secret_{0}_community = {{
@@ -168,6 +184,94 @@ emf_sr_can_have_new_secret_community_of_FROM = {
 					has_province_modifier = secret_{0}_community
 				}}
 			}}
+		}}'''.format(r), file=f)
+
+	print('\t}\n}', file=f)
+
+
+def print_trigger_has_not_religion_or_community_of_ROOT_sr(f):
+	print('''
+# THIS = province, ROOT's secret_religion is considered
+emf_sr_has_not_religion_or_community_of_ROOT_sr = {
+	OR = {''', file=f)
+
+	for r in g_religions:
+		print('''\
+		AND = {{
+			ROOT = {{ secret_religion = {0} }}
+			NOR = {{
+				religion = {0}
+				has_province_modifier = secret_{0}_community
+			}}
+		}}'''.format(r), file=f)
+
+	print('\t}\n}', file=f)
+
+
+# NOTE: this function does not use the auto-populated religion list, so if it changes,
+# so should this function (if affected). reason: IDEK what the exact reasons for the
+# vanilla groupings are, and while I've got theories, even a more dynamic solution
+# would have to include some direct-coded elements (such as parent religions).
+def print_triggers_event_desc(f):
+	classes = {
+		'christian_group_1':
+			['catholic', 'cathar', 'fraticelli', 'waldensian', 'lollard', 'nestorian', 'messalian',
+			'adoptionist', 'arian', 'maronite', 'syriac'], # EMF
+		'christian_group_2':
+			['orthodox', 'bogomilist', 'monothelite', 'iconoclast', 'paulician', 'miaphysite', 'monophysite',
+			'apostolic', 'tondrakian'], # EMF
+		'muslim_group_1':
+			['sunni', 'zikri', 'ibadi', 'kharijite', # vanilla, but moved yazidi out (ours is zoroastrian_group)
+			'mahdiyya', 'nabawiyya', 'haruri'], # EMF
+		'muslim_group_2':
+			['shiite', 'druze', 'hurufi',
+			'waqifi', 'zaydi', 'ismaili', 'qarmatian'], # EMF
+		'african_pagan_group':
+			['west_african_pagan_reformed', 'west_african_pagan',
+			'east_african_pagan_reformed', 'east_african_pagan'], # EMF
+	}
+
+	for c in classes:
+		print('''
+emf_sr_event_desc_{} = {{
+	OR = {{'''.format(c), file=f)
+
+		for r in classes[c]:
+			print('\t\treligion = ' + r, file=f)
+
+		print('\t}\n}', file=f)
+
+
+def print_triggers_does_cult_need_DLC(f):
+	dlc_rgroups_map = {
+		'SoI': ['muslim'],
+		'SoA': ['jewish_group'],
+		'TOG': ['zoroastrian_group', 'pagan_group'],
+		'RoI': ['indian_group'],
+	}
+
+	for dlc, rgroups in dlc_rgroups_map.items():
+		print('''
+# THIS = character
+emf_sr_does_cult_need_{} = {{
+	OR = {{'''.format(dlc), file=f)
+
+		for rg in rgroups:
+			for r in g_rg_religions_map[rg]:
+				print('\t\tsociety_member_of = secret_religious_society_' + r, file=f)
+		print('\t}\n}', file=f)
+
+
+def print_trigger_old_religion_is_liege_sr(f):
+	print('''
+emf_sr_old_religion_is_liege_sr = {
+	OR = {''', file=f)
+
+	for r in g_religions:
+		print('''\
+		AND = {{
+			has_character_flag = character_was_{0}
+			liege = {{ secret_religion = {0} }}
 		}}'''.format(r), file=f)
 
 	print('\t}\n}', file=f)
@@ -302,10 +406,103 @@ emf_sr_flip_secret_community_provinces_to_my_religion = {
 	print('\t}\n}', file=f)
 
 
+def print_effect_set_adopt_faith_flag_of_my_cult_on_ROOT(f):
+	print('''
+# THIS = society member
+emf_sr_set_adopt_faith_flag_of_my_cult_on_ROOT = {
+	trigger_switch = {
+		on_trigger = society_member_of''', file=f)
+
+	for rel in g_religions:
+		print('''\
+		secret_religious_society_{0} = {{
+			ROOT = {{ set_character_flag = adopt_faith_{0} }}
+		}}'''.format(rel), file=f)
+
+	print('\t}\n}', file=f)
+
+
+def print_effect_adopt_faith_from_flag(f):
+	print('''
+emf_sr_adopt_faith_from_flag = {
+	trigger_switch = {
+		on_trigger = has_character_flag''', file=f)
+
+	for rel in g_religions:
+		print('\t\tadopt_faith_{0} = {{ religion = {0} }}'.format(rel), file=f)
+
+	print('\t}\n}', file=f)
+
+
+def print_effect_clr_adopt_faith_flag(f):
+	print('''
+emf_sr_clr_adopt_faith_flag = {''', file=f)
+
+	for rel in g_religions:
+		print('\tclr_character_flag = adopt_faith_' + rel, file=f)
+
+	print('}', file=f)
+
+
+def print_effect_set_prov_flip_char_flag_of_my_cult_on_ROOT(f):
+	print('''
+# THIS = society member
+emf_sr_set_prov_flip_char_flag_of_my_cult_on_ROOT = {
+	trigger_switch = {
+		on_trigger = society_member_of''', file=f)
+
+	for rel in g_religions:
+		print('''\
+		secret_religious_society_{0} = {{
+			ROOT = {{ set_character_flag = sr_{0}_prov_flip }}
+		}}'''.format(rel), file=f)
+
+	print('\t}\n}', file=f)
+
+
+def print_effect_flip_secret_community_provinces_by_prov_flip_char_flag(f):
+	print('''
+# THIS owns the provinces which may need flipping, and we base the flip on THIS's flag sr_X_prov_flip
+emf_sr_flip_secret_community_provinces_by_prov_flip_char_flag = {
+	trigger_switch = {
+		on_trigger = has_character_flag''', file=f)
+
+	for rel in g_religions:
+		print('''\
+		sr_{0}_prov_flip = {{
+			any_demesne_province = {{
+				limit = {{ has_province_modifier = secret_{0}_community }}
+				religion = {0}
+				remove_province_modifier = secret_{0}_community
+			}}
+			clr_character_flag = sr_{0}_prov_flip
+		}}'''.format(rel), file=f)
+
+	print('\t}\n}', file=f)
+
+
+def print_effect_add_secret_community_to_target_province(f):
+	print('''
+# THIS's secret religion determines which type of secret community to add to event_target:target_province
+emf_sr_add_secret_community_to_target_province = {
+	trigger_switch = {
+		on_trigger = secret_religion''', file=f)
+
+	for rel in g_religions:
+		print('''\
+		{0} = {{
+			event_target:target_province = {{
+				add_province_modifier = {{ name = secret_{0}_community duration = -1 }}
+			}}
+		}}'''.format(rel), file=f)
+
+	print('\t}\n}', file=f)
+
+
 #### DECISIONS ####
 
 
-def print_secretly_convert_to_holy_site_decisions(f):
+def print_decisions_secretly_convert_to_holy_site(f):
 	print('title_decisions = {', file=f)
 
 	for rel in g_religions:
