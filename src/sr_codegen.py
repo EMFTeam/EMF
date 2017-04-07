@@ -2,15 +2,17 @@
 
 import sys
 import datetime
-import pprint
-from collections import defaultdict
+import csv
 import ck2parser
+
+from collections import defaultdict
 
 emf_path = ck2parser.rootpath / 'EMF/EMF'
 sr_modifier_path = emf_path / 'common/event_modifiers/emf_sr_codegen_modifiers.txt'
 sr_effect_path = emf_path / 'common/scripted_effects/emf_sr_codegen_effects.txt'
 sr_trigger_path = emf_path / 'common/scripted_triggers/emf_sr_codegen_triggers.txt'
 sr_holy_site_decisions_path = emf_path / 'decisions/emf_secretly_convert_to_holy_site_decisions.txt'
+sr_localisation_path = emf_path / 'localisation/1_emf_sr_codegen.csv'
 
 ###
 
@@ -28,15 +30,16 @@ g_codegen_file_hdr = '''
 ###
 
 
+
+
 def main():
-	global g_religions
-	global g_rg_religions_map
+	global g_religions, g_rg_religions_map
+	
+	# grab a list of religions & a map of religion_groups to their religions from the religions folder
 	g_religions = []
 	g_rg_religions_map = defaultdict(list)
 
-	parser = ck2parser.SimpleParser(emf_path)
-
-	for _, tree in parser.parse_files('common/religions/*.txt'):
+	for _, tree in ck2parser.SimpleParser(emf_path).parse_files('common/religions/*.txt'):
 		for n, v in tree:
 			if n.val.endswith('_trigger'):
 				continue
@@ -47,10 +50,16 @@ def main():
 					g_religions.append(n2.val)
 					g_rg_religions_map[n.val].append(n2.val)
 
+	# remove the old code-generated SR localisation file & then load all of localisation for vanilla & EMF
+	if sr_localisation_path.exists():
+		sr_localisation_path.unlink()
+	loc = ck2parser.get_localisation(moddirs=(emf_path,))
+	new_loc = {}
+
 	# create SR community event modifiers
 	with sr_modifier_path.open('w', encoding='cp1252', newline='\r\n') as f:
 		print_file_header(f, 'ck2.event_modifiers')
-		print_modifiers_secret_community(f)
+		print_modifiers_secret_community(f, loc, new_loc)
 
 	# generate SR scripted triggers
 	with sr_trigger_path.open('w', encoding='cp1252', newline='\r\n') as f:
@@ -85,7 +94,13 @@ def main():
 	# generate "secretly convert to this holy site's religion" decisions
 	with sr_holy_site_decisions_path.open('w', encoding='cp1252', newline='\r\n') as f:
 		print_file_header(f, 'ck2.decisions')
-		print_decisions_secretly_convert_to_holy_site(f)
+		print_decisions_secretly_convert_to_holy_site(f, loc, new_loc)
+
+	# write default SR localisation
+	with sr_localisation_path.open('w', encoding='cp1252', newline='\r\n') as f:
+		print('#CODE;ENGLISH;FRENCH;GERMAN;;SPANISH;;;;;;;;;x', file=f)
+		for k in sorted(new_loc):
+			print('{};{};;;;;;;;;;;;;x'.format(k, new_loc[k]), file=f)
 
 	return 0
 
@@ -99,13 +114,19 @@ def print_file_header(f, spec=None):
 #### MODIFIERS ####
 
 
-def print_modifiers_secret_community(f):
+def print_modifiers_secret_community(f, loc, new_loc):
 	for r in g_religions:
+		modifier = 'secret_{}_community'.format(r)
+		desc = modifier + '_desc'
+		if not loc.get(modifier):
+			new_loc[modifier] = 'Secret {} Community'.format(loc[r])
+		if not loc.get(desc):
+			new_loc[desc] = 'In secret, {0} faithfuls have organized around a small community in this province. From there it converts others, grows, and protects its own.'.format(loc[r])
 		print('''\
-secret_{0}_community = {{
+{} = {{
 	icon = 18
-	is_visible = {{ society_member_of = secret_religious_society_{0} }}
-}}'''.format(r), file=f)
+	is_visible = {{ society_member_of = secret_religious_society_{} }}
+}}'''.format(modifier, r), file=f)
 
 
 #### TRIGGERS ####
@@ -231,7 +252,7 @@ def print_triggers_event_desc(f):
 			'east_african_pagan_reformed', 'east_african_pagan'], # EMF
 	}
 
-	for c in classes:
+	for c in sorted(classes):
 		print('''
 emf_sr_event_desc_{} = {{
 	OR = {{'''.format(c), file=f)
@@ -250,7 +271,7 @@ def print_triggers_does_cult_need_DLC(f):
 		'RoI': ['indian_group'],
 	}
 
-	for dlc, rgroups in dlc_rgroups_map.items():
+	for dlc, rgroups in sorted(dlc_rgroups_map.items()):
 		print('''
 # THIS = character
 emf_sr_does_cult_need_{} = {{
@@ -502,12 +523,18 @@ emf_sr_add_secret_community_to_target_province = {
 #### DECISIONS ####
 
 
-def print_decisions_secretly_convert_to_holy_site(f):
+def print_decisions_secretly_convert_to_holy_site(f, loc, new_loc):
 	print('title_decisions = {', file=f)
 
 	for rel in g_religions:
+		decision = 'secretly_convert_to_{0}_holy_site'.format(rel)
+		desc = decision + '_desc'
+		if not loc.get(decision):
+			new_loc[decision] = 'Secretly Convert to ' + loc[rel]
+		if not loc.get(desc):
+			new_loc[desc] = 'The §Y{0}§! pilgrims that flock to the holy site in §Y[Root.Location.GetName]§! impress me with the depth and passion of their faith. I am tempted to convert in secrecy...'.format(loc[rel])
 		print('''\
-	secretly_convert_to_{0}_holy_site = {{
+	{0} = {{
 		only_playable = yes
 		
 		filter = demesne
@@ -519,6 +546,16 @@ def print_decisions_secretly_convert_to_holy_site(f):
 			NOT = {{ secret_religion = {0} }}
 			NOT = {{ religion = {0} }}
 			NOT = {{ controls_religion = yes }}
+			OR = {{
+				any_province = {{
+					religion = {0}
+					is_heretic = no
+				}}
+				any_character = {{
+					religion = {0}
+					is_heretic = no
+				}}
+			}}
 		}}
 		potential = {{
 			tier = COUNT
