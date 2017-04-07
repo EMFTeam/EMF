@@ -11,7 +11,7 @@ emf_path = ck2parser.rootpath / 'EMF/EMF'
 sr_modifier_path = emf_path / 'common/event_modifiers/emf_sr_codegen_modifiers.txt'
 sr_effect_path = emf_path / 'common/scripted_effects/emf_sr_codegen_effects.txt'
 sr_trigger_path = emf_path / 'common/scripted_triggers/emf_sr_codegen_triggers.txt'
-sr_holy_site_decisions_path = emf_path / 'decisions/emf_secretly_convert_to_holy_site_decisions.txt'
+sr_holy_site_decisions_path = emf_path / 'decisions/emf_secretly_convert_to_holy_site_codegen_decisions.txt'
 sr_localisation_path = emf_path / 'localisation/1_emf_sr_codegen.csv'
 
 ###
@@ -90,6 +90,7 @@ def main():
 		print_effect_set_prov_flip_char_flag_of_my_cult_on_ROOT(f)
 		print_effect_flip_secret_community_provinces_by_prov_flip_char_flag(f)
 		print_effect_add_secret_community_to_target_province(f)
+		print_effect_ai_try_to_join_society(f)
 
 	# generate "secretly convert to this holy site's religion" decisions
 	with sr_holy_site_decisions_path.open('w', encoding='cp1252', newline='\r\n') as f:
@@ -516,6 +517,329 @@ emf_sr_add_secret_community_to_target_province = {
 				add_province_modifier = {{ name = secret_{0}_community duration = -1 }}
 			}}
 		}}'''.format(rel), file=f)
+
+	print('\t}\n}', file=f)
+
+
+def print_effect_ai_try_to_join_society(f):
+	print('''
+# contains most of the implementation of vanilla event MNM.10031, except with support for joining all
+# secret religious cults (vanilla only supported a select few)
+emf_sr_ai_try_to_join_society = {
+	random_list = {
+		700 = { } # Fall back dead weight
+		100 = {
+			trigger = {
+				can_join_society = monastic_order_benedictine
+			}
+			modifier = {
+				factor = 3
+				OR = {
+					trait = zealous
+					trait = scholar
+					trait = theologian
+					trait = gardener
+					trait = monk
+					trait = nun
+					learning = 16
+					is_priest = yes
+				}
+			}
+			join_society = monastic_order_benedictine
+			emf_sr_add_random_society_influence_if_small = yes
+			emf_sr_set_grandmaster_if_none = yes
+		}
+		100 = {
+			trigger = {
+				can_join_society = monastic_order_dominican
+			}
+			modifier = {
+				factor = 3
+				OR = {
+					trait = zealous
+					trait = scholar
+					trait = theologian
+					trait = gardener
+					trait = monk
+					trait = nun
+					learning = 16
+					is_priest = yes
+				}
+			}
+			join_society = monastic_order_dominican
+			emf_sr_add_random_society_influence_if_small = yes
+			emf_sr_set_grandmaster_if_none = yes
+		}
+		100 = {
+			trigger = {
+				can_join_society = monastic_order_orthodox
+			}
+			modifier = {
+				factor = 3
+				OR = {
+					trait = zealous
+					trait = scholar
+					trait = theologian
+					trait = gardener
+					trait = monk
+					trait = nun
+					learning = 16
+					is_priest = yes
+				}
+			}
+			join_society = monastic_order_orthodox
+			emf_sr_add_random_society_influence_if_small = yes
+			emf_sr_set_grandmaster_if_none = yes
+		}
+		100 = {
+			trigger = {
+				can_join_society = monastic_order_nestorian
+			}
+			modifier = {
+				factor = 3
+				OR = {
+					trait = zealous
+					trait = scholar
+					trait = theologian
+					trait = gardener
+					trait = monk
+					trait = nun
+					learning = 16
+					is_priest = yes
+				}
+			}
+			join_society = monastic_order_nestorian
+			emf_sr_add_random_society_influence_if_small = yes
+			emf_sr_set_grandmaster_if_none = yes
+		}
+		100 = {
+			trigger = {
+				can_join_society = monastic_order_monophysite
+			}
+			modifier = {
+				factor = 3
+				OR = {
+					trait = zealous
+					trait = scholar
+					trait = theologian
+					trait = gardener
+					trait = monk
+					trait = nun
+					learning = 16
+					is_priest = yes
+				}
+			}
+			join_society = monastic_order_monophysite
+			emf_sr_add_random_society_influence_if_small = yes
+			emf_sr_set_grandmaster_if_none = yes
+		}
+		100 = {
+			trigger = {
+				can_join_society = monastic_order_hindu
+			}
+			modifier = {
+				factor = 3
+				OR = {
+					trait = zealous
+					trait = scholar
+					trait = theologian
+					trait = brahmin
+					learning = 16
+					is_priest = yes
+				}
+			}
+			join_society = monastic_order_hindu
+			emf_sr_add_random_society_influence_if_small = yes
+			emf_sr_set_grandmaster_if_none = yes
+		}
+		100 = {
+			trigger = {
+				can_join_society = monastic_order_buddhist
+			}
+			modifier = {
+				factor = 3
+				OR = {
+					trait = zealous
+					trait = scholar
+					trait = theologian
+					trait = brahmin
+					learning = 16
+					is_priest = yes
+				}
+			}
+			join_society = monastic_order_buddhist
+			emf_sr_add_random_society_influence_if_small = yes
+			emf_sr_set_grandmaster_if_none = yes
+		}
+		100 = {
+			trigger = {
+				can_join_society = monastic_order_jain
+			}
+			modifier = {
+				factor = 3
+				OR = {
+					trait = zealous
+					trait = scholar
+					trait = theologian
+					trait = brahmin
+					learning = 16
+					is_priest = yes
+				}
+			}
+			join_society = monastic_order_jain
+			emf_sr_add_random_society_influence_if_small = yes
+			emf_sr_set_grandmaster_if_none = yes
+		}
+		150 = {
+			trigger = {
+				can_join_society = hermetics
+			}
+			modifier = {
+				factor = 5
+				is_dumb_trigger = no
+				OR = { 
+					learning = 12
+					trait = scholar
+					trait = erudite
+					trait = genius
+					trait = mystic
+				}
+			}
+			modifier = {
+				factor = 0
+				is_landed = no
+			}
+			join_society = hermetics
+			emf_sr_add_random_society_influence_if_small = yes
+			emf_sr_set_grandmaster_if_none = yes
+		}
+		100 = { 
+			trigger = {
+				can_join_society = the_assassins
+			}
+			modifier = {
+				factor = 0.5
+				is_landed = no
+			}
+			modifier = {
+				factor = 2
+				is_landed = yes
+			}
+			modifier = {
+				factor = 5
+				NOT = { trait = decadent }
+				OR = {
+					trait = zealous
+					trait = schemer
+					trait = elusive_shadow
+					trait = deceitful
+					trait = ambitious
+					intrigue = 18
+				}
+			}
+			join_society = the_assassins
+			emf_sr_add_random_society_influence_if_small = yes
+			emf_sr_set_grandmaster_if_none = yes
+		}
+		50 = { 
+			trigger = {
+				can_join_society = the_satanists
+			}
+			modifier = {
+				factor = 5
+				OR = {
+					has_impious_trait_trigger = yes
+					has_vice_trigger = yes
+					trait = drunkard
+					trait = possessed
+					trait = lunatic
+				}
+			}
+			join_society = the_satanists
+			emf_sr_add_random_society_influence_if_small = yes
+			emf_sr_set_grandmaster_if_none = yes
+		}
+		50 = { 
+			trigger = {
+				can_join_society = the_trollcrafters
+			}
+			modifier = {
+				factor = 5
+				OR = {
+					has_impious_trait_trigger = yes
+					has_vice_trigger = yes
+					trait = drunkard
+					trait = possessed
+					trait = lunatic
+				}
+			}
+			join_society = the_trollcrafters
+			emf_sr_add_random_society_influence_if_small = yes
+			emf_sr_set_grandmaster_if_none = yes
+		}
+		50 = { 
+			trigger = {
+				can_join_society = the_cult_of_kali
+			}
+			modifier = {
+				factor = 5
+				OR = {
+					has_impious_trait_trigger = yes
+					has_vice_trigger = yes
+					trait = drunkard
+					trait = possessed
+					trait = lunatic
+				}
+			}
+			join_society = the_cult_of_kali
+			emf_sr_add_random_society_influence_if_small = yes
+			emf_sr_set_grandmaster_if_none = yes
+		}
+		50 = { 
+			trigger = {
+				can_join_society = the_cold_ones
+			}
+			modifier = {
+				factor = 5
+				OR = {
+					has_impious_trait_trigger = yes
+					has_vice_trigger = yes
+					trait = drunkard
+					trait = possessed
+					trait = lunatic
+				}
+			}
+			join_society = the_cold_ones
+			emf_sr_add_random_society_influence_if_small = yes
+			emf_sr_set_grandmaster_if_none = yes
+		}
+		50 = {
+			trigger = {
+				can_join_society = the_plaguebringers
+			}
+			modifier = {
+				factor = 5
+				OR = {
+					has_impious_trait_trigger = yes
+					has_vice_trigger = yes
+					trait = drunkard
+					trait = possessed
+					trait = lunatic
+				}
+			}
+			join_society = the_plaguebringers
+			emf_sr_add_random_society_influence_if_small = yes
+			emf_sr_set_grandmaster_if_none = yes
+		}''', file=f)
+
+	for r in g_religions:
+		print('''\
+		200 = {{
+			trigger = {{ can_join_society = secret_religious_society_{0} }}
+			join_society = secret_religious_society_{0}
+			emf_sr_add_random_society_influence_if_small = yes
+			emf_sr_set_grandmaster_if_none = yes
+		}}'''.format(r), file=f)
 
 	print('\t}\n}', file=f)
 
