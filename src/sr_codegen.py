@@ -13,6 +13,7 @@ sr_effect_path = emf_path / 'common/scripted_effects/emf_sr_codegen_effects.txt'
 sr_trigger_path = emf_path / 'common/scripted_triggers/emf_sr_codegen_triggers.txt'
 sr_holy_site_decisions_path = emf_path / 'decisions/emf_secretly_convert_to_holy_site_codegen_decisions.txt'
 sr_localisation_path = emf_path / 'localisation/1_emf_sr_codegen.csv'
+sr_custom_loc_path = emf_path / 'localisation/customizable_localisation/emf_sr_custom_loc_codegen.txt'
 
 ###
 
@@ -96,6 +97,12 @@ def main():
 	with sr_holy_site_decisions_path.open('w', encoding='cp1252', newline='\r\n') as f:
 		print_file_header(f, 'ck2.decisions')
 		print_decisions_secretly_convert_to_holy_site(f, loc, new_loc)
+
+
+	with sr_custom_loc_path.open('w', encoding='cp1252', newline='\r\n') as f:
+		print_file_header(f, 'ck2.custom_loc')
+		print_custom_loc_GetTrueReligionAdherent(f, loc, new_loc)
+		print_custom_loc_GetReligionAdherent(f, loc, new_loc)
 
 	# write default SR localisation
 	with sr_localisation_path.open('w', encoding='cp1252', newline='\r\n') as f:
@@ -917,6 +924,66 @@ def print_decisions_secretly_convert_to_holy_site(f, loc, new_loc):
 			factor = 0
 		}}
 	}}'''.format(rel, decision), file=f)
+
+	print('}', file=f)
+
+
+#### CUSTOM LOCALISATION ####
+
+g_rel_adherent_special = {
+	'catholic': 'String_Catholic',
+	'orthodox': 'String_Orthodox_Christian',
+	'sunni': 'String_Sunni',
+	'shiite': 'String_Shia',
+	'jewish': 'String_Jew',
+	'zoroastrian': 'String_Zoroastrian',
+	'hindu': 'String_Hindu',
+	'buddhist': 'String_Buddhist',
+	'jain': 'String_Jain',
+	'norse_pagan_reformed': 'String_Norse_Follower',
+	'slavic_pagan_reformed': 'String_Slav',
+	'tengri_pagan_reformed': 'String_Tengri',
+	'baltic_pagan_reformed': 'String_Romuvan',
+	'finnish_pagan_reformed': 'String_Suomenusko_Follower',
+	'west_african_pagan_reformed': 'String_West_African',
+	'zun_pagan_reformed': 'String_Zunist',
+	'norse_pagan': 'String_Norse_Follower',
+	'slavic_pagan': 'String_Slav',
+	'tengri_pagan': 'String_Tengri',
+	'baltic_pagan': 'String_Romuvan',
+	'finnish_pagan': 'String_Suomenusko_Follower',
+	'west_african_pagan': 'String_West_African',
+	'zun_pagan': 'String_Zunist',
+}
+
+
+def print_custom_loc_GetTrueReligionAdherent(f, loc, new_loc):
+	print('''
+defined_text = {
+	name = GetTrueReligionAdherent
+''', file=f)
+
+	for r in g_religions:
+		print('''\
+	text = {{
+		localisation_key = {}
+		trigger = {{ true_religion = {} }}
+	}}'''.format(g_rel_adherent_special.get(r, r), r), file=f)
+
+	print('}', file=f)
+
+def print_custom_loc_GetReligionAdherent(f, loc, new_loc):
+	print('''
+defined_text = {
+	name = GetReligionAdherent
+''', file=f)
+
+	for r in g_religions:
+		print('''\
+	text = {{
+		localisation_key = {}
+		trigger = {{ religion = {} }}
+	}}'''.format(g_rel_adherent_special.get(r, r), r), file=f)
 
 	print('}', file=f)
 
