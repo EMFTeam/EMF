@@ -534,7 +534,7 @@ def print_decisions_secretly_convert_to_holy_site(f, loc, new_loc):
 		if not loc.get(desc):
 			new_loc[desc] = 'The §Y{0}§! pilgrims that flock to the holy site in §Y[Root.Location.GetName]§! impress me with the depth and passion of their faith. I am tempted to convert in secrecy...'.format(loc[rel])
 		print('''\
-	{0} = {{
+	{1} = {{
 		only_playable = yes
 		
 		filter = demesne
@@ -592,7 +592,7 @@ def print_decisions_secretly_convert_to_holy_site(f, loc, new_loc):
 		ai_will_do = {{
 			factor = 0
 		}}
-	}}'''.format(rel), file=f)
+	}}'''.format(rel, decision), file=f)
 
 	print('}', file=f)
 
