@@ -105,6 +105,8 @@ def main():
 		print_custom_loc_GetReligionAdherent(f, loc, new_loc)
 
 	# write default SR localisation
+	generate_default_sr_localisation(loc, new_loc)
+
 	with sr_localisation_path.open('w', encoding='cp1252', newline='\r\n') as f:
 		print('#CODE;ENGLISH;FRENCH;GERMAN;;SPANISH;;;;;;;;;x', file=f)
 		for k in sorted(new_loc):
@@ -117,6 +119,30 @@ def print_file_header(f, spec=None):
 	if spec:
 		print('# -*- {} -*-'.format(spec), file=f)
 	print(g_codegen_file_hdr, file=f)
+
+
+def generate_default_sr_localisation(loc, new_loc):
+	for r in g_religions:
+		base_key = 'secret_religious_society_' + r
+		add_loc_if_needed(loc, new_loc, base_key, 'the {} Society'.format(loc[r]))
+		add_loc_if_needed(loc, new_loc, base_key + '_desc',
+		                  'In this society, secret followers of the {} religion try to advance their true faith and hope to one day be able to openly adopt it.'.format(loc[r]))
+		add_loc_if_needed(loc, new_loc, base_key + '_leader_desc',
+		                  'The High Priest, leading the international effort of bringing more people into the fold.')
+		add_loc_if_needed(loc, new_loc, base_key + '_currency', 'Devotion')
+		add_loc_if_needed(loc, new_loc, base_key + '_rank_1_female', 'Faithful')
+		add_loc_if_needed(loc, new_loc, base_key + '_rank_1_male', 'Faithful')
+		add_loc_if_needed(loc, new_loc, base_key + '_rank_2_female', 'Adherent')
+		add_loc_if_needed(loc, new_loc, base_key + '_rank_2_male', 'Adherent')
+		add_loc_if_needed(loc, new_loc, base_key + '_rank_3_female', 'Preacher')
+		add_loc_if_needed(loc, new_loc, base_key + '_rank_3_male', 'Preacher')
+		add_loc_if_needed(loc, new_loc, base_key + '_rank_4_female', 'Herald')
+		add_loc_if_needed(loc, new_loc, base_key + '_rank_4_male', 'Herald')
+
+
+def add_loc_if_needed(loc, new_loc, key, val):
+	if not loc.get(key):
+		new_loc[key] = val
 
 
 #### MODIFIERS ####
