@@ -2,7 +2,6 @@
 
 import sys
 import datetime
-import csv
 import ck2parser
 
 from collections import defaultdict
