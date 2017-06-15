@@ -47,6 +47,8 @@ character_event = {
 				emf_remove_decay_mods_effect = yes
 			}
 		}
+
+		log = "INFO: DECAY: emf_imperial.1850: [Root.GetBestName] inherits/usurps title [From.GetID] (decay=[From.imperial_decay.GetValue]) from [FromFrom.GetBestName]"
 	}
 }
 
@@ -65,27 +67,32 @@ character_event = {
 	}
 	
 	immediate = {
+		log = "INFO: DECAY: emf_imperial.1851: deferred processing of: [Root.GetBestName] inherits/usurps title [Root.PrimaryTitle.GetID] (decay: [Root.PrimaryTitle.imperial_decay.GetValue]) from [FromFromFrom.GetBestName]"
 		
 		primary_title = {
 			# Skip the increase if title was overthrown
 			if = {
 				limit = { has_title_flag = emf_decay_overthrow }
 				clr_title_flag = emf_decay_overthrow
+				log = "--> title was overthrown"
 				set_variable = { which = "imperial_decay_change" value = -10 }
 				ROOT = { character_event = { id = emf_imperial.1852 } }
 				break = yes
 			}
 			# The base decay change is 1
 			set_variable = { which = "imperial_decay_change" value = 1 }
+			log = "--> title not overthrown, so decay change is now [This.imperial_decay_change.GetValue]"
 			# Reset dynasty count if this is a new dynasty
 			if = {
 				limit = { NOT = { ROOT = { dynasty = event_target:former_owner } } }
 				set_variable = { which = "imperial_dynasty_count" value = 0 }
+				log = "--> ruling dynasty changed"
 			}
 			# Increase dynasty count if this is an ongoing dynasty
 			if = {
 				limit = { ROOT = { dynasty = event_target:former_owner } }
 				change_variable = { which = "imperial_dynasty_count" value = 1 }
+				log = "--> ruling dynasty stayed the same"
 			}
 			# Decay value goes higher for long-running dynasties, curve is pseudo-logarithmic
 			if = {
@@ -136,6 +143,7 @@ character_event = {
 				limit = { check_variable = { which = "imperial_dynasty_count" value = 12 } }
 				change_variable = { which = "imperial_decay_change" value = 0.2 }
 			}
+			log = "--> imperial dynasty count for title is now [This.imperial_dynasty_count.GetValue], so decay change is now [This.imperial_decay_change.GetValue]"
 			# Increase more if this is an usurpation
 			if = {
 				limit = {
@@ -145,10 +153,12 @@ character_event = {
 					}
 				}
 				change_variable = { which = "imperial_decay_change" value = 2 }
+				log = "--> title was usurped, so decay change is now [This.imperial_decay_change.GetValue]"
 			}
 			# Imperial Administration gets an additional +1
 			if = {
 				limit = { has_law = administration_2 }
+				log = "--> title has Imperial Administration"
 				change_variable = { which = "imperial_decay_change" value = 1 }
 			}
 			# Then determine how much CA should change it
@@ -160,24 +170,32 @@ character_event = {
 						has_law = crown_authority_4
 					}
 				}
+				log = "--> title has CA1"
 				change_variable = { which = "imperial_decay_change" value = 3 }
 			}
 			if = {
 				limit = { has_law = crown_authority_2 }
+				log = "--> title has CA2"
 				change_variable = { which = "imperial_decay_change" value = 2 }
 			}
 			if = {
 				limit = { has_law = crown_authority_3 }
+				log = "--> title has CA3"
 				change_variable = { which = "imperial_decay_change" value = 1 }
 			}
 			# Increase less if we have a horde culture
 			if = {
 				limit = { ROOT = { has_horde_culture = yes } }
+				log = "--> new title owner has horde culture"
 				change_variable = { which = "imperial_decay_change" value = -2 }
 			}
+
+			log = "--> after applying CA, IA, and horde culture rules, decay change is now [This.imperial_decay_change.GetValue]"
+
 			# Adjust according to realm size and map
 			if = {
 				limit = { NOT = { has_global_flag = SWMH } }
+				log = "--> using vanilla map rules for realm size component of decay change"
 				if = {
 					limit = { NOT = { ROOT = { realm_size = 100 } } }
 					change_variable = { which = "imperial_decay_change" value = -1 }
@@ -274,6 +292,7 @@ character_event = {
 			# For SWMH, we use a realm size factor of 8/5 vs. vanilla
 			if = {
 				limit = { has_global_flag = SWMH }
+				log = "--> using SWMH map rules for realm size component of decay change"
 				if = {
 					limit = { NOT = { ROOT = { realm_size = 160 } } }
 					change_variable = { which = "imperial_decay_change" value = -1 }
@@ -367,11 +386,15 @@ character_event = {
 					change_variable = { which = "imperial_decay_change" value = 0.25 }
 				}
 			}
+
+			log = "--> after applying realm size component, decay change is now [This.imperial_decay_change.GetValue]"
+
 			# Wrap this up...
 			# If AI, apply a handicap
 			if = {
 				limit = { ROOT = { ai = yes } }
 				multiply_variable = { which = "imperial_decay_change" value = 0.75 }
+				log = "--> applying AI handicap"
 			}
 			# Round imperial_decay_change to nearest integer
 			# Since we have a limited range of possible change that could've been induced in this event,
@@ -383,6 +406,8 @@ character_event = {
 			# Range from horde culture [-2,0]
 			# Range from realm size [-2,7]
 			# Max. range: [-4,17] --> [1,17] after enforcing minimum gain rule
+
+			log = "--> before rounding, decay change is [This.imperial_decay_change.GetValue]"
 			if = {
 				limit = { # Minimum gain rule
 					NOT = { check_variable = { which = "imperial_decay_change" value = 1.5 } }
@@ -500,8 +525,9 @@ character_event = {
 				}
 				set_variable = { which = "imperial_decay_change" value = 17 }
 			}
+			log = "--> final decay change due to title transfer is [This.imperial_decay_change.GetValue]"
 		}
-		
+
 		# Commit the change
 		character_event = { id = emf_imperial.1852 }
 	}
@@ -515,22 +541,23 @@ character_event = {
 	hide_window = yes
 	is_triggered_only = yes
 	
-	trigger = {
-#		is_ironman = no
-	}
-	
 	immediate = {
+		log = "INFO: DECAY: emf_imperial.1852: rating change of [Root.PrimaryTitle.imperial_decay_change.GetValue] requested for title [Root.PrimaryTitle.GetID] (current decay is [Root.PrimaryTitle.imperial_decay.GetValue])"
 		primary_title = {
 			# Clamp imperial_decay to the range [0,100] while changing it by imperial_decay_change
 			change_variable = { which = "imperial_decay" which = "imperial_decay_change" }
+			log = "--> this would cause a decay rating of [This.imperial_decay.GetValue]"
 			if = {
 				limit = { NOT = { check_variable = { which = "imperial_decay" value = 0 } } }
+				log = "--> decay was negative, clamping to 0"
 				set_variable = { which = "imperial_decay" value = 0 }
 			}
 			if = {
 				limit = { check_variable = { which = "imperial_decay" value = 100 } }
+				log = "--> decay was >= 100, clamping to 100"
 				set_variable = { which = "imperial_decay" value = 100 }
 			}
+			log = "--> after clamping, decay rating is now [This.imperial_decay.GetValue]"
 		}
 		
 		# Remove old decay modifier
@@ -659,7 +686,6 @@ character_event = {
 	is_triggered_only = yes
 	
 	only_independent = yes
-	only_playable = yes
 	
 	trigger = {
 		FROM = {
@@ -670,7 +696,10 @@ character_event = {
 	}
 	
 	immediate = {
+		log = "INFO: DECAY: emf_imperial.1853: title [From.GetID] created; (re)setting decay rating..."
+		log = "--> current decay is [From.imperial_decay.GetValue])"
 		FROM = { set_variable = { which = "imperial_decay" value = 0 } }
+		log = "--> final decay is [From.imperial_decay.GetValue]) -- should be exactly 0"
 	}
 }
 
@@ -682,8 +711,6 @@ character_event = {
 	is_triggered_only = yes
 	
 	only_independent = yes
-	only_playable = yes
-	religion = hip_religion
 	
 	trigger = {
 		has_landed_title = e_hip
@@ -700,7 +727,10 @@ character_event = {
 				rebel = no
 				NOT = { is_variable_equal = { which = "imperial_decay" value = 0 } }
 			}
+			log = "INFO: DECAY: emf_imperial.1854: title [This.GetID]'s decay rating is not 0 on_startup, fixing..."
+			log = "--> current decay is [This.imperial_decay.GetValue]"
 			set_variable = { which = "imperial_decay" value = 0 }
+			log = "--> final decay is [This.imperial_decay.GetValue] -- should be exactly 0"
 		}
 	}
 }
