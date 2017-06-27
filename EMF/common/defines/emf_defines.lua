@@ -217,8 +217,8 @@ NDefines.NEngine.EVENT_PROCESS_OFFSET = 30
 NDefines.NAI.REVOLT_OTHER_INDEP_RISK = 0
 NDefines.NAI.REVOLT_OTHER_INDEP_RISK_CAP = 0
 NDefines.NAI.AI_EMPEROR_CREATES_KINGDOMS = 1     -- only now a good idea due to Imperial Kingdom Creation law
-NDefines.NAI.RAID_MAX_REALM_SIZE = 12
 NDefines.NAI.RAID_AGGRESSION = 24
+NDefines.NAI.TRIBAL_VASSAL_EXTRA_CALL_CHANCE = 15  -- from 40
 -- NDefines.NAI.COALITION_DISTANCE_MULTIPLIER = -1.25
 
 -- RulerDesigner
