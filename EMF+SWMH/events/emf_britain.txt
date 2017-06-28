@@ -1,0 +1,129 @@
+# -*- ck2.events -*-
+
+namespace = emf_britain
+
+# on_new_holder on_action; special stuff to be done when England is created as a titular title
+character_event = {
+	id = emf_britain.0
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		FROM = { title = k_england }
+		NOT = { FROMFROM = { always = yes } } # No prior holder for title transfer, so must be title creation
+		NOT = { has_global_flag = emf_england_formed } # Fires only once
+		FROM = { is_de_jure_title = no } # England is titular
+	}
+
+	immediate = {
+		set_global_flag = emf_england_formed
+		# England gets its "modern" de jure duchies.
+		# The other proto-English kingdoms will become titular, typically.
+		k_england = {
+			d_channel_islands = { de_jure_liege = PREV }
+			d_cornwall = { de_jure_liege = PREV }
+			d_somerset = { de_jure_liege = PREV }
+			d_canterbury = { de_jure_liege = PREV }
+			d_hereford = { de_jure_liege = PREV }
+			d_bedford = { de_jure_liege = PREV }
+			d_essex = { de_jure_liege = PREV }
+			d_norfolk = { de_jure_liege = PREV }
+			d_fivebouroughs = { de_jure_liege = PREV }
+			d_york = { de_jure_liege = PREV }
+			d_lancaster = { de_jure_liege = PREV }
+			d_northumberland = { de_jure_liege = PREV }
+		}
+		k_scotland = {
+			# Take Lothian from [K] Northumberland and give it to Scotland, as that's the 'modern' de jure setup,
+			# and we are going modern as modern goes now that England is de jure.
+			d_lothian = { de_jure_liege = PREV }
+		}
+
+		# If safe to do so and the primary title is not already k_england, switch to it if that makes sense at all.
+		k_england = { emf_try_to_make_primary_title = yes }
+
+		# Destroy any "petty" kingdom titles (aka, now titular) tomorrow [for safety-- we are in title transfer code].
+		character_event = { id = emf_britain.1 days = 1 }
+	}
+}
+
+# emf_britain.1 -- 1-day followup to emf_britain.0 to auto-destroy, e.g., titular Wessex after forming England.
+character_event = {
+	id = emf_britain.1
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = { has_landed_title = k_england }
+
+	immediate = {
+		if = { # For the AI, make sure they didn't switch primary titles away during the 1-day deferral
+			limit = { ai = yes }
+			k_england = { emf_try_to_make_primary_title = yes }
+		}
+		#k_england = { save_event_target_as = emf_new_title }
+		any_demesne_title = {
+			limit = {
+				tier = KING
+				emf_is_england_precursor_kingdom = yes
+				is_primary_holder_title = no
+				is_de_jure_title = no
+			}
+			#save_event_target_as = emf_old_title
+			# ... transfer claims ...
+			#clear_event_target = emf_old_title
+			emf_destroy_title = yes
+		}
+	}
+}
+
+
+# emf_britain.10 -- Prompt AI to form England
+character_event = {
+	id = emf_britain.10
+
+	hide_window = yes
+
+	only_independent = yes
+	only_capable = yes
+	war = no
+	prisoner = no
+	min_age = 16
+	ai = yes
+
+	trigger = {
+		k_england = { has_holder = no }
+		lower_tier_than = EMPEROR # AI emperors won't create k_england
+		primary_title = { is_primary_type_title = no }
+		mercenary = no
+		any_realm_province = {
+			count = 23 # >50% of 44 counties
+			region = custom_england
+		}
+	}
+
+	mean_time_to_happen = {
+		days = 1
+	}
+
+	immediate = {
+		log = "INFO: emf_britain.10: [Root.GetTitledName] (#[Root.GetID]) can and will now form England"
+
+		if = {
+			limit = { NOT = { is_title_active = k_england } }
+			activate_title = { title = k_england status = yes }
+		}
+
+		primary_title = {
+			k_england = {
+				if = {
+					limit = { PREV = { emf_is_england_precursor_kingdom = yes } }
+					copy_title_history = PREV
+				}
+				grant_title = { target = ROOT type = created }
+				copy_title_laws = PREV
+			}
+		}
+	}
+}
