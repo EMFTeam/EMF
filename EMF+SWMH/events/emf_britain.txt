@@ -18,26 +18,84 @@ character_event = {
 
 	immediate = {
 		set_global_flag = emf_england_formed
-		# England gets its "modern" de jure duchies.
-		# The other proto-English kingdoms will become titular, typically.
-		k_england = {
-			d_channel_islands = { de_jure_liege = PREV }
-			d_cornwall = { de_jure_liege = PREV }
-			d_somerset = { de_jure_liege = PREV }
-			d_canterbury = { de_jure_liege = PREV }
-			d_hereford = { de_jure_liege = PREV }
-			d_bedford = { de_jure_liege = PREV }
-			d_essex = { de_jure_liege = PREV }
-			d_norfolk = { de_jure_liege = PREV }
-			d_fivebouroughs = { de_jure_liege = PREV }
-			d_york = { de_jure_liege = PREV }
-			d_lancaster = { de_jure_liege = PREV }
-			d_northumberland = { de_jure_liege = PREV }
-		}
+
+		# Take Lothian from k_northumberland and give it to either k_scotland or k_strathclyde, in that order of
+		# preference. Require the receiving kingdom to de jure border Lothian (by default, both do); if neither do,
+		# Lothian will likely become part of England consequently.
+		#
+		# This is done because our next task will be to absorb the de jure duchies of the english precursor kingdoms
+		# into k_england, but we actually would prefer that k_england doesn't get a free de jure vassal Lothian 99.9% of
+		# the time England forms.
+
 		k_scotland = {
-			# Take Lothian from [K] Northumberland and give it to Scotland, as that's the 'modern' de jure setup,
-			# and we are going modern as modern goes now that England is de jure.
-			d_lothian = { de_jure_liege = PREV }
+			d_lothian = {
+				if = {
+					limit = {
+						NOT = { has_title_flag = emf_found_lothian_a_kingdom_tmp }
+						de_jure_liege = k_northumberland
+						PREV = {
+							any_de_jure_vassal_title = {
+								tier = COUNT
+								location = {
+									any_neighbor_province = {
+										duchy = { title = d_lothian }
+									}
+								}
+							}
+						}
+					}
+					de_jure_liege = PREV
+					set_title_flag = emf_found_lothian_a_kingdom_tmp
+				}
+			}
+		}
+		k_strathclyde = {
+			d_lothian = {
+				if = {
+					limit = {
+						NOT = { has_title_flag = emf_found_lothian_a_kingdom_tmp }
+						de_jure_liege = k_northumberland
+						PREV = {
+							any_de_jure_vassal_title = {
+								tier = COUNT
+								location = {
+									any_neighbor_province = {
+										duchy = { title = d_lothian }
+									}
+								}
+							}
+						}
+					}
+					de_jure_liege = PREV
+					set_title_flag = emf_found_lothian_a_kingdom_tmp
+				}
+			}
+		}
+
+		d_lothian = { clr_title_flag = emf_found_lothian_a_kingdom_tmp }
+
+		# England gets its "modern" de jure duchies -- but not if they've drifted out from under an english precursor
+		# kingdom. Likewise, we'll take any extra de jure vassal duchies of those precursor kingdoms that may exist
+		# if they are located in the British Isles, West Francia, or Holland/Frisia.
+		# The other proto-English kingdoms will thus become titular, typically.
+		any_landed_title = {
+			limit = {
+				tier = DUKE
+				is_titular = no
+				dejure_liege_title = { emf_is_england_precursor_kingdom = yes }
+				any_direct_de_jure_vassal_title = {
+					location = {
+						OR = {
+							region = custom_england
+							region = world_europe_west_brittania # should always be superset of custom_england (shrug)
+							region = world_europe_west_francia
+							region = custom_frisia
+						}
+					}
+				}
+			}
+			de_jure_liege = k_england
+			set_title_flag = emf_absorbed_by_england_formation # just context data
 		}
 
 		# If safe to do so and the primary title is not already k_england, switch to it if that makes sense at all.
@@ -96,7 +154,6 @@ character_event = {
 		k_england = { has_holder = no }
 		lower_tier_than = EMPEROR # AI emperors won't create k_england
 		primary_title = { is_primary_type_title = no }
-		mercenary = no
 		any_realm_province = {
 			count = 23 # >50% of 44 counties
 			region = custom_england
