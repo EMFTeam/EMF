@@ -295,8 +295,9 @@ emf_cb_imperial_decay_overthrow = {
 
 
 ## EMF_LODBROK_INVASION HELPER ##
-# this CB sometimes needs to repeat its main success effect (which is upon a duchy title)
-emf_cb_lodbrok_invasion_on_success_title = {
+
+# this CB needs to repeat its main success effect (which is upon a duchy title), so it's just a lot cleaner here.
+emf_cb_lodbrok_invasion_on_success_duchy = {
 	emf_cb_latb = yes
 	pf_liege_change_under_title_begin_effect = yes
 	custom_tooltip = {
@@ -306,34 +307,59 @@ emf_cb_lodbrok_invasion_on_success_title = {
 				limit = { owner_under_FROM = yes }
 				set_title_flag = emf_taken_county_tmp
 			}
-			ROOT = {
-				vassalize_or_take_under_title = { title = PREV enemy = FROM type = invasion }
+			event_target:emf_receiver = {
+				vassalize_or_take_under_title = {
+					title = PREV
+					enemy = FROM
+					type = invasion
+					is_crusade = yes
+				}
 				random_realm_title = {
 					limit = {
+						event_target:emf_receiver = { religion = norse_pagan } # Skip cul/rel flip if we somehow are no longer Norse
 						tier = COUNT
 						has_title_flag = emf_taken_county_tmp
-						location = { NAND = { culture = ROOT religion = ROOT } }
-						ROOT = { religion = norse_pagan } # Skip cul/rel flip if we somehow are no longer Norse
+						location = {
+							NAND = {
+								culture = event_target:emf_receiver
+								religion = event_target:emf_receiver
+							}
+						}
 					}
 					if = {
-						limit = { NOT = { holder = ROOT } }
-						grant_title = { target = ROOT type = invasion }
+						limit = { NOT = { holder = event_target:emf_receiver } }
+						grant_title = { target = event_target:emf_receiver type = invasion }
 					}
-					location = { culture = ROOT religion = ROOT }
+					location = {
+						culture = event_target:emf_receiver
+						religion = event_target:emf_receiver
+					}
 				}
 			}
 			any_de_jure_vassal_title = {
 				limit = {
 					tier = BARON
 					dejure_liege_title = { has_title_flag = emf_taken_county_tmp }
-					owner_under_ROOT = yes
+					owner = {
+						OR = {
+							character = event_target:emf_receiver
+							is_liege_or_above = event_target:emf_receiver
+						}
+					}
 				}
 				remove_holding_modifier = recently_conquered
 				refill_holding_levy = yes
 				set_title_flag = emf_refill_levy
-				ROOT = { character_event = { id = emf_core.40 days = 3 } } # refill levies again in 3 days
+				event_target:emf_receiver = { character_event = { id = emf_core.40 days = 3 } } # refill levies again in 3 days
 			}
 			any_direct_de_jure_vassal_title = { clr_title_flag = emf_taken_county_tmp }
+			if = {
+				limit = {
+					has_holder = no
+					is_titular = no
+				}
+				grant_title = { target = event_target:emf_receiver type = created }
+			}
 		}
 	}
 	pf_liege_change_under_title_end_effect = yes

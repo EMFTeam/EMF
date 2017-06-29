@@ -19030,8 +19030,9 @@ emf_subjugation = {
 	defender_ai_defeat_worth = {
 		factor = 100
 		modifier = {
-			factor = 0.75
+			factor = 0.8
 			# Defender respects the notion of rightful de jure vassalage
+			ROOT = { is_feudal = yes }
 			FROM = { is_feudal = yes }
 		}
 	}
@@ -19682,11 +19683,14 @@ emf_magyar_raid = {
 	}
 }
 
+#105
 emf_lodbrok_invasion = {
 	name = CB_NAME_VIKING_INVASION
 	war_name = WAR_NAME_VIKING_INVASION
 	sprite = 8
 	truce_days = 1825
+	is_permanent = no # only scripted invocation possible
+	infamy_modifier = 0
 	hostile_against_others = no
 	check_de_jure_tier = DUKE
 	apply_short_occ_mod = no
@@ -19702,7 +19706,27 @@ emf_lodbrok_invasion = {
 	}
 
 	is_valid_title = {
-		any_de_jure_vassal_title = { owner_under_FROM = yes }
+		OR = {
+			AND = {
+				has_title_flag = emf_lodbrok_invasion_of_northumberland
+				OR = {
+					d_lancaster = { any_de_jure_vassal_title = { owner_under_FROM = yes } }
+					d_lothian = { any_de_jure_vassal_title = { owner_under_FROM = yes } }
+					c_163103 = { OR = { prisoner = no is_alive = no } } # Aella
+				}
+			}
+			AND = {
+				has_title_flag = emf_lodbrok_invasion_of_mercia
+				OR = {
+					d_fivebouroughs = { any_de_jure_vassal_title = { owner_under_FROM = yes } }
+					d_norfolk = { any_de_jure_vassal_title = { owner_under_FROM = yes } }
+				}
+			}
+			AND = {
+				has_title_flag = emf_lodbrok_invasion_of_east_anglia
+				d_norfolk = { any_de_jure_vassal_title = { owner_under_FROM = yes } }
+			}
+		}
 	}
 
 	on_add = {
@@ -19721,11 +19745,9 @@ emf_lodbrok_invasion = {
 						10 = { give_nickname = nick_the_great }
 						10 = { give_nickname = nick_the_victorious }
 						10 = { give_nickname = nick_the_fearless }
-						10 = { give_nickname = nick_the_brave }
-						10 = { give_nickname = nick_haardraade }
 						10 = { give_nickname = nick_the_viking }
 						10 = { give_nickname = nick_the_dragon }
-						10 = { give_nickname = nick_the_ironside }
+						10 = { give_nickname = nick_the_sword_of_god }
 					}
 				}
 			}
@@ -19733,31 +19755,50 @@ emf_lodbrok_invasion = {
 		FROM = { prestige = -200 }
 		any_attacker = {
 			limit = { character = ROOT }
-			participation_scaled_piety = 50
+			participation_scaled_piety = 100
 			participation_scaled_prestige = 150
-			if = {
-				limit = { uses_decadence = yes }
-				participation_scaled_decadence = -10
-			}
 		}
 		any_attacker = {
 			limit = { NOT = { character = ROOT } }
 			participation_scaled_piety = 100
 			participation_scaled_prestige = 150
-			if = {
-				limit = { uses_decadence = yes }
-				participation_scaled_decadence = -10
-			}
 		}
 	}
 
 	on_success_title = {
-		emf_cb_lodbrok_invasion_on_success_title = yes
+		any_attacker = {
+			limit = {
+				has_landed_title = d_western_isles
+			}
+			save_event_target_as = emf_ivar
+		}
+		any_attacker = {
+			limit = {
+				dynasty = 7515 # Ubbe's dynasty
+			}
+			save_event_target_as = emf_ubbe
+		}
 
-		if = { # Invasion of Northumberland, so do the same to d_lothian (essentially a second thirdparty_title here)
-			limit = { title = d_lancaster }
-			d_lothian = {
-				emf_cb_lodbrok_invasion_on_success_title = yes
+		ROOT = { save_event_target_as = emf_receiver }
+		emf_cb_lodbrok_invasion_on_success_duchy = yes
+		clear_event_target = emf_receiver
+
+		trigger_switch = {
+			on_trigger = has_title_flag
+			emf_lodbrok_invasion_of_northumberland = {
+				d_lothian = {
+					event_target:emf_ivar = { save_event_target_as = emf_receiver }
+					emf_cb_lodbrok_invasion_on_success_duchy = yes
+				}
+			}
+			emf_lodbrok_invasion_of_mercia = {
+				d_norfolk = {
+					event_target:emf_ubbe = { save_event_target_as = emf_receiver }
+					emf_cb_lodbrok_invasion_on_success_duchy = yes
+				}
+			}
+			emf_lodbrok_invasion_of_east_anglia = {
+				# ... totally standard, actually
 			}
 		}
 	}
@@ -19774,30 +19815,19 @@ emf_lodbrok_invasion = {
 		log = "CB(emf_lodbrok_invasion): DEFEAT: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
 		emf_cb_holy_defeat = yes
 		ROOT = {
-			transfer_scaled_wealth = {
-				to = FROM
-				value = 4.0
-			}
+			transfer_scaled_wealth = { to = FROM value = 4.0 }
 			prestige = -200
 		}
 		FROM = { prestige = 200 }
 		any_defender = {
 			limit = { character = FROM }
-			participation_scaled_piety = 50
+			participation_scaled_piety = 100
 			participation_scaled_prestige = 150
-			if = {
-				limit = { uses_decadence = yes }
-				participation_scaled_decadence = -10
-			}
 		}
 		any_defender = {
 			limit = { NOT = { character = FROM } }
 			participation_scaled_piety = 100
 			participation_scaled_prestige = 150
-			if = {
-				limit = { uses_decadence = yes }
-				participation_scaled_decadence = -10
-			}
 		}
 	}
 
