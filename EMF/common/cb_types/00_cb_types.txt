@@ -19688,14 +19688,14 @@ emf_lodbrok_invasion = {
 	name = CB_NAME_VIKING_INVASION
 	war_name = WAR_NAME_VIKING_INVASION
 	sprite = 8
-	truce_days = 1825
+	truce_days = 365
 	is_permanent = no # only scripted invocation possible
 	infamy_modifier = 0
 	hostile_against_others = no
+	is_holy_war = yes
 	check_de_jure_tier = DUKE
 	apply_short_occ_mod = no
 	apply_long_occ_mod = no
-	battle_warscore_mult = 1.25
 
 	can_use = {
 		emf_cb_can_use = yes
@@ -19705,25 +19705,19 @@ emf_lodbrok_invasion = {
 		emf_cb_can_use_de_jure_title = yes
 	}
 
+	is_valid = {
+		ROOT = { religion = norse_pagan }
+	}
+
 	is_valid_title = {
 		OR = {
+			any_de_jure_vassal_title = { owner_under_FROM = yes }
 			AND = {
 				has_title_flag = emf_lodbrok_invasion_of_northumberland
-				OR = {
-					d_lancaster = { any_de_jure_vassal_title = { owner_under_FROM = yes } }
-					d_lothian = { any_de_jure_vassal_title = { owner_under_FROM = yes } }
-					c_163103 = { OR = { prisoner = no is_alive = no } } # Aella
-				}
+				d_lothian = { any_de_jure_vassal_title = { owner_under_FROM = yes } }
 			}
 			AND = {
 				has_title_flag = emf_lodbrok_invasion_of_mercia
-				OR = {
-					d_fivebouroughs = { any_de_jure_vassal_title = { owner_under_FROM = yes } }
-					d_norfolk = { any_de_jure_vassal_title = { owner_under_FROM = yes } }
-				}
-			}
-			AND = {
-				has_title_flag = emf_lodbrok_invasion_of_east_anglia
 				d_norfolk = { any_de_jure_vassal_title = { owner_under_FROM = yes } }
 			}
 		}
@@ -19751,6 +19745,7 @@ emf_lodbrok_invasion = {
 					}
 				}
 			}
+			religion_authority = { modifier = won_viking_invasion }
 		}
 		FROM = { prestige = -200 }
 		any_attacker = {
@@ -19767,16 +19762,16 @@ emf_lodbrok_invasion = {
 
 	on_success_title = {
 		any_attacker = {
-			limit = {
-				has_landed_title = d_western_isles
-			}
+			limit = { has_landed_title = d_western_isles }
 			save_event_target_as = emf_ivar
 		}
 		any_attacker = {
-			limit = {
-				dynasty = 7515 # Ubbe's dynasty
-			}
+			limit = { dynasty = 7515 }
 			save_event_target_as = emf_ubbe
+		}
+		any_attacker = {
+			limit = { has_landed_title = d_york }
+			save_event_target_as = emf_halfdan
 		}
 
 		ROOT = { save_event_target_as = emf_receiver }
@@ -19791,6 +19786,38 @@ emf_lodbrok_invasion = {
 					emf_cb_lodbrok_invasion_on_success_duchy = yes
 					clear_event_target = emf_receiver
 				}
+				c_163103 = { # Aella
+					if = {
+						limit = {
+							is_alive = yes
+							OR = {
+								prisoner = no
+								host = { under_ROOT = yes }
+								host = { character = event_target:emf_ivar }
+								host = { is_liege_or_above = event_target:emf_ivar }
+								host = { character = event_target:emf_ubbe }
+								host = { is_liege_or_above = event_target:emf_ubbe }
+							}
+						}
+						imprison = ROOT
+					}
+					# If both Aella and ROOT are AI (and we successfully imprisoned him), just execute him right here.
+					if = {
+						limit = {
+							host = { character = ROOT }
+							ai = yes
+							ROOT = { ai = yes }
+						}
+						if = {
+							limit = { event_target:emf_ivar = { character = 163111 } } # Ivar gets first dibs
+							death = { death_reason = death_execution killer = event_target:emf_ivar }
+						}
+						if = {
+							limit = { event_target:emf_ivar = { NOT = { character = 163111 } } }
+							death = { death_reason = death_execution killer = ROOT }
+						}
+					}
+				}
 			}
 			emf_lodbrok_invasion_of_mercia = {
 				d_norfolk = {
@@ -19801,7 +19828,17 @@ emf_lodbrok_invasion = {
 			}
 			emf_lodbrok_invasion_of_east_anglia = {
 				# ...
+				# TODO: grant/transfer york counties back to halfdan.
+				# TODO: spawn a small, non-reinforcing army for ubbe, or else he'll have a tendency to fall fast to
+				#       a religious reconquest war.
 			}
+		}
+
+		# TODO: after all of the initial wars are complete, immediately launch another invasion for d_northumberland
+
+		if = {
+			limit = { FROM = { is_liege_or_above = ROOT } }
+			FROM = { imprison = ROOT }
 		}
 	}
 
@@ -19809,8 +19846,12 @@ emf_lodbrok_invasion = {
 
 	on_fail = {
 		log = "CB(emf_lodbrok_invasion): WHITEPEACE: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
-		FROM = { prestige = 100 }
-		ROOT = { prestige = -100 }
+		FROM = {
+			prestige = 100
+		}
+		ROOT = {
+			prestige = -100
+		}
 	}
 
 	on_reverse_demand = {
@@ -19819,6 +19860,7 @@ emf_lodbrok_invasion = {
 		ROOT = {
 			transfer_scaled_wealth = { to = FROM value = 4.0 }
 			prestige = -200
+			religion_authority = { modifier = lost_viking_invasion }
 		}
 		FROM = { prestige = 200 }
 		any_defender = {
