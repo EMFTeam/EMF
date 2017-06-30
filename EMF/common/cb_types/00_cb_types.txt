@@ -19692,10 +19692,8 @@ emf_lodbrok_invasion = {
 	is_permanent = no # only scripted invocation possible
 	infamy_modifier = 0
 	hostile_against_others = no
-	is_holy_war = yes
 	check_de_jure_tier = DUKE
 	apply_short_occ_mod = no
-	apply_long_occ_mod = no
 
 	can_use = {
 		emf_cb_can_use = yes
@@ -19714,7 +19712,10 @@ emf_lodbrok_invasion = {
 			any_de_jure_vassal_title = { owner_under_FROM = yes }
 			AND = {
 				has_title_flag = emf_lodbrok_invasion_of_northumberland
-				d_lothian = { any_de_jure_vassal_title = { owner_under_FROM = yes } }
+				OR = {
+					d_lancaster = { any_de_jure_vassal_title = { owner_under_FROM = yes } }
+					d_lothian = { any_de_jure_vassal_title = { owner_under_FROM = yes } }
+				}
 			}
 			AND = {
 				has_title_flag = emf_lodbrok_invasion_of_mercia
@@ -19774,22 +19775,33 @@ emf_lodbrok_invasion = {
 			save_event_target_as = emf_halfdan
 		}
 
+		log = "---> emf_ivar=[emf_ivar.GetID], emf_ubbe=[emf_ubbe.GetID], emf_halfdan=[emf_halfdan.GetID] (must participate in war to not be blank)"
+		
 		ROOT = { save_event_target_as = emf_receiver }
 		emf_cb_lodbrok_invasion_on_success_duchy = yes
-		clear_event_target = emf_receiver
 
 		trigger_switch = {
 			on_trigger = has_title_flag
+
 			emf_lodbrok_invasion_of_northumberland = {
-				d_lothian = {
-					event_target:emf_ivar = { save_event_target_as = emf_receiver }
+				d_lancaster = {
 					emf_cb_lodbrok_invasion_on_success_duchy = yes
-					clear_event_target = emf_receiver
 				}
-				c_163103 = { # Aella
+				d_lothian = {
+					if = {
+						limit = { event_target:emf_ivar = { always = yes } }
+						event_target:emf_ivar = { save_event_target_as = emf_receiver }
+					}
+					if = {
+						limit = { NOT = { event_target:emf_ivar = { always = yes } } }
+						ROOT = { save_event_target_as = emf_receiver }
+					}
+					emf_cb_lodbrok_invasion_on_success_duchy = yes
+				}
+				c_163103 = { # Aella's fate
 					if = {
 						limit = {
-							is_alive = yes
+							character = FROM
 							OR = {
 								prisoner = no
 								host = { under_ROOT = yes }
@@ -19808,33 +19820,123 @@ emf_lodbrok_invasion = {
 							ai = yes
 							ROOT = { ai = yes }
 						}
-						if = {
-							limit = { event_target:emf_ivar = { character = 163111 } } # Ivar gets first dibs
-							death = { death_reason = death_execution killer = event_target:emf_ivar }
-						}
-						if = {
-							limit = { event_target:emf_ivar = { NOT = { character = 163111 } } }
-							death = { death_reason = death_execution killer = ROOT }
-						}
+						death = { death_reason = death_execution killer = ROOT }
 					}
 				}
 			}
 			emf_lodbrok_invasion_of_mercia = {
 				d_norfolk = {
-					event_target:emf_ubbe = { save_event_target_as = emf_receiver }
+					if = {
+						limit = { event_target:emf_ubbe = { always = yes } }
+						event_target:emf_ubbe = { save_event_target_as = emf_receiver }
+					}
+					if = {
+						limit = { NOT = { event_target:emf_ubbe = { always = yes } } }
+						ROOT = { save_event_target_as = emf_receiver }
+					}
 					emf_cb_lodbrok_invasion_on_success_duchy = yes
-					clear_event_target = emf_receiver
 				}
 			}
 			emf_lodbrok_invasion_of_east_anglia = {
-				# ...
-				# TODO: grant/transfer york counties back to halfdan.
-				# TODO: spawn a small, non-reinforcing army for ubbe, or else he'll have a tendency to fall fast to
-				#       a religious reconquest war.
+				hidden_tooltip = {
+					# Give counties in York back to Halfdan if AI & Ubbe.
+					random_independent_ruler = {
+						limit = {
+							NOT = { event_target:emf_halfdan = { always = yes } }
+							has_landed_title = d_york
+							religion = ROOT
+						}
+						save_event_target_as = emf_halfdan
+					}
+					if = {
+						limit = {
+							ROOT = {
+								ai = yes
+								independent = yes
+								NOT = { character = event_target:emf_halfdan }
+								NOT = { has_landed_title = d_york }
+								any_demesne_province = {
+									NOT = { duchy = { title = d_york } }
+								}
+								any_demesne_province = { duchy = { title = d_york } }
+							}
+						}
+						ROOT = {
+							any_demesne_title = {
+								limit = {
+									tier = COUNT
+									de_jure_liege_or_above = d_york
+								}
+								grant_title = event_target:emf_halfdan
+							}
+							any_demesne_title = {
+								limit = {
+									tier = BARON
+									de_jure_liege_or_above = d_york
+								}
+								grant_title = event_target:emf_halfdan
+							}
+						}
+						d_york = {
+							any_de_jure_vassal = {
+								limit = { vassal_of = ROOT }
+								set_defacto_liege = event_target:emf_halfdan
+								emf_liege_change_effect = yes
+								event_target:emf_halfdan = { opinion = { who = ROOT modifier = opinion_vassal_transfer } }
+							}
+						}
+					}
+				}
+
+				# Give Ubbe a small standing retinue, as he actually got weaker for winning this war and can't stand
+				# on his own.
+				ROOT = {
+					capital_scope = {
+						ROOT = {
+							spawn_unit = {
+								province = PREV
+								troops = {
+									light_infantry = { 350 350 }
+									archers = { 250 250 }
+									heavy_infantry = { 175 175 }
+									light_cavalry = { 125 125 }
+									knights = { 25 25 }
+								}
+								reinforces = yes
+								attrition = 1.0
+								earmark = ubbe_post_invasion_retinue
+							}
+							spawn_unit = {
+								province = PREV
+								troops = {
+									light_infantry = { 350 350 }
+									archers = { 250 250 }
+									heavy_infantry = { 175 175 }
+									light_cavalry = { 125 125 }
+									knights = { 25 25 }
+								}
+								reinforces = yes
+								attrition = 1.0
+								earmark = ubbe_post_invasion_retinue
+							}
+							spawn_unit = {
+								province = PREV
+								troops = {
+									light_infantry = { 350 350 }
+									archers = { 250 250 }
+									heavy_infantry = { 175 175 }
+									light_cavalry = { 125 125 }
+									knights = { 25 25 }
+								}
+								reinforces = yes
+								attrition = 1.0
+								earmark = ubbe_post_invasion_retinue
+							}
+						}
+					}
+				}
 			}
 		}
-
-		# TODO: after all of the initial wars are complete, immediately launch another invasion for d_northumberland
 
 		if = {
 			limit = { FROM = { is_liege_or_above = ROOT } }
