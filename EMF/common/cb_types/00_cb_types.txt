@@ -11869,7 +11869,7 @@ nomad_subjugation = {
 							higher_tier_than = DUKE
 							NOT = { controls_religion = yes }
 						}
-						emf_destroy_title_effect = yes
+						emf_destroy_title = yes
 						add_pressed_claim = PREV
 					}
 					ROOT = {
@@ -19030,8 +19030,9 @@ emf_subjugation = {
 	defender_ai_defeat_worth = {
 		factor = 100
 		modifier = {
-			factor = 0.75
+			factor = 0.8
 			# Defender respects the notion of rightful de jure vassalage
+			ROOT = { is_feudal = yes }
 			FROM = { is_feudal = yes }
 		}
 	}
@@ -19682,9 +19683,328 @@ emf_magyar_raid = {
 	}
 }
 
+#105
+emf_lodbrok_invasion = {
+	name = CB_NAME_VIKING_INVASION
+	war_name = WAR_NAME_VIKING_INVASION
+	sprite = 8
+	truce_days = 365
+	is_permanent = no # only scripted invocation possible
+	infamy_modifier = 0
+	hostile_against_others = no
+	check_de_jure_tier = DUKE
+	apply_short_occ_mod = no
+
+	can_use = {
+		emf_cb_can_use = yes
+	}
+	
+	can_use_title = {
+		emf_cb_can_use_de_jure_title = yes
+	}
+
+	is_valid = {
+		ROOT = { religion = norse_pagan }
+	}
+
+	is_valid_title = {
+		OR = {
+			any_de_jure_vassal_title = { owner_under_FROM = yes }
+			AND = {
+				has_title_flag = emf_lodbrok_invasion_of_northumberland
+				OR = {
+					d_lancaster = { any_de_jure_vassal_title = { owner_under_FROM = yes } }
+					d_lothian = { any_de_jure_vassal_title = { owner_under_FROM = yes } }
+				}
+			}
+			AND = {
+				has_title_flag = emf_lodbrok_invasion_of_mercia
+				d_norfolk = { any_de_jure_vassal_title = { owner_under_FROM = yes } }
+			}
+		}
+	}
+
+	on_add = {
+		log = "CB(emf_lodbrok_invasion): START: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+	}
+
+	on_success = {
+		log = "CB(emf_lodbrok_invasion): VICTORY: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+		emf_cb_holy_victory = yes
+		ROOT = {
+			prestige = 200
+			hidden_tooltip = {
+				if = {
+					limit = { has_nickname = no }
+					random_list = {
+						10 = { give_nickname = nick_the_great }
+						10 = { give_nickname = nick_the_victorious }
+						10 = { give_nickname = nick_the_fearless }
+						10 = { give_nickname = nick_the_viking }
+						10 = { give_nickname = nick_the_dragon }
+						10 = { give_nickname = nick_the_sword_of_god }
+					}
+				}
+			}
+			religion_authority = { modifier = won_viking_invasion }
+		}
+		FROM = { prestige = -200 }
+		any_attacker = {
+			limit = { character = ROOT }
+			participation_scaled_piety = 100
+			participation_scaled_prestige = 150
+		}
+		any_attacker = {
+			limit = { NOT = { character = ROOT } }
+			participation_scaled_piety = 100
+			participation_scaled_prestige = 150
+		}
+	}
+
+	on_success_title = {
+		any_attacker = {
+			limit = { has_landed_title = d_western_isles }
+			save_event_target_as = emf_ivar
+		}
+		any_attacker = {
+			limit = { dynasty = 7515 }
+			save_event_target_as = emf_ubbe
+		}
+		any_attacker = {
+			limit = { has_landed_title = d_york }
+			save_event_target_as = emf_halfdan
+		}
+
+		log = "---> emf_ivar=[emf_ivar.GetID], emf_ubbe=[emf_ubbe.GetID], emf_halfdan=[emf_halfdan.GetID] (must participate in war to not be blank)"
+		
+		ROOT = { save_event_target_as = emf_receiver }
+		emf_cb_lodbrok_invasion_on_success_duchy = yes
+
+		trigger_switch = {
+			on_trigger = has_title_flag
+
+			emf_lodbrok_invasion_of_northumberland = {
+				d_lancaster = {
+					emf_cb_lodbrok_invasion_on_success_duchy = yes
+				}
+				d_lothian = {
+					if = {
+						limit = { event_target:emf_ivar = { always = yes } }
+						event_target:emf_ivar = { save_event_target_as = emf_receiver }
+					}
+					if = {
+						limit = { NOT = { event_target:emf_ivar = { always = yes } } }
+						ROOT = { save_event_target_as = emf_receiver }
+					}
+					emf_cb_lodbrok_invasion_on_success_duchy = yes
+				}
+				c_163103 = { # Aella's fate
+					if = {
+						limit = {
+							character = FROM
+							OR = {
+								prisoner = no
+								host = { under_ROOT = yes }
+								host = { character = event_target:emf_ivar }
+								host = { is_liege_or_above = event_target:emf_ivar }
+								host = { character = event_target:emf_ubbe }
+								host = { is_liege_or_above = event_target:emf_ubbe }
+							}
+						}
+						imprison = ROOT
+					}
+					# If both Aella and ROOT are AI (and we successfully imprisoned him), just execute him right here.
+					if = {
+						limit = {
+							host = { character = ROOT }
+							ai = yes
+							ROOT = { ai = yes }
+						}
+						death = { death_reason = death_execution killer = ROOT }
+					}
+				}
+			}
+			emf_lodbrok_invasion_of_mercia = {
+				d_norfolk = {
+					if = {
+						limit = { event_target:emf_ubbe = { always = yes } }
+						event_target:emf_ubbe = { save_event_target_as = emf_receiver }
+					}
+					if = {
+						limit = { NOT = { event_target:emf_ubbe = { always = yes } } }
+						ROOT = { save_event_target_as = emf_receiver }
+					}
+					emf_cb_lodbrok_invasion_on_success_duchy = yes
+				}
+			}
+			emf_lodbrok_invasion_of_east_anglia = {
+				hidden_tooltip = {
+					# Give counties in York back to Halfdan if AI & Ubbe.
+					random_independent_ruler = {
+						limit = {
+							NOT = { event_target:emf_halfdan = { always = yes } }
+							has_landed_title = d_york
+							religion = ROOT
+						}
+						save_event_target_as = emf_halfdan
+					}
+					if = {
+						limit = {
+							ROOT = {
+								ai = yes
+								independent = yes
+								NOT = { character = event_target:emf_halfdan }
+								NOT = { has_landed_title = d_york }
+								any_demesne_province = {
+									NOT = { duchy = { title = d_york } }
+								}
+								any_demesne_province = { duchy = { title = d_york } }
+							}
+						}
+						ROOT = {
+							any_demesne_title = {
+								limit = {
+									tier = COUNT
+									de_jure_liege_or_above = d_york
+								}
+								grant_title = event_target:emf_halfdan
+							}
+							any_demesne_title = {
+								limit = {
+									tier = BARON
+									de_jure_liege_or_above = d_york
+								}
+								grant_title = event_target:emf_halfdan
+							}
+						}
+						d_york = {
+							any_de_jure_vassal = {
+								limit = { vassal_of = ROOT }
+								set_defacto_liege = event_target:emf_halfdan
+								emf_liege_change_effect = yes
+								event_target:emf_halfdan = { opinion = { who = ROOT modifier = opinion_vassal_transfer } }
+							}
+						}
+					}
+				}
+
+				# Give Ubbe a small standing retinue, as he actually got weaker for winning this war and can't stand
+				# on his own.
+				ROOT = {
+					capital_scope = {
+						ROOT = {
+							spawn_unit = {
+								province = PREV
+								troops = {
+									light_infantry = { 350 350 }
+									archers = { 250 250 }
+									heavy_infantry = { 175 175 }
+									light_cavalry = { 125 125 }
+									knights = { 25 25 }
+								}
+								reinforces = yes
+								attrition = 1.0
+								earmark = ubbe_post_invasion_retinue
+							}
+							spawn_unit = {
+								province = PREV
+								troops = {
+									light_infantry = { 350 350 }
+									archers = { 250 250 }
+									heavy_infantry = { 175 175 }
+									light_cavalry = { 125 125 }
+									knights = { 25 25 }
+								}
+								reinforces = yes
+								attrition = 1.0
+								earmark = ubbe_post_invasion_retinue
+							}
+							spawn_unit = {
+								province = PREV
+								troops = {
+									light_infantry = { 350 350 }
+									archers = { 250 250 }
+									heavy_infantry = { 175 175 }
+									light_cavalry = { 125 125 }
+									knights = { 25 25 }
+								}
+								reinforces = yes
+								attrition = 1.0
+								earmark = ubbe_post_invasion_retinue
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = { FROM = { is_liege_or_above = ROOT } }
+			FROM = { imprison = ROOT }
+		}
+	}
+
+	on_success_posttitle = { emf_cb_on_success_posttitle = yes }
+
+	on_fail = {
+		log = "CB(emf_lodbrok_invasion): WHITEPEACE: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+		FROM = {
+			prestige = 100
+		}
+		ROOT = {
+			prestige = -100
+		}
+	}
+
+	on_reverse_demand = {
+		log = "CB(emf_lodbrok_invasion): DEFEAT: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+		emf_cb_holy_defeat = yes
+		ROOT = {
+			transfer_scaled_wealth = { to = FROM value = 4.0 }
+			prestige = -200
+			religion_authority = { modifier = lost_viking_invasion }
+		}
+		FROM = { prestige = 200 }
+		any_defender = {
+			limit = { character = FROM }
+			participation_scaled_piety = 100
+			participation_scaled_prestige = 150
+		}
+		any_defender = {
+			limit = { NOT = { character = FROM } }
+			participation_scaled_piety = 100
+			participation_scaled_prestige = 150
+		}
+	}
+
+	on_invalidation = {
+		log = "CB(emf_lodbrok_invasion): INVALIDATED: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"		
+	}
+
+	attacker_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+
+	attacker_ai_defeat_worth = {
+		factor = 100
+	}
+
+	defender_ai_victory_worth = {
+		factor = -1 # always accept
+	}
+
+	defender_ai_defeat_worth = {
+		factor = 100
+		modifier = {
+			factor = 0.85
+			ROOT = { ai = yes }
+		}
+	}
+}
+
 ### OLDER PB STUFF IN USE BY NEW WORLD ORDER (NWO) -- RAPID CONQUEST CBS -- FROM HERE TO END OF FILE ###
 
-#105
+#106
 minor_conquest = {
 	name = CB_NAME_MINOR_CONQUEST
 	war_name = WAR_NAME_MINOR_CONQUEST
@@ -19836,7 +20156,7 @@ minor_conquest = {
 	}
 }
 
-#106
+#107
 subjugation = {
 	name = CB_NAME_SUBJUGATION
 	war_name = WAR_NAME_SUBJUGATION
@@ -19955,7 +20275,7 @@ subjugation = {
 	}
 }
 
-#107
+#108
 subjugation_duke = {
 	name = CB_NAME_SUBJUGATION
 	war_name = WAR_NAME_SUBJUGATION

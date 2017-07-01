@@ -891,14 +891,14 @@ def print_decisions_secretly_convert_to_holy_site(f, loc, new_loc):
 			new_loc[desc] = 'The §Y{0}§! pilgrims that flock to the holy site in §Y[Root.Location.GetName]§! impress me with the depth and passion of their faith. I am tempted to convert in secrecy...'.format(loc[rel])
 		print('''\
 	{1} = {{
-		only_playable = yes
-		
-		filter = demesne
+		filter = owned
 		ai_target_filter = self
+
+		only_playable = yes
 		
 		from_potential = {{
 			ai = no
-			NOT = {{ trait = incapable }}
+			is_incapable = no
 			NOT = {{ secret_religion = {0} }}
 			NOT = {{ religion = {0} }}
 			NOT = {{ controls_religion = yes }}
@@ -914,8 +914,16 @@ def print_decisions_secretly_convert_to_holy_site(f, loc, new_loc):
 			}}
 		}}
 		potential = {{
-			tier = COUNT
-			holder = FROM
+			lower_tier_than = DUKE
+			owner = {{
+				OR = {{
+					character = FROM
+					AND = {{
+						ROOT = {{ tier = BARON }}
+						vassal_of = FROM
+					}}
+				}}
+			}}
 			NOT = {{ location = {{ religion = {0} }} }}
 			OR = {{
 				is_holy_site = {0}
@@ -931,7 +939,7 @@ def print_decisions_secretly_convert_to_holy_site(f, loc, new_loc):
 					hidden_tooltip = {{ piety = 250 }}
 				}}
 				prisoner = no
-				NOT = {{ trait = incapable }}
+				is_incapable = no
 				NOT = {{ is_inaccessible_trigger = yes }}
 				NOT = {{ society_member_of = secret_religious_cult }}
 			}}

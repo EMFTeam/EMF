@@ -7,8 +7,7 @@ NDefines.NDiplomacy.MAX_PREP_INV_TARGET_HOLDINGS = 60   -- up from 40
 NDefines.NDiplomacy.MAX_PREP_INV_ATTACKER_HOLDINGS = 60 -- up from 40
 
 -- Nomad
-NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 1750 -- from 1250
-NDefines.NNomad.START_POPULATION = 0.50 -- up from 0.40
+NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 1700 -- from 1250
 
 -- Military
 NDefines.NMilitary.SHATTERED_RETREAT_MAX_PROVINCES = 7
