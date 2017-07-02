@@ -1083,12 +1083,9 @@ character_event = {
 				}
 			}
 		}
-		# If we are not independent, transfer our vassals to our liege. If we are, [ .. fix that bug .. ]
+		# If we are not independent, transfer our vassals to our liege. If we are, give our primary title (empire) to
+		# one of our vassal clans; if we have no vassal clans, just set all of our vassals independent.
 		liege = {
-			if = {
-				limit = { character = ROOT }
-				# FIXME
-			}
 			if = {
 				limit = { NOT = { character = ROOT } }
 				ROOT = {
@@ -1098,36 +1095,94 @@ character_event = {
 					}
 				}
 			}
-		}
-		
-		if = {
-			limit = { independent = yes }
 			if = {
 				limit = {
+					character = ROOT
 					NOT = { any_vassal = { clan = yes } }
 				}
 				any_vassal = {
 					set_defacto_liege = THIS
+					emf_liege_change_effect = yes
 				}
 			}
-			random_vassal = { # FIXME: come back to this long-standing bug that I've not fixed b/c Baffling
-				limit = { clan = yes }
-				primary_title = {
-					gain_title = PREVPREV # ZIJI SAYS: WTF?!?!
+			if = {
+				limit = {
+					character = ROOT
+					any_vassal = { clan = yes }
+				}
+				most_prestigious_clan_vassal = {
+					save_event_target_as = emf_new_khan
+					log = "---> new khagan will be the most_prestigious_clan_vassal"
+					break = yes
+				}
+				strongest_clan_vassal = {
+					save_event_target_as = emf_new_khan
+					log = "---> new khagan will be the strongest_clan_vassal"
+					break = yes
+				}
+				random_vassal = {
+					limit = { clan = yes }
+					save_event_target_as = emf_new_khan
+					log = "---> new khagan will be a random_vassal"
+					break = yes
 				}
 			}
 		}
+	}
+
+	option = {
+		name = OK
 
 		# Now that we're unshackled from the yoke of being landowners and a liege, it's time for an adventure!
 		
+		log = "---> converting clan title to landless title and going independent if not already"
 		set_defacto_liege = ROOT
 
 		clan_title = {
-			set_title_adventurer = { title = THIS status = yes }
 			set_title_landless = { title = THIS status = yes }
-			set_defacto_liege = THIS
 		}
 		
+		log = "---> destroying any vestigial titles..."
+
+		any_demesne_title = {
+			limit = {
+				NOR = {
+					is_primary_holder_title = yes
+					ROOT = { clan_title = { title = PREVPREV } }
+				}
+			}
+			emf_destroy_title_effect = yes
+		}
+
+		primary_title = {
+			if = {
+				limit = { tier = EMPEROR }
+				log = "---> giving top-tier khaganate title to [emf_new_khan.GetTitledName] (#[emf_new_khan.GetID]/[emf_new_khan.PrimaryTitle.GetID])"
+				grant_title_no_opinion = event_target:emf_new_khan
+				add_pressed_claim = ROOT
+				log = "---> [emf_new_khan.GetTitledName] ([emf_new_khan.PrimaryTitle.GetID]) IS FILLED WITH PUUUURRE POWWWWWER!"
+			}
+			if = {
+				limit = {
+					NOR = {
+						tier = EMPEROR
+						ROOT = { clan_title = { title = PREVPREV } }
+					}
+				}
+				emf_unsafe_destroy_title = yes # make whatever it is fucking go away!
+			}
+		}
+
+		log = "---> converting clan title to adventurer title"
+
+		clan_title = {
+			set_title_adventurer = { title = THIS status = yes }
+			set_defacto_liege = THIS
+		}
+
+		emf_liege_change_effect = yes
+		event_target:emf_new_khan = { emf_liege_change_effect = yes }
+
 		set_character_flag = raiding_adventurer
 		
 		any_army = {
