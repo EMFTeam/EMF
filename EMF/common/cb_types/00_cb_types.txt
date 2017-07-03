@@ -17828,6 +17828,7 @@ emf_restore_hre = {
 
 	is_valid = {
 		ROOT = {
+			independent = yes
 			NOT = { same_realm = FROM }
 			primary_title = { emf_cb_is_karling_kingdom = yes }
 		}
@@ -17864,34 +17865,72 @@ emf_restore_hre = {
 	}
 
 	on_success_title = {
-		usurp_title_plus_barony_if_unlanded = {
-			target = ROOT
-			type = invasion
+		# Subjugate rulers under FROM whose subrealm counties are all de jure vassal titles
+		# of either the CB's target [kingdom] title or any of ROOT's current de jure titles.
+		FROM = {
+			any_vassal = {
+				limit = {
+					higher_tier_than = BARON
+					lower_tier_than = ROOT
+					NOT = {
+						any_realm_title = {
+							tier = COUNT
+							NOT = {
+								any_de_jure_liege_title = {
+									OR = {
+										holder = ROOT
+										title = PREVPREVPREVPREV
+									}
+								}
+							}
+						}
+					}
+				}
+				emf_ROOT_subjugate_ruler_effect = yes
+			}
+		}
+		usurp_title_plus_barony_if_unlanded = { target = ROOT type = invasion }
+		ROOT = {
+			if = {
+				limit = { is_liege_or_above = FROM }
+				set_defacto_liege = THIS
+			}
 		}
 		FROM = {
 			if = {
 				limit = {
-					any_realm_title = {
-						lower_tier_than = DUKE
-						NOT = { de_jure_liege_or_above = PREVPREV }
+					OR = {
+						ai = yes
+						any_demesne_title = {
+							tier = BARON
+							NOT = { de_jure_liege_or_above = PREVPREV }
+						}
 					}
 				}
 				any_demesne_title = {
-					limit = {
-						lower_tier_than = DUKE
-						de_jure_liege_or_above = PREVPREV
-					}
+					limit = { de_jure_liege_or_above = PREVPREV }
 					emf_cb_latb = yes
-					usurp_title = {
-						target = ROOT
-						type = invasion
-					}
+					usurp_title_plus_barony_if_unlanded = { target = ROOT type = invasion }
 				}
 			}
 		}
+		pf_liege_change_under_title_begin_effect = yes
+		ROOT = {
+			subjugate_or_take_under_title = {
+				title = PREV
+				enemy = FROM
+			}
+		}
+		pf_liege_change_under_title_end_effect = yes
 	}
 
-	on_success_posttitle = { emf_cb_on_success_posttitle = yes }
+	on_success_posttitle = {
+		if = {
+			limit = { FROM = { is_liege_or_above = ROOT } }
+			FROM = { imprison = ROOT }
+		}
+		emf_cb_on_success_posttitle = yes
+	}
 
 	on_fail = {
 		log = "CB(emf_restore_hre): WHITEPEACE: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
