@@ -1,6 +1,5 @@
 # -*- ck2.events -*-
 
-
 namespace = hip
 
 # hip.0
@@ -12,8 +11,6 @@ character_event = {
 	is_triggered_only = yes
 	
 	only_independent = yes
-	only_playable = yes
-	religion = hip_religion
 	
 	trigger = {
 		has_landed_title = e_hip
@@ -35,37 +32,23 @@ character_event = {
 		# Generally "Enlighten" and then send any [player] wards back "home"
 		# HINT: Don't even try getting Isis to educate your children. Well,
 		# maybe kids in your court that you don't like.
-		any_ward = {
-			character_event = { id = hip.1 }
-		}
+		any_ward = { character_event = { id = hip.1 } }
 		
 		# No lovers, consorts, spouses, or children (would be due to some event)
-		any_lover = {
-			death = { killer = ROOT death_reason = death_sacrificed }
-		}
-		any_consort = {
-			death = { killer = ROOT death_reason = death_sacrificed }
-		}
-		any_spouse = {
-			death = { killer = ROOT death_reason = death_sacrificed }
+		any_lover = { remove_lover = PREV }
+		any_consort = { remove_consort = PREV }
+		any_spouse = { remove_spouse = PREV }
+		# Isis is not your friend or your foe. Isis sees all. Even the way you look at her portrait.
+		any_friend = { remove_friend = ROOT }
+		any_rival = { remove_rival = ROOT }
+
+		any_child = {
+			limit = { real_father = { always = yes } }
+			real_father = { long_character_event = { id = hip.4 } }
 		}
 		any_child = {
-			limit = {
-				real_father = { always = yes }
-			}
-			real_father = {
-				long_character_event = { id = hip.4 }
-			}
-		}
-		any_child = {
-			limit = {
-				NOT = {
-					real_father = { always = yes }
-				}
-			}
-			father = {
-				long_character_event = { id = hip.4 }
-			}
+			limit = { NOT = { real_father = { always = yes } } }
+			father = { long_character_event = { id = hip.4 } }
 		}
 		
 		# Just in case someone accidentally gives a title to Isis and then locks
@@ -74,11 +57,26 @@ character_event = {
 			set_defacto_liege = THIS
 			emf_liege_change = yes
 		}
-		
-		# Isis is not your friend. Isis sees all.
-		# Even the way you look at her portrait.
-		any_friend = { remove_friend = ROOT }
-		any_rival = { remove_rival = ROOT }
+
+		any_allied_character = { break_alliance = ROOT }
+
+		any_playable_ruler = {
+			limit = {
+				is_tributary = yes
+				any_suzerain = { character = ROOT }
+			}
+			ROOT = { remove_tributary = PREV }
+		}
+
+		any_character = {
+			limit = {
+				religion_group = ROOT
+				is_ruler = no
+				NOT = { employer = { character = ROOT } }
+			}
+			any_claim = { remove_claim = PREV }
+			death = { death_reason = death_missing }
+		}
 		
 		# She can't inherit, but don't let her keep any extra titles anyway.
 		any_demesne_title = {
@@ -86,20 +84,25 @@ character_event = {
 				temporary = no
 				NOT = { title = e_hip }
 			}
-			emf_destroy_title = yes
+			emf_unsafe_destroy_title = yes
 		}
 		
 		# Nor should she have claims on titles.
-		any_claim = {
-			remove_claim = ROOT
-		}
+		any_claim = { remove_claim = ROOT }
 		
+		clear_focus = yes
+		cancel_ambition = yes
+
+		# No claimants to e_hip, plzkthx
+		e_hip = { any_claimant = { e_hip = { remove_claim = PREV } } }
+
 		# In theory, most vanilla mechanisms by which Isis can gain a trait
 		# have been disabled (in EMF), but we'll cover them here in any case:
 		
 		character_event = { id = hip.2 } # Ed. traits
 		character_event = { id = hip.3 } # Leadership traits
 
+		# TODO: code-generate a remove-all-traits scripted effect, as even this list is out of date.
 		remove_trait = stressed
 		remove_trait = depressed
 		remove_trait = lunatic
@@ -346,8 +349,6 @@ character_event = {
 	hide_window = yes
 	is_triggered_only = yes
 
-	only_independent = yes
-	only_playable = yes
 	religion = hip_religion
 
 	trigger = {
@@ -357,9 +358,7 @@ character_event = {
 	immediate = {
 		# Get rid of our temporary title (was just for locking-up diplomacy)
 		any_demesne_title = {
-			limit = {
-				NOT = { title = e_hip }
-			}
+			limit = { NOT = { title = e_hip } }
 			emf_unsafe_destroy_title = yes
 		}
 
@@ -389,11 +388,10 @@ character_event = {
 			character_event = { id = hip.2 } # Remove education traits
 			character_event = { id = hip.3 } # Remove leadership traits
 
-			add_trait = isis
-
-			ROOT = { abdicate_to = PREV } # Abdicate e_hip (sounds cooler in title history than 'Inherited')
+			ROOT = { abdicate_to = PREV }
 
 			character_event = { id = hip.6 } # Create temporary title and give nickname
+			character_event = { id = hip.7 } # Inherit state from previous Isis
 		}
 	}
 }
@@ -415,6 +413,11 @@ character_event = {
 		}
 		save_global_event_target_as = isis
 
+		if = {
+			limit = { NOT = { event_target:duat = { title = e_hip } } }
+			e_hip = { save_global_event_target_as = duat }
+		}
+
 		# Create a new temporary title to lock-out most diplomatic actions
 		create_title = {
 			tier = EMPEROR
@@ -428,5 +431,48 @@ character_event = {
 		# Isis gets her own nickname, mostly to prevent her from getting random nicknames
 		give_nickname = nick_the_divine_lady
 		emf_do_not_disturb = yes
+	}
+}
+
+# hip.7 -- inherit important state from previous isis [FROM], whom is dying, so flags / opinion modifiers / etc. don't need
+# to be cleared for her (but her 'isis' trait must be cleared before she dies, or else unqualified scoping to isis via the
+# cached trait scoping mechanism may scope to a dead isis).
+character_event = {
+	id = hip.7
+	
+	hide_window = yes
+	is_triggered_only = yes
+
+	immediate = {
+		FROM = {
+			# there should only ever be one character with the `isis` trait.
+			remove_trait = isis
+
+			# pass on karling_usurper_tom TOMs
+			any_opinion_modifier_target = {
+				limit = { reverse_has_opinion_modifier = { who = PREV modifier = karling_usurper_tom } }
+				reverse_opinion = { who = ROOT modifier = karling_usurper_tom }
+			}
+		}
+
+		add_trait = isis # ... and cloning complete.
+	}
+}
+
+
+
+# save-compat until 2.8 // on_startup // add global event_target:duat = { title = e_hip } if missing
+character_event = {
+	id = hip.20
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		NOT = { event_target:duat = { title = e_hip } }
+	}
+
+	immediate = {
+		e_hip = { save_global_event_target_as = duat }
 	}
 }
