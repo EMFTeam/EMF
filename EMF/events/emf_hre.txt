@@ -1,0 +1,229 @@
+# -*- ck2.events -*-
+
+namespace = emf_is_hre
+
+
+# emf_hre.0 -- handle when a non-karling becomes king of a carolingien kingdom
+character_event = {
+	id = emf_hre.0
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		# Previous title holder was a Karling, and we are not a Karling
+		FROMFROM = {
+			emf_is_karling_dynasty = yes
+			NOT = { dynasty = ROOT }
+		}
+		FROM = { emf_is_karling_title = yes }
+	}
+
+	immediate = {
+		FROMFROM = { save_event_target_as = emf_prev_holder }
+		FROM = {
+			save_event_target_as = emf_title
+			if = {
+				limit = { tier = KING }
+				if = {
+					limit = { NOT = { has_title_flag = emf_hre_karlings_first_lost_kingdom } }
+					set_title_flag = emf_hre_karlings_first_lost_kingdom
+				}
+				set_title_flag = emf_karlings_last_lost_kingdom
+			}
+			# TODO: announcement events are not just for k_france & k_germany, yo!
+		}
+
+		character_event = { id = emf_hre.10 }
+	}
+}
+
+
+# emf_hre.10 -- if appropriate, give some temporary bonuses to non-Karling characters whom usurp (or inherit) a Karling
+#               kingdom from a Karling, if this is their first such rodeo. we're only going to do this when there are still
+#               other Karling kings or emperors in power. this mechanic is to promote the rise of an "Otto" [the Great] and
+#               generally to combat the snowball effect of dynastic entrenchment somewhat intrinsic to CK2: most folks
+#               would prefer if the Karlings didn't rule the world forever from 867 starts, take joy in seeing them fall,
+#               and would *probably* be pretty stoked to see the rise of a new great dynasty.
+#
+# SUBMODDER NOTE: though it's off when 'Historical Outcome Promotion' == Passive this mechanic can be outright disabled with:
+#
+# set_global_flag = karling_usurper_bonuses_disabled
+#
+# It's easier to fine-tune the parent mod's specific behaviors when such ways are provided to configure them without
+# overriding files and dealing with file load order / mod load order and such business.
+character_event = {
+	id = emf_hre.10
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	only_independent = yes
+	ai = yes
+
+	trigger = {
+		# Must hold a Carolingien kingdom (event_target:emf_title) or now be the HRE
+		emf_can_be_karling_usurper = yes
+		OR = {
+			# We've usurped/inherited the HRE from a Karling
+			event_target:emf_title = { emf_is_hre = yes }
+			# Or, still makes sense to be trying to restore the HRE
+			emf_is_hre_being_restored = yes
+		}
+		NOR = {
+			# Have not fired this before for this character (or his predecessor(s), since this is inherited)
+			trait = karling_usurper
+			# If HOP game rule is Passive, then we don't do this at all.
+			has_game_rule = { name = railroading value = passive }
+			# Config switch for submodding:
+			has_global_flag = emf_config_no_karling_usurpers
+		}
+	}
+
+	immediate = {
+		set_character_flag = karling_usurper
+		add_trait = karling_usurper
+		add_character_modifier = { name = karling_usurper duration = -1 } # We'll expire it ourselves
+		reverse_opinion = { who = event_target:isis modifier = karling_usurper_tom }
+		set_variable = { which = "karling_usurper_years_left"    which = event_target:duat }
+		set_variable = { which = "karling_usurper_years_elapsed" value = 0 }
+
+		# On the next day, give a temp. opinion bonus from vassals that aren't Karlings. We wait a day, because this
+		# can be called from CBs, and the title usurpation in the CB may happen before the CB's on_success is
+		# complete in whatever it is doing to our realm.
+		character_event = { id = emf_hre.11 days = 1 }
+	}
+}
+
+
+# emf_hre.11 -- add temporary opinion boost from non-karling vassals to karling-usurper liege
+character_event = {
+	id = emf_hre.11
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	only_independent = yes
+	ai = yes
+
+	trigger = {
+		has_landed_title = event_target:emf_title
+	}
+
+	immediate = {
+		any_vassal = {
+			limit = { NOT = { dynasty = event_target:emf_prev_holder } } # Not Karling
+			# Don't stack any such opinions, but if the vassal has it already, its older, so just remove it
+			# before adding this one.
+			if = {
+				limit = { has_opinion_modifier = { who = ROOT modifier = opinion_karling_usurper_pos } }
+				remove_opinion = { who = ROOT modifier = opinion_karling_usurper_pos }
+			}
+			opinion = { who = ROOT modifier = opinion_karling_usurper_pos }
+		}
+		any_independent_ruler = {
+			limit = {
+				dynasty = event_target:emf_prev_holder # Karling
+				higher_tier_than = COUNT
+				NOR = {
+					is_friend = ROOT
+					opinion = { who = ROOT value = 40 }
+				}
+			}
+			# These can stack.
+			opinion = { who = ROOT modifier = opinion_karling_usurper_neg }
+		}
+	}
+}
+
+
+# emf_hre.12 -- inherit the karling-usurper state if unexpired on_death and our heir is of our dynasty. if we have multiple
+#               heirs to different held karling kingdoms, they also inherit the status and any remaining bonuses.
+character_event = {
+	id = emf_hre.12
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		trait = karling_usurper
+	}
+
+	immediate = {
+		if = {
+			limit = { emf_is_valid_karling_usurper = no }
+			emf_teardown_karling_usurper = yes
+			break = yes
+		}
+		any_demesne_title = {
+			limit = {
+				emf_is_karling_title = yes
+				current_heir = {
+					dynasty = ROOT
+					emf_can_be_karling_usurper = yes
+					NOT = { trait = karling_usurper }
+				}
+			}
+			current_heir = {
+				# We re-check the flag trigger, as a previous iteration may have set it already (if the same
+				# heir existed for multiple such titles)
+				if = {
+					limit = { NOT = { trait = karling_usurper } }
+					add_trait = karling_usurper
+					set_character_flag = karling_usurper
+					set_character_flag = karling_usurper_new
+					add_character_modifier = { name = karling_usurper duration = -1 }
+					# Isis starts tracking heir
+					reverse_opinion = { who = event_target:isis modifier = karling_usurper_tom }
+					# Copy remaining years of bonus to heir
+					set_variable = { which = "karling_usurper_years_left"    which = ROOT }
+					set_variable = { which = "karling_usurper_years_elapsed" which = ROOT }
+					# If ROOT is an original karling-usurper (i.e., did not inherit the status), then
+					# his death adds +10 years to the inherited countdown timer for removing the status.
+					if = {
+						limit = { NOT = { ROOT = { has_character_flag = karling_usurper_new } } }
+						change_variable = { which = "karling_usurper_years_left" value = 10 }
+					}
+					if = {
+						limit = { ROOT = { has_character_flag = karling_usurper_new } }
+						change_variable = { which = "karling_usurper_years_left" value = 5 }
+					}
+				}
+			}
+		}
+	}
+}
+
+
+# emf_hre.13 -- isis on_yearly_pulse scopes to all karling-usurpers, invalidates them if necessary, and then decrements the
+# bonus countdown timer variable `karling_usurper_years_left` for all of those that are still valid. Note that
+# invalidation also occurs automatically when the countdown variable has reached zero, which is why there is no explicit
+# expiry step.
+character_event = {
+	id = emf_hre.13
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	religion = hip_religion
+
+	trigger = { has_landed_title = e_hip }
+
+	immediate = {
+		# Invalidate karling-usurpers as necessary.
+		any_opinion_modifier_target = {
+			limit = {
+				reverse_has_opinion_modifier = { who = PREV modifier = karling_usurper_tom }
+				emf_is_valid_karling_usurper = no
+			}
+			emf_teardown_karling_usurper = yes
+		}
+		# Update the bonus countdown variables for the remaining valid karling-usurpers.
+		any_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = PREV modifier = karling_usurper_tom } }
+			change_variable = { which = "karling_usurper_years_left"    value = -1 }
+			change_variable = { which = "karling_usurper_years_elapsed" value =  1 }
+		}
+	}
+}
+
