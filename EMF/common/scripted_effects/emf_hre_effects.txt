@@ -1,0 +1,152 @@
+# -*- ck2.scripted_effects -*-
+
+emf_teardown_karling_usurper = {
+	remove_trait = karling_usurper
+	clr_character_flag = karling_usurper
+	remove_character_modifier = karling_usurper
+	set_variable = { which = "karling_usurper_years_left" value = 0 }
+	set_variable = { which = "karling_usurper_years_elapsed" value = 0 }
+	reverse_remove_opinion = { who = event_target:isis modifier = karling_usurper_tom }
+}
+
+emf_hre_on_startup = {
+	e_hre = {
+		set_title_flag = emf_is_hre
+		if = {
+			limit = { has_holder = yes }
+			save_event_target_as = emf_hre_unified_title
+		}
+	}
+	e_hre_french = {
+		set_title_flag = emf_is_hre
+		if = {
+			limit = { has_holder = yes }
+			save_event_target_as = emf_hre_unified_title
+		}
+	}
+	# TODO: toss the de jure reassignment stuff for 867 in here (or call an event to do it) when there were no holders
+	# and charlemagne_hre. It's currently in emf_startup_map.txt (which has multiple versions).
+	event_target:emf_hre_unified_title = {
+		if = {
+			limit = { has_global_flag = charlemagne_hre }
+			set_global_flag = emf_hre_restored
+		}
+	}
+	k_france      = { emf_hre_precursor_kingdom_on_startup = yes }
+	k_aquitaine   = { emf_hre_precursor_kingdom_on_startup = yes }
+	k_burgundy    = { emf_hre_precursor_kingdom_on_startup = yes }
+	k_italy       = { emf_hre_precursor_kingdom_on_startup = yes }
+	k_bavaria     = { emf_hre_precursor_kingdom_on_startup = yes }
+	k_germany     = { emf_hre_precursor_kingdom_on_startup = yes }
+	k_lotharingia = { emf_hre_precursor_kingdom_on_startup = yes }
+	clear_event_target = emf_hre_unified_title
+}
+
+emf_hre_precursor_kingdom_on_startup = {
+	set_title_flag = emf_hre_precursor_kingdom
+	if = {
+		limit = { NOT = { has_global_flag = emf_hre_restored } }
+		owner = {
+			if = {
+				limit = { emf_is_karling_dynasty = no }
+				set_dynasty_flag = emf_hre_restoration_startup_vassal_dynasty
+			}
+			any_realm_lord = {
+				limit = {
+					higher_tier_than = BARON
+					emf_is_karling_dynasty = no
+				}
+				set_dynasty_flag = emf_hre_restoration_startup_vassal_dynasty
+			}
+		}
+	}
+}
+
+# Cooldowns decrease in length from 12 years in [867,899] to 8 years in [900,919] to 4 years in [920,939], after/during year
+# 940, no more cooldowns will be applied. note that the cooldowns only apply to the AI attacker version of the CB (since it
+# is so liberal) and to Carolingien dynasty attackers unless EMF has been configured to apply the cooldowns to all AI
+# attacker dynasties. Also, the cooldown will start counting from both the _beginning_ of the invasion (mostly to prevent
+# multiple simultaneous invasions) and then the cooldown timer is reset again at the _end_ of the war (unless it invalidated,
+# in which case the cooldown will be cleared).
+
+# Why single out the Karlings? These cooldowns are being added specifically to promote the possibility of an "Ottonian" HRE.
+# Applying cooldowns only to AI Karlings allows more time for non-Karlings to ascend traditionally Karling thrones & if they
+# manage to do so before the cooldowns expire, they'll be more likely to have more opportunities to use the HRE unification
+# CB, ceteris paribus. This is also just intended to slow down HRE unification so that it doesn't so often happen pretty much
+# ASAP in some campaigns (and always by a Karling emperor if so soon).
+emf_cb_restore_hre_apply_cooldown = {
+	emf_cb_restore_hre_clear_cooldown = yes
+	ROOT = {
+		if = {
+			limit = {
+				NOR = {
+					# no cooldowns at year >= 950
+					year = 950
+					# cooldowns aren't disabled
+					has_global_flag = emf_config_no_cooldowns_for_ai_hre_restoration_wars
+				}
+				OR = {
+					# by default only the karling dynasty is slowed by cooldowns in its use of this CB
+					emf_is_karling_dynasty = yes
+					# cooldowns on emf_restore_hre CB apply to all dynasties
+					has_global_flag = emf_config_no_cooldowns_for_ai_karling_hre_restoration_wars
+				}
+			}
+			if = {
+				limit = { NOT = { year = 900 } } # year in [867,899]: duration = 15yr
+				add_character_modifier = {
+					name = emf_cb_restore_hre_cooldown
+					duration = 5475
+					hidden = yes
+				}
+			}
+			if = {
+				limit = { year = 900 }
+				if = {
+					limit = { NOT = { year = 930 } }
+					if = {
+						limit = { NOT = { year = 915 } } # year in [900,914]: duration = 12yr
+						add_character_modifier = {
+							name = emf_cb_restore_hre_cooldown
+							duration = 4380
+							hidden = yes
+						}
+					}
+					if = {
+						limit = { year = 915 } # year in [915,929]: duration = 10yr
+						add_character_modifier = {
+							name = emf_cb_restore_hre_cooldown
+							duration = 3650
+							hidden = yes
+						}
+					}
+				}
+				if = {
+					limit = { year = 930 }
+					if = {
+						limit = { NOT = { year = 940 } } # year in [930,949]: duration = 8yr
+						add_character_modifier = {
+							name = emf_cb_restore_hre_cooldown
+							duration = 2920
+							hidden = yes
+						}
+					}
+					if = {
+						limit = { year = 940 } # year in [940,949]: duration = 5yr
+						add_character_modifier = {
+							name = emf_cb_restore_hre_cooldown
+							duration = 1825
+							hidden = yes
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+emf_cb_restore_hre_clear_cooldown = {
+	hidden_tooltip = {
+		ROOT = { remove_character_modifier = emf_cb_restore_hre_cooldown }
+	}
+}

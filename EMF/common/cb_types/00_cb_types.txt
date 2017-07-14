@@ -1529,6 +1529,10 @@ claim_all = {
 				count = 2
 				owner_under_FROM = yes
 				ROOT = { has_strong_claim = PREV }
+				NAND = {
+					emf_cb_restore_hre_can_use = yes
+					emf_cb_restore_hre_can_use_title = yes
+				}
 				emf_cb_can_use_title = yes
 			}
 		}
@@ -17608,264 +17612,47 @@ emf_restore_hre = {
 
 	can_use = {
 		emf_cb_can_use = yes
-		# Notion of the Holy Roman Emperor and the 'Frankish Realm' has
-		# not yet faded into history, while the HRE is yet to be formed
-		# via decision and also doesn't exist, and finally, in this campaign,
-		# Charlemagne did indeed actually become the HRE and traditional
-		# Carolingien Empire (i.e., we didn't start in 769)...
-		OR = {
-			NOT = { year = 1043 } # 200yrs after Treaty of Verdun was signed (843)
-			AND = {
-				has_global_flag = emf_restore_hre_war_won
-				NOT = {
-					had_global_flag = {
-						flag = emf_restore_hre_war_won
-						days = 18250 # 50yr since last successful use
-					}
-				}
-			}
-		}
-		e_hre = { has_holder = no }
-		e_hre_french = { has_holder = no }
-		NOT = { has_global_flag = emf_hre_formed }
-		has_global_flag = charlemagne_hre
-		ROOT = {
-			ai = yes # AI-only version of this CB
-			independent = yes # Must be independent, crimony!
-			tier = KING
-			has_regent = no
-			# Must be the right religion for the HRE
-			OR = {
-				religion = catholic
-				AND = {
-					religion = fraticelli
-					is_heretic = no
-				}
-			}
-			# Must be one of the HRE cultures
-			OR = {
-				culture_group = latin
-				culture = occitan
-				culture_group = central_germanic
-				culture = italian
-				culture_group = italian_group
-			}
-			# Must hold a Carolingien kingdom
-			primary_title = { emf_is_karling_kingdom = yes }
-		}
-		FROM = {
-			tier = KING
-			# Must not be defending against a civil war
-			NOT = {
-				any_war = {
-					defender = { character = PREV }
-					attacker = { in_revolt = yes }
-				}
-			}
-		}
+		emf_cb_restore_hre_can_use = yes
 	}
 
 	can_use_title = {
-		holder = FROM
-		tier = KING
-		OR = {
-			title = k_italy
-			title = k_lotharingia
-			title = k_burgundy
-			# ... toward a potential french HRE
-			AND = {
-				ROOT = {
-					NOR = {
-						has_landed_title = k_germany
-						has_landed_title = k_bavaria
-					}
-				}
-				OR = {
-					title = k_france
-					title = k_aquitaine
-				}
-			}
-			# ... or toward a standard german HRE
-			AND = {
-				ROOT = {
-					NOR = {
-						has_landed_title = k_france
-						has_landed_title = k_aquitaine
-					}
-				}
-				OR = {
-					title = k_germany
-					title = k_bavaria
-				}
-			}
-		}
-		# Don't attack your children
-		NOT = { holder_scope = { is_child_of = ROOT } }
-		# If you're the heir to this title and the defender is your parent,
-		# don't attack them either.
-		NOT = {
-			AND = {
-				current_heir = { character = ROOT }
-				holder_scope = { any_child = { character = ROOT } }
-			}
-		}
-		OR = {
-			AND = {
-				# AI vs. AI always has a virtual weak claim, but AI vs. player
-				# requires a claim to use standard claim conditions
-				OR = {
-					ROOT = { has_claim = PREV }
-					holder_scope = { ai = yes }
-				}
-				OR = {
-					ROOT = { has_strong_claim = PREV }
-					emf_cb_is_weak_claim_pressable = yes
-					current_heir = { character = ROOT }
-					holder_scope = { is_rival = ROOT }
-					ROOT = { any_pretender_title = { title = PREVPREV } }
-					ROOT = { trait = lucky_ruler }
-					holder_scope = {
-						ai = yes
-						OR = {
-							has_character_modifier = emf_mod_recent_succession
-							trait = in_hiding
-							trait = excommunicated
-							trait = slow
-							trait = imbecile
-							trait = inbred
-							trait = weak
-							trait = lunatic
-							trait = possessed
-							trait = infirm
-							trait = deaf
-							trait = blinded
-							trait = peasant_leader
-							trait = heresiarch
-							NOT = {
-								reverse_opinion = {
-									who = ROOT
-									value = -40
-								}
-							}
-						}
-					}
-					holder_scope = { is_feudal = no }
-				}
-			}
-			AND = {
-				# If attacker has a claim on the title and owns at least 2 HRE
-				# kingdoms while the defender is also AI and only owns the target
-				# kingdom, we've got CB. Essentially, the conditions for pressing a
-				# weak claim can be bypassed when might makes right-- but only vs.
-				# AI targets.
-				ROOT = {
-					has_claim = PREV
-					any_demesne_title = {
-						count = 2
-						emf_is_karling_kingdom = yes
-					}
-				}
-				holder_scope = {
-					ai = yes
-					NOT = {
-						any_demesne_title = {
-							higher_tier_than = DUKE
-							is_de_jure_title = yes
-							NOT = { title = PREVPREV }
-						}
-					}
-				}
-			}
-			holder_scope = {
-				# For AI targets, merely not being of the proper culture or
-				# religion and holding this HRE kingdom is CB. For the
-				# different-religion case, this is preferred to holy war,
-				# because we'd rather take the kingdom whole and preserve its
-				# vassals.
-				ai = yes
-				OR = {
-					NOR = { # Target not of proper HRE religion
-						religion = catholic
-						AND = {
-							religion = fraticelli
-							is_heretic = no
-						}
-					}
-					NOR = { # Target not of proper HRE culture
-						culture_group = latin
-						culture = occitan
-						culture_group = central_germanic
-						culture = italian
-						culture_group = italian_group
-					}
-				}
-			}
-			AND = {
-				# Target title has zero CA, attacker has medium CA in at least
-				# one of their held HRE kingdoms.
-				has_law = crown_authority_0
-				ROOT = {
-					primary_title = {
-						OR = {
-							has_law = crown_authority_2
-							has_law = crown_authority_3
-							has_law = crown_authority_4
-						}
-					}
-				}
-			}
-		}
-		# And, finally, do not try to take target titles whose
-		# de jure borders are not "roughly" adjacent to your
-		# de facto realm borders. Note that there's an ai_will_do
-		# rule to prefer a perfect border condition that's
-		# also not just via an isolated province.
-		any_direct_de_jure_vassal_title = {
-			any_direct_de_jure_vassal_title = {
-				OR = {
-					owner_under_ROOT = yes
-					location = {
-						any_neighbor_province = {
-							is_land = yes
-							OR = {
-								owner_under_ROOT = yes
-								any_neighbor_province = { owner_under_ROOT = yes }
-							}
-						}
-					}
-				}
-			}
-		}
+		emf_cb_restore_hre_can_use_title = yes
 		emf_cb_can_use_title = yes
 	}
 
 	is_valid = {
 		ROOT = {
 			independent = yes
-			NOT = { same_realm = FROM }
-			primary_title = { emf_is_karling_kingdom = yes }
+			emf_has_hre_precursor_kingdom = yes
 		}
+		FROM = { independent = yes }
 		e_hre = { has_holder = no }
 		e_hre_french = { has_holder = no }
 	}
 
 	is_valid_title = {
 		holder = FROM
+		FROM = {
+			any_realm_title = {
+				any_de_jure_liege_title = {
+					OR = {
+						title = PREVPREVPREV
+						owner_under_ROOT = yes
+					}
+				}
+			}
+		}
 	}
 
 	on_add = {
 		log = "CB(emf_restore_hre): START: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+		emf_cb_restore_hre_apply_cooldown = yes
 	}
 
 	on_success = {
 		log = "CB(emf_restore_hre): VICTORY: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
 		emf_cb_victory = yes
-		hidden_tooltip = {
-			ROOT = {
-				set_character_flag = emf_cb_restore_hre
-				set_global_flag = emf_restore_hre_war_won
-			}
-		}
+		set_global_flag = emf_restore_hre_war_won
 		any_attacker = {
 			limit = { character = ROOT }
 			participation_scaled_prestige = 200
@@ -17875,10 +17662,12 @@ emf_restore_hre = {
 			hidden_tooltip = { participation_scaled_prestige = 200 }
 		}
 		FROM = { prestige = -200 }
+		emf_cb_restore_hre_apply_cooldown = yes
 	}
 
 	on_success_title = {
 		save_event_target_as = emf_cb_title
+		pf_liege_change_under_title_begin_effect = yes
 
 		# Try to take the kingdom's capital county, but only do so against AI holders under FROM. This avoids
 		# unnecessary AI revocations & promotes ruler capitals being in plausible places (e.g., Paris, Aachen, Pavia,
@@ -17892,15 +17681,15 @@ emf_restore_hre = {
 						owner = {
 							under_FROM = yes
 							ai = yes
+							NOT = { any_liege = { ai = no } }
 						}
-						de_jure_liege_or_above = event_target:emf_cb_title # JIC bad capital definition or de jure drift
+						# JIC human error or de jure drift has made the capital invalid
+						de_jure_liege_or_above = event_target:emf_cb_title
+						# Must not be one of the originally pseudo-viceroyal Karling kingdoms
 						event_target:emf_cb_title = {
-							OR = {
-								title = k_france
-								title = k_lotharingia
-								title = k_burgundy
-								title = k_germany
-								title = k_italy
+							NOR = {
+								title = k_bavaria
+								title = k_aquitaine
 							}
 						}
 					}
@@ -17908,14 +17697,10 @@ emf_restore_hre = {
 						log = "---> usurping kingdom capital, [This.GetBaseName] ([This.GetID])"
 					}
 					emf_cb_latb = yes
-					pf_liege_change_under_title_begin_effect = yes
 					usurp_title_plus_barony_if_unlanded = { target = ROOT type = invasion }
-					pf_liege_change_under_title_end_effect = yes
 				}
 			}
 		}
-
-		pf_liege_change_under_title_begin_effect = yes
 
 		# Subjugate the [count-tier] vassal(s) of FROM's [duke-tier] vassals, the latter of which's realm are not
 		# completely contained within the de jure liege titles of ROOT plus the CB target kingdom, but the former of
@@ -18188,7 +17973,7 @@ emf_restore_hre = {
 					OR = {
 						AND = {
 							ai = yes
-							dynasty = 25061 # Karling
+							is_karling_dynasty = yes
 						}
 						any_demesne_title = {
 							tier = COUNT
@@ -18319,9 +18104,6 @@ emf_restore_hre = {
 
 	on_fail = {
 		log = "CB(emf_restore_hre): WHITEPEACE: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
-		hidden_tooltip = {
-			ROOT = { set_character_flag = emf_cb_restore_hre }
-		}
 		ROOT = { prestige = -100 }
 		any_defender = {
 			limit = { character = FROM }
@@ -18336,9 +18118,6 @@ emf_restore_hre = {
 	on_reverse_demand = {
 		log = "CB(emf_restore_hre): DEFEAT: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
 		emf_cb_defeat = yes
-		hidden_tooltip = {
-			ROOT = { set_character_flag = emf_cb_restore_hre }
-		}
 		ROOT = {
 			prestige = -200
 			transfer_scaled_wealth = {
@@ -18358,6 +18137,7 @@ emf_restore_hre = {
 
 	on_invalidation = {
 		log = "CB(emf_restore_hre): INVALIDATED: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
+		emf_cb_restore_hre_clear_cooldown = yes
 	}
 
 	attacker_ai_victory_worth = {
@@ -18495,13 +18275,13 @@ emf_restore_hre_player = {
 		}
 		e_hre = { has_holder = no }
 		e_hre_french = { has_holder = no }
-		NOT = { has_global_flag = emf_hre_formed }
+		NOT = { has_global_flag = emf_hre_restored }
 		has_global_flag = charlemagne_hre
 		ROOT = {
 			ai = no
 			independent = yes
 			# These guys are allowed to be reunification aggressors:
-			primary_title = { emf_is_karling_kingdom = yes }
+			primary_title = { emf_is_hre_precursor_kingdom = yes }
 			# Must be one of the HRE cultures
 			OR = {
 				culture_group = latin
@@ -18515,7 +18295,7 @@ emf_restore_hre_player = {
 
 	can_use_title = {
 		FROM = { has_landed_title = PREV }
-		emf_is_karling_kingdom = yes
+		emf_is_hre_precursor_kingdom = yes
 		emf_cb_can_press_claim = no # Use the claim CBs otherwise
 		emf_cb_is_weak_claim_pressable = yes # Just want to know if a [virtual] weak claim could be pressed			
 		any_direct_de_jure_vassal_title = {
@@ -18543,7 +18323,7 @@ emf_restore_hre_player = {
 	is_valid = {
 		ROOT = {
 			NOT = { same_realm = FROM }
-			primary_title = { emf_is_karling_kingdom = yes }
+			primary_title = { emf_is_hre_precursor_kingdom = yes }
 		}
 		e_hre = { has_holder = no }
 		e_hre_french = { has_holder = no }
