@@ -45,13 +45,6 @@ character_event = {
 #               generally to combat the snowball effect of dynastic entrenchment somewhat intrinsic to CK2: most folks
 #               would prefer if the Karlings didn't rule the world forever from 867 starts, take joy in seeing them fall,
 #               and would *probably* be pretty stoked to see the rise of a new great dynasty.
-#
-# SUBMODDER NOTE: though it's off when 'Historical Outcome Promotion' == Passive this mechanic can be outright disabled with:
-#
-# set_global_flag = karling_usurper_bonuses_disabled
-#
-# It's easier to fine-tune the parent mod's specific behaviors when such ways are provided to configure them without
-# overriding files and dealing with file load order / mod load order and such business.
 character_event = {
 	id = emf_hre.10
 
@@ -62,21 +55,22 @@ character_event = {
 	ai = yes
 
 	trigger = {
-		# Must hold a Carolingien kingdom (event_target:emf_title) or now be the HRE
 		emf_can_be_karling_usurper = yes
+		# Must hold a Carolingien kingdom (event_target:emf_title) or now be the HRE
 		OR = {
 			# We've usurped/inherited the HRE from a Karling
 			event_target:emf_title = { emf_is_hre = yes }
 			# Or, still makes sense to be trying to restore the HRE
 			emf_is_hre_being_restored = yes
 		}
-		NOR = {
-			# Have not fired this before for this character (or his predecessor(s), since this is inherited)
-			trait = karling_usurper
-			# If HOP game rule is Passive, then we don't do this at all.
-			has_game_rule = { name = railroading value = passive }
-			# Config switch for submodding:
-			has_global_flag = emf_config_no_karling_usurpers
+		# Have not fired this before for this character (or his predecessor(s), since this is inherited)
+		NOT = { trait = karling_usurper }
+		# Is this mechanic even enabled?
+		emf_are_karling_usurpers_enabled = yes
+		# There must be a remaining independent karling king or emperor somewhere in the world.
+		any_independent_ruler = {
+			higher_real_tier_than = DUKE
+			emf_is_karling_dynasty = yes
 		}
 	}
 
@@ -123,8 +117,7 @@ character_event = {
 		}
 		any_independent_ruler = {
 			limit = {
-				dynasty = event_target:emf_prev_holder # Karling
-				higher_tier_than = COUNT
+				dynasty = event_target:emf_prev_holder
 				NOR = {
 					is_friend = ROOT
 					opinion = { who = ROOT value = 40 }
@@ -171,7 +164,7 @@ character_event = {
 					limit = { NOT = { trait = karling_usurper } }
 					add_trait = karling_usurper
 					set_character_flag = karling_usurper
-					set_character_flag = karling_usurper_new
+					set_character_flag = karling_usurper_new # We weren't the original KU in this line
 					add_character_modifier = { name = karling_usurper duration = -1 }
 					# Isis starts tracking heir
 					reverse_opinion = { who = event_target:isis modifier = karling_usurper_tom }
@@ -184,6 +177,7 @@ character_event = {
 						limit = { NOT = { ROOT = { has_character_flag = karling_usurper_new } } }
 						change_variable = { which = "karling_usurper_years_left" value = 10 }
 					}
+					# Else, he only adds 5 (subject to the absolute cap as well)
 					if = {
 						limit = { ROOT = { has_character_flag = karling_usurper_new } }
 						change_variable = { which = "karling_usurper_years_left" value = 5 }

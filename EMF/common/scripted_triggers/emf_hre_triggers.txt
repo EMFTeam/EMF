@@ -94,22 +94,30 @@ emf_has_hre_culture = {
 	}
 }
 
-emf_can_restore_hre_someday = {
-	# Must be an independent feudal king
-	independent = yes
-	tier = KING
-	is_feudal = yes
-	# Must hold a Carolingien kingdom
-	emf_has_hre_precursor_kingdom = yes
+emf_is_good_fit_for_hre = {
+	OR = { is_feudal = yes is_ruler = no }
 	# Has suitable culture & religion for the HRE
 	emf_has_hre_religion = yes
 	emf_has_hre_culture = yes
 }
 
+emf_can_restore_hre_someday = {
+	independent = yes
+	tier = KING
+	emf_is_good_fit_for_hre = yes
+	# Must hold a Carolingien kingdom
+	emf_has_hre_precursor_kingdom = yes
+}
+
+emf_are_karling_usurpers_enabled = {
+	NOR = {
+		has_game_rule = { name = railroading value = passive }
+		has_global_flag = emf_config_no_karling_usurpers
+	}
+}
+
 emf_can_be_karling_usurper = {
-	OR = { is_feudal = yes is_ruler = no }
-	emf_has_hre_religion = yes
-	emf_has_hre_culture = yes
+	emf_is_good_fit_for_hre = yes
 	ai = yes
 }
 
@@ -129,75 +137,17 @@ emf_is_valid_karling_usurper = {
 	reverse_has_opinion_modifier = { who = event_target:isis modifier = karling_usurper_tom }
 }
 
-
-emf_can_accept_vassals_from_karling_title = {
+emf_is_hre_restoration_non_dj_vassal_defection_participant = {
 	OR = {
 		emf_has_hre = yes
-		emf_can_restore_hre_someday = yes
+		emf_has_hre_precursor_kingdom = yes
 	}
+	OR = {
+		emf_was_hre_recently_restored = yes
+		emf_is_hre_being_restored = yes
+	}
+	independent = yes
 	ai = yes
-}
-
-
-emf_can_vassal_try_to_defect_from_karling_title = {
-	higher_tier_than = BARON
-	war = no
-	in_revolt = no
-	ai = yes
-	
-	# Not a single realm county is potentially an indirect war target due to a de jure liege title being targetted in an
-	# ongoing war. It depends upon the CB whether it matters that a de jure liege title is a war target, but for now, we
-	# stay on the safe side and assume that our realm titles could be involved.
-	#
-	# TODO: If I ever determine which CBs cannot affect take or subjugate titles under the war_title, make this a
-	# scripted trigger too. Unfortunately, you can't seem to make a scripted trigger that is an OR of a bunch of using_cb
-	# tests and used in an any_war scope; at least, that's what I found out when rewriting the HIP/CK2Plus civil war
-	# system. It might have been related to a known bug with using_cb, however, and it should be tested.
-	NOT = {
-		any_realm_title = {
-			tier = COUNT
-			NOT = {
-				any_de_jure_liege_title = {
-					any_war = {
-						defender = { is_vassal_or_below = PREVPREVPREVPREV }
-					}
-				}
-			}
-		}
-	}
-
-	# Vassal subrealm's occupied titles, if any, must all be controlled by rulers within the vassal's subrealm
-	NOT = {
-		any_realm_title = {
-			lower_tier_than = DUKE
-			is_occupied = yes
-			NOT = { controller = { under_PREVPREV = yes } }
-			any_de_jure_liege_title = {
-				any_war = {
-					defender = { is_vassal_or_below = PREVPREVPREVPREV }
-				}
-			}
-		}
-	}
-	
-	# We are ENTIRELY not a de jure vassal of ROOT.
-	NOT = {
-		any_realm_title = {
-			tier = COUNT
-			best_de_jure_liege_title_under_ROOT = yes
-		}
-	}
-	
-	# Vassal subrealm neighbors another independent realm whose top liege is theoretically capable of restoring the HRE
-	# or simply is the HRE and it was recently restored.
-	any_realm_province = {
-		any_neighbor_province = {
-			owner = {
-				NOT = { same_realm = ROOT }
-				top_liege = { emf_can_vassal_defect_to_karling_title_holder = yes }
-			}
-		}
-	}
 }
 
 
@@ -206,6 +156,12 @@ emf_is_hre_restoration_non_dj_vassal_defection_enabled = {
 		has_game_rule = { name = railroading value = passive }
 		has_global_flag = emf_config_no_hre_restoration_non_dj_vassal_defection
 	}
+}
+
+emf_may_accept_vassals_from_karling_title = {
+	higher_tier_than = DUKE
+	emf_is_hre_restoration_non_dj_vassal_defection_participant = yes
+	emf_is_good_fit_for_hre = yes
 }
 
 #### SOME EXPORTED CASUS BELLI TRIGGERS ####
