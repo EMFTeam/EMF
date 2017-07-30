@@ -114,6 +114,12 @@ emf_are_karling_usurpers_enabled = {
 		has_game_rule = { name = railroading value = passive }
 		has_global_flag = emf_config_no_karling_usurpers
 	}
+	# There must be a remaining independent karling king or emperor in the Frankish Realm.
+	any_independent_ruler = {
+		higher_real_tier_than = DUKE
+		emf_is_karling_dynasty = yes
+		emf_has_karling_title = yes
+	}
 }
 
 emf_can_be_karling_usurper = {
@@ -175,6 +181,14 @@ emf_cb_restore_hre_can_use = {
 						liege_before_war = { character = ROOT_FROM }
 					}
 				}
+				NOR = {
+					using_cb = peasant_revolt
+					using_cb = heretic_revolt
+					using_cb = religious_revolt
+					using_cb = liberation_revolt
+					using_cb = cb_minor_clan_revolt
+					using_cb = emf_decadence_revolt
+				}
 			}
 		}
 	}
@@ -217,8 +231,7 @@ emf_cb_restore_hre_can_use_title = {
 	}
 	# Don't attack your children
 	NOT = { owner = { is_child_of = ROOT } }
-	# If you're the heir to this title and the defender is your parent,
-	# don't attack them either.
+	# If you're the heir to this title and the defender is your parent, don't attack them either.
 	NOT = {
 		AND = {
 			current_heir = { character = ROOT }
@@ -227,8 +240,8 @@ emf_cb_restore_hre_can_use_title = {
 	}
 	OR = {
 		AND = {
-			# AI vs. AI always has a virtual weak claim, but AI vs. player
-			# requires a claim to use standard claim conditions
+			# AI vs. AI always has a virtual weak claim, but AI vs. player requires a claim to use standard claim
+			# conditions
 			OR = {
 				ROOT = { has_claim = PREV }
 				owner = { ai = yes }
@@ -237,11 +250,12 @@ emf_cb_restore_hre_can_use_title = {
 				ROOT = { has_strong_claim = PREV }
 				emf_cb_is_weak_claim_pressable = yes
 				current_heir = { character = ROOT }
-				owner = { is_rival = ROOT }
 				ROOT = { any_pretender_title = { title = PREVPREV } }
-				AND = {
-					ROOT = { trait = lucky_ruler }
-					NOT = { owner = { trait = lucky_ruler } }
+				owner = {
+					OR = {
+						is_feudal = no
+						is_rival = ROOT
+					}
 				}
 				owner = {
 					ai = yes
@@ -251,19 +265,24 @@ emf_cb_restore_hre_can_use_title = {
 						trait = lunatic         trait = possessed       trait = infirm
 						trait = deaf            trait = blinded         trait = peasant_leader
 						trait = heresiarch
+						# Non-traits:
 						has_character_modifier = emf_mod_recent_succession
 						NOT = { reverse_opinion = { who = ROOT value = -40 } }
+						ROOT = { trait = lucky_ruler }
+						ROOT = { is_foe = PREV }
+						AND = {
+							ROOT = { trait = karling_usurper }
+							NOT = { dynasty = ROOT }
+							emf_are_karling_usurpers_enabled = yes
+						}
 					}
 				}
-				owner = { is_feudal = no }
 			}
 		}
 		AND = {
-			# If attacker has a claim on the title and owns at least 2 HRE
-			# kingdoms while the defender is also AI and only owns the target
-			# kingdom, we've got CB. Essentially, the conditions for pressing a
-			# weak claim can be bypassed when might makes right-- but only vs.
-			# AI targets.
+			# If attacker has a claim on the title and owns at least 2 HRE kingdoms while the defender is also AI
+			# and only owns the target kingdom, we've got CB. Essentially, the conditions for pressing a weak
+			# claim can be bypassed when might makes right-- but only vs. AI targets.
 			ROOT = {
 				has_claim = PREV
 				any_demesne_title = { count = 2 emf_is_hre_precursor_kingdom = yes }
@@ -280,23 +299,18 @@ emf_cb_restore_hre_can_use_title = {
 			}
 		}
 		owner = {
-			# For AI targets, merely not being of the proper culture or
-			# religion and holding this HRE kingdom is CB. For the
-			# different-religion case, this is preferred to holy war,
-			# because we'd rather take the kingdom whole and preserve its
-			# vassals.
+			# For AI targets, merely not being of the proper culture or religion and holding this HRE kingdom is
+			# CB. For the different-religion case, this is preferred to holy war, because we'd rather take the
+			# kingdom whole and preserve its vassals.
 			ai = yes
-			NAND = {
-				emf_has_hre_religion = yes
-				emf_has_hre_culture = yes
-			}
+			emf_is_good_fit_for_hre = no
 		}
 		AND = {
-			# Target title has zero CA, attacker has medium CA in at least
-			# one of their held HRE kingdoms.
+			# Target title has zero CA, attacker has medium CA in at least one of their held HRE kingdoms.
 			has_law = crown_authority_0
 			ROOT = {
-				primary_title = {
+				any_demesne_title = {
+					emf_is_hre_precursor_kingdom = yes
 					OR = {
 						has_law = crown_authority_2
 						has_law = crown_authority_3
