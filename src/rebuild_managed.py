@@ -13,13 +13,16 @@ from localpaths import rootpath
 # SWMH into MiniSWMH with a special option to tell it to only generate EMF+MiniSWMH/map/geographical_region.txt
 # from the aforementioned file rather than do its full set of operations.
 
-version = 'v7.01-BETA'
+version = 'v7.03-BETA'
 version_path = rootpath / 'EMF/EMF/version.txt'
+emf_src_path = rootpath / 'EMF/src'
 
 scons_bin_path = Path('/usr/bin/scons')
 mapcut_bin_path_default = Path('/usr/local/bin/mapcut')
 mapcut_path = rootpath / 'ck2utils/mapcut'
 cut_titles = ['e_rajastan', 'e_mali', 'k_sahara', 'k_fezzan', 'k_kanem', 'k_hausaland', 'k_canarias']
+emf_holding_slot_path = emf_src_path / 'holding_slot_trigger.py'
+
 
 def build_mapcut():
     print(">> attempting to build mapcut from source...")
@@ -47,7 +50,6 @@ def main():
         return 2
 
     print(">> executing mapcut...")
-
     try:
         output = subprocess.check_output([str(mapcut_bin_path), '--emf'] + cut_titles,
                                          universal_newlines=True, stderr=subprocess.STDOUT)
@@ -56,6 +58,16 @@ def main():
     except subprocess.CalledProcessError as e:
         sys.stderr.write('> mapcut failed!\n> command: {}\n> exit code: {}\n\n{}'.format(e.cmd, e.returncode, e.output))
         return 3
+
+    print(">> executing holding slot trigger generator...")
+    try:
+        output = subprocess.check_output([str(emf_holding_slot_path)],
+                                         universal_newlines=True, stderr=subprocess.STDOUT)
+        if sys.stdout:
+            sys.stdout.write(output)
+    except subprocess.CalledProcessError as e:
+        sys.stderr.write('> build failed!\n> command: {}\n> exit code: {}\n\n{}'.format(e.cmd, e.returncode, e.output))
+        return 4
 
     with version_path.open('w') as f:
         print('{} - {}'.format(version, datetime.date.today()), file=f)
