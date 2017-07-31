@@ -61,7 +61,7 @@ def main():
 
     print(">> executing holding slot trigger generator...")
     try:
-        output = subprocess.check_output([str(emf_holding_slot_path)],
+        output = subprocess.check_output(['/usr/bin/python3', str(emf_holding_slot_path)],
                                          universal_newlines=True, stderr=subprocess.STDOUT)
         if sys.stdout:
             sys.stdout.write(output)
