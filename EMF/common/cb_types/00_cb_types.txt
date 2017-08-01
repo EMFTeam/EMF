@@ -17625,7 +17625,10 @@ emf_restore_hre = {
 			independent = yes
 			emf_has_hre_precursor_kingdom = yes
 		}
-		FROM = { independent = yes }
+		FROM = {
+			independent = yes
+			lower_tier_than = EMPEROR
+		}
 		e_hre = { has_holder = no }
 		e_hre_french = { has_holder = no }
 	}
@@ -17721,13 +17724,32 @@ emf_restore_hre = {
 
 	defender_ai_defeat_worth = {
 		factor = 100
+		modifier = {
+			factor = 0.85
+			emf_are_karling_usurpers_enabled = yes
+			ROOT = { trait = karling_usurper }
+			FROM = { NOT = { trait = karling_usurper } }
+			# Defender can afford to accept defeat slightly easier:
+			OR = {
+				FROM = { num_of_king_titles = 2 }
+				any_independent_ruler = {
+					dynasty = FROM
+					NOT = { character = FROM }
+					any_demesne_title = {
+						higher_tier_than = DUKE
+						is_primary_type_title = no
+						is_de_jure_title = yes
+					}
+				}
+			}
+		}
 	}
 
 	# ai importance placed on this CB: scope is the targeted title, ROOT is the attacking character, FROM is the defending character
 	ai_will_do = {
 		factor = 4
 		modifier = { # Focus on the most core kingdom titles for traditional HRE formation
-			factor = 1.25
+			factor = 1.35
 			OR = {
 				title = k_italy
 				AND = {
@@ -17760,7 +17782,7 @@ emf_restore_hre = {
 			}
 		}
 		modifier = {
-			factor = 1.25
+			factor = 1.4
 			any_direct_de_jure_vassal_title = {
 				any_direct_de_jure_vassal_title = {
 					owner_under_FROM = yes
@@ -17807,55 +17829,25 @@ emf_restore_hre_player = {
 				text = NEEDS_1000_PRESTIGE_COST
 				hidden_tooltip = { prestige = 1000 }
 			}
-			OR = {
-				religion = catholic
-				AND = {
-					religion = fraticelli
-					is_heretic = no
-				}
-			}
 		}
 	}
 
 	can_use = {
 		emf_cb_can_use = yes
-		OR = {
-			NOT = { year = 1043 } # 200yrs after Treaty of Verdun was signed (843)
-			AND = {
-				has_global_flag = emf_restore_hre_war_won
-				NOT = {
-					had_global_flag = {
-						flag = emf_restore_hre_war_won
-						days = 18250 # 50yr since last successful use
-					}
-				}
-			}
-		}
-		e_hre = { has_holder = no }
-		e_hre_french = { has_holder = no }
-		NOT = { has_global_flag = emf_hre_restored }
-		has_global_flag = charlemagne_hre
-		ROOT = {
-			ai = no
+		ROOT = { ai = no }
+		FROM = {
 			independent = yes
-			# These guys are allowed to be reunification aggressors:
-			primary_title = { emf_is_hre_precursor_kingdom = yes }
-			# Must be one of the HRE cultures
-			OR = {
-				culture_group = latin
-				culture = occitan
-				culture_group = central_germanic
-				culture = italian
-				culture_group = italian_group
-			}
+			tier = KING
 		}
+		emf_is_hre_being_restored = yes
+		ROOT = { emf_can_restore_hre_someday = yes }
 	}
 
 	can_use_title = {
-		FROM = { has_landed_title = PREV }
+		holder = FROM
 		emf_is_hre_precursor_kingdom = yes
 		emf_cb_can_press_claim = no # Use the claim CBs otherwise
-		emf_cb_is_weak_claim_pressable = yes # Just want to know if a [virtual] weak claim could be pressed			
+		emf_cb_is_weak_claim_pressable = yes # Just want to know if a [virtual] weak claim could be pressed
 		any_direct_de_jure_vassal_title = {
 			any_direct_de_jure_vassal_title = {
 				OR = {
@@ -17865,10 +17857,7 @@ emf_restore_hre_player = {
 							is_land = yes
 							OR = {
 								owner_under_ROOT = yes
-								any_neighbor_province = {
-									owner_under_ROOT = yes
-									has_province_flag = emf_capital_connected
-								}
+								any_neighbor_province = { owner_under_ROOT = yes }
 							}
 						}
 					}
@@ -17880,15 +17869,19 @@ emf_restore_hre_player = {
 	
 	is_valid = {
 		ROOT = {
-			NOT = { same_realm = FROM }
-			primary_title = { emf_is_hre_precursor_kingdom = yes }
+			independent = yes
+			emf_has_hre_precursor_kingdom = yes
+		}
+		FROM = {
+			independent = yes
+			lower_tier_than = EMPEROR
 		}
 		e_hre = { has_holder = no }
 		e_hre_french = { has_holder = no }
 	}
 
 	is_valid_title = {
-		FROM = { has_landed_title = PREV }
+		holder = FROM
 	}
 
 	on_add = {
@@ -17911,13 +17904,16 @@ emf_restore_hre_player = {
 	}
 
 	on_success_title = {
-		usurp_title_plus_barony_if_unlanded = {
-			target = ROOT
-			type = invasion
-		}
+		emf_cb_restore_hre_on_success_title = yes
 	}
 
-	on_success_posttitle = { emf_cb_on_success_posttitle = yes }
+	on_success_posttitle = {
+		if = {
+			limit = { FROM = { is_liege_or_above = ROOT } }
+			FROM = { imprison = ROOT }
+		}
+		emf_cb_on_success_posttitle = yes
+	}
 
 	on_fail = {
 		log = "CB(emf_restore_hre_player): WHITEPEACE: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] ([Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] ([From.GetID]/[From.PrimaryTitle.GetID])"
