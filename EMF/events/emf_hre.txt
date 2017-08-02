@@ -143,7 +143,7 @@ character_event = {
 		log = "DEBUG: emf_hre.12: karling-usurper is dying: [Root.GetTitledFirstName] [Root.GetOnlyDynastyName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]):"
 		if = {
 			limit = { emf_is_valid_karling_usurper = no }
-			emf_teardown_karling_usurper = yes
+			emf_invalidate_karling_usurper = yes
 			break = yes
 		}
 		any_demesne_title = {
@@ -156,31 +156,34 @@ character_event = {
 				}
 			}
 			current_heir = {
-				# We re-check the flag trigger, as a previous iteration may have set it already (if the same
-				# heir existed for multiple such titles)
-				if = {
-					limit = { NOT = { trait = karling_usurper } }
-					add_trait = karling_usurper
-					set_character_flag = karling_usurper
-					set_character_flag = karling_usurper_new # We weren't the original KU in this line
-					add_character_modifier = { name = karling_usurper_modifier duration = -1 }
-					# Isis starts tracking heir
-					reverse_opinion = { who = event_target:isis modifier = karling_usurper_tom }
-					# Copy remaining years of bonus to heir
-					set_variable = { which = "karling_usurper_years_left"    which = ROOT }
-					set_variable = { which = "karling_usurper_years_elapsed" which = ROOT }
-					# If ROOT is an original karling-usurper (i.e., did not inherit the status), then
-					# his death adds +10 years to the inherited countdown timer for removing the status.
-					if = {
-						limit = { NOT = { ROOT = { has_character_flag = karling_usurper_new } } }
-						change_variable = { which = "karling_usurper_years_left" value = 10 }
-					}
-					# Else, he only adds 5 (subject to the absolute cap as well)
-					if = {
-						limit = { ROOT = { has_character_flag = karling_usurper_new } }
-						change_variable = { which = "karling_usurper_years_left" value = 5 }
-					}
-				}
+				# Just mark them with a TOM so that we can make a single pass over all eligible inheritor(s)
+				reverse_opinion = { who = ROOT modifier = karling_usurper_heir_tom }
+			}
+		}
+		any_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = karling_usurper_heir_tom } }
+			reverse_remove_opinion = { who = ROOT modifier = karling_usurper_heir_tom }
+			log = "---> inheriting [Root.GetHersHis] karling-usurper status: [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+			# Here we go!
+			add_trait = karling_usurper
+			set_character_flag = karling_usurper
+			set_character_flag = karling_usurper_new # We weren't the original KU in this line
+			add_character_modifier = { name = karling_usurper_modifier duration = -1 }
+			# Isis starts tracking heir
+			reverse_opinion = { who = event_target:isis modifier = karling_usurper_tom }
+			# Copy remaining years of bonus to heir
+			set_variable = { which = "karling_usurper_years_left"    which = ROOT }
+			set_variable = { which = "karling_usurper_years_elapsed" which = ROOT }
+			# If ROOT is an original karling-usurper (i.e., did not inherit the status), then
+			# his death adds +10 years to the inherited countdown timer for removing the status.
+			if = {
+				limit = { NOT = { ROOT = { has_character_flag = karling_usurper_new } } }
+				change_variable = { which = "karling_usurper_years_left" value = 10 }
+			}
+			# Else, he only adds 5 (subject to the absolute cap as well)
+			if = {
+				limit = { ROOT = { has_character_flag = karling_usurper_new } }
+				change_variable = { which = "karling_usurper_years_left" value = 5 }
 			}
 		}
 	}
