@@ -460,7 +460,7 @@ character_event = {
 						}
 						owner = {
 							set_defacto_liege = ROOT
-							emf_liege_change_effect = yes
+							emf_liege_change = yes
 							any_realm_province = {
 								clr_province_flag = emf_old_khan_claim
 							}
@@ -511,31 +511,31 @@ character_event = {
 			# Spawn proportional to # of empty holding slots abandoned
 			if = {
 				limit = { num_of_empty_holdings = 1 }
-				emf_nomad_settlement_spawn_unit_effect = yes
+				emf_nomad_settlement_spawn_unit = yes
 			}
 			if = {
 				limit = { num_of_empty_holdings = 2 }
-				emf_nomad_settlement_spawn_unit_effect = yes
+				emf_nomad_settlement_spawn_unit = yes
 			}
 			if = {
 				limit = { num_of_empty_holdings = 3 }
-				emf_nomad_settlement_spawn_unit_effect = yes
+				emf_nomad_settlement_spawn_unit = yes
 			}
 			if = {
 				limit = { num_of_empty_holdings = 4 }
-				emf_nomad_settlement_spawn_unit_effect = yes
+				emf_nomad_settlement_spawn_unit = yes
 			}
 			if = {
 				limit = { num_of_empty_holdings = 5 }
-				emf_nomad_settlement_spawn_unit_effect = yes
+				emf_nomad_settlement_spawn_unit = yes
 			}
 			if = {
 				limit = { num_of_empty_holdings = 6 }
-				emf_nomad_settlement_spawn_unit_effect = yes
+				emf_nomad_settlement_spawn_unit = yes
 			}
 			if = {
 				limit = { num_of_empty_holdings = 7 }
-				emf_nomad_settlement_spawn_unit_effect = yes
+				emf_nomad_settlement_spawn_unit = yes
 			}
 		}
 	}
@@ -592,6 +592,7 @@ character_event = {
 		# We depend upon being able to query character religion/culture, so this
 		# is here as a sort of assertion:
 		FROMFROM = { always = yes }
+		NOT = { has_global_flag = emf_config_latb_disabled }
 	}
 
 	immediate = {
@@ -648,6 +649,7 @@ character_event = {
 		# We depend upon being able to query character religion/culture, so this
 		# is here as a sort of assertion:
 		FROMFROM = { always = yes }
+		NOT = { has_global_flag = emf_config_latb_disabled }
 	}
 
 	immediate = {
@@ -996,207 +998,5 @@ narrative_event = {
 	option = {
 		name = EXCELLENT
 		trigger = { NOT = { character = ROOT } }
-	}
-}
-
-
-######
-
-# emf_nomad.200 -- when a nomad loses his last county title, turn him into a raiding adventurer
-#
-# This is a replacement for the approach of HL.130 (which is triggered on_unlanded). Doing it this way
-# ensures that we always have an accurate "last province" / origin from which to potentially return, to be blocked
-# from raiding, etc.
-#
-# The vanilla / on_unlanded way will fail when the clan_title's capital_scope is actually an invalid province
-# (e.g., due to using MiniSWMH or nanoSWMH variants wherein the province may be wasteland; or, the clan_title's
-# base_title may simply have an incorrect capital, invalid or not). Further, it's not accurate, because the clan_title's
-# capital might be half the map away from the last province that the nomad held.
-#
-# This event is triggered by on_new_holder, on_new_holder_usurpation, and on_new_holder_inheritance (in case of
-# abdication for the latter).
-character_event = {
-	id = emf_nomad.200
-
-	is_triggered_only = yes
-	hide_window = yes
-
-	trigger = {
-		FROM = { lower_tier_than = DUKE }
-		FROMFROM = {
-			is_nomadic = yes
-			is_alive = yes
-			is_dying = no
-			prisoner = no
-			is_incapable = no
-			NOT = { has_character_flag = vassal_khan }
-			NOT = { any_demesne_title = { lower_tier_than = DUKE } }
-		}
-		has_game_started = yes
-	}
-
-	immediate = {
-		FROM = {
-			location = { save_event_target_as = last_province }
-		}
-		FROMFROM = {
-			character_event = { id = emf_nomad.201 }
-		}
-	}
-}
-
-
-character_event = {
-	id = emf_nomad.201
-
-	is_triggered_only = yes
-	hide_window = yes
-
-	immediate = {
-		log = "INFO: emf_nomad.201: [Root.GetBestName] (#[Root.GetID]) is a nomad who has been unlanded, now converting into a raiding adventurer"
-		log = "---> the last province taken from them was [last_province.GetName]"
-		location = {
-			county = {
-				log = "---> they are currently located in [Prev.GetName] ([This.GetID])"
-			}
-		}
-		clan_title = {
-			capital_scope = {
-				county = {
-					log = "---> their clan title's capital is [Prev.GetName] ([This.GetID])"
-				}
-			}
-		}
-		event_target:last_province = {
-			owner = {
-				top_liege = {
-					reverse_opinion = {
-						modifier = opinion_driven_from_my_lands
-						who = ROOT
-						months = 1200
-					}
-					reverse_opinion = {
-						modifier = forbidden_raid_target
-						who = ROOT
-						months = 1200
-					}
-				}
-			}
-		}
-		# If we are not independent, transfer our vassals to our liege. If we are, give our primary title (empire) to
-		# one of our vassal clans; if we have no vassal clans, just set all of our vassals independent.
-		liege = {
-			if = {
-				limit = { NOT = { character = ROOT } }
-				ROOT = {
-					any_vassal = {
-						set_defacto_liege = PREVPREV
-						emf_liege_change_effect = yes
-					}
-				}
-			}
-			if = {
-				limit = {
-					character = ROOT
-					NOT = { any_vassal = { clan = yes } }
-				}
-				any_vassal = {
-					set_defacto_liege = THIS
-					emf_liege_change_effect = yes
-				}
-			}
-			if = {
-				limit = {
-					character = ROOT
-					any_vassal = { clan = yes }
-				}
-				most_prestigious_clan_vassal = {
-					save_event_target_as = emf_new_khan
-					log = "---> new khagan will be the most_prestigious_clan_vassal"
-					break = yes
-				}
-				strongest_clan_vassal = {
-					save_event_target_as = emf_new_khan
-					log = "---> new khagan will be the strongest_clan_vassal"
-					break = yes
-				}
-				random_vassal = {
-					limit = { clan = yes }
-					save_event_target_as = emf_new_khan
-					log = "---> new khagan will be a random_vassal"
-					break = yes
-				}
-			}
-		}
-	}
-
-	option = {
-		name = OK
-
-		# Now that we're unshackled from the yoke of being landowners and a liege, it's time for an adventure!
-		
-		log = "---> converting clan title to landless title and going independent if not already"
-		set_defacto_liege = ROOT
-
-		clan_title = {
-			set_title_landless = { title = THIS status = yes }
-		}
-		
-		log = "---> destroying any vestigial titles..."
-
-		any_demesne_title = {
-			limit = {
-				NOR = {
-					is_primary_holder_title = yes
-					ROOT = { clan_title = { title = PREVPREV } }
-				}
-			}
-			emf_destroy_title_effect = yes
-		}
-
-		primary_title = {
-			if = {
-				limit = { tier = EMPEROR }
-				log = "---> giving top-tier khaganate title to [emf_new_khan.GetTitledName] (#[emf_new_khan.GetID]/[emf_new_khan.PrimaryTitle.GetID])"
-				grant_title_no_opinion = event_target:emf_new_khan
-				add_pressed_claim = ROOT
-				log = "---> [emf_new_khan.GetTitledName] ([emf_new_khan.PrimaryTitle.GetID]) IS FILLED WITH PUUUURRE POWWWWWER!"
-			}
-			if = {
-				limit = {
-					NOR = {
-						tier = EMPEROR
-						ROOT = { clan_title = { title = PREVPREV } }
-					}
-				}
-				emf_unsafe_destroy_title = yes # make whatever it is fucking go away!
-			}
-		}
-
-		log = "---> converting clan title to adventurer title"
-
-		clan_title = {
-			set_title_adventurer = { title = THIS status = yes }
-			set_defacto_liege = THIS
-		}
-
-		emf_liege_change_effect = yes
-		event_target:emf_new_khan = { emf_liege_change_effect = yes }
-
-		set_character_flag = raiding_adventurer
-		
-		any_army = {
-			set_can_toggle_looting = yes
-			set_looting = yes
-			set_can_toggle_looting = no
-		}
-		
-		if = {
-			limit = { NOT = { unused_manpower = 250 } }
-			manpower = 250
-		}
-		
-		character_event = { id = HL.132 } # Convert unused manpower into raiding troops
-		character_event = { id = HL.110 days = 1095 } # Ping to see if he's ready to settle, repeating every 3 years.
 	}
 }

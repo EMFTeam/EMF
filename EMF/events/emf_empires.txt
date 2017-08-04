@@ -24,7 +24,7 @@ character_event = {
 		is_nomadic = no
 		had_global_flag = { flag = EMF days = 10950 } # First 30yr of campaign
 		any_demesne_title = {
-			emf_empires_aed_valid_title_trigger = yes
+			emf_empires_aed_valid_title = yes
 		}
 	}
 	
@@ -34,7 +34,7 @@ character_event = {
 	
 	immediate = {
 		random_demesne_title = {
-			limit = { emf_empires_aed_valid_title_trigger = yes }
+			limit = { emf_empires_aed_valid_title = yes }
 			log = "INFO: AED: disentegrating [This.GetID] ([This.GetFullName])..."
 			save_event_target_as = emf_empire_title
 		}
@@ -168,7 +168,7 @@ character_event = {
 			any_vassal = {
 				limit = { tier = KING }
 				set_defacto_liege = THIS
-				emf_liege_change_effect = yes
+				emf_liege_change = yes
 			}
 		}
 		if = {
@@ -290,7 +290,7 @@ character_event = {
 		trait = conqueror
 		OR = {
 			ai = no
-			trait = incapable
+			is_incapable = yes
 			is_adult = no
 			AND = {
 				OR = {
@@ -567,7 +567,7 @@ character_event = {
 				30 = { add_trait = duelist }
 				30 = { add_trait = strategist }
 			}
-			emf_new_character_effect = yes
+			emf_new_character = yes
 		}
 		primary_title = {
 			capital_scope = {
@@ -624,7 +624,7 @@ character_event = {
 				}
 				usurp_title = { target = ROOT type = revoke }
 			}
-			emf_make_location_ROOT_capital_effect = yes
+			emf_make_location_ROOT_capital = yes
 		}
 	}
 }
@@ -632,6 +632,9 @@ character_event = {
 
 # emf_empires.50 -- on_death handler for feudal elective emperors whose heir has waived the nomination in advance.
 # from here, we intend to find an alternative heir before inheritance is allowed to happen.
+#
+# NOTE: since this screws with the heir of an empire right before death, it should be carefully ordered in the on_death
+# on_action event list so as to avoid acting [or failing to act at all] on incorrect information while processing the death.
 character_event = {
 	id = emf_empires.50
 	
@@ -648,7 +651,7 @@ character_event = {
 			temporary = no
 			has_law = succ_feudal_elective
 			current_heir = {
-				has_character_flag = emf_empires_decline_election
+				has_character_modifier = emf_decline_elective_empire_modifier
 			}
 		}
 	}
@@ -661,68 +664,29 @@ character_event = {
 				temporary = no
 				has_law = succ_feudal_elective
 				current_heir = {
-					has_character_flag = emf_empires_decline_election
+					has_character_modifier = emf_decline_elective_empire_modifier
 				}
 			}
 			save_event_target_as = emf_empire
-			current_heir = {
-				save_event_target_as = emf_heir
-			}
+			current_heir = { save_event_target_as = emf_heir }
 		}
-		
+
 		event_target:emf_heir = {
-			log = "DEBUG: emf_empires.50: [This.GetTitledName] (#[This.GetID]) waives elective inheritance of the [emf_empire.GetFullBaseName] ([emf_empire.GetID])"
-			add_trait = eunuch
+			log = "INFO: emf_empires.50: elective empire inheritance waived for the [emf_empire.GetFullBaseName] ([emf_empire.GetID]) by [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+			add_trait = emf_cannot_inherit
 		}
 		
 		recalc_succession = yes
 		
-		event_target:emf_heir = { remove_trait = eunuch }
+		event_target:emf_heir = { remove_trait = emf_cannot_inherit }
 		
+		# REVISIT: hmm, should we also recalc_succession on the heir after removing the temporary anti-inheritance
+		# trait? it might make a difference, depending upon game implementation details.
+
 		event_target:emf_empire = {
 			current_heir = {
-				log = "--> new heir is [This.GetTitledName] (#[This.GetID])"
+				log = "---> new heir is [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
 			}
 		}
-	}
-}
-
-
-character_event = {
-	id = emf_empires.51
-	
-	is_triggered_only = yes
-	hide_window = yes
-	
-	trigger = {
-		e_hre = {
-			is_titular = no
-			has_law = succ_feudal_elective
-			holder_scope = {
-				is_vassal_or_below = ROOT
-			}
-		}
-		any_demesne_title = {
-			higher_tier_than = COUNT
-			de_jure_liege_or_above = e_hre
-		}
-	}
-	
-	immediate = {
-		# for the vassal opinion
-		add_trait = lucky_ruler
-		add_trait = content
-		add_trait = strong
-		add_trait = commander4
-		
-		prestige = 5000
-		
-		e_hre = {
-			owner = {
-				recalc_succession = yes
-			}
-		}
-		
-		set_character_flag = emf_empires_decline_election
 	}
 }
