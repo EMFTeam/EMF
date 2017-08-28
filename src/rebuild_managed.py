@@ -22,6 +22,7 @@ mapcut_bin_path_default = Path('/usr/local/bin/mapcut')
 mapcut_path = rootpath / 'ck2utils/mapcut'
 cut_titles = ['e_rajastan', 'e_mali', 'k_sahara', 'k_fezzan', 'k_kanem', 'k_hausaland', 'k_canarias']
 emf_holding_slot_path = emf_src_path / 'holding_slot_trigger.py'
+emf_swmh_history_path = emf_src_path / 'emf_swmh_history.py'
 
 
 def build_mapcut():
@@ -62,6 +63,16 @@ def main():
     print(">> executing holding slot trigger generator...")
     try:
         output = subprocess.check_output(['/usr/bin/python3', str(emf_holding_slot_path)],
+                                         universal_newlines=True, stderr=subprocess.STDOUT)
+        if sys.stdout:
+            sys.stdout.write(output)
+    except subprocess.CalledProcessError as e:
+        sys.stderr.write('> build failed!\n> command: {}\n> exit code: {}\n\n{}'.format(e.cmd, e.returncode, e.output))
+        return 4
+
+    print(">> executing EMF+SWMH history generator...")
+    try:
+        output = subprocess.check_output(['/usr/bin/python3', str(emf_swmh_history_path)],
                                          universal_newlines=True, stderr=subprocess.STDOUT)
         if sys.stdout:
             sys.stdout.write(output)
