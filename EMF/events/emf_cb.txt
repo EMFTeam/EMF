@@ -180,6 +180,7 @@ character_event = {
 			limit = { character = event_target:emf_cb_loser }
 			event_target:emf_cb_winner = { emf_cb_relsub_reset_statistics = yes }
 		}
+		log = "---> emf_cb.60: [Root.GetTitledFirstName] [Root.GetOnlyDynastyName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) receives ultimatum"
 	}
 
 	option = {
@@ -197,12 +198,28 @@ character_event = {
 		}
 		ai_chance = {
 			factor = 100
-		}
-		hidden_tooltip = {
-			event_target:emf_cb_winner = {
-				change_variable = { which = "emf_relsub_lords_converted" value = 1 }
+			modifier = {
+				factor = 0
+				any_realm_title = {
+					tier = COUNT
+					NOT = { de_jure_liege_or_above = event_target:emf_cb_title }
+				}
+			}
+			modifier = {
+				factor = 1.333
+				trait = humble
+			}
+			modifier = {
+				factor = 0.75
+				trait = proud
+			}
+			# vs. secret conversion + submission, not vs. refusal
+			modifier = {
+				factor = 1.5
+				trait = honest
 			}
 		}
+		hidden_tooltip = { log = "----> chooses to submit & truly convert" }
 		emf_cb_relsub_basic_submission_decision = yes
 		if = {
 			limit = { NOT = { religion = event_target:emf_cb_winner } }
@@ -210,7 +227,15 @@ character_event = {
 				limit = { has_secret_religion = yes }
 				clear_secret_religion = yes
 			}
+			if = {
+				limit = { higher_tier_than = BARON }
+				religion_authority = { modifier = ruler_mass_converted_from }
+			}
 			religion = event_target:emf_cb_winner
+			if = {
+				limit = { higher_tier_than = BARON }
+				event_target:emf_cb_winner = { religion_authority = { modifier = ruler_mass_converted_to } }
+			}
 			emf_cb_relsub_convert_court = yes
 		}
 		emf_cb_relsub_ask_vassals_to_convert = yes
@@ -225,15 +250,39 @@ character_event = {
 			NOT = { secret_religion = { target = event_target:emf_cb_winner target_type = public } }
 		}
 		ai_chance = {
-			factor = 100
-		}
-		hidden_tooltip = {
-			event_target:emf_cb_winner = {
-				change_variable = { which = "emf_relsub_lords_converted" value = 1 }
+			factor = 80
+			modifier = {
+				factor = 0
+				any_realm_title = {
+					tier = COUNT
+					NOT = { de_jure_liege_or_above = event_target:emf_cb_title }
+				}
+			}
+			modifier = {
+				factor = 1.2
+				trait = humble
+			}
+			modifier = {
+				factor = 0.85
+				trait = proud
+			}
+			# not vs. refusal, but non-secret submission
+			modifier = {
+				factor = 1.5
+				trait = deceitful
 			}
 		}
+		hidden_tooltip = { log = "----> chooses to submit & pretend to convert" }
 		emf_cb_relsub_basic_submission_decision = yes
+		if = {
+			limit = { higher_tier_than = BARON }
+			religion_authority = { modifier = ruler_mass_converted_from }
+		}
 		religion = event_target:emf_cb_winner
+		if = {
+			limit = { higher_tier_than = BARON }
+			event_target:emf_cb_winner = { religion_authority = { modifier = ruler_mass_converted_to } }
+		}
 		# pretenders don't try to convert their court at all
 		trigger_switch = {
 			on_trigger = has_secret_religion
@@ -264,8 +313,77 @@ character_event = {
 		}
 		ai_chance = {
 			factor = 100
+			modifier = {
+				factor = 0
+				religion = event_target:emf_cb_winner
+				NOT = {
+					any_realm_title = {
+						tier = COUNT
+						NOT = { de_jure_liege_or_above = event_target:emf_cb_title }
+					}
+				}
+			}
+			# Adds the opinion from 'ROOT' to 'who' multiplied by factor to the score.
+			additive_opinion_modifier = {
+				who = event_target:emf_cb_winner
+				factor = -0.2 # 20 to -20, from least opinion to most opinion
+				always = yes
+			}
+			# Adds the percentage of available troops from 'ROOT' to 'who' multiplied by factor to the score.
+			additive_power_diff_modifier = {
+				who = event_target:emf_cb_winner
+				factor = 0.2 # 0 (when having no relative power) to 20 (when equally powerful)
+				always = yes
+			}
+			# Adds the percentage of realm size from 'ROOT' to 'who' multiplied by factor to the score.
+			additive_compared_realm_size_modifier = {
+				who = event_target:emf_cb_winner
+				factor = 0.5
+				always = yes
+			}
+			# Effects of zeal, rationality, greed, and ambition. Note all tests are simply for "non-negative,"
+			# as these properties are on a scale of [-100,100].
+			additive_modifier = {
+				value = 20
+				ai_zeal = 0
+				has_secret_religion = no
+			}
+			additive_modifier = {
+				value = -20
+				ai_rationality = 0
+			}
+			additive_modifier = {
+				value = -10
+				ai_greed = 0
+			}
+			additive_modifier = {
+				value = 20
+				ai_ambition = 0
+			}
+			# Counts and barons are significantly less likely to refuse the ultimatum
+			modifier = {
+				factor = 0.5
+				lower_real_tier_than = DUKE
+			}
+			# Pagans are more willing to submit & convert than those of organized religions
+			modifier = {
+				factor = 0.5
+				religion_group = pagan_group
+				is_reformed_religion = no
+			}
+			# Zoroastrians should be slightly more willing to submit & convert than normal
+			modifier = {
+				factor = 0.85
+				religion_group = zoroastrian_group
+			}
+			# Counterbalance modifiers that differ between submit vs. submit & follow secret religion
+			modifier = {
+				factor = 1.5
+				OR = { trait = honest trait = deceitful }
+			}
 		}
 		hidden_tooltip = {
+			log = "----> chooses to refuse ultimatum"
 			# Ensure that we can be reached later
 			reverse_opinion = { who = event_target:emf_cb_winner modifier = refused_my_relsub }
 			# Mark titles to be taken
@@ -275,7 +393,6 @@ character_event = {
 					NOT = { ROOT = { family_palace = { title = PREVPREV } } }
 				}
 				set_title_flag = emf_relsub_tmp_take_title
-
 				event_target:emf_cb_winner = {
 					change_variable = { which = "emf_relsub_titles_taken" value = 1 }
 					if = {
@@ -284,8 +401,7 @@ character_event = {
 					}
 				}
 			}
-			# Since we're refusing, our direct vassals shall receive the same peace offer/ultimatum (if of a
-			# different religion than CB winner -- else, emf_cb.62 will silently prepare them for submission)
+			# Since we're refusing, our direct vassals shall receive the same peace offer/ultimatum
 			any_vassal = {
 				limit = { any_realm_title = { de_jure_liege_or_above = event_target:emf_cb_title } }
 				character_event = { id = emf_cb.60 }
@@ -360,6 +476,18 @@ character_event = {
 		}
 		ai_chance = {
 			factor = 100
+			modifier = {
+				factor = 1.5
+				trait = cynical
+			}
+			modifier = {
+				factor = 1.5
+				trait = honest
+			}
+			modifier = {
+				factor = 1.5
+				trait = humble
+			}
 		}
 		if = {
 			limit = { has_secret_religion = yes }
@@ -370,7 +498,15 @@ character_event = {
 				change_variable = { which = "emf_relsub_lords_converted" value = 1 }
 			}
 		}
+		if = {
+			limit = { higher_tier_than = BARON }
+			religion_authority = { modifier = ruler_mass_converted_from }
+		}
 		religion = event_target:emf_cb_winner
+		if = {
+			limit = { higher_tier_than = BARON }
+			event_target:emf_cb_winner = { religion_authority = { modifier = ruler_mass_converted_to } }
+		}
 		emf_cb_relsub_convert_court = yes
 		opinion = { who = LIEGE modifier = opinion_relsub_converted_with_my_liege }
 		reverse_opinion = { who = LIEGE modifier = opinion_relsub_converted_with_me }
@@ -386,14 +522,34 @@ character_event = {
 			NOT = { secret_religion = { target = event_target:emf_cb_winner target_type = public } }
 		}
 		ai_chance = {
-			factor = 100
+			factor = 60
+			modifier = {
+				factor = 1.5
+				trait = cynical
+			}
+			modifier = {
+				factor = 1.5
+				trait = deceitful
+			}
+			modifier = {
+				factor = 1.25
+				trait = proud
+			}
 		}
 		hidden_tooltip = {
 			event_target:emf_cb_winner = {
 				change_variable = { which = "emf_relsub_lords_converted" value = 1 }
 			}
 		}
+		if = {
+			limit = { higher_tier_than = BARON }
+			religion_authority = { modifier = ruler_mass_converted_from }
+		}
 		religion = event_target:emf_cb_winner
+		if = {
+			limit = { higher_tier_than = BARON }
+			event_target:emf_cb_winner = { religion_authority = { modifier = ruler_mass_converted_to } }
+		}
 		# pretenders don't want to try to convert their court and can get away with that, so they don't
 		trigger_switch = {
 			on_trigger = has_secret_religion
@@ -409,6 +565,19 @@ character_event = {
 		name = emf_cb.61.opt.refuse
 		ai_chance = {
 			factor = 100
+			modifier = {
+				factor = 1.5
+				trait = zealous
+			}
+			modifier = {
+				factor = 1.5
+				trait = proud
+			}
+			# Counterbalance modifiers that differ between convert vs. convert & follow secret religion
+			modifier = {
+				factor = 1.5
+				OR = { trait = honest trait = deceitful }
+			}
 		}
 		opinion = { who = event_target:emf_cb_loser modifier = opinion_relsub_submitted_to_infidel_conqueror }
 		reverse_opinion = { who = LIEGE modifier = opinion_relsub_refused_to_convert_with_me }
@@ -429,12 +598,17 @@ character_event = {
 			limit = { NOT = { religion = event_target:emf_cb_winner } }
 			set_character_flag = emf_relsub_tmp_infidel
 		}
-		if = {
+		if = { # Infidel to CB winner
 			limit = { has_character_flag = emf_relsub_tmp_infidel }
 			character_event = { id = emf_cb.61 }
 		}
-		if = {
+		if = { # Same-religion as CB winner
 			limit = { NOT = { has_character_flag = emf_relsub_tmp_infidel } }
+			hidden_tooltip = {
+				event_target:emf_cb_winner = {
+					change_variable = { which = "emf_relsub_lords_liberated" value = 1 }
+				}
+			}
 			emf_cb_relsub_ask_vassals_to_convert = yes
 		}
 	}
@@ -474,6 +648,10 @@ character_event = {
 	immediate = {
 		# Lords are also nobles
 		change_variable = { which = "emf_relsub_nobles_converted" which = "emf_relsub_lords_converted" }
+		log = "---> emf_cb.63: results are in:"
+		log = "----> [Root.emf_relsub_titles_taken.GetValue] titles to take ([Root.emf_relsub_counties_taken.GetValue] counties)"
+		log = "----> [Root.emf_relsub_nobles_converted.GetValue] nobles converted ([Root.emf_relsub_lords_converted.GetValue] rulers)"
+		log = "----> [Root.emf_relsub_lords_liberated.GetValue] same-religion rulers liberated"
 	}
 
 	option = {
