@@ -85,22 +85,7 @@ character_event = {
 	}
 }
 
-
-
-# emf_cb.20 [Attacker]
-#
-# Invalidate all revolts for defender (FROMFROM) for which
-# the revolt title capital is within the de jure territory of emf_cb_title
-character_event = {
-	id = emf_cb.20
-	hide_window = yes
-	is_triggered_only = yes
-	
-	immediate = {
-	}
-}
-
-# emf_cb.50 [Roman Emperor]
+# emf_cb.50-51 [Roman Emperor]
 #
 # Loop over counties not completely-controlled within IR tier 1.
 character_event = {
@@ -159,3 +144,440 @@ character_event = {
 		}
 	}
 }
+
+# emf_cb.60 -- serve ultimatum to Religious Subjugation war loser (or vassal thereof)
+character_event = {
+	id = emf_cb.60
+	picture = GFX_evt_emissary
+	border = GFX_event_normal_frame_religion
+
+	is_triggered_only = yes
+
+	desc = {
+		text = emf_cb.60.desc.overlord
+		trigger = { character = event_target:emf_cb_loser }
+	}
+
+	desc = {
+		text = emf_cb.60.desc.underling
+		trigger = {
+			NOT = { character = event_target:emf_cb_loser }
+			NOT = { religion = event_target:emf_cb_winner }
+		}
+	}
+
+	desc = {
+		text = emf_cb.60.desc.underling_samerel
+		trigger = {
+			NOT = { character = event_target:emf_cb_loser }
+			religion = event_target:emf_cb_winner
+		}
+	}
+
+	immediate = {
+		religion_scope = { save_event_target_as = emf_old_religion }
+		if = {
+			limit = { character = event_target:emf_cb_loser }
+			event_target:emf_cb_winner = { emf_cb_relsub_reset_statistics = yes }
+		}
+	}
+
+	option = {
+		name = {
+			text = emf_cb.60.opt.submit_and_convert
+			trigger = { NOT = { religion = event_target:emf_cb_winner } }
+		}
+		name = {
+			text = emf_cb.60.opt.submit_samerel
+			trigger = { religion = event_target:emf_cb_winner }
+		}
+		trigger = {
+			emf_cb_relsub_can_submit = yes
+			NOT = { religion = event_target:emf_cb_winner }
+		}
+		ai_chance = {
+			factor = 100
+		}
+		hidden_tooltip = {
+			event_target:emf_cb_winner = {
+				change_variable = { which = "emf_relsub_lords_converted" value = 1 }
+			}
+		}
+		emf_cb_relsub_basic_submission_decision = yes
+		if = {
+			limit = { NOT = { religion = event_target:emf_cb_winner } }
+			if = {
+				limit = { has_secret_religion = yes }
+				clear_secret_religion = yes
+			}
+			religion = event_target:emf_cb_winner
+			emf_cb_relsub_convert_court = yes
+		}
+		emf_cb_relsub_ask_vassals_to_convert = yes
+	}
+
+	option = {
+		name = emf_cb.60.opt.submit_and_pretend_to_convert
+		trigger = {
+			emf_cb_relsub_can_submit = yes
+			NOT = { religion = event_target:emf_cb_winner }
+			# Doesn't already have same secret religion as we'd be converting to (CB winner's public religion)
+			NOT = { secret_religion = { target = event_target:emf_cb_winner target_type = public } }
+		}
+		ai_chance = {
+			factor = 100
+		}
+		hidden_tooltip = {
+			event_target:emf_cb_winner = {
+				change_variable = { which = "emf_relsub_lords_converted" value = 1 }
+			}
+		}
+		emf_cb_relsub_basic_submission_decision = yes
+		religion = event_target:emf_cb_winner
+		# pretenders don't try to convert their court at all
+		trigger_switch = {
+			on_trigger = has_secret_religion
+			yes = { custom_tooltip = { text = RELSUB_CONTINUE_OBSERVING_SECRET_FAITH } }
+			no = { set_secret_religion = event_target:emf_old_religion }
+		}
+		emf_cb_relsub_ask_vassals_to_convert = yes
+	}
+
+	option = {
+		name = {
+			text = emf_cb.60.opt.refuse_diffrel
+			trigger = { NOT = { religion = event_target:emf_cb_winner } }
+		}
+		name = {
+			text = emf_cb.60.opt.refuse_samerelcul
+			trigger = {
+				religion = event_target:emf_cb_winner
+				culture = event_target:emf_cb_winner
+			}
+		}
+		name = {
+			text = emf_cb.60.opt.refuse_diffcul
+			trigger = {
+				religion = event_target:emf_cb_winner
+				NOT = { culture = event_target:emf_cb_winner }
+			}
+		}
+		ai_chance = {
+			factor = 100
+		}
+		hidden_tooltip = {
+			# Ensure that we can be reached later
+			reverse_opinion = { who = event_target:emf_cb_winner modifier = refused_my_relsub }
+			# Mark titles to be taken
+			any_demesne_title = {
+				limit = {
+					de_jure_liege_or_above = event_target:emf_cb_title
+					NOT = { ROOT = { family_palace = { title = PREVPREV } } }
+				}
+				set_title_flag = emf_relsub_tmp_take_title
+
+				event_target:emf_cb_winner = {
+					change_variable = { which = "emf_relsub_titles_taken" value = 1 }
+					if = {
+						limit = { PREV = { tier = COUNT } }
+						change_variable = { which = "emf_relsub_counties_taken" value = 1 }
+					}
+				}
+			}
+			# Since we're refusing, our direct vassals shall receive the same peace offer/ultimatum (if of a
+			# different religion than CB winner -- else, emf_cb.62 will silently prepare them for submission)
+			any_vassal = {
+				limit = { any_realm_title = { de_jure_liege_or_above = event_target:emf_cb_title } }
+				character_event = { id = emf_cb.60 }
+			}
+		}
+		if = {
+			limit = {
+				is_patrician = no # Would have had their family palace to fall back upon
+				NOT = {
+					any_demesne_title = {
+						tier = COUNT
+						NOT = { de_jure_liege_or_above = event_target:emf_cb_title }
+					}
+				}
+			}
+			custom_tooltip = { text = GAME_OVER_OPTION_WARNING }
+			custom_tooltip = { text = emf_ctt_break }
+		}
+		custom_tooltip = { text = RELSUB_WILL_SEND_ULTIMATUM_TO_DIRECT_VASSALS }
+		custom_tooltip = { text = RELSUB_LOSE_ALL_LAND_WITHIN_TARGET_TITLE }
+		tooltip = {
+			any_demesne_title = {
+				limit = {
+					tier = COUNT
+					de_jure_liege_or_above = event_target:emf_cb_title
+				}
+				usurp_title = event_target:emf_cb_winner
+			}
+			any_demesne_title = {
+				limit = {
+					tier = BARON
+					de_jure_liege_or_above = event_target:emf_cb_title
+					NOT = { ROOT = { family_palace = { title = PREVPREV } } }
+					# Do not list the province capital baronies since we listed the county already
+					is_capital = no
+				}
+				usurp_title = event_target:emf_cb_winner
+			}
+		}
+	}
+
+	after = {
+		# After all the recursion's done, we'll be the initial receiver of this event, and we kick back results to
+		# the CB winner in order to actually execute the effects.
+		if = {
+			limit = { character = event_target:emf_cb_loser }
+			event_target:emf_cb_winner = { character_event = { id = emf_cb.63 } }
+		}
+	}
+}
+
+# emf_cb.61 -- my liege has bent the knee and [apparently] converted, how do I react? [religious subjugation]
+character_event = {
+	id = emf_cb.61
+	desc = emf_cb.61.desc
+	picture = GFX_evt_emissary
+	border = GFX_event_normal_frame_religion
+
+	is_triggered_only = yes
+	show_from_from = yes # we always bounce through emf_cb.62, so FROMFROM is the portrait to show
+
+	trigger = { NOT = { religion = event_target:emf_cb_winner } }
+
+	immediate = {
+		religion_scope = { save_event_target_as = emf_old_religion }
+	}
+
+	option = {
+		name = emf_cb.61.opt.convert_too
+		trigger = {
+			can_change_religion = yes
+		}
+		ai_chance = {
+			factor = 100
+		}
+		if = {
+			limit = { has_secret_religion = yes }
+			clear_secret_religion = yes
+		}
+		hidden_tooltip = {
+			event_target:emf_cb_winner = {
+				change_variable = { which = "emf_relsub_lords_converted" value = 1 }
+			}
+		}
+		religion = event_target:emf_cb_winner
+		emf_cb_relsub_convert_court = yes
+		opinion = { who = LIEGE modifier = opinion_relsub_converted_with_my_liege }
+		reverse_opinion = { who = LIEGE modifier = opinion_relsub_converted_with_me }
+		# Since we chose to convert, pass the choice on to our direct vassals
+		emf_cb_relsub_ask_vassals_to_convert = yes
+	}
+
+	option = {
+		name = emf_cb.61.opt.pretend_to_convert_too
+		trigger = {
+			can_change_religion = yes
+			# Doesn't already have same secret religion as we'd be converting to (CB winner's public religion)
+			NOT = { secret_religion = { target = event_target:emf_cb_winner target_type = public } }
+		}
+		ai_chance = {
+			factor = 100
+		}
+		hidden_tooltip = {
+			event_target:emf_cb_winner = {
+				change_variable = { which = "emf_relsub_lords_converted" value = 1 }
+			}
+		}
+		religion = event_target:emf_cb_winner
+		# pretenders don't want to try to convert their court and can get away with that, so they don't
+		trigger_switch = {
+			on_trigger = has_secret_religion
+			yes = { custom_tooltip = { text = RELSUB_CONTINUE_OBSERVING_SECRET_FAITH } }
+			no = { set_secret_religion = event_target:emf_old_religion }
+		}
+		opinion = { who = LIEGE modifier = opinion_relsub_converted_with_my_liege }
+		reverse_opinion = { who = LIEGE modifier = opinion_relsub_converted_with_me }
+		emf_cb_relsub_ask_vassals_to_convert = yes
+	}
+
+	option = {
+		name = emf_cb.61.opt.refuse
+		ai_chance = {
+			factor = 100
+		}
+		opinion = { who = event_target:emf_cb_loser modifier = opinion_relsub_submitted_to_infidel_conqueror }
+		reverse_opinion = { who = LIEGE modifier = opinion_relsub_refused_to_convert_with_me }
+	}
+}
+
+# emf_cb.62 -- proxy for emf_cb.62 recursion to filter same-religion lords and yet propogate mass conversion choices to their
+#              vassals.
+character_event = {
+	id = emf_cb.62
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		# Grr, can't wait for if/else_if/else...
+		if = {
+			limit = { NOT = { religion = event_target:emf_cb_winner } }
+			set_character_flag = emf_relsub_tmp_infidel
+		}
+		if = {
+			limit = { has_character_flag = emf_relsub_tmp_infidel }
+			character_event = { id = emf_cb.61 }
+		}
+		if = {
+			limit = { NOT = { has_character_flag = emf_relsub_tmp_infidel } }
+			emf_cb_relsub_ask_vassals_to_convert = yes
+		}
+	}
+
+	after = { clr_character_flag = emf_relsub_tmp_infidel }
+}
+
+character_event = {
+	id = emf_cb.63
+	picture = GFX_evt_emissary
+	border = GFX_event_normal_frame_religion
+
+	is_triggered_only = yes
+
+	desc = {
+		text = emf_cb.63.desc.subjugated_overlord
+		trigger = {
+			has_opinion_modifier = { who = event_target:emf_cb_loser modifier = submits_to_my_relsub }
+		}
+	}
+
+	desc = {
+		text = emf_cb.63.desc.subjugated_underlings
+		trigger = {
+			NOT = { has_opinion_modifier = { who = event_target:emf_cb_loser modifier = submits_to_my_relsub } }
+			has_any_opinion_modifier = submits_to_my_relsub
+		}
+	}
+
+	desc = {
+		text = emf_cb.63.desc.subjugated_nobody
+		trigger = {
+			NOT = { has_any_opinion_modifier = submits_to_my_relsub }
+		}
+	}
+
+	immediate = {
+		# Lords are also nobles
+		change_variable = { which = "emf_relsub_nobles_converted" which = "emf_relsub_lords_converted" }
+	}
+
+	option = {
+		name = {
+			text = emf_cb.63.opt.ok_normal
+			trigger = {
+				OR = {
+					check_variable = { which = "emf_relsub_counties_taken" value = 1 }
+					check_variable = { which = "emf_relsub_lords_converted" value = 1 }
+				}
+			}
+		}
+		name = {
+			text = emf_cb.63.opt.ok_no_counties_seized
+			trigger = {
+				NOT = { check_variable = { which = "emf_relsub_counties_taken" value = 1 } }
+			}
+		}
+		name = {
+			text = emf_cb.63.opt.ok_no_lords_converted
+			trigger = {
+				NOT = { check_variable = { which = "emf_relsub_lords_converted" value = 1 } }
+			}
+		}
+		custom_tooltip = { text = RELSUB_LORDS_WHO_BENT_THE_KNEE }
+		any_opinion_modifier_target = {
+			limit = {
+				tier = KING
+				reverse_has_opinion_modifier = { who = ROOT modifier = submits_to_my_relsub }
+			}
+			emf_cb_relsub_subjugate = yes
+		}
+		any_opinion_modifier_target = {
+			limit = {
+				tier = DUKE
+				reverse_has_opinion_modifier = { who = ROOT modifier = submits_to_my_relsub }
+			}
+			emf_cb_relsub_subjugate = yes
+		}
+		any_opinion_modifier_target = {
+			limit = {
+				tier = COUNT
+				reverse_has_opinion_modifier = { who = ROOT modifier = submits_to_my_relsub }
+			}
+			emf_cb_relsub_subjugate = yes
+		}
+		any_opinion_modifier_target = {
+			limit = {
+				tier = BARON
+				reverse_has_opinion_modifier = { who = ROOT modifier = submits_to_my_relsub }
+			}
+			emf_cb_relsub_subjugate = yes
+		}
+		custom_tooltip = { text = RELSUB_TITLES_SEIZED }
+		# Instead of choosing the considerably more efficient way to access the titles marked for taking (i.e., scope
+		# to rulers via refused_my_relsub TOM and then scope to their flagged demesne titles), we use
+		# any_landed_title so that we can ensure the tier-based sort/priority order is upheld in the tooltip:
+		any_landed_title = {
+			limit = {
+				tier = COUNT
+				has_title_flag = emf_relsub_tmp_take_title
+				owner = { reverse_has_opinion_modifier = { who = ROOT modifier = refused_my_relsub } }
+			}
+			usurp_title_plus_barony_if_unlanded = { target = event_target:emf_cb_winner type = holy_war }
+		}
+		any_landed_title = {
+			limit = {
+				tier = BARON
+				has_title_flag = emf_relsub_tmp_take_title
+				owner = { reverse_has_opinion_modifier = { who = ROOT modifier = refused_my_relsub } }
+			}
+			# Hide usurpation tooltip for province capital baronies, as they're covered by the count-tier case
+			if = {
+				limit = { is_capital = yes }
+				hidden_tooltip = {
+					usurp_title_plus_barony_if_unlanded = {
+						target = event_target:emf_cb_winner
+						type = holy_war
+					}
+				}
+			}
+			if = {
+				limit = { is_capital = no }
+				usurp_title_plus_barony_if_unlanded = { target = event_target:emf_cb_winner type = holy_war }
+			}
+		}
+	}
+
+	after = {
+		# Cleanup our remaining variables, TOMs, and flags
+		emf_cb_relsub_reset_statistics = yes
+		hidden_tooltip = {
+			any_opinion_modifier_target = {
+				limit = {
+					OR = {
+						reverse_has_opinion_modifier = { who = ROOT modifier = submits_to_my_relsub }
+						reverse_has_opinion_modifier = { who = ROOT modifier = refused_my_relsub }
+					}
+				}
+				reverse_remove_opinion = { who = ROOT modifier = submits_to_my_relsub }
+				reverse_remove_opinion = { who = ROOT modifier = refused_my_relsub }
+				any_demesne_title = { clear_flags_with_prefix = emf_relsub_tmp }
+			}
+		}
+	}
+}
+
