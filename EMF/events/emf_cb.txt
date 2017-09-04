@@ -152,6 +152,11 @@ character_event = {
 	border = GFX_event_normal_frame_religion
 
 	is_triggered_only = yes
+	show_from_from = yes # emf_cb.65 is our proxy, so we're always once removed from the normal "FROM"
+
+	# TODO: ideally, we'd just always show the portrait of the CB winner, even when recursing (currently in that case,
+	# we'll show their liege whom refused ultimatum). in 2.8, this will be ridiculously easy, so I'm not going to worry
+	# about bounce events and the like for it.
 
 	desc = {
 		text = emf_cb.60.desc.overlord
@@ -753,6 +758,7 @@ character_event = {
 				tier = BARON
 				has_title_flag = emf_relsub_tmp_take_title
 				owner = { reverse_has_opinion_modifier = { who = ROOT modifier = refused_my_relsub } }
+				NOT = { holder = ROOT }
 			}
 			# Hide usurpation tooltip for province capital baronies, as they're covered by the count-tier case
 			if = {
@@ -787,6 +793,37 @@ character_event = {
 				any_demesne_title = { clear_flags_with_prefix = emf_relsub_tmp }
 			}
 		}
+		clear_flags_with_prefix = emf_relsub_tmp
 	}
 }
 
+# emf_cb.65 -- proxy for emf_cb.60, the main ultimatum event. this is the event chain entrance point and probably will be
+#              revisited by recursion down the realm tree.
+character_event = {
+	id = emf_cb.65
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		# Handle revolt leaders, as invalidating their civil war now will probably have a significant impact upon
+		# their ultimatum decision-making due to a reduced tier and potentially making a clean subjugation case from
+		# a same-tier one which would require destroying titles -- a type of title that we cannot safely destroy
+		# (and, of course, allows us to properly deal with revolters without any delay in the process).
+		any_war = {
+			limit = {
+				attacker = { character = ROOT }
+				defender = {
+					ROOT = {
+						OR = {
+							in_revolt = yes
+							liege_before_war = { character = PREVPREV } # defender
+						}
+					}
+				}
+			}
+			end_war = invalid
+		}
+		character_event = { id = emf_cb.60 }
+	}
+}
