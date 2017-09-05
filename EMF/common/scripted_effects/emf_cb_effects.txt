@@ -290,3 +290,239 @@ emf_cb_imperial_decay_overthrow = {
 		}
 	}
 }
+
+
+## RELIGIOUS SUBJUGATION ##
+
+emf_cb_relsub_ask_vassals_to_convert = {
+	# Since we chose to convert, pass the choice to our direct vassals (sort tooltip / exec order by tier, desc.)
+	any_vassal = {
+		limit = { tier = KING }
+		custom_tooltip = {
+			text = RELSUB_ASK_VASSAL_TO_CONVERT
+			hidden_tooltip = { character_event = { id = emf_cb.62 } }
+		}
+	}
+	any_vassal = {
+		limit = { tier = DUKE }
+		custom_tooltip = {
+			text = RELSUB_ASK_VASSAL_TO_CONVERT
+			hidden_tooltip = { character_event = { id = emf_cb.62 } }
+		}
+	}
+	any_vassal = {
+		limit = { tier = COUNT }
+		custom_tooltip = {
+			text = RELSUB_ASK_VASSAL_TO_CONVERT
+			hidden_tooltip = { character_event = { id = emf_cb.62 } }
+		}
+	}
+	any_vassal = {
+		limit = { tier = BARON }
+		custom_tooltip = {
+			text = RELSUB_ASK_VASSAL_TO_CONVERT
+			hidden_tooltip = { character_event = { id = emf_cb.62 } }
+		}
+	}
+}
+
+emf_cb_relsub_basic_submission_decision = {	
+	hidden_tooltip = {
+		# Ensure that we can be reached later
+		reverse_opinion = { who = event_target:emf_cb_winner modifier = submits_to_my_relsub }
+		# Mark titles to be destroyed (in same-tier case)
+		any_demesne_title = {
+			limit = { tier = event_target:emf_cb_winner }
+			set_title_flag = emf_relsub_tmp_destroy_title
+			log = "-----> same-tier title [This.GetBaseName] ([This.GetID]) will be destroyed"
+		}
+		event_target:emf_cb_winner = {
+			if = {
+				limit = { religion = PREV }
+				change_variable = { which = "emf_relsub_lords_liberated" value = 1 }
+			}
+			if = {
+				limit = { NOT = { religion = PREV } }
+				change_variable = { which = "emf_relsub_lords_converted" value = 1 }
+			}
+		}
+	}
+	if = {
+		limit = { tier = event_target:emf_cb_winner }
+		custom_tooltip = { text = RELSUB_SAME_TIER_TITLES_WILL_BE_DESTROYED }
+	}
+	tooltip = { set_defacto_liege = event_target:emf_cb_winner }
+}
+
+emf_cb_relsub_reset_statistics = {
+	hidden_tooltip = {
+		set_variable = { which = "emf_relsub_lords_liberated"  value = 0 }
+		set_variable = { which = "emf_relsub_lords_converted"  value = 0 }
+		set_variable = { which = "emf_relsub_nobles_converted" value = 0 }
+		set_variable = { which = "emf_relsub_baronies_taken"   value = 0 }
+		set_variable = { which = "emf_relsub_counties_taken"   value = 0 }
+	}
+}
+
+
+emf_cb_relsub_convert_court = {
+	if = {
+		limit = { NOT = { religion = event_target:emf_old_religion } }
+		custom_tooltip = { text = RELSUB_FAMILY_IN_COURT_CONVERTS }
+		hidden_tooltip = {
+			any_courtier = {
+				limit = {
+					OR = {
+						is_married = ROOT
+						is_close_relative = ROOT
+						dynasty = ROOT
+					}
+					NOT = { religion = event_target:emf_cb_winner }
+					liege = { character = ROOT }
+					is_ruler = no
+					prisoner = no # Who is going to agree to convert while staying imprisoned despite it?
+				}
+				religion = event_target:emf_cb_winner
+				event_target:emf_cb_winner = {
+					change_variable = { which = "emf_relsub_nobles_converted" value = 1 }
+				}
+			}
+		}
+	}
+}
+
+# ROOT = event_target:emf_cb_winner
+emf_cb_relsub_subjugate = {
+	if = {
+		limit = { tier = ROOT }
+		hidden_tooltip = {
+			# Track our current vassals...
+			any_vassal = { reverse_opinion = { who = PREV modifier = my_prior_vassal } }
+			# ... because destroying our primary-tier titles will break their vassalage
+			any_demesne_title = {
+				limit = { has_title_flag = emf_relsub_tmp_destroy_title }
+				emf_destroy_title = yes
+			}
+			# Now, for vassals whose subrealms contain land inside the CB target title, either revassalize them
+			# (if our new tier permits) or, failing that, have the CB winner subjugate them directly.
+			any_opinion_modifier_target = {
+				limit = {
+					reverse_has_opinion_modifier = { who = PREV modifier = my_prior_vassal }
+					NOT = { vassal_of = PREV }
+					lower_tier_than = PREV
+					any_realm_title = { de_jure_liege_or_above = event_target:emf_cb_title }
+				}
+				set_defacto_liege = PREV # simply reconnect vassalage
+				if = {
+					limit = { NOT = { vassal_of = PREV } }
+					emf_ROOT_subjugate_ruler = yes
+				}
+			}
+			any_opinion_modifier_target = {
+				limit = {
+					reverse_has_opinion_modifier = { who = PREV modifier = my_prior_vassal }
+					NOT = { vassal_of = PREV }
+					NOT = { lower_tier_than = PREV }
+					any_realm_title = { de_jure_liege_or_above = event_target:emf_cb_title }
+				}
+				emf_ROOT_subjugate_ruler = yes
+			}
+			# Process liege changes for those left independent
+			any_opinion_modifier_target = {
+				limit = {
+					reverse_has_opinion_modifier = { who = PREV modifier = my_prior_vassal }
+					NOT = { vassal_of = PREV }
+					NOT = { any_realm_title = { de_jure_liege_or_above = event_target:emf_cb_title } }
+				}
+				set_defacto_liege = THIS # make it official; destroying titles is currently buggy this way
+				emf_liege_change = yes
+			}
+			# Cleanup TOMs
+			any_opinion_modifier_target = { reverse_remove_opinion = { who = PREV modifier = my_prior_vassal } }
+			# Keep sane
+			if = {
+				limit = { NOT = { lower_tier_than = ROOT } }
+				log = "ERROR: emf_cb_relsub_subjugate: even after destroying relevant titles, [This.GetTitledFirstName] (#[This.GetID]/[This.PrimaryTitle.GetID]) is same- or higher-tier than CB winner"
+			}
+		}
+	}
+	custom_tooltip = { text = RELSUB_WILL_BECOME_VASSAL_TO_WINNER }
+	hidden_tooltip = { emf_ROOT_subjugate_ruler = yes }
+}
+
+emf_cb_relsub_complete = {
+	if = {
+		limit = { has_any_opinion_modifier = submits_to_my_relsub }
+		custom_tooltip = { text = RELSUB_LORDS_WHO_BENT_THE_KNEE }
+		any_opinion_modifier_target = {
+			limit = {
+				tier = KING
+				reverse_has_opinion_modifier = { who = ROOT modifier = submits_to_my_relsub }
+			}
+			emf_cb_relsub_subjugate = yes
+		}
+		any_opinion_modifier_target = {
+			limit = {
+				tier = DUKE
+				reverse_has_opinion_modifier = { who = ROOT modifier = submits_to_my_relsub }
+			}
+			emf_cb_relsub_subjugate = yes
+		}
+		any_opinion_modifier_target = {
+			limit = {
+				tier = COUNT
+				reverse_has_opinion_modifier = { who = ROOT modifier = submits_to_my_relsub }
+			}
+			emf_cb_relsub_subjugate = yes
+		}
+		any_opinion_modifier_target = {
+			limit = {
+				tier = BARON
+				reverse_has_opinion_modifier = { who = ROOT modifier = submits_to_my_relsub }
+			}
+			emf_cb_relsub_subjugate = yes
+		}
+	}
+	if = {
+		limit = {
+			any_opinion_modifier_target = {
+				reverse_has_opinion_modifier = { who = ROOT modifier = refused_my_relsub }
+				any_demesne_title = { has_title_flag = emf_relsub_tmp_take_title }
+			}
+		}
+		custom_tooltip = { text = RELSUB_TITLES_SEIZED }
+		# Instead of choosing the considerably more efficient way to access the titles marked for taking (i.e., scope
+		# to rulers via refused_my_relsub TOM and then scope to their flagged demesne titles), we use
+		# any_landed_title so that we can ensure the tier-based sort/priority order is upheld in the tooltip:
+		any_landed_title = {
+			limit = {
+				tier = COUNT
+				has_title_flag = emf_relsub_tmp_take_title
+				owner = { reverse_has_opinion_modifier = { who = ROOT modifier = refused_my_relsub } }
+			}
+			usurp_title_plus_barony_if_unlanded = { target = event_target:emf_cb_winner type = holy_war }
+		}
+		any_landed_title = {
+			limit = {
+				tier = BARON
+				has_title_flag = emf_relsub_tmp_take_title
+				owner = { reverse_has_opinion_modifier = { who = ROOT modifier = refused_my_relsub } }
+				NOT = { holder = ROOT }
+			}
+			# Hide usurpation tooltip for province capital baronies, as they're covered by the count-tier case
+			if = {
+				limit = { is_capital = yes }
+				hidden_tooltip = {
+					usurp_title_plus_barony_if_unlanded = {
+						target = event_target:emf_cb_winner
+						type = holy_war
+					}
+				}
+			}
+			if = {
+				limit = { is_capital = no }
+				usurp_title_plus_barony_if_unlanded = { target = event_target:emf_cb_winner type = holy_war }
+			}
+		}
+	}
+}
