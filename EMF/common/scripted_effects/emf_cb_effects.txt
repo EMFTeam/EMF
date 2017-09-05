@@ -559,3 +559,52 @@ emf_cb_relsub_complete = {
 		}
 	}
 }
+
+#### CLAIM_ON_VASSAL_PLOT ####
+
+# The calculation for available troops of barons once the vassal and his liege are at war with each other at the moment
+# troops would be raised by the baron is bugged, so we compensate for it. Additionally, a common gamey tactic when plot-
+# revoking from barons is to park an army directly on their capital province, preventing them from raising any troops at all,
+# so the troops we spawn will try to find a nearby non-hostile province in which to be raised (like mercenary-raising
+# behavior).
+#
+# TODO: in 2.8, spawn_unit will support `province = closest` (or something like that) which can do this part for
+# us much better. Also, revisit the troop calculation bug for these barons in 2.8, as it may have been fixed. [I brought it
+# up, but I'm not sure if anybody did anything about it.]
+emf_cb_claim_on_vassal_plot_on_add = {
+	clear_event_target = emf_cb_cvp_tmp_prov
+	clear_event_target = emf_cb_cvp_tmp_capital
+
+	# find a province in which to spawn
+	FROM = {
+		capital_scope = {
+			save_event_target_as = emf_cb_cvp_tmp_capital
+			if = {
+				limit = { ROOT = { NOT = { any_army = { location = { province = PREVPREVPREV } } } } }
+				save_event_target_as = emf_cb_cvp_tmp_prov
+			}
+		}
+		any_demesne_title = {
+			limit = {
+				location = {
+					ROOT = { NOT = { any_army = { location = { province = PREVPREVPREV } } }
+				}
+			}
+		}
+
+
+
+			if = {
+				limit = { NOT = { event_target:emf_cb_cvp_tmp_prov = { always = yes } } }
+				random_neighbor_province = {
+					limit = {
+						ROOT = { NOT = { any_army = { location = { province = PREVPREVPREV } } } }
+						any_province_holding = { holder = ROOT_FROM }
+					}
+				}
+			}
+	}
+
+	clear_event_target = emf_cb_cvp_tmp_prov
+	clear_event_target = emf_cb_cvp_tmp_capital
+}
