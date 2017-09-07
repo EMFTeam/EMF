@@ -187,7 +187,6 @@ NDefines.NMilitary.SPECIAL_TROOPS_PHASE_SKIRMISH_DEFENSE = 4
 NDefines.NMilitary.SPECIAL_TROOPS_PHASE_MELEE_DEFENSE = 4
 NDefines.NMilitary.SPECIAL_TROOPS_PHASE_PURSUE_DEFENSE = 7
 NDefines.NMilitary.SPECIAL_TROOPS_GRAPHICAL_FACTOR = 2.0
-NDefines.NMilitary.GALLEYS_MAINTENANCE = 50
 NDefines.NMilitary.CAPITAL_DUCHY_LIEGE_LEVY_MULT = 0.75 -- same as vanilla, just here for completeness
 NDefines.NMilitary.CAPITAL_KINGDOM_LIEGE_LEVY_MULT = 0.5 -- same as vanilla, just here for completeness
 NDefines.NMilitary.CAPITAL_EMPIRE_LIEGE_LEVY_MULT = 0.25 -- reduced to be same as "outside capital empire," since most places are "outside" a de jure empire in the default EMF setup (or, rather, it's e_null, which complicates things if they're not the same)
