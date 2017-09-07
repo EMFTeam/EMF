@@ -1152,15 +1152,7 @@ character_event = {
 	}
 }
 
-# emf_cb.80 -- Correct the current troop calculation bugs for plot-revoking from baron-tier rulers and try to place raised
-#              levy in a non-hostile province so that they can actually fight. Invoked from the on_add_title of the
-#              emf_cb_claim_on_vassal_baron_plot CB.
-#
-# The calculation for available troops of barons once the vassal and his liege are at war with each other at the moment
-# troops would be raised by the baron is bugged, so we compensate for it. Additionally, a common gamey tactic when plot-
-# revoking from barons is to park an army directly on their capital province, preventing them from raising any troops at all,
-# so the troops we spawn will try to find a nearby non-hostile province in which to be raised (like mercenary-raising
-# behavior).
+# emf_cb.80 -- Invoked from the on_add of the emf_cb_claim_on_vassal_baron_plot CB.
 #
 # TODO: In CKII v2.8.X, spawn_unit will support `province = closest` (or something like that) which can do this part for
 # us much better. Also, revisit the troop calculation bug for these barons in 2.8, as it may have been fixed. [I brought it
@@ -1174,8 +1166,6 @@ character_event = {
 	trigger = { tier = BARON }
 
 	immediate = {
-		save_event_target_as = emf_baron
-		FROM = { save_event_target_as = emf_liege }
 		# For every barony we own, try to find a non-hostile nearby province in which to spawn the troop-correction
 		# self-matched unit, and then spawn it. Note that technically we're overcompensating if they have multiple
 		# baronies in multiple provinces, because I cannot easily match just against the levy of a holding and thus
@@ -1198,8 +1188,6 @@ province_event = {
 	hide_window = yes
 
 	immediate = {
-		log = "THIS=[This.GetID] vs. ROOT=[Root.GetID]"
-
 		if = {
 			limit = { FROMFROM = { NOT = { any_army = { location = { province = ROOT } } } } }
 			save_event_target_as = emf_sprov
@@ -1291,12 +1279,53 @@ province_event = {
 			ROOT = { save_event_target_as = emf_sprov }
 		}
 
-		# Need to spawn an apparent 4x factor to what the game thinks the baron's troop count is during this status,
-		# which is convenient, because that means spawning 3 matches x 1.0, which allows for 3 flanks. NOTE:
-		# Eventually this bug will get fixed or change behavior, so keep vigilant. However, I certainly don't mind
-		# erring on the side of more troops for the baron, since he will barely be able to put up a fight anyway.
-		# That's not to mention that barons can't even have commanders, so all flanks will use the literally worst
-		# combat tactics possible. Even if they had 2x the troops of their liege somehow, they'd probably get wiped.
+		if = {
+			limit = {
+				FROMFROM = {
+					ai = no
+					any_army = { location = { province = ROOT } }
+				}
+			}
+			# Player actively gaming the system by preventing the levy from even raising in advance, so double
+			# the spawn. It's still somewhat pointless since all they need is to siege that one holding and then
+			# get 100% WS.
+			FROM = {
+				spawn_unit = {
+					province = event_target:emf_sprov
+					home = ROOT
+					owner = THIS
+					match_character = THIS
+					match_mult = 1.0
+					disband_on_peace = yes
+					cannot_inherit = yes
+					reinforces = yes # Try to simulate the reinforcement-in-the-field of actual levies.
+					earmark = emf_cb_cvbp_levy
+				}
+				spawn_unit = {
+					province = event_target:emf_sprov
+					home = ROOT
+					owner = THIS
+					match_character = THIS
+					match_mult = 0.5
+					disband_on_peace = yes
+					cannot_inherit = yes
+					reinforces = yes # Try to simulate the reinforcement-in-the-field of actual levies.
+					earmark = emf_cb_cvbp_levy
+				}
+				spawn_unit = {
+					province = event_target:emf_sprov
+					home = ROOT
+					owner = THIS
+					match_character = THIS
+					match_mult = 0.25
+					disband_on_peace = yes
+					cannot_inherit = yes
+					reinforces = yes # Try to simulate the reinforcement-in-the-field of actual levies.
+					earmark = emf_cb_cvbp_levy
+				}
+			}
+		}
+
 		FROM = {
 			spawn_unit = {
 				province = event_target:emf_sprov
@@ -1314,7 +1343,7 @@ province_event = {
 				home = ROOT
 				owner = THIS
 				match_character = THIS
-				match_mult = 1.0
+				match_mult = 0.5
 				disband_on_peace = yes
 				cannot_inherit = yes
 				reinforces = yes # Try to simulate the reinforcement-in-the-field of actual levies.
@@ -1325,7 +1354,7 @@ province_event = {
 				home = ROOT
 				owner = THIS
 				match_character = THIS
-				match_mult = 1.0
+				match_mult = 0.25
 				disband_on_peace = yes
 				cannot_inherit = yes
 				reinforces = yes # Try to simulate the reinforcement-in-the-field of actual levies.
