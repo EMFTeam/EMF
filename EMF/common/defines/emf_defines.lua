@@ -204,9 +204,6 @@ NDefines.NTechnology.BASE_DEMESNE_SPREAD_BONUS = 0.1
 NDefines.NTechnology.MAX_DEMESNE_BONUS = 0.5
 NDefines.NTechnology.TRADEPOST_SPREAD_BONUS = 0.01
 
--- Disease
-NDefines.NDisease.CROWDED_THRESHOLD_MODIFIER = 30
-
 -- Graphics
 NDefines.NGraphics.CITY_SPRAWL_AMOUNT = 0.75
 
