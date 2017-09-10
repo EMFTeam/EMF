@@ -127,27 +127,7 @@ character_event = {
 			break = yes
 		}
 		random_demesne_province = {
-			limit = {
-				NOT = { ROOT = { capital_scope = { culture = PREVPREV } } }
-				port = yes
-				emf_is_neapolitan_source_province = yes
-			}
-			save_event_target_as = emf_converted_province
-			break = yes
-		}
-		random_demesne_province = {
-			limit = {
-				port = yes
-				emf_is_neapolitan_source_province = yes
-			}
-			save_event_target_as = emf_converted_province
-			break = yes
-		}
-		random_demesne_province = {
-			limit = {
-				NOT = { ROOT = { capital_scope = { culture = PREVPREV } } }
-				emf_is_neapolitan_source_province = yes
-			}
+			limit = { port = yes emf_is_neapolitan_source_province = yes }
 			save_event_target_as = emf_converted_province
 			break = yes
 		}
@@ -161,7 +141,7 @@ character_event = {
 		name = emf_italian_melt.0.opt.embrace
 		culture = neapolitan
 		event_target:emf_converted_province = { emf_make_province_neapolitan = yes }
-		emf_make_court_neapolitan = yes
+		emf_make_court_family_neapolitan = yes
 	}
 
 	option = {
@@ -186,6 +166,12 @@ province_event = {
 			any_neighbor_province = {
 				culture = neapolitan
 				owner = { culture = PREV }
+			}
+		}
+		owner = {
+			NOR = {
+				has_character_flag = emf_no_melting_pot_neapolitan
+				any_liege = { has_character_flag = emf_no_melting_pot_neapolitan }
 			}
 		}
 		NOT = { has_province_flag = melting_pot }
@@ -248,7 +234,7 @@ province_event = {
 # emf_italian_melt.2 -- ensure neapolitan courts speak neapolitan in region custom_neapolitan
 character_event = {
 	id = emf_italian_melt.2
-	
+
 	hide_window = yes
 
 	only_playable = yes
@@ -259,7 +245,12 @@ character_event = {
 
 	trigger = {
 		capital_scope = { region = custom_neapolitan }
+		NOR = {
+			has_character_flag = emf_no_melting_pot_neapolitan
+			any_liege = { has_character_flag = emf_no_melting_pot_neapolitan }
+		}
 		any_courtier = {
+			is_liege_or_above = ROOT
 			is_ruler = no
 			prisoner = no
 			emf_is_neapolitan_source_culture = yes
@@ -282,12 +273,47 @@ character_event = {
 		name = OK
 		random_courtier = {
 			limit = {
+				is_liege_or_above = ROOT
 				is_ruler = no
 				prisoner = no
 				emf_is_neapolitan_source_culture = yes
 			}
-			culture = neapolitan
+			if = {
+				limit = { ROOT = { ai = yes } }
+				culture = ROOT
+			}
+			if = {
+				limit = { ROOT = { ai = no } }
+				culture_scope = { save_event_target_as = emf_old_culture }
+				culture = ROOT
+				character_event = { id = emf_italian_melt.3 }
+			}
 		}
 	}
+}
+
+# emf_italian_melt.3 -- bounce courtier from previous event into the FROM of next event, a notification event, so that
+#                       they'll show up in the associated portrait (FIXME: in 2.8, we *should* be able to skip these steps
+#                       altogether and just specify who we want in the portrait directly)
+character_event = {
+	id = emf_italian_melt.3
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		FROM = { character_event = { id = emf_italian_melt.4 } }
+	}
+}
+
+# emf_italian_melt.4 -- notification that a courtier has been converted
+character_event = {
+	id = emf_italian_melt.4
+	desc = emf_italian_melt.4.desc
+
+	is_triggered_only = yes
+	notification = yes
+
+	option = { name = OK }
 }
 
