@@ -30,8 +30,6 @@ g_codegen_file_hdr = '''
 ###
 
 
-
-
 def main():
 	global g_religions, g_rg_religions_map
 	
