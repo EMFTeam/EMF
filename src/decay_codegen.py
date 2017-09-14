@@ -91,7 +91,8 @@ def define_modifiers(f):
 				val = int(val)
 			if val < -0.0009 or val > 0.0009:
 				print('\t{} = {}'.format(name, val), file=f)
-		print('\ticon = 28', file=f)
+		icon = 28 if i > 0 else 10
+		print('\ticon = {}'.format(icon), file=f)
 		print('}', file=f)
 
 
@@ -146,7 +147,7 @@ def round_effect(f, name, var, min_v, max_v):
 
 with effects_path.open('w', encoding='cp1252') as ef, \
 	 modifiers_path.open('w', encoding='cp1252') as mf, \
-	 i18n_path.open('w', encoding='cp1252', newline='\r\n') as lf:
+	 i18n_path.open('w', encoding='cp1252') as lf:
 	headers([('scripted_effects', ef), ('event_modifiers', mf), ('i18n', lf)])
 	define_modifiers(mf)
 	localisation(lf)
