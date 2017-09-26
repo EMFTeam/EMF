@@ -199,14 +199,14 @@ character_event = {
 }
 
 # emf_cb.60 -- serve ultimatum to Religious Subjugation war loser (or vassal thereof)
-character_event = {
+letter_event = {
 	id = emf_cb.60
 	picture = GFX_evt_emissary
 	border = GFX_event_normal_frame_religion
 
 	is_triggered_only = yes
-	show_from_from = yes # emf_cb.65 is our proxy, so we're always once removed from the normal "FROM"
 
+	# TODO-2.8: use `portrait = event_target:emf_cb_winner` (or so)
 	# TODO: ideally, we'd just always show the portrait of the CB winner, even when recursing (currently in that case,
 	# we'll show their liege whom refused ultimatum). in 2.8, this will be ridiculously easy, so I'm not going to worry
 	# about bounce events and the like for it.
@@ -233,12 +233,25 @@ character_event = {
 	}
 
 	immediate = {
+		log = "-> emf_cb.60: [Root.GetTitledFirstName] [Root.GetOnlyDynastyName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) receives ultimatum"
 		religion_scope = { save_event_target_as = emf_old_religion }
+		character_event = { id = emf_cb.5 } # Invalidate personal civil wars
 		if = {
 			limit = { character = event_target:emf_cb_loser }
 			event_target:emf_cb_winner = { emf_cb_relsub_reset_statistics = yes }
+			if = {
+				limit = { tier = event_target:emf_cb_winner }
+				# Then the subrealm (non-recursive -- just direct vassals) must also invalidate any of their
+				# civil wars, or we could get messy.
+				any_vassal = {
+					limit = {
+						war = yes
+						any_realm_title = { de_jure_liege_or_above = event_target:emf_cb_title }
+					}
+					character_event = { id = emf_cb.5 } # Invalidate personal civil wars
+				}
+			}
 		}
-		log = "-> emf_cb.60: [Root.GetTitledFirstName] [Root.GetOnlyDynastyName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) receives ultimatum"
 	}
 
 	option = {
@@ -263,19 +276,10 @@ character_event = {
 					NOT = { de_jure_liege_or_above = event_target:emf_cb_title }
 				}
 			}
-			modifier = {
-				factor = 1.333
-				trait = humble
-			}
-			modifier = {
-				factor = 0.75
-				trait = proud
-			}
+			modifier = { factor = 1.333 trait = humble }
+			modifier = { factor = 0.75 trait = proud }
 			# vs. secret conversion + submission, not vs. refusal
-			modifier = {
-				factor = 1.5
-				trait = honest
-			}
+			modifier = { factor = 1.5 trait = honest }
 		}
 		hidden_tooltip = { log = "--> chooses to submit & convert truly" }
 		emf_cb_relsub_basic_submission_decision = yes
@@ -285,7 +289,7 @@ character_event = {
 			if = {
 				limit = {
 					higher_real_tier_than = DUKE
-					NOT = { religion_group = christian }
+					religion_group = pagan_group
 					event_target:emf_cb_winner = { religion_group = christian }
 				}
 				set_character_flag = king_converted
@@ -310,7 +314,7 @@ character_event = {
 			if = {
 				limit = { NOT = { trait = zealous } }
 				random = {
-					chance = 40
+					chance = 33
 					emf_notify_add_zealous = yes
 				}
 			}
@@ -335,19 +339,10 @@ character_event = {
 					NOT = { de_jure_liege_or_above = event_target:emf_cb_title }
 				}
 			}
-			modifier = {
-				factor = 1.2
-				trait = humble
-			}
-			modifier = {
-				factor = 0.85
-				trait = proud
-			}
+			modifier = { factor = 1.2  trait = humble }
+			modifier = { factor = 0.85 trait = proud }
 			# not vs. refusal, but non-secret submission
-			modifier = {
-				factor = 1.5
-				trait = deceitful
-			}
+			modifier = { factor = 1.5 trait = deceitful }
 		}
 		hidden_tooltip = { log = "--> chooses to submit & pretend to convert" }
 		emf_cb_relsub_basic_submission_decision = yes
@@ -355,7 +350,7 @@ character_event = {
 		if = {
 			limit = {
 				higher_real_tier_than = DUKE
-				NOT = { religion_group = christian }
+				religion_group = pagan_group
 				event_target:emf_cb_winner = { religion_group = christian }
 			}
 			event_target:emf_cb_winner = { set_character_flag = converted_king }
@@ -371,7 +366,7 @@ character_event = {
 				religion_authority = { modifier = ruler_mass_converted_to years = 15 }
 			}
 		}
-		# pretenders don't try to convert their court at all
+		emf_cb_relsub_pretend_to_convert_court = yes
 		trigger_switch = {
 			on_trigger = has_secret_religion
 			yes = { custom_tooltip = { text = RELSUB_CONTINUE_OBSERVING_SECRET_FAITH } }
@@ -401,7 +396,7 @@ character_event = {
 		}
 		ai_chance = {
 			factor = 100
-			mult_modifier = {
+			modifier = {
 				factor = 0
 				religion = event_target:emf_cb_winner
 				NOT = {
@@ -421,52 +416,52 @@ character_event = {
 				who = event_target:emf_cb_winner
 				factor = 0.4 # 0 (when having no relative power) to 40 (when equally powerful)
 			}
-			# Effects of zeal, rationality, greed, and ambition. Note all tests are simply for "non-negative,"
-			# as these properties are on a scale of [-100,100].
-			additive_modifier = {
-				value = 20
-				ai_zeal = 0
-				has_secret_religion = no
-			}
-			additive_modifier = {
-				value = 20
-				ai_ambition = 0
-			}
-			additive_modifier = {
-				value = -20
-				ai_rationality = 0
-			}
-			additive_modifier = {
-				value = -10
-				ai_greed = 0
-			}
+			# Effects of zeal, rationality, greed, and ambition. Note that these properties are on a scale of
+			# [-100,100].
+			additive_modifier = { value = -5 ai_zeal = 0  has_secret_religion = no }
+			additive_modifier = { value = -5 ai_zeal = 5  has_secret_religion = no }
+			additive_modifier = { value = -5 ai_zeal = 10 has_secret_religion = no }
+			additive_modifier = { value = -5 ai_zeal = 15 has_secret_religion = no }
+			additive_modifier = { value = -5 ai_zeal = 20 has_secret_religion = no }
+			additive_modifier = { value =  2 ai_ambition = 0 }
+			additive_modifier = { value =  2 ai_ambition = 5 }
+			additive_modifier = { value =  2 ai_ambition = 10 }
+			additive_modifier = { value =  2 ai_ambition = 15 }
+			additive_modifier = { value =  2 ai_ambition = 20 }
+			additive_modifier = { value = -4 ai_rationality = 0 }
+			additive_modifier = { value = -4 ai_rationality = 5 }
+			additive_modifier = { value = -4 ai_rationality = 10 }
+			additive_modifier = { value = -4 ai_rationality = 15 }
+			additive_modifier = { value = -4 ai_rationality = 20 }
+			additive_modifier = { value = -5 ai_greed = 0 }
+			additive_modifier = { value = -5 ai_greed = 10 }
 			# General tuning mult. modifier (adjusting it only affects scale of chance after additive modifiers)
-			mult_modifier = {
+			modifier = {
 				factor = 1.333
 			}
 			# Dukes are a bit less likely to refuse the ultimatum
-			mult_modifier = {
+			modifier = {
 				factor = 0.8
 				lower_real_tier_than = KING
 			}
 			# Counts and barons are significantly less likely to refuse the ultimatum
-			mult_modifier = {
+			modifier = {
 				factor = 0.625
 				lower_real_tier_than = DUKE
 			}
 			# Pagans are more willing to submit & convert than those of organized religions
-			mult_modifier = {
+			modifier = {
 				factor = 0.5
 				religion_group = pagan_group
 				is_reformed_religion = no
 			}
 			# Zoroastrians should be slightly more willing to submit & convert than normal
-			mult_modifier = {
+			modifier = {
 				factor = 0.85
 				religion_group = zoroastrian_group
 			}
 			# Counterbalance modifiers that differ between submit vs. submit & follow secret religion
-			mult_modifier = {
+			modifier = {
 				factor = 1.5
 				OR = { trait = honest trait = deceitful }
 			}
@@ -496,7 +491,7 @@ character_event = {
 			# Since we're refusing, our direct vassals shall receive the same peace offer/ultimatum
 			any_vassal = {
 				limit = { any_realm_title = { de_jure_liege_or_above = event_target:emf_cb_title } }
-				character_event = { id = emf_cb.65 }
+				character_event = { id = emf_cb.60 }
 			}
 		}
 		if = {
@@ -546,7 +541,7 @@ character_event = {
 }
 
 # emf_cb.61 -- my liege has bent the knee and [apparently] converted, how do I react? [religious subjugation]
-character_event = {
+letter_event = {
 	id = emf_cb.61
 	desc = emf_cb.61.desc
 	picture = GFX_evt_emissary
@@ -563,23 +558,12 @@ character_event = {
 
 	option = {
 		name = emf_cb.61.opt.convert_too
-		trigger = {
-			can_change_religion = yes
-		}
+		trigger = { can_change_religion = yes }
 		ai_chance = {
 			factor = 100
-			modifier = {
-				factor = 1.5
-				trait = cynical
-			}
-			modifier = {
-				factor = 1.5
-				trait = honest
-			}
-			modifier = {
-				factor = 1.5
-				trait = humble
-			}
+			modifier = { factor = 1.5 trait = cynical }
+			modifier = { factor = 1.5 trait = honest }
+			modifier = { factor = 1.5 trait = humble }
 		}
 		hidden_tooltip = {
 			event_target:emf_cb_winner = {
@@ -601,6 +585,13 @@ character_event = {
 				religion_authority = { modifier = ruler_mass_converted_to years = 15 }
 			}
 		}
+		if = {
+			limit = { NOT = { trait = zealous } }
+			random = {
+				chance = 20
+				emf_notify_add_zealous = yes
+			}
+		}
 		emf_cb_relsub_convert_court = yes
 		opinion = { who = LIEGE modifier = opinion_relsub_converted_with_my_liege }
 		reverse_opinion = { who = LIEGE modifier = opinion_relsub_converted_with_me }
@@ -617,18 +608,9 @@ character_event = {
 		}
 		ai_chance = {
 			factor = 60
-			modifier = {
-				factor = 1.5
-				trait = cynical
-			}
-			modifier = {
-				factor = 1.5
-				trait = deceitful
-			}
-			modifier = {
-				factor = 1.25
-				trait = proud
-			}
+			modifier = { factor = 1.5  trait = cynical }
+			modifier = { factor = 1.5  trait = deceitful }
+			modifier = { factor = 1.25 trait = proud }
 		}
 		hidden_tooltip = {
 			event_target:emf_cb_winner = {
@@ -646,11 +628,11 @@ character_event = {
 				religion_authority = { modifier = ruler_mass_converted_to years = 15 }
 			}
 		}
-		# pretenders don't want to try to convert their court and can get away with that, so they don't
+		emf_cb_relsub_pretend_to_convert_court = yes
 		trigger_switch = {
 			on_trigger = has_secret_religion
 			yes = { custom_tooltip = { text = RELSUB_CONTINUE_OBSERVING_SECRET_FAITH } }
-			no = { set_secret_religion = event_target:emf_old_religion }
+			no  = { secret_religion = event_target:emf_old_religion }
 		}
 		opinion = { who = LIEGE modifier = opinion_relsub_converted_with_my_liege }
 		reverse_opinion = { who = LIEGE modifier = opinion_relsub_converted_with_me }
@@ -661,19 +643,10 @@ character_event = {
 		name = emf_cb.61.opt.refuse
 		ai_chance = {
 			factor = 160
-			modifier = {
-				factor = 1.5
-				trait = zealous
-			}
-			modifier = {
-				factor = 1.5
-				trait = proud
-			}
+			modifier = { factor = 1.5 trait = zealous }
+			modifier = { factor = 1.5 trait = proud }
 			# Counterbalance modifiers that differ between convert vs. convert & follow secret religion
-			modifier = {
-				factor = 1.5
-				OR = { trait = honest trait = deceitful }
-			}
+			modifier = { factor = 1.5 OR = { trait = honest trait = deceitful } }
 		}
 		opinion = { who = event_target:emf_cb_loser modifier = opinion_relsub_submitted_to_infidel_conqueror }
 		reverse_opinion = { who = LIEGE modifier = opinion_relsub_refused_to_convert_with_me }
@@ -1174,7 +1147,8 @@ character_event = {
 	}
 }
 
-# emf_cb.65 -- proxy for emf_cb.60, the main ultimatum event. the event chain entrance point for religious subjugation
+# emf_cb.65 -- helper for emf_cb.60, the main ultimatum event. executes only upon the event chain entrance point for
+#              religious subjugation
 character_event = {
 	id = emf_cb.65
 
@@ -1182,19 +1156,10 @@ character_event = {
 	hide_window = yes
 
 	immediate = {
-		character_event = { id = emf_cb.5 } # Invalidate personal civil wars
 		# Recursively invalidate civil wars below the war loser inside the target duchy, respecting realm tree
 		any_vassal = {
-			limit = {
-				war = yes
-				any_realm_title = { de_jure_liege_or_above = event_target:emf_cb_title }
-			}
+			limit = { any_realm_title = { de_jure_liege_or_above = event_target:emf_cb_title } }
 			repeat_event = { id = emf_cb.65 }
-		}
-		# Only continue to main ultimatum event for the war loser (the rest will have their chances, no doubt)
-		if = {
-			limit = { character = event_target:emf_cb_loser }
-			character_event = { id = emf_cb.60 }
 		}
 	}
 }
