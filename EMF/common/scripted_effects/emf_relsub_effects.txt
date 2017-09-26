@@ -40,8 +40,7 @@ emf_relsub_basic_submission_decision = {
 		# Mark titles to be destroyed (in same-tier case)
 		any_demesne_title = {
 			limit = { tier = event_target:emf_cb_winner }
-			set_title_flag = emf_relsub_tmp_destroy_title
-			log = "-----> same-tier title [This.GetBaseName] ([This.GetID]) will be destroyed"
+			log = "---> same-tier title [This.GetBaseName] ([This.GetID]) will be destroyed"
 		}
 		event_target:emf_cb_winner = {
 			if = {
@@ -92,14 +91,14 @@ emf_relsub_convert_court = {
 				random_list = {
 					20 = {
 						trigger = { has_secret_religion = no }
-						modifier = { factor = 2 trait = zealous }
+						modifier = { factor = 2.0 trait = zealous }
 						modifier = { factor = 1.5 trait = deceitful }
 						modifier = { factor = 1.5 trait = stubborn }
-						modifier = { factor = 1.5 trait = proud }
 						secret_religion = event_target:emf_old_religion
 					}
 					80 = {
-						modifier = { factor = 5 is_marriage_adult = no }
+						modifier = { factor = 2.0 is_marriage_adult = no }
+						modifier = { factor = 2.0 NOT = { age = 10 } }
 					}
 				}
 				religion = event_target:emf_cb_winner
@@ -151,11 +150,22 @@ emf_relsub_subjugate = {
 			any_vassal = { reverse_opinion = { who = PREV modifier = my_prior_vassal } }
 			# ... because destroying our primary-tier titles will break their vassalage
 			any_demesne_title = {
-				limit = { has_title_flag = emf_relsub_tmp_destroy_title }
+				limit = { tier = ROOT }
 				emf_destroy_title = yes
+			}
+			if = {
+				limit = { tier = ROOT }
+				log = "---> WARNING: emf_relsub_subjugate: after trying to safely destroy same-tier titles of [This.GetTitledFirstName] (#[This.GetID]), war loser is still same-tier as war winner! agh!"
 			}
 			# Now, for vassals whose subrealms contain land inside the CB target title, either revassalize them
 			# (if our new tier permits) or, failing that, have the CB winner subjugate them directly.
+			any_opinion_modifier_target = {
+				limit = {
+					reverse_has_opinion_modifier = { who = PREV modifier = my_prior_vassal }
+					NOT = { vassal_of = PREV }
+				}
+				set_defacto_liege = THIS # make it official; destroying titles is currently buggy this way
+			}
 			any_opinion_modifier_target = {
 				limit = {
 					reverse_has_opinion_modifier = { who = PREV modifier = my_prior_vassal }
@@ -185,7 +195,6 @@ emf_relsub_subjugate = {
 					NOT = { vassal_of = PREV }
 					NOT = { any_realm_title = { de_jure_liege_or_above = event_target:emf_cb_title } }
 				}
-				set_defacto_liege = THIS # make it official; destroying titles is currently buggy this way
 				emf_liege_change = yes
 			}
 			# Cleanup TOMs
