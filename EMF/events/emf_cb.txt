@@ -63,6 +63,59 @@ namespace = emf_cb
 	# }
 # }
 
+# emf_cb.5 -- invalidate all civil wars in which ROOT is a primary participant (as either defender/liege or civil war leader)
+character_event = {
+	id = emf_cb.5
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		any_war = {
+			limit = {
+				OR = {
+					defender = { character = ROOT }
+					attacker = { character = ROOT }
+				}
+				# NOTE: last time I tested, this OR cannot be a scripted trigger (v2.5 -- Conclave) because
+				# of weirdness with either the `using_cb` trigger or simply being in `any_war` scope -- it's
+				# weird, and I'd love it if someone could show me it now worked. That's the only reason this
+				# common event exists.
+				OR = {
+					using_cb = claim_on_liege
+					using_cb = claim_on_liege_plot
+					using_cb = claim_on_vassal_plot
+					using_cb = other_claim_on_liege
+					using_cb = bid_for_independence
+					using_cb = overthrow_ruler
+					using_cb = overthrow_ruler_no_calls
+					using_cb = cb_faction_independence
+					using_cb = cb_install_antiking
+					using_cb = cb_install_khan
+					using_cb = increase_council_power_war
+					using_cb = emf_faction_gender_succ_agnatic
+					using_cb = emf_faction_gender_succ_cognatic
+					using_cb = emf_faction_gender_succ_true_cognatic
+					using_cb = emf_faction_overthrow
+					using_cb = emf_faction_overthrow_CA
+					using_cb = emf_faction_overthrow_TO
+					using_cb = emf_faction_overthrow_obligations
+					using_cb = emf_faction_succ_elective_gavelkind
+					using_cb = emf_faction_succ_feudal_elective
+					using_cb = emf_faction_succ_gavelkind
+					using_cb = emf_faction_succ_primogeniture
+					using_cb = emf_faction_succ_seniority
+					using_cb = emf_faction_succ_tanistry
+					using_cb = emf_faction_succ_turkish_succession
+					using_cb = emf_faction_succ_ultimogeniture
+					using_cb = emf_resist_viceroy_revocation
+				}
+			}
+			end_war = invalid
+		}
+	}
+}
+
 
 # emf_cb.10
 #
@@ -1121,8 +1174,7 @@ character_event = {
 	}
 }
 
-# emf_cb.65 -- proxy for emf_cb.60, the main ultimatum event. this is the event chain entrance point and probably will be
-#              revisited by recursion down the realm tree.
+# emf_cb.65 -- proxy for emf_cb.60, the main ultimatum event. the event chain entrance point for religious subjugation
 character_event = {
 	id = emf_cb.65
 
@@ -1130,25 +1182,20 @@ character_event = {
 	hide_window = yes
 
 	immediate = {
-		# Handle revolt leaders, as invalidating their civil war now will probably have a significant impact upon
-		# their ultimatum decision-making due to a reduced tier and potentially making a clean subjugation case from
-		# a same-tier one which would require destroying titles -- a type of title that we cannot safely destroy
-		# (and, of course, allows us to properly deal with revolters without any delay in the process).
-		any_war = {
+		character_event = { id = emf_cb.5 } # Invalidate personal civil wars
+		# Recursively invalidate civil wars below the war loser inside the target duchy, respecting realm tree
+		any_vassal = {
 			limit = {
-				attacker = { character = ROOT }
-				defender = {
-					ROOT = {
-						OR = {
-							in_revolt = yes
-							liege_before_war = { character = PREVPREV } # defender
-						}
-					}
-				}
+				war = yes
+				any_realm_title = { de_jure_liege_or_above = event_target:emf_cb_title }
 			}
-			end_war = invalid
+			repeat_event = { id = emf_cb.65 }
 		}
-		character_event = { id = emf_cb.60 }
+		# Only continue to main ultimatum event for the war loser (the rest will have their chances, no doubt)
+		if = {
+			limit = { character = event_target:emf_cb_loser }
+			character_event = { id = emf_cb.60 }
+		}
 	}
 }
 
