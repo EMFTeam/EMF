@@ -293,24 +293,6 @@ letter_event = {
 			log = "--> chooses to refuse ultimatum"
 			# Ensure that we can be reached later
 			reverse_opinion = { who = event_target:emf_cb_winner modifier = refused_my_relsub }
-			# Mark titles to be taken
-			any_demesne_title = {
-				limit = {
-					de_jure_liege_or_above = event_target:emf_cb_title
-					NOT = { ROOT = { family_palace = { title = PREVPREV } } }
-				}
-				set_title_flag = emf_relsub_tmp_take_title
-				event_target:emf_cb_winner = {
-					if = {
-						limit = { PREV = { tier = COUNT } }
-						change_variable = { which = "emf_relsub_counties_taken" value = 1 }
-					}
-					if = {
-						limit = { PREV = { tier = BARON } }
-						change_variable = { which = "emf_relsub_baronies_taken" value = 1 }
-					}
-				}
-			}
 			# Since we're refusing, our direct vassals shall receive the same peace offer/ultimatum
 			any_vassal = {
 				limit = { any_realm_title = { de_jure_liege_or_above = event_target:emf_cb_title } }
@@ -473,6 +455,16 @@ letter_event = {
 		}
 		opinion = { who = event_target:emf_cb_loser modifier = opinion_relsub_submitted_to_infidel_conqueror }
 		reverse_opinion = { who = LIEGE modifier = opinion_relsub_refused_to_convert_with_me }
+		# Since we won't recurse here, add all same-religion-as-attacker lords under this guy now to the appropriate
+		# statistic
+		any_realm_lord = {
+			limit = { religion = event_target:emf_cb_winner }
+			hidden_tooltip = {
+				event_target:emf_cb_winner = {
+					change_variable = { which = "emf_relsub_lords_liberated" value = 1 }
+				}
+			}
+		}
 	}
 }
 
@@ -531,6 +523,7 @@ character_event = {
 		FROM = { letter_event = { id = emf_relsub.0 } }
 	}
 }
+
 
 # emf_relsub.20 -- starter event received by war winner before proceeding with anything else. called directly from a holy war
 #                  CB's on_success_title -- entrance to whole event chain.
@@ -603,6 +596,31 @@ character_event = {
 	immediate = {
 		# Lords are also nobles
 		change_variable = { which = "emf_relsub_nobles_converted" which = "emf_relsub_lords_converted" }
+
+		# Mark titles to be taken (for tooltip only, as we freshen our "list" at option execution time)
+		any_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = PREV modifier = refused_my_relsub } }
+			save_event_target_as = emf_refuser
+			any_demesne_title = {
+				limit = {
+					de_jure_liege_or_above = event_target:emf_cb_title
+					event_target:emf_refuser = { NOT = { family_palace = { title = PREVPREV } } }
+				}
+				set_title_flag = emf_relsub_tmp_take_title
+				event_target:emf_cb_winner = {
+					if = {
+						limit = { PREV = { tier = COUNT } }
+						change_variable = { which = "emf_relsub_counties_taken" value = 1 }
+					}
+					if = {
+						limit = { PREV = { tier = BARON } }
+						change_variable = { which = "emf_relsub_baronies_taken" value = 1 }
+					}
+				}
+			}
+			clear_event_target = emf_refuser
+		}
+
 		log = "-> emf_relsub.21: results are in:"
 		log = "--> [Root.emf_relsub_baronies_taken.GetValue] baronies to take ([Root.emf_relsub_counties_taken.GetValue] counties)"
 		log = "--> [Root.emf_relsub_nobles_converted.GetValue] nobles converted ([Root.emf_relsub_lords_converted.GetValue] rulers)"
