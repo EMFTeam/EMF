@@ -10,9 +10,6 @@ letter_event = {
 
 	is_triggered_only = yes
 
-	# TODO-2.8: use `portrait = event_target:emf_cb_winner` (or so)
-	# TODO-MAYBE: use bounce events to get what I want with the portraits even sooner, esp. since they are letter events
-
 	desc = {
 		text = emf_relsub.0.desc.overlord
 		trigger = { character = event_target:emf_cb_loser }
@@ -35,22 +32,30 @@ letter_event = {
 	}
 
 	immediate = {
-		log = "-> emf_relsub.0: [Root.GetTitledFirstName] [Root.GetOnlyDynastyName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) receives ultimatum"
+		if = {
+			limit = { character = event_target:emf_cb_loser }
+			log = "-> emf_relsub.0: [Root.GetTitledFirstName] [Root.GetOnlyDynastyName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) receives holy war ultimatum"
+		}
+		if = {
+			limit = { NOT = { character = event_target:emf_cb_loser } }
+			log = "--> emf_relsub.0: <underling> [Root.GetTitledFirstName] [Root.GetOnlyDynastyName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) receives holy war ultimatum"
+		}
 		religion_scope = { save_event_target_as = emf_old_religion }
-		character_event = { id = emf_cb.5 } # Invalidate personal civil wars
+		character_event = { id = emf_cb.5 } # Invalidate any civil wars against which we might be defending
+		character_event = { id = emf_cb.6 } # Invalidate any civil wars which we might be leading
 		if = {
 			limit = { character = event_target:emf_cb_loser }
 			event_target:emf_cb_winner = { emf_relsub_reset_statistics = yes }
 			if = {
 				limit = { tier = event_target:emf_cb_winner }
 				# [Same-tier defenders] Then the de jure subrealm (non-recursive -- just direct vassals) must
-				# [also invalidate any of their civil wars, or this could get messy later.
+				# also invalidate any of their civil wars, or this could get messy later. Technically, they
+				# only need to invalidate the ones in which the [temporarily elevated] vassal ruler is
+				# _leading_ a a civil war (e.g., COUNT[TEMP. DUKE] vs. DUKE for a KING war loser) here,
+				# so we'll do that only.
 				any_vassal = {
-					limit = {
-						war = yes
-						any_realm_title = { de_jure_liege_or_above = event_target:emf_cb_title }
-					}
-					character_event = { id = emf_cb.5 } # Invalidate personal civil wars
+					limit = { any_realm_title = { de_jure_liege_or_above = event_target:emf_cb_title } }
+					character_event = { id = emf_cb.6 } # Invalidate civil wars which we might be leading
 				}
 			}
 		}
@@ -228,16 +233,23 @@ letter_event = {
 			additive_modifier = { value =  2 ai_ambition = 0 }
 			additive_modifier = { value =  2 ai_ambition = 5 }
 			additive_modifier = { value =  2 ai_ambition = 10 }
-			additive_modifier = { value =  3 ai_ambition = 15 }
-			additive_modifier = { value =  3 ai_ambition = 20 }
+			additive_modifier = { value =  2 ai_ambition = 15 }
+			additive_modifier = { value =  2 ai_ambition = 20 }
+			additive_modifier = { value =  2 ai_ambition = 25 }
+			additive_modifier = { value =  2 ai_ambition = 30 }
+			additive_modifier = { value =  2 ai_ambition = 35 }
 			additive_modifier = { value = -4 ai_rationality = 0 }
 			additive_modifier = { value = -4 ai_rationality = 5 }
 			additive_modifier = { value = -4 ai_rationality = 10 }
 			additive_modifier = { value = -4 ai_rationality = 15 }
 			additive_modifier = { value = -4 ai_rationality = 20 }
-			additive_modifier = { value = -5 ai_greed = 0 }
-			additive_modifier = { value = -5 ai_greed = 10 }
-			additive_modifier = { value = -5 ai_greed = 20 }
+			additive_modifier = { value = -4 ai_rationality = 25 }
+			additive_modifier = { value = -4 ai_rationality = 30 }
+			additive_modifier = { value = -4 ai_greed = 0 }
+			additive_modifier = { value = -4 ai_greed = 10 }
+			additive_modifier = { value = -4 ai_greed = 20 }
+			additive_modifier = { value = -4 ai_greed = 30 }
+			additive_modifier = { value = -4 ai_greed = 40 }
 			# General tuning mult. modifier (adjusting it only affects scale of chance after additive modifiers)
 			modifier = {
 				factor = 1.333
@@ -298,7 +310,7 @@ letter_event = {
 			# Since we're refusing, our direct vassals shall receive the same peace offer/ultimatum
 			any_vassal = {
 				limit = { any_realm_title = { de_jure_liege_or_above = event_target:emf_cb_title } }
-				character_event = { id = emf_relsub.0 }
+				character_event = { id = emf_relsub.10 }
 			}
 		}
 		if = {
@@ -951,5 +963,29 @@ character_event = {
 		}
 		clear_flags_with_prefix = emf_relsub_tmp
 		any_demesne_title = { clear_flags_with_prefix = emf_relsub_tmp }
+	}
+}
+
+
+# emf_relsub.10 -- general event chain entrance point as well as always the proxy event arc for emf_relsub.0 (ultimatum)
+character_event = {
+	id = emf_relsub.10
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = { event_target:emf_cb_winner = { character_event = { id = emf_relsub.11 } } }
+}
+
+# emf_relsub.11 -- bounce event
+character_event = {
+	id = emf_relsub.11
+	
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		# Now, FROM in emf_relsub.0 will always be the holy warrior liege
+		FROM = { character_event = { id = emf_relsub.0 } }
 	}
 }
