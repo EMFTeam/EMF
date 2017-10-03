@@ -1,0 +1,860 @@
+# -*- ck2.events -*-
+
+namespace = emf_revolt
+
+##############################
+## EXTENDED PEASANT REBELLIONS
+##############################
+
+# emf_revolt.0 -- religious rebels rise up (triggered from on_rebel_revolt), replaces vanilla TOG.1060
+province_event = {
+	id = emf_revolt.0
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		is_heretic = no
+		any_province_holding = { NOT = { holding_type = nomad } }
+		owner = { top_liege = { emf_hostile_religion_to_ROOT = yes } }
+		# Prioritize liberation revolts
+		OR = {
+			has_province_flag = emf_revolt_tmp_triggered # Unless this is explicitly intentional
+			owner = { top_liege = { culture = ROOT } }
+			kingdom = {
+				OR = {
+					has_holder = yes
+					NOT = { culture = ROOT }
+				}
+			}
+		}
+		# Don't fire multiple revolt wars of the same general type at the same time, and don't fire a revolt from
+		# this province when a peasant revolt is contesting it already.
+		NOT = {
+			owner = {
+				top_liege = {
+					any_war = {
+						defender = { character = PREV }
+						OR = {
+							AND = {
+								using_cb = peasant_revolt
+								war_title = ROOT # The county associated with this province
+							}
+							AND = {
+								attacker = { religion = ROOT }
+								OR = {
+									using_cb = heretic_revolt
+									using_cb = emf_religious_revolt
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	immediate = {
+		owner = { top_liege = { character_event = { id = emf_revolt.1 } } }
+	}
+}
+
+# emf_revolt.1 -- religious rebels rising up in FROM, which is a province in ROOT's realm, so now determine which other
+# nearby qualifying provinces may rise up with FROM, create a rebel leader, and then bounce event chain to him.
+character_event = {
+	id = emf_revolt.1
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		# Determine upper bound on revolt size according to approximate size of realm. The origin province is
+		# not "free" -- it's included in these caps too.
+		if = {
+			limit = { NOT = { num_of_count_titles_in_realm = 10 } }
+			set_variable = { which = "maxprov" value = 3 }
+		}
+		if = {
+			limit = { num_of_count_titles_in_realm = 10 }
+			set_variable = { which = "maxprov" value = 4 }
+		}
+		if = {
+			limit = { num_of_count_titles_in_realm = 20 }
+			set_variable = { which = "maxprov" value = 5 }
+		}
+		if = {
+			limit = { num_of_count_titles_in_realm = 30 }
+			set_variable = { which = "maxprov" value = 6 }
+		}
+		if = {
+			limit = { num_of_count_titles_in_realm = 40 }
+			set_variable = { which = "maxprov" value = 8 }
+		}
+		if = {
+			limit = { num_of_count_titles_in_realm = 50 }
+			set_variable = { which = "maxprov" value = 10 }
+		}
+		# Determine reasonable set of provinces to revolt together, respecting upper bound on the number allowed.
+		# The origin province is, of course, a gimme.
+		FROM = {
+			set_province_flag = emf_revolt_tmp_source
+			set_province_flag = emf_revolt_tmp_origin
+			save_event_target_as = emf_revolt_origin
+		}
+		change_variable = { which = "maxprov" value = -1 }
+		set_variable = { which = "nprov" value = 1 }
+		log = "DEBUG: emf_revolt.1: attempting religious revolt against [Root.GetTitledFirstName] [Root.GetOnlyDynastyName] (#[Root.GetID]/[Root.PrimaryTitle.GetID])"
+		if = {
+			limit = { FROM = { has_province_flag = emf_revolt_tmp_triggered } }
+			log = "--> revolt was triggered intentionally (e.g., religious subjugation consequences)"
+		}
+		if = {
+			limit = { NOT = { FROM = { has_province_flag = emf_revolt_tmp_triggered } } }
+			log = "--> revolt was triggered on a standard on_rebel_revolt pulse"
+		}
+		log = "--> origin province: [From.GetName] (#[From.GetID]/[From.County.GetID])"
+		log = "--> limit on additional participating provinces in megarevolt: [Root.maxprov.GetValue]"
+		log = "--> selecting additional source provinces:"
+		while = {
+			limit = {
+				check_variable = { which = "maxprov" value = 1 }
+				any_realm_province = {
+					emf_can_province_join_religious_revolt = yes
+					NOT = { distance = { where = event_target:emf_revolt_origin value = 250 } }
+					NOT = { has_province_flag = emf_revolt_tmp_source }
+				}
+			}
+			random_realm_province = {
+				limit = {
+					NOT = { event_target:emf_province = { always = yes } }
+					emf_can_province_join_religious_revolt = yes
+					any_neighbor_province = { province = event_target:emf_revolt_origin }
+					revolt_risk = 0.3
+					NOT = { has_province_flag = emf_revolt_tmp_source }
+				}
+				save_event_target_as = emf_province
+			}
+			random_realm_province = {
+				limit = {
+					NOT = { event_target:emf_province = { always = yes } }
+					emf_can_province_join_religious_revolt = yes
+					any_neighbor_province = { province = event_target:emf_revolt_origin }
+					revolt_risk = 0.15
+					NOT = { has_province_flag = emf_revolt_tmp_source }
+				}
+				save_event_target_as = emf_province
+			}
+			random_realm_province = {
+				limit = {
+					NOT = { event_target:emf_province = { always = yes } }
+					emf_can_province_join_religious_revolt = yes
+					any_neighbor_province = { province = event_target:emf_revolt_origin }
+					NOT = { has_province_flag = emf_revolt_tmp_source }
+				}
+				save_event_target_as = emf_province
+			}
+			random_realm_province = {
+				limit = {
+					NOT = { event_target:emf_province = { always = yes } }
+					emf_can_province_join_religious_revolt = yes
+					NOT = { distance = { where = event_target:emf_revolt_origin value = 100 } }
+					revolt_risk = 0.3
+					NOT = { has_province_flag = emf_revolt_tmp_source }
+				}
+				save_event_target_as = emf_province
+			}
+			random_realm_province = {
+				limit = {
+					NOT = { event_target:emf_province = { always = yes } }
+					emf_can_province_join_religious_revolt = yes
+					NOT = { distance = { where = event_target:emf_revolt_origin value = 100 } }
+					revolt_risk = 0.15
+					NOT = { has_province_flag = emf_revolt_tmp_source }
+				}
+				save_event_target_as = emf_province
+			}
+			random_realm_province = {
+				limit = {
+					NOT = { event_target:emf_province = { always = yes } }
+					emf_can_province_join_religious_revolt = yes
+					NOT = { distance = { where = event_target:emf_revolt_origin value = 100 } }
+					NOT = { has_province_flag = emf_revolt_tmp_source }
+				}
+				save_event_target_as = emf_province
+			}
+			random_realm_province = {
+				limit = {
+					NOT = { event_target:emf_province = { always = yes } }
+					emf_can_province_join_religious_revolt = yes
+					NOT = { distance = { where = event_target:emf_revolt_origin value = 150 } }
+					revolt_risk = 0.3
+					NOT = { has_province_flag = emf_revolt_tmp_source }
+				}
+				save_event_target_as = emf_province
+			}
+			random_realm_province = {
+				limit = {
+					NOT = { event_target:emf_province = { always = yes } }
+					emf_can_province_join_religious_revolt = yes
+					NOT = { distance = { where = event_target:emf_revolt_origin value = 150 } }
+					revolt_risk = 0.15
+					NOT = { has_province_flag = emf_revolt_tmp_source }
+				}
+				save_event_target_as = emf_province
+			}
+			random_realm_province = {
+				limit = {
+					NOT = { event_target:emf_province = { always = yes } }
+					emf_can_province_join_religious_revolt = yes
+					NOT = { distance = { where = event_target:emf_revolt_origin value = 150 } }
+					NOT = { has_province_flag = emf_revolt_tmp_source }
+				}
+				save_event_target_as = emf_province
+			}
+			random_realm_province = {
+				limit = {
+					NOT = { event_target:emf_province = { always = yes } }
+					emf_can_province_join_religious_revolt = yes
+					NOT = { distance = { where = event_target:emf_revolt_origin value = 200 } }
+					revolt_risk = 0.3
+					NOT = { has_province_flag = emf_revolt_tmp_source }
+				}
+				save_event_target_as = emf_province
+			}
+			random_realm_province = {
+				limit = {
+					NOT = { event_target:emf_province = { always = yes } }
+					emf_can_province_join_religious_revolt = yes
+					NOT = { distance = { where = event_target:emf_revolt_origin value = 200 } }
+					revolt_risk = 0.15
+					NOT = { has_province_flag = emf_revolt_tmp_source }
+				}
+				save_event_target_as = emf_province
+			}
+			random_realm_province = {
+				limit = {
+					NOT = { event_target:emf_province = { always = yes } }
+					emf_can_province_join_religious_revolt = yes
+					NOT = { distance = { where = event_target:emf_revolt_origin value = 200 } }
+					NOT = { has_province_flag = emf_revolt_tmp_source }
+				}
+				save_event_target_as = emf_province
+			}
+			random_realm_province = {
+				limit = {
+					NOT = { event_target:emf_province = { always = yes } }
+					emf_can_province_join_religious_revolt = yes
+					NOT = { distance = { where = event_target:emf_revolt_origin value = 250 } }
+					revolt_risk = 0.3
+					NOT = { has_province_flag = emf_revolt_tmp_source }
+				}
+				save_event_target_as = emf_province
+			}
+			random_realm_province = {
+				limit = {
+					NOT = { event_target:emf_province = { always = yes } }
+					emf_can_province_join_religious_revolt = yes
+					NOT = { distance = { where = event_target:emf_revolt_origin value = 250 } }
+					revolt_risk = 0.15
+					NOT = { has_province_flag = emf_revolt_tmp_source }
+				}
+				save_event_target_as = emf_province
+			}
+			random_realm_province = {
+				limit = {
+					NOT = { event_target:emf_province = { always = yes } }
+					emf_can_province_join_religious_revolt = yes
+					NOT = { distance = { where = event_target:emf_revolt_origin value = 250 } }
+					NOT = { has_province_flag = emf_revolt_tmp_source }
+				}
+				save_event_target_as = emf_province
+			}
+			event_target:emf_province = {
+				log = "---> selected additional source province [This.GetName] (#[This.GetID]/[This.County.GetID])"
+				set_province_flag = emf_revolt_tmp_source
+				ROOT = { change_variable = { which = "maxprov" value = -1 } }
+				ROOT = { change_variable = { which = "nprov" value = 1 } }
+			}
+			clear_event_target = emf_province
+		}
+		log = "--> revolt will proceed with [Root.nprov.GetValue] source provinces ([Root.maxprov.GetValue] more were allowed)"
+
+		# Marshal the province selections into event targets for various use in the event chain.
+		event_target:emf_revolt_origin = { save_event_target_as = emf_revolt_prov1 }
+		random_realm_province = {
+			limit = {
+				has_province_flag = emf_revolt_tmp_source
+				NOT = { province = event_target:emf_revolt_prov1 }
+			}
+			save_event_target_as = emf_revolt_prov2
+		}
+		random_realm_province = {
+			limit = {
+				has_province_flag = emf_revolt_tmp_source
+				NOR = {
+					province = event_target:emf_revolt_prov1
+					province = event_target:emf_revolt_prov2
+				}
+			}
+			save_event_target_as = emf_revolt_prov3
+		}
+		random_realm_province = {
+			limit = {
+				has_province_flag = emf_revolt_tmp_source
+				NOR = {
+					province = event_target:emf_revolt_prov1
+					province = event_target:emf_revolt_prov2
+					province = event_target:emf_revolt_prov3
+				}
+			}
+			save_event_target_as = emf_revolt_prov4
+		}
+		random_realm_province = {
+			limit = {
+				has_province_flag = emf_revolt_tmp_source
+				NOR = {
+					province = event_target:emf_revolt_prov1
+					province = event_target:emf_revolt_prov2
+					province = event_target:emf_revolt_prov3
+					province = event_target:emf_revolt_prov4
+				}
+			}
+			save_event_target_as = emf_revolt_prov5
+		}
+		random_realm_province = {
+			limit = {
+				has_province_flag = emf_revolt_tmp_source
+				NOR = {
+					province = event_target:emf_revolt_prov1
+					province = event_target:emf_revolt_prov2
+					province = event_target:emf_revolt_prov3
+					province = event_target:emf_revolt_prov4
+					province = event_target:emf_revolt_prov5
+				}
+			}
+			save_event_target_as = emf_revolt_prov6
+		}
+		random_realm_province = {
+			limit = {
+				has_province_flag = emf_revolt_tmp_source
+				NOR = {
+					province = event_target:emf_revolt_prov1
+					province = event_target:emf_revolt_prov2
+					province = event_target:emf_revolt_prov3
+					province = event_target:emf_revolt_prov4
+					province = event_target:emf_revolt_prov5
+					province = event_target:emf_revolt_prov6
+				}
+			}
+			save_event_target_as = emf_revolt_prov7
+		}
+		random_realm_province = {
+			limit = {
+				has_province_flag = emf_revolt_tmp_source
+				NOR = {
+					province = event_target:emf_revolt_prov1
+					province = event_target:emf_revolt_prov2
+					province = event_target:emf_revolt_prov3
+					province = event_target:emf_revolt_prov4
+					province = event_target:emf_revolt_prov5
+					province = event_target:emf_revolt_prov6
+					province = event_target:emf_revolt_prov7
+				}
+			}
+			save_event_target_as = emf_revolt_prov8
+		}
+		random_realm_province = {
+			limit = {
+				has_province_flag = emf_revolt_tmp_source
+				NOR = {
+					province = event_target:emf_revolt_prov1
+					province = event_target:emf_revolt_prov2
+					province = event_target:emf_revolt_prov3
+					province = event_target:emf_revolt_prov4
+					province = event_target:emf_revolt_prov5
+					province = event_target:emf_revolt_prov6
+					province = event_target:emf_revolt_prov7
+					province = event_target:emf_revolt_prov8
+				}
+			}
+			save_event_target_as = emf_revolt_prov9
+		}
+
+		# We want to spawn the rebel leader in an appropriate court (so that he takes the right default government
+		# type, actually starts at that location(ish), etc.)
+		ROOT = { save_event_target_as = emf_spawn_court } # fallback
+		random_realm_lord = {
+			limit = {
+				is_playable = yes
+				any_demesne_province = { province = event_target:emf_revolt_origin }
+			}
+			save_event_target_as = emf_spawn_court
+		}
+
+		# Create the peasant revolt leader (whom hails from our origin province) -- randomly varied ages
+		event_target:emf_spawn_court = {
+			log = "--> spawning peasant leader:"
+			log = "---> in the court of [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+			log = "---> in the province of [This.Capital.GetName] (#[This.Capital.GetID]/[This.Capital.County.GetID])"
+			event_target:emf_revolt_origin = { save_event_target_as = emf_spawn_relcul }
+			emf_spawn_religious_revolt_leader = yes
+			clear_event_target = emf_spawn_relcul
+			new_character = { character_event = { id = emf_revolt.2 } }
+		}
+	}
+}
+
+# emf_revolt.2 -- rebel leader (literally just freshly spawned, no title, nada) = ROOT, defender against rebellion = FROM
+character_event = {
+	id = emf_revolt.2
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		emf_customize_spawned_religious_revolt_leader = yes
+
+		# Create temp. revolt title
+		create_title = {
+			tier = DUKE
+			landless = yes
+			temporary = yes
+			rebel = yes
+			culture = ROOT
+			name = "HERETIC_REVOLT"
+			holder = ROOT
+		}
+
+		# for each source province, spawn troops/commanders, add a bit to treasury, and a strong claim on its county
+		# so that it may be properly contested regarding territorial warscore (and so we can include the names of all
+		# the source provinces for the rebellion in the actual war name + know during and after the war which
+		# provinces are actually source provinces since our current province flags get cleared instantly after this).
+
+		FROM = {
+			any_realm_province = {
+				limit = { has_province_flag = emf_revolt_tmp_source }
+				province_event = { id = emf_revolt.3 }
+			}
+		}
+
+		opinion = { who = FROM modifier = opinion_evil_tyrant }
+
+		# declare war!
+		war = {
+			target = FROM
+			casus_belli = emf_religious_revolt
+		}
+
+		if = {
+			limit = { war = no }
+			log = "--> ERROR: aborting: rebel leader failed to declare war with emf_religious_revolt CB"
+			disband_event_forces = emf_revolt
+			any_courtier = { death = { death_reason = death_missing } }
+			primary_title = { emf_unsafe_destroy_title = yes }
+			death = { death_reason = death_missing }
+			break = yes
+		}
+
+		FROM = {
+			# Notify affected realm lords; note that we hide these notifications for the top liege, as
+			# they get their own event.
+			any_realm_province = {
+				limit = { has_province_flag = emf_revolt_tmp_source }
+				save_event_target_as = emf_revolt_province
+				owner = { any_liege = { character_event = { id = emf_revolt.10 } } }
+				clear_event_target = emf_revolt_province
+			}
+			character_event = { id = emf_revolt.4 } # tell the top liege defender what's gone down
+		}
+	}
+}
+
+# emf_revolt.4 -- called on each source province of religious revolt; spawns units & commanders ready to fight.
+#
+# ROOT = a source province for uprising
+# FROM = rebel leader (with title now, so a ruler w/ a court)
+province_event = {
+	id = emf_revolt.3
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		log = "--> adding to rebellion: [Root.GetName] (#[Root.GetID]/[Root.County.GetID])"
+		add_province_modifier = { name = recent_county_uprising duration = 1825 } # 5yr of -100% revolt risk
+		county = { add_claim = FROM }
+		FROM = {
+			wealth = 100
+			random_list = {
+				33 = { emf_revolt_spawn_troops_LI10_LC4_A6_scale100 = yes }
+				33 = { emf_revolt_spawn_troops_LI12_LC2_A6_scale100 = yes }
+				33 = { emf_revolt_spawn_troops_LI14_A6_scale100 = yes }
+			}
+		}
+	}
+}
+
+# emf_revolt.4 -- religious uprising has begun (now in a state of war), so tell the defender about it.
+#
+# + rebel leader with duke-tier temporary title = FROM
+# + defender against rebellion = ROOT (top liege)
+# + the provinces participating in the rebellion are all claimed by FROM
+# + the origin province is event_target:emf_revolt_origin (also flagged, also event_target:emf_revolt_prov1)
+# + up to 9 of the source provinces are packed into 9 event targets for misc. usage.
+long_character_event = {
+	id = emf_revolt.4
+	picture = GFX_evt_heretic
+	border = GFX_event_long_frame_war
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	desc = {
+		text = emf_revolt.4.desc.directly_due_to_relsub
+		trigger = { emf_is_religious_revolt_related_to_relsub = yes }
+	}
+
+	desc = {
+		text = emf_revolt.4.desc.normal
+		trigger = { emf_is_religious_revolt_related_to_relsub = no }
+	}
+
+	immediate = {
+		# cleanup temp flags. only state we need now is the rebel leader's claims on the participating counties.
+		any_realm_province = { clear_flags_with_prefix = emf_revolt_tmp }
+	}
+
+	option = {
+		name = EVTOPTA_TOG_1060 # FIXME
+		trigger = { religion_group = FROM }
+	}
+	option = {
+		name = EVTOPTB_TOG_1060 # FIXME
+		trigger = { NOT = { religion_group = FROM } }
+	}
+}
+
+# emf_revolt.5 -- rebel uprising receives reinforcements (triggered from on_rebel_revolt)
+province_event = {
+	id = emf_revolt.5
+	desc = EVTDESC_TOG_1070 # FIXME
+	picture = GFX_evt_heretic
+	border = GFX_event_normal_frame_war
+	
+	is_triggered_only = yes
+
+	trigger = {
+		is_heretic = no
+		any_province_holding = { NOT = { holding_type = nomad } }
+		owner = {
+			top_liege = {
+				any_war = {
+					defender = { character = PREV }
+					attacker = { religion = ROOT }
+					using_cb = emf_religious_revolt
+				}
+				emf_hostile_religion_to_ROOT = yes
+			}
+		}
+	}
+
+	immediate = {
+		owner = {
+			top_liege = {
+				any_war = {
+					limit = {
+						defender = { character = PREV }
+						attacker = { religion = ROOT }
+						using_cb = emf_religious_revolt
+					}
+					attacker = {
+						log = "INFO: emf_revolt.5: [Root.GetName] (#[Root.GetID]/[Root.County.GetID]) joins [This.Religion.GetName] religious uprising led by [This.GetTitledName] (#[This.GetID]/[This.PrimaryTitle.GetID]) against [PrevPrev.GetTitledFirstName] [PrevPrev.GetOnlyDynastyName] of the [PrevPrev.PrimaryTitle.GetFullName] (#[PrevPrev.GetID]/[PrevPrev.PrimaryTitle.GetID])"
+						character_event = { id = emf_revolt.6 }
+					}
+				}
+			}
+		}
+	}
+
+	option = {
+		name = EVTOPTA_TOG_1070 # FIXME
+	}
+}
+
+# emf_revolt.6 -- rebel leader in religious uprising sees opportunity to recruit reinforcements from province FROM
+character_event = {
+	id = emf_revolt.6
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		FROM = {
+			# Reinforce from that province
+			province_event = { id = emf_revolt.3 }
+			# Notify relevant rulers in defender realm (including top liege)
+			save_event_target_as = emf_revolt_province
+			owner = {
+				any_liege = { character_event = { id = emf_revolt.11 } }
+			}
+		}
+	}
+}
+
+# emf_revolt.7 -- settlement sacked in religious revolt on_siege_over_winner: army owner is ROOT, settlement is FROM
+character_event = {
+	id = emf_revolt.7
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	only_rulers = yes
+	has_character_flag = emf_religious_revolt_leader
+
+	trigger = {
+		rebel = yes
+	}
+
+	immediate = {
+		FROM = {
+			log = "DEBUG: emf_revolt.7: religious rebels under [Root.GetTitledName] sack holding [This.GetBaseName] in [This.Location.GetName] ([This.GetID]/[This.Location.County.GetID])"
+			if = {
+				limit = { NOT = { has_holding_modifier = looted_modifier } }
+				# Rebels loot the holding of all sorts of stored wealth, proportional to how rich the holding
+				# is. The `holding_tax_value` export is very close (if not equal under normal conditions) to
+				# the UI's "Total Tax Value" number for the holding, which is its yearly net gold profit
+				# (after modifiers, good or bad).
+				ROOT = { export_to_variable = { who = PREV value = holding_tax_value which = "loot" } }
+				log = "--> base loot amount for holding: [Root.loot.GetValue]"
+				# If the holding is in a playable ruler capital, we increase the effective lot according to
+				# the rank of the ruler. E.g., looting a king's capital province is much more profitable than
+				# looting a baron's capital holding (if nothing else, the king collects taxes while the baron
+				# doesn't-- he only pays them).
+				location = {
+					if = {
+						limit = { is_capital = yes }
+						log = "--> location is the capital of a playable ruler"
+						if = {
+							limit = { owner = { real_tier = COUNT } }
+							ROOT = { multiply_variable = { which = "loot" value = 1.25 } }
+							log = "----> whose tier = COUNT (+25% loot)"
+						}
+						if = {
+							limit = { owner = { real_tier = DUKE } }
+							ROOT = { multiply_variable = { which = "loot" value = 1.5 } }
+							log = "----> whose tier = DUKE (+50% loot)"
+						}
+						if = {
+							limit = { owner = { real_tier = KING } }
+							ROOT = { multiply_variable = { which = "loot" value = 1.75 } }
+							log = "----> whose tier = KING (+75% loot)"
+						}
+						if = {
+							limit = { owner = { real_tier = EMPEROR } }
+							ROOT = { multiply_variable = { which = "loot" value = 2.0 } }
+							log = "----> whose tier = EMPEROR (+100% loot)"
+						}				
+						log = "--> base loot after capital province adjustment: [Root.loot.GetValue]"
+					}
+				}
+				# Rebels always loot a bit, regardless of other factors
+				ROOT = { set_variable = { which = "loot_mult" value = 0.25 } } # Base value is 3mos profit
+				if = {
+					limit = { location = { emf_hostile_religion_to_ROOT = yes } }
+					# Rebels loot more in provinces with hostile majority religions
+					log = "--> province has a hostile religion"
+					ROOT = { change_variable = { which = "loot_mult" value = 1.0 } }
+					if = { # And even more if the majority is of a different religion group
+						limit = { location = { NOT = { religion_group = ROOT } } }
+						log = "--> province has a different religion group"
+						ROOT = { change_variable = { which = "loot_mult" value = 0.4 } }
+					}
+				}
+				if = { # More if they're of a different culture
+					limit = { location = { NOT = { culture = ROOT } } }
+					log = "--> province has a different culture"
+					ROOT = { change_variable = { which = "loot_mult" value = 0.2 } }
+				}
+				if = { # More if they're of a different culture group
+					limit = { location = { NOT = { culture_group = ROOT } } }
+					log = "--> province has a different culture group"
+					ROOT = { change_variable = { which = "loot_mult" value = 0.4 } }
+				}
+				ROOT = {
+					# Transfer the theoretical loot into real cash money and cleanup
+					multiply_variable = { which = "loot" which = "loot_mult" }
+					log = "----> total loot taken from holding: [Root.loot.GetValue]"
+					while = {
+						limit = { check_variable = { which = "loot" value = 1 } }
+						change_variable = { which = "loot" value = -2 }
+						wealth = 2
+					}
+					set_variable = { which = "loot" value = 0 }
+					set_variable = { which = "loot_mult" value = 0 }
+				}
+				add_holding_modifier = { name = looted_modifier duration = 545 } # 18mos
+			}
+			location = {
+				if = {
+					limit = { NOT = { has_province_modifier = religious_unrest } }
+					log = "--> adding religious_unrest modifier to province"
+					add_province_modifier = { name = religious_unrest duration = 730 }
+				}
+				if = {
+					limit = { has_province_modifier = relsub_unrest_modifier }
+					log = "--> stacking extra 10 years of religious subjugation unrest modifier upon province"
+					add_province_modifier = { name = relsub_unrest_modifier years = 10 stacking = yes }
+				}
+			}
+		}
+		if = {
+			limit = { FROM = { location = { religion = ROOT } } }
+			log = "--> province is same religion as rebels, so pressing some of the local peasants into the army"
+			emf_revolt_spawn_post_siege_reinforcements = yes
+		}
+		FROM = {
+			if = {
+				limit = { is_capital = yes } # province capital holding
+				if = {
+					limit = { location = { is_capital = yes } } # capital prov. of a playable ruler
+					ROOT = { prestige = 40 }
+					if = {
+						limit = { location = { emf_hostile_religion_to_ROOT = yes } }
+						ROOT = { piety = 20 }
+					}
+				}
+				if = {
+					limit = { location = { is_capital = no } } # demesne prov. of a playable ruler
+					ROOT = { prestige = 30 }
+					if = {
+						limit = { location = { emf_hostile_religion_to_ROOT = yes } }
+						ROOT = { piety = 15 }
+					}
+				}
+			}
+			if = {
+				limit = { is_capital = no  } # province minor holding
+				if = {
+					limit = { location = { is_capital = yes } } # capital prov. of a playable ruler
+					ROOT = { prestige = 20 }
+					if = {
+						limit = { location = { emf_hostile_religion_to_ROOT = yes } }
+						ROOT = { piety = 10 }
+					}
+				}
+				if = {
+					limit = { location = { is_capital = no } } # demesne prov. of a playable ruler
+					ROOT = { prestige = 10 }
+					if = {
+						limit = { location = { emf_hostile_religion_to_ROOT = yes } }
+						ROOT = { piety = 5 }
+					}
+				}
+			}
+		}
+	}
+}
+
+# emf_revolt.8 -- on_death for religious revolt leader: handle inheritance of revolt state & troops
+character_event = {
+	id = emf_revolt.8
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	has_character_flag = emf_religious_revolt_leader
+
+	trigger = {
+		rebel = yes
+	}
+
+	immediate = {
+		log = "INFO: emf_revolt.8: religious revolt leader is dying: [This.GetTitledName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+		if = {
+			limit = { NOT = { current_heir = { is_liege_or_above = ROOT } } }
+			if = {
+				limit = { NOT = { current_heir = { is_alive = yes } } }
+				log = "--> leader has no known successor!"
+			}
+			if = {
+				limit = { current_heir = { is_alive = yes } }
+				log = "--> successor is not vassal or below of leader!"
+			}
+		}
+		current_heir = {
+			log = "--> successor would have been: [This.GetTitledName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+		}
+		# instead, let's not trust rebel inheritance at all and just spawn a new peasant leader
+		ROOT = { save_event_target_as = emf_spawn_relcul }
+		emf_spawn_religious_revolt_leader = yes
+		clear_event_target = emf_spawn_relcul
+		new_character = {
+			emf_customize_spawned_religious_revolt_leader = yes # note that this adds the appropriate flags too
+			save_event_target_as = emf_abdicate_real_heir
+		}
+		# transfer strong claims to heir (important for war targeting)
+		any_claim = {
+			limit = {
+				tier = COUNT
+				ROOT = { has_strong_claim = PREV }
+			}
+			add_pressed_claim = event_target:emf_abdicate_real_heir
+		}
+		# transfer accrued wealth, prestige, and piety from rebellion to heir
+		transfer_scaled_wealth = { to = event_target:emf_abdicate_real_heir value = all }
+		export_to_variable = { which = "pr" value = prestige }
+		export_to_variable = { which = "pi" value = piety }
+		while = {
+			limit = { check_variable = { which = "pr" value = 5 } }
+			change_variable = { which = "pr" value = -10 }
+			event_target:emf_abdicate_real_heir = { prestige = 10 }
+		}
+		while = {
+			limit = { check_variable = { which = "pi" value = 2.5 } }
+			change_variable = { which = "pi" value = -5 }
+			event_target:emf_abdicate_real_heir = { piety = 5 }
+		}
+		# all right, good to go for the handoff.
+		emf_abdicate = yes
+	}
+}
+
+# emf_revolt.10 -- notify lieges of a religious revolt source province (excluding top liege)
+character_event = {
+	id = emf_revolt.10
+	desc = EVTDESC_TOG_1061 # FIXME
+	picture = GFX_evt_heretic
+	border = GFX_event_normal_frame_war
+
+	is_triggered_only = yes
+
+	ai = no
+
+	trigger = { independent = no }
+
+	option = {
+		name = EVTOPTA_TOG_1060 # FIXME
+		trigger = { religion_group = FROM }
+	}
+	option = {
+		name = EVTOPTB_TOG_1060 # FIXME
+		trigger = { NOT = { religion_group = FROM } }
+	}
+}
+
+# emf_revolt.11 -- notify lieges of a religious revolt reinforcement province
+character_event = {
+	id = emf_revolt.11
+	desc = EVTDESC_TOG_1071 # FIXME
+	picture = GFX_evt_heretic
+	border = GFX_event_normal_frame_war
+
+	is_triggered_only = yes
+
+	ai = no
+
+	option = {
+		name = EVTOPTA_TOG_1070 # FIXME
+	}
+}
+

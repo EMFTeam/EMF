@@ -5,8 +5,7 @@ namespace = emf_relsub
 # emf_relsub.0 -- serve ultimatum to Religious Subjugation war loser (or vassal thereof)
 letter_event = {
 	id = emf_relsub.0
-	picture = GFX_evt_emissary
-	border = GFX_event_normal_frame_religion
+	border = GFX_event_letter_frame_religion
 
 	is_triggered_only = yes
 
@@ -349,8 +348,7 @@ letter_event = {
 letter_event = {
 	id = emf_relsub.1
 	desc = emf_relsub.1.desc
-	picture = GFX_evt_emissary
-	border = GFX_event_normal_frame_religion
+	border = GFX_event_letter_frame_religion
 
 	is_triggered_only = yes
 	show_from_from = yes # we always bounce through emf_relsub.2, so FROMFROM is the portrait to show
@@ -1099,6 +1097,49 @@ province_event = {
 	}
 }
 
+# emf_relsub.40 -- delayed event for attempting to trigger a religious uprising in a province conquered through holy war
+#
+# basically just a proxy for emf_revolt.0, the on_rebel_revolt handler when there isn't already a religious uprising
+# underway and, alternately, a proxy for emf_revolt.5 (reinforcement of ongoing religious uprising war).
+#
+# this allows us to supply our own intentional "revolt risk pulse" instead of relying entirely upon the game's
+# on_rebel_revolt triggering behavior effectively.
+province_event = {
+	id = emf_relsub.40
 
-	immediate = { emf_relsub_reset_religious_unrest = yes }
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		is_heretic = no
+		has_province_modifier = relsub_unrest_modifier
+		owner = { top_liege = { emf_hostile_religion_to_ROOT = yes } }
+	}
+
+	immediate = {
+		owner = {
+			top_liege = {
+				if = {
+					limit = {
+						any_war = {
+							defender = { character = PREV }
+							attacker = { religion = ROOT }
+							using_cb = emf_religious_revolt
+						}
+					}
+					# Try to reinforce existing same-religion religious uprising
+					ROOT = { province_event = { id = emf_revolt.5 } }
+					break = yes
+				}
+				# If we reach this point, there was not yet an uprising of our religion underway, so forward
+				# to beginning of religious uprising chain with ROOT as the origin province:
+				ROOT = {
+					# Set temp. flag that overrides any prioritization of other revolt types
+					# over a religious revolt in the province:
+					set_province_flag = emf_revolt_tmp_triggered
+					province_event = { id = emf_revolt.0 }
+				}
+			}
+		}
+	}
 }
