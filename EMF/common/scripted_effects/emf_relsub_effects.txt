@@ -1,0 +1,441 @@
+# -*- ck2.scripted_effects -*-
+
+
+emf_relsub_ask_vassals_to_convert = {
+	# Since we chose to convert, pass the choice to our direct vassals (sort tooltip / exec order by tier, desc.)
+	any_vassal = {
+		limit = { tier = KING }
+		custom_tooltip = {
+			text = RELSUB_ASK_VASSAL_TO_CONVERT
+			hidden_tooltip = { character_event = { id = emf_relsub.2 } }
+		}
+	}
+	any_vassal = {
+		limit = { tier = DUKE }
+		custom_tooltip = {
+			text = RELSUB_ASK_VASSAL_TO_CONVERT
+			hidden_tooltip = { character_event = { id = emf_relsub.2 } }
+		}
+	}
+	any_vassal = {
+		limit = { tier = COUNT }
+		custom_tooltip = {
+			text = RELSUB_ASK_VASSAL_TO_CONVERT
+			hidden_tooltip = { character_event = { id = emf_relsub.2 } }
+		}
+	}
+	any_vassal = {
+		limit = { tier = BARON }
+		custom_tooltip = {
+			text = RELSUB_ASK_VASSAL_TO_CONVERT
+			hidden_tooltip = { character_event = { id = emf_relsub.2 } }
+		}
+	}
+}
+
+emf_relsub_basic_submission_decision = {	
+	hidden_tooltip = {
+		# Ensure that we can be reached later
+		reverse_opinion = { who = event_target:emf_cb_winner modifier = submits_to_my_relsub }
+		# Mark titles to be destroyed (in same-tier case)
+		any_demesne_title = {
+			limit = { tier = event_target:emf_cb_winner }
+			log = "---> same-tier title [This.GetBaseName] ([This.GetID]) will be destroyed"
+		}
+		event_target:emf_cb_winner = {
+			if = {
+				limit = { religion = PREV }
+				change_variable = { which = "emf_relsub_lords_liberated" value = 1 }
+			}
+			if = {
+				limit = { NOT = { religion = PREV } }
+				change_variable = { which = "emf_relsub_lords_converted" value = 1 }
+			}
+		}
+	}
+	if = {
+		limit = { tier = event_target:emf_cb_winner }
+		custom_tooltip = { text = RELSUB_SAME_TIER_TITLES_WILL_BE_DESTROYED }
+	}
+	tooltip = { set_defacto_liege = event_target:emf_cb_winner }
+}
+
+emf_relsub_reset_statistics = {
+	hidden_tooltip = {
+		set_variable = { which = "emf_relsub_lords_liberated"  value = 0 }
+		set_variable = { which = "emf_relsub_lords_converted"  value = 0 }
+		set_variable = { which = "emf_relsub_nobles_converted" value = 0 }
+		set_variable = { which = "emf_relsub_baronies_taken"   value = 0 }
+		set_variable = { which = "emf_relsub_counties_taken"   value = 0 }
+	}
+}
+
+
+emf_relsub_convert_court = {
+	if = {
+		limit = { NOT = { religion = event_target:emf_old_religion } }
+		custom_tooltip = { text = RELSUB_FAMILY_IN_COURT_CONVERTS }
+		hidden_tooltip = {
+			any_courtier = {
+				limit = {
+					OR = {
+						is_married = ROOT
+						is_close_relative = ROOT
+						dynasty = ROOT
+					}
+					NOT = { religion = event_target:emf_cb_winner }
+					liege = { character = ROOT }
+					is_ruler = no
+					prisoner = no # Who is going to agree to convert while staying imprisoned despite it?
+				}
+				random_list = {
+					20 = {
+						trigger = { has_secret_religion = no }
+						modifier = { factor = 2.0 trait = zealous }
+						modifier = { factor = 1.5 trait = deceitful }
+						modifier = { factor = 1.5 trait = stubborn }
+						secret_religion = event_target:emf_old_religion
+					}
+					80 = {
+						modifier = { factor = 2.0 is_marriage_adult = no }
+						modifier = { factor = 2.0 NOT = { age = 10 } }
+					}
+				}
+				religion = event_target:emf_cb_winner
+				event_target:emf_cb_winner = {
+					change_variable = { which = "emf_relsub_nobles_converted" value = 1 }
+				}
+			}
+		}
+	}
+}
+
+# boy, a little macro support in here...
+emf_relsub_pretend_to_convert_court = {
+	if = {
+		limit = { NOT = { religion = event_target:emf_old_religion } }
+		custom_tooltip = { text = RELSUB_FAMILY_IN_COURT_SECRETLY_CONVERTS }
+		hidden_tooltip = {
+			any_courtier = {
+				limit = {
+					OR = {
+						is_married = ROOT
+						is_close_relative = ROOT
+						dynasty = ROOT
+					}
+					NOT = { religion = event_target:emf_cb_winner }
+					liege = { character = ROOT }
+					is_ruler = no
+					prisoner = no # Who is going to agree to convert while staying imprisoned despite it?
+				}
+				religion = event_target:emf_cb_winner
+				if = {
+					limit = { has_secret_religion = no }
+					secret_religion = event_target:emf_old_religion
+				}
+				event_target:emf_cb_winner = {
+					change_variable = { which = "emf_relsub_nobles_converted" value = 1 }
+				}
+			}
+		}
+	}
+}
+
+# ROOT = event_target:emf_cb_winner
+emf_relsub_subjugate = {
+	if = {
+		limit = { tier = ROOT }
+		hidden_tooltip = {
+			# Track our current vassals...
+			any_vassal = { reverse_opinion = { who = PREV modifier = my_prior_vassal } }
+			# ... because destroying our primary-tier titles will break their vassalage
+			any_demesne_title = {
+				limit = { tier = ROOT }
+				emf_destroy_title = yes
+			}
+			if = {
+				limit = { tier = ROOT }
+				log = "---> WARNING: emf_relsub_subjugate: after trying to safely destroy same-tier titles of [This.GetTitledFirstName] (#[This.GetID]), war loser is still same-tier as war winner! agh!"
+			}
+			# Now, for vassals whose subrealms contain land inside the CB target title, either revassalize them
+			# (if our new tier permits) or, failing that, have the CB winner subjugate them directly.
+			any_opinion_modifier_target = {
+				limit = {
+					reverse_has_opinion_modifier = { who = PREV modifier = my_prior_vassal }
+					NOT = { vassal_of = PREV }
+				}
+				set_defacto_liege = THIS # make it official; destroying titles is currently buggy this way
+			}
+			any_opinion_modifier_target = {
+				limit = {
+					reverse_has_opinion_modifier = { who = PREV modifier = my_prior_vassal }
+					NOT = { vassal_of = PREV }
+					lower_tier_than = PREV
+					any_realm_title = { de_jure_liege_or_above = event_target:emf_cb_title }
+				}
+				set_defacto_liege = PREV # simply reconnect vassalage
+				if = {
+					limit = { NOT = { vassal_of = PREV } }
+					emf_ROOT_subjugate_ruler = yes
+				}
+			}
+			any_opinion_modifier_target = {
+				limit = {
+					reverse_has_opinion_modifier = { who = PREV modifier = my_prior_vassal }
+					NOT = { vassal_of = PREV }
+					NOT = { lower_tier_than = PREV }
+					any_realm_title = { de_jure_liege_or_above = event_target:emf_cb_title }
+				}
+				emf_ROOT_subjugate_ruler = yes
+			}
+			# Process liege changes for those left independent
+			any_opinion_modifier_target = {
+				limit = {
+					reverse_has_opinion_modifier = { who = PREV modifier = my_prior_vassal }
+					NOT = { vassal_of = PREV }
+					NOT = { any_realm_title = { de_jure_liege_or_above = event_target:emf_cb_title } }
+				}
+				emf_liege_change = yes
+			}
+			# Cleanup TOMs
+			any_opinion_modifier_target = { reverse_remove_opinion = { who = PREV modifier = my_prior_vassal } }
+			# Keep sane
+			if = {
+				limit = { NOT = { lower_tier_than = ROOT } }
+				log = "ERROR: emf_relsub_subjugate: even after destroying relevant titles, [This.GetTitledFirstName] (#[This.GetID]/[This.PrimaryTitle.GetID]) is same- or higher-tier than CB winner"
+			}
+		}
+	}
+	custom_tooltip = { text = RELSUB_WILL_BECOME_VASSAL_TO_WINNER }
+	hidden_tooltip = {
+		emf_ROOT_subjugate_ruler = yes
+		any_demesne_title = {
+			limit = { tier = BARON }
+			remove_holding_modifier = new_administration
+			add_holding_modifier = { name = new_administration years = 20 }
+		}
+		any_realm_province = { emf_relsub_set_baseline_religious_unrest = yes }
+		any_realm_province = {
+			limit = { religion = event_target:emf_cb_winner }
+			add_province_modifier = { name = relsub_liberation_modifier years = 20 }
+		}
+	}
+}
+
+emf_relsub_complete = {
+	custom_tooltip = { text = RELSUB_STATISTICS }
+	if = {
+		limit = { has_any_opinion_modifier = submits_to_my_relsub }
+		custom_tooltip = { text = RELSUB_LORDS_WHO_BENT_THE_KNEE }
+		any_opinion_modifier_target = {
+			limit = {
+				tier = KING
+				reverse_has_opinion_modifier = { who = ROOT modifier = submits_to_my_relsub }
+			}
+			emf_relsub_subjugate = yes
+		}
+		any_opinion_modifier_target = {
+			limit = {
+				tier = DUKE
+				reverse_has_opinion_modifier = { who = ROOT modifier = submits_to_my_relsub }
+			}
+			emf_relsub_subjugate = yes
+		}
+		any_opinion_modifier_target = {
+			limit = {
+				tier = COUNT
+				reverse_has_opinion_modifier = { who = ROOT modifier = submits_to_my_relsub }
+			}
+			emf_relsub_subjugate = yes
+		}
+		any_opinion_modifier_target = {
+			limit = {
+				tier = BARON
+				reverse_has_opinion_modifier = { who = ROOT modifier = submits_to_my_relsub }
+			}
+			emf_relsub_subjugate = yes
+		}
+	}
+	if = {
+		limit = {
+			any_opinion_modifier_target = {
+				reverse_has_opinion_modifier = { who = ROOT modifier = refused_my_relsub }
+				any_demesne_title = { has_title_flag = emf_relsub_tmp_take_title }
+			}
+		}
+		custom_tooltip = { text = RELSUB_TITLES_SEIZED }
+		# Instead of choosing the considerably more efficient way to access the titles marked for taking (i.e., scope
+		# to rulers via refused_my_relsub TOM and then scope to their flagged demesne titles), we use
+		# any_landed_title so that we can ensure the tier-based sort/priority order is upheld in the tooltip:
+		any_landed_title = {
+			limit = {
+				tier = COUNT
+				has_title_flag = emf_relsub_tmp_take_title
+				owner = { reverse_has_opinion_modifier = { who = ROOT modifier = refused_my_relsub } }
+			}
+			if = {
+				limit = { always = yes } # auto-tooltip black magic
+				usurp_title = { target = event_target:emf_cb_winner type = holy_war }
+				location = {
+					emf_relsub_set_baseline_religious_unrest = yes
+					hidden_tooltip = {
+						if = {
+							limit = { religion = event_target:emf_cb_winner }
+							add_province_modifier = {
+								name = relsub_liberation_modifier
+								years = 20
+							}
+						}
+					}
+				}
+			}
+		}
+		any_landed_title = {
+			limit = {
+				tier = BARON
+				has_title_flag = emf_relsub_tmp_take_title
+				owner = { reverse_has_opinion_modifier = { who = ROOT modifier = refused_my_relsub } }
+				NOT = { holder = ROOT }
+			}
+			# Hide usurpation tooltip for province capital baronies, as they're covered by the count-tier case
+			if = {
+				limit = { is_capital = yes }
+				hidden_tooltip = {
+					usurp_title = { target = event_target:emf_cb_winner type = holy_war }
+				}
+			}
+			if = {
+				limit = { is_capital = no }
+				usurp_title = { target = event_target:emf_cb_winner type = holy_war }
+			}
+			hidden_tooltip = {
+				remove_holding_modifier = recently_conquered
+				remove_holding_modifier = new_administration
+				if = {
+					limit = { NOT = { location = { religion = event_target:emf_cb_winner } } }
+					add_holding_modifier = { name = recently_conquered years = 20 }
+				}
+				if = {
+					limit = { location = { religion = event_target:emf_cb_winner } }
+					add_holding_modifier = { name = new_administration years = 20 }
+				}
+			}
+			location = { emf_relsub_add_religious_unrest = yes }
+		}
+	}
+}
+
+emf_relsub_set_baseline_religious_unrest = {
+	hidden_tooltip = {
+		if = {
+			limit = { NOT = { religion = event_target:emf_cb_winner } }
+			save_event_target_as = emf_relsub_unrest_province
+			# reset first
+			emf_relsub_reset_religious_unrest = yes
+			# baseline is determined by aggressiveness of subjugation
+			event_target:emf_cb_winner = {
+				trigger_switch = {
+					on_trigger = has_character_flag
+					emf_relsub_tmp_light_approach = {
+						event_target:emf_relsub_unrest_province = {
+							add_province_modifier = {
+								modifier = relsub_unrest_modifier
+								years = 30
+								stacking = yes
+							}
+						}
+					}
+					emf_relsub_tmp_normal_approach = {
+						event_target:emf_relsub_unrest_province = {
+							add_province_modifier = {
+								modifier = relsub_unrest_modifier
+								years = 30
+								stacking = yes
+							}
+							add_province_modifier = {
+								modifier = relsub_unrest_modifier
+								years = 30
+								stacking = yes
+							}
+						}
+					}
+					emf_relsub_tmp_heavy_approach = {
+						event_target:emf_relsub_unrest_province = {
+							add_province_modifier = {
+								modifier = relsub_unrest_modifier
+								years = 30
+								stacking = yes
+							}
+							add_province_modifier = {
+								modifier = relsub_unrest_modifier
+								years = 30
+								stacking = yes
+							}
+							add_province_modifier = {
+								modifier = relsub_unrest_modifier
+								years = 30
+								stacking = yes
+							}
+						}
+					}
+				}
+			}
+			clear_event_target = emf_relsub_unrest_province
+		}
+	}
+}
+
+# THIS = province, should be called once per taken settlement in THIS
+emf_relsub_add_religious_unrest = {
+	hidden_tooltip = {
+		if = {
+			limit = { NOT = { religion = event_target:emf_cb_winner } }
+			if = {
+				limit = {
+					event_target:emf_cb_winner = {
+						NOT = { has_character_flag = emf_relsub_tmp_light_approach }
+					}
+				}
+				add_province_modifier = {
+					modifier = relsub_unrest_modifier
+					years = 30
+					stacking = yes
+				}
+			}
+			add_province_modifier = {
+				modifier = relsub_unrest_modifier
+				years = 20
+				stacking = yes
+			}
+			add_province_modifier = {
+				modifier = relsub_unrest_modifier
+				years = 10
+				stacking = yes
+			}
+			if = {
+				limit = {
+					event_target:emf_cb_winner = { has_character_flag = emf_relsub_tmp_heavy_approach }
+				}
+				add_province_modifier = {
+					modifier = relsub_unrest_modifier
+					years = 10
+					stacking = yes
+				}
+			}
+			add_province_modifier = {
+				modifier = relsub_unrest_modifier
+				years = 5
+				stacking = yes
+			}
+		}
+	}
+}
+
+emf_relsub_reset_religious_unrest = {
+	hidden_tooltip = {
+		while = {
+			limit = { has_province_modifier = relsub_unrest_modifier }
+			remove_province_modifier = relsub_unrest_modifier
+		}
+	}
+}

@@ -1,0 +1,1215 @@
+# -*- ck2.events -*-
+
+namespace = emf_relsub
+
+# emf_relsub.0 -- serve ultimatum to Religious Subjugation war loser (or vassal thereof)
+letter_event = {
+	id = emf_relsub.0
+	border = GFX_event_letter_frame_religion
+
+	is_triggered_only = yes
+
+	desc = {
+		text = emf_relsub.0.desc.overlord
+		trigger = { character = event_target:emf_cb_loser }
+	}
+
+	desc = {
+		text = emf_relsub.0.desc.underling
+		trigger = {
+			NOT = { character = event_target:emf_cb_loser }
+			NOT = { religion = event_target:emf_cb_winner }
+		}
+	}
+
+	desc = {
+		text = emf_relsub.0.desc.underling_samerel
+		trigger = {
+			NOT = { character = event_target:emf_cb_loser }
+			religion = event_target:emf_cb_winner
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = { character = event_target:emf_cb_loser }
+			log = "-> emf_relsub.0: [Root.GetTitledFirstName] [Root.GetOnlyDynastyName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) receives holy war ultimatum"
+		}
+		if = {
+			limit = { NOT = { character = event_target:emf_cb_loser } }
+			log = "--> emf_relsub.0: <underling> [Root.GetTitledFirstName] [Root.GetOnlyDynastyName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) receives holy war ultimatum"
+		}
+		religion_scope = { save_event_target_as = emf_old_religion }
+		character_event = { id = emf_cb.5 } # Invalidate any civil wars against which we might be defending
+		character_event = { id = emf_cb.6 } # Invalidate any civil wars which we might be leading
+		if = {
+			limit = { character = event_target:emf_cb_loser }
+			event_target:emf_cb_winner = { emf_relsub_reset_statistics = yes }
+			if = {
+				limit = { tier = event_target:emf_cb_winner }
+				# [Same-tier defenders] Then the de jure subrealm (non-recursive -- just direct vassals) must
+				# also invalidate any of their civil wars, or this could get messy later. Technically, they
+				# only need to invalidate the ones in which the [temporarily elevated] vassal ruler is
+				# _leading_ a a civil war (e.g., COUNT[TEMP. DUKE] vs. DUKE for a KING war loser) here,
+				# so we'll do that only.
+				any_vassal = {
+					limit = { any_realm_title = { de_jure_liege_or_above = event_target:emf_cb_title } }
+					character_event = { id = emf_cb.6 } # Invalidate civil wars which we might be leading
+				}
+			}
+		}
+	}
+
+	option = {
+		name = {
+			text = emf_relsub.0.opt.submit_and_convert
+			trigger = { NOT = { religion = event_target:emf_cb_winner } }
+		}
+		name = {
+			text = emf_relsub.0.opt.submit_samerel
+			trigger = { religion = event_target:emf_cb_winner }
+		}
+		trigger = {
+			emf_relsub_can_submit = yes
+			NOT = { religion = event_target:emf_cb_winner }
+		}
+		ai_chance = {
+			factor = 100
+			modifier = {
+				factor = 0
+				any_realm_title = {
+					tier = COUNT
+					NOT = { de_jure_liege_or_above = event_target:emf_cb_title }
+				}
+			}
+			modifier = { factor = 1.333 trait = humble }
+			modifier = { factor = 0.75 trait = proud }
+			# vs. secret conversion + submission, not vs. refusal
+			modifier = { factor = 1.5 trait = honest }
+		}
+		hidden_tooltip = { log = "--> chooses to submit & convert truly" }
+		emf_relsub_basic_submission_decision = yes
+		if = {
+			limit = { NOT = { religion = event_target:emf_cb_winner } }
+			# Mark converted kings & their convertors for the sainthood mechanic
+			if = {
+				limit = {
+					higher_real_tier_than = DUKE
+					religion_group = pagan_group
+					event_target:emf_cb_winner = { religion_group = christian }
+				}
+				set_character_flag = king_converted
+				event_target:emf_cb_winner = { set_character_flag = converted_king }
+			}
+			if = {
+				limit = { has_secret_religion = yes }
+				clear_secret_religion = yes
+			}
+			if = {
+				limit = { higher_tier_than = BARON }
+				religion_authority = { modifier = ruler_mass_converted_from years = 15 }
+			}
+			religion = event_target:emf_cb_winner
+			if = {
+				limit = { higher_tier_than = BARON }
+				event_target:emf_cb_winner = {
+					religion_authority = { modifier = ruler_mass_converted_to years = 15 }
+				}
+			}
+			emf_relsub_convert_court = yes
+			if = {
+				limit = { NOT = { trait = zealous } }
+				random = {
+					chance = 33
+					emf_notify_add_zealous = yes
+				}
+			}
+		}
+		emf_relsub_ask_vassals_to_convert = yes
+	}
+
+	option = {
+		name = emf_relsub.0.opt.submit_and_pretend_to_convert
+		trigger = {
+			emf_relsub_can_submit = yes
+			NOT = { religion = event_target:emf_cb_winner }
+			# Doesn't already have same secret religion as we'd be converting to (CB winner's public religion)
+			NOT = { secret_religion = { target = event_target:emf_cb_winner target_type = public } }
+		}
+		ai_chance = {
+			factor = 80
+			modifier = {
+				factor = 0
+				any_realm_title = {
+					tier = COUNT
+					NOT = { de_jure_liege_or_above = event_target:emf_cb_title }
+				}
+			}
+			modifier = { factor = 1.2  trait = humble }
+			modifier = { factor = 0.85 trait = proud }
+			# not vs. refusal, but non-secret submission
+			modifier = { factor = 1.5 trait = deceitful }
+		}
+		hidden_tooltip = { log = "--> chooses to submit & pretend to convert" }
+		emf_relsub_basic_submission_decision = yes
+		# Since the converted king is pretending, don't mark him, but mark the convertor for the sainthood mechanic
+		if = {
+			limit = {
+				higher_real_tier_than = DUKE
+				religion_group = pagan_group
+				event_target:emf_cb_winner = { religion_group = christian }
+			}
+			event_target:emf_cb_winner = { set_character_flag = converted_king }
+		}
+		if = {
+			limit = { higher_tier_than = BARON }
+			religion_authority = { modifier = ruler_mass_converted_from years = 15 }
+		}
+		religion = event_target:emf_cb_winner
+		if = {
+			limit = { higher_tier_than = BARON }
+			event_target:emf_cb_winner = {
+				religion_authority = { modifier = ruler_mass_converted_to years = 15 }
+			}
+		}
+		emf_relsub_pretend_to_convert_court = yes
+		trigger_switch = {
+			on_trigger = has_secret_religion
+			yes = { custom_tooltip = { text = RELSUB_CONTINUE_OBSERVING_SECRET_FAITH } }
+			no = { set_secret_religion = event_target:emf_old_religion }
+		}
+		emf_relsub_ask_vassals_to_convert = yes
+	}
+
+	option = {
+		name = {
+			text = emf_relsub.0.opt.refuse_diffrel
+			trigger = { NOT = { religion = event_target:emf_cb_winner } }
+		}
+		name = {
+			text = emf_relsub.0.opt.refuse_samerelcul
+			trigger = {
+				religion = event_target:emf_cb_winner
+				culture = event_target:emf_cb_winner
+			}
+		}
+		name = {
+			text = emf_relsub.0.opt.refuse_diffcul
+			trigger = {
+				religion = event_target:emf_cb_winner
+				NOT = { culture = event_target:emf_cb_winner }
+			}
+		}
+		ai_chance = {
+			factor = 100
+			modifier = {
+				factor = 0
+				religion = event_target:emf_cb_winner
+				NOT = {
+					any_realm_title = {
+						tier = COUNT
+						NOT = { de_jure_liege_or_above = event_target:emf_cb_title }
+					}
+				}
+			}
+			# Adds the opinion from 'ROOT' to 'who' multiplied by factor to the score.
+			additive_opinion_modifier = {
+				who = event_target:emf_cb_winner
+				factor = -0.4 # 40 to -40, from least opinion to most opinion
+			}
+			# Adds the percentage of available troops from 'ROOT' to 'who' multiplied by factor to the score.
+			additive_power_diff_modifier = {
+				who = event_target:emf_cb_winner
+				factor = 0.4 # 0 (when having no relative power) to 40 (when equally powerful)
+			}
+			# Effects of zeal, rationality, greed, and ambition. Note that these properties are on a scale of
+			# [-100,100].
+			additive_modifier = { value = -5 ai_zeal = 0  has_secret_religion = no }
+			additive_modifier = { value = -5 ai_zeal = 5  has_secret_religion = no }
+			additive_modifier = { value = -5 ai_zeal = 10 has_secret_religion = no }
+			additive_modifier = { value = -5 ai_zeal = 15 has_secret_religion = no }
+			additive_modifier = { value = -5 ai_zeal = 20 has_secret_religion = no }
+			additive_modifier = { value =  2 ai_ambition = 0 }
+			additive_modifier = { value =  2 ai_ambition = 5 }
+			additive_modifier = { value =  2 ai_ambition = 10 }
+			additive_modifier = { value =  2 ai_ambition = 15 }
+			additive_modifier = { value =  2 ai_ambition = 20 }
+			additive_modifier = { value =  2 ai_ambition = 25 }
+			additive_modifier = { value =  2 ai_ambition = 30 }
+			additive_modifier = { value =  2 ai_ambition = 35 }
+			additive_modifier = { value = -4 ai_rationality = 0 }
+			additive_modifier = { value = -4 ai_rationality = 5 }
+			additive_modifier = { value = -4 ai_rationality = 10 }
+			additive_modifier = { value = -4 ai_rationality = 15 }
+			additive_modifier = { value = -4 ai_rationality = 20 }
+			additive_modifier = { value = -4 ai_rationality = 25 }
+			additive_modifier = { value = -4 ai_rationality = 30 }
+			additive_modifier = { value = -4 ai_greed = 0 }
+			additive_modifier = { value = -4 ai_greed = 10 }
+			additive_modifier = { value = -4 ai_greed = 20 }
+			additive_modifier = { value = -4 ai_greed = 30 }
+			additive_modifier = { value = -4 ai_greed = 40 }
+			# General tuning mult. modifier (adjusting it only affects scale of chance after additive modifiers)
+			modifier = {
+				factor = 1.333
+			}
+			# Dukes are a bit less likely to refuse the ultimatum
+			modifier = {
+				factor = 0.8
+				lower_real_tier_than = KING
+			}
+			# Counts and barons are significantly less likely to refuse the ultimatum
+			modifier = {
+				factor = 0.625
+				lower_real_tier_than = DUKE
+			}
+			# Pagans are more willing to submit & convert than those of organized religions
+			modifier = {
+				factor = 0.5
+				religion_group = pagan_group
+				is_reformed_religion = no
+			}
+			# Zoroastrians should be slightly more willing to submit & convert than normal
+			modifier = {
+				factor = 0.85
+				religion_group = zoroastrian_group
+			}
+			modifier = {
+				factor = 0.625
+				event_target:emf_cb_winner = { has_character_flag = emf_relsub_tmp_light_approach }
+			}
+			modifier = {
+				factor = 2.0
+				event_target:emf_cb_winner = { has_character_flag = emf_relsub_tmp_heavy_approach }
+			}
+			# Counterbalance modifiers that differ between submit vs. submit & follow secret religion
+			modifier = {
+				factor = 1.5
+				OR = { trait = honest trait = deceitful }
+			}
+		}
+		hidden_tooltip = {
+			log = "--> chooses to refuse ultimatum"
+			# Ensure that we can be reached later
+			reverse_opinion = { who = event_target:emf_cb_winner modifier = refused_my_relsub }
+			# Since we're refusing, our direct vassals shall receive the same peace offer/ultimatum
+			any_vassal = {
+				limit = { any_realm_title = { de_jure_liege_or_above = event_target:emf_cb_title } }
+				character_event = { id = emf_relsub.10 }
+			}
+		}
+		if = {
+			limit = {
+				is_patrician = no # Would have had their family palace to fall back upon
+				NOT = {
+					any_demesne_title = {
+						tier = COUNT
+						NOT = { de_jure_liege_or_above = event_target:emf_cb_title }
+					}
+				}
+			}
+			custom_tooltip = { text = GAME_OVER_OPTION_WARNING }
+			custom_tooltip = { text = emf_ctt_break }
+		}
+		custom_tooltip = { text = RELSUB_WILL_SEND_ULTIMATUM_TO_DIRECT_VASSALS }
+		custom_tooltip = { text = RELSUB_LOSE_ALL_LAND_WITHIN_TARGET_TITLE }
+		tooltip = {
+			any_demesne_title = {
+				limit = {
+					tier = COUNT
+					de_jure_liege_or_above = event_target:emf_cb_title
+				}
+				usurp_title = event_target:emf_cb_winner
+			}
+			any_demesne_title = {
+				limit = {
+					tier = BARON
+					de_jure_liege_or_above = event_target:emf_cb_title
+					NOT = { ROOT = { family_palace = { title = PREVPREV } } }
+					# Do not list the province capital baronies since we listed the county already
+					is_capital = no
+				}
+				usurp_title = event_target:emf_cb_winner
+			}
+		}
+	}
+
+	after = {
+		# After all the recursion's done, we'll be the initial receiver of this event, and we kick back results to
+		# the CB winner in order to actually execute the effects.
+		if = {
+			limit = { character = event_target:emf_cb_loser }
+			event_target:emf_cb_winner = { character_event = { id = emf_relsub.21 } }
+		}
+	}
+}
+
+# emf_relsub.1 -- my liege has bent the knee and [apparently] converted, how do I react? [religious subjugation]
+letter_event = {
+	id = emf_relsub.1
+	desc = emf_relsub.1.desc
+	border = GFX_event_letter_frame_religion
+
+	is_triggered_only = yes
+	show_from_from = yes # we always bounce through emf_relsub.2, so FROMFROM is the portrait to show
+
+	trigger = { NOT = { religion = event_target:emf_cb_winner } }
+
+	immediate = {
+		religion_scope = { save_event_target_as = emf_old_religion }
+	}
+
+	option = {
+		name = emf_relsub.1.opt.convert_too
+		trigger = { can_change_religion = yes }
+		ai_chance = {
+			factor = 100
+			modifier = { factor = 1.5 trait = cynical }
+			modifier = { factor = 1.5 trait = honest }
+			modifier = { factor = 1.5 trait = humble }
+		}
+		hidden_tooltip = {
+			event_target:emf_cb_winner = {
+				change_variable = { which = "emf_relsub_lords_converted" value = 1 }
+			}
+		}
+		if = {
+			limit = { has_secret_religion = yes }
+			clear_secret_religion = yes
+		}
+		if = {
+			limit = { higher_tier_than = BARON }
+			religion_authority = { modifier = ruler_mass_converted_from years = 15 }
+		}
+		religion = event_target:emf_cb_winner
+		if = {
+			limit = { higher_tier_than = BARON }
+			event_target:emf_cb_winner = {
+				religion_authority = { modifier = ruler_mass_converted_to years = 15 }
+			}
+		}
+		if = {
+			limit = { NOT = { trait = zealous } }
+			random = {
+				chance = 20
+				emf_notify_add_zealous = yes
+			}
+		}
+		emf_relsub_convert_court = yes
+		opinion = { who = LIEGE modifier = opinion_relsub_converted_with_my_liege }
+		reverse_opinion = { who = LIEGE modifier = opinion_relsub_converted_with_me }
+		# Since we chose to convert, pass the choice on to our direct vassals
+		emf_relsub_ask_vassals_to_convert = yes
+	}
+
+	option = {
+		name = emf_relsub.1.opt.pretend_to_convert_too
+		trigger = {
+			can_change_religion = yes
+			# Doesn't already have same secret religion as we'd be converting to (CB winner's public religion)
+			NOT = { secret_religion = { target = event_target:emf_cb_winner target_type = public } }
+		}
+		ai_chance = {
+			factor = 60
+			modifier = { factor = 1.5  trait = cynical }
+			modifier = { factor = 1.5  trait = deceitful }
+			modifier = { factor = 1.25 trait = proud }
+		}
+		hidden_tooltip = {
+			event_target:emf_cb_winner = {
+				change_variable = { which = "emf_relsub_lords_converted" value = 1 }
+			}
+		}
+		if = {
+			limit = { higher_tier_than = BARON }
+			religion_authority = { modifier = ruler_mass_converted_from years = 15 }
+		}
+		religion = event_target:emf_cb_winner
+		if = {
+			limit = { higher_tier_than = BARON }
+			event_target:emf_cb_winner = {
+				religion_authority = { modifier = ruler_mass_converted_to years = 15 }
+			}
+		}
+		emf_relsub_pretend_to_convert_court = yes
+		trigger_switch = {
+			on_trigger = has_secret_religion
+			yes = { custom_tooltip = { text = RELSUB_CONTINUE_OBSERVING_SECRET_FAITH } }
+			no  = { secret_religion = event_target:emf_old_religion }
+		}
+		opinion = { who = LIEGE modifier = opinion_relsub_converted_with_my_liege }
+		reverse_opinion = { who = LIEGE modifier = opinion_relsub_converted_with_me }
+		emf_relsub_ask_vassals_to_convert = yes
+	}
+
+	option = {
+		name = emf_relsub.1.opt.refuse
+		ai_chance = {
+			factor = 160
+			modifier = { factor = 1.5 trait = zealous }
+			modifier = { factor = 1.5 trait = proud }
+			# Counterbalance modifiers that differ between convert vs. convert & follow secret religion
+			modifier = { factor = 1.5 OR = { trait = honest trait = deceitful } }
+		}
+		opinion = { who = event_target:emf_cb_loser modifier = opinion_relsub_submitted_to_infidel_conqueror }
+		reverse_opinion = { who = LIEGE modifier = opinion_relsub_refused_to_convert_with_me }
+		# Since we won't recurse here, add all same-religion-as-attacker lords under this guy now to the appropriate
+		# statistic
+		any_realm_lord = {
+			limit = { religion = event_target:emf_cb_winner }
+			hidden_tooltip = {
+				event_target:emf_cb_winner = {
+					change_variable = { which = "emf_relsub_lords_liberated" value = 1 }
+				}
+			}
+		}
+	}
+}
+
+# emf_relsub.2 -- proxy for emf_relsub.2 recursion to filter same-religion lords and yet propogate mass conversion choices to their
+#              vassals.
+character_event = {
+	id = emf_relsub.2
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		# Grr, can't wait for if/else_if/else...
+		if = {
+			limit = { NOT = { religion = event_target:emf_cb_winner } }
+			set_character_flag = emf_relsub_tmp_infidel
+		}
+		if = { # Infidel to CB winner
+			limit = { has_character_flag = emf_relsub_tmp_infidel }
+			letter_event = { id = emf_relsub.1 }
+		}
+		if = { # Same-religion as CB winner
+			limit = { NOT = { has_character_flag = emf_relsub_tmp_infidel } }
+			hidden_tooltip = {
+				event_target:emf_cb_winner = {
+					change_variable = { which = "emf_relsub_lords_liberated" value = 1 }
+				}
+			}
+			emf_relsub_ask_vassals_to_convert = yes
+		}
+	}
+
+	after = { clr_character_flag = emf_relsub_tmp_infidel }
+}
+
+
+# emf_relsub.10 -- bounce event for underling cases of emf_relsub.0 (ultimatum)
+character_event = {
+	id = emf_relsub.10
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = { event_target:emf_cb_winner = { character_event = { id = emf_relsub.11 } } }
+}
+
+# emf_relsub.11 -- bounce event
+character_event = {
+	id = emf_relsub.11
+	
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		# Now, FROM in emf_relsub.0 will always be the holy warrior liege
+		FROM = { letter_event = { id = emf_relsub.0 } }
+	}
+}
+
+
+# emf_relsub.20 -- starter event received by war winner before proceeding with anything else. called directly from a holy war
+#                  CB's on_success_title -- entrance to whole event chain.
+#
+# this event should set the stage narratively and cue the player to choose a level of aggressiveness with which to treat the
+# infidels: what the code calls a light approach (tolerant/passive), default approach (middle ground), or heavy approach
+# (aggro).  its tooltips should also explain the general trade-offs between tolerant vs. intolerant approaches to how we
+# treat the infidel conquered.
+character_event = {
+	id = emf_relsub.20
+	desc = emf_relsub.20.desc
+	picture = GFX_evt_bloody_man
+	border = GFX_event_normal_frame_war
+
+	is_triggered_only = yes
+	show_from_from = yes # show FROM -- defender/loser -- from CB in event portrait. so FROMFROM here, naturally.
+
+	option = {
+		name = emf_relsub.20.opt.approach_lightly
+		custom_tooltip = { text = RELSUB_LIGHT_APPROACH_HEADER }
+		set_character_flag = emf_relsub_tmp_light_approach
+	}
+
+	option = {
+		name = emf_relsub.20.opt.approach_normally
+		set_character_flag = emf_relsub_tmp_normal_approach
+	}
+
+	option = {
+		name = emf_relsub.20.opt.approach_aggressively
+		custom_tooltip = { text = RELSUB_HEAVY_APPROACH_HEADER }
+		set_character_flag = emf_relsub_tmp_heavy_approach
+	}
+
+	after = {
+		hidden_tooltip = { FROMFROM = { letter_event = { id = emf_relsub.0 } } }
+	}
+}
+
+# emf_relsub.21 -- final return event to war winner after decisions have been made; where most CB effects actually happen and
+#                  where event chain cleanup all happens
+character_event = {
+	id = emf_relsub.21
+	picture = GFX_evt_emissary
+	border = GFX_event_normal_frame_religion
+
+	is_triggered_only = yes
+
+	desc = {
+		text = emf_relsub.21.desc.subjugated_overlord
+		trigger = {
+			has_opinion_modifier = { who = event_target:emf_cb_loser modifier = submits_to_my_relsub }
+		}
+	}
+
+	desc = {
+		text = emf_relsub.21.desc.subjugated_underlings
+		trigger = {
+			NOT = { has_opinion_modifier = { who = event_target:emf_cb_loser modifier = submits_to_my_relsub } }
+			has_any_opinion_modifier = submits_to_my_relsub
+		}
+	}
+
+	desc = {
+		text = emf_relsub.21.desc.subjugated_nobody
+		trigger = {
+			NOT = { has_any_opinion_modifier = submits_to_my_relsub }
+		}
+	}
+
+	immediate = {
+		# Lords are also nobles
+		change_variable = { which = "emf_relsub_nobles_converted" which = "emf_relsub_lords_converted" }
+
+		# Mark titles to be taken (for tooltip only, as we freshen our "list" at option execution time)
+		any_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = PREV modifier = refused_my_relsub } }
+			save_event_target_as = emf_refuser
+			any_demesne_title = {
+				limit = {
+					de_jure_liege_or_above = event_target:emf_cb_title
+					event_target:emf_refuser = { NOT = { family_palace = { title = PREVPREV } } }
+				}
+				set_title_flag = emf_relsub_tmp_take_title
+				event_target:emf_cb_winner = {
+					if = {
+						limit = { PREV = { tier = COUNT } }
+						change_variable = { which = "emf_relsub_counties_taken" value = 1 }
+					}
+					if = {
+						limit = { PREV = { tier = BARON } }
+						change_variable = { which = "emf_relsub_baronies_taken" value = 1 }
+					}
+				}
+			}
+			clear_event_target = emf_refuser
+		}
+
+		# Save the provinces which were already ours before religious subjugation
+		any_realm_province = { set_province_flag = emf_relsub_tmp_prior_province }
+
+		log = "-> emf_relsub.21: results are in:"
+		log = "--> [Root.emf_relsub_baronies_taken.GetValue] baronies to take ([Root.emf_relsub_counties_taken.GetValue] counties)"
+		log = "--> [Root.emf_relsub_nobles_converted.GetValue] nobles converted ([Root.emf_relsub_lords_converted.GetValue] rulers)"
+		log = "--> [Root.emf_relsub_lords_liberated.GetValue] same-religion rulers liberated"
+
+		event_target:emf_cb_loser = { save_event_target_as = target_ruler }
+
+		# Gather up to 3 choices for choosing a county to seize if no counties would be seized otherwise
+		if = {
+			limit = {
+				ai = no
+				NOT = { check_variable = { which = "emf_relsub_counties_taken" value = 1 } }
+				# At least 2 counties could've been gained from war
+				event_target:emf_cb_title = {
+					any_de_jure_vassal_title = {
+						count = 2
+						tier = COUNT
+						owner_under_target_ruler = yes
+					}
+				}
+			}
+			random_province = {
+				limit = {
+					county = {
+						de_jure_liege_or_above = event_target:emf_cb_title
+						NOT = { has_title_flag = emf_relsub_tmp_take_title }
+					}
+					owner = {
+						under_target_ruler = yes
+						ai = yes
+						any_demesne_province = { NOT = { province = PREVPREV } }
+					}
+					NOT = { event_target:emf_prov_1 = { always = yes } }
+					num_of_settlements = 7
+				}
+				save_event_target_as = emf_prov_1
+			}
+			random_province = {
+				limit = {
+					county = {
+						de_jure_liege_or_above = event_target:emf_cb_title
+						NOT = { has_title_flag = emf_relsub_tmp_take_title }
+					}
+					owner = {
+						under_target_ruler = yes
+						ai = yes
+						any_demesne_province = { NOT = { province = PREVPREV } }
+					}
+					NOT = { event_target:emf_prov_1 = { always = yes } }
+					num_of_settlements = 6
+				}
+				save_event_target_as = emf_prov_1
+			}
+			random_province = {
+				limit = {
+					county = {
+						de_jure_liege_or_above = event_target:emf_cb_title
+						NOT = { has_title_flag = emf_relsub_tmp_take_title }
+					}
+					owner = {
+						under_target_ruler = yes
+						ai = yes
+						any_demesne_province = { NOT = { province = PREVPREV } }
+					}
+					NOT = { event_target:emf_prov_1 = { always = yes } }
+					num_of_settlements = 5
+				}
+				save_event_target_as = emf_prov_1
+			}
+			random_province = {
+				limit = {
+					county = {
+						de_jure_liege_or_above = event_target:emf_cb_title
+						NOT = { has_title_flag = emf_relsub_tmp_take_title }
+					}
+					owner = {
+						under_target_ruler = yes
+						ai = yes
+						any_demesne_province = { NOT = { province = PREVPREV } }
+					}
+					NOT = { event_target:emf_prov_1 = { always = yes } }
+					num_of_settlements = 4
+				}
+				save_event_target_as = emf_prov_1
+			}
+			random_province = {
+				limit = {
+					county = {
+						de_jure_liege_or_above = event_target:emf_cb_title
+						NOT = { has_title_flag = emf_relsub_tmp_take_title }
+					}
+					owner = {
+						under_target_ruler = yes
+						ai = yes
+						any_demesne_province = { NOT = { province = PREVPREV } }
+					}
+					NOT = { event_target:emf_prov_1 = { always = yes } }
+					num_of_settlements = 3
+				}
+				save_event_target_as = emf_prov_1
+			}
+			random_province = {
+				limit = {
+					county = {
+						de_jure_liege_or_above = event_target:emf_cb_title
+						NOT = { has_title_flag = emf_relsub_tmp_take_title }
+					}
+					owner = {
+						under_target_ruler = yes
+						ai = yes
+						any_demesne_province = { NOT = { province = PREVPREV } }
+					}
+					NOT = { event_target:emf_prov_1 = { always = yes } }
+				}
+				save_event_target_as = emf_prov_1
+			}
+			# 2nd county pick
+			random_province = {
+				limit = {
+					county = {
+						de_jure_liege_or_above = event_target:emf_cb_title
+						NOT = { has_title_flag = emf_relsub_tmp_take_title }
+					}
+					owner = {
+						under_target_ruler = yes
+						ai = yes
+						any_demesne_province = { NOT = { province = PREVPREV } }
+					}
+					NOT = { province = event_target:emf_prov_1 }
+					NOT = { event_target:emf_prov_2 = { always = yes } }
+					num_of_settlements = 7
+				}
+				save_event_target_as = emf_prov_2
+			}
+			random_province = {
+				limit = {
+					county = {
+						de_jure_liege_or_above = event_target:emf_cb_title
+						NOT = { has_title_flag = emf_relsub_tmp_take_title }
+					}
+					owner = {
+						under_target_ruler = yes
+						ai = yes
+						any_demesne_province = { NOT = { province = PREVPREV } }
+					}
+					NOT = { province = event_target:emf_prov_1 }
+					NOT = { event_target:emf_prov_2 = { always = yes } }
+					num_of_settlements = 6
+				}
+				save_event_target_as = emf_prov_2
+			}
+			random_province = {
+				limit = {
+					county = {
+						de_jure_liege_or_above = event_target:emf_cb_title
+						NOT = { has_title_flag = emf_relsub_tmp_take_title }
+					}
+					owner = {
+						under_target_ruler = yes
+						ai = yes
+						any_demesne_province = { NOT = { province = PREVPREV } }
+					}
+					NOT = { province = event_target:emf_prov_1 }
+					NOT = { event_target:emf_prov_2 = { always = yes } }
+					num_of_settlements = 5
+				}
+				save_event_target_as = emf_prov_2
+			}
+			random_province = {
+				limit = {
+					county = {
+						de_jure_liege_or_above = event_target:emf_cb_title
+						NOT = { has_title_flag = emf_relsub_tmp_take_title }
+					}
+					owner = {
+						under_target_ruler = yes
+						ai = yes
+						any_demesne_province = { NOT = { province = PREVPREV } }
+					}
+					NOT = { province = event_target:emf_prov_1 }
+					NOT = { event_target:emf_prov_2 = { always = yes } }
+					num_of_settlements = 4
+				}
+				save_event_target_as = emf_prov_2
+			}
+			random_province = {
+				limit = {
+					county = {
+						de_jure_liege_or_above = event_target:emf_cb_title
+						NOT = { has_title_flag = emf_relsub_tmp_take_title }
+					}
+					owner = {
+						under_target_ruler = yes
+						ai = yes
+						any_demesne_province = { NOT = { province = PREVPREV } }
+					}
+					NOT = { province = event_target:emf_prov_1 }
+					NOT = { event_target:emf_prov_2 = { always = yes } }
+					num_of_settlements = 3
+				}
+				save_event_target_as = emf_prov_2
+			}
+			random_province = {
+				limit = {
+					county = {
+						de_jure_liege_or_above = event_target:emf_cb_title
+						NOT = { has_title_flag = emf_relsub_tmp_take_title }
+					}
+					owner = {
+						under_target_ruler = yes
+						ai = yes
+						any_demesne_province = { NOT = { province = PREVPREV } }
+					}
+					NOT = { province = event_target:emf_prov_1 }
+					NOT = { event_target:emf_prov_2 = { always = yes } }
+				}
+				save_event_target_as = emf_prov_2
+			}
+			# 3rd county pick
+			random_province = {
+				limit = {
+					county = {
+						de_jure_liege_or_above = event_target:emf_cb_title
+						NOT = { has_title_flag = emf_relsub_tmp_take_title }
+					}
+					owner = {
+						under_target_ruler = yes
+						ai = yes
+						any_demesne_province = { NOT = { province = PREVPREV } }
+					}
+					NOR = {
+						province = event_target:emf_prov_1
+						province = event_target:emf_prov_2
+					}
+					NOT = { event_target:emf_prov_3 = { always = yes } }
+					num_of_settlements = 7
+				}
+				save_event_target_as = emf_prov_3
+			}
+			random_province = {
+				limit = {
+					county = {
+						de_jure_liege_or_above = event_target:emf_cb_title
+						NOT = { has_title_flag = emf_relsub_tmp_take_title }
+					}
+					owner = {
+						under_target_ruler = yes
+						ai = yes
+						any_demesne_province = { NOT = { province = PREVPREV } }
+					}
+					NOR = {
+						province = event_target:emf_prov_1
+						province = event_target:emf_prov_2
+					}
+					NOT = { event_target:emf_prov_3 = { always = yes } }
+					num_of_settlements = 6
+				}
+				save_event_target_as = emf_prov_3
+			}
+			random_province = {
+				limit = {
+					county = {
+						de_jure_liege_or_above = event_target:emf_cb_title
+						NOT = { has_title_flag = emf_relsub_tmp_take_title }
+					}
+					owner = {
+						under_target_ruler = yes
+						ai = yes
+						any_demesne_province = { NOT = { province = PREVPREV } }
+					}
+					NOR = {
+						province = event_target:emf_prov_1
+						province = event_target:emf_prov_2
+					}
+					NOT = { event_target:emf_prov_3 = { always = yes } }
+					num_of_settlements = 5
+				}
+				save_event_target_as = emf_prov_3
+			}
+			random_province = {
+				limit = {
+					county = {
+						de_jure_liege_or_above = event_target:emf_cb_title
+						NOT = { has_title_flag = emf_relsub_tmp_take_title }
+					}
+					owner = {
+						under_target_ruler = yes
+						ai = yes
+						any_demesne_province = { NOT = { province = PREVPREV } }
+					}
+					NOR = {
+						province = event_target:emf_prov_1
+						province = event_target:emf_prov_2
+					}
+					NOT = { event_target:emf_prov_3 = { always = yes } }
+					num_of_settlements = 4
+				}
+				save_event_target_as = emf_prov_3
+			}
+			random_province = {
+				limit = {
+					county = {
+						de_jure_liege_or_above = event_target:emf_cb_title
+						NOT = { has_title_flag = emf_relsub_tmp_take_title }
+					}
+					owner = {
+						under_target_ruler = yes
+						ai = yes
+						any_demesne_province = { NOT = { province = PREVPREV } }
+					}
+					NOR = {
+						province = event_target:emf_prov_1
+						province = event_target:emf_prov_2
+					}
+					NOT = { event_target:emf_prov_3 = { always = yes } }
+					num_of_settlements = 3
+				}
+				save_event_target_as = emf_prov_3
+			}
+			random_province = {
+				limit = {
+					county = {
+						de_jure_liege_or_above = event_target:emf_cb_title
+						NOT = { has_title_flag = emf_relsub_tmp_take_title }
+					}
+					owner = {
+						under_target_ruler = yes
+						ai = yes
+						any_demesne_province = { NOT = { province = PREVPREV } }
+					}
+					NOR = {
+						province = event_target:emf_prov_1
+						province = event_target:emf_prov_2
+					}
+					NOT = { event_target:emf_prov_3 = { always = yes } }
+				}
+				save_event_target_as = emf_prov_3
+			}
+		}
+	}
+
+	option = {
+		name = {
+			text = emf_relsub.21.opt.ok_normal
+			trigger = {
+				OR = {
+					check_variable = { which = "emf_relsub_counties_taken" value = 1 }
+					check_variable = { which = "emf_relsub_lords_converted" value = 1 }
+				}
+			}
+		}
+		name = {
+			text = emf_relsub.21.opt.ok_no_counties_seized
+			trigger = {
+				NOT = { check_variable = { which = "emf_relsub_counties_taken" value = 1 } }
+			}
+		}
+		name = {
+			text = emf_relsub.21.opt.ok_no_lords_converted
+			trigger = {
+				NOT = { check_variable = { which = "emf_relsub_lords_converted" value = 1 } }
+			}
+		}
+		emf_relsub_complete = yes
+	}
+
+	option = {
+		trigger = { event_target:emf_prov_1 = { always = yes } }
+		name = emf_relsub.21.opt.no_counties_seized_so_usurp_prov_1
+		emf_relsub_complete = yes
+		custom_tooltip = { text = emf_ctt_break }
+		event_target:emf_prov_1 = {
+			hidden_tooltip = {
+				capital_holding = {
+					gain_title = { target = ROOT type = holy_war }
+				}
+				emf_relsub_add_religious_unrest = yes
+			}
+			county = {
+				tooltip = { owner = { opinion = { who = ROOT modifier = opinion_usurped_title } } }
+				usurp_title_plus_barony_if_unlanded = { target = ROOT type = holy_war }
+			}
+		}
+		any_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = submits_to_my_relsub } }
+			opinion = { who = ROOT modifier = opinion_relsub_disrespected_peace_deal }
+		}
+	}
+
+	option = {
+		trigger = { event_target:emf_prov_2 = { always = yes } }
+		name = emf_relsub.21.opt.no_counties_seized_so_usurp_prov_2
+		emf_relsub_complete = yes
+		custom_tooltip = { text = emf_ctt_break }
+		event_target:emf_prov_2 = {
+			hidden_tooltip = {
+				capital_holding = {
+					gain_title = { target = ROOT type = holy_war }
+				}
+				emf_relsub_add_religious_unrest = yes
+			}
+			county = {
+				tooltip = { owner = { opinion = { who = ROOT modifier = opinion_usurped_title } } }
+				usurp_title_plus_barony_if_unlanded = { target = ROOT type = holy_war }
+			}
+		}
+		any_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = submits_to_my_relsub } }
+			opinion = { who = ROOT modifier = opinion_relsub_disrespected_peace_deal }
+		}
+	}
+
+	option = {
+		trigger = { event_target:emf_prov_3 = { always = yes } }
+		name = emf_relsub.21.opt.no_counties_seized_so_usurp_prov_3
+		emf_relsub_complete = yes
+		custom_tooltip = { text = emf_ctt_break }
+		event_target:emf_prov_3 = {
+			hidden_tooltip = {
+				capital_holding = {
+					gain_title = { target = ROOT type = holy_war }
+				}
+				emf_relsub_add_religious_unrest = yes
+			}
+			county = {
+				tooltip = { owner = { opinion = { who = ROOT modifier = opinion_usurped_title } } }
+				usurp_title_plus_barony_if_unlanded = { target = ROOT type = holy_war }
+			}
+		}
+		any_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = submits_to_my_relsub } }
+			opinion = { who = ROOT modifier = opinion_relsub_disrespected_peace_deal }
+		}
+	}
+
+	after = { # Event chain cleanup
+		clear_event_target = target_ruler
+		# Cleanup our remaining variables, TOMs, and flags
+		emf_relsub_reset_statistics = yes
+		hidden_tooltip = {
+			any_opinion_modifier_target = {
+				limit = {
+					OR = {
+						reverse_has_opinion_modifier = { who = ROOT modifier = submits_to_my_relsub }
+						reverse_has_opinion_modifier = { who = ROOT modifier = refused_my_relsub }
+					}
+				}
+				reverse_remove_opinion = { who = ROOT modifier = submits_to_my_relsub }
+				reverse_remove_opinion = { who = ROOT modifier = refused_my_relsub }
+				any_demesne_title = { clear_flags_with_prefix = emf_relsub_tmp }
+			}
+		}
+		any_demesne_title = { clear_flags_with_prefix = emf_relsub_tmp }
+		# A chance at a future religious uprising from conquered provinces before we clean *everything* up:
+		character_event = { id = emf_relsub.22 }
+		# OK, good to clean the rest up now:
+		clear_flags_with_prefix = emf_relsub_tmp
+		any_realm_province = { clear_flags_with_prefix = emf_relsub_tmp }
+	}
+}
+
+# emf_relsub.22 -- holy war outcome effects complete; now give a random chance at directly firing a religious uprising from
+#                  one of the provinces we conquered in the holy war
+character_event = {
+	id = emf_relsub.22
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		any_realm_province = {
+			NOT = { has_province_flag = emf_relsub_tmp_prior_province }
+			has_province_modifier = relsub_unrest_modifier
+			emf_hostile_religion_to_ROOT = yes
+		}
+	}
+
+	immediate = {
+		any_realm_province = {
+			limit = {
+				NOT = { has_province_flag = emf_relsub_tmp_prior_province }
+				has_province_modifier = relsub_unrest_modifier
+				emf_hostile_religion_to_ROOT = yes
+			}
+			random_list = {
+				6  = { province_event = { id = emf_relsub.40 days = 1095 random = 180 } } #3yr +/- 0.5yr
+				12 = { province_event = { id = emf_relsub.40 days = 1460 random = 180 } } #4yr +/- 0.5yr
+				14 = { province_event = { id = emf_relsub.40 days = 1825 random = 180 } } #5yr +/- 0.5yr
+				12 = { province_event = { id = emf_relsub.40 days = 2190 random = 180 } } #6yr +/- 0.5yr
+				6  = { province_event = { id = emf_relsub.40 days = 2555 random = 180 } } #7yr +/- 0.5yr
+				100 = {
+					modifier = {
+						factor = 0.5
+						FROM = { has_character_flag = emf_relsub_tmp_heavy_approach }
+					}
+					modifier = {
+						factor = 2
+						FROM = { has_character_flag = emf_relsub_tmp_light_approach }
+					}
+					modifier = { factor = 0.95 revolt_risk = 0.1 }
+					modifier = { factor = 0.95 revolt_risk = 0.15 }
+					modifier = { factor = 0.95 revolt_risk = 0.2 }
+					modifier = { factor = 0.95 revolt_risk = 0.25 }
+					modifier = { factor = 0.95 revolt_risk = 0.3 }
+					modifier = { factor = 0.95 revolt_risk = 0.35 }
+					modifier = { factor = 0.95 revolt_risk = 0.4 }
+					modifier = { factor = 0.95 revolt_risk = 0.45 }
+					modifier = { factor = 0.95 revolt_risk = 0.5 }
+					modifier = { factor = 0.95 revolt_risk = 0.55 }
+					modifier = { factor = 0.95 revolt_risk = 0.6 }
+					modifier = { factor = 0.95 revolt_risk = 0.65 }
+					modifier = { factor = 0.95 revolt_risk = 0.7 }
+					modifier = { factor = 0.95 revolt_risk = 0.75 }
+					modifier = { factor = 0.95 revolt_risk = 0.8 }
+					modifier = { factor = 0.95 revolt_risk = 0.85 }
+					modifier = { factor = 0.95 revolt_risk = 0.9 }
+					modifier = { factor = 0.95 revolt_risk = 0.95 }
+					modifier = { factor = 0.95 revolt_risk = 1.0 }
+				}
+			}
+		}
+	}
+}
+
+# emf_relsub.30 -- clear pertinent province modifiers on_county_religion_change
+province_event = {
+	id = emf_relsub.30
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		OR = {
+			has_province_modifier = relsub_unrest_modifier
+			has_province_modifier = relsub_liberation_modifier
+		}
+	}
+
+	immediate = {
+		emf_relsub_reset_religious_unrest = yes
+		remove_province_modifier = relsub_liberation_modifier
+	}
+}
+
+# emf_relsub.40 -- delayed event for attempting to trigger a religious uprising in a province conquered through holy war
+#
+# basically just a proxy for emf_revolt.0, the on_rebel_revolt handler when there isn't already a religious uprising
+# underway and, alternately, a proxy for emf_revolt.5 (reinforcement of ongoing religious uprising war).
+#
+# this allows us to supply our own intentional "revolt risk pulse" instead of relying entirely upon the game's
+# on_rebel_revolt triggering behavior effectively.
+province_event = {
+	id = emf_relsub.40
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		is_heretic = no
+		has_province_modifier = relsub_unrest_modifier
+		owner = { top_liege = { emf_hostile_religion_to_ROOT = yes } }
+	}
+
+	immediate = {
+		owner = {
+			top_liege = {
+				if = {
+					limit = {
+						any_war = {
+							defender = { character = PREV }
+							attacker = { religion = ROOT }
+							using_cb = emf_religious_revolt
+						}
+					}
+					# Try to reinforce existing same-religion religious uprising
+					ROOT = { province_event = { id = emf_revolt.5 } }
+					break = yes
+				}
+				# If we reach this point, there was not yet an uprising of our religion underway, so forward
+				# to beginning of religious uprising chain with ROOT as the origin province:
+				ROOT = {
+					# Set temp. flag that overrides any prioritization of other revolt types
+					# over a religious revolt in the province:
+					set_province_flag = emf_revolt_tmp_triggered
+					province_event = { id = emf_revolt.0 }
+				}
+			}
+		}
+	}
+}
