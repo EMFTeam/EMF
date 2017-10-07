@@ -48,7 +48,7 @@ province_event = {
 								attacker = { religion = ROOT }
 								OR = {
 									using_cb = heretic_revolt
-									using_cb = emf_religious_revolt
+									using_cb = emf_revolt_religious
 								}
 							}
 						}
@@ -585,12 +585,12 @@ character_event = {
 		# declare war!
 		war = {
 			target = FROM
-			casus_belli = emf_religious_revolt
+			casus_belli = emf_revolt_religious
 		}
 
 		if = {
 			limit = { war = no }
-			log = "--> ERROR: aborting: rebel leader failed to declare war with emf_religious_revolt CB"
+			log = "--> ERROR: aborting: rebel leader failed to declare war with emf_revolt_religious CB"
 			disband_event_forces = emf_revolt
 			any_courtier = { death = { death_reason = death_missing } }
 			primary_title = { emf_unsafe_destroy_title = yes }
@@ -706,7 +706,7 @@ province_event = {
 				any_war = {
 					defender = { character = PREV }
 					attacker = { religion = ROOT }
-					using_cb = emf_religious_revolt
+					using_cb = emf_revolt_religious
 				}
 				emf_hostile_religion_to_ROOT = yes
 				NOT = { is_parent_religion = ROOT }
@@ -721,7 +721,7 @@ province_event = {
 					limit = {
 						defender = { character = PREV }
 						attacker = { religion = ROOT }
-						using_cb = emf_religious_revolt
+						using_cb = emf_revolt_religious
 					}
 					attacker = {
 						log = "INFO: emf_revolt.5: [Root.GetName] (#[Root.GetID]/[Root.County.GetID]) joins [This.Religion.GetName] religious uprising led by [This.GetTitledName] (#[This.GetID]/[This.PrimaryTitle.GetID]) against [PrevPrev.GetTitledFirstName] [PrevPrev.GetOnlyDynastyName] of the [PrevPrev.PrimaryTitle.GetFullName] (#[PrevPrev.GetID]/[PrevPrev.PrimaryTitle.GetID])"
@@ -766,7 +766,7 @@ character_event = {
 	hide_window = yes
 
 	only_rulers = yes
-	has_character_flag = emf_religious_revolt_leader
+	has_character_flag = emf_revolt_religious_leader
 
 	trigger = {
 		rebel = yes
@@ -870,9 +870,13 @@ character_event = {
 					add_province_modifier = { name = religious_unrest duration = 730 }
 				}
 				if = {
-					limit = { has_province_modifier = relsub_unrest_modifier }
-					log = "--> stacking extra 10 years of religious subjugation unrest modifier upon province"
-					add_province_modifier = { name = relsub_unrest_modifier years = 10 stacking = yes }
+					limit = {
+						emf_relsub_has_unrest = yes
+						religion = ROOT
+					}
+					emf_relsub_add_unrest = yes
+					log = "--> stacking extra 20 years of religious subjugation unrest modifier upon province"
+					
 				}
 			}
 		}
@@ -931,7 +935,7 @@ character_event = {
 	is_triggered_only = yes
 	hide_window = yes
 
-	has_character_flag = emf_religious_revolt_leader
+	has_character_flag = emf_revolt_religious_leader
 
 	trigger = {
 		rebel = yes
@@ -1027,7 +1031,7 @@ character_event = {
 	}
 }
 
-# emf_revolt.20 -- called from emf_religious_revolt CB upon rebel success
+# emf_revolt.20 -- called from emf_revolt_religious CB upon rebel success
 # ROOT = defender
 # FROM = rebel leader
 #
@@ -1450,19 +1454,47 @@ character_event = {
 					tier = DUKE
 					rebel = no
 				}
-				set_title_flag = emf_religious_revolt_victory_title
+				set_title_flag = emf_revolt_religious_victory_title
 				set_title_flag = emf_autodestroy # Destroy at first opportunity
 				save_event_target_as = emf_new_title
 			}
 		}
-		event_target:emf_base_title = {
-			location = {
-				duchy = {
-					capital_scope = {
-						event_target:emf_new_title = { set_preferred_capital = PREV }
-					}
-				}
-			}
-		}
 	}
 }
+
+# emf_revolt.25 -- finish setting up the new rebel realm of ROOT (called from CB after subjugating & usurping)
+character_event = {
+	id = emf_revolt.25
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+			any_vassal = { opinion = { who = ROOT name = emf_revolt_opinion_respects_rebel_ruler } }
+			add_character_modifier = {
+				name = emf_revolt_new_religious_realm_modifier
+				years = 30
+				inherit = yes
+			}
+			add_trait = peasant_ruler
+			any_realm_province = {
+				limit = {
+					religion = ROOT
+					has_province_modifier = religious_unrest
+				}
+				remove_province_modifier = religious_unrest
+			}
+			emf_create_courtiers = yes
+			# TODO: do the same for the relsub_unrest modifiers once I've finished them
+			# TODO: apply a "liberated" modifier to same-religion provinces
+			# TODO: validate the government type of the rebel leader (make it match FROM, but with
+			#       potential religious differences)
+			# TODO: spawn retinue that is disbanded in 10-20 years
+			# TODO: fire deferred-by-1-day event to initialize/validate [succession, mostly] laws
+	}
+
+	after = {
+		any_realm_province = { clear_flags_with_prefix = emf_revolt_tmp }
+	}
+}
+
