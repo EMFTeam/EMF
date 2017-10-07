@@ -1031,7 +1031,7 @@ character_event = {
 # ROOT = defender
 # FROM = rebel leader
 #
-# our job is to setup the new rebel realm (including the usurpation of titles).
+# our job is to prepare the CB to be able to subjugate and/or usurp titles.
 character_event = {
 	id = emf_revolt.20
 
@@ -1091,70 +1091,8 @@ character_event = {
 	option = {
 		name = OK
 		# Create a titular duchy for the rebel leader based upon the revolt's origin county title. Hopefully, he'll
-		# be able to form a de jure duchy soon. Only actually do this if the war defender is higher tier than a duke,
-		# because it'd be annoying for a duke or count to defend and lose against a revolt that immediately became
-		# same- or higher-tier than them afterward (making, e.g., emf_subjugation impossible). Usurp and/or vassalize
-		# titles.
-		character_event = { id = emf_revolt.24 }
-
-		while = {
-			limit = {
-				any_realm_province = {
-					has_province_flag = emf_revolt_tmp_claim
-					owner = {
-						religion = FROM
-						lower_tier_than = FROM
-						in_revolt = no
-						OR = {
-							is_patrician = no
-							is_merchant_republic = yes
-						}
-						NOT = {
-							any_demesne_province = {
-								NOT = { has_province_flag = emf_revolt_tmp_claim }
-							}
-						}
-					}
-				}
-			}
-			random_realm_province = {
-				limit = {
-					has_province_flag = emf_revolt_tmp_claim
-					owner = {
-						religion = FROM
-						lower_tier_than = FROM
-						in_revolt = no
-						OR = {
-							is_patrician = no
-							is_merchant_republic = yes
-						}
-						NOT = {
-							any_demesne_province = {
-								NOT = { has_province_flag = emf_revolt_tmp_claim }
-							}
-						}
-					}
-				}
-				owner = {
-					emf_FROM_subjugate_ruler = yes # FIXME: variant w/ FROM doesn't exist
-				}
-			}
-		}
-		any_realm_province = {
-			limit = { has_province_flag = emf_revolt_tmp_claim }
-			county = {
-				FROM = {
-					vassalize_or_take_under_title = {
-						title = PREV
-						enemy = ROOT
-						same_religion = yes
-						is_religious = yes
-						type = revolt
-					}
-				}
-				usurp_title = { target = FROM type = revolt }
-			}
-		}
+		# be able to form a de jure duchy soon if he's got a decent number of counties.
+		character_event = { id = emf_revolt.24 } # Create titular duchy
 	}
 
 	after = {
@@ -1223,7 +1161,7 @@ province_event = {
 						# Has not already been processed:
 						NOT = { has_province_flag = emf_revolt_tmp_pathing_done }
 					}
-					# Province B this be
+					# Province B this be, please handle me...
 					province_event = { id = emf_revolt.23 }
 				}
 			}
@@ -1258,10 +1196,7 @@ province_event = {
 						religion = ROOT_FROMFROMFROM
 						lower_tier_than = ROOT_FROMFROMFROM
 						in_revolt = no
-						OR = {
-							is_patrician = no
-							is_merchant_republic = yes
-						}
+						is_patrician = no
 						NOT = {
 							any_demesne_province = {
 								NOR = {
@@ -1343,11 +1278,9 @@ character_event = {
 	is_triggered_only = yes
 	hide_window = yes
 
-	trigger = {
-		higher_real_tier_than = DUKE
-	}
-
 	immediate = {
+		# Currently we don't set this flag, so it just goes straight to the numerous fallback cases.
+		# FIXME-ZCK: use timed flags to set a flag like this.
 		FROMFROM = {
 			primary_title = {
 				ROOT = {
@@ -1490,6 +1423,15 @@ character_event = {
 			}
 		}
 		event_target:emf_base_title = {
+			# Ensure that rebels gain this title fully, it will be their initial capital
+			location = {
+				set_province_flag = emf_revolt_tmp_capital
+				if = {
+					limit = { NOT = { religion = FROMFROM } }
+					religion = FROMFROM
+				}
+			}
+			# Create titular duchy
 			create_title = {
 				tier = DUKE
 				landless = no
@@ -1497,9 +1439,9 @@ character_event = {
 				custom_created = yes
 				culture = FROMFROM
 				holder = FROMFROM
-				name = "TRIBAL_CUSTOM" # FIXME
+				name = RELIGIOUS_REVOLT_VICTORY_TITLE_NAME
 				base_title = THIS
-				copy_title_laws = yes
+				copy_title_laws = no
 			}
 		}
 		FROMFROM = {
@@ -1508,7 +1450,18 @@ character_event = {
 					tier = DUKE
 					rebel = no
 				}
+				set_title_flag = emf_religious_revolt_victory_title
 				set_title_flag = emf_autodestroy # Destroy at first opportunity
+				save_event_target_as = emf_new_title
+			}
+		}
+		event_target:emf_base_title = {
+			location = {
+				duchy = {
+					capital_scope = {
+						event_target:emf_new_title = { set_preferred_capital = PREV }
+					}
+				}
 			}
 		}
 	}

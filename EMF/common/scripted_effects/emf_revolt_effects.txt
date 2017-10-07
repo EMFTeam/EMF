@@ -402,3 +402,101 @@ emf_cb_religious_revolt_cleanup = {
 		}
 	}
 }
+
+emf_cb_religious_revolt_take_province = {
+	county = {
+		ROOT = {
+			vassalize_or_take_under_title = {
+				title = PREV
+				enemy = FROM
+				same_religion = yes
+				is_religious = yes
+				type = revolt
+			}
+		}
+		usurp_title_plus_barony_if_unlanded = { target = ROOT type = revolt }
+	}
+}
+
+emf_cb_religious_revolt_on_success = {
+	ROOT = {
+		prestige = 200
+		piety = 100
+		occupy_minors_of_occupied_settlements = FROM
+		# Setup emf_revolt_tmp_claim/capital flags & create a titular duchy
+		hidden_tooltip = { character_event = { id = emf_revolt.20 } }
+		FROM = {
+			random_realm_province = {
+				limit = { has_province_flag = emf_revolt_tmp_capital }
+				emf_cb_religious_revolt_take_province = yes
+				ROOT = { capital = PREV }
+			}
+			while = {
+				limit = {
+					any_realm_province = {
+						has_province_flag = emf_revolt_tmp_claim
+						owner = {
+							religion = ROOT
+							lower_tier_than = ROOT
+							in_revolt = no
+							is_patrician = no
+							NOT = {
+								any_demesne_province = {
+									NOT = { has_province_flag = emf_revolt_tmp_claim }
+								}
+							}
+						}
+					}
+				}
+				random_realm_province = {
+					limit = {
+						has_province_flag = emf_revolt_tmp_claim
+						owner = {
+							religion = ROOT
+							lower_tier_than = ROOT
+							in_revolt = no
+							is_patrician = no
+							NOT = {
+								any_demesne_province = {
+									NOT = { has_province_flag = emf_revolt_tmp_claim }
+								}
+							}
+						}
+					}
+					owner = { emf_ROOT_subjugate_ruler = yes }
+				}
+			}
+			any_realm_province = {
+				limit = { has_province_flag = emf_revolt_tmp_claim }
+				emf_cb_religious_revolt_take_province = yes
+			}
+		}
+		hidden_tooltip = {
+			ROOT = {
+				any_vassal = { opinion = { who = ROOT name = opinion_respects_rebel_ruler } }
+				add_character_modifier = { name = new_rebel_realm_modifier years = 30 inherit = yes }
+				add_trait = peasant_ruler
+				emf_create_courtiers = yes
+				any_realm_province = {
+					limit = {
+						religion = ROOT
+						has_province_modifier = religious_unrest
+					}
+					remove_province_modifier = religious_unrest
+				}
+				# TODO: do the same for the relsub_unrest modifiers once I've finished them
+				# TODO: apply a "liberated" modifier to same-religion provinces
+				# TODO: validate the government type of the rebel leader (make it match FROM, but with
+				#       potential religious differences)
+				# TODO: spawn retinue that is disbanded in 10-20 years
+				# TODO: fire deferred-by-1-day event to initialize/validate [succession, mostly] laws
+			}
+		}
+	}
+	FROM = {
+		prestige = -500
+		piety = -250
+		religion_authority = { modifier = lost_religious_revolt }
+	}
+}
+
