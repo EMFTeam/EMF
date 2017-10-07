@@ -1027,3 +1027,236 @@ character_event = {
 	}
 }
 
+# emf_revolt.20 -- called from emf_religious_revolt CB upon rebel success
+# ROOT = defender
+# FROM = rebel leader
+#
+# our job is to setup the new rebel realm (including the usurpation of titles).
+character_event = {
+	id = emf_revolt.20
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		# Mark all rebel source provinces as claimed
+		any_realm_province = {
+			limit = { county = { FROM = { has_strong_claim = PREV } } }
+			set_province_flag = emf_revolt_tmp_source
+			set_province_flag = emf_revolt_tmp_claim
+		}
+		# Mark all provinces occupied by the rebels or any allies of the rebels (allies: a TODO feature) as claimed
+		any_realm_province = {
+			limit = {
+				capital_holding = {
+					is_occupied = yes
+					controller = {
+						any_war = {
+							attacker = { character = FROM }
+							defender = { character = ROOT }
+							any_attacker = { character = PREVPREV }
+						}
+					}
+				}
+			}
+			set_province_flag = emf_revolt_tmp_claim
+		}
+		if = {
+			limit = { NOT = { any_realm_province = { count = 2 has_province_flag = emf_revolt_tmp_claim } } }
+			break = yes
+		}
+		# Now, we're going to attempt to improve the direct connectivity of the new rebel realm's provinces by
+		# computing the reachability set for each claimed province and then trying to find unclaimed provinces which
+		# connect as many of the clusters as possible (subject to a total limit on provinces taken this way) through
+		# a single degree of disconnection. First, for each claimed province, compute the set of claimed provinces
+		# that are reachable through direct province adjacencies.
+
+		any_realm_province = {
+			limit = { has_province_flag = emf_revolt_tmp_claim }
+			province_event = { id = emf_revolt.21 }
+		}
+		# For each of the claimed provinces A and B, search for a province C which is adjacent to the reachable set
+		# of A and the reachable set of B but is itself unclaimed / not part of any of the paths. If we find one,
+		# mark all of A's reachable provinces with B and vice versa and flag the connecting province.
+		any_realm_province = {
+			limit = { has_province_flag = emf_revolt_tmp_claim }
+			province_event = { id = emf_revolt.22 }
+		}
+	}
+
+	after = {
+		any_realm_province = { clear_flags_with_prefix = emf_revolt_tmp }
+	}
+}
+
+# emf_revolt.21 -- calculate claimed province reachability set for province ROOT in FROM's realm
+province_event = {
+	id = emf_revolt.21
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		set_province_flag = emf_revolt_tmp_path_@ROOT # Seed the set
+		FROM = {
+			while = {
+				limit = {
+					any_realm_province = {
+						has_province_flag = emf_revolt_tmp_claim
+						NOT = { has_province_flag = emf_revolt_tmp_path_@ROOT }
+						any_neighbor_province = { has_province_flag = emf_revolt_tmp_path_@ROOT }
+					}
+				}
+				any_realm_province = {
+					limit = {
+						has_province_flag = emf_revolt_tmp_claim
+						NOT = { has_province_flag = emf_revolt_tmp_path_@ROOT }
+						any_neighbor_province = { has_province_flag = emf_revolt_tmp_path_@ROOT }
+					}
+					set_province_flag = emf_revolt_tmp_path_@ROOT
+				}
+			}
+		}
+	}
+}
+
+
+# emf_revolt.22 -- try to merge clusters of provinces disconnected by 1 degree of land adjacency
+# ROOT = province A
+# FROM = ruler whom is [currently] overlord of A
+province_event = {
+	id = emf_revolt.22
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		FROM = {
+			while = {
+				limit = {
+					any_realm_province = {
+						has_province_flag = emf_revolt_tmp_claim
+						# Disconnected from ROOT's cluster:
+						NOT = { has_province_flag = emf_revolt_tmp_path_@ROOT }
+						# Has not already been processed:
+						NOT = { has_province_flag = emf_revolt_tmp_pathing_done }
+					}
+				}
+				random_realm_province = {
+					limit = {
+						has_province_flag = emf_revolt_tmp_claim
+						# Disconnected from ROOT's cluster:
+						NOT = { has_province_flag = emf_revolt_tmp_path_@ROOT }
+						# Has not already been processed:
+						NOT = { has_province_flag = emf_revolt_tmp_pathing_done }
+					}
+					# Province B this be
+					province_event = { id = emf_revolt.23 }
+				}
+			}
+		}
+		set_province_flag = emf_revolt_tmp_pathing_done
+	}
+}
+
+# emf_revolt.23 -- try to merge cluster of province FROM with cluster of province ROOT in FROMFROM's realm
+# additionally, rebel leader is FROMFROMFROM.
+province_event = {
+	id = emf_revolt.23
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		FROMFROM = {
+			random_realm_province = {
+				limit = {
+					NOT = { event_target:emf_dot = { always = yes } }
+					NOT = { has_province_flag = emf_revolt_tmp_claim }
+					any_neighbor_province = {
+						has_province_flag = emf_revolt_tmp_path_@ROOT
+						PREV = { # The unclaimed province
+							any_neighbor_province = {
+								has_province_flag = emf_revolt_tmp_path_@ROOT_FROM
+							}
+						}
+					}
+					owner = { # Vassalization candidate
+						religion = ROOT_FROMFROMFROM
+						lower_tier_than = ROOT_FROMFROMFROM
+						in_revolt = no
+						OR = {
+							is_patrician = no
+							is_merchant_republic = yes
+						}
+						NOT = {
+							any_demesne_province = {
+								NOR = {
+									has_province_flag = emf_revolt_tmp_claim
+									province = PREVPREV
+								}
+							}
+						}
+					}
+				}
+				save_event_target_as = emf_dot
+			}
+			# FIXME-ZCK: when scripted triggers are upgraded to be able to take arguments, insert here
+			# secondary preference for emf_hostile_religion != root_from^3
+			random_realm_province = {
+				limit = {
+					NOT = { event_target:emf_dot = { always = yes } }
+					NOT = { has_province_flag = emf_revolt_tmp_claim }
+					any_neighbor_province = {
+						has_province_flag = emf_revolt_tmp_path_@ROOT
+						PREV = { # The unclaimed province
+							any_neighbor_province = {
+								has_province_flag = emf_revolt_tmp_path_@ROOT_FROM
+							}
+						}
+					}
+					owner = { # Then prefer to not unland characters by taking this province
+						any_demesne_province = {
+							NOR = {
+								has_province_flag = emf_revolt_tmp_claim
+								province = PREVPREV
+							}
+						}
+					}
+				}
+				save_event_target_as = emf_dot
+			}
+			random_realm_province = { # Fallback
+				limit = {
+					NOT = { event_target:emf_dot = { always = yes } }
+					NOT = { has_province_flag = emf_revolt_tmp_claim }
+					any_neighbor_province = {
+						has_province_flag = emf_revolt_tmp_path_@ROOT
+						PREV = { # The unclaimed province
+							any_neighbor_province = {
+								has_province_flag = emf_revolt_tmp_path_@ROOT_FROM
+							}
+						}
+					}
+				}
+				save_event_target_as = emf_dot
+			}
+		}
+		# Connect the dot (if it exists)
+		event_target:emf_dot = {
+			set_province_flag = emf_revolt_tmp_claim
+			set_province_flag = emf_revolt_tmp_path_@ROOT
+			FROMFROM = {
+				# Merge the reachability sets
+				any_realm_province = {
+					limit = { has_province_flag = emf_revolt_tmp_path_@ROOT }
+					set_province_flag = emf_revolt_tmp_path_@ROOT_FROM
+				}
+				any_realm_province = {
+					limit = { has_province_flag = emf_revolt_tmp_path_@ROOT_FROM }
+					set_province_flag = emf_revolt_tmp_path_@ROOT
+				}
+			}
+		}
+	}
+}
