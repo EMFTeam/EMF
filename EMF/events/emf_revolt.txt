@@ -1045,13 +1045,16 @@ character_event = {
 	hide_window = yes
 
 	immediate = {
+		log = "--> claiming source provinces:"
 		# Mark all rebel source provinces as claimed
 		any_realm_province = {
 			limit = { county = { FROM = { has_strong_claim = PREV } } }
 			set_province_flag = emf_revolt_tmp_source
 			set_province_flag = emf_revolt_tmp_claim
+			log = "----> [This.GetName] (#[This.GetID]/[This.County.GetID])"
 		}
 		# Mark all provinces occupied by the rebels or any allies of the rebels (allies: a TODO feature) as claimed
+		log = "--> claiming occupied provinces:"
 		any_realm_province = {
 			limit = {
 				capital_holding = {
@@ -1066,6 +1069,7 @@ character_event = {
 				}
 			}
 			set_province_flag = emf_revolt_tmp_claim
+			log = "----> [This.GetName] (#[This.GetID]/[This.County.GetID])"
 		}
 		if = {
 			limit = { NOT = { any_realm_province = { count = 2 has_province_flag = emf_revolt_tmp_claim } } }
@@ -1073,9 +1077,9 @@ character_event = {
 		}
 		# Now, we're going to attempt to improve the direct connectivity of the new rebel realm's provinces by
 		# computing the reachability set for each claimed province and then trying to find unclaimed provinces which
-		# connect as many of the clusters as possible (subject to a total limit on provinces taken this way) through
-		# a single degree of disconnection. First, for each claimed province, compute the set of claimed provinces
-		# that are reachable through direct province adjacencies.
+		# connect as many of the clusters as possible through a single degree of disconnection. First, for each
+		# claimed province, compute the set of claimed provinces that are reachable through direct province
+		# adjacencies.
 		any_realm_province = {
 			limit = { has_province_flag = emf_revolt_tmp_claim }
 			province_event = { id = emf_revolt.21 }
@@ -1114,6 +1118,7 @@ province_event = {
 	hide_window = yes
 
 	immediate = {
+		log = "--> computing claimed provinces reachable from [Root.GetName] (#[Root.GetID]/[Root.County.GetID]):"
 		set_province_flag = emf_revolt_tmp_path_@ROOT # Seed the set
 		FROM = {
 			while = {
@@ -1131,6 +1136,7 @@ province_event = {
 						any_neighbor_province = { has_province_flag = emf_revolt_tmp_path_@ROOT }
 					}
 					set_province_flag = emf_revolt_tmp_path_@ROOT
+					log = "----> [This.GetName] (#[This.GetID]/[This.County.GetID])"
 				}
 			}
 		}
@@ -1148,6 +1154,7 @@ province_event = {
 	hide_window = yes
 
 	immediate = {
+		log = "--> trying to merge other claimed and disconnected provinces' clusters with that of [Root.GetName] (#[Root.GetID]/[Root.County.GetID]):"
 		FROM = {
 			while = {
 				limit = {
@@ -1185,6 +1192,7 @@ province_event = {
 	hide_window = yes
 
 	immediate = {
+		log = "----> disconnected: [This.GetName] (#[This.GetID]/[This.County.GetID]):"
 		FROMFROM = {
 			random_realm_province = {
 				limit = {
@@ -1258,6 +1266,7 @@ province_event = {
 		}
 		# Connect the dot (if it exists)
 		event_target:emf_dot = {
+			log = "------> connected the clusters with [This.GetName] (#[This.GetID]/[This.County.GetID])"
 			set_province_flag = emf_revolt_tmp_dot
 			set_province_flag = emf_revolt_tmp_path_@ROOT
 			FROMFROM = {
@@ -1272,6 +1281,11 @@ province_event = {
 				}
 			}
 		}
+		if = {
+			limit = { NOT = { event_target:emf_dot = { always = yes } } }
+			log = "------> clusters couldn't be connected"
+		}
+		clear_event_target = emf_dot
 	}
 }
 
@@ -1431,9 +1445,11 @@ character_event = {
 		event_target:emf_base_title = {
 			# Ensure that rebels gain this title fully, it will be their initial capital
 			location = {
+				log = "--> selected rebel capital: [This.GetName] (#[This.GetID]/[This.County.GetID])"
 				set_province_flag = emf_revolt_tmp_capital
 				if = {
 					limit = { NOT = { religion = FROMFROM } }
+					log = "--> flipped capital religion from [This.Religion.GetName] to [FromFrom.Religion.GetName]"
 					religion = FROMFROM
 				}
 			}
@@ -1461,6 +1477,7 @@ character_event = {
 				save_event_target_as = emf_new_title
 			}
 		}
+		log = "--> created titular title of the [emf_new_title.GetFullName]"
 	}
 }
 
