@@ -1,1158 +1,2316 @@
 # -*- ck2.events -*-
 
 
+
+
+
 namespace = emf_startup
 
-# basic startup [Isis]
-# invoked through character history effect
-character_event = {
-	id = emf_startup.0
-	
-	is_triggered_only = yes
-	hide_window = yes
 
-	immediate = {
-		if = { # Make sure we recognize SWMH ASAP.
-			limit = {
-				NOT = { has_global_flag = SWMH }
-				k_sicily = { de_jure_liege = e_byzantium } # Only true for vanilla
-			}
-			set_global_flag = SWMH
-		}
-	}
+
+# basic startup [Isis]
+
+# invoked through character history effect
+
+character_event = {
+
+    id = emf_startup.0
+
+
+
+    is_triggered_only = yes
+
+    hide_window = yes
+
+
+
+    immediate = {
+
+        if = { # Make sure we recognize SWMH ASAP.
+
+            limit = {
+
+                NOT = { has_global_flag = SWMH }
+
+                k_sicily = { de_jure_liege = e_byzantium } # Only true for vanilla
+
+            }
+
+            set_global_flag = SWMH
+
+        }
+
+    }
+
 }
+
+
+
 
 
 # emf_startup.1
+
 # Initial welcome event
+
 narrative_event = {
-	id    = emf_startup.1
-	desc  = emf_startup.1.desc
-	title = emf_startup.1.title
 
-	picture = GFX_evt_rainy_lanterns
-	border  = GFX_event_narrative_frame_diplomacy
+    id    = emf_startup.1
 
-	is_triggered_only = yes
-	major = yes
-	
-	major_trigger = { ai = no }
+    desc  = emf_startup.1.desc
 
-	option = {
-		name = emf_startup.1.opt.a
-	}
+    title = emf_startup.1.title
+
+
+
+    picture = GFX_evt_rainy_lanterns
+
+    border  = GFX_event_narrative_frame_diplomacy
+
+
+
+    is_triggered_only = yes
+
+    major = yes
+
+
+
+    major_trigger = { ai = no }
+
+
+
+    option = {
+
+        name = emf_startup.1.opt.a
+
+    }
+
 }
+
+
+
 
 
 # on_startup [Isis]
+
 #
+
 # We don't trust startup via character history effect (emf_startup.0)
+
 # as much as we do on_startup to give us valid game state with which
+
 # to work, post-2.4/HL, so now we do most of our campaign setup here.
+
 character_event = {
-	id = emf_startup.2
-	hide_window = yes
-	is_triggered_only = yes
 
-	only_independent = yes
+    id = emf_startup.2
 
-	trigger = {
-		has_landed_title = e_hip
-		NOT = { has_global_flag = EMF }
-	}
+    hide_window = yes
 
-	immediate = {
-		# Global EMF config pre-startup settings (great for easy tweaking of EMF behavior in your submod):
-		character_event = { id = emf_config.0 }
+    is_triggered_only = yes
 
-		# Map-specific changes (see emf_startup_map.txt)
-		character_event = { id = emf_startup.30 }
-		
-		# Add Court Anarchy trait during Anarchy at Samarra
-		if = {
-			limit = {
-				year = 862
-				NOT = { year = 870 }
-			}
-			d_sunni = {
-				owner = {
-					add_trait = court_anarchy
-					c_163025 = {
-						reverse_remove_opinion = { who = PREV modifier = opinion_charge_heresiarch }
-						reverse_opinion = { who = PREV modifier = mad_heretic }
-					}
-					c_163026 = {
-						reverse_remove_opinion = { who = PREV modifier = opinion_charge_heresiarch }
-						reverse_opinion = { who = PREV modifier = mad_heretic }
-					}
-				}
-			}
-		}
 
-		# Mark [some of] the sons of Ragnar as never being willing to "bend the knee"
-		# via EMF's generalized Rollo mechanic. It's quite sad when the Great Heathen Army just all decides, "Fuck it,
-		# Odin never did anything for me anyway."
-		c_163110 = { set_character_flag = emf_will_never_bend_the_knee } # Sigurdr
-		c_163111 = { set_character_flag = emf_will_never_bend_the_knee } # Ivar
-		c_163112 = { set_character_flag = emf_will_never_bend_the_knee } # Halfdan
-		c_163119 = { set_character_flag = emf_will_never_bend_the_knee } # Ubbe
 
-		k_magyar = { set_title_flag = emf_autodestroy_exemption }
+    only_independent = yes
 
-		# Run the [unnecessary] titular title autodestruction code upon every playable ruler now
-		any_playable_ruler = {
-			limit = { ai = yes war = no }
-			character_event = { id = emf_core.100 }
-		}
 
-		# Rum's existence always consumes k_anatolia's de jure territory
-		if = {
-			limit = { k_rum = { has_holder = yes } }
-			k_anatolia = { any_direct_de_jure_vassal_title = { de_jure_liege = k_rum } }
-		}
-		
-		# Prevent early mending of the Catholic Schism
-		if = {
-			limit = { b_hagiasophia = { owner = { religion = catholic } } }
-			k_orthodox = {
-				owner = {
-					b_hagiasophia = {
-						grant_title_no_opinion = PREV
-					}
-				}
-			}
-		}
 
-		if = {
-			limit = { year = 1100 }
-			set_global_flag = christian_crusades_unlocked
-			set_global_flag = muslim_jihads_unlocked
-		}
-		
-		# Remove ahistorical de jure empires
-		character_event = { id = emf_empires.20 }
+    trigger = {
 
-		emf_hre_on_startup = yes
-		
-		if = { # Paradox title/char history flag-setting timestamp bug workaround
-			limit = { e_mongol_empire = { has_holder = yes } }
-			set_global_flag = mongol_empire_arrival
-		}
+        has_landed_title = e_hip
 
-		# PB compatibility tweaks and setup
-		character_event = { id = emf_startup.4 }
+        NOT = { has_global_flag = EMF }
 
-		# Initialize capital-connected territory tracking (note that this is also done on_startup as its own
-		# on_action, so I'm commenting-out this invocation until/if some code in campaign setup needs to have that
-		# data guaranteed in order to do something with it)
-		#any_independent_ruler = {
-		#	character_event = { id = emf_core.50 }
-		#}
+    }
 
-		# Initialize laws
-		character_event = { id = emf_laws.0 }
 
-		# Initialize playable ruler demesne (limit random vassal barons)
-		any_playable_ruler = {
-			character_event = { id = emf_startup.10 }
-		}
 
-		if = {
-			limit = { NOT = { has_global_flag = emf_config_antinomad_disabled } }
-			# Antinomad setup (preserve province history culture & religion)
-			character_event = { id = emf_nomad.1000 }
-		}
-		
-		# Combat & diplo trait distribution
-		any_character = {
-			character_event = { id = emf_startup.5 }
-			character_event = { id = emf_startup.6 }
-		}
-		
-		# Set flag on married characters
-		any_character = {
-			limit = { is_married = yes }
-			set_character_flag = emf_is_married
-		}
+    immediate = {
 
-		# Deal with randomly-applied sterility traits
-		any_character = {
-			limit = { trait = sterile_secret }
-			set_character_flag = emf_was_sterile
-			if = {
-				limit = { any_child_even_if_dead = { always = yes } }
-				clr_character_flag = emf_was_sterile
-				remove_trait = sterile_secret
-			}
-			if = {
-				limit = {
-					has_character_flag = emf_was_sterile
-					is_married = no
-					is_consort = no
-					has_lover = no
-				}
-				clr_character_flag = emf_was_sterile
-				set_character_flag = emf_is_sterile
-				remove_trait = sterile_secret
-			}
-		}
+        # Global EMF config pre-startup settings (great for easy tweaking of EMF behavior in your submod):
 
-		# Apply Islamic handicap to religious authority
-		character_event = { id = emf_startup.41 }
+        character_event = { id = emf_config.0 }
 
-		# Add Crowned traits
-		character_event = { id = emf_coronation.1100 }
-		
-		# Byzantine setup events
-		e_byzantium = {
-			holder_scope = {
-				character_event = { id = emf_imperial.1875 days = 1 }
-			}
-		}
-		
-		# History's Forgotten Daughters
-		random_playable_ruler = {
-			limit = { emf_needs_extra_child = yes }
-			character_event = { id = emf_startup.14 }
-		}
-		
-		# Mongol startup event
-		character_event = { id = emf_mongol.100 }
-		
-		# Norman startup event
-		character_event = { id = emf_adventurer.2749 }
-		
-		# Initialize dynlevy
-		character_event = { id = emf_dynlevy.0 }
 
-		if = {
-			limit = { has_game_rule = { name = mr_cb_restriction value = off } }
-			set_global_flag = emf_mr_cbs_unlocked
-		}
-		
-		# Primary startup is done, so we raise the EMF flag.
-		set_global_flag = EMF
 
-		# Global EMF config post-startup settings (great for easy tweaking of EMF behavior in your submod when the
-		# configuration options depend upon the fairly large changes to game state made by the startup code which has
-		# just finished).
-		character_event = { id = emf_config.1 }
+        # Map-specific changes (see emf_startup_map.txt)
 
-		narrative_event = { id = emf_startup.1 } # Welcome event
-	}
+        character_event = { id = emf_startup.30 }
+
+
+
+        # Add Court Anarchy trait during Anarchy at Samarra
+
+        if = {
+
+            limit = {
+
+                year = 862
+
+                NOT = { year = 870 }
+
+            }
+
+            d_sunni = {
+
+                owner = {
+
+                    add_trait = court_anarchy
+
+                    c_163025 = {
+
+                        reverse_remove_opinion = { who = PREV modifier = opinion_charge_heresiarch }
+
+                        reverse_opinion = { who = PREV modifier = mad_heretic }
+
+                    }
+
+                    c_163026 = {
+
+                        reverse_remove_opinion = { who = PREV modifier = opinion_charge_heresiarch }
+
+                        reverse_opinion = { who = PREV modifier = mad_heretic }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+
+
+        # Mark [some of] the sons of Ragnar as never being willing to "bend the knee"
+
+        # via EMF's generalized Rollo mechanic. It's quite sad when the Great Heathen Army just all decides, "Fuck it,
+
+        # Odin never did anything for me anyway."
+
+        c_163110 = { set_character_flag = emf_will_never_bend_the_knee } # Sigurdr
+
+        c_163111 = { set_character_flag = emf_will_never_bend_the_knee } # Ivar
+
+        c_163112 = { set_character_flag = emf_will_never_bend_the_knee } # Halfdan
+
+        c_163119 = { set_character_flag = emf_will_never_bend_the_knee } # Ubbe
+
+
+
+        k_magyar = { set_title_flag = emf_autodestroy_exemption }
+
+
+
+        # Run the [unnecessary] titular title autodestruction code upon every playable ruler now
+
+        any_playable_ruler = {
+
+            limit = { ai = yes war = no }
+
+            character_event = { id = emf_core.100 }
+
+        }
+
+
+
+        # Rum's existence always consumes k_anatolia's de jure territory
+
+        if = {
+
+            limit = { k_rum = { has_holder = yes } }
+
+            k_anatolia = { any_direct_de_jure_vassal_title = { de_jure_liege = k_rum } }
+
+        }
+
+
+
+        # Prevent early mending of the Catholic Schism
+
+        if = {
+
+            limit = { b_hagiasophia = { owner = { religion = catholic } } }
+
+            k_orthodox = {
+
+                owner = {
+
+                    b_hagiasophia = {
+
+                        grant_title_no_opinion = PREV
+
+                    }
+
+                }
+
+            }
+
+        }
+
+
+
+        if = {
+
+            limit = { year = 1100 }
+
+            set_global_flag = christian_crusades_unlocked
+
+            set_global_flag = muslim_jihads_unlocked
+
+        }
+
+
+
+        # Remove ahistorical de jure empires
+
+        character_event = { id = emf_empires.20 }
+
+
+
+        emf_hre_on_startup = yes
+
+
+
+        if = { # Paradox title/char history flag-setting timestamp bug workaround
+
+            limit = { e_mongol_empire = { has_holder = yes } }
+
+            set_global_flag = mongol_empire_arrival
+
+        }
+
+
+
+        # PB compatibility tweaks and setup
+
+        character_event = { id = emf_startup.4 }
+
+
+
+        # Initialize capital-connected territory tracking (note that this is also done on_startup as its own
+
+        # on_action, so I'm commenting-out this invocation until/if some code in campaign setup needs to have that
+
+        # data guaranteed in order to do something with it)
+
+        #any_independent_ruler = {
+
+        #    character_event = { id = emf_core.50 }
+
+        #}
+
+
+
+        # Initialize laws
+
+        character_event = { id = emf_laws.0 }
+
+
+
+        # Initialize playable ruler demesne (limit random vassal barons)
+
+        any_playable_ruler = {
+
+            character_event = { id = emf_startup.10 }
+
+        }
+
+
+
+        if = {
+
+            limit = { NOT = { has_global_flag = emf_config_antinomad_disabled } }
+
+            # Antinomad setup (preserve province history culture & religion)
+
+            character_event = { id = emf_nomad.1000 }
+
+        }
+
+
+
+        # Combat & diplo trait distribution
+
+        any_character = {
+
+            character_event = { id = emf_startup.5 }
+
+            character_event = { id = emf_startup.6 }
+
+        }
+
+
+
+        # Set flag on married characters
+
+        any_character = {
+
+            limit = { is_married = yes }
+
+            set_character_flag = emf_is_married
+
+        }
+
+
+
+        # Deal with randomly-applied sterility traits
+
+        any_character = {
+
+            limit = { trait = sterile_secret }
+
+            set_character_flag = emf_was_sterile
+
+            if = {
+
+                limit = { any_child_even_if_dead = { always = yes } }
+
+                clr_character_flag = emf_was_sterile
+
+                remove_trait = sterile_secret
+
+            }
+
+            if = {
+
+                limit = {
+
+                    has_character_flag = emf_was_sterile
+
+                    is_married = no
+
+                    is_consort = no
+
+                    has_lover = no
+
+                }
+
+                clr_character_flag = emf_was_sterile
+
+                set_character_flag = emf_is_sterile
+
+                remove_trait = sterile_secret
+
+            }
+
+        }
+
+
+
+        # Apply Islamic handicap to religious authority
+
+        character_event = { id = emf_startup.41 }
+
+
+
+        # Add Crowned traits
+
+        character_event = { id = emf_coronation.1100 }
+
+
+
+        # Byzantine setup events
+
+        e_byzantium = {
+
+            holder_scope = {
+
+                character_event = { id = emf_imperial.1875 days = 1 }
+
+            }
+
+        }
+
+
+
+        # History's Forgotten Daughters
+
+        random_playable_ruler = {
+
+            limit = { emf_needs_extra_child = yes }
+
+            character_event = { id = emf_startup.14 }
+
+        }
+
+
+
+        # Mongol startup event
+
+        character_event = { id = emf_mongol.100 }
+
+
+
+        # Norman startup event
+
+        character_event = { id = emf_adventurer.2749 }
+
+
+
+        # Initialize dynlevy
+
+        character_event = { id = emf_dynlevy.0 }
+
+
+
+        if = {
+
+            limit = { has_game_rule = { name = mr_cb_restriction value = off } }
+
+            set_global_flag = emf_mr_cbs_unlocked
+
+        }
+
+
+
+        # Primary startup is done, so we raise the EMF flag.
+
+        set_global_flag = EMF
+
+
+
+        # Global EMF config post-startup settings (great for easy tweaking of EMF behavior in your submod when the
+
+        # configuration options depend upon the fairly large changes to game state made by the startup code which has
+
+        # just finished).
+
+        character_event = { id = emf_config.1 }
+
+
+
+        narrative_event = { id = emf_startup.1 } # Welcome event
+
+    }
+
 }
+
+
+
 
 
 # emf_startup.3
+
 #
+
 # Detect a ruler-designed character acquiring their titles upon game initialization
+
 # through on_new_holder_inheritance (neat trick from Rylock to workaround silly way
+
 # of inserting ruler-designed characters into an already-initialized game without
+
 # waiting for a maintenance event).
+
 #
+
 # Technically this thing fires for a lot more than RDed characters, but is our secondary hook into
+
 # 2nd-stage campaign setup (setup which requires the presence of a possibly-RDed player's character
+
 # inserted into the game world).
+
 character_event = {
-	id = emf_startup.3
-	
-	is_triggered_only = yes
-	hide_window = yes
-	
-	only_playable = yes
-	has_global_flag = EMF # After the main on_startup only ...
-#	ai = no # Cannot use, because apparently the RD character is still AI at this point.
-	
-	trigger = {
-		FROM = { is_primary_holder_title = yes }
-		NOT = { had_global_flag = { flag = EMF days = 1 } } # ... but not before unpausing
-	}
-	
-	immediate = {
-		log = "DEBUG: emf_startup.3: day-1 primary-inheritance of [From.GetID] by [Root.GetTitledName] ([Root.GetID]) from [FromFrom.GetTitledName] ([FromFrom.GetID])"
-		
-		# Remove any temp. age customization traits from Ruler Designer
-		remove_trait = age_1
-		remove_trait = age_2
-		remove_trait = age_4
-		remove_trait = age_8
-		remove_trait = age_16
-		remove_trait = age_32
-		
-		# Remove the customize ruler dynasty trait in 15 days (if unused)
-		if = {
-			limit = { trait = emf_customize_ruler }
-			character_event = { id = emf_startup.1002 days = 15 }
-		}
-	}
+
+    id = emf_startup.3
+
+
+
+    is_triggered_only = yes
+
+    hide_window = yes
+
+
+
+    only_playable = yes
+
+    has_global_flag = EMF # After the main on_startup only ...
+
+#    ai = no # Cannot use, because apparently the RD character is still AI at this point.
+
+
+
+    trigger = {
+
+        FROM = { is_primary_holder_title = yes }
+
+        NOT = { had_global_flag = { flag = EMF days = 1 } } # ... but not before unpausing
+
+    }
+
+
+
+    immediate = {
+
+        log = "DEBUG: emf_startup.3: day-1 primary-inheritance of [From.GetID] by [Root.GetTitledName] ([Root.GetID]) from [FromFrom.GetTitledName] ([FromFrom.GetID])"
+
+
+
+        # Remove any temp. age customization traits from Ruler Designer
+
+        remove_trait = age_1
+
+        remove_trait = age_2
+
+        remove_trait = age_4
+
+        remove_trait = age_8
+
+        remove_trait = age_16
+
+        remove_trait = age_32
+
+
+
+        # Remove the customize ruler dynasty trait in 15 days (if unused)
+
+        if = {
+
+            limit = { trait = emf_customize_ruler }
+
+            character_event = { id = emf_startup.1002 days = 15 }
+
+        }
+
+    }
+
 }
+
+
+
 
 
 # emf_startup.4
+
 #
+
 # PB compatibility tweaks & setup
+
 character_event = {
-	id = emf_startup.4
-	
-	is_triggered_only = yes
-	hide_window = yes
-	
-	immediate = {
-		if = {
-			limit = { year = 1077 }
-			set_global_flag = rum_formed
-		}
-		# Ensure the Persian Emperor doesn't hold the kingdom title too
-		if = {
-			limit = { e_persia = { owner = { has_landed_title = k_persia } } }
-			k_persia = { emf_destroy_title = yes }
-		}
-	}
+
+    id = emf_startup.4
+
+
+
+    is_triggered_only = yes
+
+    hide_window = yes
+
+
+
+    immediate = {
+
+        if = {
+
+            limit = { year = 1077 }
+
+            set_global_flag = rum_formed
+
+        }
+
+        # Ensure the Persian Emperor doesn't hold the kingdom title too
+
+        if = {
+
+            limit = { e_persia = { owner = { has_landed_title = k_persia } } }
+
+            k_persia = { emf_destroy_title = yes }
+
+        }
+
+    }
+
 }
+
+
+
 
 
 # emf_startup.5 [Playable ruler, FROM=Isis]
+
 #
+
 # Combat trait distribution
+
 character_event = {
-	id = emf_startup.5
-	
-	hide_window = yes
-	is_triggered_only = yes
-	
-	min_age = 16
 
-	trigger = {
-		has_warrior_skill_trigger = no
-		
-		OR = {
-			is_playable = yes
-			can_be_marshal_trigger = yes
-		}
-		OR = {
-			has_education_martial_trigger = yes
-			has_lifestyle_martial_trigger = yes
-			has_job_title = job_marshal
-			has_minor_title = title_commander
-		}
-	}
+    id = emf_startup.5
 
-	immediate = {
-		if = {
-			limit = { trait = misguided_warrior }
-			isis = { change_variable = { which = combat_skill value = 2 } }
-		}
-		if = {
-			limit = { trait = tough_soldier }
-			isis = { change_variable = { which = combat_skill value = 4 } }
-		}
-		if = {
-			limit = { trait = skilled_tactician }
-			isis = { change_variable = { which = combat_skill value = 6 } }
-		}
-		if = {
-			limit = { trait = brilliant_strategist }
-			isis = { change_variable = { which = combat_skill value = 8 } }
-		}
-		if = {
-			limit = { trait = diligent }
-			isis = { change_variable = { which = combat_skill value = 1 } }
-		}
-		if = {
-			limit = { trait = brave }
-			isis = { change_variable = { which = combat_skill value = 2 } }
-		}
-		if = {
-			limit = { is_smart_trigger = yes }
-			isis = { change_variable = { which = combat_skill value = 1 } }
-		}
-		if = {
-			limit = { trait = genius }
-			isis = { change_variable = { which = combat_skill value = 2 } }
-		}
-		if = {
-			limit = { trait = strong }
-			isis = { change_variable = { which = combat_skill value = 2 } }
-		}
-		if = {
-			limit = { trait = robust }
-			isis = { change_variable = { which = combat_skill value = 2 } }
-		}
-		if = {
-			limit = { trait = agile }
-			isis = { change_variable = { which = combat_skill value = 1 } }
-		}
-		if = {
-			limit = { is_weak_trigger = yes }
-			isis = { change_variable = { which = combat_skill value = -2 } }
-		}
-		if = {
-			limit = { trait = slow }
-			isis = { change_variable = { which = combat_skill value = -1 } }
-		}
-		if = {
-			limit = { trait = dull }
-			isis = { change_variable = { which = combat_skill value = -1 } }
-		}
-		if = {
-			limit = { trait = imbecile }
-			isis = { change_variable = { which = combat_skill value = -3 } }
-		}
-		if = {
-			limit = { trait = inbred }
-			isis = { change_variable = { which = combat_skill value = -2 } }
-		}
-		if = {
-			limit = { trait = clubfooted }
-			isis = { change_variable = { which = combat_skill value = -1 } }
-		}
-		if = {
-			limit = { trait = slothful }
-			isis = { change_variable = { which = combat_skill value = -1 } }
-		}
-		if = {
-			limit = { trait = craven }
-			isis = { change_variable = { which = combat_skill value = -2 } }
-		}
-		if = {
-			limit = { trait = impaler }
-			isis = { change_variable = { which = combat_skill value = 1 } }
-		}
-		if = {
-			limit = { trait = duelist }
-			isis = { change_variable = { which = combat_skill value = 3 } }
-		}
-		if = {
-			limit = {
-				isis = { check_variable = { which = combat_skill value = 8 } }
-			}
-			add_trait = master_warrior
-			break = yes
-		}
-		if = {
-			limit = {
-				isis = { check_variable = { which = combat_skill value = 6 } }
-			}
-			add_trait = skilled_warrior
-			break = yes
-		}
-		if = {
-			limit = {
-				isis = { check_variable = { which = combat_skill value = 4 } }
-			}
-			add_trait = trained_warrior
-			break = yes
-		}
-		if = {
-			limit = {
-				isis = { check_variable = { which = combat_skill value = 1 } }
-			}
-			add_trait = poor_warrior
-		}
-	}
 
-	option = {
-		name = OK
-		isis = { set_variable = { which = combat_skill value = 0 } }
-	}
+
+    hide_window = yes
+
+    is_triggered_only = yes
+
+
+
+    min_age = 16
+
+
+
+    trigger = {
+
+        has_warrior_skill_trigger = no
+
+
+
+        OR = {
+
+            is_playable = yes
+
+            can_be_marshal_trigger = yes
+
+        }
+
+        OR = {
+
+            has_education_martial_trigger = yes
+
+            has_lifestyle_martial_trigger = yes
+
+            has_job_title = job_marshal
+
+            has_minor_title = title_commander
+
+        }
+
+    }
+
+
+
+    immediate = {
+
+        if = {
+
+            limit = { trait = misguided_warrior }
+
+            isis = { change_variable = { which = combat_skill value = 2 } }
+
+        }
+
+        if = {
+
+            limit = { trait = tough_soldier }
+
+            isis = { change_variable = { which = combat_skill value = 4 } }
+
+        }
+
+        if = {
+
+            limit = { trait = skilled_tactician }
+
+            isis = { change_variable = { which = combat_skill value = 6 } }
+
+        }
+
+        if = {
+
+            limit = { trait = brilliant_strategist }
+
+            isis = { change_variable = { which = combat_skill value = 8 } }
+
+        }
+
+        if = {
+
+            limit = { trait = diligent }
+
+            isis = { change_variable = { which = combat_skill value = 1 } }
+
+        }
+
+        if = {
+
+            limit = { trait = brave }
+
+            isis = { change_variable = { which = combat_skill value = 2 } }
+
+        }
+
+        if = {
+
+            limit = { is_smart_trigger = yes }
+
+            isis = { change_variable = { which = combat_skill value = 1 } }
+
+        }
+
+        if = {
+
+            limit = { trait = genius }
+
+            isis = { change_variable = { which = combat_skill value = 2 } }
+
+        }
+
+        if = {
+
+            limit = { trait = strong }
+
+            isis = { change_variable = { which = combat_skill value = 2 } }
+
+        }
+
+        if = {
+
+            limit = { trait = robust }
+
+            isis = { change_variable = { which = combat_skill value = 2 } }
+
+        }
+
+        if = {
+
+            limit = { trait = agile }
+
+            isis = { change_variable = { which = combat_skill value = 1 } }
+
+        }
+
+        if = {
+
+            limit = { is_weak_trigger = yes }
+
+            isis = { change_variable = { which = combat_skill value = -2 } }
+
+        }
+
+        if = {
+
+            limit = { trait = slow }
+
+            isis = { change_variable = { which = combat_skill value = -1 } }
+
+        }
+
+        if = {
+
+            limit = { trait = dull }
+
+            isis = { change_variable = { which = combat_skill value = -1 } }
+
+        }
+
+        if = {
+
+            limit = { trait = imbecile }
+
+            isis = { change_variable = { which = combat_skill value = -3 } }
+
+        }
+
+        if = {
+
+            limit = { trait = inbred }
+
+            isis = { change_variable = { which = combat_skill value = -2 } }
+
+        }
+
+        if = {
+
+            limit = { trait = clubfooted }
+
+            isis = { change_variable = { which = combat_skill value = -1 } }
+
+        }
+
+        if = {
+
+            limit = { trait = slothful }
+
+            isis = { change_variable = { which = combat_skill value = -1 } }
+
+        }
+
+        if = {
+
+            limit = { trait = craven }
+
+            isis = { change_variable = { which = combat_skill value = -2 } }
+
+        }
+
+        if = {
+
+            limit = { trait = impaler }
+
+            isis = { change_variable = { which = combat_skill value = 1 } }
+
+        }
+
+        if = {
+
+            limit = { trait = duelist }
+
+            isis = { change_variable = { which = combat_skill value = 3 } }
+
+        }
+
+        if = {
+
+            limit = {
+
+                isis = { check_variable = { which = combat_skill value = 8 } }
+
+            }
+
+            add_trait = master_warrior
+
+            break = yes
+
+        }
+
+        if = {
+
+            limit = {
+
+                isis = { check_variable = { which = combat_skill value = 6 } }
+
+            }
+
+            add_trait = skilled_warrior
+
+            break = yes
+
+        }
+
+        if = {
+
+            limit = {
+
+                isis = { check_variable = { which = combat_skill value = 4 } }
+
+            }
+
+            add_trait = trained_warrior
+
+            break = yes
+
+        }
+
+        if = {
+
+            limit = {
+
+                isis = { check_variable = { which = combat_skill value = 1 } }
+
+            }
+
+            add_trait = poor_warrior
+
+        }
+
+    }
+
+
+
+    option = {
+
+        name = OK
+
+        isis = { set_variable = { which = combat_skill value = 0 } }
+
+    }
+
 }
+
+
 
 # Diplomat trait distribution
+
 character_event = {
-	id = emf_startup.6
-	
-	hide_window = yes
-	is_triggered_only = yes
-	
-	min_age = 16
 
-	trigger = {
-		has_diplomat_skill_trigger = no
-		
-		OR = {
-			is_playable = yes
-			can_be_chancellor_trigger = yes
-		}
-		OR = {
-			has_education_diplomacy_trigger = yes
-			has_lifestyle_diplomacy_trigger = yes
-			has_job_title = job_chancellor
-		}
-	}
+    id = emf_startup.6
 
-	immediate = {
-		if = {
-			limit = { trait = naive_appeaser }
-			isis = { change_variable = { which = diplomat_skill value = 2 } }
-		}
-		if = {
-			limit = { trait = underhanded_rogue }
-			isis = { change_variable = { which = diplomat_skill value = 4 } }
-		}
-		if = {
-			limit = { trait = charismatic_negotiator }
-			isis = { change_variable = { which = diplomat_skill value = 6 } }
-		}
-		if = {
-			limit = { trait = grey_eminence }
-			isis = { change_variable = { which = diplomat_skill value = 8 } }
-		}
-		if = {
-			limit = { trait = gregarious }
-			isis = { change_variable = { which = diplomat_skill value = 1 } }
-		}
-		if = {
-			limit = { trait = charitable }
-			isis = { change_variable = { which = diplomat_skill value = 1 } }
-		}
-		if = {
-			limit = { is_smart_trigger = yes }
-			isis = { change_variable = { which = diplomat_skill value = 1 } }
-		}
-		if = {
-			limit = { trait = genius }
-			isis = { change_variable = { which = diplomat_skill value = 2 } }
-		}
-		if = {
-			limit = { trait = diligent }
-			isis = { change_variable = { which = diplomat_skill value = 1 } }
-		}
-		if = {
-			limit = { trait = patient }
-			isis = { change_variable = { which = diplomat_skill value = 1 } }
-		}
-		if = {
-			limit = { trait = deceitful }
-			isis = { change_variable = { which = diplomat_skill value = -2 } }
-		}
-		if = {
-			limit = { trait = honest }
-			isis = { change_variable = { which = diplomat_skill value = 2 } }
-		}
-		if = {
-			limit = { trait = slow }
-			isis = { change_variable = { which = diplomat_skill value = -1 } }
-		}
-		if = {
-			limit = { trait = dull }
-			isis = { change_variable = { which = diplomat_skill value = -1 } }
-		}
-		if = {
-			limit = { trait = imbecile }
-			isis = { change_variable = { which = diplomat_skill value = -3 } }
-		}
-		if = {
-			limit = { trait = shy }
-			isis = { change_variable = { which = diplomat_skill value = -2 } }
-		}
-		if = {
-			limit = { trait = trusting }
-			isis = { change_variable = { which = diplomat_skill value = 1 } }
-		}
-		if = {
-			limit = { trait = tall }
-			isis = { change_variable = { which = diplomat_skill value = 1 } }
-		}
-		if = {
-			limit = { trait = melodious_voice }
-			isis = { change_variable = { which = diplomat_skill value = 1 } }
-		}
-		if = {
-			limit = { trait = powerful_voice }
-			isis = { change_variable = { which = diplomat_skill value = 1 } }
-		}
-		if = {
-			limit = { trait = calm_voice }
-			isis = { change_variable = { which = diplomat_skill value = 1 } }
-		}
-		if = {
-			limit = { trait = paranoid }
-			isis = { change_variable = { which = diplomat_skill value = -1 } }
-		}
-		if = {
-			limit = { trait = cruel }
-			isis = { change_variable = { which = diplomat_skill value = -1 } }
-		}
-		if = {
-			limit = { trait = deaf }
-			isis = { change_variable = { which = diplomat_skill value = -2 } }
-		}
-		if = {
-			limit = {
-				isis = { check_variable = { which = diplomat_skill value = 8 } }
-			}
-			add_trait = master_diplomat
-			break = yes
-		}
-		if = {
-			limit = {
-				isis = { check_variable = { which = diplomat_skill value = 6 } }
-			}
-			add_trait = skilled_diplomat
-			break = yes
-		}
-		if = {
-			limit = {
-				isis = { check_variable = { which = diplomat_skill value = 4 } }
-			}
-			add_trait = trained_diplomat
-			break = yes
-		}
-		if = {
-			limit = {
-				isis = { check_variable = { which = diplomat_skill value = 1 } }
-			}
-			add_trait = novice_diplomat
-		}
-	}
 
-	option = {
-		name = OK
-		isis = { set_variable = { which = diplomat_skill value = 0 } }
-	}
+
+    hide_window = yes
+
+    is_triggered_only = yes
+
+
+
+    min_age = 16
+
+
+
+    trigger = {
+
+        has_diplomat_skill_trigger = no
+
+
+
+        OR = {
+
+            is_playable = yes
+
+            can_be_chancellor_trigger = yes
+
+        }
+
+        OR = {
+
+            has_education_diplomacy_trigger = yes
+
+            has_lifestyle_diplomacy_trigger = yes
+
+            has_job_title = job_chancellor
+
+        }
+
+    }
+
+
+
+    immediate = {
+
+        if = {
+
+            limit = { trait = naive_appeaser }
+
+            isis = { change_variable = { which = diplomat_skill value = 2 } }
+
+        }
+
+        if = {
+
+            limit = { trait = underhanded_rogue }
+
+            isis = { change_variable = { which = diplomat_skill value = 4 } }
+
+        }
+
+        if = {
+
+            limit = { trait = charismatic_negotiator }
+
+            isis = { change_variable = { which = diplomat_skill value = 6 } }
+
+        }
+
+        if = {
+
+            limit = { trait = grey_eminence }
+
+            isis = { change_variable = { which = diplomat_skill value = 8 } }
+
+        }
+
+        if = {
+
+            limit = { trait = gregarious }
+
+            isis = { change_variable = { which = diplomat_skill value = 1 } }
+
+        }
+
+        if = {
+
+            limit = { trait = charitable }
+
+            isis = { change_variable = { which = diplomat_skill value = 1 } }
+
+        }
+
+        if = {
+
+            limit = { is_smart_trigger = yes }
+
+            isis = { change_variable = { which = diplomat_skill value = 1 } }
+
+        }
+
+        if = {
+
+            limit = { trait = genius }
+
+            isis = { change_variable = { which = diplomat_skill value = 2 } }
+
+        }
+
+        if = {
+
+            limit = { trait = diligent }
+
+            isis = { change_variable = { which = diplomat_skill value = 1 } }
+
+        }
+
+        if = {
+
+            limit = { trait = patient }
+
+            isis = { change_variable = { which = diplomat_skill value = 1 } }
+
+        }
+
+        if = {
+
+            limit = { trait = deceitful }
+
+            isis = { change_variable = { which = diplomat_skill value = -2 } }
+
+        }
+
+        if = {
+
+            limit = { trait = honest }
+
+            isis = { change_variable = { which = diplomat_skill value = 2 } }
+
+        }
+
+        if = {
+
+            limit = { trait = slow }
+
+            isis = { change_variable = { which = diplomat_skill value = -1 } }
+
+        }
+
+        if = {
+
+            limit = { trait = dull }
+
+            isis = { change_variable = { which = diplomat_skill value = -1 } }
+
+        }
+
+        if = {
+
+            limit = { trait = imbecile }
+
+            isis = { change_variable = { which = diplomat_skill value = -3 } }
+
+        }
+
+        if = {
+
+            limit = { trait = shy }
+
+            isis = { change_variable = { which = diplomat_skill value = -2 } }
+
+        }
+
+        if = {
+
+            limit = { trait = trusting }
+
+            isis = { change_variable = { which = diplomat_skill value = 1 } }
+
+        }
+
+        if = {
+
+            limit = { trait = tall }
+
+            isis = { change_variable = { which = diplomat_skill value = 1 } }
+
+        }
+
+        if = {
+
+            limit = { trait = melodious_voice }
+
+            isis = { change_variable = { which = diplomat_skill value = 1 } }
+
+        }
+
+        if = {
+
+            limit = { trait = powerful_voice }
+
+            isis = { change_variable = { which = diplomat_skill value = 1 } }
+
+        }
+
+        if = {
+
+            limit = { trait = calm_voice }
+
+            isis = { change_variable = { which = diplomat_skill value = 1 } }
+
+        }
+
+        if = {
+
+            limit = { trait = paranoid }
+
+            isis = { change_variable = { which = diplomat_skill value = -1 } }
+
+        }
+
+        if = {
+
+            limit = { trait = cruel }
+
+            isis = { change_variable = { which = diplomat_skill value = -1 } }
+
+        }
+
+        if = {
+
+            limit = { trait = deaf }
+
+            isis = { change_variable = { which = diplomat_skill value = -2 } }
+
+        }
+
+        if = {
+
+            limit = {
+
+                isis = { check_variable = { which = diplomat_skill value = 8 } }
+
+            }
+
+            add_trait = master_diplomat
+
+            break = yes
+
+        }
+
+        if = {
+
+            limit = {
+
+                isis = { check_variable = { which = diplomat_skill value = 6 } }
+
+            }
+
+            add_trait = skilled_diplomat
+
+            break = yes
+
+        }
+
+        if = {
+
+            limit = {
+
+                isis = { check_variable = { which = diplomat_skill value = 4 } }
+
+            }
+
+            add_trait = trained_diplomat
+
+            break = yes
+
+        }
+
+        if = {
+
+            limit = {
+
+                isis = { check_variable = { which = diplomat_skill value = 1 } }
+
+            }
+
+            add_trait = novice_diplomat
+
+        }
+
+    }
+
+
+
+    option = {
+
+        name = OK
+
+        isis = { set_variable = { which = diplomat_skill value = 0 } }
+
+    }
+
 }
+
+
+
 
 
 # emf_startup.10 [Playable Ruler]
+
 #
+
 # If the ruler has vassal feudal baronies in their capital county or in their
+
 # capital duchy or in their general demesne (in that order of preference), seize
+
 # them from ahistorical (randomly-generated) feudal barons until the ruler no
+
 # longer has free demesne capacity (or runs out of such potential baronies to seize).
+
 character_event = {
-	id = emf_startup.10
-	hide_window = yes
-	is_triggered_only = yes
 
-	trigger = {
-		is_feudal = yes
-		is_landed = yes
-		NOT = { over_max_demesne_size = 0 } # has free capacity
-	}
+    id = emf_startup.10
 
-	immediate = {
-		# Recursively attempt to seize capital county baronies
-		character_event = { id = emf_startup.11 }
+    hide_window = yes
 
-		# Recursively attempt to seize capital duchy baronies
-		character_event = { id = emf_startup.12 }
+    is_triggered_only = yes
 
-		# Recursively attempt to seize demesne baronies
-		character_event = { id = emf_startup.13 }
-	}
+
+
+    trigger = {
+
+        is_feudal = yes
+
+        is_landed = yes
+
+        NOT = { over_max_demesne_size = 0 } # has free capacity
+
+    }
+
+
+
+    immediate = {
+
+        # Recursively attempt to seize capital county baronies
+
+        character_event = { id = emf_startup.11 }
+
+
+
+        # Recursively attempt to seize capital duchy baronies
+
+        character_event = { id = emf_startup.12 }
+
+
+
+        # Recursively attempt to seize demesne baronies
+
+        character_event = { id = emf_startup.13 }
+
+    }
+
 }
+
+
+
 
 
 # emf_startup.11 [Playable Ruler]
+
 #
+
 # Recursively seize baronies in capital county.
+
 character_event = {
-	id = emf_startup.11
-	hide_window = yes
-	is_triggered_only = yes
 
-	trigger = {
-		NOT = { over_max_demesne_size = 0 } # still has free capacity
-		capital_scope = {
-			any_province_holding = {
-				OR = {
-					holding_type = castle
-					AND = {
-						ROOT = { religion_group = muslim }
-						holding_type = temple
-					}
-				}
-				holder_scope = {
-					tier = BARON
-					vassal_of = ROOT
-					NOT = { historical = yes }
-				}
-			}
-		}
-	}
+    id = emf_startup.11
 
-	option = {
-		name = OK
+    hide_window = yes
 
-		capital_scope = {
-			random_province_holding = {
-				limit = {
-					OR = {
-						holding_type = castle
-						AND = {
-							ROOT = { religion_group = muslim }
-							holding_type = temple
-						}
-					}
-					holder_scope = {
-						tier = BARON
-						vassal_of = ROOT
-						NOT = { historical = yes }
-					}
-				}
-				holder_scope = {
-					PREV = { grant_title_no_opinion = ROOT }
-					if = {
-						limit = {
-							NOR = {
-								is_ruler = yes
-								is_councillor = yes
-							}
-						}
-						emf_see_god = yes
-					}
-				}
-			}
-		}
+    is_triggered_only = yes
 
-		# Tail-recurse
-		repeat_event = { id = emf_startup.11 }
-	}
+
+
+    trigger = {
+
+        NOT = { over_max_demesne_size = 0 } # still has free capacity
+
+        capital_scope = {
+
+            any_province_holding = {
+
+                OR = {
+
+                    holding_type = castle
+
+                    AND = {
+
+                        ROOT = { religion_group = muslim }
+
+                        holding_type = temple
+
+                    }
+
+                }
+
+                holder_scope = {
+
+                    tier = BARON
+
+                    vassal_of = ROOT
+
+                    NOT = { historical = yes }
+
+                }
+
+            }
+
+        }
+
+    }
+
+
+
+    option = {
+
+        name = OK
+
+
+
+        capital_scope = {
+
+            random_province_holding = {
+
+                limit = {
+
+                    OR = {
+
+                        holding_type = castle
+
+                        AND = {
+
+                            ROOT = { religion_group = muslim }
+
+                            holding_type = temple
+
+                        }
+
+                    }
+
+                    holder_scope = {
+
+                        tier = BARON
+
+                        vassal_of = ROOT
+
+                        NOT = { historical = yes }
+
+                    }
+
+                }
+
+                holder_scope = {
+
+                    PREV = { grant_title_no_opinion = ROOT }
+
+                    if = {
+
+                        limit = {
+
+                            NOR = {
+
+                                is_ruler = yes
+
+                                is_councillor = yes
+
+                            }
+
+                        }
+
+                        emf_see_god = yes
+
+                    }
+
+                }
+
+            }
+
+        }
+
+
+
+        # Tail-recurse
+
+        repeat_event = { id = emf_startup.11 }
+
+    }
+
 }
+
+
+
 
 
 # emf_startup.12 [Playable Ruler]
+
 #
+
 # Recursively seize baronies in capital duchy.
+
 character_event = {
-	id = emf_startup.12
-	hide_window = yes
-	is_triggered_only = yes
 
-	trigger = {
-		NOT = { over_max_demesne_size = 0 } # still has free capacity
-		capital_scope = {
-			duchy = {
-				ROOT = {
-					any_demesne_province = { # only owned, capital duchy provinces
-						duchy = {
-							title = PREVPREVPREV
-						}
-						any_province_holding = {
-							OR = {
-								holding_type = castle
-								AND = {
-									ROOT = { religion_group = muslim }
-									holding_type = temple
-								}
-							}
-							holder_scope = {
-								tier = BARON
-								vassal_of = ROOT
-								NOT = { historical = yes }
-							}
-						}
-					}
-				}
-			}
-		}
-	}
+    id = emf_startup.12
 
-	option = {
-		name = OK
+    hide_window = yes
 
-		capital_scope = {
-			duchy = {
-				ROOT = {
-					random_demesne_province = {
-						limit = {
-							duchy = {
-								title = PREVPREVPREV
-							}
-							any_province_holding = {
-								OR = {
-									holding_type = castle
-									AND = {
-										ROOT = { religion_group = muslim }
-										holding_type = temple
-									}
-								}
-								holder_scope = {
-									tier = BARON
-									vassal_of = ROOT
-									NOT = { historical = yes }
-								}
-							}
-						}
-						random_province_holding = {
-							limit = {
-								OR = {
-									holding_type = castle
-									AND = {
-										ROOT = { religion_group = muslim }
-										holding_type = temple
-									}
-								}
-								holder_scope = {
-									tier = BARON
-									vassal_of = ROOT
-									NOT = { historical = yes }
-								}
-							}
-							holder_scope = {
-								PREV = { grant_title_no_opinion = ROOT }
-								if = {
-									limit = {
-										NOR = {
-											is_ruler = yes
-											is_councillor = yes
-										}
-									}
-									emf_see_god = yes
-								}
-							}
-						}
-					}
-				}
-			}
-		}
+    is_triggered_only = yes
 
-		# Tail-recurse
-		repeat_event = { id = emf_startup.12 }
-	}
+
+
+    trigger = {
+
+        NOT = { over_max_demesne_size = 0 } # still has free capacity
+
+        capital_scope = {
+
+            duchy = {
+
+                ROOT = {
+
+                    any_demesne_province = { # only owned, capital duchy provinces
+
+                        duchy = {
+
+                            title = PREVPREVPREV
+
+                        }
+
+                        any_province_holding = {
+
+                            OR = {
+
+                                holding_type = castle
+
+                                AND = {
+
+                                    ROOT = { religion_group = muslim }
+
+                                    holding_type = temple
+
+                                }
+
+                            }
+
+                            holder_scope = {
+
+                                tier = BARON
+
+                                vassal_of = ROOT
+
+                                NOT = { historical = yes }
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    }
+
+
+
+    option = {
+
+        name = OK
+
+
+
+        capital_scope = {
+
+            duchy = {
+
+                ROOT = {
+
+                    random_demesne_province = {
+
+                        limit = {
+
+                            duchy = {
+
+                                title = PREVPREVPREV
+
+                            }
+
+                            any_province_holding = {
+
+                                OR = {
+
+                                    holding_type = castle
+
+                                    AND = {
+
+                                        ROOT = { religion_group = muslim }
+
+                                        holding_type = temple
+
+                                    }
+
+                                }
+
+                                holder_scope = {
+
+                                    tier = BARON
+
+                                    vassal_of = ROOT
+
+                                    NOT = { historical = yes }
+
+                                }
+
+                            }
+
+                        }
+
+                        random_province_holding = {
+
+                            limit = {
+
+                                OR = {
+
+                                    holding_type = castle
+
+                                    AND = {
+
+                                        ROOT = { religion_group = muslim }
+
+                                        holding_type = temple
+
+                                    }
+
+                                }
+
+                                holder_scope = {
+
+                                    tier = BARON
+
+                                    vassal_of = ROOT
+
+                                    NOT = { historical = yes }
+
+                                }
+
+                            }
+
+                            holder_scope = {
+
+                                PREV = { grant_title_no_opinion = ROOT }
+
+                                if = {
+
+                                    limit = {
+
+                                        NOR = {
+
+                                            is_ruler = yes
+
+                                            is_councillor = yes
+
+                                        }
+
+                                    }
+
+                                    emf_see_god = yes
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+
+
+        # Tail-recurse
+
+        repeat_event = { id = emf_startup.12 }
+
+    }
+
 }
+
+
+
 
 
 # emf_startup.13 [Playable Ruler]
+
 #
+
 # Recursively seize baronies in demesne.
+
 character_event = {
-	id = emf_startup.13
-	hide_window = yes
-	is_triggered_only = yes
 
-	trigger = {
-		NOT = { over_max_demesne_size = 0 } # still has free capacity
-		any_demesne_province = {
-			any_province_holding = {
-				OR = {
-					holding_type = castle
-					AND = {
-						ROOT = { religion_group = muslim }
-						holding_type = temple
-					}
-				}
-				holder_scope = {
-					tier = BARON
-					vassal_of = ROOT
-					NOT = { historical = yes }
-				}
-			}
-		}
-	}
+    id = emf_startup.13
 
-	option = {
-		name = OK
+    hide_window = yes
 
-		random_demesne_province = {
-			limit = {
-				any_province_holding = {
-					OR = {
-						holding_type = castle
-						AND = {
-							ROOT = { religion_group = muslim }
-							holding_type = temple
-						}
-					}
-					holder_scope = {
-						tier = BARON
-						vassal_of = ROOT
-						NOT = { historical = yes }
-					}
-				}
-			}
-			random_province_holding = {
-				limit = {
-					OR = {
-						holding_type = castle
-						AND = {
-							ROOT = { religion_group = muslim }
-							holding_type = temple
-						}
-					}
-					holder_scope = {
-						tier = BARON
-						vassal_of = ROOT
-						NOT = { historical = yes }
-					}
-				}
-				holder_scope = {
-					PREV = { grant_title_no_opinion = ROOT }
-					if = {
-						limit = {
-							NOR = {
-								is_ruler = yes
-								is_councillor = yes
-							}
-						}
-						emf_see_god = yes
-					}
-				}
-			}
-		}
+    is_triggered_only = yes
 
-		# Tail-recurse
-		repeat_event = { id = emf_startup.13 }
-	}
+
+
+    trigger = {
+
+        NOT = { over_max_demesne_size = 0 } # still has free capacity
+
+        any_demesne_province = {
+
+            any_province_holding = {
+
+                OR = {
+
+                    holding_type = castle
+
+                    AND = {
+
+                        ROOT = { religion_group = muslim }
+
+                        holding_type = temple
+
+                    }
+
+                }
+
+                holder_scope = {
+
+                    tier = BARON
+
+                    vassal_of = ROOT
+
+                    NOT = { historical = yes }
+
+                }
+
+            }
+
+        }
+
+    }
+
+
+
+    option = {
+
+        name = OK
+
+
+
+        random_demesne_province = {
+
+            limit = {
+
+                any_province_holding = {
+
+                    OR = {
+
+                        holding_type = castle
+
+                        AND = {
+
+                            ROOT = { religion_group = muslim }
+
+                            holding_type = temple
+
+                        }
+
+                    }
+
+                    holder_scope = {
+
+                        tier = BARON
+
+                        vassal_of = ROOT
+
+                        NOT = { historical = yes }
+
+                    }
+
+                }
+
+            }
+
+            random_province_holding = {
+
+                limit = {
+
+                    OR = {
+
+                        holding_type = castle
+
+                        AND = {
+
+                            ROOT = { religion_group = muslim }
+
+                            holding_type = temple
+
+                        }
+
+                    }
+
+                    holder_scope = {
+
+                        tier = BARON
+
+                        vassal_of = ROOT
+
+                        NOT = { historical = yes }
+
+                    }
+
+                }
+
+                holder_scope = {
+
+                    PREV = { grant_title_no_opinion = ROOT }
+
+                    if = {
+
+                        limit = {
+
+                            NOR = {
+
+                                is_ruler = yes
+
+                                is_councillor = yes
+
+                            }
+
+                        }
+
+                        emf_see_god = yes
+
+                    }
+
+                }
+
+            }
+
+        }
+
+
+
+        # Tail-recurse
+
+        repeat_event = { id = emf_startup.13 }
+
+    }
+
 }
+
+
 
 # emf_startup.14 [Playable Ruler]
-#
-# Recursively create extra children for early bookmarks
-character_event = {
-	id = emf_startup.14
-	
-	hide_window = yes
-	is_triggered_only = yes
-	
-	immediate = {
-		set_character_flag = emf_initial_child_check
-		# Chance of first daughter
-		random = {
-			chance = 40
-			modifier = {
-				factor = 1.25
-				OR = {
-					higher_tier_than = DUKE
-					religion_group = muslim
-					religion_group = pagan_group
-				}
-			}
-			modifier = {
-				factor = 1.5
-				OR = {
-					is_patrician = yes
-					is_republic = yes
-					higher_tier_than = COUNT
-				}
-			}
-			emf_create_daughter = yes
-		}
-		# Chance of second daughter
-		random = {
-			chance = 20
-			emf_create_daughter = yes
-		}
-		recalc_succession = yes
 
-		# Move onto the next ruler
-		random_playable_ruler = {
-			limit = { emf_needs_extra_child = yes }
-			character_event = { id = emf_startup.14 }
-		}
-	}
+#
+
+# Recursively create extra children for early bookmarks
+
+character_event = {
+
+    id = emf_startup.14
+
+
+
+    hide_window = yes
+
+    is_triggered_only = yes
+
+
+
+    immediate = {
+
+        set_character_flag = emf_initial_child_check
+
+        # Chance of first daughter
+
+        random = {
+
+            chance = 40
+
+            modifier = {
+
+                factor = 1.25
+
+                OR = {
+
+                    higher_tier_than = DUKE
+
+                    religion_group = muslim
+
+                    religion_group = pagan_group
+
+                }
+
+            }
+
+            modifier = {
+
+                factor = 1.5
+
+                OR = {
+
+                    is_patrician = yes
+
+                    is_republic = yes
+
+                    higher_tier_than = COUNT
+
+                }
+
+            }
+
+            emf_create_daughter = yes
+
+        }
+
+        # Chance of second daughter
+
+        random = {
+
+            chance = 20
+
+            emf_create_daughter = yes
+
+        }
+
+        recalc_succession = yes
+
+
+
+        # Move onto the next ruler
+
+        random_playable_ruler = {
+
+            limit = { emf_needs_extra_child = yes }
+
+            character_event = { id = emf_startup.14 }
+
+        }
+
+    }
+
 }
+
+
+
 
 
 # emf_startup.30-39 reserved for map-specific de jure adjustments and such
 
 
+
+
+
 # emf_startup.40
+
 #
+
 # Place all kingdoms with no de jure empire nominally under e_null. This is due
+
 # to various bugs with lack of de jure empires (memory leaks, issues with titles,
+
 # crashing, etc.), as identified by the CK2Plus team (notably Rylock, in the
+
 # "Captain Gars to the Rescue" thread in CK2/Modding forum) in at least patch 2.4.
+
 #
+
 # We also bother with active, titular kingdoms that lack an empire, because it's
+
 # possible that they will either drift into the game or be swapped with other de
+
 # jure title(s) by event.
+
 #
+
 # Called on_startup (titular titles don't persist the change across save/reload,
+
 # so it must be re-done each time).
+
 character_event = {
-	id = emf_startup.40
-	hide_window = yes
-	is_triggered_only = yes
 
-	only_independent = yes
-	only_playable = yes
-	religion = hip_religion
+    id = emf_startup.40
 
-	trigger = {
-		has_landed_title = e_hip
-	}
+    hide_window = yes
 
-	immediate = {
-		any_landed_title = {
-			limit = {
-				tier = KING
-				temporary = no
-				rebel = no
-				OR = { # Not a clan/nomad title (unless somehow de jure) ...
-					is_de_jure_title = yes
-					NOR = {
-						clan = yes
-						is_nomadic = yes
-					}
-				}
-				NOT = { # No de jure empire ...
-					empire = { always = yes }
-				}
-				OR = {
-					is_title_active = THIS
-					has_holder = yes # Another event will take care of this...
-				}
-			}
-			de_jure_liege = e_null
-		}
-	}
+    is_triggered_only = yes
+
+
+
+    only_independent = yes
+
+    only_playable = yes
+
+    religion = hip_religion
+
+
+
+    trigger = {
+
+        has_landed_title = e_hip
+
+    }
+
+
+
+    immediate = {
+
+        any_landed_title = {
+
+            limit = {
+
+                tier = KING
+
+                temporary = no
+
+                rebel = no
+
+                OR = { # Not a clan/nomad title (unless somehow de jure) ...
+
+                    is_de_jure_title = yes
+
+                    NOR = {
+
+                        clan = yes
+
+                        is_nomadic = yes
+
+                    }
+
+                }
+
+                NOT = { # No de jure empire ...
+
+                    empire = { always = yes }
+
+                }
+
+                OR = {
+
+                    is_title_active = THIS
+
+                    has_holder = yes # Another event will take care of this...
+
+                }
+
+            }
+
+            de_jure_liege = e_null
+
+        }
+
+    }
+
 }
+
+
+
 
 
 # emf_startup.41 [Isis]
-#
-# For dealing with the apparent imbalance in Islamic vs. Christian RA
-# Apply RA modifier islamic_handicap to Ibadi|Sunni|Shia|Ismaili, assuming a
-# character or province of each religion exists in the game.
-character_event = {
-	id = emf_startup.41
-	hide_window = yes
-	is_triggered_only = yes
 
-	immediate = {
-		character_event = { id = emf_startup.42 } # Sunni
-		character_event = { id = emf_startup.43 } # Shi'ite
-		character_event = { id = emf_startup.44 } # Isma'ili
-		character_event = { id = emf_startup.45 } # Ibadi
-		character_event = { id = emf_startup.46 } # Zaydi
-	}
+#
+
+# For dealing with the apparent imbalance in Islamic vs. Christian RA
+
+# Apply RA modifier islamic_handicap to Ibadi|Sunni|Shia|Ismaili, assuming a
+
+# character or province of each religion exists in the game.
+
+character_event = {
+
+    id = emf_startup.41
+
+    hide_window = yes
+
+    is_triggered_only = yes
+
+
+
+    immediate = {
+
+        character_event = { id = emf_startup.42 } # Sunni
+
+        character_event = { id = emf_startup.43 } # Shi'ite
+
+        character_event = { id = emf_startup.44 } # Isma'ili
+
+        character_event = { id = emf_startup.45 } # Ibadi
+
+        character_event = { id = emf_startup.46 } # Zaydi
+
+    }
+
 }
+
+
+
 
 
 # emf_startup.42 [Isis]
-#
-# Helper for emf_startup.41 [Sunni]
-character_event = {
-	id = emf_startup.42
-	hide_window = yes
-	is_triggered_only = yes
 
-	immediate = {
-		random_province = {
-			limit = { religion = sunni }
-			religion_authority = { modifier = ra_islamic_handicap }
-			break = yes
-		}
-		random_character = {
-			limit = { religion = sunni }
-			religion_authority = { modifier = ra_islamic_handicap }
-		}
-	}
+#
+
+# Helper for emf_startup.41 [Sunni]
+
+character_event = {
+
+    id = emf_startup.42
+
+    hide_window = yes
+
+    is_triggered_only = yes
+
+
+
+    immediate = {
+
+        random_province = {
+
+            limit = { religion = sunni }
+
+            religion_authority = { modifier = ra_islamic_handicap }
+
+            break = yes
+
+        }
+
+        random_character = {
+
+            limit = { religion = sunni }
+
+            religion_authority = { modifier = ra_islamic_handicap }
+
+        }
+
+    }
+
 }
+
+
+
 
 
 # emf_startup.43 [Isis]
-#
-# Helper for emf_startup.41 [Shia]
-character_event = {
-	id = emf_startup.43
-	hide_window = yes
-	is_triggered_only = yes
 
-	immediate = {
-		random_province = {
-			limit = { religion = shiite }
-			religion_authority = { modifier = ra_islamic_handicap }
-			break = yes
-		}
-		random_character = {
-			limit = { religion = shiite }
-			religion_authority = { modifier = ra_islamic_handicap }
-		}
-	}
+#
+
+# Helper for emf_startup.41 [Shia]
+
+character_event = {
+
+    id = emf_startup.43
+
+    hide_window = yes
+
+    is_triggered_only = yes
+
+
+
+    immediate = {
+
+        random_province = {
+
+            limit = { religion = shiite }
+
+            religion_authority = { modifier = ra_islamic_handicap }
+
+            break = yes
+
+        }
+
+        random_character = {
+
+            limit = { religion = shiite }
+
+            religion_authority = { modifier = ra_islamic_handicap }
+
+        }
+
+    }
+
 }
+
+
+
 
 
 # emf_startup.44 [Isis]
-#
-# Helper for emf_startup.41 [Isma'ili]
-character_event = {
-	id = emf_startup.44
-	hide_window = yes
-	is_triggered_only = yes
 
-	immediate = {
-		random_province = {
-			limit = { religion = ismaili }
-			religion_authority = { modifier = ra_islamic_handicap }
-			break = yes
-		}
-		random_character = {
-			limit = { religion = ismaili }
-			religion_authority = { modifier = ra_islamic_handicap }
-		}
-	}
+#
+
+# Helper for emf_startup.41 [Isma'ili]
+
+character_event = {
+
+    id = emf_startup.44
+
+    hide_window = yes
+
+    is_triggered_only = yes
+
+
+
+    immediate = {
+
+        random_province = {
+
+            limit = { religion = ismaili }
+
+            religion_authority = { modifier = ra_islamic_handicap }
+
+            break = yes
+
+        }
+
+        random_character = {
+
+            limit = { religion = ismaili }
+
+            religion_authority = { modifier = ra_islamic_handicap }
+
+        }
+
+    }
+
 }
+
+
 
 # emf_startup.45 [Isis]
-#
-# Helper for emf_startup.41 [Ibadi]
-character_event = {
-	id = emf_startup.45
-	hide_window = yes
-	is_triggered_only = yes
 
-	immediate = {
-		random_province = {
-			limit = { religion = ibadi }
-			religion_authority = { modifier = ra_islamic_handicap }
-			break = yes
-		}
-		random_character = {
-			limit = { religion = ibadi }
-			religion_authority = { modifier = ra_islamic_handicap }
-		}
-	}
+#
+
+# Helper for emf_startup.41 [Ibadi]
+
+character_event = {
+
+    id = emf_startup.45
+
+    hide_window = yes
+
+    is_triggered_only = yes
+
+
+
+    immediate = {
+
+        random_province = {
+
+            limit = { religion = ibadi }
+
+            religion_authority = { modifier = ra_islamic_handicap }
+
+            break = yes
+
+        }
+
+        random_character = {
+
+            limit = { religion = ibadi }
+
+            religion_authority = { modifier = ra_islamic_handicap }
+
+        }
+
+    }
+
 }
+
+
 
 # emf_startup.46 [Isis]
-#
-# Helper for emf_startup.41 [Zaydi]
-character_event = {
-	id = emf_startup.46
-	hide_window = yes
-	is_triggered_only = yes
 
-	immediate = {
-		random_province = {
-			limit = { religion = zaydi }
-			religion_authority = { modifier = ra_islamic_handicap }
-			break = yes
-		}
-		random_character = {
-			limit = { religion = zaydi }
-			religion_authority = { modifier = ra_islamic_handicap }
-		}
-	}
+#
+
+# Helper for emf_startup.41 [Zaydi]
+
+character_event = {
+
+    id = emf_startup.46
+
+    hide_window = yes
+
+    is_triggered_only = yes
+
+
+
+    immediate = {
+
+        random_province = {
+
+            limit = { religion = zaydi }
+
+            religion_authority = { modifier = ra_islamic_handicap }
+
+            break = yes
+
+        }
+
+        random_character = {
+
+            limit = { religion = zaydi }
+
+            religion_authority = { modifier = ra_islamic_handicap }
+
+        }
+
+    }
+
 }
+
+
 
 # emf_startup.1000 -- TMP-SAVE-COMPAT: fix East African Pagan Reformed bug in past 7.0x versions
+
 character_event = {
-	id = emf_startup.1000
 
-	is_triggered_only = yes
-	hide_window = yes
+    id = emf_startup.1000
 
-	religion = hip_religion
 
-	trigger = {
-		has_landed_title = e_hip
-	}
 
-	immediate = {
-		if = {
-			limit = {
-				NOT = { any_playable_ruler = { count = 10 religion = east_african_pagan_reformed } }
-				NOT = { any_player = { religion = east_african_pagan_reformed } }
-			}
-			d_east_african_pagan_reformed = {
-				emf_unsafe_destroy_title = yes
-			}
-			any_character = {
-				limit = { religion = east_african_pagan_reformed }
-				religion = east_african_pagan
-			}
-		}
-	}
+    is_triggered_only = yes
+
+    hide_window = yes
+
+
+
+    religion = hip_religion
+
+
+
+    trigger = {
+
+        has_landed_title = e_hip
+
+    }
+
+
+
+    immediate = {
+
+        if = {
+
+            limit = {
+
+                NOT = { any_playable_ruler = { count = 10 religion = east_african_pagan_reformed } }
+
+                NOT = { any_player = { religion = east_african_pagan_reformed } }
+
+            }
+
+            d_east_african_pagan_reformed = {
+
+                emf_unsafe_destroy_title = yes
+
+            }
+
+            any_character = {
+
+                limit = { religion = east_african_pagan_reformed }
+
+                religion = east_african_pagan
+
+            }
+
+        }
+
+    }
+
 }
+
