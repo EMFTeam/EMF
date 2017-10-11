@@ -413,7 +413,11 @@ character_event = {
             }
             clear_event_target = emf_province
         }
+
         log = "--> revolt will proceed with [Root.nprov.GetValue] source provinces ([Root.maxprov.GetValue] more were allowed)"
+
+        set_variable = { which = "maxprov" value = 0 }
+        set_variable = { which = "nprov" value = 0 }
 
         # Marshal the province selections into event targets for various use in the event chain.
         event_target:emf_revolt_origin = { save_event_target_as = emf_revolt_prov1 }
@@ -599,11 +603,32 @@ character_event = {
         }
 
         # Send call-to-arms to nearby independent coreligionists
+        set_variable = { which = "max_allies" value = 3 }
         any_independent_ruler = {
             limit = {
                 religion = ROOT
                 capital_scope = {
                     FROM = {
+                        any_realm_province = {
+                            has_province_flag = emf_revolt_tmp_source
+                            NOT = { distance = { where = PREVPREV value = 150 } }
+                        }
+                    }
+                }
+            }
+            letter_event = { id = emf_revolt.9 days = 3 random = 3 }
+        }
+        any_independent_ruler = {
+            limit = {
+                religion = ROOT
+                capital_scope = {
+                    FROM = {
+                        NOT = {
+                            any_realm_province = {
+                                has_province_flag = emf_revolt_tmp_source
+                                NOT = { distance = { where = PREVPREV value = 150 } }
+                            }
+                        }
                         any_realm_province = {
                             has_province_flag = emf_revolt_tmp_source
                             NOT = { distance = { where = PREVPREV value = 250 } }
@@ -1015,8 +1040,14 @@ letter_event = {
 
     ai = yes # for now, since I can't get writing help to save my life ;)
 
+    trigger = {
+        FROM = {
+            check_variable = { which = "max_allies" value = 1 }
+        }
+    }
+
     immediate = {
-        log = "--> rebel call-to-arms received by [Root.GetTitledFirstName] [Root.GetOnlyDynastyName] (#[Root.GetID]/[Root.PrimaryTitle.GetID])"
+        log = "--> rebel call-to-arms received by [Root.GetTitledFirstName] [Root.GetOnlyDynastyName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) from [From.GetTitledName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
     }
 
     option = {
@@ -1025,31 +1056,23 @@ letter_event = {
             factor = 100
             modifier = {
                 factor = 0
-                any_war = {
-                    OR = {
-                        AND = {
-                            any_attacker = { character = ROOT }
-                            using_cb = emf_revolt_religious
-                        }
-                        AND = {
-                            any_defender = { character = ROOT }
-                            attacker = { emf_hostile_religion_to_ROOT = yes }
-                        }
-                        # Same side as FROM's opposition in some war:
-                        AND = {
-                            any_defender = { character = ROOT }
-                            any_defender = { character = FROMFROM }
-                        }
-                        AND = {
-                            any_attacker = { character = ROOT }
-                            any_attacker = { character = FROMFROM }
-                        }
-                    }
-                }
+                war = yes
+            }
+            modifier = {
+                factor = 0
+                NOT = { wealth = 0 }
+            }
+            modifier = {
+                factor = 2
+                opinion = { who = FROM value = 40 }
             }
             modifier = {
                 factor = 0.1
-                war = yes
+                NOT = { opinion = { who = FROM value = 0 } }
+            }
+            modifier = {
+                factor = 0.1
+                NOT = { opinion = { who = FROM value = -40 } }
             }
         }
         log = "----> chose to assist rebels in their war"
@@ -1067,6 +1090,9 @@ letter_event = {
             }
             log = "------> WARNING: failed to join offensive war of rebel leader"
             break = yes
+        }
+        FROM = {
+            change_variable = { which = "max_allies" value = -1 }
         }
         # TODO: fire an event to FROMFROM informing him that ROOT has decided to assist the rebels
     }
@@ -1597,6 +1623,7 @@ character_event = {
 
     after = {
         any_realm_province = { clear_flags_with_prefix = emf_revolt_tmp }
+        set_variable = { which = "max_allies" value = 0 }
     }
 }
 
@@ -1609,7 +1636,7 @@ character_event = {
 
     immediate = {
         log = "DEBUG: emf_revolt.26: continuing rebel victory completion (1 day after war ended) for [Root.GetTitledName] (#[Root.GetID]/[Root.PrimaryTitle.GetID])"
-        log = "--> capital: [Root.Capital.GetName] (#[Root.Capital.GetID]/[Root.Capital.County.GetID])"
+        log = "--> capital province: [Root.Capital.GetName] (#[Root.Capital.GetID]/[Root.Capital.County.GetID])"
         capital_holding = {
             log = "--> capital holding: [This.GetBaseName] ([This.GetID])"
             trigger_switch = {
