@@ -419,107 +419,6 @@ character_event = {
         set_variable = { which = "maxprov" value = 0 }
         set_variable = { which = "nprov" value = 0 }
 
-        # Marshal the province selections into event targets for various use in the event chain.
-        event_target:emf_revolt_origin = { save_event_target_as = emf_revolt_prov1 }
-        random_realm_province = {
-            limit = {
-                has_province_flag = emf_revolt_tmp_source
-                NOT = { province = event_target:emf_revolt_prov1 }
-            }
-            save_event_target_as = emf_revolt_prov2
-        }
-        random_realm_province = {
-            limit = {
-                has_province_flag = emf_revolt_tmp_source
-                NOR = {
-                    province = event_target:emf_revolt_prov1
-                    province = event_target:emf_revolt_prov2
-                }
-            }
-            save_event_target_as = emf_revolt_prov3
-        }
-        random_realm_province = {
-            limit = {
-                has_province_flag = emf_revolt_tmp_source
-                NOR = {
-                    province = event_target:emf_revolt_prov1
-                    province = event_target:emf_revolt_prov2
-                    province = event_target:emf_revolt_prov3
-                }
-            }
-            save_event_target_as = emf_revolt_prov4
-        }
-        random_realm_province = {
-            limit = {
-                has_province_flag = emf_revolt_tmp_source
-                NOR = {
-                    province = event_target:emf_revolt_prov1
-                    province = event_target:emf_revolt_prov2
-                    province = event_target:emf_revolt_prov3
-                    province = event_target:emf_revolt_prov4
-                }
-            }
-            save_event_target_as = emf_revolt_prov5
-        }
-        random_realm_province = {
-            limit = {
-                has_province_flag = emf_revolt_tmp_source
-                NOR = {
-                    province = event_target:emf_revolt_prov1
-                    province = event_target:emf_revolt_prov2
-                    province = event_target:emf_revolt_prov3
-                    province = event_target:emf_revolt_prov4
-                    province = event_target:emf_revolt_prov5
-                }
-            }
-            save_event_target_as = emf_revolt_prov6
-        }
-        random_realm_province = {
-            limit = {
-                has_province_flag = emf_revolt_tmp_source
-                NOR = {
-                    province = event_target:emf_revolt_prov1
-                    province = event_target:emf_revolt_prov2
-                    province = event_target:emf_revolt_prov3
-                    province = event_target:emf_revolt_prov4
-                    province = event_target:emf_revolt_prov5
-                    province = event_target:emf_revolt_prov6
-                }
-            }
-            save_event_target_as = emf_revolt_prov7
-        }
-        random_realm_province = {
-            limit = {
-                has_province_flag = emf_revolt_tmp_source
-                NOR = {
-                    province = event_target:emf_revolt_prov1
-                    province = event_target:emf_revolt_prov2
-                    province = event_target:emf_revolt_prov3
-                    province = event_target:emf_revolt_prov4
-                    province = event_target:emf_revolt_prov5
-                    province = event_target:emf_revolt_prov6
-                    province = event_target:emf_revolt_prov7
-                }
-            }
-            save_event_target_as = emf_revolt_prov8
-        }
-        random_realm_province = {
-            limit = {
-                has_province_flag = emf_revolt_tmp_source
-                NOR = {
-                    province = event_target:emf_revolt_prov1
-                    province = event_target:emf_revolt_prov2
-                    province = event_target:emf_revolt_prov3
-                    province = event_target:emf_revolt_prov4
-                    province = event_target:emf_revolt_prov5
-                    province = event_target:emf_revolt_prov6
-                    province = event_target:emf_revolt_prov7
-                    province = event_target:emf_revolt_prov8
-                }
-            }
-            save_event_target_as = emf_revolt_prov9
-        }
-
         # We want to spawn the rebel leader in an appropriate court (so that he takes the right default government
         # type, actually starts at that location(ish), etc.)
         ROOT = { save_event_target_as = emf_spawn_court } # fallback
@@ -649,8 +548,6 @@ character_event = {
                     }
                 }
             }
-
-            character_event = { id = emf_revolt.4 } # tell the top liege defender what's gone down
         }
 
         # Notify affected realm lords; note that we hide these notifications for the top liege, as
@@ -659,6 +556,10 @@ character_event = {
             limit = { reverse_has_opinion_modifier = { who = ROOT name = emf_revolt_source_province_liege } }
             character_event = { id = emf_revolt.10 }
             reverse_remove_opinion = { who = ROOT name = emf_revolt_source_province_liege }
+        }
+
+        FROM = {
+            character_event = { id = emf_revolt.4 } # tell the top liege defender what's gone down (and clear tmp. state)
         }
     }
 }
@@ -695,13 +596,17 @@ province_event = {
 # + the provinces participating in the rebellion are all claimed by FROM
 # + the origin province is event_target:emf_revolt_origin (also flagged, also event_target:emf_revolt_prov1)
 # + up to 9 of the source provinces are packed into 9 event targets for misc. usage.
-long_character_event = {
+character_event = {
     id = emf_revolt.4
     picture = GFX_evt_heretic
-    border = GFX_event_long_frame_war
+    border = GFX_event_normal_frame_war
 
     is_triggered_only = yes
     hide_window = yes
+
+    immediate = {
+        emf_revolt_fill_realm_source_province_targets = yes
+    }
 
     desc = {
         text = emf_revolt.4.desc.directly_due_to_relsub
@@ -713,25 +618,20 @@ long_character_event = {
         trigger = { emf_is_religious_revolt_related_to_relsub = no }
     }
 
-    immediate = {
-        # cleanup temp flags. only state we need now is the rebel leader's claims on the participating counties.
-        any_realm_province = { clear_flags_with_prefix = emf_revolt_tmp }
+    option = {
+        name = EVTOPTB_TOG_1060
     }
 
-    option = {
-        name = EVTOPTA_TOG_1060 # FIXME
-        trigger = { emf_hostile_religion_to_FROM = no }
-    }
-    option = {
-        name = EVTOPTB_TOG_1060 # FIXME
-        trigger = { emf_hostile_religion_to_FROM = yes }
+    after = {
+        emf_revolt_clear_source_province_targets = yes
+        any_realm_province = { clear_flags_with_prefix = emf_revolt_tmp }
     }
 }
 
 # emf_revolt.5 -- rebel uprising receives reinforcements (triggered from on_rebel_revolt)
 province_event = {
     id = emf_revolt.5
-    desc = EVTDESC_TOG_1070 # FIXME
+    desc = EVTDESC_TOG_1070
     picture = GFX_evt_heretic
     border = GFX_event_normal_frame_war
 
@@ -772,7 +672,12 @@ province_event = {
     }
 
     option = {
-        name = EVTOPTA_TOG_1070 # FIXME
+        name = EVTOPTA_TOG_1060
+        trigger = { emf_hostile_religion_to_FROM = no }
+    }
+    option = {
+        name = EVTOPTB_TOG_1060
+        trigger = { emf_hostile_religion_to_FROM = yes }
     }
 }
 
@@ -1091,9 +996,7 @@ letter_event = {
             log = "------> WARNING: failed to join offensive war of rebel leader"
             break = yes
         }
-        FROM = {
-            change_variable = { which = "max_allies" value = -1 }
-        }
+        FROM = { change_variable = { which = "max_allies" value = -1 } }
         FROMFROM = { letter_event = { id = emf_revolt.12 } } # Inform the defender that I'm supporting his rebels
     }
     option = {
@@ -1108,7 +1011,7 @@ letter_event = {
 # emf_revolt.10 -- notify lieges of religious revolt source provinces under them (excluding top liege)
 character_event = {
     id = emf_revolt.10
-    desc = EVTDESC_TOG_1061 # FIXME
+    desc = emf_revolt.10.desc
     picture = GFX_evt_heretic
     border = GFX_event_normal_frame_war
 
@@ -1118,20 +1021,28 @@ character_event = {
 
     trigger = { independent = no }
 
+    immediate = {
+        emf_revolt_fill_realm_source_province_targets = yes
+    }
+
     option = {
-        name = EVTOPTA_TOG_1060 # FIXME
+        name = EVTOPTA_TOG_1060
         trigger = { emf_hostile_religion_to_FROM = no }
     }
     option = {
-        name = EVTOPTB_TOG_1060 # FIXME
+        name = EVTOPTB_TOG_1060
         trigger = { emf_hostile_religion_to_ROOT = yes }
+    }
+
+    after = {
+        emf_revolt_clear_source_province_targets = yes
     }
 }
 
 # emf_revolt.11 -- notify lieges of a religious revolt reinforcement province (FROMFROM), FROM is rebel leader
 character_event = {
     id = emf_revolt.11
-    desc = EVTDESC_TOG_1071 # FIXME
+    desc = emf_revolt.11.desc
     picture = GFX_evt_heretic
     border = GFX_event_normal_frame_war
 
@@ -1140,7 +1051,12 @@ character_event = {
     ai = no
 
     option = {
-        name = EVTOPTA_TOG_1070 # FIXME
+        name = EVTOPTA_TOG_1060
+        trigger = { emf_hostile_religion_to_FROM = no }
+    }
+    option = {
+        name = EVTOPTB_TOG_1060
+        trigger = { emf_hostile_religion_to_ROOT = yes }
     }
 }
 
@@ -1148,7 +1064,6 @@ character_event = {
 letter_event = {
     id = emf_revolt.12
     desc = emf_revolt.12.desc
-    picture = GFX_evt_battle
     border = GFX_event_normal_frame_war
 
     is_triggered_only = yes
