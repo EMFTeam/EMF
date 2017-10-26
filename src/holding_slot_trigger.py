@@ -69,8 +69,7 @@ def main():
         for title, baronies in scan_for_baronies(tree):
             counties_by_barony_count[baronies].append(title)
     trigger = build_trigger(parser, counties_by_barony_count, title_id)
-    with outpath.open('w', encoding='cp1252', newline='\n') as f:
-        f.write(trigger.str(parser))
+    parser.write(trigger, outpath)
 
 if __name__ == '__main__':
     main()
