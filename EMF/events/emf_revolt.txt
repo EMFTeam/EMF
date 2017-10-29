@@ -460,15 +460,27 @@ character_event = {
     immediate = {
         emf_customize_spawned_religious_revolt_leader = yes
 
-        # Create temp. revolt title
-        create_title = {
-            tier = DUKE
-            landless = yes
-            temporary = yes
-            rebel = yes
-            culture = ROOT
-            name = "HERETIC_REVOLT"
-            holder = ROOT
+        # Create landless revolt title (note that it is neither temporary=yes nor rebel=yes)
+        d_rebel_coa = {
+            create_title = {
+                tier = DUKE
+                landless = yes
+                temporary = no
+                custom_created = yes
+                base_title = THIS
+                culture = ROOT
+                name = "HERETIC_REVOLT"
+                holder = ROOT
+            }
+        }
+
+        primary_title = {
+            set_title_flag = emf_revolt
+            set_title_flag = emf_autodestroy
+            if = {
+                limit = { NOT = { has_law = succ_open_elective } }
+                add_law = succ_open_elective
+            }
         }
 
         set_defacto_liege = ROOT
@@ -714,11 +726,11 @@ character_event = {
     is_triggered_only = yes
     hide_window = yes
 
-    only_rulers = yes
+    only_playable = yes
     has_character_flag = emf_revolt_religious_leader
 
     trigger = {
-        rebel = yes
+        primary_title = { has_title_flag = emf_revolt }
     }
 
     immediate = {
@@ -732,11 +744,13 @@ character_event = {
                 # (after modifiers, good or bad).
                 ROOT = {
                     export_to_variable = { who = PREV value = holding_tax_value which = "loot" }
-                    log = "--> base loot amount for holding: [Root.loot.GetValue]"
-                    if = {
-                        limit = { NOT = { check_variable = { which = "loot" value = 1 } } }
-                        break = yes
+                    random_list = {
+                        10 = { change_variable = { which = "loot" value = 3.303 } }
+                        10 = { change_variable = { which = "loot" value = 4.404 } }
+                        10 = { change_variable = { which = "loot" value = 5.505 } }
+                        10 = { change_variable = { which = "loot" value = 6.606 } }
                     }
+                    log = "--> base loot amount for holding: [Root.loot.GetValue]"
                 }
                 # If the holding is in a playable ruler capital, we increase the effective lot according to
                 # the rank of the ruler. E.g., looting a king's capital province is much more profitable than
@@ -884,70 +898,47 @@ character_event = {
     is_triggered_only = yes
     hide_window = yes
 
+    only_playable = yes
     has_character_flag = emf_revolt_religious_leader
 
     trigger = {
-        rebel = yes
+        primary_title = { has_title_flag = emf_revolt }
     }
 
     immediate = {
         log = "INFO: emf_revolt.8: religious revolt leader is dying: [This.GetTitledName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
-        if = {
-            limit = { NOT = { current_heir = { is_liege_or_above = ROOT } } }
-            if = {
-                limit = { NOT = { current_heir = { is_alive = yes } } }
-                log = "--> leader has no known successor!"
-            }
-            if = {
-                limit = { current_heir = { is_alive = yes } }
-                log = "--> successor is not vassal or below of leader!"
-            }
+        ## we don't use rebel inheritance at all, so we just spawn a new peasant leader and abdicate to him
+        ROOT = { save_event_target_as = emf_spawn_relcul }
+        emf_spawn_religious_revolt_leader = yes
+        clear_event_target = emf_spawn_relcul
+        new_character = {
+            emf_customize_spawned_religious_revolt_leader = yes # note that this adds the appropriate flags too
+            save_event_target_as = emf_abdicate_real_heir
         }
-        current_heir = {
-            log = "--> successor would have been: [This.GetTitledName] (#[This.GetID], title:[This.PrimaryTitle.GetID], top realm:[This.TopLiege.PrimaryTitle.GetID])"
-            ROOT = {
-                any_claim = {
-                    limit = {
-                        tier = COUNT
-                        ROOT = { has_strong_claim = PREV }
-                    }
-                    add_pressed_claim = PREVPREV
-                }
+        # transfer strong claims to heir (important for war targeting)
+        any_claim = {
+            limit = {
+                tier = COUNT
+                ROOT = { has_strong_claim = PREV }
             }
-            set_character_flag = emf_revolt_religious_leader
+            add_pressed_claim = event_target:emf_abdicate_real_heir
         }
-        ## instead, let's not trust rebel inheritance at all and just spawn a new peasant leader
-        #ROOT = { save_event_target_as = emf_spawn_relcul }
-        #emf_spawn_religious_revolt_leader = yes
-        #clear_event_target = emf_spawn_relcul
-        #new_character = {
-        #    emf_customize_spawned_religious_revolt_leader = yes # note that this adds the appropriate flags too
-        #    save_event_target_as = emf_abdicate_real_heir
-        #}
-        ## transfer strong claims to heir (important for war targeting)
-        #any_claim = {
-        #    limit = {
-        #        tier = COUNT
-        #        ROOT = { has_strong_claim = PREV }
-        #    }
-        #    add_pressed_claim = event_target:emf_abdicate_real_heir
-        #}
-        ## transfer accrued wealth, prestige, and piety from rebellion to heir
-        #transfer_scaled_wealth = { to = event_target:emf_abdicate_real_heir value = all }
-        #export_to_variable = { which = "pr" value = prestige }
-        #export_to_variable = { which = "pi" value = piety }
-        #while = {
-        #    limit = { check_variable = { which = "pr" value = 5 } }
-        #    change_variable = { which = "pr" value = -10 }
-        #    event_target:emf_abdicate_real_heir = { prestige = 10 }
-        #}
-        #while = {
-        #    limit = { check_variable = { which = "pi" value = 2.5 } }
-        #    change_variable = { which = "pi" value = -5 }
-        #    event_target:emf_abdicate_real_heir = { piety = 5 }
-        #}
-        ## all right, good to go for the handoff.
-        #emf_abdicate = yes
+        # transfer accrued wealth, prestige, and piety from rebellion to heir
+        transfer_scaled_wealth = { to = event_target:emf_abdicate_real_heir value = all }
+        export_to_variable = { which = "pr" value = prestige }
+        export_to_variable = { which = "pi" value = piety }
+        while = {
+            limit = { check_variable = { which = "pr" value = 5 } }
+            change_variable = { which = "pr" value = -10 }
+            event_target:emf_abdicate_real_heir = { prestige = 10 }
+        }
+        while = {
+            limit = { check_variable = { which = "pi" value = 2.5 } }
+            change_variable = { which = "pi" value = -5 }
+            event_target:emf_abdicate_real_heir = { piety = 5 }
+        }
+        # all right, good to go for the handoff.
+        emf_abdicate = yes
     }
 }
 
