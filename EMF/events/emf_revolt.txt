@@ -72,6 +72,7 @@ character_event = {
     hide_window = yes
 
     immediate = {
+        save_event_target_as = emf_revolt_defender
         # Determine upper bound on revolt size according to approximate size of realm. The origin province is
         # not "free" -- it's included in these caps too.
         if = {
@@ -515,11 +516,15 @@ character_event = {
         }
 
         # Send call-to-arms to nearby independent coreligionists
-        set_variable = { which = "max_allies" value = 3 }
+        set_variable = { which = "emf_revolt_allowed_allies" value = 3 }
         any_independent_ruler = {
             limit = {
                 religion = ROOT
-                capital_scope = {
+                is_landed = yes
+                war = no
+                mercenary = no
+                any_realm_province = {
+                    has_province_flag = emf_capital_connected
                     FROM = {
                         any_realm_province = {
                             has_province_flag = emf_revolt_tmp_source
@@ -528,12 +533,16 @@ character_event = {
                     }
                 }
             }
-            letter_event = { id = emf_revolt.9 days = 3 random = 3 }
+            letter_event = { id = emf_revolt.30 days = 3 random = 3 }
         }
         any_independent_ruler = {
             limit = {
                 religion = ROOT
-                capital_scope = {
+                is_landed = yes
+                war = no
+                mercenary = no
+                any_realm_province = {
+                    has_province_flag = emf_capital_connected
                     FROM = {
                         NOT = {
                             any_realm_province = {
@@ -548,7 +557,7 @@ character_event = {
                     }
                 }
             }
-            letter_event = { id = emf_revolt.9 days = 7 random = 7 }
+            letter_event = { id = emf_revolt.30 days = 7 random = 7 }
         }
 
         FROM = {
@@ -914,110 +923,6 @@ character_event = {
         }
         # all right, good to go for the handoff.
         emf_abdicate = yes
-    }
-}
-
-# emf_revolt.9 -- nearby coreligionist receives call-to-arms from rebel leader
-letter_event = {
-    id = emf_revolt.9
-
-    is_triggered_only = yes
-    hide_window = yes
-
-    ai = yes # for now, since I can't get writing help to save my life ;)
-    war = no
-
-    trigger = {
-        FROM = { check_variable = { which = "max_allies" value = 1 } }
-        
-    }
-
-    immediate = {
-        log = "--> rebel call-to-arms received by [Root.GetTitledFirstName] [Root.GetOnlyDynastyName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) from [From.GetTitledName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
-    }
-
-    option = {
-        name = YES
-        ai_chance = {
-            factor = 100
-            modifier = {
-                factor = 0
-                NOT = { wealth = 0 }
-            }
-            modifier = {
-                factor = 0
-                NOT = { opinion = { who = FROM value = -75 } }
-            }
-            modifier = {
-                factor = 2
-                opinion = { who = FROM value = 40 }
-            }
-            modifier = {
-                factor = 1.25
-                opinion = { who = FROM value = 15 }
-            }
-            modifier = {
-                factor = 1.25
-                opinion = { who = FROM value = 30 }
-            }
-            modifier = {
-                factor = 1.25
-                opinion = { who = FROM value = 45 }
-            }
-            modifier = {
-                factor = 1.5
-                opinion = { who = FROM value = 60 }
-            }
-            modifier = {
-                factor = 1.5
-                opinion = { who = FROM value = 75 }
-            }
-            modifier = {
-                factor = 0.75
-                NOT = { opinion = { who = FROM value = 0 } }
-            }
-            modifier = {
-                factor = 0.75
-                NOT = { opinion = { who = FROM value = -15 } }
-            }
-            modifier = {
-                factor = 0.75
-                NOT = { opinion = { who = FROM value = -30 } }
-            }
-            modifier = {
-                factor = 0.75
-                NOT = { opinion = { who = FROM value = -45 } }
-            }
-            modifier = {
-                factor = 0.1
-                NOT = { opinion = { who = FROM value = -60 } }
-            }
-        }
-        log = "----> accepted call-to-arms"
-        set_variable = { which = "tries_left" value = 3 }
-        while = {
-            limit = {
-                check_variable = { which = "tries_left" value = 1 }
-                war = no
-            }
-            change_variable = { which = "tries_left" value = -1 }
-            join_attacker_wars = FROM
-        }
-        set_variable = { which = "tries_left" value = 0 }
-        if = {
-            limit = { war = no }
-            log = "------> WARNING: failed to join rebel war"
-            break = yes
-        }
-        FROM = { change_variable = { which = "max_allies" value = -1 } }
-        FROMFROM = { letter_event = { id = emf_revolt.12 } } # Inform the defender that I'm supporting his rebels
-    }
-    option = {
-        name = NO
-        ai_chance = {
-            factor = 10
-        }
-        log = "----> declined call-to-arms"
     }
 }
 
@@ -1571,7 +1476,6 @@ character_event = {
 
     after = {
         any_realm_province = { clear_flags_with_prefix = emf_revolt_tmp }
-        set_variable = { which = "max_allies" value = 0 }
     }
 }
 
@@ -1622,6 +1526,218 @@ character_event = {
                 emf_revolt_spawn_peasant_ruler_son = yes
                 emf_revolt_spawn_peasant_ruler_son = yes
             }
+        }
+    }
+}
+
+# emf_revolt.30 -- nearby coreligionist receives call-to-arms from rebel leader
+letter_event = {
+    id = emf_revolt.30
+
+    is_triggered_only = yes
+    hide_window = yes
+
+    ai = yes # for now, due to low manpower re: writing
+    war = no
+
+    trigger = {
+        FROM = { check_variable = { which = "emf_revolt_allowed_allies" value = 1 } }   
+    }
+
+    immediate = {
+        log = "--> rebel call-to-arms received by [Root.GetTitledFirstName] [Root.GetOnlyDynastyName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) from [From.GetTitledName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
+    }
+
+    option = {
+        name = YES
+        ai_chance = {
+            factor = 100
+            modifier = {
+                factor = 0
+                NOT = { wealth = 0 }
+            }
+            modifier = {
+                factor = 0
+                NOT = { opinion = { who = FROM value = -75 } }
+            }
+            modifier = {
+                factor = 2
+                opinion = { who = FROM value = 40 }
+            }
+            modifier = {
+                factor = 1.25
+                opinion = { who = FROM value = 15 }
+            }
+            modifier = {
+                factor = 1.25
+                opinion = { who = FROM value = 30 }
+            }
+            modifier = {
+                factor = 1.25
+                opinion = { who = FROM value = 45 }
+            }
+            modifier = {
+                factor = 1.5
+                opinion = { who = FROM value = 60 }
+            }
+            modifier = {
+                factor = 1.5
+                opinion = { who = FROM value = 75 }
+            }
+            modifier = {
+                factor = 0.75
+                NOT = { opinion = { who = FROM value = 0 } }
+            }
+            modifier = {
+                factor = 0.75
+                NOT = { opinion = { who = FROM value = -15 } }
+            }
+            modifier = {
+                factor = 0.75
+                NOT = { opinion = { who = FROM value = -30 } }
+            }
+            modifier = {
+                factor = 0.75
+                NOT = { opinion = { who = FROM value = -45 } }
+            }
+            modifier = {
+                factor = 0.1
+                NOT = { opinion = { who = FROM value = -60 } }
+            }
+        }
+        log = "----> accepted call-to-arms"
+        set_variable = { which = "tries_left" value = 3 }
+        while = {
+            limit = {
+                check_variable = { which = "tries_left" value = 1 }
+                war = no
+            }
+            change_variable = { which = "tries_left" value = -1 }
+            join_attacker_wars = FROM
+        }
+        set_variable = { which = "tries_left" value = 0 }
+        if = {
+            limit = { war = no }
+            log = "------> WARNING: failed to join rebel war"
+            break = yes
+        }
+        FROM = { change_variable = { which = "emf_revolt_allowed_allies" value = -1 } }
+        # Inform the defender that I'm supporting his rebels
+        event_target:emf_revolt_defender = { letter_event = { id = emf_revolt.12 } }
+    }
+    option = {
+        name = NO
+        ai_chance = {
+            factor = 10
+        }
+        log = "----> declined call-to-arms"
+        reverse_opinion = { who = ROOT modifier = emf_revolt_opinion_declined_call_to_arms }
+    }
+}
+
+# emf_revolt.31 -- periodically send call-to-arms to now-qualifying nearby independent coreligionists that have not yet
+# declined our call
+character_event = {
+    id = emf_revolt.31
+    
+    hide_window = yes
+    
+    only_independent = yes
+    has_character_flag = emf_revolt_religious_leader
+    war = yes
+
+    trigger = {
+        check_variable = { which = "emf_revolt_allowed_allies" value = 1 }
+        primary_title = { has_title_flag = emf_revolt }
+        any_war = {
+            attacker = { character = ROOT }
+            using_cb = emf_revolt_religious
+        }
+        any_independent_ruler = {
+            religion = ROOT
+            is_landed = yes
+            war = no
+            mercenary = no
+            NOR = {
+                war_with = ROOT
+                any_war = {
+                    attacker = { character = ROOT }
+                    any_attacker = { character = PREV }
+                }
+                reverse_has_opinion_modifier = { who = ROOT modifier = emf_revolt_opinion_declined_call_to_arms }
+            }
+            any_realm_province = {
+                has_province_flag = emf_capital_connected
+                ROOT = {
+                    any_claim = {
+                        tier = COUNT
+                        location = { NOT = { distance = { where = PREVPREV value = 250 } } }
+                    }
+                }
+            }
+        }
+    }
+
+    mean_time_to_happen = {
+        days = 30
+    }
+
+    immediate = {
+        any_war = {
+            limit = {
+                attacker = { character = ROOT }
+                using_cb = emf_revolt_religious
+            }
+            defender = { save_event_target_as = emf_revolt_defender }
+        }
+        any_independent_ruler = {
+            limit = {
+                religion = ROOT
+                is_landed = yes
+                war = no
+                mercenary = no
+                NOT = { reverse_has_opinion_modifier = { who = ROOT modifier = emf_revolt_opinion_declined_call_to_arms } }
+                any_realm_province = {
+                    has_province_flag = emf_capital_connected
+                    ROOT = {
+                        any_claim = {
+                            tier = COUNT
+                            location = { NOT = { distance = { where = PREVPREV value = 150 } } }
+                        }
+                    }
+                }
+            }
+            letter_event = { id = emf_revolt.30 }
+        }
+        any_independent_ruler = {
+            limit = {
+                religion = ROOT
+                is_landed = yes
+                war = no
+                mercenary = no
+                NOT = { reverse_has_opinion_modifier = { who = ROOT modifier = emf_revolt_opinion_declined_call_to_arms } }
+                NOT = {
+                    any_realm_province = {
+                        has_province_flag = emf_capital_connected
+                        ROOT = {
+                            any_claim = {
+                                tier = COUNT
+                                location = { NOT = { distance = { where = PREVPREV value = 150 } } }
+                            }
+                        }
+                    }
+                }
+                any_realm_province = {
+                    has_province_flag = emf_capital_connected
+                    ROOT = {
+                        any_claim = {
+                            tier = COUNT
+                            location = { NOT = { distance = { where = PREVPREV value = 250 } } }
+                        }
+                    }
+                }
+            }
+            letter_event = { id = emf_revolt.30 }
         }
     }
 }
