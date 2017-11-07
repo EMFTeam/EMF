@@ -1449,6 +1449,9 @@ character_event = {
                     tier = DUKE
                     NOT = { has_title_flag = emf_revolt }
                 }
+                # Mark holder religion as a flag on the title so that we may later detect if they go out of sync
+                emf_revolt_set_religion_title_flag = yes
+                # More flags:
                 set_title_flag = emf_revolt_religious_victory_title
                 set_title_flag = emf_revolt_victory_title
                 set_title_flag = emf_autodestroy # Destroy at first opportunity
@@ -1777,6 +1780,73 @@ character_event = {
                 primary_title = { emf_destroy_title = yes }
             }
             set_defacto_vassal = ROOT
+        }
+    }
+}
+
+# emf_revolt.41 -- rename rebel victory titles according to holder religion; due to 2.7 limitations, we cannot just use
+# set_name here. no no, we must create an all new dynamic title named appropriately and then oust the old one.
+#
+# triggered on MTTH just so that the title destruction can happen when not at war (on_yearly_pulse would be more appropriate
+# otherwise), which is not so common of a state sometimes.
+#
+# TODO-2.8: just use set_name on the existing religious rebel victory title and use on_yearly_pulse.
+character_event = {
+    id = emf_revolt.41
+    
+    hide_window = yes
+
+    only_independent = yes
+    war = no
+
+    trigger = {
+        tier = DUKE
+        primary_title = { has_title_flag = emf_revolt_religious_victory_title }
+        primary_title = {
+            emf_revolt_ROOT_religion_matches_rebel_victory_title = no
+        }
+    }
+
+    immediate = {
+        primary_title = { save_event_target_as = emf_mismatched_title }
+        capital_scope = {
+            county = {
+                # Create ANOTHER titular duchy
+                create_title = {
+                    tier = DUKE
+                    landless = no
+                    temporary = no
+                    custom_created = yes
+                    culture = ROOT
+                    holder = ROOT
+                    name = REVOLT_RELIGIOUS_VICTORY_TITLE_RENAMED
+                    base_title = THIS
+                    copy_title_laws = no
+                }
+            }
+        }
+        random_demesne_title = { # What we just created
+            limit = {
+                is_primary_holder_title_tier = yes
+                NOT = { has_title_flag = emf_revolt_religious_victory_title }
+            }
+            save_event_target_as = emf_new_title
+        }
+        event_target:emf_mismatched_title = {
+            event_target:emf_new_title = {
+                emf_copy_title_state_from_PREV = yes # Will copy claims, etc.
+                copy_title_laws = PREV
+                copy_title_history = PREV
+                emf_try_to_make_primary_title = yes
+                # Mark holder religion as a flag on the title so that we may later detect if they go out of sync
+                emf_revolt_set_religion_title_flag = yes
+                # More flags:
+                set_title_flag = emf_revolt_religious_victory_title
+                set_title_flag = emf_revolt_victory_title
+                set_title_flag = emf_autodestroy # Destroy at first opportunity
+            }
+            emf_destroy_title = yes
+            activate_title = { title = THIS status = no }
         }
     }
 }
