@@ -484,6 +484,9 @@ character_event = {
             set_preferred_capital = event_target:emf_revolt_origin
         }
 
+        # Remember where we came from (oh, for a presaved_event_target right now...)
+        set_character_flag = emf_revolt_origin_@event_target:emf_revolt_origin
+
         set_defacto_liege = ROOT
 
         # for each source province, spawn troops/commanders, add a bit to treasury, and a strong claim on its county
@@ -494,13 +497,14 @@ character_event = {
         FROM = {
             any_realm_province = {
                 limit = { has_province_flag = emf_revolt_tmp_source }
+                county = { add_claim = ROOT }
                 province_event = { id = emf_revolt.3 }
             }
         }
 
         opinion = { who = FROM modifier = opinion_evil_tyrant }
 
-        # declare war!
+        # Declare war!
         war = {
             target = FROM
             casus_belli = emf_revolt_religious
@@ -543,7 +547,7 @@ character_event = {
                 }
             }
         }
-        
+        # First hit up the really close ones, if any
         any_independent_ruler = {
             limit = {
                 religion = ROOT
@@ -562,6 +566,7 @@ character_event = {
             }
             letter_event = { id = emf_revolt.30 days = 7 random = 6 }
         }
+        # Then hit up the further ones that are still close. Due to the timing, closer should always make its decision first.
         any_independent_ruler = {
             limit = {
                 religion = ROOT
@@ -587,6 +592,10 @@ character_event = {
             letter_event = { id = emf_revolt.30 days = 14 random = 7 }
         }
 
+        # Notification time!
+
+        # Track all the lieges of the source provinces temporarily so that we may notify them with a single, coalesced event
+        # rather than a bunch of spam per source province.
         FROM = {
             any_realm_province = {
                 limit = { has_province_flag = emf_revolt_tmp_source }
@@ -596,7 +605,6 @@ character_event = {
                 }
             }
         }
-
         # Notify affected realm lords; note that we hide these notifications for the top liege, as
         # they get their own event.
         any_opinion_modifier_target = {
@@ -604,8 +612,7 @@ character_event = {
             character_event = { id = emf_revolt.10 }
             reverse_remove_opinion = { who = ROOT name = emf_revolt_source_province_liege }
         }
-
-        # tell the top liege defender what's gone down (and clear temp. state)
+        # Tell the top liege defender what's gone down (and then clear our temp. state)
         FROM = { long_character_event = { id = emf_revolt.4 } }
     }
 }
@@ -623,9 +630,22 @@ province_event = {
     immediate = {
         log = "--> adding to rebellion: [Root.GetName] (#[Root.GetID]/[Root.County.GetID])"
         add_province_modifier = { name = recent_county_uprising duration = 1825 } # 5yr of -100% revolt risk
-        county = { add_claim = FROM }
+
+        if = {
+            limit = {
+                event_target:emf_revolt_defender = {
+                    any_realm_province = {
+                        FROM = { has_character_flag = emf_revolt_origin_@PREV }
+                        NOT = { distance = { where = ROOT value = 250 } }
+                    }
+                }
+            }
+            county = { add_claim = FROM }
+        }
         FROM = {
             wealth = 100
+            prestige = 50
+            piety = 25
             random_list = {
                 33 = { emf_revolt_spawn_army_LI6_LC4_A6_P4_scale100 = yes }
                 33 = { emf_revolt_spawn_army_LI8_LC2_A6_P4_scale100 = yes }
@@ -700,6 +720,7 @@ province_event = {
     immediate = {
         owner = {
             top_liege = {
+                save_event_target_as = emf_revolt_defender
                 any_war = {
                     limit = {
                         defender = { character = PREV }
@@ -736,8 +757,13 @@ character_event = {
         FROM = {
             # Reinforce from that province
             province_event = { id = emf_revolt.3 }
-            # Press our claim on that province's county
-            county = { press_claim = ROOT }
+            # Press our claim on that province's county, if we qualified for one
+            county = {
+                if = {
+                    limit = { ROOT = { has_claim = PREV } }
+                    press_claim = ROOT
+                }
+            }
             # Notify relevant rulers in defender realm (including top liege): province will be FROMFROM
             owner = { any_liege = { character_event = { id = emf_revolt.11 } } }
         }
@@ -925,6 +951,11 @@ character_event = {
         new_character = {
             emf_customize_spawned_religious_revolt_leader = yes # note that this adds the appropriate flags too
             save_event_target_as = emf_abdicate_real_heir
+        }
+        # transfer additional flags
+        random_province = {
+            limit = { ROOT = { has_character_flag = emf_revolt_origin_@PREV } }
+            event_target:emf_abdicate_real_heir = { set_character_flag = emf_revolt_origin_@PREV }
         }
         # transfer strong claims to heir (important for war targeting)
         any_claim = {
