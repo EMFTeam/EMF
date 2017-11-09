@@ -110,7 +110,7 @@ An empire is a hard thing to hold together. The massive bureaucracy can become c
 def remove_modifier_effect(f):
 	print('\nemf_remove_decay_modifier = {', file=f)
 	for i in range(101):
-		print('\tremove_character_modifier = emf_decay_modifier_{}'.format(i), file=f)
+		print('{}remove_character_modifier = emf_decay_modifier_{}'.format(TAB, i), file=f)
 	print('}', file=f)
 
 
