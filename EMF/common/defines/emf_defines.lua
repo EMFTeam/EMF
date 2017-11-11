@@ -69,7 +69,7 @@ NDefines.NTitle.EMPEROR_DESTRUCTION_PRESTIGE_COST = 500
 NDefines.NTitle.NORMAL_LAW_CHANGE_COUNCIL_MONTHS = 48 -- from 60
 NDefines.NTitle.NORMAL_LAW_CHANGE_ABSOLUTISM_MONTHS = 120
 NDefines.NTitle.MAX_CROWN_LAW_CHANGES = 64  -- intention is "unlimited" due to the way EMF CA sub-laws are designed & existence of its soft-coded cooldowns
-NDefines.NTitle.CROWN_LAW_CHANGE_TIMER = 0
+NDefines.NTitle.CROWN_LAW_CHANGE_TIMER = 0  -- EMF crown laws assume that you will be able to change a CA sub-law after raising CA with same ruler
 NDefines.NTitle.EMPIRE_DE_JURE_ASSIMILATION_YEARS = 50
 NDefines.NTitle.GAME_RULES_DEJURE_LONG = 200
 NDefines.NTitle.GAME_RULES_DEJURE_LONG_EMPIRE = 100
@@ -78,6 +78,7 @@ NDefines.NTitle.GAME_RULES_DEJURE_SHORT_EMPIRE = 35
 NDefines.NTitle.GAME_RULES_DEJURE_SHORTEST = 20
 NDefines.NTitle.GAME_RULES_DEJURE_SHORTEST_EMPIRE = 10
 NDefines.NTitle.REQ_KINGDOMS_FOR_EMPIRE_CREATION = 3 -- from 2
+NDefines.NTitle.ENFORCE_ONE_OF_EACH_HOLDING = 0 -- not needed, esp. on SWMH w/ its more realistic, irregular provinces
 NDefines.NTitle.MAX_REPUBLIC_COUNTIES_IN_REALM = 0.2
 NDefines.NTitle.MAX_THEOCRACY_COUNTIES_IN_REALM = 0.2
 NDefines.NTitle.EMPIRE_DEJURE_COUNTY_LIMIT_TO_CREATE = 0.667
@@ -185,17 +186,16 @@ NDefines.NMilitary.SPECIAL_TROOPS_PHASE_PURSUE_ATTACK = 7
 NDefines.NMilitary.SPECIAL_TROOPS_PHASE_SKIRMISH_DEFENSE = 4
 NDefines.NMilitary.SPECIAL_TROOPS_PHASE_MELEE_DEFENSE = 4
 NDefines.NMilitary.SPECIAL_TROOPS_PHASE_PURSUE_DEFENSE = 7
-NDefines.NMilitary.SPECIAL_TROOPS_GRAPHICAL_FACTOR = 2.0
-NDefines.NMilitary.GALLEYS_MAINTENANCE = 50
-NDefines.NMilitary.CAPITAL_DUCHY_LIEGE_LEVY_MULT = 1
-NDefines.NMilitary.CAPITAL_KINGDOM_LIEGE_LEVY_MULT = 0.8
-NDefines.NMilitary.CAPITAL_EMPIRE_LIEGE_LEVY_MULT = 0.5
-NDefines.NMilitary.OUTSIDE_LIEGE_LEVY_MULT = 0.5
-NDefines.NMilitary.MONTHS_OF_UNDECIDED_WAR = 6
+NDefines.NMilitary.SPECIAL_TROOPS_GRAPHICAL_FACTOR = 1.5
+NDefines.NMilitary.CAPITAL_DUCHY_LIEGE_LEVY_MULT = 0.75 -- same as vanilla, just here for completeness
+NDefines.NMilitary.CAPITAL_KINGDOM_LIEGE_LEVY_MULT = 0.5 -- same as vanilla, just here for completeness
+NDefines.NMilitary.CAPITAL_EMPIRE_LIEGE_LEVY_MULT = 0.25 -- reduced to be same as "outside capital empire," since most places are "outside" a de jure empire in the default EMF setup (or, rather, it's e_null, which complicates things if they're not the same)
+NDefines.NMilitary.OUTSIDE_LIEGE_LEVY_MULT = 0.25 -- same as vanilla, just here for completeness
+NDefines.NMilitary.MONTHS_OF_UNDECIDED_WAR = 0
 NDefines.NMilitary.SHATTERED_RETREAT_MORALE_MULTIPLIER = 1.0
 NDefines.NMilitary.SHATTERED_RETREAT_PREFERRED_PROVINCES = 4
 NDefines.NMilitary.SHATTERED_RETREAT_MAX_PROVINCES = 6
-NDefines.NMilitary.MAX_WARSCORE_FROM_BATTLE_DEFENDERS = 150   -- from 100
+NDefines.NMilitary.MAX_WARSCORE_FROM_BATTLE_DEFENDERS = 200   -- from 100
 
 -- Technology
 NDefines.NTechnology.POINTS_PER_ATTRIBUTE = 0.02
@@ -204,18 +204,14 @@ NDefines.NTechnology.BASE_DEMESNE_SPREAD_BONUS = 0.1
 NDefines.NTechnology.MAX_DEMESNE_BONUS = 0.5
 NDefines.NTechnology.TRADEPOST_SPREAD_BONUS = 0.01
 
--- Disease
-NDefines.NDisease.CROWDED_THRESHOLD_MODIFIER = 30
-
 -- Graphics
 NDefines.NGraphics.CITY_SPRAWL_AMOUNT = 0.75
 
 -- Engine
 NDefines.NEngine.EVENT_PROCESS_OFFSET = 30
+NDefines.NEngine.COURTIER_EVENT_PROCESS_OFFSET = 60
 
 -- AI
-NDefines.NAI.REVOLT_OTHER_INDEP_RISK = 0
-NDefines.NAI.REVOLT_OTHER_INDEP_RISK_CAP = 0
 NDefines.NAI.AI_EMPEROR_CREATES_KINGDOMS = 1     -- only now a good idea due to Imperial Kingdom Creation law
 NDefines.NAI.RAID_AGGRESSION = 24
 NDefines.NAI.TRIBAL_VASSAL_EXTRA_CALL_CHANCE = 30
@@ -237,9 +233,14 @@ NDefines.NRulerDesigner.COST_SPOUCE_OPINION = 0.0
 NDefines.NRulerDesigner.COST_SEXAPPEAL_OPINION = 0.0
 NDefines.NRulerDesigner.COST_DYNASTY_OPINION = 0.0
 NDefines.NRulerDesigner.COST_VASSAL_OPINION = 0.0
+NDefines.NRulerDesigner.COST_LIEGE_OPINION = 0.0
+NDefines.NRulerDesigner.COST_INFIDEL_OPINION = 0.0
 NDefines.NRulerDesigner.COST_OPPOSITE_TRAIT_OPINION = 0.0
 NDefines.NRulerDesigner.COST_SAME_TRAIT_OPINION = 0.0
 NDefines.NRulerDesigner.COST_SAME_RELIGION_OPINION = 0.0
+NDefines.NRulerDesigner.COST_AMBITION_OPINION = 0.0
+NDefines.NRulerDesigner.COST_TRIBAL_OPINION = 0.0
+NDefines.NRulerDesigner.COST_UNREFORMED_TRIBAL_OPINION = 0.0
 NDefines.NRulerDesigner.COST_GENERAL_OPINION = 0.0
 NDefines.NRulerDesigner.COST_MUSLIM_OPINION = 0.0
 NDefines.NRulerDesigner.COST_JEWISH_OPINION = 0.0
