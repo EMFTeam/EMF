@@ -40,7 +40,7 @@ def vassal_opinion(i):
 def defensive_plot_power_modifier(i):
 	return -1.0 * (i / 100)
 
-def retinue_size_perc(i):
+def retinuesize_perc(i):
 	if i < 40: return 0
 	return -2.0 * ((i-40) / 60)
 
@@ -63,8 +63,10 @@ MODIFIERS = [
 	('global_tax_modifier',           global_tax_modifier,           DECIMAL),
 	('vassal_opinion',                vassal_opinion,                INTEGER),
 	('defensive_plot_power_modifier', defensive_plot_power_modifier, DECIMAL),
-	('retinue_size_perc',             retinue_size_perc,             DECIMAL),
+	('retinuesize_perc',              retinuesize_perc,              DECIMAL),
 ]
+
+TAB = ' ' * 4
 
 
 def headers(files):
@@ -90,9 +92,9 @@ def define_modifiers(f):
 			elif value_type == INTEGER:
 				val = int(val)
 			if val < -0.0009 or val > 0.0009:
-				print('\t{} = {}'.format(name, val), file=f)
+				print('{}{} = {}'.format(TAB,name, val), file=f)
 		icon = 28 if i > 0 else 10
-		print('\ticon = {}'.format(icon), file=f)
+		print('{}icon = {}'.format(TAB, icon), file=f)
 		print('}', file=f)
 
 
@@ -108,21 +110,21 @@ An empire is a hard thing to hold together. The massive bureaucracy can become c
 def remove_modifier_effect(f):
 	print('\nemf_remove_decay_modifier = {', file=f)
 	for i in range(101):
-		print('\tremove_character_modifier = emf_decay_modifier_{}'.format(i), file=f)
+		print('{}remove_character_modifier = emf_decay_modifier_{}'.format(TAB, i), file=f)
 	print('}', file=f)
 
 
 def add_modifier_effect(f):
 	print('\nemf_add_decay_modifier = {', file=f)
-	print('\tif = {', file=f)
-	print('\t\tlimit = { primary_title = { NOT = { check_variable = { which = "imperial_decay" value = 1 } } } }', file=f)
-	print('\t\tadd_character_modifier = { name = emf_decay_modifier_0 duration = -1 }', file=f)
-	print('\t}', file=f)
+	print('{}if = {{'.format(TAB), file=f)
+	print('{}limit = {{ primary_title = {{ NOT = {{ check_variable = {{ which = "imperial_decay" value = 1 }} }} }} }}'.format(TAB*2), file=f)
+	print('{}add_character_modifier = {{ name = emf_decay_modifier_0 duration = -1 }}'.format(TAB*2), file=f)
+	print(TAB*2 + '}', file=f)
 	for i in range(1, 101):
-		print('\tif = {', file=f)
-		print('\t\tlimit = {{ primary_title = {{ is_variable_equal = {{ which = "imperial_decay" value = {} }} }} }}'.format(i), file=f)
-		print('\t\tadd_character_modifier = {{ name = emf_decay_modifier_{} duration = -1 }}'.format(i), file=f)
-		print('\t}', file=f)
+		print(TAB + 'if = {', file=f)
+		print('{}limit = {{ primary_title = {{ is_variable_equal = {{ which = "imperial_decay" value = {} }} }} }}'.format(TAB*2, i), file=f)
+		print('{}add_character_modifier = {{ name = emf_decay_modifier_{} duration = -1 }}'.format(TAB*2, i), file=f)
+		print(TAB + '}', file=f)
 	print('}', file=f)
 
 
@@ -132,22 +134,22 @@ def round_effect(f, name, var, min_v, max_v):
 	for i in range(min_v, max_v+1):
 		below = i - 0.5
 		above = i + 0.5
-		print('\tif = {', file=f)
-		print('\t\tlimit = {', file=f)
+		print(TAB + 'if = {', file=f)
+		print(TAB*2 + 'limit = {', file=f)
 		if i > min_v:
-			print('\t\t\tcheck_variable = {{ which = "{}" value = {} }}'.format(var, below), file=f)
+			print('{}check_variable = {{ which = "{}" value = {} }}'.format(TAB*3, var, below), file=f)
 		if i < max_v:
-			print('\t\t\tNOT = {{ check_variable = {{ which = "{}" value = {} }} }}'.format(var, above), file=f)
-		print('\t\t}', file=f)
-		print('\t\tset_variable = {{ which = "{}" value = {} }}'.format(var, i), file=f)
-		print('\t}', file=f)
+			print('{}NOT = {{ check_variable = {{ which = "{}" value = {} }} }}'.format(TAB*3, var, above), file=f)
+		print(TAB*2 + '}', file=f)
+		print('{}set_variable = {{ which = "{}" value = {} }}'.format(TAB*2, var, i), file=f)
+		print(TAB + '}', file=f)
 	print('}', file=f)
 
 
 
-with effects_path.open('w', encoding='cp1252') as ef, \
-	 modifiers_path.open('w', encoding='cp1252') as mf, \
-	 i18n_path.open('w', encoding='cp1252') as lf:
+with effects_path.open('w', encoding='cp1252', newline='\n') as ef, \
+	 modifiers_path.open('w', encoding='cp1252', newline='\n') as mf, \
+	 i18n_path.open('w', encoding='cp1252', newline='\n') as lf:
 	headers([('scripted_effects', ef), ('event_modifiers', mf), ('i18n', lf)])
 	define_modifiers(mf)
 	localisation(lf)

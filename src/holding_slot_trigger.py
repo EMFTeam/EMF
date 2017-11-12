@@ -45,6 +45,9 @@ def build_trigger(parser, counties_by_barony_count, title_id):
 @print_time.print_time
 def main():
     parser = ck2parser.FullParser(ck2parser.rootpath / 'SWMH-BETA/SWMH')
+    parser.crlf = False
+    parser.tab_indents = False
+    parser.indent_width = 4
     outpath = ck2parser.rootpath / 'EMF/EMF+SWMH/common/scripted_triggers/emf_can_add_holding_slot_trigger.txt'
     simple_parser = ck2parser.SimpleParser(*parser.moddirs)
 
@@ -66,8 +69,7 @@ def main():
         for title, baronies in scan_for_baronies(tree):
             counties_by_barony_count[baronies].append(title)
     trigger = build_trigger(parser, counties_by_barony_count, title_id)
-    with outpath.open('w', encoding='cp1252', newline='\r\n') as f:
-        f.write(trigger.str(parser))
+    parser.write(trigger, outpath)
 
 if __name__ == '__main__':
     main()
