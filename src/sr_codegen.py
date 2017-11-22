@@ -301,6 +301,9 @@ def print_triggers_does_cult_need_DLC(f):
 		'TOG': ['zoroastrian_group', 'pagan_group'],
 		'RoI': ['indian_group'],
 	}
+	dlc_religion_map = {
+		'JD': ['taoist', 'bon', 'khurmazta'],
+	}
 
 	for dlc, rgroups in sorted(dlc_rgroups_map.items()):
 		print('''
@@ -311,6 +314,16 @@ emf_sr_does_cult_need_{} = {{
 		for rg in rgroups:
 			for r in g_rg_religions_map[rg]:
 				print('\t\tsociety_member_of = secret_religious_society_' + r, file=f)
+		print('\t}\n}', file=f)
+
+	for dlc, rlist in sorted(dlc_religion_map.items()):
+		print('''
+# THIS = character
+emf_sr_does_cult_need_{} = {{
+	OR = {{'''.format(dlc), file=f)
+
+		for r in rlist:
+			print('\t\tsociety_member_of = secret_religious_society_' + r, file=f)
 		print('\t}\n}', file=f)
 
 
