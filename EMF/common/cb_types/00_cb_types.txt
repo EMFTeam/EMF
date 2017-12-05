@@ -3964,6 +3964,7 @@ bid_for_independence = {
             ROOT = {
                 prestige = 100
                 reverse_opinion = { who = FROM modifier = opinion_rightful_subjugation }
+                set_character_flag = ai_flag_never_transfer
             }
         }
         ROOT = {
@@ -5456,6 +5457,7 @@ cb_faction_independence = {
             hidden_tooltip = {
                 prestige = 100
                 reverse_opinion = { who = FROM modifier = opinion_rightful_subjugation }
+                set_character_flag = ai_flag_never_transfer
             }
         }
         ROOT = {
@@ -5905,9 +5907,12 @@ embargo_cb = {
                     any_trade_post = { owner_under_ROOT = yes }
                 }
                 AND = {
-                    higher_tier_than = DUKE
-                    any_realm_lord = {
+                    OR = {
                         is_merchant_republic = yes
+                        higher_tier_than = DUKE
+                    }
+                    any_realm_lord = {
+                        is_patrician = yes
                         any_trade_post = { owner_under_ROOT = yes }
                     }
                 }
@@ -13983,12 +13988,15 @@ hostages_cb = { # New5
         log = "CB(hostages_cb): VICTORY: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
         emf_cb_victory = yes
         ROOT = {
+            show_scope_change = no
             prestige = 250
         }
         FROM = {
+            show_scope_change = no
             prestige = -250
         }
         FROM = {
+            show_scope_change = no
             save_event_target_as = character_kidnapper
             transfer_scaled_wealth = {
                 to = ROOT
@@ -14071,16 +14079,21 @@ hostages_cb = { # New5
                     years = 100
                 }
             }
-            random_realm_character = {
-                limit = {
-                    NOT = {
-                        character = PREV
+            custom_tooltip = {
+                text = hostages_random_imprisonment_tt
+                hidden_effect = {
+                    random_realm_character = {
+                        limit = {
+                            NOT = {
+                                character = PREV
+                            }
+                            prisoner = no
+                            ai = yes
+                            is_close_relative = PREV
+                        }
+                        imprison = ROOT
                     }
-                    prisoner = no
-                    ai = yes
-                    is_close_relative = PREV
                 }
-                imprison = ROOT
             }
         }
     }
@@ -14089,10 +14102,12 @@ hostages_cb = { # New5
 
     on_fail = {
         log = "CB(hostages_cb): WHITEPEACE: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
-        ROOT = { 
+        ROOT = {
+            show_scope_change = no
             prestige = -250
         }
-        FROM = { 
+        FROM = {
+            show_scope_change = no
             prestige = 250
         }
     }
@@ -14101,13 +14116,15 @@ hostages_cb = { # New5
         log = "CB(hostages_cb): DEFEAT: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
         emf_cb_defeat = yes
         ROOT = {
+            show_scope_change = no
             transfer_scaled_wealth = {
                 to = FROM
                 value = 3.0
             }
             prestige = -250
         }
-        FROM = { 
+        FROM = {
+            show_scope_change = no
             prestige = 250
         }
     }
@@ -15187,10 +15204,7 @@ unjust_conquest = { # New7
                         de_facto_liege = PREV
                     }
                     holder_scope = {
-                        OR = {
-                            character = FROM
-                            is_liege_or_above = FROM
-                        }
+                        is_liege_or_above = FROM
                     }
                 }
 
@@ -17158,7 +17172,7 @@ destabilization_china_cb = {
                                 clan = yes
                             }
                         }
-                        emf_destroy_title = yes
+                        emf_unsafe_destroy_title = yes
                     }
                     #death = { death_reason = death_executed_by_chinese_emperor }
                 }
@@ -17307,6 +17321,10 @@ invasion_of_china_cb = {
                                 leave_court_for_china_effect = yes
                             }
                         }
+                        abdicate = yes
+                        any_claim = {
+                            remove_claim = event_target:invasion_of_china_claimant
+                        }
                         clr_character_flag = no_court_invites
                         remove_trait = cannot_marry
                         diplomatic_immunity = no
@@ -17375,6 +17393,18 @@ invasion_of_china_cb = {
                         set_offmap_holder = event_target:invasion_of_china_claimant
                         clr_offmap_flag = no_succession_news
                         clr_offmap_flag = rename_override
+                        
+                        if = {
+                            limit = {
+                                NOR = {
+                                    has_status = china_stable
+                                    has_status = china_golden_age
+                                }
+                            }
+                            set_offmap_flag = no_status_news
+                            set_status = china_stable
+                            clr_offmap_flag = no_status_news
+                        }
                     }
                     any_player = {
                         limit = {
@@ -17411,6 +17441,7 @@ invasion_of_china_cb = {
                 add_artifact = jian_sword
             }
             hidden_effect = { add_character_modifier = { name = peace_deal_with_china inherit = yes years = 50 } }
+            remove_character_modifier = china_raid_active
             remove_character_modifier = war_with_china_modifier
         }
         any_attacker = {
