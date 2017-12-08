@@ -542,6 +542,38 @@ def main():
             tree[764, 1, 1].contents[:0] = parser.parse('''
                 law = succ_gavelkind
                 ''').contents
+        elif path.stem == 'e_china_west_governor':
+            changed = True
+            assert len(tree.contents) == 44
+            tree[1234, 2, 10].contents.extend(parser.parse('''
+                effect = { set_coa = e_china_yuan }
+                ''').contents)
+            tree.contents[37:37] = parser.parse('''
+                1127.1.9 = {
+                    effect = { set_coa = e_china_jin }
+                }
+                ''').contents
+            tree[960, 2, 1].contents.extend(parser.parse('''
+                effect = { set_coa = e_china_song }
+                ''').contents)
+            tree.contents[5:5] = parser.parse('''
+                907.5.12 = {
+                    effect = { reset_coa = THIS }
+                }
+                ''').contents
+            tree.contents[:0] = parser.parse('''
+                618.6.18 = {
+                    effect = { set_coa = e_china_tang }
+                }
+                690.10.16 = {
+                    effect = { set_coa = e_china_zhou }
+                }
+                705.12.16 = {
+                    effect = { set_coa = e_china_tang }
+                }
+                ''').contents
+            tree.contents[0].pre_comments = tree.contents[3].pre_comments
+            tree.contents[3].pre_comments = []
         if changed:
             tree.contents = [p for p in tree.contents
                              if p.value.contents or p.has_comments]
