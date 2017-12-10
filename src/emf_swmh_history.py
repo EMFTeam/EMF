@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import shutil
+import sys
 from ck2parser import rootpath, Comment, FullParser
 from print_time import print_time
 
@@ -257,7 +258,7 @@ changeset = {
             law = crown_authority_1
             '''),
         ((1055, 1, 11), 1, '''
-            clr_global_flag = byz_empire_flourishes 
+            clr_global_flag = byz_empire_flourishes
             set_global_flag = byz_empire_cracking
             effect = {
                 set_variable = { which = "imperial_decay" value = 30 }
@@ -270,15 +271,15 @@ changeset = {
             law = crown_authority_1
             '''),
         ((1071, 8, 26), 1, '''
-            clr_global_flag = byz_empire_cracking 
+            clr_global_flag = byz_empire_cracking
             set_global_flag = byz_empire_falling
             effect = {
                 set_variable = { which = "imperial_decay" value = 50 }
             }
             '''),
         ((1081, 4, 1), 1, '''
-            law = crown_authority_2 
-            clr_global_flag = byz_empire_falling 
+            law = crown_authority_2
+            clr_global_flag = byz_empire_falling
             set_global_flag = byz_empire_cracking
             effect = {
                 set_variable = { which = "imperial_dynasty_count" value = 0 }
@@ -292,8 +293,8 @@ changeset = {
             effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
             '''),
         ((1180, 9, 24), 1, '''
-            law = crown_authority_1 
-            clr_global_flag = byz_empire_cracking 
+            law = crown_authority_1
+            clr_global_flag = byz_empire_cracking
             set_global_flag = byz_empire_falling
             effect = {
                 change_variable = { which = "imperial_dynasty_count" value = 1 }
@@ -342,25 +343,25 @@ changeset = {
                 set_variable = { which = "imperial_decay" value = 5 }
             }
             '''),
-        ((1002, 1, 12), 1, '''
+        ((1002, 1, 24), 1, '''
             effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
             '''),
-        ((1024, 7, 13), 1, '''
+        ((1024, 7, 3), 1, '''
             effect = { set_variable = { which = "imperial_dynasty_count" value = 0 } }
             '''),
         ((1039, 6, 4), 1, '''
             effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
             '''),
-        ((1056, 5, 10), 1, '''
+        ((1056, 10, 5), 1, '''
             effect = {
                 change_variable = { which = "imperial_decay" value = 5 }
                 change_variable = { which = "imperial_dynasty_count" value = 1 }
             }
             '''),
-        ((1106, 7, 8), 1, '''
+        ((1106, 8, 7), 1, '''
             effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
             '''),
-        ((1125, 8, 24), 1, '''
+        ((1125, 5, 23), 1, '''
             effect = { set_variable = { which = "imperial_dynasty_count" value = 0 } }
             '''),
         ((1152, 2, 15), 1, '''
@@ -401,11 +402,14 @@ def main():
     emfswmhhistory = emfswmhpath / 'history'
     parser = FullParser()
     parser.fq_keys = ['name']
+    parser.crlf = False
+    parser.tab_indents = False
+    parser.indent_width = 4
     # parser.no_fold_keys.extend(['factor', 'value'])
 
     # shutil.rmtree(str(emfswmhhistory), ignore_errors=True)
     # emfswmhhistory.mkdir(parents=True)
-    
+
     shutil.rmtree(str(emfswmhhistory / 'characters'), ignore_errors=True)
 
     parser.newlines_to_depth = 0
@@ -449,8 +453,7 @@ def main():
         }
         ''').contents
     targetpath = emfswmhhistory / path.relative_to(swmhhistory)
-    with targetpath.open('w', encoding='cp1252', newline='\r\n') as f:
-        f.write(tree.str(parser))
+    parser.write(tree, targetpath)
 
     shutil.rmtree(str(emfswmhhistory / 'titles'), ignore_errors=True)
 
@@ -470,25 +473,49 @@ def main():
         if path.stem in changeset:
             changed = True
             for date, where, text in changeset[path.stem]:
-                tree[date].contents[where:where] = parser.parse(text).contents
+                try:
+                    tree[date].contents[where:where] = parser.parse(text).contents
+                except:
+                    print(path)
+                    raise
             if path.stem == 'e_byzantium':
                 for n, v in tree[3, 1, 27]:
                     if n.val == 'law' and v.val == 'imperial_administration':
                         v.val = 'administration_2'
+        elif path.stem == 'd_apostolic':
+            for p in reversed(tree):
+                for p2 in reversed(p.value):
+                    if p2.key.val != 'holder':
+                        p.value.contents.remove(p2)
+                if len(p.value.contents) == 0:
+                    tree.contents.remove(p)
+            later_history = []
+            for p in reversed(tree):
+                if p.key.val >= (1058, 1, 1):
+                    tree.contents.remove(p)
+                    later_history.insert(0, p)
+            tree.contents.extend(parser.parse('''
+                1058.1.1 = {
+                    holder = 0
+                }
+                ''').contents)
+            parser.write(tree, emfswmhhistory / 'titles/b_etchmiadzin.txt')
+            tree.contents = later_history
+            parser.write(tree, emfswmhhistory / 'titles/b_trazak.txt')
         elif path.stem == 'k_hungary':
             changed = True
             assert len(tree.contents) == 50
             assert len(tree[580, 1, 1].contents) == 1
             item = tree[580, 1, 1].contents.pop()
-            comments = item.key.pre_comments
-            item.key.pre_comments = []
+            comments = item.pre_comments
+            item.pre_comments = []
             comments.extend(
                 [Comment(x) for x in item.inline_str(parser)[0].splitlines()])
             tree[580, 1, 1].ker.pre_comments[:0] = comments
             assert len(tree[797, 1, 1].contents) == 2
             item = tree[797, 1, 1].contents.pop()
-            comments = item.key.pre_comments
-            item.key.pre_comments = []
+            comments = item.pre_comments
+            item.pre_comments = []
             comments.extend(
                 [Comment(x) for x in item.inline_str(parser)[0].splitlines()])
             tree[797, 1, 1].ker.pre_comments[:0] = comments
@@ -505,9 +532,8 @@ def main():
                     set_global_flag = emf_magyar_migration_completed
                 }
                 ''').contents
-            tree.contents[22].key.pre_comments = (
-                tree.contents[24].key.pre_comments)
-            tree.contents[24].key.pre_comments = []
+            tree.contents[22].pre_comments = tree.contents[24].pre_comments
+            tree.contents[24].pre_comments = []
         elif path.stem == 'k_magyar':
             changed = True
             item = tree[20, 1, 1].contents.pop()
@@ -516,18 +542,43 @@ def main():
             tree[764, 1, 1].contents[:0] = parser.parse('''
                 law = succ_gavelkind
                 ''').contents
+        elif path.stem == 'e_china_west_governor':
+            changed = True
+            assert len(tree.contents) == 44
+            tree[1234, 2, 10].contents.extend(parser.parse('''
+                effect = { set_coa = e_china_yuan }
+                ''').contents)
+            tree.contents[37:37] = parser.parse('''
+                1127.1.9 = {
+                    effect = { set_coa = e_china_jin }
+                }
+                ''').contents
+            tree[960, 2, 1].contents.extend(parser.parse('''
+                effect = { set_coa = e_china_song }
+                ''').contents)
+            tree.contents[5:5] = parser.parse('''
+                907.5.12 = {
+                    effect = { reset_coa = THIS }
+                }
+                ''').contents
+            tree.contents[:0] = parser.parse('''
+                618.6.18 = {
+                    effect = { set_coa = e_china_tang }
+                }
+                690.10.16 = {
+                    effect = { set_coa = e_china_zhou }
+                }
+                705.12.16 = {
+                    effect = { set_coa = e_china_tang }
+                }
+                ''').contents
+            tree.contents[0].pre_comments = tree.contents[3].pre_comments
+            tree.contents[3].pre_comments = []
         if changed:
             tree.contents = [p for p in tree.contents
                              if p.value.contents or p.has_comments]
             targetpath = emfswmhhistory / path.relative_to(swmhhistory)
-            with targetpath.open('w', encoding='cp1252', newline='\r\n') as f:
-                f.write(tree.str(parser))
-
-    # for path, tree in parser.parse_files('common/cb_types/*', basedir=MODPATH):
-    #     # for cb_pair in tree:
-    #     #     mutate_cb(cb_pair)
-    #     with path.open('w', encoding='cp1252', newline='\r\n') as f:
-    #         f.write(tree.str(parser))
+            parser.write(tree, targetpath)
 
 if __name__ == '__main__':
     main()

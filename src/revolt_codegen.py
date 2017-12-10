@@ -3,8 +3,9 @@
 import sys
 import datetime
 import ck2parser
-
 from collections import defaultdict
+
+TAB = ' ' * 4
 
 emf_path = ck2parser.rootpath / 'EMF/EMF'
 #revolt_modifier_path = emf_path / 'common/event_modifiers/emf_revolt_codegen_modifiers.txt'
@@ -73,7 +74,7 @@ emf_revolt_ROOT_religion_matches_rebel_victory_title = {
 			ROOT = {{ religion = {0} }}
 		}}'''.format(r), file=f)
 
-	print('\t}\n}', file=f)
+	print(TAB + '}\n}', file=f)
 
 
 #### EFFECTS ####
