@@ -13,7 +13,7 @@ from localpaths import rootpath
 # SWMH into MiniSWMH with a special option to tell it to only generate EMF+MiniSWMH/map/geographical_region.txt
 # from the aforementioned file rather than do its full set of operations.
 
-version = 'v7.03-BETA'
+version = 'v8.0'
 version_path = rootpath / 'EMF/EMF/version.txt'
 emf_src_path = rootpath / 'EMF/src'
 
