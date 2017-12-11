@@ -120,23 +120,26 @@ emf_revolt_spawn_unit_LI9_A7_P5_scale100 = {
 
 # THIS = province from which to spawn, ROOT = rebel leader
 emf_revolt_spawn_post_siege_reinforcements = {
-    ROOT = {
-        spawn_unit = {
-            province = PREV
-            home = PREV
-            owner = THIS
-            scaled_by_biggest_garrison = 0.5
-            troops = {
-                archers = { 5 5 }
-                light_infantry = { 5 5 }
-                pikemen = { 4 4 }
-                heavy_infantry = { 2 2 }
-                light_cavalry = { 1 1 }
+    if = {
+        limit = { event_target:emf_revolt_defender = { ai = no } }
+        ROOT = {
+            spawn_unit = {
+                province = PREV
+                home = PREV
+                owner = THIS
+                scaled_by_biggest_garrison = 0.4
+                troops = {
+                    archers = { 5 5 }
+                    light_infantry = { 5 5 }
+                    pikemen = { 4 4 }
+                    heavy_infantry = { 2 2 }
+                    light_cavalry = { 1 1 }
+                }
+                attrition = 1.0
+                disband_on_peace = yes
+                cannot_inherit = no
+                earmark = emf_revolt
             }
-            attrition = 1.0
-            disband_on_peace = yes
-            cannot_inherit = no
-            earmark = emf_revolt
         }
     }
 }
@@ -361,8 +364,8 @@ emf_revolt_spawn_peasant_ruler_son = {
             dynasty = ROOT
         }
     }
-    if = {
-        limit = { event_target:emf_revolt_youngest = { age = 6 } }
+    else_if = {
+        limit = { event_target:emf_revolt_youngest = { age == 6 } }
         create_character = {
             random_traits = yes
             age = 5
@@ -372,13 +375,8 @@ emf_revolt_spawn_peasant_ruler_son = {
             dynasty = ROOT
         }
     }
-    if = {
-        limit = {
-            event_target:emf_revolt_youngest = {
-                age = 5
-                NOT = { age = 6 }
-            }
-        }
+    else_if = {
+        limit = { event_target:emf_revolt_youngest = { age == 5 } }
         create_character = {
             random_traits = yes
             age = 4
@@ -388,13 +386,8 @@ emf_revolt_spawn_peasant_ruler_son = {
             dynasty = ROOT
         }
     }
-    if = {
-        limit = {
-            event_target:emf_revolt_youngest = {
-                age = 4
-                NOT = { age = 5 }
-            }
-        }
+    else_if = {
+        limit = { event_target:emf_revolt_youngest = { age == 4 } }
         create_character = {
             random_traits = yes
             age = 3
@@ -419,7 +412,6 @@ emf_revolt_religious_cb_cleanup = {
             disband_event_forces = emf_revolt
             clr_character_flag = emf_revolt_religious_leader
             set_character_flag = emf_revolt_was_religious_leader
-            any_claim = { remove_claim = ROOT }
             set_variable = { which = "emf_revolt_allowed_allies" value = 0 }
             if = {
                 limit = {
@@ -433,16 +425,24 @@ emf_revolt_religious_cb_cleanup = {
                 any_courtier = {
                     # TODO: since they might have taken on exiles, move people that aren't lowborn to appropriate places instead
                     # of "disappearing" them. to review, before we destroy our landless title, we must clear our court.
-                    any_claim = {
-                        log = "ASSERT: emf_revolt_religious_cb_cleanup: nobility mixing with peasants: [Prev.GetTitledFirstName] [Prev.GetOnlyDynastyName] has a claim on [This.GetID]"
+                    if = {
+                        limit = {
+                            OR = {
+                                num_of_claims = 1
+                                any_heir_title = { NOT = { has_title_flag = emf_revolt } }
+                                any_pretender_title = { NOT = { has_title_flag = emf_revolt } }
+                            }
+                        }
+                        banish = yes
                     }
-                    death = { death_reason = death_missing }
+                    else = { death = { death_reason = death_missing } }
                 }
             }
             any_demesne_title = {
                 limit = { has_title_flag = emf_revolt }
                 emf_unsafe_destroy_title = yes
             }
+            any_claim = { remove_claim = ROOT }
         }
     }
 }
@@ -471,9 +471,9 @@ emf_revolt_religious_cb_on_success = {
         piety = 100
         # TODO: all of this literally shows no tooltip regarding the provinces to be taken; it'd be nice to do
         #       something about that.
-        # Setup emf_revolt_tmp_claim/capital flags & create a titular duchy
         hidden_tooltip = { occupy_minors_of_occupied_settlements = FROM }
         FROM = {
+            # Setup emf_revolt_tmp_claim/capital flags & create a titular duchy
             character_event = { id = emf_revolt.20 }
             log = "--> subjugating or taking claimed provinces:"
             random_realm_province = {
@@ -481,14 +481,19 @@ emf_revolt_religious_cb_on_success = {
                 emf_revolt_religious_cb_take_province = yes
             }
             while = {
+                count = 30 # This has looped infinitely before, and I don't know why.
                 limit = {
                     any_realm_province = {
                         has_province_flag = emf_revolt_tmp_claim
                         owner = {
+                            under_FROM = yes
                             religion = ROOT
                             lower_tier_than = ROOT
                             in_revolt = no
-                            is_patrician = no
+                            OR = {
+                                is_patrician = no
+                                is_merchant_republic = yes
+                            }
                             NOT = {
                                 any_demesne_province = {
                                     NOT = { has_province_flag = emf_revolt_tmp_claim }
@@ -501,10 +506,14 @@ emf_revolt_religious_cb_on_success = {
                     limit = {
                         has_province_flag = emf_revolt_tmp_claim
                         owner = {
+                            under_FROM = yes
                             religion = ROOT
                             lower_tier_than = ROOT
                             in_revolt = no
-                            is_patrician = no
+                            OR = {
+                                is_patrician = no
+                                is_merchant_republic = yes
+                            }
                             NOT = {
                                 any_demesne_province = {
                                     NOT = { has_province_flag = emf_revolt_tmp_claim }
@@ -515,6 +524,12 @@ emf_revolt_religious_cb_on_success = {
                     owner = {
                         log = "----> subjugating [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
                         emf_ROOT_subjugate_ruler = yes
+                        if = {
+                            limit = { NOT = { vassal_of = ROOT } }
+                            log = "------> ASSERT: failed to vassalize [This.GetHerHim]: taking all their provinces instead..."
+                            any_demesne_province = { emf_revolt_religious_cb_take_province = yes }
+                        }
+                        else = { any_demesne_province = { clr_province_flag = emf_revolt_tmp_claim } }
                     }
                 }
             }

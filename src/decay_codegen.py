@@ -3,6 +3,8 @@
 from pathlib import Path
 from localpaths import rootpath
 
+TAB = ' ' * 4
+
 emf_path = rootpath / 'EMF/EMF'
 effects_path = emf_path / 'common/scripted_effects/emf_decay_codegen_effects.txt'
 modifiers_path = emf_path / 'common/event_modifiers/emf_decay_codegen_modifiers.txt'
@@ -65,8 +67,6 @@ MODIFIERS = [
 	('defensive_plot_power_modifier', defensive_plot_power_modifier, DECIMAL),
 	('retinuesize_perc',              retinuesize_perc,              DECIMAL),
 ]
-
-TAB = ' ' * 4
 
 
 def headers(files):
