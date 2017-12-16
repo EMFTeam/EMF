@@ -553,10 +553,10 @@ def main():
                 ''').contents)
             tree[1125, 3, 26].contents.extend(parser.parse('''
                 effect = { set_coa = e_china_jin }
-                ''').contents
+                ''').contents)
             tree[1005, 1, 1].contents.extend(parser.parse('''
                 effect = { set_coa = e_china_liao }
-                ''').contents
+                ''').contents)
             tree[960, 2, 1].contents.extend(parser.parse('''
                 effect = { set_coa = e_china_song }
                 ''').contents)
