@@ -31,7 +31,7 @@ character_event = {
             any_dynasty_member_even_if_dead = {
                 dynasty = father_bastard # neither 'none' nor '0' work here, so just give them a random one
                 if = {
-                    limit = { is_alive = yes }
+                    limit = { always = yes }
                     death = { death_reason = death_missing }
                 }
             }
@@ -188,7 +188,6 @@ character_event = {
     major = yes
 
     ai = yes
-    only_playable = yes
     only_independent = yes
     only_capable = yes
     min_age = 16
@@ -207,16 +206,14 @@ character_event = {
             is_feudal = yes
             is_tribal = yes
         }
+        emf_can_convert_religion = yes
         NOR = {
             trait = zealous
             is_inaccessible_trigger = yes
             is_ill = yes
             controls_religion = yes
-            can_change_religion = no
         }
-        any_realm_province = {
-            religion_group = muslim
-        }
+        any_realm_province = { religion_group = muslim }
     }
 
     mean_time_to_happen = {
@@ -337,7 +334,7 @@ character_event = {
                         }
                     }
                 }
-                can_change_religion = yes
+                emf_can_convert_religion = yes
                 religion = tengri_pagan
                 NOT = { trait = zealous }
                 is_incapable = no
@@ -410,62 +407,92 @@ character_event = {
 
         capital_scope = { # Seed the capital
             set_province_flag = emf_mongol_connected
-            change_variable = { which = "n_connected" value = 1 }
+            ROOT = { change_variable = { which = "n_connected" value = 1 } }
         }
 
         # First figure out which provinces in the home region are connected
-        while = {
-            limit = {
+        if = {
+            limit = { has_landed_title = e_golden_horde }
+            while = {
+                limit = {
+                    any_realm_province = {
+                        NOT = { has_province_flag = emf_mongol_connected }
+                        emf_golden_horde_province = yes
+                        any_neighbor_province = {
+                            owner_under_ROOT = yes
+                            has_province_flag = emf_mongol_connected
+                        }
+                    }
+                }
                 any_realm_province = {
-                    NOT = { has_province_flag = emf_mongol_connected }
-                    OR = {
-                        AND = {
-                            ROOT = { has_landed_title = e_golden_horde }
-                            emf_golden_horde_province = yes
-                        }
-                        AND = {
-                            ROOT = { has_landed_title = e_il-khanate }
-                            emf_il_khanate_province = yes
-                        }
-                        AND = {
-                            ROOT = { has_landed_title = e_chagatai }
-                            emf_chagatai_province = yes
+                    limit = {
+                        NOT = { has_province_flag = emf_mongol_connected }
+                        emf_golden_horde_province = yes
+                        any_neighbor_province = {
+                            owner_under_ROOT = yes
+                            has_province_flag = emf_mongol_connected
                         }
                     }
-                    any_neighbor_province = {
-                        owner_under_ROOT = yes
-                        has_province_flag = emf_mongol_connected
-                    }
+                    set_province_flag = emf_mongol_connected
+                    ROOT = { change_variable = { which = "n_connected" value = 1 } }
                 }
             }
-            any_realm_province = {
+        }
+        else_if = {
+            limit = { has_landed_title = e_il-khanate }
+            while = {
                 limit = {
-                    NOT = { has_province_flag = emf_mongol_connected }
-                    OR = {
-                        AND = {
-                            ROOT = { has_landed_title = e_golden_horde }
-                            emf_golden_horde_province = yes
+                    any_realm_province = {
+                        NOT = { has_province_flag = emf_mongol_connected }
+                        emf_il_khanate_province = yes
+                        any_neighbor_province = {
+                            owner_under_ROOT = yes
+                            has_province_flag = emf_mongol_connected
                         }
-                        AND = {
-                            ROOT = { has_landed_title = e_il-khanate }
-                            emf_il_khanate_province = yes
-                        }
-                        AND = {
-                            ROOT = { has_landed_title = e_chagatai }
-                            emf_chagatai_province = yes
-                        }
-                    }
-                    any_neighbor_province = {
-                        owner_under_ROOT = yes
-                        has_province_flag = emf_mongol_connected
                     }
                 }
-                set_province_flag = emf_mongol_connected
-                change_variable = { which = "n_connected" value = 1 }
+                any_realm_province = {
+                    limit = {
+                        NOT = { has_province_flag = emf_mongol_connected }
+                        emf_il_khanate_province = yes
+                        any_neighbor_province = {
+                            owner_under_ROOT = yes
+                            has_province_flag = emf_mongol_connected
+                        }
+                    }
+                    set_province_flag = emf_mongol_connected
+                    ROOT = { change_variable = { which = "n_connected" value = 1 } }
+                }
+            }
+        }
+        else = {
+            while = {
+                limit = {
+                    any_realm_province = {
+                        NOT = { has_province_flag = emf_mongol_connected }
+                        emf_chagatai_province = yes
+                        any_neighbor_province = {
+                            owner_under_ROOT = yes
+                            has_province_flag = emf_mongol_connected
+                        }
+                    }
+                }
+                any_realm_province = {
+                    limit = {
+                        NOT = { has_province_flag = emf_mongol_connected }
+                        emf_chagatai_province = yes
+                        any_neighbor_province = {
+                            owner_under_ROOT = yes
+                            has_province_flag = emf_mongol_connected
+                        }
+                    }
+                    set_province_flag = emf_mongol_connected
+                    ROOT = { change_variable = { which = "n_connected" value = 1 } }
+                }
             }
         }
 
-        # Then allow the flags to extend up to two provinces outside the home region
+        # Then allow the flags to extend up to two provinces (radially) outside the home region
         any_realm_province = {
             limit = {
                 NOT = { has_province_flag = emf_mongol_connected }
@@ -475,7 +502,7 @@ character_event = {
                 }
             }
             set_province_flag = emf_mongol_connected
-            change_variable = { which = "n_connected" value = 1 }
+            ROOT = { change_variable = { which = "n_connected" value = 1 } }
         }
         any_realm_province = {
             limit = {
@@ -486,13 +513,13 @@ character_event = {
                 }
             }
             set_province_flag = emf_mongol_connected
-            change_variable = { which = "n_connected" value = 1 }
+            ROOT = { change_variable = { which = "n_connected" value = 1 } }
         }
 
         set_variable = { which = "n_disconnected" which = "n_total" }
         subtract_variable = { which = "n_disconnected" which = "n_connected" }
 
-        log = "--> Provinces connected: [Root.n_connected.GetValue] / [Root.n_total.GetValue] ([Root.n_disconnected.GetValue] not connnected)"
+        log = "--> provinces connected: [Root.n_connected.GetValue] / [Root.n_total.GetValue] ([Root.n_disconnected.GetValue] not connnected)"
 
         set_variable = { which = "n_disconnected" value = 0 }
         set_variable = { which = "n_connected" value = 0 }
@@ -558,6 +585,12 @@ narrative_event = {
 
     immediate = {
         log = "INFO: emf_mongol.200: [Root.GetTitledFirstName] [Root.GetOnlyDynastyName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) has died with sufficient conditions for a 3-way mongol empire split"
+        current_heir = {
+            log = "--> current_heir: [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+        }
+        player_heir = {
+            log = "--> player_heir: [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+        }
         # First attempt to give titles to historical people
         # Starting with Jochi & descendants
         if = {
@@ -615,7 +648,7 @@ narrative_event = {
         current_heir = {
             if = {
                 limit = {
-                    NOT = { event_target:first_mongol_heir = { is_alive = yes } }
+                    NOT = { event_target:first_mongol_heir = { always = yes } }
                     NOR = {
                         trait = craven
                         trait = content
@@ -636,7 +669,7 @@ narrative_event = {
         }
         random_dynasty_member = {
             limit = {
-                NOT = { event_target:first_mongol_heir = { is_alive = yes } }
+                NOT = { event_target:first_mongol_heir = { always = yes } }
                 ROOT = { NOT = { has_character_flag = line_of_jochi } }
                 has_character_flag = line_of_jochi
                 emf_valid_mongol_heir_for_ROOT = yes
@@ -653,7 +686,7 @@ narrative_event = {
         }
         random_dynasty_member = {
             limit = {
-                NOT = { event_target:second_mongol_heir = { is_alive = yes } }
+                NOT = { event_target:second_mongol_heir = { always = yes } }
                 ROOT = { NOT = { has_character_flag = line_of_tolui } }
                 has_character_flag = line_of_tolui
                 emf_valid_mongol_heir_for_ROOT = yes
@@ -670,7 +703,7 @@ narrative_event = {
         }
         random_dynasty_member = {
             limit = {
-                NOT = { event_target:third_mongol_heir = { is_alive = yes } }
+                NOT = { event_target:third_mongol_heir = { always = yes } }
                 ROOT = { NOT = { has_character_flag = line_of_chagatai } }
                 has_character_flag = line_of_chagatai
                 emf_valid_mongol_heir_for_ROOT = yes
@@ -690,7 +723,7 @@ narrative_event = {
         # Give Golden Horde to someone who's already a king in that region
         random_dynasty_member = {
             limit = {
-                NOT = { event_target:first_mongol_heir = { is_alive = yes } }
+                NOT = { event_target:first_mongol_heir = { always = yes } }
                 tier = KING
                 emf_valid_mongol_heir_for_ROOT = yes
                 capital_scope = { emf_golden_horde_province = yes }
@@ -716,7 +749,7 @@ narrative_event = {
         }
         random_dynasty_member = {
             limit = {
-                NOT = { event_target:first_mongol_heir = { is_alive = yes } }
+                NOT = { event_target:first_mongol_heir = { always = yes } }
                 tier = KING
                 emf_valid_mongol_heir_for_ROOT = yes
                 capital_scope = { emf_golden_horde_province = yes }
@@ -741,7 +774,7 @@ narrative_event = {
         # Give Golden Horde to someone who's already a duke in that region
         random_dynasty_member = {
             limit = {
-                NOT = { event_target:first_mongol_heir = { is_alive = yes } }
+                NOT = { event_target:first_mongol_heir = { always = yes } }
                 tier = DUKE
                 emf_valid_mongol_heir_for_ROOT = yes
                 capital_scope = { emf_golden_horde_province = yes }
@@ -767,7 +800,7 @@ narrative_event = {
         }
         random_dynasty_member = {
             limit = {
-                NOT = { event_target:first_mongol_heir = { is_alive = yes } }
+                NOT = { event_target:first_mongol_heir = { always = yes } }
                 tier = DUKE
                 emf_valid_mongol_heir_for_ROOT = yes
                 capital_scope = { emf_golden_horde_province = yes }
@@ -792,7 +825,7 @@ narrative_event = {
         # Otherwise give Golden Horde to eldest available heir
         random_dynasty_member = {
             limit = {
-                NOT = { event_target:first_mongol_heir = { is_alive = yes } }
+                NOT = { event_target:first_mongol_heir = { always = yes } }
                 emf_valid_mongol_heir_for_ROOT = yes
                 emf_child_or_heir_grandchild_of_ROOT = yes
                 NOR = {
@@ -812,13 +845,9 @@ narrative_event = {
             save_event_target_as = first_mongol_heir
             log = "----> 1st heir is the eldest available dynastic heir (variant #1): [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
         }
-        if = {
-            limit = { NOT = { event_target:first_mongol_heir = { always = yes } } }
-            log = "----> reached fallback selection case for 1st heir"
-        }
         random_dynasty_member = {
             limit = {
-                NOT = { event_target:first_mongol_heir = { is_alive = yes } }
+                NOT = { event_target:first_mongol_heir = { always = yes } }
                 emf_valid_mongol_heir_for_ROOT = yes
                 NOR = {
                     character = event_target:second_mongol_heir
@@ -836,10 +865,34 @@ narrative_event = {
             save_event_target_as = first_mongol_heir
             log = "----> 1st heir is the eldest available dynastic heir (variant #2): [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
         }
+        if = {
+            limit = { NOT = { event_target:first_mongol_heir = { always = yes } } }
+            log = "----> reached fallback selection case for 1st heir, creating a character to fill the role for debugging purposes"
+            create_character = {
+                random_traits = no
+                culture = ROOT
+                religion = ROOT
+                dynasty = ROOT
+                female = no
+                age = 23
+                trait = brilliant_strategist
+                trait = brave
+                trait = ambitious
+                trait = proud
+                trait = quick
+                trait = fertile
+            }
+            new_character = {
+                set_character_flag = line_of_jochi
+                set_father = ROOT
+                emf_new_character_noble = yes
+                save_event_target_as = first_mongol_heir
+            }
+        }
         # Give Il-Khanate to someone who's already a king in that region
         random_dynasty_member = {
             limit = {
-                NOT = { event_target:second_mongol_heir = { is_alive = yes } }
+                NOT = { event_target:second_mongol_heir = { always = yes } }
                 tier = KING
                 emf_valid_mongol_heir_for_ROOT = yes
                 capital_scope = { emf_il_khanate_province = yes }
@@ -865,7 +918,7 @@ narrative_event = {
         }
         random_dynasty_member = {
             limit = {
-                NOT = { event_target:second_mongol_heir = { is_alive = yes } }
+                NOT = { event_target:second_mongol_heir = { always = yes } }
                 tier = KING
                 emf_valid_mongol_heir_for_ROOT = yes
                 capital_scope = { emf_il_khanate_province = yes }
@@ -890,7 +943,7 @@ narrative_event = {
         # Give Il-Khanate to someone who's already a duke in that region
         random_dynasty_member = {
             limit = {
-                NOT = { event_target:second_mongol_heir = { is_alive = yes } }
+                NOT = { event_target:second_mongol_heir = { always = yes } }
                 tier = DUKE
                 emf_valid_mongol_heir_for_ROOT = yes
                 capital_scope = { emf_il_khanate_province = yes }
@@ -916,7 +969,7 @@ narrative_event = {
         }
         random_dynasty_member = {
             limit = {
-                NOT = { event_target:second_mongol_heir = { is_alive = yes } }
+                NOT = { event_target:second_mongol_heir = { always = yes } }
                 tier = DUKE
                 emf_valid_mongol_heir_for_ROOT = yes
                 capital_scope = { emf_il_khanate_province = yes }
@@ -942,7 +995,7 @@ narrative_event = {
         current_heir = {
             if = {
                 limit = {
-                    NOT = { event_target:second_mongol_heir = { is_alive = yes } }
+                    NOT = { event_target:second_mongol_heir = { always = yes } }
                     NOR = {
                         character = event_target:first_mongol_heir
                         character = event_target:third_mongol_heir
@@ -954,7 +1007,7 @@ narrative_event = {
         }
         random_dynasty_member = {
             limit = {
-                NOT = { event_target:second_mongol_heir = { is_alive = yes } }
+                NOT = { event_target:second_mongol_heir = { always = yes } }
                 emf_valid_mongol_heir_for_ROOT = yes
                 emf_child_or_heir_grandchild_of_ROOT = yes
                 NOR = {
@@ -976,7 +1029,7 @@ narrative_event = {
         }
         random_dynasty_member = {
             limit = {
-                NOT = { event_target:second_mongol_heir = { is_alive = yes } }
+                NOT = { event_target:second_mongol_heir = { always = yes } }
                 emf_valid_mongol_heir_for_ROOT = yes
                 NOR = {
                     character = event_target:first_mongol_heir
@@ -994,10 +1047,34 @@ narrative_event = {
             save_event_target_as = second_mongol_heir
             log = "----> 2nd heir is the eldest available dynastic heir (variant #2): [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
         }
+        if = {
+            limit = { NOT = { event_target:second_mongol_heir = { always = yes } } }
+            log = "----> reached fallback selection case for 2nd heir, creating a character to fill the role for debugging purposes"
+            create_character = {
+                random_traits = no
+                culture = ROOT
+                religion = ROOT
+                dynasty = ROOT
+                female = no
+                age = 22
+                trait = brilliant_strategist
+                trait = brave
+                trait = ambitious
+                trait = proud
+                trait = quick
+                trait = fertile
+            }
+            new_character = {
+                set_character_flag = line_of_tolui
+                set_father = ROOT
+                emf_new_character_noble = yes
+                save_event_target_as = second_mongol_heir
+            }
+        }
         # Give Chagatai to someone who's already a king in that region
         random_dynasty_member = {
             limit = {
-                NOT = { event_target:third_mongol_heir = { is_alive = yes } }
+                NOT = { event_target:third_mongol_heir = { always = yes } }
                 tier = KING
                 emf_valid_mongol_heir_for_ROOT = yes
                 capital_scope = { emf_chagatai_province = yes }
@@ -1023,7 +1100,7 @@ narrative_event = {
         }
         random_dynasty_member = {
             limit = {
-                NOT = { event_target:third_mongol_heir = { is_alive = yes } }
+                NOT = { event_target:third_mongol_heir = { always = yes } }
                 tier = KING
                 emf_valid_mongol_heir_for_ROOT = yes
                 capital_scope = { emf_chagatai_province = yes }
@@ -1048,7 +1125,7 @@ narrative_event = {
         # Give Chagatai to someone who's already a duke in that region
         random_dynasty_member = {
             limit = {
-                NOT = { event_target:third_mongol_heir = { is_alive = yes } }
+                NOT = { event_target:third_mongol_heir = { always = yes } }
                 tier = DUKE
                 emf_valid_mongol_heir_for_ROOT = yes
                 capital_scope = { emf_chagatai_province = yes }
@@ -1074,7 +1151,7 @@ narrative_event = {
         }
         random_dynasty_member = {
             limit = {
-                NOT = { event_target:third_mongol_heir = { is_alive = yes } }
+                NOT = { event_target:third_mongol_heir = { always = yes } }
                 tier = DUKE
                 emf_valid_mongol_heir_for_ROOT = yes
                 capital_scope = { emf_chagatai_province = yes }
@@ -1100,7 +1177,7 @@ narrative_event = {
         current_heir = {
             if = {
                 limit = {
-                    NOT = { event_target:third_mongol_heir = { is_alive = yes } }
+                    NOT = { event_target:third_mongol_heir = { always = yes } }
                     NOR = {
                         character = event_target:first_mongol_heir
                         character = event_target:second_mongol_heir
@@ -1112,7 +1189,7 @@ narrative_event = {
         }
         random_dynasty_member = {
             limit = {
-                NOT = { event_target:third_mongol_heir = { is_alive = yes } }
+                NOT = { event_target:third_mongol_heir = { always = yes } }
                 emf_valid_mongol_heir_for_ROOT = yes
                 emf_child_or_heir_grandchild_of_ROOT = yes
                 NOR = {
@@ -1134,7 +1211,7 @@ narrative_event = {
         }
         random_dynasty_member = {
             limit = {
-                NOT = { event_target:third_mongol_heir = { is_alive = yes } }
+                NOT = { event_target:third_mongol_heir = { always = yes } }
                 emf_valid_mongol_heir_for_ROOT = yes
                 NOR = {
                     character = event_target:first_mongol_heir
@@ -1152,6 +1229,30 @@ narrative_event = {
             save_event_target_as = third_mongol_heir
             log = "----> 3rd heir is the eldest available dynastic heir (variant #2): [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
         }
+        if = {
+            limit = { NOT = { event_target:third_mongol_heir = { always = yes } } }
+            log = "----> reached fallback selection case for 3rd heir, creating a character to fill the role for debugging purposes..."
+            create_character = {
+                random_traits = no
+                culture = ROOT
+                religion = ROOT
+                dynasty = ROOT
+                female = no
+                age = 21
+                trait = brilliant_strategist
+                trait = brave
+                trait = ambitious
+                trait = proud
+                trait = quick
+                trait = fertile
+            }
+            new_character = {
+                set_character_flag = line_of_chagatai
+                set_father = ROOT
+                emf_new_character_noble = yes
+                save_event_target_as = third_mongol_heir
+            }
+        }
 
         log = "--> heir selection complete:"
         log = "----> Golden Horde (#1): [first_mongol_heir.GetTitledFirstName] [first_mongol_heir.GetOnlyDynastyName] (#[first_mongol_heir.GetID]/[first_mongol_heir.PrimaryTitle.GetID])"
@@ -1161,9 +1262,9 @@ narrative_event = {
         if = {
             limit = {
                 NAND = {
-                    event_target:first_mongol_heir = { is_alive = yes }
-                    event_target:second_mongol_heir = { is_alive = yes }
-                    event_target:third_mongol_heir = { is_alive = yes }
+                    event_target:first_mongol_heir = { always = yes }
+                    event_target:second_mongol_heir = { always = yes }
+                    event_target:third_mongol_heir = { always = yes }
                 }
             }
             log = "--> ASSERT: at least one of the three heirs wasn't assigned!"
