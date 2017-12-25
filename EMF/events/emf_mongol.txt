@@ -865,6 +865,18 @@ narrative_event = {
             save_event_target_as = first_mongol_heir
             log = "----> 1st heir is the eldest available dynastic heir (variant #2): [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
         }
+        random_dynasty_member = {
+            limit = {
+                NOT = { event_target:first_mongol_heir = { always = yes } }
+                emf_valid_mongol_heir_for_ROOT = yes
+                NOR = {
+                    character = event_target:second_mongol_heir
+                    character = event_target:third_mongol_heir
+                }
+            }
+            save_event_target_as = first_mongol_heir
+            log = "----> 1st heir is some valid dynastic heir: [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+        }
         if = {
             limit = { NOT = { event_target:first_mongol_heir = { always = yes } } }
             log = "----> reached fallback selection case for 1st heir, creating a character to fill the role for debugging purposes"
@@ -883,7 +895,6 @@ narrative_event = {
                 trait = fertile
             }
             new_character = {
-                set_character_flag = line_of_jochi
                 set_father = ROOT
                 emf_new_character_noble = yes
                 save_event_target_as = first_mongol_heir
@@ -1047,6 +1058,18 @@ narrative_event = {
             save_event_target_as = second_mongol_heir
             log = "----> 2nd heir is the eldest available dynastic heir (variant #2): [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
         }
+        random_dynasty_member = {
+            limit = {
+                NOT = { event_target:second_mongol_heir = { always = yes } }
+                emf_valid_mongol_heir_for_ROOT = yes
+                NOR = {
+                    character = event_target:first_mongol_heir
+                    character = event_target:third_mongol_heir
+                }
+            }
+            save_event_target_as = second_mongol_heir
+            log = "----> 2nd heir is some valid dynastic heir: [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+        }
         if = {
             limit = { NOT = { event_target:second_mongol_heir = { always = yes } } }
             log = "----> reached fallback selection case for 2nd heir, creating a character to fill the role for debugging purposes"
@@ -1065,7 +1088,6 @@ narrative_event = {
                 trait = fertile
             }
             new_character = {
-                set_character_flag = line_of_tolui
                 set_father = ROOT
                 emf_new_character_noble = yes
                 save_event_target_as = second_mongol_heir
@@ -1229,6 +1251,18 @@ narrative_event = {
             save_event_target_as = third_mongol_heir
             log = "----> 3rd heir is the eldest available dynastic heir (variant #2): [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
         }
+        random_dynasty_member = {
+            limit = {
+                NOT = { event_target:third_mongol_heir = { always = yes } }
+                emf_valid_mongol_heir_for_ROOT = yes
+                NOR = {
+                    character = event_target:first_mongol_heir
+                    character = event_target:second_mongol_heir
+                }
+            }
+            save_event_target_as = third_mongol_heir
+            log = "----> 3rd heir is some valid dynastic heir: [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+        }
         if = {
             limit = { NOT = { event_target:third_mongol_heir = { always = yes } } }
             log = "----> reached fallback selection case for 3rd heir, creating a character to fill the role for debugging purposes..."
@@ -1283,26 +1317,17 @@ narrative_event = {
         disband_event_forces = horde_invasion
         disband_event_forces = start_troops
 
-        # Invalidate all internal civil wars
+        # Invalidate all internal wars as well
         any_realm_lord = {
-            limit = { tier = KING }
-            character_event = { id = emf_cb.5 }
-            character_event = { id = emf_cb.6 }
-        }
-        any_realm_lord = {
-            limit = { tier = DUKE }
-            character_event = { id = emf_cb.5 }
-            character_event = { id = emf_cb.6 }
-        }
-        any_realm_lord = {
-            limit = { tier = COUNT }
-            character_event = { id = emf_cb.5 }
-            character_event = { id = emf_cb.6 }
-        }
-        any_realm_lord = {
-            limit = { tier = BARON }
-            character_event = { id = emf_cb.5 }
-            character_event = { id = emf_cb.6 }
+            any_war = {
+                limit = {
+                    OR = {
+                        attacker = { character = PREV }
+                        defender = { character = PREV }
+                    }
+                }
+                end_war = invalid
+            }
         }
 
         ### Now do the actual transfer to the new horde titles
@@ -1336,16 +1361,18 @@ narrative_event = {
         event_target:second_mongol_heir = { emf_create_mongol_dynasty = yes }
         event_target:third_mongol_heir = { emf_create_mongol_dynasty = yes }
 
+        any_realm_province = { clr_province_flag = emf_capital_connected }
+
         log = "--> granting successor empires..."
 
         # Create the new horde titles
-        activate_title = { title = e_golden_horde status = yes }
         e_golden_horde = {
+            activate_title = { title = THIS status = yes }
             set_title_landless = { title = THIS status = yes }
             set_title_flag = temporary_landless_title
             grant_title = event_target:first_mongol_heir
             copy_title_laws = e_mongol_empire
-            emf_try_to_make_primary_title = yes
+            make_primary_title = yes
         }
 
         if = {
@@ -1358,6 +1385,7 @@ narrative_event = {
         }
 
         event_target:first_mongol_heir = {
+            set_defacto_liege = THIS
             wealth = 5000
             prestige = 1000
             if = {
@@ -1379,12 +1407,12 @@ narrative_event = {
             }
         }
 
-        activate_title = { title = e_il-khanate status = yes }
         e_il-khanate = {
+            activate_title = { title = THIS status = yes }
             set_title_landless = { title = THIS status = yes }
             set_title_flag = temporary_landless_title
             grant_title = event_target:second_mongol_heir
-            emf_try_to_make_primary_title = yes
+            make_primary_title = yes
         }
 
         if = {
@@ -1397,6 +1425,7 @@ narrative_event = {
         }
 
         event_target:second_mongol_heir = {
+            set_defacto_liege = THIS
             wealth = 4000
             prestige = 800
             emf_switch_to_feudal_gov = yes
@@ -1406,13 +1435,13 @@ narrative_event = {
             }
         }
 
-        activate_title = { title = e_chagatai status = yes }
         e_chagatai = {
+            activate_title = { title = THIS status = yes }
             set_title_landless = { title = THIS status = yes }
             set_title_flag = temporary_landless_title
-            copy_title_laws = e_mongol_empire
             grant_title = event_target:third_mongol_heir
-            emf_try_to_make_primary_title = yes
+            copy_title_laws = e_mongol_empire
+            make_primary_title = yes
         }
 
         if = {
@@ -1425,6 +1454,7 @@ narrative_event = {
         }
 
         event_target:third_mongol_heir = {
+            set_defacto_liege = THIS
             wealth = 1000
             prestige = 250
             if = {
@@ -1456,7 +1486,8 @@ narrative_event = {
 
         log = "--> ensuring heirs get at least one county in their respective regions..."
 
-        primary_title = { set_title_landless = { title = THIS status = yes } }
+        clan_title = { emf_unsafe_destroy_title = yes }
+        set_title_landless = { title = e_mongol_empire status = yes }
 
         # Ensure first heir gets at least one county in Golden Horde region
         if = {
@@ -1624,6 +1655,21 @@ narrative_event = {
                 grant_title = event_target:second_mongol_heir
             }
         }
+        if = {
+            limit = {
+                event_target:second_mongol_heir = { NOT = { any_demesne_province = { emf_il_khanate_province = yes } } }
+            }
+            random_realm_title = {
+                limit = {
+                    tier = COUNT
+                    location = {
+                        emf_il_khanate_province = yes
+                        owner = { ai = yes }
+                    }
+                }
+                grant_title = event_target:second_mongol_heir
+            }
+        }
 
         if = {
             limit = {
@@ -1763,9 +1809,6 @@ narrative_event = {
             character_event = { id = emf_mongol.203 }
         }
 
-        clan_title = { emf_unsafe_destroy_title = yes }
-        primary_title = { set_title_landless = { title = THIS status = yes } }
-
         log = "--> now granting rest of non-primary titles to heirs..."
 
         # Give up non-primary titles now
@@ -1778,15 +1821,21 @@ narrative_event = {
         event_target:second_mongol_heir = { character_event = { id = emf_mongol.204 } }
         event_target:third_mongol_heir = { character_event = { id = emf_mongol.204 } }
 
-        # Deactivate the primary title
-        # Note: we don't destroy it because we want it to be visible for the event text
-        # deactivated titles will automatically be destroyed as soon as they are passed on
-        e_mongol_empire = {
-            activate_title = { title = THIS status = no }
-            set_title_flag = emf_autodestroy
+        # Get rid of the remaining courtiers
+        any_courtier = {
+            limit = { is_ruler = no }
+            random_list = {
+                10 = { move_character = event_target:first_mongol_heir }
+                10 = { move_character = event_target:second_mongol_heir }
+                10 = { move_character = event_target:third_mongol_heir }
+            }
         }
+        any_courtier = {
+            limit = { prisoner = yes }
+            prisoner = no
+        }
+        any_courtier = { banish = yes }
 
-        # Clean up flags
         clr_global_flag = jochi_dynasty_created
         clr_global_flag = chagatai_dynasty_created
         clr_global_flag = ogodei_dynasty_created
@@ -1797,6 +1846,7 @@ narrative_event = {
             clr_character_flag = line_of_ogodei
             clr_character_flag = line_of_tolui
         }
+        any_landed_title = { clr_character_flag = emf_mongol_split_granted }
     }
 
     option = {
@@ -1831,6 +1881,49 @@ narrative_event = {
             event_target:first_mongol_heir = { custom_tooltip = { text = NOTIFY_TOOLTIP } }
             event_target:second_mongol_heir = { custom_tooltip = { text = NOTIFY_TOOLTIP } }
             event_target:third_mongol_heir = { custom_tooltip = { text = NOTIFY_TOOLTIP } }
+        }
+    }
+
+    after = {
+        if = {
+            limit = { character = ROOT }
+            e_mongol_empire = {
+                #set_title_landless = { title = THIS status = no }
+                set_title_flag = emf_defunct
+                #emf_destroy_title = yes
+            }
+            isis = { character_event = { id = emf_mongol.201 days = 1 }  }
+            if = {
+                limit = { any_demesne_title = { NOR = { title = e_mongol_empire holding_type = nomad } } }
+                log = "--> ASSERT: dying khan still has at least 1 regular title before succession:"
+                any_demesne_title = {
+                    log = "----> [This.GetID]"
+                }
+            }
+        }
+    }
+}
+
+character_event = {
+    id = emf_mongol.201
+    hide_window = yes
+    is_triggered_only = yes
+
+    trigger = {
+        has_landed_title = e_hip
+        e_mongol_empire = {
+            has_title_flag = emf_defunct
+            OR = {
+                has_holder = yes
+                is_landless_type_title = yes
+            }
+        }
+    }
+
+    immediate = {
+        e_mongol_empire = {
+            set_title_landless = { title = THIS status = no }
+            emf_destroy_title = yes
         }
     }
 }
@@ -2184,7 +2277,6 @@ character_event = {
         emf_mongol_spawn_unit = yes
         emf_mongol_spawn_unit = yes
         hidden_tooltip = {
-            emf_create_courtiers = yes
             any_courtier = {
                 limit = { is_ruler = no }
                 any_claim = {
@@ -2209,7 +2301,7 @@ character_event = {
                 }
                 e_mongol_empire = { remove_claim = PREV }
             }
-            any_realm_province = { clr_province_flag = emf_capital_connected } # Remove old state #um, emf_mongol_connected?
+            emf_create_courtiers = yes
             character_event = { id = emf_mongol.105 } # Establish contiguous provinces
             character_event = { id = emf_mongol.205 days = 1 } # Surrender cut-off realm provinces
         }
@@ -2251,7 +2343,6 @@ character_event = {
         emf_mongol_spawn_unit = yes
         emf_mongol_spawn_unit = yes
         hidden_tooltip = {
-            emf_create_courtiers = yes
             any_courtier = {
                 limit = { is_ruler = no }
                 any_claim = {
@@ -2276,7 +2367,7 @@ character_event = {
                 }
                 e_mongol_empire = { remove_claim = PREV }
             }
-            any_realm_province = { clr_province_flag = emf_capital_connected } # Remove old state
+            emf_create_courtiers = yes
             character_event = { id = emf_mongol.105 } # Establish contiguous provinces
             character_event = { id = emf_mongol.205 days = 1 } # Surrender cut-off realm provinces
         }
@@ -2337,7 +2428,6 @@ character_event = {
                 }
                 e_mongol_empire = { remove_claim = PREV }
             }
-            any_realm_province = { clr_province_flag = emf_capital_connected } # Remove old state #again, wrong flag?
             character_event = { id = emf_mongol.105 } # Establish contiguous provinces
             character_event = { id = emf_mongol.205 days = 1 } # Surrender cut-off realm provinces
         }
@@ -2379,32 +2469,44 @@ character_event = {
                 any_demesne_title = {
                     limit = {
                         OR = {
-                            capital_scope = {
-                                NOT = { has_province_flag = emf_mongol_connected }
-                                emf_il_khanate_province = yes
+                            AND = {
+                                higher_tier_than = COUNT
+                                capital_scope = {
+                                    NOT = { has_province_flag = emf_mongol_connected }
+                                    emf_il_khanate_province = yes
+                                }
                             }
-                            location = {
-                                NOT = { has_province_flag = emf_mongol_connected }
-                                emf_il_khanate_province = yes
+                            AND = {
+                                lower_tier_than = DUKE
+                                location = {
+                                    NOT = { has_province_flag = emf_mongol_connected }
+                                    emf_il_khanate_province = yes
+                                }
                             }
                         }
                     }
-                    event_target:second_mongol_heir = { grant_title = PREV }
+                    grant_title = event_target:second_mongol_heir
                 }
                 any_demesne_title = {
                     limit = {
                         OR = {
-                            capital_scope = {
-                                NOT = { has_province_flag = emf_mongol_connected }
-                                emf_chagatai_province = yes
+                            AND = {
+                                higher_tier_than = COUNT
+                                capital_scope = {
+                                    NOT = { has_province_flag = emf_mongol_connected }
+                                    emf_chagatai_province = yes
+                                }
                             }
-                            location = {
-                                NOT = { has_province_flag = emf_mongol_connected }
-                                emf_chagatai_province = yes
+                            AND = {
+                                lower_tier_than = DUKE
+                                location = {
+                                    NOT = { has_province_flag = emf_mongol_connected }
+                                    emf_chagatai_province = yes
+                                }
                             }
                         }
                     }
-                    event_target:third_mongol_heir = { grant_title = PREV }
+                    grant_title = event_target:third_mongol_heir
                 }
                 if = {
                     limit = { NOT = { top_liege = { character = event_target:first_mongol_heir } } }
@@ -2417,32 +2519,44 @@ character_event = {
                 any_demesne_title = {
                     limit = {
                         OR = {
-                            capital_scope = {
-                                NOT = { has_province_flag = emf_mongol_connected }
-                                emf_golden_horde_province = yes
+                            AND = {
+                                higher_tier_than = COUNT
+                                capital_scope = {
+                                    NOT = { has_province_flag = emf_mongol_connected }
+                                    emf_golden_horde_province = yes
+                                }
                             }
-                            location = {
-                                NOT = { has_province_flag = emf_mongol_connected }
-                                emf_golden_horde_province = yes
+                            AND = {
+                                lower_tier_than = DUKE
+                                location = {
+                                    NOT = { has_province_flag = emf_mongol_connected }
+                                    emf_golden_horde_province = yes
+                                }
                             }
                         }
                     }
-                    event_target:first_mongol_heir = { grant_title = PREV }
+                    grant_title = event_target:first_mongol_heir
                 }
                 any_demesne_title = {
                     limit = {
                         OR = {
-                            capital_scope = {
-                                NOT = { has_province_flag = emf_mongol_connected }
-                                emf_chagatai_province = yes
+                            AND = {
+                                higher_tier_than = COUNT
+                                capital_scope = {
+                                    NOT = { has_province_flag = emf_mongol_connected }
+                                    emf_chagatai_province = yes
+                                }
                             }
-                            location = {
-                                NOT = { has_province_flag = emf_mongol_connected }
-                                emf_chagatai_province = yes
+                            AND = {
+                                lower_tier_than = DUKE
+                                location = {
+                                    NOT = { has_province_flag = emf_mongol_connected }
+                                    emf_chagatai_province = yes
+                                }
                             }
                         }
                     }
-                    event_target:third_mongol_heir = { grant_title = PREV }
+                    grant_title = event_target:third_mongol_heir
                 }
                 if = {
                     limit = { NOT = { top_liege = { character = event_target:second_mongol_heir } } }
@@ -2455,32 +2569,44 @@ character_event = {
                 any_demesne_title = {
                     limit = {
                         OR = {
-                            capital_scope = {
-                                NOT = { has_province_flag = emf_mongol_connected }
-                                emf_golden_horde_province = yes
+                            AND = {
+                                higher_tier_than = COUNT
+                                capital_scope = {
+                                    NOT = { has_province_flag = emf_mongol_connected }
+                                    emf_golden_horde_province = yes
+                                }
                             }
-                            location = {
-                                NOT = { has_province_flag = emf_mongol_connected }
-                                emf_golden_horde_province = yes
+                            AND = {
+                                lower_tier_than = DUKE
+                                location = {
+                                    NOT = { has_province_flag = emf_mongol_connected }
+                                    emf_golden_horde_province = yes
+                                }
                             }
                         }
                     }
-                    event_target:first_mongol_heir = { grant_title = PREV }
+                    grant_title = event_target:first_mongol_heir
                 }
                 any_demesne_title = {
                     limit = {
                         OR = {
-                            capital_scope = {
-                                NOT = { has_province_flag = emf_mongol_connected }
-                                emf_il_khanate_province = yes
+                            AND = {
+                                higher_tier_than = COUNT
+                                capital_scope = {
+                                    NOT = { has_province_flag = emf_mongol_connected }
+                                    emf_il_khanate_province = yes
+                                }
                             }
-                            location = {
-                                NOT = { has_province_flag = emf_mongol_connected }
-                                emf_il_khanate_province = yes
+                            AND = {
+                                lower_tier_than = DUKE
+                                location = {
+                                    NOT = { has_province_flag = emf_mongol_connected }
+                                    emf_il_khanate_province = yes
+                                }
                             }
                         }
                     }
-                    event_target:second_mongol_heir = { grant_title = PREV }
+                    grant_title = event_target:second_mongol_heir
                 }
                 if = {
                     limit = { NOT = { top_liege = { character = event_target:third_mongol_heir } } }
@@ -2511,7 +2637,6 @@ character_event = {
                     tier = COUNT
                     holder_scope = { ai = yes }
                     location = {
-                        owner_under_ROOT = yes
                         NOT = { has_province_flag = emf_mongol_connected }
                         any_neighbor_province = {
                             has_province_flag = emf_mongol_connected
@@ -2534,7 +2659,6 @@ character_event = {
                     tier = COUNT
                     holder_scope = { ai = yes }
                     location = {
-                        owner_under_ROOT = yes
                         NOT = { has_province_flag = emf_mongol_connected }
                         any_neighbor_province = {
                             has_province_flag = emf_mongol_connected
@@ -2587,6 +2711,7 @@ character_event = {
 
     immediate = {
         any_realm_province = { clr_province_flag = emf_mongol_connected }
+        character_event = { id = emf_core.65 } # Recalculate official capital-connected flags
     }
 }
 
