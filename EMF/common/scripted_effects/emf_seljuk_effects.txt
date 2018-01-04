@@ -90,36 +90,45 @@ emf_seljuk_become_invader = {
     set_character_flag = emf_seljuk_invader
 }
 
-emf_seljuk_cleanup_potential_invader = {
+emf_seljuk_free_potential_invader = {
     if = {
-        limit = { is_alive = yes }
-        if = {
-            limit = {
-                prisoner = yes
-                host = { ai = yes }
-            }
+        limit = {
+            is_alive = yes
+            prisoner = yes
+            host = { ai = yes }
+        }
+        prisoner = no
+    }
+}
+
+emf_seljuk_cleanup_potential_invader = {
+    emf_seljuk_free_potential_invader = yes
+    if = {
+        limit = {
+            is_alive = yes
             prisoner = no
         }
         if = {
-            limit = { prisoner = no }
-            remove_trait = weak
-            remove_trait = feeble
-            remove_trait = dull
-            remove_trait = slow
-            remove_trait = imbecile
-            remove_trait = incapable
-            remove_trait = sick_incapable
-            add_trait = ambitious
-            while = {
-                count = 3
-                limit = { martial < 16 }
-                emf_promote_education_trait = yes
-            }
-            while = {
-                count = 10
-                limit = { martial < 16 }
-                change_martial = 1
-            }
+            limit = { NOT = { religion_group = muslim } }
+            religion = sunni
+        }
+        remove_trait = weak
+        remove_trait = feeble
+        remove_trait = dull
+        remove_trait = slow
+        remove_trait = imbecile
+        remove_trait = incapable
+        remove_trait = sick_incapable
+        add_trait = ambitious
+        while = {
+            count = 3
+            limit = { martial < 16 }
+            emf_promote_education_trait = yes
+        }
+        while = {
+            count = 4
+            limit = { martial < 16 }
+            change_martial = 1
         }
     }
 }
@@ -262,5 +271,145 @@ emf_seljuk_target_initial_invasion = {
             }
             save_event_target_as = seljuk_origin
         }
+    }
+}
+
+emf_seljuk_adventure_cb_cleanup = {
+    hidden_effect = {
+        ROOT = {
+            clr_character_flag = do_not_disturb
+            clr_character_flag = duchy_adventurer
+            disband_event_forces = emf_seljuk_adventure
+            if = {
+                limit = { NOT = { any_demesne_title = { temporary = no } } } # Failure/invalidation
+                log = "DEBUG: emf_seljuk_adventure_cb_cleanup: adventure failed or invalidated for [This.GetTitledFirstName] [This.GetOnlyDynastyName] of the [This.PrimaryTitle.GetFullName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+                FROM = { primary_title = { set_global_flag = emf_seljuk_adventure_failed_against_@THIS } }
+                remove_trait = emf_seljuk_invader
+                clr_character_flag = emf_seljuk_invader
+                disband_event_forces = emf_seljuk_event_troops
+                any_courtier = {
+                    limit = { prisoner = yes }
+                    prisoner = no
+                }
+                if = {
+                    limit = { has_global_flag = emf_seljuk_spawned }
+                    # so that he can potentially spawn again and do it all over, erase him & his spawned family
+                    log = "--> the Seljuk adventurers simply vanished without a trace -- maybe they were never there?"
+                    clr_global_flag = emf_seljuk_spawned
+                    any_dynasty_member = {
+                        limit = { NOT = { character = ROOT } }
+                        dynasty = father_bastard
+                        set_father = 0
+                        set_mother = 0
+                        death = { death_reason = death_missing }
+                    }
+                    any_courtier = { banish = yes }
+                    any_demesne_title = {
+                        limit = { temporary = yes }
+                        emf_unsafe_destroy_title = yes
+                    }
+                    dynasty = father_bastard
+                    death = { death_reason = death_missing }
+                }
+                else = {
+                    emf_seljuk_find_exile_court = yes
+                    any_courtier = {
+                        limit = { is_ruler = no }
+                        move_character = event_target:emf_exile_court
+                    }
+                    any_courtier = { banish = yes }
+                    any_demesne_title = {
+                        limit = { temporary = yes }
+                        emf_unsafe_destroy_title = yes
+                    }
+                    move_character = event_target:emf_exile_court
+                    event_target:emf_exile_court = {
+                        log = "--> the Seljuk adventurers were exiled to the court of [This.GetTitledFirstName] [This.GetOnlyDynastyName] of the [This.PrimaryTitle.GetFullName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+                    }
+                }
+            }
+            else = {
+                # War was success / we got non-temporary titles out of it
+                emf_check_adventurer_government = yes
+            }
+        }
+    }
+}
+
+emf_seljuk_find_exile_court = {
+    random_independent_ruler = {
+        limit = {
+            NOT = { event_target:emf_exile_court = { always = yes } }
+            mercenary = yes
+            religion = ROOT
+            culture = ROOT
+        }
+        save_event_target_as = emf_exile_court
+    }
+    random_independent_ruler = {
+        limit = {
+            NOT = { event_target:emf_exile_court = { always = yes } }
+            mercenary = yes
+            religion = ROOT
+            culture_group = ROOT
+        }
+        save_event_target_as = emf_exile_court
+    }
+    random_playable_ruler = {
+        limit = {
+            NOT = { event_target:emf_exile_court = { always = yes } }
+            religion = ROOT
+            culture = ROOT
+            capital_scope = {
+                NAND = {
+                    c_merv = { location = { distance = { where = PREVPREV value = 700 } } }
+                    c_tus = { location = { distance = { where = PREVPREV value = 700 } } }
+                    c_dihistan = { location = { distance = { where = PREVPREV value = 700 } } }
+                }
+            }
+        }
+        save_event_target_as = emf_exile_court
+    }
+    random_playable_ruler = {
+        limit = {
+            NOT = { event_target:emf_exile_court = { always = yes } }
+            religion = ROOT
+            culture_group = ROOT
+            capital_scope = {
+                NAND = {
+                    c_merv = { location = { distance = { where = PREVPREV value = 700 } } }
+                    c_tus = { location = { distance = { where = PREVPREV value = 700 } } }
+                    c_dihistan = { location = { distance = { where = PREVPREV value = 700 } } }
+                }
+            }
+        }
+        save_event_target_as = emf_exile_court
+    }
+    random_playable_ruler = {
+        limit = {
+            NOT = { event_target:emf_exile_court = { always = yes } }
+            religion = ROOT
+            culture = ROOT
+        }
+        save_event_target_as = emf_exile_court
+    }
+    random_playable_ruler = {
+        limit = {
+            NOT = { event_target:emf_exile_court = { always = yes } }
+            religion = ROOT
+            culture_group = ROOT
+        }
+        save_event_target_as = emf_exile_court
+    }
+    random_playable_ruler = {
+        limit = {
+            NOT = { event_target:emf_exile_court = { always = yes } }
+            religion = ROOT
+        }
+        save_event_target_as = emf_exile_court
+    }
+    random_playable_ruler = {
+        limit = { NOT = { event_target:emf_exile_court = { always = yes } } }
+        save_event_target_as = emf_exile_court
     }
 }
