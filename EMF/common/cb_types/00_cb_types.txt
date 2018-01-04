@@ -7254,7 +7254,6 @@ duchy_adventure = {
     battle_warscore_mult = 1.5
 
     can_use = {
-        emf_cb_can_use = yes
         ROOT = { has_character_flag = duchy_adventurer }
     }
 
@@ -7263,7 +7262,7 @@ duchy_adventure = {
     }
 
     is_valid_title = {
-        any_de_jure_vassal_title = { tier = COUNT owner_under_FROM = yes }
+        any_direct_de_jure_vassal_title = { owner_under_FROM = yes }
     }
 
     on_add = {
@@ -7285,6 +7284,7 @@ duchy_adventure = {
     }
 
     on_success_title = {
+        save_event_target_as = emf_cb_title
         emf_cb_latb = yes
         pf_liege_change_under_title_begin_effect = yes
         custom_tooltip = {
@@ -7302,9 +7302,13 @@ duchy_adventure = {
                         random_realm_title = {
                             limit = {
                                 tier = COUNT
-                                de_jure_liege_or_above = PREVPREV
+                                de_jure_liege_or_above = event_target:emf_cb_title
                             }
                             usurp_title_plus_barony_if_unlanded = { target = ROOT type = host }
+                            any_de_jure_vassal_title = {
+                                limit = { owner_under_FROM = yes }
+                                usurp_title_plus_barony_if_unlanded = { target = ROOT type = host }
+                            }
                         }
                     }
                 }
@@ -7313,15 +7317,10 @@ duchy_adventure = {
         pf_liege_change_under_title_end_effect = yes
         ROOT = {
             hidden_tooltip = {
-                if = { # Special case: Seljuk (or a descendant, if historical Seljuk was born) succeeds in his first conquest
-                    limit = { has_character_flag = emf_seljuk_invader }
-                    narrative_event = { id = emf_seljuk.5 days = 1 }
-                }
-                else_if = { # Special case: Timur succeeds in his first conquest
+                if = { # Special case: Timur succeeds in his first conquest
                     limit = { has_character_flag = timur_himself }
                     narrative_event = { id = 60306 days = 1 }
                 }
-                
                 else_if = { # Special case: Sabuktigin succeeds in his first conquest
                     limit = { has_character_flag = sabuktigin_himself }
                     narrative_event = { id = 60406 days = 1 }
@@ -7355,7 +7354,6 @@ duchy_adventure = {
             hidden_tooltip = {
                 disband_event_forces = duchy_adventure
                 disband_event_forces = raiding_adventure
-                disband_event_forces = seljuk_duchy_adventure
                 disband_event_forces = timur_duchy_adventure
                 disband_event_forces = sabuktigin_duchy_adventure
                 clr_character_flag = duchy_adventurer
@@ -7381,7 +7379,6 @@ duchy_adventure = {
             hidden_tooltip = {
                 disband_event_forces = duchy_adventure
                 disband_event_forces = raiding_adventure
-                disband_event_forces = seljuk_duchy_adventure
                 disband_event_forces = timur_duchy_adventure
                 disband_event_forces = sabuktigin_duchy_adventure
                 clr_character_flag = duchy_adventurer
@@ -7399,7 +7396,6 @@ duchy_adventure = {
             hidden_tooltip = {
                 disband_event_forces = duchy_adventure
                 disband_event_forces = raiding_adventure
-                disband_event_forces = seljuk_duchy_adventure
                 disband_event_forces = timur_duchy_adventure
                 disband_event_forces = sabuktigin_duchy_adventure
                 clr_character_flag = duchy_adventurer
@@ -10023,7 +10019,7 @@ manifest_destiny_invasion = {
             }
             OR = {
                 AND = {
-                    dynasty = 613 # Seljuks
+                    emf_seljuk_dynasty = yes
                     NOT = { year = 1200 }
                 }
                 dynasty = 800 # Timurids
@@ -24656,6 +24652,244 @@ emf_border_dispute = {
             factor = 10
             FROM = { ai = no }
             had_global_flag = { flag = EMF days = 730 }
+        }
+    }
+}
+
+#126
+emf_seljuk_adventure = {
+    name = CB_NAME_DUCHY_ADVENTURE
+    war_name = WAR_DUCHY_ADVENTURE
+    sprite = 9
+    truce_days = 365
+    is_permanent = no
+    hostile_against_others = yes
+    check_de_jure_tier = DUKE # this scans all dejure duchies for the counties which are held by or vassals(or below) of selected character.
+    battle_warscore_mult = 1.5
+    capturing_attacker_is_complete_victory = no
+
+    can_use = {
+        ROOT = { has_character_flag = emf_cb_pass_tmp }
+    }
+
+    can_use_title = {
+        tier = DUKE
+    }
+
+    is_valid_title = {
+        any_direct_de_jure_vassal_title = { owner_under_FROM = yes }
+    }
+
+    on_add = {
+        log = "CB(emf_seljuk_adventure): START: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
+        ROOT = { clr_character_flag = emf_cb_pass_tmp }
+        emf_cb_on_add = yes
+    }
+
+    on_success = {
+        log = "CB(emf_seljuk_adventure): VICTORY: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
+        emf_cb_victory = yes
+        ROOT = {
+            prestige = 250
+            hidden_tooltip = { add_trait = adventurer }
+        }
+        FROM = { prestige = -250 }
+    }
+
+    on_success_title = {
+        save_event_target_as = emf_cb_title
+        emf_cb_latb = yes
+        pf_liege_change_under_title_begin_effect = yes
+        custom_tooltip = {
+            text = other_invasion_succ_tip
+            hidden_tooltip = {
+                ROOT = {
+                    emf_cb_start_subjugation_opinions = yes
+                    vassalize_or_take_under_title = {
+                        title = PREV
+                        enemy = FROM
+                        type = host
+                    }
+                    # Usurp a county in case ROOT ended up vassalizing everyone
+                    random_realm_title = {
+                        limit = {
+                            tier = COUNT
+                            de_jure_liege_or_above = event_target:emf_cb_title
+                            NOT = { holder = ROOT }
+                            OR = {
+                                title = c_merv
+                                title = c_tus
+                                title = c_dihistan
+                            }
+                        }
+                        usurp_title_plus_barony_if_unlanded = { target = ROOT type = host }
+                        any_de_jure_vassal_title = {
+                            limit = {
+                                tier = BARON
+                                owner = {
+                                    OR = {
+                                        is_liege_or_above = ROOT
+                                        under_FROM = yes
+                                    }
+                                }
+                                OR = {
+                                    holding_type = castle
+                                    holding_type = temple
+                                }
+                            }
+                            usurp_title_plus_barony_if_unlanded = { target = ROOT type = host }
+                        }
+                    }
+                    # If still unlanded, don't prefer our target provinces
+                    if = {
+                        limit = { is_landed = no }
+                        random_realm_title = {
+                            limit = {
+                                tier = COUNT
+                                de_jure_liege_or_above = event_target:emf_cb_title
+                            }
+                            usurp_title_plus_barony_if_unlanded = { target = ROOT type = host }
+                            any_de_jure_vassal_title = {
+                                limit = {
+                                    tier = BARON
+                                    owner = {
+                                        OR = {
+                                            is_liege_or_above = ROOT
+                                            under_FROM = yes
+                                        }
+                                    }
+                                    OR = {
+                                        holding_type = castle
+                                        holding_type = temple
+                                    }
+                                }
+                                usurp_title_plus_barony_if_unlanded = { target = ROOT type = host }
+                            }
+                        }
+                    }
+                }
+                # Usurp/create the target duchy
+                usurp_title = { target = ROOT type = host }
+                # Free from prison & ensure independent
+                ROOT = {
+                    emf_cb_finish_subjugation_opinions = yes
+                    if = {
+                        limit = {
+                            prisoner = yes
+                            host = { ai = yes }
+                        }
+                        prisoner = no
+                    }
+                    if = {
+                        limit = { independent = no }
+                        set_defacto_liege = ROOT # no emf_liege_change nec.
+                    }
+                }
+            }
+        }
+        pf_liege_change_under_title_end_effect = yes
+        hidden_tooltip = {
+            # Setup possible event targets for custom localisation in narrative event
+            random_landed_title = {
+                limit = {
+                    mercenary = yes
+                    ROOT = { has_character_flag = emf_seljuk_origin_merc_captain_of_@PREV }
+                }
+                ROOT = { clr_character_flag = emf_seljuk_origin_merc_captain_of_@PREV }
+                save_event_target_as = emf_seljuk_mercenary_title
+            }
+            random_landed_title = {
+                limit = {
+                    mercenary = yes
+                    ROOT = { has_character_flag = emf_seljuk_origin_merc_commander_of_@PREV }
+                }
+                ROOT = { clr_character_flag = emf_seljuk_origin_merc_commander_of_@PREV }
+                save_event_target_as = emf_seljuk_merc_commander_title
+            }
+            random_playable_ruler = {
+                limit = {
+                    ROOT = { has_character_flag = emf_seljuk_origin_former_vassal_of_@PREV }
+                }
+                ROOT = { clr_character_flag = emf_seljuk_origin_former_vassal_of_@PREV }
+                save_event_target_as = emf_seljuk_former_liege
+            }
+            # Do it
+            ROOT = { narrative_event = { id = emf_seljuk.10 days = 1 } }
+        }
+        emf_seljuk_adventure_cb_cleanup = yes
+    }
+
+    on_success_posttitle = { emf_cb_on_success_posttitle = yes }
+
+    on_fail = {
+        log = "CB(emf_seljuk_adventure): WHITEPEACE: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
+        FROM = {
+            prestige = 100
+            hidden_tooltip = {
+                opinion = {
+                    modifier = opinion_rebel_traitor
+                    who = ROOT
+                    months = 1200
+                }
+            }
+        }
+        ROOT = {
+            clear_wealth = yes
+            imprison = FROM
+            prestige = -100
+        }
+        emf_seljuk_adventure_cb_cleanup = yes
+    }
+
+    on_reverse_demand = {
+        log = "CB(emf_seljuk_adventure): DEFEAT: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
+        emf_cb_defeat = yes
+        ROOT = {
+            transfer_scaled_wealth = {
+                to = FROM
+                value = 4.0
+            }
+        }
+        FROM = { prestige = 200 }
+        ROOT = {
+            clear_wealth = yes
+            imprison = FROM
+            prestige = -200
+        }
+        emf_seljuk_adventure_cb_cleanup = yes
+    }
+
+    on_attacker_leader_death = {
+        log = "CB(emf_seljuk_adventure): ATTACKER_DEATH: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
+        end_war = invalid
+    }
+
+    on_invalidation = {
+        log = "CB(emf_seljuk_adventure): INVALIDATED: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
+        emf_seljuk_adventure_cb_cleanup = yes
+    }
+
+    attacker_ai_victory_worth = {
+        factor = -1 # always accept
+    }
+
+    attacker_ai_defeat_worth = {
+        factor = 120
+    }
+
+    defender_ai_victory_worth = {
+        factor = -1 # always accept
+    }
+
+    defender_ai_defeat_worth = {
+        factor = 100
+        additive_modifier = {
+            value = -15
+            NOT = { has_game_rule = { name = railroading value = passive } }
+        }
+        additive_modifier = {
+            value = -15
+            has_game_rule = { name = railroading value = aggressive }
         }
     }
 }
