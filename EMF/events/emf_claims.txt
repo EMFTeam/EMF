@@ -1,0 +1,96 @@
+# -*- ck2.events -*-
+
+namespace = emf_claims
+
+# emf_claims.0 -- generate claims and justified claimants to feudal elective titles [on_death]
+character_event = {
+    id = emf_claims.0
+    
+    is_triggered_only = yes
+    hide_window = yes
+    
+    only_playable = yes
+    
+    trigger = {
+        any_demesne_title = { has_law = succ_feudal_elective }
+    }
+    
+    immediate = {
+        # Progeny will get claims automatically, so simply setup justified claimants among them
+        any_demesne_title = {
+            limit = {
+                has_law = succ_feudal_elective
+                current_heir = { NOT = { is_child_of = ROOT } }
+                succ_law_title = { NOT = { has_law = true_cognatic_succession } }
+            }
+            ROOT = {
+                random_child = {
+                    limit = {
+                        is_female = no
+                        emf_can_inherit = yes
+                        NOT = {
+                            any_sibling = {
+                                is_female = no
+                                emf_can_inherit = yes
+                                is_older_than = PREV
+                            }
+                        }
+                    }
+                    set_character_flag = emf_justified_claimant_@PREVPREV
+                }
+            }
+        }
+        any_demesne_title = {
+            limit = {
+                has_law = succ_feudal_elective
+                current_heir = { NOT = { is_child_of = ROOT } }
+                succ_law_title = { has_law = true_cognatic_succession }
+            }
+            ROOT = {
+                random_child = {
+                    limit = {
+                        emf_can_inherit = yes
+                        NOT = {
+                            any_sibling = {
+                                emf_can_inherit = yes
+                                is_older_than = PREV
+                            }
+                        }
+                    }
+                    set_character_flag = emf_justified_claimant_@PREVPREV
+                }
+            }
+        }
+        # Now, give weak claims to all pretenders of the feudal elective title(s), defer to emf_claims.1 for post-death delay
+        any_demesne_title = {
+            limit = { has_law = succ_feudal_elective }
+            any_character = {
+                limit = { any_pretender_title = { title = PREVPREV } }
+                set_character_flag = emf_claims_feudal_elective_pretender_to_@PREV
+                character_event = { id = emf_claims.1 days = 1 }
+            }
+        }
+    }
+}
+
+# emf_claims.1 -- Deferred continuation of emf_claims.0, post-death of feudal elective title holder, ROOT was a pretender
+#
+# NOTE: We don't assume all pretenders are actually justified claimants, so they just get weak claims. If we had scopes to
+# the ordered list of pretenders, then we'd make #2 and #3 justified claimants (perhaps with further qualifications).
+character_event = {
+    id = emf_claims.1
+    
+    is_triggered_only = yes
+    hide_window = yes
+
+    immediate = {
+        random_landed_title = {
+            limit = { ROOT = { has_character_flag = emf_claims_feudal_elective_pretender_to_@PREV } }
+            ROOT = { clr_character_flag = emf_claims_feudal_elective_pretender_to_@PREV }
+            if = {
+                limit = { NOT = { claimed_by = ROOT } }
+                add_weak_claim = ROOT
+            }
+        }
+    }
+}
