@@ -25,6 +25,7 @@ character_event = {
             has_global_flag = emf_seljuk_spawned
             has_game_rule = { name = turkic_invasions value = off }
             has_game_rule = { name = adventurers value = none }
+            emf_seljuk_invader = { is_alive = yes }
             has_global_flag = seljuk_spawned # FIXME TMP-SAVE-COMPAT: not set in Hydra3 and beyond, drop after Hydra
         }
         OR = {
@@ -67,12 +68,6 @@ character_event = {
     immediate = {
         # Pick the target
         emf_seljuk_target_initial_invasion = yes
-
-        if = {
-            limit = { NOT = { event_target:seljuk_origin = { always = yes } } }
-            log = "ASSERT: emf_seljuk.0: failed to find an origin province in which Seljuk can spawn his troops"
-            break = yes
-        }
 
         # Now create Seljuk
         if = {
@@ -125,58 +120,46 @@ character_event = {
             add_trait = adventurer
             set_dynasty_flag = emf_is_historical
             set_character_flag = emf_seljuk_himself
-            emf_new_character = yes
-            log = "INFO: emf_seljuk.0: Seljuk (#[This.GetID]) has successfully spawned"
-            character_event = { id = emf_seljuk.1 } # spawn family & court
+            # Create his sons
+            create_character = {
+                name="Arslan Esra'íl"
+                random_traits = yes
+                dynasty = THIS
+                religion = THIS
+                culture = THIS
+                female = no
+                age = 5
+                genetic_father = THIS
+            }
+            create_character = {
+                name="Yunus"
+                random_traits = yes
+                dynasty = THIS
+                religion = THIS
+                culture = THIS
+                female = no
+                age = 1
+                genetic_father = THIS
+            }
+            create_character = {
+                name="Miká'íl"
+                random_traits = yes
+                dynasty = THIS
+                religion = THIS
+                culture = THIS
+                female = no
+                age = 0
+                genetic_father = THIS
+            }
+            emf_new_character_noble = yes
+            set_global_flag = emf_seljuk_spawned
+            log = "INFO: emf_seljuk.0: Seljuk (#[This.GetID]) and his sons have successfully spawned"
             character_event = { id = emf_seljuk.3 } # create adventurer title & launch invasion
         }
     }
 }
 
-# Spawn Seljuk's children and extra courtiers
-character_event = {
-    id = emf_seljuk.1
-
-    hide_window = yes
-    is_triggered_only = yes
-
-    immediate = {
-        # Create his sons
-        create_character = {
-            name="Arslan Esra'íl"
-            random_traits = yes
-            dynasty = ROOT
-            religion = ROOT
-            culture = ROOT
-            female = no
-            age = 5
-            genetic_father = ROOT
-        }
-        create_character = {
-            name="Yunus"
-            random_traits = yes
-            dynasty = ROOT
-            religion = ROOT
-            culture = ROOT
-            female = no
-            age = 1
-            genetic_father = ROOT
-        }
-        create_character = {
-            name="Miká'íl"
-            random_traits = yes
-            dynasty = ROOT
-            religion = ROOT
-            culture = ROOT
-            female = no
-            age = 0
-            genetic_father = ROOT
-        }
-    }
-    after = {
-        set_global_flag = emf_seljuk_spawned
-    }
-}
+# emf_seljuk.1 -- FREE
 
 # emf_seljuk.2 -- A Seljuk is alive and begins his first conquest [ uses historical characters & their progeny ]
 character_event = {
@@ -249,6 +232,7 @@ character_event = {
             }
         }
         c_3030 = {
+            emf_seljuk_cleanup_potential_invader = yes
             if = { # Seljuk himself
                 limit = {
                     NOT = { event_target:emf_seljuk_invader = { always = yes } }
@@ -349,16 +333,8 @@ character_event = {
             any_claim = { remove_claim = ROOT }
         }
 
-        # Pick the target
-        emf_seljuk_target_initial_invasion = yes
-
-        if = {
-            limit = { NOT = { event_target:seljuk_origin = { always = yes } } }
-            log = "ASSERT: emf_seljuk.3: failed to find an origin province in which a historical Seljuk can spawn his troops"
-            break = yes
-        }
-
-        character_event = { id = emf_seljuk.4 } # create adventurer title & launch invasion
+        emf_seljuk_target_initial_invasion = yes # Pick the target
+        character_event = { id = emf_seljuk.4 } # Create adventurer title & launch invasion
     }
 }
 
@@ -388,8 +364,42 @@ character_event = {
                     name = "CLAIMANT_ADVENTURE"
                     holder = THIS
                 }
-                # Just skip to a feudal government
+                # Just skip to a feudal government, even though arguably the first two generations of Seljuks should be
+                # nomadic government. Things are easier this way, and it's the inevitable outcome once the initial invasion
+                # is complete anyhow.
                 emf_switch_to_feudal_gov = yes
+                # Bring our friends & family along with us
+                any_spouse = {
+                    limit = { is_ruler = no }
+                    move_character = ROOT
+                }
+                any_child_even_if_dead = {
+                    if = {
+                        limit = {
+                            is_alive = yes
+                            is_ruler = no
+                        }
+                        move_character = ROOT
+                    }
+                    any_child = {
+                        limit = { is_ruler = no }
+                        move_character = ROOT
+                    }
+                }
+                any_friend = {
+                    limit = {
+                        is_ruler = no
+                        opinion = { who = ROOT value = 20 }
+                        OR = {
+                            NOT = { opinion = { who = LIEGE value = 20 } }
+                            AND = {
+                                is_councillor = yes
+                                NOT = { opinion = { who = LIEGE value = 40 } }
+                            }
+                        }
+                    }
+                    move_character = ROOT 
+                }
                 # Become an invader
                 emf_seljuk_become_invader = yes
                 # Create some extra courtiers
