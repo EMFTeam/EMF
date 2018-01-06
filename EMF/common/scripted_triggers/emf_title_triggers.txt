@@ -3,107 +3,133 @@
 #### LANDED TITLES TRIGGERS ####
 
 title_duke_basic_allow = {
-    conditional_tooltip = {
-        trigger = { FROM = { NOR = { has_title_flag = emf_autodestroy_defunct has_title_flag = emf_defunct } } }
-        is_primary_war_defender = no
+    FROM = {
         conditional_tooltip = {
-            trigger = {
-                FROM = { is_titular = yes }
-                ai = yes
+            trigger = { has_holder = no }
+            conditional_tooltip = {
+                trigger = { has_title_flag = emf_defunct }
+                custom_tooltip = {
+                    text = emf_ctt_has_not_become_defunct_title
+                    hidden_tooltip = { always = no }
+                }
             }
-            NOT = { higher_real_tier_than = FROM }
-        }
-    }
-    conditional_tooltip = {
-        trigger = { FROM = { OR = { has_title_flag = emf_autodestroy_defunct has_title_flag = emf_defunct } } }
-        custom_tooltip = {
-            text = emf_ctt_has_not_become_defunct_title
-            hidden_tooltip = { always = no }
+            conditional_tooltip = {
+                trigger = { NOT = { has_title_flag = emf_defunct } }
+                ROOT = {
+                    show_scope_change = no
+                    is_primary_war_defender = no
+                }
+                conditional_tooltip = {
+                    trigger = { is_titular = yes }
+                    has_game_rule = { name = titular_title_creation value = all }
+                    conditional_tooltip = {
+                        trigger = { ROOT = { ai = yes } }
+                        ROOT = { lower_tier_than = KING }
+                    }
+                }
+            }
         }
     }
 }
 
 title_king_basic_allow = {
+    is_primary_war_defender = no
+    is_adult = yes
+    has_regent = no
     conditional_tooltip = {
-        trigger = { FROM = { NOR = { has_title_flag = emf_autodestroy_defunct has_title_flag = emf_defunct } } }
+        trigger = { FROM = { has_holder = no } }
         conditional_tooltip = {
-            trigger = { NOT = { has_character_flag = emf_aed_in_progress_tmp } }
-            is_primary_war_defender = no
-            is_adult = yes
-            has_regent = no
+            trigger = { FROM = { has_title_flag = emf_defunct } }
             FROM = {
+                custom_tooltip = {
+                    text = emf_ctt_has_not_become_defunct_title
+                    hidden_tooltip = { always = no }
+                }
+            }
+        }
+        conditional_tooltip = {
+            trigger = {
+                NOR = {
+                    FROM = { has_title_flag = emf_defunct }
+                    has_character_flag = emf_aed_in_progress_tmp
+                }
+            }
+            conditional_tooltip = { # Titular kingdom rules apply
+                trigger = { is_de_jure_title = no }
+                independent = yes
                 conditional_tooltip = {
-                    trigger = { has_holder = no }
-                    conditional_tooltip = {
-                        trigger = { is_de_jure_title = no }
-                        ROOT = {
-                            independent = yes
-                            conditional_tooltip = {
-                                trigger = { is_republic = no }
-                                num_of_count_titles_in_realm = 5
-                            }
-                            # EMF allows emperor AI to create kingdoms, but we don't want them spamming titular ones (they would)
-                            conditional_tooltip = {
-                                trigger = { ai = yes }
-                                lower_real_tier_than = EMPEROR
+                    trigger = { is_republic = no }
+                    num_of_count_titles_in_realm = 5
+                }
+                OR = {
+                    has_game_rule = { name = titular_title_creation value = all }
+                    has_game_rule = { name = titular_title_creation value = kingdoms_and_empires }
+                }
+                # EMF allows emperor AI to create kingdoms, but we don't want them spamming titular ones (they would)
+                conditional_tooltip = {
+                    trigger = { ai = yes }
+                    lower_tier_than = EMPEROR
+                }
+            }
+            conditional_tooltip = { # IKC laws apply
+                trigger = {
+                    FROM = {
+                        is_de_jure_title = yes
+                        empire = { owner = { same_realm = ROOT } }
+                        NOT = { title = k_bohemia }
+                    }
+                }
+                FROM = {
+                    empire = { # Effectively never null in EMF (and never e_null here since it has an owner)
+                        conditional_tooltip = {
+                            trigger = { NOT = { holder = ROOT } }
+                            NOR = {
+                                has_law = imperial_kingdom_creation_0
+                                has_law = imperial_kingdom_creation_2
                             }
                         }
-                    }
-                    conditional_tooltip = {
-                        trigger = { is_de_jure_title = yes }
                         conditional_tooltip = {
-                            trigger = { NOT = { title = k_bohemia } } # Bohemia is a magical, lawless wonderland of glitter
-                            conditional_tooltip = {
-                                trigger = { empire = { owner = { same_realm = ROOT } } }
-                                empire = { # Effectively never null in EMF
-                                    conditional_tooltip = {
-                                        trigger = { NOT = { holder = ROOT } }
-                                        NOR = {
-                                            has_law = imperial_kingdom_creation_0
-                                            has_law = imperial_kingdom_creation_2
-                                        }
-                                    }
-                                    conditional_tooltip = {
-                                        trigger = { holder = ROOT }
-                                        NOT = { has_law = imperial_kingdom_creation_0 }
-                                    }
-                                }
-                            }
+                            trigger = { holder = ROOT }
+                            NOT = { has_law = imperial_kingdom_creation_0 }
                         }
                     }
                 }
             }
         }
     }
-    conditional_tooltip = {
-        trigger = { FROM = { OR = { has_title_flag = emf_autodestroy_defunct has_title_flag = emf_defunct } } }
-        custom_tooltip = {
-            text = emf_ctt_has_not_become_defunct_title
-            hidden_tooltip = { always = no }
-        }
-    }
 }
 
 title_emperor_basic_allow = {
+    war = no
+    is_adult = yes # for that brief moment when a child isn't auto-assigned a regent, plus better TT
+    has_regent = no
+    ruled_years = 5
+    realm_size = 120
     conditional_tooltip = {
-        trigger = { FROM = { NOR = { has_title_flag = emf_autodestroy_defunct has_title_flag = emf_defunct } } }
-        war = no
-        is_adult = yes # for that brief moment when a child isn't auto-assigned a regent, plus better TT
-        has_regent = no
-        ruled_years = 5
-        realm_size = 120
-        conditional_tooltip = {
-            trigger = { real_tier = EMPEROR }
-            is_nomadic = no
-            primary_title = { is_titular_title = yes }
-            FROM = { is_de_jure_title = yes }
-        }
+        trigger = { tier = EMPEROR }
+        is_nomadic = no
+        primary_title = { is_titular_title = yes }
+        FROM = { is_de_jure_title = yes }
     }
     conditional_tooltip = {
-        trigger = { FROM = { OR = { has_title_flag = emf_autodestroy_defunct has_title_flag = emf_defunct } } }
-        custom_tooltip = {
-            text = emf_ctt_has_not_become_defunct_title
-            hidden_tooltip = { always = no }
+        trigger = { FROM = { has_holder = no } }
+        conditional_tooltip = {
+            trigger = { FROM = { has_title_flag = emf_defunct } }
+            FROM = {
+                custom_tooltip = {
+                    text = emf_ctt_has_not_become_defunct_title
+                    hidden_tooltip = { always = no }
+                }
+            }
+        }
+        conditional_tooltip = {
+            trigger = {
+                FROM = {
+                    NOT = { has_title_flag = emf_defunct }
+                    is_de_jure_title = no
+                }
+            }
+            NOT = { has_game_rule = { name = titular_title_creation value = none } }
         }
     }
 }
