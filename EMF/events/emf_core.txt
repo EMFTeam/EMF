@@ -474,7 +474,11 @@ character_event = {
 
     immediate = {
         # log = "DEBUG: emf_core.65: calculating emf_capital_connected for [This.GetTitledFirstName] of [This.PrimaryTitle.GetBaseName] ([This.GetID]/[This.PrimaryTitle.GetID])"
-        any_realm_province = { clr_province_flag = emf_capital_connected } # Remove old state
+        any_realm_province = { # Remove old state
+            limit = { owner = { same_realm = ROOT } } # any_realm_province includes provinces in which we have a realm barony
+            clr_province_flag = emf_capital_connected
+            clr_province_flag = emf_capital_connected_by_seazone
+        }
         capital_scope = { # Seed the capital
             set_province_flag = emf_capital_connected
             any_neighbor_province = { # Handle near-OPMs quickly (loop below makes it technically redundant)
@@ -485,6 +489,7 @@ character_event = {
         while = {
             limit = {
                 any_realm_province = {
+                    owner = { same_realm = ROOT }
                     NOT = { has_province_flag = emf_capital_connected }
                     any_neighbor_province = {
                         owner = { same_realm = ROOT }
@@ -494,6 +499,7 @@ character_event = {
             }
             any_realm_province = {
                 limit = {
+                    owner = { same_realm = ROOT }
                     NOT = { has_province_flag = emf_capital_connected }
                     any_neighbor_province = {
                         owner = { same_realm = ROOT }
@@ -501,6 +507,46 @@ character_event = {
                     }
                 }
                 set_province_flag = emf_capital_connected
+            }
+        }
+        # Now, mark the provinces which are capital-connected only via a seazone adjacency
+        any_realm_province = {
+            limit = {
+                port = yes
+                owner = { same_realm = ROOT }
+                NOT = { has_province_flag = emf_capital_connected }
+                any_neighbor_province = {
+                    is_land = no
+                    any_neighbor_province = {
+                        owner = { same_realm = ROOT }
+                        has_province_flag = emf_capital_connected
+                    }
+                }
+            }
+            set_province_flag = emf_capital_connected_by_seazone # might want to make this into a modifier w/ slight malus
+        }
+        # Now, mark those provinces connected to provinces which are capital-connected only via a seazone adjacency
+        while = {
+            limit = {
+                any_realm_province = {
+                    owner = { same_realm = ROOT }
+                    NOT = { has_province_flag = emf_capital_connected_by_seazone }
+                    any_neighbor_province = {
+                        owner = { same_realm = ROOT }
+                        has_province_flag = emf_capital_connected_by_seazone
+                    }
+                }
+            }
+            any_realm_province = {
+                limit = {
+                    owner = { same_realm = ROOT }
+                    NOT = { has_province_flag = emf_capital_connected_by_seazone }
+                    any_neighbor_province = {
+                        owner = { same_realm = ROOT }
+                        has_province_flag = emf_capital_connected_by_seazone
+                    }
+                }
+                set_province_flag = emf_capital_connected_by_seazone
             }
         }
     }
