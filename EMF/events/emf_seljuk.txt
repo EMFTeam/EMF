@@ -1109,23 +1109,25 @@ character_event = {
     }
 }
 
+# emf_seljuk.55 -- prompt AI to create Persia if the Seljuk Invader meets all the basic requirements [on_biyearly_pulse]
 character_event = {
-    id = emf_seljuk.50
-
-    hide_window = yes
+    id = emf_seljuk.55
 
     is_triggered_only = yes
+    hide_window = yes
+
     only_independent = yes
     has_character_flag = emf_seljuk_invader
+    ai = yes
 
     trigger = {
         tier = KING
-        NOT = { has_landed_title = e_persia }
-        is_landed_title_allowed = e_persia
-        e_persia = {
-            is_title_active = THIS
-            is_de_jure_title = yes # ensures we don't divide by zero among other things
+        OR = {
+            num_of_king_titles >= 2
+            e_persia = { has_holder = yes } # 2+ kingdom titles are only required for empire _creation_ -- not _usurpation_
         }
+        is_title_active = e_persia
+        is_landed_title_allowed = e_persia
     }
 
     immediate = {
@@ -1142,23 +1144,30 @@ character_event = {
         set_variable = { which = local_pct_under which = local_n_under }
         divide_variable = { which = local_pct_under which = local_n_total }
         if = {
-            limit = { check_variable = { which = local_pct_under value >= 0.667 } } # 2/3 rule for empire create/usurp
-            # Woohoo!
-            primary_title = {
-                e_persia = {
+            limit = { check_variable = { which = local_pct_under value < 0.667 } } # 2/3 rule for empire create/usurp
+            break = yes # Boohoo!
+        }
+        # Woohoo!
+        primary_title = {
+            e_persia = {
+                if = {
+                    limit = { has_holder = no }
                     grant_title = { target = ROOT type = created }
-                    copy_title_laws = PREV
                     emf_copy_title_state_from_PREV = yes
-                    make_primary_title = yes
+                    copy_title_laws = PREV
+                }
+                else = {
+                    usurp_title_only = { target = ROOT type = usurp }
                 }
             }
-            any_demesne_title = {
-                limit = {
-                    tier = KING
-                    de_jure_liege = e_persia
-                }
-                emf_destroy_title = yes
+        }
+        # TODO: move this to an on_new_holder on_action event for e_persia + emf_seljuk_invader
+        any_demesne_title = {
+            limit = {
+                tier = KING
+                de_jure_liege = e_persia
             }
+            emf_destroy_title = yes
         }
     }
 }
