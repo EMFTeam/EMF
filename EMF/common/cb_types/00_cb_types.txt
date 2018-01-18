@@ -24973,13 +24973,22 @@ emf_seljuk_invasion = {
         custom_tooltip = {
             text = other_invasion_succ_tip # tribal_invasion_succ_tip
             hidden_tooltip = {
+                # Determine if we should usurp/create the target kingdom title
                 if = {
                     limit = {
-                        owner_under_FROM = yes
-                        de_jure_liege = e_persia
+                        NOT = { empire = { holder = ROOT } } # Never if we already hold its de jure empire
+                        OR = { # Either a Persian kingdom or any other kingdom that has an `allow` permitting create/usurp
+                            de_jure_liege = e_persia
+                            ROOT = { is_landed_title_allowed = PREV }
+                        }
+                        OR = {
+                            has_holder = no # Create if we can ...
+                            owner_under_FROM = yes # ... but only usurp when the title's actually under the war loser
+                        }       
                     }
                     set_title_flag = emf_usurp_tmp
                 }
+                # On to standard affairs...
                 ROOT = {
                     vassalize_or_take_under_title_destroy_duchies = {
                         title = PREV
@@ -24988,16 +24997,12 @@ emf_seljuk_invasion = {
                         type = invasion
                     }
                 }
+                # Follow through with that usurp/create if it was permitted
                 if = {
-                    limit = {
-                        OR = {
-                            has_title_flag = emf_usurp_tmp
-                            has_holder = no
-                        }
-                    }
-                    clr_title_flag = emf_usurp_tmp
+                    limit = { has_title_flag = emf_usurp_tmp }
                     usurp_title = ROOT
                 }
+                clr_title_flag = emf_usurp_tmp
             }
         }
         emf_cb_finish_subjugation_opinions = yes
@@ -25005,6 +25010,15 @@ emf_seljuk_invasion = {
     }
 
     on_success_posttitle = {
+        hidden_effect = {
+            # Correct nonsense that can happen when usurping kingdoms:
+            ROOT = {
+                if = {
+                    limit = { is_liege_or_above = FROM }
+                    set_defacto_liege = THIS
+                }
+            }
+        }
         emf_cb_on_success_posttitle = yes
         emf_seljuk_invasion_on_success_posttitle = yes
     }
