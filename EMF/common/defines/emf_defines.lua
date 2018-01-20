@@ -108,7 +108,7 @@ NDefines.NReligion.HERESY_TAKEOVER_PROVINCES = 5
 NDefines.NEconomy.BISHOP_TAX_TO_POPE_FACTOR = 0.25
 NDefines.NEconomy.BISHOP_TAX_TO_ANTI_POPE_FACTOR = 0.025          -- prior to EMF v8.02: 0.05
 NDefines.NEconomy.TRADE_POST_COST_INC_DIST = 0.0045
-NDefines.NEconomy.PATRICIAN_CITY_TAX_MULT = 0.25
+NDefines.NEconomy.PATRICIAN_CITY_TAX_MULT = 0.5                   -- prior to EMF v8.02: 0.25, now back to vanilla
 NDefines.NEconomy.OVER_MAX_DEMESNE_TAX_PENALTY = 0.05
 NDefines.NEconomy.LOOTER_ARMY_MAINT_MULT = 0.1
 
