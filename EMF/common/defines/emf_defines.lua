@@ -99,6 +99,8 @@ NDefines.NReligion.AUTHORITY_FROM_RELHEAD_DIPLOMACY = 0.02
 NDefines.NReligion.AUTHORITY_FROM_RELHEAD_HOLY_SITE = 0.05        -- prior to EMF v8.02: 0, now back to vanilla
 NDefines.NReligion.AUTHORITY_FROM_ORG_RELIGION = 0.3
 NDefines.NReligion.DIVINE_BLOOD_FERTILITY_MULT = 1.0
+NDefines.NReligion.ELECTOR_TITLE_CULTURE_GROUP_FACTOR = 25        -- prior to EMF v8.02: 50
+NDefines.NReligion.ELECTOR_TITLE_CULTURE_FACTOR = 50              -- prior to EMF v8.02: 200
 NDefines.NReligion.ELECTOR_FAMOUS_DYNASTY_FACTOR = 0.005
 NDefines.NReligion.HERESY_TAKEOVER_PROVINCES = 5
 
