@@ -24761,20 +24761,8 @@ emf_seljuk_adventure = {
                 }
                 # Usurp/create the target duchy
                 usurp_title = { target = ROOT type = host }
-                # Free from prison & ensure independent
                 ROOT = {
                     emf_cb_finish_subjugation_opinions = yes
-                    if = {
-                        limit = {
-                            prisoner = yes
-                            host = { ai = yes }
-                        }
-                        prisoner = no
-                    }
-                    if = {
-                        limit = { independent = no }
-                        set_defacto_liege = ROOT # no emf_liege_change nec.
-                    }
                 }
             }
         }
@@ -24810,7 +24798,22 @@ emf_seljuk_adventure = {
         emf_seljuk_adventure_cb_cleanup = yes
     }
 
-    on_success_posttitle = { emf_cb_on_success_posttitle = yes }
+    on_success_posttitle = {
+        ROOT = {
+            if = {
+                limit = {
+                    prisoner = yes
+                    host = { ai = yes }
+                }
+                prisoner = no
+            }
+            if = {
+                limit = { independent = no }
+                set_defacto_liege = ROOT # no emf_liege_change nec.
+            }
+        }
+        emf_cb_on_success_posttitle = yes
+    }
 
     on_fail = {
         log = "CB(emf_seljuk_adventure): WHITEPEACE: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
@@ -24990,21 +24993,6 @@ emf_seljuk_invasion = {
         custom_tooltip = {
             text = other_invasion_succ_tip # tribal_invasion_succ_tip
             hidden_tooltip = {
-                # Determine if we should usurp/create the target kingdom title
-                if = {
-                    limit = {
-                        NOT = { empire = { holder = ROOT } } # Never if we already hold its de jure empire
-                        OR = { # Either a Persian kingdom or any other kingdom that has an `allow` permitting create/usurp
-                            de_jure_liege = e_persia
-                            ROOT = { is_landed_title_allowed = PREV }
-                        }
-                        OR = {
-                            has_holder = no # Create if we can ...
-                            owner_under_FROM = yes # ... but only usurp when the title's actually under the war loser
-                        }
-                    }
-                    set_title_flag = emf_usurp_tmp
-                }
                 # On to standard affairs...
                 ROOT = {
                     vassalize_or_take_under_title_destroy_duchies = {
@@ -25014,18 +25002,62 @@ emf_seljuk_invasion = {
                         type = invasion
                     }
                 }
-                # Follow through with that usurp/create if it was permitted
+                # If we can usurp/create the target kingdom title, do so.
                 if = {
-                    limit = { has_title_flag = emf_usurp_tmp }
-                    if = {
-                        limit = { has_holder = yes }
-                        usurp_title_only = { target = ROOT type = usurp }
+                    limit = {
+                        owner_under_ROOT = no
+                        NOT = { empire = { holder = ROOT } } # Never if we already hold its de jure empire
+                        ROOT = { is_landed_title_allowed = PREV }
+                        is_de_jure_title = yes # JIC it somehow became titular during the war, then disregard it
                     }
-                    else = {
-                        grant_title = { target = ROOT type = created }
+                    # But first verify that we have >=51% of the title's de jure counties
+                    any_de_jure_vassal_title = {
+                        limit = { tier = COUNT }
+                        change_variable = { which = local_n value = 1 }
+                        if = {
+                            limit = { owner_under_ROOT = yes }
+                            change_variable = { which = local_ours value = 1 }
+                        }
+                    }
+                    divide_variable = { which = local_ours which = local_n }
+                    set_variable = { which = local_our_pct which = local_ours }
+                    multiply_variable = { which = local_our_pct value = 100 }
+                    log = "--> we control [local_our_pct.GetValue]% of target title [This.GetID]"
+                    if = {
+                        limit = { check_variable = { which = local_ours value >= 0.51 } }
+                        if = {
+                            limit = { has_holder = yes }
+                            ROOT = { any_vassal = { set_character_flag = emf_vassal_prior_to_usurp } }
+                            log = "--> usurping title: [This.GetID]"
+                            usurp_title_only = { target = ROOT type = usurp }
+                            ROOT = {
+                                any_vassal = {
+                                    limit = { NOT = { has_character_flag = emf_vassal_prior_to_usurp } }
+                                    log = "----> ASSERT: vassal was transferred to us despite using usurp_title_only, getting rid of them."
+                                    if = {
+                                        limit = { higher_tier_than = BARON }
+                                        set_defacto_liege = THIS
+                                    }
+                                    else = {
+                                        capital_holding = {
+                                            dejure_liege_title = {
+                                                owner = {
+                                                    set_defacto_vassal = PREVPREVPREV
+                                                }
+                                            }
+                                        }
+                                    }
+                                    emf_liege_change = yes
+                                }
+                                any_vassal = { clr_character_flag = emf_vassal_prior_to_usurp }
+                            }
+                        }
+                        else = {
+                            log = "--> creating title: [This.GetID]"
+                            grant_title = { target = ROOT type = created }
+                        }
                     }
                 }
-                clr_title_flag = emf_usurp_tmp
             }
         }
         emf_cb_finish_subjugation_opinions = yes
@@ -25150,27 +25182,27 @@ emf_seljuk_invasion = {
 
     defender_ai_defeat_worth = {
         factor = 100
-        additive_modifier = {
-            value = -20
-            NOT = { has_game_rule = { name = railroading value = passive } }
-            NOT = { # Sunni Caliph should not give up over k_mesopotamia/k_iraq too easily
-                FROM = { controls_religion = sunni }
-                c_baghdad = { kingdom = { title = PREVPREV } }
-            }
-        }
-        additive_modifier = {
-            value = -10
-            has_game_rule = { name = railroading value = aggressive }
-            NOT = { # Sunni Caliph should not give up over k_mesopotamia/k_iraq too easily
-                FROM = { controls_religion = sunni }
-                c_baghdad = { kingdom = { title = PREVPREV } }
-            }
-        }
-        additive_modifier = {
-            value = 20 # Sunni Caliph should not give up over k_mesopotamia/k_iraq too easily
-            FROM = { controls_religion = sunni }
-            c_baghdad = { kingdom = { title = PREVPREV } }
-        }
+        #additive_modifier = {
+        #    value = -20
+        #    NOT = { has_game_rule = { name = railroading value = passive } }
+        #    NOT = { # Sunni Caliph should not give up over k_mesopotamia/k_iraq too easily
+        #        FROM = { controls_religion = sunni }
+        #        c_baghdad = { kingdom = { title = PREVPREV } }
+        #    }
+        #}
+        #additive_modifier = {
+        #    value = -10
+        #    has_game_rule = { name = railroading value = aggressive }
+        #    NOT = { # Sunni Caliph should not give up over k_mesopotamia/k_iraq too easily
+        #        FROM = { controls_religion = sunni }
+        #        c_baghdad = { kingdom = { title = PREVPREV } }
+        #    }
+        #}
+        #additive_modifier = {
+        #    value = 20 # Sunni Caliph should not give up over k_mesopotamia/k_iraq too easily
+        #    FROM = { controls_religion = sunni }
+        #    c_baghdad = { kingdom = { title = PREVPREV } }
+        #}
     }
 }
 
