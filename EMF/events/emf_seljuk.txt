@@ -157,11 +157,9 @@ character_event = {
     }
 }
 
-# emf_seljuk.1 -- FREE
-
-# emf_seljuk.2 -- A Seljuk is alive and begins his first conquest [ uses historical characters & their progeny ]
+# emf_seljuk.1 -- A Seljuk is alive and begins his first conquest [ uses historical characters & their progeny ]
 character_event = {
-    id = emf_seljuk.2
+    id = emf_seljuk.1
 
     hide_window = yes
 
@@ -277,25 +275,25 @@ character_event = {
     option = {
         name = CANCEL
         trigger = { NOT = { event_target:emf_seljuk_invader = { is_alive = yes } } }
-        log = "ASSERT: emf_seljuk.2: failed to select a historical Seljuk character: aborting!"
+        log = "ASSERT: emf_seljuk.1: failed to select a historical Seljuk character: aborting!"
     }
 
     option = {
         name = OK
         trigger = { event_target:emf_seljuk_invader = { is_alive = yes } }
-        event_target:emf_seljuk_invader = { character_event = { id = emf_seljuk.3 } }
+        event_target:emf_seljuk_invader = { character_event = { id = emf_seljuk.2 } }
     }
 }
 
-# emf_seljuk.3 -- continuation of emf_seljuk.2: ROOT is the selected invader
+# emf_seljuk.2 -- continuation of emf_seljuk.1: ROOT is the selected invader
 character_event = {
-    id = emf_seljuk.3
+    id = emf_seljuk.2
 
     is_triggered_only = yes
     hide_window = yes
 
     immediate = {
-        log = "INFO: emf_seljuk.3: a Seljuk, [This.GetTitledName] (#[This.GetID]), has been selected for their initial invasion"
+        log = "INFO: emf_seljuk.2: a Seljuk, [This.GetTitledName] (#[This.GetID]), has been selected for their initial invasion"
 
         if = {
             limit = {
@@ -333,6 +331,74 @@ character_event = {
 
         emf_seljuk_target_initial_invasion = yes # Pick the target
         character_event = { id = emf_seljuk.4 } # Create adventurer title & launch invasion
+    }
+}
+
+# emf_seljuk.3 -- seljuk invasion startup event [ROOT=isis]
+character_event = {
+    id = emf_seljuk.3
+
+    is_triggered_only = yes
+    hide_window = yes
+
+    trigger = {
+        NOT = { any_independent_ruler = { emf_seljuk_invasion_mission_done = yes } }
+    }
+
+    immediate = {
+        c_3030 = { # Seljuk
+            if = {
+                limit = { is_alive = yes }
+                set_character_flag = emf_seljuk_himself # In case he's picked to invade, for proper narrative event text
+            }
+        }
+        if = {
+            limit = { start_date >= 1018.1.1 } # TODO: timeline extension before 1018 will require adjustment
+            set_global_flag = emf_seljuk_historical_start
+        }
+        else = {
+            set_global_flag = emf_seljuk_ahistorical_start
+        }
+        if = {
+            limit = { any_independent_ruler = { emf_seljuk_invader_is_valid = yes } }
+            emf_seljuk_select_valid_invader = yes
+        }
+        else = { # No independent, landed, non-merc, non-HO Seljuk
+            # Prevent the Seljuk dynasty members (if any alive) from accepting a Demand Religious Conversion request
+            # & ensure they're all Sunni while we're at it
+            c_3030 = {
+                any_dynasty_member = {
+                    limit = { ai = yes }
+                    religion = sunni
+                    set_character_flag = ai_flag_refuse_conversion
+                    if = {
+                        limit = { independent = no }
+                        reverse_opinion = { who = LIEGE modifier = opinion_impressed multiplier = 5 years = 100 }
+                    }
+                }
+                if = {
+                    limit = {
+                        is_alive = yes
+                        ai = yes
+                    }
+                    religion = sunni
+                    set_character_flag = ai_flag_refuse_conversion
+                    if = {
+                        limit = { independent = no }
+                        reverse_opinion = { who = LIEGE modifier = opinion_impressed multiplier = 5 years = 100 }
+                    }
+                }
+            }
+        }
+    }
+
+    option = {
+        name = OK
+        event_target:emf_seljuk_invader = {
+            log = "INFO: emf_seljuk.3: selected landed, independent Seljuk Invader: [This.GetTitledName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+            emf_seljuk_become_invader = yes
+            emf_seljuk_refresh_retinue = yes
+        }
     }
 }
 
@@ -398,8 +464,6 @@ character_event = {
                     }
                     move_character = ROOT 
                 }
-                # Become an invader
-                emf_seljuk_become_invader = yes
                 # Create some extra courtiers
                 emf_create_courtiers = yes
                 # Spawn mad stax
@@ -413,6 +477,7 @@ character_event = {
                 # And on to the adventure...
                 set_character_flag = do_not_disturb
                 set_character_flag = duchy_adventurer
+                set_character_flag = emf_seljuk_adventurer
                 set_character_flag = emf_cb_pass_tmp
                 war = {
                     target = event_target:seljuk_target_ruler
@@ -482,9 +547,15 @@ narrative_event = {
         set_global_flag = emf_seljuk_won_initial_invasion
         prestige = 500
         if = {
+            limit = { independent = no }
+            set_defacto_liege = ROOT
+            emf_liege_change = yes
+        }
+        if = {
             limit = { NOT = { religion_group = muslim } }
             religion = sunni
         }
+        emf_seljuk_become_invader = yes
         emf_seljuk_refresh_retinue = yes
         log = "INFO: emf_seljuk.5: Seljuks win their first war!"
     }
@@ -539,17 +610,24 @@ character_event = {
     trigger = {
         year < 1100
         NOT = { has_global_flag = emf_seljuk_invasion_done }
-        current_heir = { dynasty = ROOT }
     }
 
     immediate = {
         # TODO: this is going to get a lot more complicated when Islamic Succession Laws == Historical (i.e., Seljuks will
         # follow a custom succession type based upon seniority and merit instead of gavelkind or forced primogeniture)
+        log = "DEBUG: emf_seljuk.11: invader dying: [Root.GetBestName] of the [Root.PrimaryTitle.GetFullBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID])"
         current_heir = {
             if = {
-                limit = { ai = yes }
+                limit = {
+                    ai = yes
+                    dynasty = ROOT
+                }
+                log = "--> passing on invader status to heir: [This.GetTitledName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
                 emf_seljuk_become_invader = yes
                 character_event = { id = emf_seljuk.12 days = 1 }
+            }
+            else = {
+                log = "--> couldn't pass on invader status to heir: [This.GetTitledName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
             }
         }
     }
@@ -584,419 +662,6 @@ character_event = {
     }
 }
 
-# Prompt AI to use the manifest destiny CB
-character_event = {
-    id = emf_seljuk.30
-
-    hide_window = yes
-
-    only_independent = yes
-    min_age = 16
-    capable_only = yes
-    prisoner = no
-    war = no
-    ai = yes
-
-    trigger = {
-        emf_seljuk_invasion_mission = no # Uses a whole different thingie
-        OR = {
-            AND = {
-                emf_seljuk_dynasty = yes
-                NOT = { year = 1200 }
-            }
-            dynasty = 800 # Timurids
-        }
-        wealth = 0
-        mercenary = no
-        is_tributary = no
-        is_ill = no
-        has_regent = no
-        NOR = {
-            realm_size = 300
-            trait = content
-            trait = humble
-            trait = craven
-            trait = maimed
-            trait = depressed
-            trait = infirm
-            is_inaccessible_trigger = yes
-        }
-        any_independent_ruler = {
-            is_merchant_republic = no
-            reverse_realm_levy_diff = { who = ROOT value = 10000 }
-            any_realm_title = {
-                tier = COUNT
-                location = {
-                    region = emf_region_manifest_destiny
-                    any_neighbor_province = { owner_under_ROOT = yes }
-                }
-            }
-            NOR = {
-                dynasty = ROOT
-                same_realm = ROOT
-                reverse_has_truce = ROOT
-                is_allied_with = ROOT
-                has_non_aggression_pact_with = ROOT
-                reverse_opinion = { who = ROOT value = 25 }
-                pays_tribute_to = ROOT
-                ROOT = { pays_tribute_to = PREV }
-            }
-        }
-    }
-
-    mean_time_to_happen = {
-        months = 12
-    }
-
-    immediate = {
-        # First priority
-        random_independent_ruler = {
-            limit = {
-                is_merchant_republic = no
-                reverse_realm_levy_diff = { who = ROOT value = 10000 }
-                any_realm_title = {
-                    tier = COUNT
-                    location = {
-                        region = emf_region_manifest_destiny_tier_1
-                        any_neighbor_province = { owner_under_ROOT = yes }
-                    }
-                }
-                NOR = {
-                    dynasty = ROOT
-                    same_realm = ROOT
-                    reverse_has_truce = ROOT
-                    is_allied_with = ROOT
-                    has_non_aggression_pact_with = ROOT
-                    reverse_opinion = { who = ROOT value = 25 }
-                    pays_tribute_to = ROOT
-                    ROOT = { pays_tribute_to = PREV }
-                }
-            }
-            save_event_target_as = target_ruler
-            random_realm_title = {
-                limit = {
-                    tier = COUNT
-                    location = {
-                        region = emf_region_manifest_destiny_tier_1
-                        any_neighbor_province = { owner_under_ROOT = yes }
-                    }
-                }
-                kingdom = {
-                    ROOT = {
-                        war = {
-                            casus_belli = manifest_destiny_invasion
-                            target = PREVPREVPREV
-                            thirdparty_title = PREV
-                            infamy = 0
-                        }
-                    }
-                }
-                break = yes
-            }
-        }
-        # Second priority
-        random_independent_ruler = {
-            limit = {
-                is_merchant_republic = no
-                reverse_realm_levy_diff = { who = ROOT value = 10000 }
-                any_realm_title = {
-                    tier = COUNT
-                    location = {
-                        region = emf_region_manifest_destiny_tier_2
-                        any_neighbor_province = { owner_under_ROOT = yes }
-                    }
-                }
-                NOR = {
-                    dynasty = ROOT
-                    same_realm = ROOT
-                    reverse_has_truce = ROOT
-                    is_allied_with = ROOT
-                    has_non_aggression_pact_with = ROOT
-                    reverse_opinion = { who = ROOT value = 25 }
-                    pays_tribute_to = ROOT
-                    ROOT = { pays_tribute_to = PREV }
-                }
-            }
-            save_event_target_as = target_ruler
-            random_realm_title = {
-                limit = {
-                    tier = COUNT
-                    location = {
-                        region = emf_region_manifest_destiny_tier_2
-                        any_neighbor_province = { owner_under_ROOT = yes }
-                    }
-                }
-                kingdom = {
-                    ROOT = {
-                        war = {
-                            casus_belli = manifest_destiny_invasion
-                            target = PREVPREVPREV
-                            thirdparty_title = PREV
-                            infamy = 0
-                        }
-                    }
-                }
-                break = yes
-            }
-        }
-        # Third priority
-        random_independent_ruler = {
-            limit = {
-                is_merchant_republic = no
-                reverse_realm_levy_diff = { who = ROOT value = 10000 }
-                any_realm_title = {
-                    tier = COUNT
-                    location = {
-                        region = emf_region_manifest_destiny_tier_3
-                        any_neighbor_province = { owner_under_ROOT = yes }
-                    }
-                }
-                NOR = {
-                    dynasty = ROOT
-                    same_realm = ROOT
-                    reverse_has_truce = ROOT
-                    is_allied_with = ROOT
-                    has_non_aggression_pact_with = ROOT
-                    reverse_opinion = { who = ROOT value = 25 }
-                    pays_tribute_to = ROOT
-                    ROOT = { pays_tribute_to = PREV }
-                }
-            }
-            save_event_target_as = target_ruler
-            random_realm_title = {
-                limit = {
-                    tier = COUNT
-                    location = {
-                        region = emf_region_manifest_destiny_tier_3
-                        any_neighbor_province = { owner_under_ROOT = yes }
-                    }
-                }
-                kingdom = {
-                    ROOT = {
-                        war = {
-                            casus_belli = manifest_destiny_invasion
-                            target = PREVPREVPREV
-                            thirdparty_title = PREV
-                            infamy = 0
-                        }
-                    }
-                }
-                break = yes
-            }
-        }
-    }
-}
-
-# emf_seljuk.40 -- Oghuz ruler becomes Turkmen after becoming non-nomadic
-character_event = {
-    id = emf_seljuk.40
-    desc = EVTDESC60220
-    picture = GFX_evt_mongols
-
-    only_playable = yes
-    culture = oghuz
-    min_age = 16
-    prisoner = no
-    capable_only = yes
-    war = no
-    has_global_flag = SWMH
-
-    trigger = {
-        is_nomadic = no
-        OR = {
-            independent = yes
-            liege = { culture = turkmen }
-            liege = { culture = turkish }
-            NOT = {
-                any_liege = {
-                    OR = {
-                        culture = turkish
-                        culture = turkmen
-                        culture = oghuz
-                    }
-                }
-            }
-        }
-        NOR = {
-            is_inaccessible_trigger = yes
-            has_character_flag = refuse_culture_conversion
-            any_liege = { has_character_flag = refuse_culture_conversion }
-        }
-    }
-
-    mean_time_to_happen = {
-        years = 25
-        modifier = {
-            factor = 2.0
-            NOT = { age = 30 }
-        }
-        modifier = {
-            factor = 0.5
-            liege = { culture = turkmen }
-        }
-        modifier = {
-            factor = 0.5
-            capital_scope = { culture = turkmen }
-        }
-        modifier = {
-            factor = 0.5
-            independent = no
-            liege = { independent = no }
-            NOT = { any_liege = { NOT = { culture = turkmen } } }
-        }
-    }
-
-    option = {
-        name = EVTOPTA60220 # Convert
-        culture = turkmen
-        capital_scope = {
-            if = {
-                limit = {
-                    ROOT = { higher_tier_than = BARON }
-                    culture = oghuz
-                }
-                culture = turkmen
-            }
-        }
-        hidden_tooltip = {
-            any_courtier = {
-                limit = {
-                    is_ruler = no
-                    culture = oghuz
-                    prisoner = no
-                    is_incapable = no
-                }
-                culture = turkmen
-            }
-            any_vassal = {
-                limit = {
-                    is_playable = no
-                    culture = oghuz
-                    prisoner = no
-                    is_incapable = no
-                }
-                culture = turkmen
-                any_courtier = {
-                    limit = {
-                        is_ruler = no
-                        culture = oghuz
-                        prisoner = no
-                        is_incapable = no
-                    }
-                    culture = turkmen
-                }
-            }
-        }
-    }
-    option = {
-        name = EVTOPTB60220 # Refuse
-        trigger = { ai = no }
-        set_character_flag = refuse_culture_conversion
-    }
-}
-
-# Turkmen ruler becomes Turkish if in Anatolia
-character_event = {
-    id = emf_seljuk.41
-    desc = EVTDESC60221
-    picture = GFX_evt_mongols
-
-    only_playable = yes
-    culture = turkmen
-    min_age = 16
-    prisoner = no
-    capable_only = yes
-    war = no
-    has_global_flag = SWMH
-
-    trigger = {
-        year = 1200
-        is_nomadic = no
-        is_tribal = no
-        capital_scope = { region = world_asia_minor }
-        OR = {
-            liege = { culture = turkish }
-            independent = yes
-            NOT = { any_liege = { culture = turkmen } }
-        }
-        NOR = {
-            is_inaccessible_trigger = yes
-            has_character_flag = refuse_culture_conversion
-            any_liege = { has_character_flag = refuse_culture_conversion }
-        }
-    }
-
-    mean_time_to_happen = {
-        years = 25
-        modifier = {
-            factor = 2.0
-            NOT = { age = 30 }
-        }
-        modifier = {
-            factor = 0.5
-            liege = { culture = turkish }
-        }
-        modifier = {
-            factor = 0.5
-            capital_scope = { culture = turkish }
-        }
-        modifier = {
-            factor = 0.5
-            independent = no
-            liege = { independent = no }
-            NOT = { any_liege = { NOT = { culture = turkish } } }
-        }
-    }
-
-    option = {
-        name = EVTOPTA60220 # Convert
-        culture = turkish
-        capital_scope = {
-            if = {
-                limit = {
-                    ROOT = { higher_tier_than = BARON }
-                    culture = turkmen
-                }
-                culture = turkish
-            }
-        }
-        hidden_tooltip = {
-            any_courtier = {
-                limit = {
-                    is_ruler = no
-                    culture = turkmen
-                    prisoner = no
-                    is_incapable = no
-                }
-                culture = turkish
-            }
-            any_vassal = {
-                limit = {
-                    is_playable = no
-                    culture = turkmen
-                    prisoner = no
-                    is_incapable = no
-                }
-                culture = turkish
-                any_courtier = {
-                    limit = {
-                        is_ruler = no
-                        culture = turkmen
-                        prisoner = no
-                        is_incapable = no
-                    }
-                    culture = turkish
-                }
-            }
-        }
-    }
-    option = {
-        name = EVTOPTB60220 # Refuse
-        trigger = { ai = no }
-        set_character_flag = refuse_culture_conversion
-    }
-}
-
 # emf_seljuk.50 -- invalidate the Seljuk Invader if nec., and then try to find a new one if possible [on_yearly_pulse]
 character_event = {
     id = emf_seljuk.50
@@ -1016,7 +681,116 @@ character_event = {
 
     immediate = {
         emf_seljuk_invader = {
-            limit = { is_alive = yes }
+            limit = {
+                is_alive = yes
+                emf_seljuk_invader_is_valid = no
+            }
+            log = "DEBUG: emf_seljuk.50: invader invalid: [This.GetBestName] of the [This.PrimaryTitle.GetFullBaseName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+            if = {
+                limit = { year >= 1100 }
+                log = "--> year is greater than or equal to 1100 AD"
+            }
+            if = {
+                limit = { emf_seljuk_dynasty = no }
+                log = "--> not a Seljuk"
+            }
+            if = {
+                limit = { independent = no }
+                log = "--> not independent"
+                if = {
+                    limit = { is_ruler = yes }
+                    reverse_opinion = { who = LIEGE modifier = opinion_rightful_subjugation }
+                    set_defacto_liege = THIS
+                    emf_liege_change = yes
+                    log = "----> corrected"
+                }
+            }
+            if = {
+                limit = { is_feudal = no }
+                log = "--> not a feudal government"
+                if = {
+                    limit = { is_ruler = yes }
+                    emf_switch_to_feudal_gov = yes
+                    if = {
+                        limit = { is_feudal = yes }
+                        log = "----> corrected"
+                    }
+                    else = {
+                        log = "----> failed to correct"
+                    }
+                }
+            }
+            if = {
+                limit = {
+                    has_game_rule = { name = railroading value = aggressive }
+                    NOT = { religion = sunni }
+                }
+                log = "--> religion is not sunni"
+                religion = sunni
+                any_child = {
+                    limit = {
+                        NOT = { religion = sunni }
+                        ai = yes
+                    }
+                    religion = sunni
+                }
+                if = {
+                    limit = { religion = sunni }
+                    log = "----> corrected"
+                }
+            }
+            if = {
+                limit = { is_landed = no }
+                log = "--> not landed"
+            }
+            if = {
+                limit = { NOT = { higher_tier_than = BARON } }
+                log = "--> not higher tier than BARON"
+            }
+            if = {
+                limit = { mercenary = yes }
+                log = "--> is mercenary"
+            }
+            if = {
+                limit = { holy_order = yes }
+                log = "--> is holy order"
+            }
+            if = {
+                limit = { ai = no }
+                log = "--> is a player"
+            }
+            if = {
+                limit = {
+                    NOR = {
+                        capital_scope = {
+                            OR = {
+                                region = emf_region_seljuk_invasion_tier_1
+                                region = emf_region_seljuk_invasion_tier_2
+                            }
+                        }
+                        any_realm_province = {
+                            owner = { same_realm = PREVPREV }
+                            has_province_flag = emf_capital_connected
+                            OR = {
+                                region = emf_region_seljuk_invasion_tier_1
+                                region = emf_region_seljuk_invasion_tier_2
+                                any_neighbor_province = {
+                                    OR = {
+                                        region = emf_region_seljuk_invasion_tier_1
+                                        region = emf_region_seljuk_invasion_tier_2
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                log = "--> does not have a realm province within the conquest zone"
+            }
+            if = {
+                limit = { emf_seljuk_invader_is_valid = yes }
+                log = "----> invader is again valid!"
+                break = yes
+            }
             emf_seljuk_invader_teardown = yes
         }
         emf_seljuk_select_valid_invader = yes
@@ -1024,10 +798,17 @@ character_event = {
 
     option = {
         name = OK
+        trigger = { event_target:emf_seljuk_invader = { always = yes } }
         event_target:emf_seljuk_invader = {
+            log = "--> selected new invader: [This.GetBestName] of the [This.PrimaryTitle.GetFullBaseName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
             emf_seljuk_become_invader = yes
             emf_seljuk_refresh_retinue = yes
         }
+    }
+    option = {
+        name = CANCEL
+        trigger = { NOT = { event_target:emf_seljuk_invader = { always = yes } } }
+        log = "--> could not select a new invader!"
     }
 }
 
@@ -1049,6 +830,7 @@ character_event = {
     }
 
     immediate = {
+        log = "INFO: emf_seljuk.51: seljuk invasion mission complete!"
         set_global_flag = emf_seljuk_invasion_done
         # NOTE: we don't remove the invader trait (emf_seljuk_invasion_done will stop the mission, and we keep the invader
         # traits on dead invaders as well as the final alive one for posterity)
@@ -1094,6 +876,7 @@ character_event = {
             limit = { check_variable = { which = local_pct_under value < 0.667 } } # 2/3 rule for empire create/usurp
             break = yes # Boohoo!
         }
+        log = "DEBUG: emf_seljuk.55: invader can create/usurp e_persia, creating/usurping for him..."
         # Woohoo!
         primary_title = {
             e_persia = {
@@ -1492,7 +1275,7 @@ character_event = {
             limit = { check_variable = { which = local_troops value <= 0 } }
             break = yes # We've already got enough troops to pull this off.
         }
-        divide_variable = { which = local_troops value = 1550 } # Standard Seljuk unit size is 1550 men
+        divide_variable = { which = local_troops value = 1550 } # Standard Seljuk unit size is 1550 soldiers
         while = {
             limit = { check_variable = { which = local_troops value > 0 } }
             change_variable = { which = local_troops value = -1 }
@@ -1501,72 +1284,421 @@ character_event = {
     }
 }
 
-# emf_seljuk.100 -- startup event [ROOT=isis]
-character_event = {
-    id = emf_seljuk.100
 
-    is_triggered_only = yes
-    hide_window = yes
+#### CULTURE CONVERSION EVENTS FOR OGHUZ -> TURKMEN AND TURKMEN -> TURKISH ####
+
+# emf_seljuk.90 -- Oghuz ruler becomes Turkmen after becoming non-nomadic
+character_event = {
+    id = emf_seljuk.90
+    desc = EVTDESC60220
+    picture = GFX_evt_mongols
+
+    only_playable = yes
+    culture = oghuz
+    min_age = 16
+    prisoner = no
+    capable_only = yes
+    war = no
+    has_global_flag = SWMH
 
     trigger = {
-        NOT = { any_independent_ruler = { emf_seljuk_invasion_mission_done = yes } }
+        is_nomadic = no
+        OR = {
+            independent = yes
+            liege = { culture = turkmen }
+            liege = { culture = turkish }
+            NOT = {
+                any_liege = {
+                    OR = {
+                        culture = turkish
+                        culture = turkmen
+                        culture = oghuz
+                    }
+                }
+            }
+        }
+        NOR = {
+            is_inaccessible_trigger = yes
+            has_character_flag = refuse_culture_conversion
+            any_liege = { has_character_flag = refuse_culture_conversion }
+        }
     }
 
-    immediate = {
-        c_3030 = { # Seljuk
-            if = {
-                limit = { is_alive = yes }
-                set_character_flag = emf_seljuk_himself # In case he's picked to invade, for proper narrative event text
-            }
+    mean_time_to_happen = {
+        years = 25
+        modifier = {
+            factor = 2.0
+            NOT = { age = 30 }
         }
-
-        if = {
-            limit = { start_date >= 1018.1.1 } # TODO: timeline extension before 1018 will require adjustment
-            set_global_flag = emf_seljuk_historical_start
+        modifier = {
+            factor = 0.5
+            liege = { culture = turkmen }
         }
-        else = {
-            set_global_flag = emf_seljuk_ahistorical_start
+        modifier = {
+            factor = 0.5
+            capital_scope = { culture = turkmen }
         }
-
-        if = {
-            limit = { any_independent_ruler = { emf_seljuk_invader_is_valid = yes } }
-            emf_seljuk_select_valid_invader = yes
-        }
-        else = { # No independent, landed, non-merc, non-HO Seljuk
-            # Prevent the Seljuk dynasty members (if any alive) from accepting a Demand Religious Conversion request
-            # & ensure they're all Sunni while we're at it
-            c_3030 = {
-                any_dynasty_member = {
-                    limit = { ai = yes }
-                    religion = sunni
-                    set_character_flag = ai_flag_refuse_conversion
-                    if = {
-                        limit = { independent = no }
-                        reverse_opinion = { who = LIEGE modifier = opinion_impressed multiplier = 5 years = 100 }
-                    }
-                }
-                if = {
-                    limit = {
-                        is_alive = yes
-                        ai = yes
-                    }
-                    religion = sunni
-                    set_character_flag = ai_flag_refuse_conversion
-                    if = {
-                        limit = { independent = no }
-                        reverse_opinion = { who = LIEGE modifier = opinion_impressed multiplier = 5 years = 100 }
-                    }
-                }
-            }
+        modifier = {
+            factor = 0.5
+            independent = no
+            liege = { independent = no }
+            NOT = { any_liege = { NOT = { culture = turkmen } } }
         }
     }
 
     option = {
-        name = OK
-        event_target:emf_seljuk_invader = {
-            log = "INFO: emf_seljuk.100: selected landed, independent Seljuk Invader: [This.GetTitledName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
-            emf_seljuk_become_invader = yes
-            emf_seljuk_refresh_retinue = yes
+        name = EVTOPTA60220 # Convert
+        culture = turkmen
+        capital_scope = {
+            if = {
+                limit = {
+                    ROOT = { higher_tier_than = BARON }
+                    culture = oghuz
+                }
+                culture = turkmen
+            }
+        }
+        hidden_tooltip = {
+            any_courtier = {
+                limit = {
+                    is_ruler = no
+                    culture = oghuz
+                    prisoner = no
+                    is_incapable = no
+                }
+                culture = turkmen
+            }
+            any_vassal = {
+                limit = {
+                    is_playable = no
+                    culture = oghuz
+                    prisoner = no
+                    is_incapable = no
+                }
+                culture = turkmen
+                any_courtier = {
+                    limit = {
+                        is_ruler = no
+                        culture = oghuz
+                        prisoner = no
+                        is_incapable = no
+                    }
+                    culture = turkmen
+                }
+            }
+        }
+    }
+    option = {
+        name = EVTOPTB60220 # Refuse
+        trigger = { ai = no }
+        set_character_flag = refuse_culture_conversion
+    }
+}
+
+# emf_seljuk.91 -- Turkmen ruler becomes Turkish if in Anatolia
+character_event = {
+    id = emf_seljuk.91
+    desc = EVTDESC60221
+    picture = GFX_evt_mongols
+
+    only_playable = yes
+    culture = turkmen
+    min_age = 16
+    prisoner = no
+    capable_only = yes
+    war = no
+    has_global_flag = SWMH
+
+    trigger = {
+        year = 1200
+        is_nomadic = no
+        is_tribal = no
+        capital_scope = { region = world_asia_minor }
+        OR = {
+            liege = { culture = turkish }
+            independent = yes
+            NOT = { any_liege = { culture = turkmen } }
+        }
+        NOR = {
+            is_inaccessible_trigger = yes
+            has_character_flag = refuse_culture_conversion
+            any_liege = { has_character_flag = refuse_culture_conversion }
+        }
+    }
+
+    mean_time_to_happen = {
+        years = 25
+        modifier = {
+            factor = 2.0
+            NOT = { age = 30 }
+        }
+        modifier = {
+            factor = 0.5
+            liege = { culture = turkish }
+        }
+        modifier = {
+            factor = 0.5
+            capital_scope = { culture = turkish }
+        }
+        modifier = {
+            factor = 0.5
+            independent = no
+            liege = { independent = no }
+            NOT = { any_liege = { NOT = { culture = turkish } } }
+        }
+    }
+
+    option = {
+        name = EVTOPTA60220 # Convert
+        culture = turkish
+        capital_scope = {
+            if = {
+                limit = {
+                    ROOT = { higher_tier_than = BARON }
+                    culture = turkmen
+                }
+                culture = turkish
+            }
+        }
+        hidden_tooltip = {
+            any_courtier = {
+                limit = {
+                    is_ruler = no
+                    culture = turkmen
+                    prisoner = no
+                    is_incapable = no
+                }
+                culture = turkish
+            }
+            any_vassal = {
+                limit = {
+                    is_playable = no
+                    culture = turkmen
+                    prisoner = no
+                    is_incapable = no
+                }
+                culture = turkish
+                any_courtier = {
+                    limit = {
+                        is_ruler = no
+                        culture = turkmen
+                        prisoner = no
+                        is_incapable = no
+                    }
+                    culture = turkish
+                }
+            }
+        }
+    }
+    option = {
+        name = EVTOPTB60220 # Refuse
+        trigger = { ai = no }
+        set_character_flag = refuse_culture_conversion
+    }
+}
+
+
+#### NOT RELATED TO SELJUK INVASION MISSION: ALSO FOR TIMURIDS ####
+
+# Prompt AI to use the manifest destiny CB
+character_event = {
+    id = emf_seljuk.200
+
+    hide_window = yes
+
+    only_independent = yes
+    min_age = 16
+    capable_only = yes
+    prisoner = no
+    war = no
+    ai = yes
+
+    trigger = {
+        emf_seljuk_invasion_mission = no # Uses a whole different thingie
+        OR = {
+            AND = {
+                emf_seljuk_dynasty = yes
+                NOT = { year = 1200 }
+            }
+            dynasty = 800 # Timurids
+        }
+        wealth = 0
+        mercenary = no
+        is_tributary = no
+        is_ill = no
+        has_regent = no
+        NOR = {
+            realm_size = 300
+            trait = content
+            trait = humble
+            trait = craven
+            trait = maimed
+            trait = depressed
+            trait = infirm
+            is_inaccessible_trigger = yes
+        }
+        any_independent_ruler = {
+            is_merchant_republic = no
+            reverse_realm_levy_diff = { who = ROOT value = 10000 }
+            any_realm_title = {
+                tier = COUNT
+                location = {
+                    region = emf_region_manifest_destiny
+                    any_neighbor_province = { owner_under_ROOT = yes }
+                }
+            }
+            NOR = {
+                dynasty = ROOT
+                same_realm = ROOT
+                reverse_has_truce = ROOT
+                is_allied_with = ROOT
+                has_non_aggression_pact_with = ROOT
+                reverse_opinion = { who = ROOT value = 25 }
+                pays_tribute_to = ROOT
+                ROOT = { pays_tribute_to = PREV }
+            }
+        }
+    }
+
+    mean_time_to_happen = {
+        months = 12
+    }
+
+    immediate = {
+        # First priority
+        random_independent_ruler = {
+            limit = {
+                is_merchant_republic = no
+                reverse_realm_levy_diff = { who = ROOT value = 10000 }
+                any_realm_title = {
+                    tier = COUNT
+                    location = {
+                        region = emf_region_manifest_destiny_tier_1
+                        any_neighbor_province = { owner_under_ROOT = yes }
+                    }
+                }
+                NOR = {
+                    dynasty = ROOT
+                    same_realm = ROOT
+                    reverse_has_truce = ROOT
+                    is_allied_with = ROOT
+                    has_non_aggression_pact_with = ROOT
+                    reverse_opinion = { who = ROOT value = 25 }
+                    pays_tribute_to = ROOT
+                    ROOT = { pays_tribute_to = PREV }
+                }
+            }
+            save_event_target_as = target_ruler
+            random_realm_title = {
+                limit = {
+                    tier = COUNT
+                    location = {
+                        region = emf_region_manifest_destiny_tier_1
+                        any_neighbor_province = { owner_under_ROOT = yes }
+                    }
+                }
+                kingdom = {
+                    ROOT = {
+                        war = {
+                            casus_belli = manifest_destiny_invasion
+                            target = PREVPREVPREV
+                            thirdparty_title = PREV
+                            infamy = 0
+                        }
+                    }
+                }
+                break = yes
+            }
+        }
+        # Second priority
+        random_independent_ruler = {
+            limit = {
+                is_merchant_republic = no
+                reverse_realm_levy_diff = { who = ROOT value = 10000 }
+                any_realm_title = {
+                    tier = COUNT
+                    location = {
+                        region = emf_region_manifest_destiny_tier_2
+                        any_neighbor_province = { owner_under_ROOT = yes }
+                    }
+                }
+                NOR = {
+                    dynasty = ROOT
+                    same_realm = ROOT
+                    reverse_has_truce = ROOT
+                    is_allied_with = ROOT
+                    has_non_aggression_pact_with = ROOT
+                    reverse_opinion = { who = ROOT value = 25 }
+                    pays_tribute_to = ROOT
+                    ROOT = { pays_tribute_to = PREV }
+                }
+            }
+            save_event_target_as = target_ruler
+            random_realm_title = {
+                limit = {
+                    tier = COUNT
+                    location = {
+                        region = emf_region_manifest_destiny_tier_2
+                        any_neighbor_province = { owner_under_ROOT = yes }
+                    }
+                }
+                kingdom = {
+                    ROOT = {
+                        war = {
+                            casus_belli = manifest_destiny_invasion
+                            target = PREVPREVPREV
+                            thirdparty_title = PREV
+                            infamy = 0
+                        }
+                    }
+                }
+                break = yes
+            }
+        }
+        # Third priority
+        random_independent_ruler = {
+            limit = {
+                is_merchant_republic = no
+                reverse_realm_levy_diff = { who = ROOT value = 10000 }
+                any_realm_title = {
+                    tier = COUNT
+                    location = {
+                        region = emf_region_manifest_destiny_tier_3
+                        any_neighbor_province = { owner_under_ROOT = yes }
+                    }
+                }
+                NOR = {
+                    dynasty = ROOT
+                    same_realm = ROOT
+                    reverse_has_truce = ROOT
+                    is_allied_with = ROOT
+                    has_non_aggression_pact_with = ROOT
+                    reverse_opinion = { who = ROOT value = 25 }
+                    pays_tribute_to = ROOT
+                    ROOT = { pays_tribute_to = PREV }
+                }
+            }
+            save_event_target_as = target_ruler
+            random_realm_title = {
+                limit = {
+                    tier = COUNT
+                    location = {
+                        region = emf_region_manifest_destiny_tier_3
+                        any_neighbor_province = { owner_under_ROOT = yes }
+                    }
+                }
+                kingdom = {
+                    ROOT = {
+                        war = {
+                            casus_belli = manifest_destiny_invasion
+                            target = PREVPREVPREV
+                            thirdparty_title = PREV
+                            infamy = 0
+                        }
+                    }
+                }
+                break = yes
+            }
         }
     }
 }
