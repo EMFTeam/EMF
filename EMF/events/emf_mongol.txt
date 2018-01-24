@@ -492,12 +492,23 @@ character_event = {
 
 ### MONGOL EMPIRE SPLITS UP
 
-# emf_mongol.199 -- Khan dies with a large enough empire to split up among sons/brothers [on_death]
-character_event = {
-    id = emf_mongol.199
+# Khan dies with a large enough empire to split up among sons/brothers [on_death]
+narrative_event = {
+    id = emf_mongol.200
+    desc = EVTDESC_emf_mongol_200
+    picture = GFX_evt_mongols
+
+    title = {
+        text = EVTNAME_emf_mongol_200
+        trigger = { ROOT = { NOT = { has_character_modifier = greatest_of_khans } } }
+    }
+    title = {
+        text = EVTNAME_emf_mongol_200_genghis
+        trigger = { ROOT = { has_character_modifier = greatest_of_khans } }
+    }
 
     is_triggered_only = yes
-    hide_window = yes
+    major = yes
 
     ai = yes
     culture = mongol
@@ -537,7 +548,7 @@ character_event = {
     }
 
     immediate = {
-        log = "INFO: emf_mongol.199: [Root.GetTitledFirstName] [Root.GetOnlyDynastyName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) has died with sufficient conditions for a 3-way mongol empire split"
+        log = "INFO: emf_mongol.200: [Root.GetTitledFirstName] [Root.GetOnlyDynastyName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) has died with sufficient conditions for a 3-way mongol empire split"
         current_heir = {
             log = "--> current_heir: [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
         }
@@ -1736,19 +1747,18 @@ character_event = {
                 }
             }
         }
+        # Failsafe for assert: make sure we get rid of ALL titles
+        # Disabled for now, because we'd rather catch this as aberrant behavior sooner rather than later
+        #any_demesne_title = {
+        #    limit = { NOR = { title = e_mongol_empire holding_type = nomad clan = yes } }
+        #    grant_title = event_target:mongol_heir_1
+        #}
 
-        # Fire narrative event to players
-        narrative_event = { id = emf_mongol.200 }
-
-        # Destroy e_mongol_empire and our clan_title
         clan_title = { emf_unsafe_destroy_title = yes }
-        e_mongol_empire = {
-            set_title_landless = { title = THIS status = no }
-            emf_destroy_title = yes
-            set_title_flag = emf_defunct
-        }
+        activate_title = { title = e_mongol_empire status = no }
+        event_target:isis = { character_event = { id = emf_mongol.201 days = 1 } }
 
-        # Cleanup
+
         clr_global_flag = jochi_dynasty_created
         clr_global_flag = chagatai_dynasty_created
         clr_global_flag = ogodei_dynasty_created
@@ -1761,26 +1771,6 @@ character_event = {
         }
         any_landed_title = { clr_character_flag = emf_mongol_split_granted }
     }
-}
-
-narrative_event = {
-    id = emf_mongol.200
-    desc = EVTDESC_emf_mongol_200
-    picture = GFX_evt_mongols
-
-    title = {
-        text = EVTNAME_emf_mongol_200
-        trigger = { ROOT = { NOT = { has_character_modifier = greatest_of_khans } } }
-    }
-    title = {
-        text = EVTNAME_emf_mongol_200_genghis
-        trigger = { ROOT = { has_character_modifier = greatest_of_khans } }
-    }
-
-    is_triggered_only = yes
-    major = yes
-
-    major_trigger = { ai = no }
 
     option = {
         name = EVTOPTA_emf_mongol_200
@@ -1814,6 +1804,39 @@ narrative_event = {
             event_target:emf_mongol_heir_1 = { custom_tooltip = { text = NOTIFY_TOOLTIP } }
             event_target:emf_mongol_heir_2 = { custom_tooltip = { text = NOTIFY_TOOLTIP } }
             event_target:emf_mongol_heir_3 = { custom_tooltip = { text = NOTIFY_TOOLTIP } }
+        }
+    }
+}
+
+character_event = {
+    id = emf_mongol.201
+    hide_window = yes
+    is_triggered_only = yes
+
+    trigger = {
+        has_landed_title = e_hip
+    }
+
+    immediate = {
+        # PARANOIA:
+        event_target:emf_mongol_heir_1 = { set_defacto_liege = THIS }
+        event_target:emf_mongol_heir_2 = { set_defacto_liege = THIS }
+        event_target:emf_mongol_heir_3 = { set_defacto_liege = THIS }
+        e_mongol_empire = {
+            # PARANOIA:
+            owner = {
+                clan_title = { emf_unsafe_destroy_title = yes }
+                any_vassal = {
+                    limit = { clan = yes }
+                    clan_title = { emf_unsafe_destroy_title = yes }
+                }
+            }
+            # Kill the title
+            set_title_landless = { title = THIS status = no }
+            emf_destroy_title = yes
+            # Bring back the title history [don't THINK it was actually lost by deactivation]
+            activate_title = { title = THIS status = yes }
+            set_title_flag = emf_defunct # But never to be created again
         }
     }
 }
@@ -2633,7 +2656,7 @@ character_event = {
             infamy = 0
         }
         event_target:emf_defender = {
-            character_event = { id = emf_mongol.1001 days = 1 } # Verify war happened
+            character_event = { id = emf_mongol.1001 days = 1 } # Verify war happened (debugging only)
         }
     }
 }
@@ -2648,15 +2671,14 @@ character_event = {
     immediate = {
         if = {
             limit = {
-                any_war = {
-                    attacker = { character = FROM }
-                    defender = { character = ROOT }
-                    using_cb = emf_mongol_invasion
+                NOT = {
+                    any_war = {
+                        attacker = { character = FROM }
+                        defender = { character = ROOT }
+                        using_cb = emf_mongol_invasion
+                    }
                 }
             }
-            set_global_flag = emf_mongol_invasion_started
-        }
-        else = {
             log = "WARNING: emf_mongol.1001: script-declared emf_mongol_invasion (by #[From.GetID]/[From.PrimaryTitle.GetID]) failed to work vs. [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID])"
         }
     }
