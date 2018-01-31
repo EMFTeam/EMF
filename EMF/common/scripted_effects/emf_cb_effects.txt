@@ -40,11 +40,22 @@ emf_cb_thirdparty_on_success_posttitle = {
 }
 
 emf_cb_on_add = {
+    attacker = { emf_cb_reset_peace_years = yes }
+    defender = { emf_cb_reset_peace_years = yes }
     if = {
         limit = { defender = { is_offmap_governor = offmap_china } }
-        attacker = {  
+        attacker = {
             sound_effect = china_angered_emperor
             detract_grace_super_huge_effect = yes 
+        }
+    }
+}
+
+emf_cb_reset_peace_years = {
+    hidden_effect = {
+        if = {
+            limit = { higher_real_tier_than = COUNT }
+            set_variable = { which = "emf_peace_years" value = 0 }
         }
     }
 }
@@ -138,6 +149,34 @@ emf_cb_dynlevy_other_end = {
 }
 
 #### UTILITY EFFECTS ####
+
+emf_cb_start_subjugation_opinions = {
+    hidden_effect = {
+        ROOT = { any_vassal = { set_character_flag = emf_subj_opinion_prior_vassal } }
+    }
+}
+
+emf_cb_finish_subjugation_opinions = {
+    hidden_effect = {
+        ROOT = {
+            any_vassal = {
+                limit = {
+                    NOT = { has_character_flag = emf_subj_opinion_prior_vassal }
+                    religion = ROOT
+                }
+                opinion = { who = ROOT modifier = opinion_subjugated }
+            }
+            any_vassal = {
+                limit = {
+                    NOT = { has_character_flag = emf_subj_opinion_prior_vassal }
+                    NOT = { religion = ROOT }
+                }
+                opinion = { who = ROOT modifier = opinion_subjugated_other_rel }
+            }
+            any_vassal = { clr_character_flag = emf_subj_opinion_prior_vassal }
+        }
+    }
+}
 
 # THIS = title, ROOT = character about to assume THIS
 emf_cb_ROOT_ensure_feudal = {
@@ -240,6 +279,7 @@ emf_cb_latb_build = {
         }
         random_province_holding = {
             limit = { holding_type = tribal }
+            set_title_flag = emf_built_by_latb
             log = "DEBUG: LATB: built tribal holding [This.GetID] ([This.GetBaseName]) in [Prev.GetName] ([PrevPrev.GetID])"
         }
     }
@@ -325,49 +365,10 @@ emf_cb_religious_on_success_title = {
     }
     else = {
         pf_liege_change_under_title_begin_effect = yes
-        if = { # Standard Holy War behaviour for Non-Muslims and Muslims fighting other Muslims
-            limit = {
-                OR = {
-                    ROOT = {
-                        NOT = {
-                            religion_group = muslim
-                        }
-                    }
-                    AND = {
-                        ROOT = {
-                            religion_group = muslim
-                        }
-                        FROM = {
-                            religion_group = muslim
-                        }
-                    }
-                }
-            }
-            custom_tooltip = {
-                text = religious_cb_succ_tip
-                hidden_tooltip = {
-                    ROOT = {
-                        vassalize_or_take_under_title = {
-                            title = PREV
-                            enemy = FROM
-                            same_religion = yes # Only vassalize rulers of my religion
-                            is_religious = yes
-                            type = holy_war
-                        }
-                    }
-                }
-            }
-        }
         if = { # Muslims fighting Non-Muslims preserve vassals
             limit = {
-                ROOT = {
-                    religion_group = muslim
-                }
-                FROM = {
-                    NOT = {
-                        religion_group = muslim
-                    }
-                }
+                ROOT = { religion_group = muslim }
+                FROM = { NOT = { religion_group = muslim } }
             }
             custom_tooltip = {
                 text = religious_cb_succ_muslim_tip
@@ -376,6 +377,22 @@ emf_cb_religious_on_success_title = {
                         vassalize_or_take_under_title = {
                             title = PREV
                             enemy = FROM
+                            is_religious = yes
+                            type = holy_war
+                        }
+                    }
+                }
+            }
+        }
+        else = { # Standard Holy War behaviour for Non-Muslims and Muslims fighting other Muslims
+            custom_tooltip = {
+                text = religious_cb_succ_tip
+                hidden_tooltip = {
+                    ROOT = {
+                        vassalize_or_take_under_title = {
+                            title = PREV
+                            enemy = FROM
+                            same_religion = yes # Only vassalize rulers of my religion
                             is_religious = yes
                             type = holy_war
                         }

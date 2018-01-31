@@ -3,79 +3,96 @@
 #### LANDED TITLES TRIGGERS ####
 
 title_duke_basic_allow = {
-    FROM = {
-        custom_tooltip = {
-            text = emf_ctt_has_not_become_defunct_titular_title
-            hidden_tooltip = {
-                OR = {
-                    is_titular = no
-                    AND = {
-                        NOT = { has_title_flag = emf_autodestroy_defunct }
-                        ROOT = { ai = no } # only let players create titular duchies, as the AI seems to spam them
+    is_primary_war_defender = no
+    conditional_tooltip = {
+        trigger = { FROM = { has_holder = no } }
+        conditional_tooltip = {
+            trigger = { FROM = { has_title_flag = emf_defunct } }
+            custom_tooltip = {
+                text = emf_ctt_FROM_is_not_defunct
+                hidden_tooltip = { always = no }
+            }
+        }
+        conditional_tooltip = {
+            trigger = {
+                FROM = {
+                    NOR = {
+                        has_title_flag = emf_defunct
+                        ROOT = { has_character_flag = emf_skip_title_basic_allow_tmp }
                     }
+                    is_titular = yes
                 }
+            }
+            has_game_rule = { name = titular_title_creation value = all }
+            conditional_tooltip = {
+                trigger = { ai = yes }
+                # AI dukes and below may create titular duchies; they may help the AI form a kingdom.
+                # AI kings and emperors have no sensible use for titular duchies and may [not] abuse them to their detriment.
+                lower_tier_than = KING
             }
         }
     }
 }
 
 title_king_basic_allow = {
-    OR = {
-        hidden_tooltip = { has_character_flag = emf_aed_in_progress_tmp }
-        AND = {
-            is_primary_war_defender = no
-            is_adult = yes
-            has_regent = no
-            FROM = {
-                custom_tooltip = {
-                    text = emf_ctt_title_is_active
-                    hidden_tooltip = { is_title_active = THIS }
+    is_primary_war_defender = no
+    is_adult = yes
+    has_regent = no
+    conditional_tooltip = {
+        trigger = { FROM = { has_holder = no } }
+        conditional_tooltip = {
+            trigger = { FROM = { has_title_flag = emf_defunct } }
+            custom_tooltip = {
+                text = emf_ctt_FROM_is_not_defunct
+                hidden_tooltip = { always = no }
+            }
+        }
+        conditional_tooltip = {
+            trigger = {
+                NOR = {
+                    FROM = { has_title_flag = emf_defunct }
+                    has_character_flag = emf_skip_title_basic_allow_tmp
+                }
+            }
+            conditional_tooltip = { # Titular kingdom rules apply
+                trigger = { FROM = { is_de_jure_title = no } }
+                independent = yes
+                conditional_tooltip = {
+                    trigger = { is_republic = no }
+                    num_of_count_titles_in_realm = 5
                 }
                 OR = {
-                    has_holder = yes # Usurpation always permitted
-                    # Independent rulers can create titular kingdoms
-                    AND = {
-                        is_titular_title = yes
-                        ROOT = {
-                            independent = yes
-                            OR = { # AI emperors spam titular kingdoms, which is dumb, so just don't.
-                                lower_tier_than = EMPEROR
-                                ai = no
-                            }
-                            OR = {
-                                num_of_count_titles_in_realm = 5
-                                is_republic = yes
-                            }
-                        }
+                    has_game_rule = { name = titular_title_creation value = all }
+                    has_game_rule = { name = titular_title_creation value = kingdoms_and_empires }
+                }
+                # EMF allows emperor AI to create kingdoms, but we don't want them spamming titular ones (they would)
+                conditional_tooltip = {
+                    trigger = { ai = yes }
+                    lower_tier_than = EMPEROR
+                }
+            }
+            conditional_tooltip = { # IKC laws apply
+                trigger = {
+                    FROM = {
+                        is_de_jure_title = yes
+                        empire = { owner = { same_realm = ROOT } }
+                        NOT = { title = k_bohemia }
                     }
-                    custom_tooltip = {
-                        text = emf_laws_ctt_dj_empire_no_holder_or_not_same_realm
-                        hidden_tooltip = {
-                            NOT = { empire = { owner = { same_realm = ROOT } } }
-                        }
-                    }
-                    custom_tooltip = {
-                        text = emf_laws_ctt_dj_empire_vassal_can_create_kingdoms
-                        hidden_tooltip = {
-                            empire = {
-                                NOR = {
-                                    has_law = imperial_kingdom_creation_0
-                                    has_law = imperial_kingdom_creation_2
-                                }
-                                owner = { is_vassal_or_below = ROOT }
+                }
+                FROM = {
+                    empire = { # Effectively never null in EMF (and never e_null here since it has an owner)
+                        conditional_tooltip = {
+                            trigger = { NOT = { holder = ROOT } }
+                            NOR = {
+                                has_law = imperial_kingdom_creation_0
+                                has_law = imperial_kingdom_creation_2
                             }
                         }
-                    }
-                    custom_tooltip = {
-                        text = emf_laws_ctt_dj_empire_emperor_can_create_kingdoms
-                        hidden_tooltip = {
-                            empire = {
-                                NOT = { has_law = imperial_kingdom_creation_0 }
-                                holder = ROOT
-                            }
+                        conditional_tooltip = {
+                            trigger = { holder = ROOT }
+                            NOT = { has_law = imperial_kingdom_creation_0 }
                         }
                     }
-                    title = k_bohemia
                 }
             }
         }
@@ -84,16 +101,36 @@ title_king_basic_allow = {
 
 title_emperor_basic_allow = {
     war = no
-    is_adult = yes # for that brief moment when a child isn't auto-assigned a regent, plus better TT
+    is_adult = yes
     has_regent = no
     ruled_years = 5
     realm_size = 120
-    OR = {
-        lower_real_tier_than = EMPEROR
-        AND = {
-            is_nomadic = no
-            primary_title = { is_titular_title = yes }
-            FROM = { is_de_jure_title = yes }
+    conditional_tooltip = {
+        trigger = { tier = EMPEROR }
+        is_nomadic = no
+        primary_title = { is_titular_title = yes }
+        FROM = { is_de_jure_title = yes }
+    }
+    conditional_tooltip = {
+        trigger = { FROM = { has_holder = no } }
+        conditional_tooltip = {
+            trigger = { FROM = { has_title_flag = emf_defunct } }
+            custom_tooltip = {
+                text = emf_ctt_FROM_is_not_defunct
+                hidden_tooltip = { always = no }
+            }
+        }
+        conditional_tooltip = {
+            trigger = {
+                FROM = {
+                    NOR = {
+                        has_title_flag = emf_defunct
+                        ROOT = { has_character_flag = emf_skip_title_basic_allow_tmp }
+                    }
+                    is_de_jure_title = no
+                }
+            }
+            NOT = { has_game_rule = { name = titular_title_creation value = none } }
         }
     }
 }

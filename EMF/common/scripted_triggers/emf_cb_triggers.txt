@@ -5,9 +5,13 @@
 
 emf_cb_can_use_gui = {
     ROOT = {
-        custom_tooltip = {
-            text = emf_cb_ctt_no_peace_pledge
-            hidden_tooltip = { NOT = { has_character_modifier = emf_peace_pledge } }
+        show_scope_change = no
+        conditional_tooltip = {
+            trigger = { has_character_modifier = emf_peace_pledge }
+            custom_tooltip = {
+                text = emf_cb_ctt_no_peace_pledge
+                hidden_tooltip = { always = no }
+            }
         }
     }
 }
@@ -21,6 +25,14 @@ emf_cb_can_use = {
                 has_character_flag = emf_planning_tournament
                 has_character_flag = emf_holding_tournament
                 has_character_flag = planning_coronation
+                AND = {
+                    trait = uncrowned
+                    ai = yes
+                    NAND = {
+                        trait = ambitious
+                        NOT = { trait = patient }
+                    }
+                }
             }
         }
     }
@@ -396,10 +408,13 @@ emf_cb_can_use_religious = {
 }
 
 emf_cb_religious_basic_can_use_title = {
-    # Can't holy war a duchy without at least one non-nomadic province in it
+    # Can't holy war a duchy without at least one non-nomadic province in it. If attacking a nomad, tribal holdings also
+    # don't count toward settlements unless LATB or Antinomad are disabled.
     any_direct_de_jure_vassal_title = {
-        location = { any_province_holding = { NOT = { holding_type = nomad } } }
+        owner_under_FROM = yes
+        location = { emf_nomadic_province = no }
     }
+
     # The attacker needs at least one county in the target duchy, or a land
     # border, or to be within two sea zones from one of your counties (if
     # crossing seazones is allowed). Seazones may only be traversed from
@@ -523,8 +538,41 @@ emf_cb_religious_reconquest_basic_can_use_title = {
         owner_under_FROM = yes
         location = {
             religion = ROOT
-            any_province_holding = { NOT = { holding_type = nomad } }
+            emf_nomadic_province = no
         }
+    }
+}
+
+emf_cb_border_dispute_basic_can_use_title = {
+    tier = COUNT
+    owner_under_FROM = yes
+    best_de_jure_liege_title_holder_FROM = no
+    location = {
+        NOT = { has_province_flag = emf_capital_connected }
+        any_neighbor_province = {
+            owner_under_ROOT = yes
+            has_province_flag = emf_capital_connected
+        }
+        OR = {
+            ROOT = { is_nomadic = yes }
+            emf_nomadic_province = no
+        }
+    }
+}
+
+# should be used in CB target title scope
+emf_cb_prefer_border_dispute = {
+    always = no # Disabled in alpha, WIP on feature/clean-borders
+    NAND = {
+        ROOT = {
+            NOT = { same_realm = FROM }
+            OR = {
+                ai = yes
+                piety = 50
+            }
+        }
+        FROM = { independent = yes } # Can't attack revolters
+        emf_cb_border_dispute_basic_can_use_title = yes
     }
 }
 

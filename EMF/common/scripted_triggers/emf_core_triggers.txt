@@ -3,32 +3,6 @@
 
 #### EMF CORE PROPERTIES TRIGGERS ####
 
-emf_has_primary_peace = {
-    custom_tooltip = {
-        text = TT_HAS_PRIMARY_PEACE
-        hidden_tooltip = {
-            NOT = {
-                any_war = {
-                    OR = {
-                        attacker = { character = PREV }
-                        AND = {
-                            defender = { character = PREV }
-                            NOR = {
-                                using_cb = peasant_revolt
-                                using_cb = heretic_revolt
-                                #using_cb = liberation_revolt
-                                using_cb = cb_minor_clan_revolt
-                                #using_cb = emf_revolt_religious
-                                #using_cb = emf_decadence_revolt
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 emf_not_unreformed_pagan = {
     custom_tooltip = {
         text = TT_NOT_UNREFORMED_PAGAN
@@ -125,6 +99,71 @@ emf_divine_blood_religion = {
     }
 }
 
+# Makes no assumptions about current government type -- only considers potential government type
+emf_feudal_can_hold_temples_potential = {
+    OR = {
+        is_government_potential = muslim_government
+        is_government_potential = muslim_imperial_government
+        is_government_potential = bogomilist_government
+        is_government_potential = bogomilist_imperial_government
+        is_government_potential = theocratic_feudal_government
+    }
+}
+
+emf_can_hold_temples_potential = {
+    OR = {
+        is_government_potential = theocracy_government
+        emf_feudal_can_hold_temples_potential = yes
+    }
+}
+
+emf_feudal_can_hold_temples = {
+    OR = {
+        government = muslim_government
+        government = muslim_imperial_government
+        government = bogomilist_government
+        government = bogomilist_imperial_government
+        government = theocratic_feudal_government
+    }
+}
+
+emf_can_hold_temples = {
+    OR = {
+        government = theocracy_government
+        emf_feudal_can_hold_temples = yes
+    }
+}
+
+emf_has_any_succ_law = {
+    OR = {
+        has_law = succ_gavelkind
+        has_law = succ_elective_gavelkind
+        has_law = succ_seniority
+        has_law = succ_primogeniture
+        has_law = succ_feudal_elective
+        has_law = succ_tanistry
+        has_law = succ_ultimogeniture
+        has_law = succ_turkish_succession
+        has_law = succ_papal_succession
+        has_law = succ_appointment
+        has_law = succ_open_elective
+        has_law = succ_catholic_bishopric
+        has_law = succ_patrician_elective
+        has_law = succ_nomad_succession
+        has_law = succ_offmap_succession
+    }
+}
+
+emf_has_any_gender_succ_law = {
+    OR = {
+        has_law = agnatic_succession
+        has_law = cognatic_succession
+        has_law = true_cognatic_succession
+        has_law = enatic_succession
+        has_law = enatic_cognatic_succession
+    }
+}
+
 emf_is_formidable_woman = {
     is_female = yes
     trait = ambitious
@@ -165,20 +204,23 @@ emf_can_inherit = {
         is_consort = yes # Concubines cannot inherit
         holy_order = yes
         any_liege = { holy_order = yes }
-        AND = {
-            NOR = {
-                religion_group = pagan_group
-                religion_group = muslim
-            }
-            OR = {
+        is_offmap_ruler = yes
+        is_theocracy = yes
+        AND = { # Bishop nominees under Free Investiture
+            is_ruler = no
+            any_heir_title = {
                 is_theocracy = yes
-                AND = { # Nominees
-                    is_ruler = no
-                    any_heir_title = { is_theocracy = yes }
-                    NOT = { any_heir_title = { is_theocracy = no } }
-                }
+                succ_law_title = { has_law = succ_catholic_bishopric }
             }
         }
+    }
+}
+
+emf_hidden_modifier_visibility = {
+    OR = {
+        character = FROM # character themselves
+        character = event_target:isis # isis conveniently sees all
+        has_global_flag = emf_debug # so does debug mode
     }
 }
 
@@ -194,36 +236,6 @@ emf_can_convert_religion = {
     OR = {
         ai = no
         NOT = { has_character_flag = ai_flag_refuse_conversion }
-    }
-}
-
-emf_needs_extra_child = {
-    ai = yes
-    age = 30
-    NOR = {
-        age = 70
-        holy_order = yes
-        mercenary = yes
-        is_theocracy = yes
-        any_child = { is_female = yes }
-        has_character_flag = emf_initial_child_check
-    }
-    OR = {
-        any_child = {
-            emf_can_inherit = yes
-            age = 22
-        }
-        succ_law_title = {
-            NOT = { has_law = cognatic_succession }
-            NOT = { has_law = true_cognatic_succession }
-        }
-        AND = {
-            succ_law_title = { has_law = cognatic_succession }
-            any_child = {
-                emf_can_inherit = yes
-                is_female = no
-            }
-        }
     }
 }
 
@@ -262,6 +274,20 @@ emf_ROOT_completely_controls_counties = {
     }
 }
 
+emf_nomadic_province = {
+    NOT = {
+        any_province_holding = {
+            NOR = {
+                holding_type = nomad
+                AND = {
+                    holding_type = tribal
+                    has_title_flag = emf_built_by_latb
+                }
+            }
+        }
+    }
+}
+
 emf_has_swmh = {
     custom_tooltip = {
         text = emf_ctt_swmh_trigger
@@ -276,6 +302,7 @@ emf_not_has_swmh = { # Defined separately to give a custom negation tooltip
 }
 
 # opinion mods for things like "can imprison" or "can execute"
+# [which is it? a smattering of the gist, or specifically execution? -Z 2017/12/20 ]
 emf_can_execute_ROOT = {
     OR = {
         has_opinion_modifier = { who = ROOT modifier = declared_war }
@@ -313,6 +340,7 @@ emf_can_execute_ROOT = {
     }
 }
 
+# all non-hordes (retinues) have this in their purchase/hire requirements
 emf_retinue_hire_basic_potential = {
     is_nomadic = no
     OR = {
@@ -321,10 +349,69 @@ emf_retinue_hire_basic_potential = {
         is_merchant_republic = yes
         AND = {
             higher_real_tier_than = COUNT
-            yearly_income = 72
+            yearly_income = 120 # 10g/month
             OR = {
-                realm_size = 24
-                num_of_count_titles_in_realm = 8
+                realm_size = 21
+                num_of_count_titles_in_realm = 7
+            }
+        }
+    }
+}
+
+# considered "Good Enough Peace" for the realm for the purposes of tracking whether and how long since a realm/ruler has had
+# relatively uninterrupted peace. currently only used for the 'See The Realm Prosper' ambition.
+emf_has_primary_peace = {
+    custom_tooltip = {
+        text = TT_HAS_PRIMARY_PEACE
+        hidden_tooltip = {
+            NOT = {
+                any_war = {
+                    OR = {
+                        attacker = { character = PREV }
+                        AND = {
+                            defender = { character = PREV }
+                            NOR = {
+                                using_cb = peasant_revolt
+                                using_cb = heretic_revolt
+                                using_cb = cb_minor_clan_revolt
+                                #using_cb = liberation_revolt
+                                #using_cb = emf_revolt_religious
+                                #using_cb = emf_decadence_revolt
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+# forgotten daughters
+emf_needs_extra_child = {
+    ai = yes
+    age = 30
+    NOR = {
+        age = 70
+        holy_order = yes
+        mercenary = yes
+        is_theocracy = yes
+        any_child = { is_female = yes }
+        has_character_flag = emf_initial_child_check
+    }
+    OR = {
+        any_child = {
+            emf_can_inherit = yes
+            age = 22
+        }
+        succ_law_title = {
+            NOT = { has_law = cognatic_succession }
+            NOT = { has_law = true_cognatic_succession }
+        }
+        AND = {
+            succ_law_title = { has_law = cognatic_succession }
+            any_child = {
+                emf_can_inherit = yes
+                is_female = no
             }
         }
     }

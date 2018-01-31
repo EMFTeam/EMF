@@ -47,6 +47,7 @@ def main():
 
 	with revolt_effect_path.open('w', encoding='cp1252', newline='\n') as f:
 		print_file_header(f, 'ck2.scripted_effects')
+		print_effect_clear_religion_title_flags(f)
 		print_effect_set_religion_title_flag(f)
 
 	return 0
@@ -78,6 +79,15 @@ emf_revolt_ROOT_religion_matches_rebel_victory_title = {
 
 
 #### EFFECTS ####
+
+def print_effect_clear_religion_title_flags(f):
+	print('''
+emf_revolt_clear_religion_title_flags = {''', file=f)
+
+	for rel in g_religions:
+		print('\tclr_title_flag = emf_revolt_religious_victory_title_{}'.format(rel), file=f)
+
+	print('}', file=f)
 
 
 def print_effect_set_religion_title_flag(f):

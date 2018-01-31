@@ -62,6 +62,8 @@ character_event = {
     }
 
     immediate = {
+        set_global_flag = emf_v8_02a_at_game_start # FIXME / TODO: CHANGE UPON RELEASE
+
         # Global EMF config pre-startup settings (great for easy tweaking of EMF behavior in your submod):
         character_event = { id = emf_config.0 }
 
@@ -144,10 +146,7 @@ character_event = {
 
         # Initialize capital-connected territory tracking (note that this is also done on_startup as its own
         # on_action, so I'm commenting-out this invocation until/if some code in campaign setup needs to have that
-        # data guaranteed in order to do something with it)
-        #any_independent_ruler = {
-        #    character_event = { id = emf_core.50 }
-        #}
+        # data guaranteed in order to do something with it).
 
         # Initialize laws
         character_event = { id = emf_laws.0 }
@@ -155,6 +154,12 @@ character_event = {
         # Initialize playable ruler demesne (limit random vassal barons)
         any_playable_ruler = {
             character_event = { id = emf_startup.10 }
+        }
+
+        # Track historical dynasties already in the game at start
+        any_character = {
+            limit = { historical = yes }
+            set_dynasty_flag = emf_is_historical
         }
 
         if = {
@@ -178,22 +183,21 @@ character_event = {
         # Deal with randomly-applied sterility traits
         any_character = {
             limit = { trait = sterile_secret }
-            set_character_flag = emf_was_sterile
             if = {
                 limit = { any_child_even_if_dead = { always = yes } }
-                clr_character_flag = emf_was_sterile
                 remove_trait = sterile_secret
             }
-            if = {
+            else_if = {
                 limit = {
-                    has_character_flag = emf_was_sterile
                     is_married = no
                     is_consort = no
                     has_lover = no
                 }
-                clr_character_flag = emf_was_sterile
                 set_character_flag = emf_is_sterile
                 remove_trait = sterile_secret
+            }
+            else = {
+                set_character_flag = emf_was_sterile
             }
         }
 
@@ -221,6 +225,9 @@ character_event = {
 
         # Norman startup event
         character_event = { id = emf_adventurer.2749 }
+
+        # Seljuk startup event
+        character_event = { id = emf_seljuk.3 }
 
         # Initialize dynlevy
         character_event = { id = emf_dynlevy.0 }
@@ -324,7 +331,6 @@ character_event = {
 
     trigger = {
         has_warrior_skill_trigger = no
-
         OR = {
             is_playable = yes
             can_be_marshal_trigger = yes
@@ -468,7 +474,6 @@ character_event = {
 
     trigger = {
         has_diplomat_skill_trigger = no
-
         OR = {
             is_playable = yes
             can_be_chancellor_trigger = yes
@@ -1127,7 +1132,7 @@ character_event = {
     }
 }
 
-# emf_startup.2000 -- TMP-SAVE-COMPAT: fix East African Pagan Reformed bug in past 7.0x versions
+# emf_startup.2000 -- fires on_startup (incl. save/reload)
 character_event = {
     id = emf_startup.2000
 
@@ -1141,18 +1146,14 @@ character_event = {
     }
 
     immediate = {
-        if = {
+        set_global_flag = emf_v8_02a # TODO / FIXME : CHANGE UPON RELEASE OR SAVE-COMPATIBILITY CHANGE
+        # TMP-SAVE-COMPAT: add emf_defunct flag to titles with emf_autodestroy_defunct flag
+        any_landed_title = {
             limit = {
-                NOT = { any_playable_ruler = { count = 10 religion = east_african_pagan_reformed } }
-                NOT = { any_player = { religion = east_african_pagan_reformed } }
+                has_title_flag = emf_autodestroy_defunct
+                NOT = { has_title_flag = emf_defunct }
             }
-            d_east_african_pagan_reformed = {
-                emf_unsafe_destroy_title = yes
-            }
-            any_character = {
-                limit = { religion = east_african_pagan_reformed }
-                religion = east_african_pagan
-            }
+            set_title_flag = emf_defunct
         }
     }
 }

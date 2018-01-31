@@ -52,14 +52,16 @@ NDefines.NCharacter.NATURAL_DEATH_CHANCE_AGE_60 = 600
 NDefines.NCharacter.NATURAL_DEATH_CHANCE_AGE_70 = 2100
 NDefines.NCharacter.SECONDARY_SPOUSE_FERTILITY_MULT = 0.33
 NDefines.NCharacter.INFANT_DEATH_CHANCE = 0.03
+NDefines.NCharacter.TREASURY_CHANCE_TO_DISAPPEAR_STANDARD = 0    -- prior EMF v8.02: 0.05
 
 -- Title
-NDefines.NTitle.BARON_GRANT_TO_CHURCH_PIETY = 75
-NDefines.NTitle.COUNT_GRANT_TO_CHURCH_PIETY = 150
 NDefines.NTitle.COUNT_TITLE_PRESTIGE = 0.05
 NDefines.NTitle.DUKE_TITLE_PRESTIGE = 0.2
 NDefines.NTitle.KING_TITLE_PRESTIGE = 0.4
 NDefines.NTitle.EMPEROR_TITLE_PRESTIGE = 0.8
+NDefines.NTitle.BARON_LANDLESS_SON_PRESTIGE = 0
+NDefines.NTitle.BARON_GRANT_TO_CHURCH_PIETY = 75
+NDefines.NTitle.COUNT_GRANT_TO_CHURCH_PIETY = 150
 NDefines.NTitle.DUKE_CREATION_PRESTIGE = 125
 NDefines.NTitle.KING_CREATION_PRESTIGE = 250
 NDefines.NTitle.EMPEROR_CREATION_PRESTIGE = 500
@@ -72,37 +74,44 @@ NDefines.NTitle.MAX_CROWN_LAW_CHANGES = 64  -- intention is "unlimited" due to t
 NDefines.NTitle.CROWN_LAW_CHANGE_TIMER = 0  -- EMF crown laws assume that you will be able to change a CA sub-law after raising CA with same ruler
 NDefines.NTitle.EMPIRE_DE_JURE_ASSIMILATION_YEARS = 50
 NDefines.NTitle.GAME_RULES_DEJURE_LONG = 200
-NDefines.NTitle.GAME_RULES_DEJURE_LONG_EMPIRE = 100
-NDefines.NTitle.GAME_RULES_DEJURE_SHORT = 70
-NDefines.NTitle.GAME_RULES_DEJURE_SHORT_EMPIRE = 35
-NDefines.NTitle.GAME_RULES_DEJURE_SHORTEST = 20
-NDefines.NTitle.GAME_RULES_DEJURE_SHORTEST_EMPIRE = 10
+NDefines.NTitle.GAME_RULES_DEJURE_LONG_EMPIRE = 200
+NDefines.NTitle.GAME_RULES_DEJURE_SHORT = 50
+NDefines.NTitle.GAME_RULES_DEJURE_SHORT_EMPIRE = 50
+NDefines.NTitle.GAME_RULES_DEJURE_SHORTEST = 25
+NDefines.NTitle.GAME_RULES_DEJURE_SHORTEST_EMPIRE = 25
 NDefines.NTitle.REQ_KINGDOMS_FOR_EMPIRE_CREATION = 3 -- from 2
 NDefines.NTitle.ENFORCE_ONE_OF_EACH_HOLDING = 0 -- not needed, esp. on SWMH w/ its more realistic, irregular provinces
 NDefines.NTitle.MAX_REPUBLIC_COUNTIES_IN_REALM = 0.2
 NDefines.NTitle.MAX_THEOCRACY_COUNTIES_IN_REALM = 0.2
 NDefines.NTitle.EMPIRE_DEJURE_COUNTY_LIMIT_TO_CREATE = 0.667
 NDefines.NTitle.EMPIRE_DEJURE_COUNTY_LIMIT_TO_USURP = 0.667
-NDefines.NTitle.CUSTOM_TITLE_COLOR_OFFSET = 0.25
+NDefines.NTitle.CUSTOM_TITLE_COLOR_OFFSET = 0.2
 
 -- Religion
+
+NDefines.NReligion.CREATE_ANTIPOPE_PRESTIGE_COST = 1500           -- prior to EMF v8.02: 500
 NDefines.NReligion.INVASION_MIN_AUTHORITY = 0.4
 NDefines.NReligion.REFORM_RELIGION_MIN_AUTHORITY = 0.3
 NDefines.NReligion.REFORM_RELIGION_MIN_HOLY_SITES = 4
 NDefines.NReligion.AUTHORITY_FROM_HOLY_SITE = 0.05
-NDefines.NReligion.AUTHORITY_FROM_RELHEAD_PIETY = 0
+NDefines.NReligion.AUTHORITY_FROM_ANTIPOPE = -0.1                 -- prior to EMF v8.02: -0.3
+NDefines.NReligion.AUTHORITY_FROM_RELHEAD_PIETY = 0.001           -- prior to EMF v8.02: 0
 NDefines.NReligion.AUTHORITY_FROM_RELHEAD_DIPLOMACY = 0.02
-NDefines.NReligion.AUTHORITY_FROM_RELHEAD_HOLY_SITE = 0
+NDefines.NReligion.AUTHORITY_FROM_RELHEAD_HOLY_SITE = 0.05        -- prior to EMF v8.02: 0, now back to vanilla
 NDefines.NReligion.AUTHORITY_FROM_ORG_RELIGION = 0.3
 NDefines.NReligion.DIVINE_BLOOD_FERTILITY_MULT = 1.0
+NDefines.NReligion.ELECTOR_TITLE_CULTURE_GROUP_FACTOR = 25        -- prior to EMF v8.02: 50
+NDefines.NReligion.ELECTOR_TITLE_CULTURE_FACTOR = 50              -- prior to EMF v8.02: 200
 NDefines.NReligion.ELECTOR_FAMOUS_DYNASTY_FACTOR = 0.005
-NDefines.NReligion.HERESY_TAKEOVER_PROVINCES = 5
+
 
 -- Economy
 NDefines.NEconomy.BISHOP_TAX_TO_POPE_FACTOR = 0.25
+NDefines.NEconomy.BISHOP_TAX_TO_ANTI_POPE_FACTOR = 0.025          -- prior to EMF v8.02: 0.05
 NDefines.NEconomy.TRADE_POST_COST_INC_DIST = 0.0045
-NDefines.NEconomy.PATRICIAN_CITY_TAX_MULT = 0.25
+NDefines.NEconomy.PATRICIAN_CITY_TAX_MULT = 0.5                   -- prior to EMF v8.02: 0.25, now back to vanilla
 NDefines.NEconomy.OVER_MAX_DEMESNE_TAX_PENALTY = 0.05
+NDefines.NEconomy.LOOTER_ARMY_MAINT_MULT = 0.1
 
 -- Nomad
 NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 1500
@@ -110,7 +119,7 @@ NDefines.NNomad.STARTING_HORDE_MAX_FRACTION = 1
 
 -- Military
 NDefines.NMilitary.NUMBER_OF_TROOPS_PER_GALLEY = 200
-NDefines.NMilitary.LEVY_MAINTENANCE_FACTOR = 1.85
+NDefines.NMilitary.LEVY_MAINTENANCE_FACTOR = 2.4
 NDefines.NMilitary.HOLDING_LEVY_SIZE_OWNER_MARTIAL_BASE = 0.75
 NDefines.NMilitary.HOLDING_LEVY_SIZE_OWNER_MARTIAL_MULT = 0.025
 NDefines.NMilitary.BATTLE_WARSCORE_DEFENDER_MULTIPLIER = 1.6
@@ -217,36 +226,5 @@ NDefines.NAI.RAID_AGGRESSION = 24
 NDefines.NAI.TRIBAL_VASSAL_EXTRA_CALL_CHANCE = 30
 -- NDefines.NAI.COALITION_DISTANCE_MULTIPLIER = -1.25
 
--- RulerDesigner
-NDefines.NRulerDesigner.COST_ATTRIB = 0.0
-NDefines.NRulerDesigner.COST_SON = 0.0
-NDefines.NRulerDesigner.COST_DAUGHTER = 0.0
-NDefines.NRulerDesigner.COST_MARRIED = 0.0
-NDefines.NRulerDesigner.COST_FERTILITY = 0.0
-NDefines.NRulerDesigner.COST_HEALTH = 0.0
-NDefines.NRulerDesigner.COST_MONTHLY_PRESTIGE = 0.0
-NDefines.NRulerDesigner.COST_MONTHLY_PIETY = 0.0
-NDefines.NRulerDesigner.COST_MONTHLY_WEALTH = 0.0
-NDefines.NRulerDesigner.COST_GLOBAL_TAX = 0.0
-NDefines.NRulerDesigner.COST_CHURCH_OPINION = 0.0
-NDefines.NRulerDesigner.COST_SPOUCE_OPINION = 0.0
-NDefines.NRulerDesigner.COST_SEXAPPEAL_OPINION = 0.0
-NDefines.NRulerDesigner.COST_DYNASTY_OPINION = 0.0
-NDefines.NRulerDesigner.COST_VASSAL_OPINION = 0.0
-NDefines.NRulerDesigner.COST_LIEGE_OPINION = 0.0
-NDefines.NRulerDesigner.COST_INFIDEL_OPINION = 0.0
-NDefines.NRulerDesigner.COST_OPPOSITE_TRAIT_OPINION = 0.0
-NDefines.NRulerDesigner.COST_SAME_TRAIT_OPINION = 0.0
-NDefines.NRulerDesigner.COST_SAME_RELIGION_OPINION = 0.0
-NDefines.NRulerDesigner.COST_AMBITION_OPINION = 0.0
-NDefines.NRulerDesigner.COST_TRIBAL_OPINION = 0.0
-NDefines.NRulerDesigner.COST_UNREFORMED_TRIBAL_OPINION = 0.0
-NDefines.NRulerDesigner.COST_GENERAL_OPINION = 0.0
-NDefines.NRulerDesigner.COST_MUSLIM_OPINION = 0.0
-NDefines.NRulerDesigner.COST_JEWISH_OPINION = 0.0
-NDefines.NRulerDesigner.COST_CHRISTIAN_OPINION = 0.0
-NDefines.NRulerDesigner.COST_ZOROASTRIAN_OPINION = 0.0
-NDefines.NRulerDesigner.COST_MORALE_OFFENCE = 0.0
-NDefines.NRulerDesigner.COST_MORALE_DEFENCE = 0.0
-NDefines.NRulerDesigner.COST_DEFENCE = 0.0
-NDefines.NRulerDesigner.MAX_AGE = 99
+-- RulerDesigner defines are in emf_ruler_designer_defines.lua; if you blank that file, the designer will revert to
+-- vanilla settings and no longer be "unlocked" (free everything, you be the judge of what's reasonable).
