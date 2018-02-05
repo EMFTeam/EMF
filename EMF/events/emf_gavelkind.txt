@@ -1,0 +1,111 @@
+# -*- ck2.events -*-
+
+namespace = emf_gavelkind
+
+# emf_gavelkind.0 -- on_death of a DUKE+ ruler with any form of split succession, we prepare to protect their capital
+# county's baronies from being inherited by anybody but their primary heir
+#
+# TODO: track the capital barony junior heirs' prior liege, in case it's different from ROOT and they're not a ruler, so that
+# if redistributing their inherited barony in ROOT's capital county unlands them, we can put them back in the proper court
+# instead of assuming the proper court is that of ROOT's successor. [not entirely sure if this ever matters, but in the name
+# of completeness...]
+character_event = {
+    id = emf_gavelkind.0
+
+    is_triggered_only = yes
+    hide_window = yes
+
+    only_playable = yes
+
+    trigger = {
+        higher_real_tier_than = COUNT
+        capital_scope = {
+            county = {
+                holder = ROOT
+                # Heir to capital county may be different than heir to primary title; the former is what matters (FE, etc.)
+                current_heir = {
+                    ROOT = {
+                        capital_scope = {
+                            any_province_holding = {
+                                holder = ROOT
+                                current_heir = {
+                                    not = { character = PREVPREVPREVPREV }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    immediate = {
+        capital_scope = {
+            county = {
+                save_event_target_as = e_cap_county
+                current_heir = { save_event_target_as = e_heir }
+            }
+            any_province_holding = {
+                limit = {
+                    holder = ROOT
+                    current_heir = { not = { character = event_target:e_heir } }
+                }
+                event_target:e_heir = {
+                    set_character_flag = emf_gavelkind_cap_barony_to_take_@PREV
+                }
+                current_heir = { # We also flag the expected successor of the barony to ensure consistency on the next day
+                    set_character_flag = emf_gavelkind_cap_barony_to_renounce_@PREV
+                }
+            }
+        }
+        # Redistribute baronies after inheritance (so tomorrow)
+        event_target:e_heir = { character_event = { id = emf_gavelkind.1 days = 1 } }
+    }
+}
+
+# emf_gavelkind.1 -- next-day continuation of emf_gavelkind.0, reclaim capital baronies; fires on whoever was the primary
+# heir right before succession.
+character_event = {
+    id = emf_gavelkind.1
+
+    is_triggered_only = yes
+    hide_window = yes
+
+    trigger = {
+        capital_scope = {
+            county = {
+                holder = ROOT
+                title = event_target:e_cap_county
+            }
+        }
+    }
+
+    immediate = {
+        log = "DEBUG: emf_gavelkind.1: reclaiming baronies in [e_cap_county.GetBaseName] ([e_cap_county.GetID]) after succession for [This.GetTitledFirstName] [This.GetOnlyDynastyName] of the [This.PrimaryTitle.GetFullName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+        capital_scope = {
+            any_province_holding = {
+                limit = {
+                    ROOT = { has_character_flag = emf_gavelkind_cap_barony_to_take_@PREV }
+                    owner = { has_character_flag = emf_gavelkind_cap_barony_to_renounce_@PREV }
+                }
+                owner = {
+                    log = "--> taking [Prev.GetBaseName] ([Prev.GetID]) from [This.GetTitledFirstName] [This.GetOnlyDynastyName] of the [This.PrimaryTitle.GetFullName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+                    PREV = { gain_title = ROOT }
+                    if = { # See TODO note for emf_gavelkind.0
+                        limit = { is_ruler = no }
+                        log = "----> [This.GetSubjectPronoun] was consequently unlanded"
+                        move_character = ROOT
+                        # Could possibly do something like give the unlanded junior heir a favor in recompense, but for now,
+                        # the policy is KISS.
+                    }
+                    random_claim = {
+                        limit = { title = PREVPREV }
+                        remove_claim = PREV
+                    }
+                    clr_character_flag = emf_gavelkind_cap_barony_to_renounce_@PREV
+                }
+                ROOT = { clr_character_flag = emf_gavelkind_cap_barony_to_take_@PREV }
+            }
+        }
+    }
+}
