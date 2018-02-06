@@ -89,7 +89,6 @@ NDefines.NTitle.EMPIRE_DEJURE_COUNTY_LIMIT_TO_USURP = 0.667
 NDefines.NTitle.CUSTOM_TITLE_COLOR_OFFSET = 0.2
 
 -- Religion
-
 NDefines.NReligion.CREATE_ANTIPOPE_PRESTIGE_COST = 1500           -- prior to EMF v8.02: 500
 NDefines.NReligion.INVASION_MIN_AUTHORITY = 0.4
 NDefines.NReligion.REFORM_RELIGION_MIN_AUTHORITY = 0.3
@@ -128,7 +127,6 @@ NDefines.NMilitary.MIN_LEVY_RAISE_OPINION_THRESHOLD = -50
 NDefines.NMilitary.ATTACKER_SIEGE_DAMAGE = 0
 NDefines.NMilitary.DEFENDER_SIEGE_DAMAGE = 0
 NDefines.NMilitary.NUM_DAYS_BETWEEN_SIEGE_MORALE_LOSS = 10
-NDefines.NMilitary.BATTLE_TECH_MULTIPLIER = 0.25
 NDefines.NMilitary.REINFORCE_RATE = 0.03
 NDefines.NMilitary.ARMY_LOAD_MOVE_COST = 40.0
 NDefines.NMilitary.CAPTURED_HEIR_WAR_SCORE = 30.0
@@ -219,7 +217,6 @@ NDefines.NGraphics.CITY_SPRAWL_AMOUNT = 0.75
 
 -- Engine
 NDefines.NEngine.EVENT_PROCESS_OFFSET = 30
-NDefines.NEngine.COURTIER_EVENT_PROCESS_OFFSET = 60
 
 -- AI
 NDefines.NAI.AI_EMPEROR_CREATES_KINGDOMS = 1     -- only now a good idea due to Imperial Kingdom Creation law
