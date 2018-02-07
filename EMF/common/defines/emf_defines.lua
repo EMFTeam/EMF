@@ -1,21 +1,22 @@
 -- Diplomacy
 NDefines.NDiplomacy.VASSAL_LIMIT_LEVY_MULTIPLIER = 0
-NDefines.NDiplomacy.TITULAR_TITLES_COUNT_TOWARDS_DUCHY_LIMIT = 0                    -- from 1
-NDefines.NDiplomacy.LAW_CHANGE_PRESTIGE_COST = 150                                  -- from 100
-NDefines.NDiplomacy.CROWN_LAW_CHANGE_PRESTIGE_COST = 300                            -- from 200
+NDefines.NDiplomacy.MAX_DUCHIES_LEGALLY_HELD = 4             -- from 2, vanilla=2
+NDefines.NDiplomacy.MAX_ELECTOR_TITLES_LEGALLY_HELD = 2      -- from 1, vanilla=1
+NDefines.NDiplomacy.LAW_CHANGE_PRESTIGE_COST = 150
+NDefines.NDiplomacy.CROWN_LAW_CHANGE_PRESTIGE_COST = 300
 NDefines.NDiplomacy.INTER_MUSLIM_WAR_MONTHLY_PIETY_COST = 1
-NDefines.NDiplomacy.MUSLIM_TEMPLE_HOLDING_MONTHLY_PIETY = 0.4
-NDefines.NDiplomacy.BASE_REVOLT_CHANCE_MOD = 175                                    -- from 250
-NDefines.NDiplomacy.TOG_REVOLT_CHANCE_MOD = 70                                      -- from 100
+NDefines.NDiplomacy.MUSLIM_TEMPLE_HOLDING_MONTHLY_PIETY = 0.5
+NDefines.NDiplomacy.BASE_REVOLT_CHANCE_MOD = 175
+NDefines.NDiplomacy.TOG_REVOLT_CHANCE_MOD = 70
 NDefines.NDiplomacy.DUKE_POWERFUL_VASSAL_COUNT = 3
 NDefines.NDiplomacy.KING_POWERFUL_VASSAL_COUNT = 4
 NDefines.NDiplomacy.EMPEROR_POWERFUL_VASSAL_COUNT = 5
 NDefines.NDiplomacy.IMPRISON_CHARACTER_INTERACTION_PIETY = 0
 NDefines.NDiplomacy.EXECUTE_IMPRISONED_INTERACTION_PIETY = 10
-NDefines.NDiplomacy.DEMAND_RELIGIOUS_CONVERSION_INTERACTION_PIETY = 25              -- from 0
-NDefines.NDiplomacy.DEMAND_RELIGIOUS_CONVERSION_INTERACTION_PRESTIGE = 50           -- from 0
-NDefines.NDiplomacy.DEMAND_RELIGIOUS_CONVERSION_INTERACTION_THRESHOLD_FOR_YES = 35  -- from 25
-NDefines.NDiplomacy.INVITE_TO_COURT_INTERACTION_MONEY = 10                          -- from 0
+NDefines.NDiplomacy.DEMAND_RELIGIOUS_CONVERSION_INTERACTION_PIETY = 25
+NDefines.NDiplomacy.DEMAND_RELIGIOUS_CONVERSION_INTERACTION_PRESTIGE = 50
+NDefines.NDiplomacy.DEMAND_RELIGIOUS_CONVERSION_INTERACTION_THRESHOLD_FOR_YES = 35
+NDefines.NDiplomacy.INVITE_TO_COURT_INTERACTION_MONEY = 10
 NDefines.NDiplomacy.ASK_FOR_INVASION_INTERACTION_THRESHOLD_FOR_YES = 100
 NDefines.NDiplomacy.DEFENSIVE_PACT_THREAT_LIMIT = 0.15
 NDefines.NDiplomacy.DEFENSIVE_PACT_MAX_RANGE = 300
@@ -88,7 +89,6 @@ NDefines.NTitle.EMPIRE_DEJURE_COUNTY_LIMIT_TO_USURP = 0.667
 NDefines.NTitle.CUSTOM_TITLE_COLOR_OFFSET = 0.2
 
 -- Religion
-
 NDefines.NReligion.CREATE_ANTIPOPE_PRESTIGE_COST = 1500           -- prior to EMF v8.02: 500
 NDefines.NReligion.INVASION_MIN_AUTHORITY = 0.4
 NDefines.NReligion.REFORM_RELIGION_MIN_AUTHORITY = 0.3
@@ -127,7 +127,6 @@ NDefines.NMilitary.MIN_LEVY_RAISE_OPINION_THRESHOLD = -50
 NDefines.NMilitary.ATTACKER_SIEGE_DAMAGE = 0
 NDefines.NMilitary.DEFENDER_SIEGE_DAMAGE = 0
 NDefines.NMilitary.NUM_DAYS_BETWEEN_SIEGE_MORALE_LOSS = 10
-NDefines.NMilitary.BATTLE_TECH_MULTIPLIER = 0.25
 NDefines.NMilitary.REINFORCE_RATE = 0.03
 NDefines.NMilitary.ARMY_LOAD_MOVE_COST = 40.0
 NDefines.NMilitary.CAPTURED_HEIR_WAR_SCORE = 30.0
@@ -218,7 +217,6 @@ NDefines.NGraphics.CITY_SPRAWL_AMOUNT = 0.75
 
 -- Engine
 NDefines.NEngine.EVENT_PROCESS_OFFSET = 30
-NDefines.NEngine.COURTIER_EVENT_PROCESS_OFFSET = 60
 
 -- AI
 NDefines.NAI.AI_EMPEROR_CREATES_KINGDOMS = 1     -- only now a good idea due to Imperial Kingdom Creation law
