@@ -165,26 +165,32 @@ character_event = {
 
     trigger = {
         has_game_rule = { name = non_dynastic_succession value = on }
-        player_heir = { NOT = { dynasty = ROOT } }
+        is_nomadic = no
+        is_merchant_republic = no
+        capital_scope = { county = { current_heir = { ai = yes NOT = { dynasty = ROOT } } } }
     }
 
     immediate = {
-        player_heir = {
+        log = "INFO: emf_core.10: triggering non-dynastic succession on death of [This.GetTitledFirstName] [This.GetOnlyDynastyName] of the [This.PrimaryTitle.GetFullName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+        capital_scope = { county = { current_heir = { save_event_target_as = emf_real_heir } } }
+        event_target:emf_real_heir = {
+            log = "--> heir: [This.GetTitledFirstName] [This.GetOnlyDynastyName] of the [This.PrimaryTitle.GetFullName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
             if = {
                 limit = { is_lowborn = yes }
                 dynasty = father_bastard
+                log = "----> heir was lowborn, gave [This.GetHerHim] a dynasty of [This.GetOnlyDynastyName]"
             }
-            event_target:isis = {
+            ROOT = {
                 create_character = {
-                    name = "Sleeve"
                     religion = PREV
                     culture = PREV
                     dynasty = PREV
-                    historical = yes # prevents small chance of pruning the character while we wait for continuation event
+                    trait = immortal
                 }
                 new_character = { save_event_target_as = emf_sleeve }
             }
             dynasty = ROOT
+            log = "--> heir temporarily switched dynasty to [This.GetOnlyDynastyName]"
             character_event = { id = emf_core.11 days = 1 }
         }
     }
@@ -202,10 +208,15 @@ character_event = {
     }
 
     immediate = {
+        log = "DEBUG: emf_core.11: finishing non-dynastic succession of [This.GetTitledFirstName] [This.GetOnlyDynastyName] of the [This.PrimaryTitle.GetFullName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
         dynasty = event_target:emf_sleeve
-        event_target:emf_sleeve = { emf_vanish_character = yes }
-        recalc_succession = yes
+        log = "--> switched back to the dynasty of [This.GetOnlyDynastyName]"
+        event_target:emf_sleeve = {
+            remove_trait = immortal
+            emf_vanish_character = yes
+        }
         clear_event_target = emf_sleeve
+        recalc_succession = yes
     }
 }
 
