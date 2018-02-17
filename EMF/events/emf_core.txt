@@ -154,6 +154,62 @@ character_event = {
     }
 }
 
+# emf_core.10 -- if game rule Non-Dynastic Succession is 'Allowed', prevent game over with non-dynastic heir on_death (or
+# if the emf_abdicate_in_progress flag is set, upon an abdication).
+character_event = {
+    id = emf_core.10
+
+    is_triggered_only = yes
+    hide_window = yes
+
+    ai = no
+
+    trigger = {
+        has_game_rule = { name = non_dynastic_succession value = on }
+        player_heir = { NOT = { dynasty = ROOT } }
+    }
+
+    immediate = {
+        player_heir = {
+            if = {
+                limit = { is_lowborn = yes }
+                dynasty = father_bastard
+            }
+            event_target:isis = {
+                create_character = {
+                    name = "Sleeve"
+                    religion = PREV
+                    culture = PREV
+                    dynasty = PREV
+                    historical = yes # prevents small chance of pruning the character while we wait for continuation event
+                }
+                new_character = { save_event_target_as = emf_sleeve }
+            }
+            dynasty = ROOT
+            character_event = { id = emf_core.11 days = 1 }
+        }
+    }
+}
+
+# emf_core.11 -- continuation after 1 day of emf_core.10 (or invoked immediately after abdication in emf_abdicate)
+character_event = {
+    id = emf_core.11
+
+    is_triggered_only = yes
+    hide_window = yes
+
+    trigger = {
+        event_target:emf_sleeve = { always = yes }
+    }
+
+    immediate = {
+        dynasty = event_target:emf_sleeve
+        event_target:emf_sleeve = { emf_vanish_character = yes }
+        recalc_succession = yes
+        clear_event_target = emf_sleeve
+    }
+}
+
 # emf_core.25
 #
 # Prevent the ERE from gaining the k_orthodox title-- or rather, when
@@ -1172,7 +1228,7 @@ character_event = {
 #
 # I can also detect abdication via on_new_holder_inheritance, but for the proper amount of power, we want to be able to
 # assess the properties of the abdicator while they still hold all of their titles and no such on_actions have yet executed
-# (much like on_death, but this is effectively on_abdicate when using `emf_abdicate` instead of the vanilla `abdicate`.
+# (much like on_death, but this is effectively on_abdicate when using `emf_abdicate` instead of the vanilla `abdicate`).
 character_event = {
     id = emf_core.110
 
@@ -1187,6 +1243,7 @@ character_event = {
         remove_trait = crowned_by_pope
         remove_trait = strong_basileus
         remove_trait = weak_basileus
+        character_event = { id = emf_core.10 } # Handle pre-abdication for Non-Dynastic Succession game rule
         if = {
             limit = { NOT = { event_target:emf_abdicate_real_heir = { always = yes } } } # Not using abdicate_to
             current_heir = {
@@ -1195,6 +1252,7 @@ character_event = {
             }
             # Renew tributes on standard abdications (where the heir will be `current_heir`)
             character_event = { id = emf_core.90 }
+            
         }
         if = {
             limit = { event_target:emf_abdicate_real_heir = { always = yes } } # Using abdicate_to
