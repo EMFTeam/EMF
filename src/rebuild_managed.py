@@ -8,10 +8,11 @@ from pathlib import Path
 
 from localpaths import rootpath
 
-# this script shall be invoked by hiphub when certain files change in the EMF repository due to a commit.
-# at this time, that is just EMF+SWMH/map/geographical_region.txt.  we invoke the same program that cuts
-# SWMH into MiniSWMH with a special option to tell it to only generate EMF+MiniSWMH/map/geographical_region.txt
-# from the aforementioned file rather than do its full set of operations.
+# this script shall be invoked by hiphub when certain files change in the EMF repository due to a commit. at this time,
+# that is just EMF+SWMH/map/geographical_region.txt.  we invoke the same program that cuts SWMH into MiniSWMH with a
+# special option to tell it to only generate EMF+MiniSWMH/map/geographical_region.txt from the aforementioned file
+# rather than do its full set of operations. additionally, EMF+SWMH history is auto-generated from here, and so are some
+# misc. bits of code (e.g., holding slot trigger for SWMH for the prosperity land reclamation event).
 
 version = 'v8.05-BETA'
 version_path = rootpath / 'EMF/EMF/version.txt'
@@ -41,7 +42,7 @@ def main():
     if sys.platform.startswith('linux') and mapcut_bin_path_default.exists():
         mapcut_bin_path = mapcut_bin_path_default
     else:
-        mapcut_bin = 'mapcut' if sys.platform.startswith('linux') else 'mapcut.exe'
+        mapcut_bin = 'mapcut' if sys.platform.startswith('linux') or sys.platform.startswith('darwin') else 'mapcut.exe'
         mapcut_bin_path = mapcut_path / mapcut_bin
 
     if not mapcut_bin_path.exists():
