@@ -1,0 +1,101 @@
+namespace = emf_borders
+
+# emf_borders.0 -- playable rulers that either own baronies for which they do not own the county or have baron-tier vassals
+#                  in counties which they do not own, MTTH
+character_event {
+    id = emf_borders.0
+    hide_window = yes
+
+    only_playable = yes
+    is_patrician = no
+    war = no
+    ai = yes
+
+    trigger {
+        controls_religion = no
+        holy_order = no
+        is_merchant_republic = no
+        OR {
+            any_demesne_title {
+                tier = baron
+                dejure_liege_title { holder != ROOT }
+            }
+            any_vassal {
+                tier = baron
+                capital_holding {
+                    dejure_liege_title { holder != ROOT }
+                }
+            }
+        }
+    }
+
+    immediate = {
+        # forfeit owned non-DJ baronies
+        any_demesne_title {
+            tier = baron
+            dejure_liege_title { holder != ROOT }
+        }
+        do {
+            dejure_liege_title {
+                owner {
+                    grant_title_no_opinion = PREVPREV
+                }
+            }
+        }
+        # transfer non-DJ baron vassals
+        any_vassal {
+            tier = baron
+            capital_holding {
+                dejure_liege_title { holder != ROOT }
+            }
+        }
+        do {
+            capital_holding {
+                dejure_liege_title {
+                    owner {
+                        set_defacto_vassal = PREVPREVPREV
+                    }
+                }
+            }
+            character_event { id = emf_borders.1 }
+        }
+    }
+}
+
+# emf_borders.1 -- barons that own baronies outside of their capital county
+character_event {
+    id = emf_borders.1
+
+    is_triggered_only = yes # yearly pulse & from emf_borders.0
+    hide_window = yes
+
+    only_rulers = yes
+    is_patrician = no
+    war = no
+    ai = yes
+
+    trigger {
+        tier = baron
+        capital_holding {
+            location {
+                ROOT {
+                    any_demesne_title {
+                        location = { province != PREVPREVPREV }
+                    }
+                }
+            }
+        }
+    }
+
+    immediate {
+        capital_holding { location { save_target = cap_prov } }
+
+        any_demesne_title { location { province != target:cap_prov } } do {
+            dejure_liege_title {
+                owner {
+                    grant_title_no_opinion = PREVPREV
+                }
+            }
+        }
+    }
+}
