@@ -403,7 +403,7 @@ emf_sr_event_target_old_religion_from_flag = {
     for rel in g_religions:
         print('''\
         character_was_{0} = {{
-            random_character = {{ limit = {{ religion = {0} }} save_event_target_as = old_religion }}
+            {0} = {{ save_event_target_as = old_religion }}
         }}'''.format(rel), file=f)
 
     print(TAB + '}\n}', file=f)
