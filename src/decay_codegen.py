@@ -3,7 +3,8 @@
 from pathlib import Path
 from localpaths import rootpath
 
-TAB = ' ' * 4
+#TAB = ' ' * 4
+TAB = '\t'
 
 emf_path = rootpath / 'EMF/EMF'
 effects_path = emf_path / 'common/scripted_effects/emf_decay_codegen_effects.txt'

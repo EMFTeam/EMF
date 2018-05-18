@@ -29,9 +29,9 @@ g_codegen_file_hdr = '''
 
 ###
 
-TAB_WIDTH = 4
-TAB = ' ' * TAB_WIDTH
-
+#TAB_WIDTH = 4
+#TAB = ' ' * TAB_WIDTH
+TAB = '\t'
 
 def main():
     global g_religions, g_rg_religions_map
