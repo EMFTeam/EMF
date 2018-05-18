@@ -1001,6 +1001,8 @@ g_rel_adherent_special = {
 	'finnish_pagan': 'String_Suomenusko_Follower',
 	'west_african_pagan': 'String_West_African',
 	'zun_pagan': 'String_Zunist',
+	'khurmazta': 'String_khurmazta_faithful',
+	'bon': 'String_bon_faithful',
 }
 
 
