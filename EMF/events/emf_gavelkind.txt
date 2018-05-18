@@ -5,179 +5,179 @@ namespace = emf_gavelkind
 # emf_gavelkind.0 -- on_death of a DUKE+ ruler with any form of split succession, we prepare to protect their capital
 # county's baronies from being inherited by anybody but their primary heir.
 character_event = {
-    id = emf_gavelkind.0
+	id = emf_gavelkind.0
 
-    is_triggered_only = yes
-    hide_window = yes
+	is_triggered_only = yes
+	hide_window = yes
 
-    only_playable = yes
+	only_playable = yes
 
-    trigger = {
-        higher_real_tier_than = COUNT
-        capital_scope = {
-            county = {
-                holder = ROOT
-                # Heir to capital county may be different than heir to primary title; the former is what matters (FE, etc.)
-                current_heir = {
-                    ROOT = {
-                        capital_scope = {
-                            any_province_holding = {
-                                holder = ROOT
-                                current_heir = {
-                                    not = { character = PREVPREVPREVPREV }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+	trigger = {
+		higher_real_tier_than = COUNT
+		capital_scope = {
+			county = {
+				holder = ROOT
+				# Heir to capital county may be different than heir to primary title; the former is what matters (FE, etc.)
+				current_heir = {
+					ROOT = {
+						capital_scope = {
+							any_province_holding = {
+								holder = ROOT
+								current_heir = {
+									not = { character = PREVPREVPREVPREV }
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 
-    immediate = {
-        capital_scope = {
-            county = {
-                save_event_target_as = emf_cap_county
-                current_heir = { save_event_target_as = emf_heir }
-            }
-            any_province_holding = {
-                limit = {
-                    holder = ROOT
-                    current_heir = { not = { character = event_target:emf_heir } }
-                }
-                event_target:emf_heir = {
-                    set_character_flag = emf_gavelkind_cap_barony_to_take_@PREV
-                }
-                current_heir = { # We also flag the expected successor of the barony to ensure consistency on the next day
-                    set_character_flag = emf_gavelkind_cap_barony_to_renounce_@PREV
-                    opinion = { who = LIEGE modifier = emf_gavelkind_prior_liege }
-                    reverse_opinion = { who = event_target:emf_heir modifier = emf_gavelkind_title_loser }
-                }
-            }
-        }
-        # Redistribute baronies after inheritance (so tomorrow)
-        event_target:emf_heir = { character_event = { id = emf_gavelkind.1 days = 1 } }
-    }
+	immediate = {
+		capital_scope = {
+			county = {
+				save_event_target_as = emf_cap_county
+				current_heir = { save_event_target_as = emf_heir }
+			}
+			any_province_holding = {
+				limit = {
+					holder = ROOT
+					current_heir = { not = { character = event_target:emf_heir } }
+				}
+				event_target:emf_heir = {
+					set_character_flag = emf_gavelkind_cap_barony_to_take_@PREV
+				}
+				current_heir = { # We also flag the expected successor of the barony to ensure consistency on the next day
+					set_character_flag = emf_gavelkind_cap_barony_to_renounce_@PREV
+					opinion = { who = LIEGE modifier = emf_gavelkind_prior_liege }
+					reverse_opinion = { who = event_target:emf_heir modifier = emf_gavelkind_title_loser }
+				}
+			}
+		}
+		# Redistribute baronies after inheritance (so tomorrow)
+		event_target:emf_heir = { character_event = { id = emf_gavelkind.1 days = 1 } }
+	}
 }
 
 # emf_gavelkind.1 -- next-day continuation of emf_gavelkind.0, reclaim capital baronies; fires on whoever was the primary
 # heir right before succession.
 character_event = {
-    id = emf_gavelkind.1
+	id = emf_gavelkind.1
 
-    is_triggered_only = yes
-    hide_window = yes
+	is_triggered_only = yes
+	hide_window = yes
 
-    trigger = {
-        capital_scope = {
-            county = {
-                holder = ROOT
-                title = event_target:emf_cap_county
-            }
-        }
-    }
+	trigger = {
+		capital_scope = {
+			county = {
+				holder = ROOT
+				title = event_target:emf_cap_county
+			}
+		}
+	}
 
-    fail_trigger_effect = {
-        log = "ASSERT: emf_gavelkind.1: failed trigger! should not happen!"
-        log = "--> county: [emf_cap_county.GetBaseName] ([emf_cap_county.GetID])"
-        log = "--> ROOT (supposed to inherit capital county): [This.GetTitledFirstName] [This.GetOnlyDynastyName] of the [This.PrimaryTitle.GetFullName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
-        log = "--> FROM (now dead): [From.GetTitledFirstName] [From.GetOnlyDynastyName] of the [From.PrimaryTitle.GetFullName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
-        any_opinion_modifier_target = {
-            limit = { reverse_has_opinion_modifier = { who = ROOT modifier = emf_gavelkind_title_loser } }
-            any_opinion_modifier_target = {
-                limit = { reverse_has_opinion_modifier = { who = PREV modifier = emf_gavelkind_prior_liege } }
-                reverse_remove_opinion = { who = PREV modifier = emf_gavelkind_prior_liege }
-            }
-            reverse_remove_opinion = { who = ROOT modifier = emf_gavelkind_title_loser }
-        }
-    }
+	fail_trigger_effect = {
+		log = "ASSERT: emf_gavelkind.1: failed trigger! should not happen!"
+		log = "--> county: [emf_cap_county.GetBaseName] ([emf_cap_county.GetID])"
+		log = "--> ROOT (supposed to inherit capital county): [This.GetTitledFirstName] [This.GetOnlyDynastyName] of the [This.PrimaryTitle.GetFullName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+		log = "--> FROM (now dead): [From.GetTitledFirstName] [From.GetOnlyDynastyName] of the [From.PrimaryTitle.GetFullName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
+		any_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = emf_gavelkind_title_loser } }
+			any_opinion_modifier_target = {
+				limit = { reverse_has_opinion_modifier = { who = PREV modifier = emf_gavelkind_prior_liege } }
+				reverse_remove_opinion = { who = PREV modifier = emf_gavelkind_prior_liege }
+			}
+			reverse_remove_opinion = { who = ROOT modifier = emf_gavelkind_title_loser }
+		}
+	}
 
-    immediate = {
-        log = "DEBUG: emf_gavelkind.1: reclaiming baronies in [emf_cap_county.GetBaseName] ([emf_cap_county.GetID]) after succession for [This.GetTitledFirstName] [This.GetOnlyDynastyName] of the [This.PrimaryTitle.GetFullName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
-        capital_scope = {
-            any_province_holding = {
-                limit = {
-                    ROOT = { has_character_flag = emf_gavelkind_cap_barony_to_take_@PREV }
-                    owner = { has_character_flag = emf_gavelkind_cap_barony_to_renounce_@PREV }
-                }
-                save_event_target_as = emf_barony
-                owner = {
-                    character_event = { id = emf_gavelkind.2 }
-                    clr_character_flag = emf_gavelkind_cap_barony_to_renounce_@PREV
-                }
-                ROOT = { clr_character_flag = emf_gavelkind_cap_barony_to_take_@PREV }
-                clear_event_target = emf_barony
-            }
-        }
-    }
+	immediate = {
+		log = "DEBUG: emf_gavelkind.1: reclaiming baronies in [emf_cap_county.GetBaseName] ([emf_cap_county.GetID]) after succession for [This.GetTitledFirstName] [This.GetOnlyDynastyName] of the [This.PrimaryTitle.GetFullName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+		capital_scope = {
+			any_province_holding = {
+				limit = {
+					ROOT = { has_character_flag = emf_gavelkind_cap_barony_to_take_@PREV }
+					owner = { has_character_flag = emf_gavelkind_cap_barony_to_renounce_@PREV }
+				}
+				save_event_target_as = emf_barony
+				owner = {
+					character_event = { id = emf_gavelkind.2 }
+					clr_character_flag = emf_gavelkind_cap_barony_to_renounce_@PREV
+				}
+				ROOT = { clr_character_flag = emf_gavelkind_cap_barony_to_take_@PREV }
+				clear_event_target = emf_barony
+			}
+		}
+	}
 
-    after = {
-        any_opinion_modifier_target = {
-            limit = { reverse_has_opinion_modifier = { who = ROOT modifier = emf_gavelkind_title_loser } }
-            any_opinion_modifier_target = {
-                limit = { reverse_has_opinion_modifier = { who = PREV modifier = emf_gavelkind_prior_liege } }
-                reverse_remove_opinion = { who = PREV modifier = emf_gavelkind_prior_liege }
-            }
-            reverse_remove_opinion = { who = ROOT modifier = emf_gavelkind_title_loser }
-        }
-    }
+	after = {
+		any_opinion_modifier_target = {
+			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = emf_gavelkind_title_loser } }
+			any_opinion_modifier_target = {
+				limit = { reverse_has_opinion_modifier = { who = PREV modifier = emf_gavelkind_prior_liege } }
+				reverse_remove_opinion = { who = PREV modifier = emf_gavelkind_prior_liege }
+			}
+			reverse_remove_opinion = { who = ROOT modifier = emf_gavelkind_title_loser }
+		}
+	}
 }
 
 # emf_gavelkind.2 -- continuation of emf_gavelkind.1 w/ ROOT as the title loser, FROM as the taker, and
 # event_target:emf_barony is the title.
 character_event = {
-    id = emf_gavelkind.2
+	id = emf_gavelkind.2
 
-    is_triggered_only = yes
-    hide_window = yes
+	is_triggered_only = yes
+	hide_window = yes
 
-    trigger = {
-        has_landed_title = event_target:emf_barony
-    }
+	trigger = {
+		has_landed_title = event_target:emf_barony
+	}
 
-    immediate = {
-        log = "--> taking [emf_barony.GetBaseName] ([emf_barony.GetID]) from [This.GetTitledFirstName] [This.GetOnlyDynastyName] of the [This.PrimaryTitle.GetFullName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
-        if = {
-            limit = {
-                NOT = { has_any_opinion_modifier = emf_gavelkind_my_courtier }
-                NOT = { any_demesne_title = { NOT = { title = event_target:emf_barony } } }
-            }
-            any_courtier = {
-                limit = {
-                    is_ruler = no
-                    liege = { character = ROOT }
-                }
-                reverse_opinion = { who = ROOT modifier = emf_gavelkind_my_courtier }
-            }
-        }
-        event_target:emf_barony = {
-            gain_title = FROM
-            remove_claim = ROOT
-        }
-        if = {
-            limit = { is_ruler = no }
-            random_opinion_modifier_target = {
-                limit = { reverse_has_opinion_modifier = { who = ROOT modifier = emf_gavelkind_prior_liege } }
-                save_event_target_as = emf_prior_liege
-            }
-            if = {
-                limit = { not = { event_target:emf_prior_liege = { always = yes } } }
-                FROM = { save_event_target_as = emf_prior_liege }
-            }
-            log = "----> [This.GetSubjectPronoun] was consequently unlanded; moving back to the court of [emf_prior_liege.GetTitledFirstName] [emf_prior_liege.GetOnlyDynastyName] of the [emf_prior_liege.PrimaryTitle.GetFullName] (#[emf_prior_liege.GetID]/[emf_prior_liege.PrimaryTitle.GetID])"
-            any_opinion_modifier_target = {
-                limit = { reverse_has_opinion_modifier = { who = ROOT modifier = emf_gavelkind_my_courtier } }
-                if = {
-                    limit = { not = { liege = { character = event_target:emf_prior_liege } } }
-                    move_character = event_target:emf_prior_liege
-                }
-                reverse_remove_opinion = { who = ROOT modifier = emf_gavelkind_my_courtier }
-            }
-            if = {
-                limit = { not = { liege = { character = event_target:emf_prior_liege } } }
-                move_character = event_target:emf_prior_liege
-            }
-            clear_event_target = emf_prior_liege
-        }
-    }
+	immediate = {
+		log = "--> taking [emf_barony.GetBaseName] ([emf_barony.GetID]) from [This.GetTitledFirstName] [This.GetOnlyDynastyName] of the [This.PrimaryTitle.GetFullName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+		if = {
+			limit = {
+				NOT = { has_any_opinion_modifier = emf_gavelkind_my_courtier }
+				NOT = { any_demesne_title = { NOT = { title = event_target:emf_barony } } }
+			}
+			any_courtier = {
+				limit = {
+					is_ruler = no
+					liege = { character = ROOT }
+				}
+				reverse_opinion = { who = ROOT modifier = emf_gavelkind_my_courtier }
+			}
+		}
+		event_target:emf_barony = {
+			gain_title = FROM
+			remove_claim = ROOT
+		}
+		if = {
+			limit = { is_ruler = no }
+			random_opinion_modifier_target = {
+				limit = { reverse_has_opinion_modifier = { who = ROOT modifier = emf_gavelkind_prior_liege } }
+				save_event_target_as = emf_prior_liege
+			}
+			if = {
+				limit = { not = { event_target:emf_prior_liege = { always = yes } } }
+				FROM = { save_event_target_as = emf_prior_liege }
+			}
+			log = "----> [This.GetSubjectPronoun] was consequently unlanded; moving back to the court of [emf_prior_liege.GetTitledFirstName] [emf_prior_liege.GetOnlyDynastyName] of the [emf_prior_liege.PrimaryTitle.GetFullName] (#[emf_prior_liege.GetID]/[emf_prior_liege.PrimaryTitle.GetID])"
+			any_opinion_modifier_target = {
+				limit = { reverse_has_opinion_modifier = { who = ROOT modifier = emf_gavelkind_my_courtier } }
+				if = {
+					limit = { not = { liege = { character = event_target:emf_prior_liege } } }
+					move_character = event_target:emf_prior_liege
+				}
+				reverse_remove_opinion = { who = ROOT modifier = emf_gavelkind_my_courtier }
+			}
+			if = {
+				limit = { not = { liege = { character = event_target:emf_prior_liege } } }
+				move_character = event_target:emf_prior_liege
+			}
+			clear_event_target = emf_prior_liege
+		}
+	}
 }
