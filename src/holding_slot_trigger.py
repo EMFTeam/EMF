@@ -46,8 +46,8 @@ def build_trigger(parser, counties_by_barony_count, title_id):
 def main():
     parser = ck2parser.FullParser(ck2parser.rootpath / 'SWMH-BETA/SWMH')
     parser.crlf = False
-    parser.tab_indents = False
-    parser.indent_width = 4
+    parser.tab_indents = True
+    parser.indent_width = 1
     outpath = ck2parser.rootpath / 'EMF/EMF+SWMH/common/scripted_triggers/emf_can_add_holding_slot_trigger.txt'
     simple_parser = ck2parser.SimpleParser(*parser.moddirs)
 

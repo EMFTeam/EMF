@@ -5,7 +5,8 @@ import datetime
 import ck2parser
 from collections import defaultdict
 
-TAB = ' ' * 4
+#TAB = ' ' * 4
+TAB = '\t'
 
 emf_path = ck2parser.rootpath / 'EMF/EMF'
 #revolt_modifier_path = emf_path / 'common/event_modifiers/emf_revolt_codegen_modifiers.txt'
