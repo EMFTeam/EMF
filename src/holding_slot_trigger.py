@@ -65,7 +65,7 @@ def main():
                     yield from scan_for_baronies(v)
 
     counties_by_barony_count = collections.defaultdict(list)
-    for _, tree in parser.parse_files('common/landed_titles/*'):
+    for _, tree in parser.parse_files('common/landed_titles/*.txt'):
         for title, baronies in scan_for_baronies(tree):
             counties_by_barony_count[baronies].append(title)
     trigger = build_trigger(parser, counties_by_barony_count, title_id)
