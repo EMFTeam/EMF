@@ -404,7 +404,7 @@ def main():
     parser.fq_keys = ['name']
     parser.crlf = False
     parser.tab_indents = True
-    parser.indent_width = 1
+    parser.indent_width = 8
     # parser.no_fold_keys.extend(['factor', 'value'])
 
     # shutil.rmtree(str(emfswmhhistory), ignore_errors=True)
