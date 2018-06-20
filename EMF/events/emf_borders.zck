@@ -1,103 +1,231 @@
 namespace = emf_borders
 
-# emf_borders.0 -- playable rulers that either own baronies for which they do not own the county or have baron-tier vassals
-#                  in counties which they do not own, MTTH
+# emf_borders.0 -- playable rulers that either own baronies for which the associated county is outside of their top
+# realm or have BARON-tier vassals in counties which are outside of their top realm, MTTH
 character_event {
-    id = emf_borders.0
-    hide_window = yes
+	id = emf_borders.0
+	hide_window = yes
 
-    only_playable = yes
-    is_patrician = no
-    war = no
-    ai = yes
+	only_playable = yes
+	is_patrician = no
+	war = no
+	ai = yes
 
-    trigger {
-        controls_religion = no
-        holy_order = no
-        is_merchant_republic = no
-        OR {
-            any_demesne_title {
-                tier = baron
-                dejure_liege_title { holder != ROOT }
-            }
-            any_vassal {
-                tier = baron
-                capital_holding {
-                    dejure_liege_title { holder != ROOT }
-                }
-            }
-        }
-    }
+	trigger {
+		controls_religion = no
+		holy_order = no
+		is_merchant_republic = no
+		OR {
+			any_demesne_title {
+				tier == BARON
+				dejure_liege_title { owner { same_realm != ROOT } }
+			}
+			any_vassal {
+				tier == BARON
+				capital_holding { dejure_liege_title { owner { same_realm != ROOT } } }
+			}
+		}
+	}
 
-    immediate = {
-        # forfeit owned non-DJ baronies
-        any_demesne_title {
-            tier = baron
-            dejure_liege_title { holder != ROOT }
-        }
-        do {
-            dejure_liege_title {
-                owner {
-                    grant_title_no_opinion = PREVPREV
-                }
-            }
-        }
-        # transfer non-DJ baron vassals
-        any_vassal {
-            tier = baron
-            capital_holding {
-                dejure_liege_title { holder != ROOT }
-            }
-        }
-        do {
-            capital_holding {
-                dejure_liege_title {
-                    owner {
-                        set_defacto_vassal = PREVPREVPREV
-                    }
-                }
-            }
-            character_event { id = emf_borders.1 }
-        }
-    }
+	mean_time_to_happen { days = 1 }
+
+	immediate {
+		# forfeit owned non-DJ baronies
+		any_demesne_title {
+			tier == BARON
+			dejure_liege_title { owner { same_realm != ROOT } }
+		}
+		do {
+			save_target = barony_to_shed
+			dejure_liege_title { owner { character_event { id = emf_borders.2 } } }
+			clear_target = barony_to_shed
+		}
+		# transfer non-DJ BARON vassals
+		any_vassal {
+			tier == BARON
+			capital_holding { dejure_liege_title { owner { same_realm != ROOT } } }
+		}
+		do {
+			capital_holding {
+				dejure_liege_title {
+					owner {
+						set_defacto_vassal = PREVPREVPREV
+					}
+				}
+			}
+			emf_liege_change = yes
+			character_event { id = emf_borders.1 }
+		}
+	}
 }
 
-# emf_borders.1 -- barons that own baronies outside of their capital county
+# emf_borders.1 -- barons that own baronies outside of their top realm borders
 character_event {
-    id = emf_borders.1
+	id = emf_borders.1
 
-    is_triggered_only = yes # yearly pulse & from emf_borders.0
-    hide_window = yes
+	is_triggered_only = yes # yearly pulse & from emf_borders.0
+	hide_window = yes
 
-    only_rulers = yes
-    is_patrician = no
-    war = no
-    ai = yes
+	only_rulers = yes
+	is_patrician = no
+	war = no
+	ai = yes
 
-    trigger {
-        tier = baron
-        capital_holding {
-            location {
-                ROOT {
-                    any_demesne_title {
-                        location = { province != PREVPREVPREV }
-                    }
-                }
-            }
-        }
-    }
+	trigger {
+		tier == BARON
+		independent = no
+		any_demesne_title { location { owner { same_realm != ROOT } } }
+	}
 
-    immediate {
-        capital_holding { location { save_target = cap_prov } }
+	immediate {
+		if { num_of_baron_titles == 1 } then {
+			capital_holding { location { owner { set_defacto_vassal = ROOT } } }
+			emf_liege_change = yes
+		}
+		else {
+			any_demesne_title { location { owner { same_realm != ROOT } } } do {
+				save_target = barony_to_shed
+				location { owner { character_event { id = emf_borders.2 } } }
+				clear_target = barony_to_shed
+			}
+		}
+	}
+}
 
-        any_demesne_title { location { province != target:cap_prov } } do {
-            dejure_liege_title {
-                owner {
-                    grant_title_no_opinion = PREVPREV
-                }
-            }
-        }
-    }
+# emf_borders.2 -- given a barony target:barony_to_shed, create a new, appropriately-typed character for the barony,
+# grant it to the new character, and then vassalize them to the barony's containing province's holder (ROOT).
+character_event {
+	id = emf_borders.2
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger {
+		target:barony_to_shed { location { owner { character = ROOT } } }
+	}
+
+	immediate {
+		if { target:barony_to_shed { holding_type = TEMPLE } } then {
+			if { religion_allows_female_temple_holders = no } then {
+				create_random_priest = {
+					random_traits = yes
+					dynasty = none
+					female = no
+					attributes {
+						diplomacy = 2
+						martial = 2
+						stewardship = 2
+						intrigue = 2
+						learning = 5
+					}
+				}
+			}
+			else {
+				random_list {
+					50 {
+						create_random_priest {
+							random_traits = yes
+							dynasty = none
+							female = no
+							attributes {
+								diplomacy = 2
+								martial = 2
+								stewardship = 2
+								intrigue = 2
+								learning = 5
+							}
+						}
+					}
+					50 {
+						create_random_priest {
+							random_traits = yes
+							dynasty = none
+							female = yes
+							attributes {
+								diplomacy = 2
+								martial = 2
+								stewardship = 2
+								intrigue = 2
+								learning = 5
+							}
+						}
+					}
+				}
+			}
+			new_character {
+				save_target = new_baron
+				remove_trait = slow
+				remove_trait = imbecile
+				remove_trait = dull
+				emf_remove_lifestyle_traits = yes
+				random_list {
+					60 { }
+					25 { add_trait = theologian }
+					15 { add_trait = scholar }
+					15 { add_trait = erudite }
+					5  { add_trait = shrewd }
+				}
+				if { OR { religion = cathar religion = bogomilist } } then {
+					remove_trait = incapable
+					remove_trait = cynical
+					remove_trait = lustful
+					add_trait = zealous
+					add_trait = perfecti
+					set_character_flag = consolamentum_taken
+				}
+				if { religion_group = indian_group } then {
+					add_trait = brahmin
+					character_event { id = RoI.30121 }
+				}
+				emf_new_character = yes
+			}
+		}
+		elsif { target:barony_to_shed { holding_type = CITY } } then {
+			create_random_steward {
+				random_traits = yes
+				dynasty = none
+				female = no
+				attributes {
+					diplomacy = 2
+					martial = 2
+					stewardship = 5
+					intrigue = 2
+					learning = 2
+				}
+			}
+			new_character {
+				save_target = new_baron
+				remove_trait = slow
+				remove_trait = imbecile
+				remove_trait = dull
+				emf_new_character_noble = yes
+			}
+		}
+		else {
+			create_random_soldier = {
+				random_traits = yes
+				dynasty = none
+				female = no
+				attributes = {
+					diplomacy = 2
+					martial = 5
+					stewardship = 2
+					intrigue = 2
+					learning = 2
+				}
+			}
+			new_character = {
+				save_target = new_baron
+				remove_trait = weak
+				remove_trait = slow
+				remove_trait = imbecile
+				remove_trait = dull
+				emf_new_character_noble = yes
+			}
+		}
+		target:barony_to_shed { grant_title = target:new_baron }
+		set_defacto_vassal = target:new_baron
+	}
 }
 
 # emf_borders.5 -- king+ independent rulers whose de facto capital is disconnected from their de jure primary title's
@@ -107,111 +235,113 @@ character_event {
 #                  simplified assumption that their [de jure] primary title's preferred capital is much more likely to be
 #                  connected to the general "home region" of their realm.
 character_event {
-    id = emf_borders.5
+	id = emf_borders.5
 
-    is_triggered_only = yes # on_yearly_pulse
-    hide_window = yes
+	is_triggered_only = yes # on_yearly_pulse
+	hide_window = yes
 
-    only_independent = yes
-    war = no
-    ai = yes
+	only_independent = yes
+	war = no
+	ai = yes
 
-    trigger {
-        tier > duke
-        primary_title {
-            capital_scope {
-                de_jure_liege_or_above = PREVPREV # title's preferred capital hasn't drifted out of title
-                has_province_flag != emf_capital_connected # not connected to current capital
-                owner {
-                    is_liege_or_above = ROOT
-                    war = no
-                    ai = yes
-                }
-            }
-        }
-    }
+	trigger {
+		tier > DUKE
+		primary_title {
+			capital_scope {
+				de_jure_liege_or_above = PREVPREV # title's preferred capital hasn't drifted out of title
+				has_province_flag != emf_capital_connected # not connected to current capital
+				owner {
+					is_liege_or_above = ROOT
+					war = no
+					ai = yes
+				}
+			}
+		}
+	}
 
-    immediate {
-        capital_scope { county { save_target = old_cap } }
-        primary_title {
-            capital_scope {
-                county { save_target = new_cap }
-                owner { save_target = revokee }
-            }
-        }
+	immediate {
+		capital_scope { county { save_target = old_cap } }
+		primary_title {
+			capital_scope {
+				county { save_target = new_cap }
+				owner { save_target = revokee }
+			}
+		}
 
-        # need to make sure that if we get temporarily unlanded, our court & prisoners aren't lost
-        if { num_of_count_titles == 1 } then {
-            any_demesne_title { set_title_flag = emf_borders_prior_tmp }
-            set_character_flag = emf_crier_no_title_creation
-            primary_title {
-                create_title = {
-                    tier = emperor
-                    landless = yes
-                    custom_created = yes
-                    base_title = THIS
-                    culture = ROOT
-                    holder = ROOT
-                }
-            }
-            clr_character_flag = emf_crier_no_title_creation
-            random_demesne_title { has_title_flag != emf_borders_prior_tmp } do { set_title_flag = emf_autodestroy }
-            any_demesne_title { has_title_flag = emf_borders_prior_tmp } do { clr_title_flag = emf_borders_prior_tmp }
-        }
+		log = "emf_borders.5: DEBUG: relocating disconnected AI capital for [This.GetTitledFirstName]/#[This.GetID] of the [This.PrimaryTitle.GetFullBaseName]/[This.PrimaryTitle.GetID] from [old_cap.GetBaseName]/[old_cap.GetID] to [new_cap.GetBaseName]/[new_cap.GetID]"
 
-        # grant our current capital to the owner of our preferred capital
-        target:old_cap {
-            # transfer barons
-            any_de_jure_vassal { tier = baron vassal_of = ROOT } do {
-                set_defacto_liege = target:revokee
-                emf_liege_change = yes
-            }
+		# need to make sure that if we get temporarily unlanded, our court & prisoners aren't lost
+		if { num_of_count_titles == 1 } then {
+			any_demesne_title { set_title_flag = emf_borders_prior_tmp }
+			set_character_flag = emf_crier_no_title_creation
+			primary_title {
+				create_title = {
+					tier = EMPEROR
+					landless = yes
+					custom_created = yes
+					base_title = THIS
+					culture = ROOT
+					holder = ROOT
+				}
+			}
+			clr_character_flag = emf_crier_no_title_creation
+			random_demesne_title { has_title_flag != emf_borders_prior_tmp } do { set_title_flag = emf_autodestroy }
+			any_demesne_title { clr_title_flag = emf_borders_prior_tmp }
+		}
 
-            # transfer county
-            gain_title { target = target:revokee type = grant }
-            remove_claim = ROOT
+		# grant our current capital to the owner of our preferred capital
+		target:old_cap {
+			# transfer barons
+			any_de_jure_vassal { tier = BARON vassal_of = ROOT } do {
+				set_defacto_liege = target:revokee
+				emf_liege_change = yes
+			}
 
-            # and subholdings
-            any_direct_de_jure_vassal_title { holder = ROOT } do {
-                gain_title { target = target:revokee type = grant }
-                remove_claim = ROOT
-            }
-        }
+			# transfer county
+			gain_title { target = target:revokee type = grant }
+			remove_claim = ROOT
 
-        # now take our preferred capital
-        target:new_cap {
-            # transfer barons
-            any_de_jure_vassal { tier = baron vassal_of = target:revokee } do {
-                set_defacto_liege = ROOT
-                emf_liege_change = yes
-            }
+			# and subholdings
+			any_direct_de_jure_vassal_title { holder = ROOT } do {
+				gain_title { target = target:revokee type = grant }
+				remove_claim = ROOT
+			}
+		}
 
-            # transfer county
-            gain_title { target = ROOT type = revoke }
-            remove_claim = target:revokee
+		# now take our preferred capital
+		target:new_cap {
+			# transfer barons
+			any_de_jure_vassal { tier = BARON vassal_of = target:revokee } do {
+				set_defacto_liege = ROOT
+				emf_liege_change = yes
+			}
 
-            # and subholdings
-            any_direct_de_jure_vassal_title {
-                owner {
-                    OR {
-                        character = target:revokee
-                        AND {
-                            is_liege_or_above = target:revokee
-                            PREV { is_allowed_holding_type = ROOT }
-                        }
-                    }
-                }
-            }
-            do {
-                gain_title { target = target:revokee type = revoke }
-                remove_claim = target:revokee
-            }
-        }
+			# transfer county
+			gain_title { target = ROOT type = revoke }
+			remove_claim = target:revokee
 
-        # get rid of that landless empire title now, if we have one.
-        random_demesne_title { has_title_flag = emf_autodestroy } do { emf_unsafe_destroy_title = yes }
+			# and subholdings
+			any_direct_de_jure_vassal_title {
+				owner {
+					OR {
+						character = target:revokee
+						AND {
+							is_liege_or_above = target:revokee
+							PREV { is_allowed_holding_type = ROOT }
+						}
+					}
+				}
+			}
+			do {
+				gain_title { target = target:revokee type = revoke }
+				remove_claim = target:revokee
+			}
+		}
 
-        # ensure the preferred capital is now our de facto capital
-        capital = target:new_cap
-    }
+		# get rid of that landless empire title now, if we have one.
+		random_demesne_title { has_title_flag = emf_autodestroy } do { emf_unsafe_destroy_title = yes }
+
+		# ensure the preferred capital is now our de facto capital
+		capital = target:new_cap
+	}
 }

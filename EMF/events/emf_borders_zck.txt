@@ -1,5 +1,5 @@
 # -*- ck2 -*-
-# Generated from ZCK source code; compiler version: v0.0-10
+# Generated from ZCK source code; compiler version: v0.0-12
 
 namespace = emf_borders
 character_event = {
@@ -15,41 +15,56 @@ character_event = {
 		is_merchant_republic = no
 		OR = {
 			any_demesne_title = {
-				tier = baron
+				tier = BARON
 				dejure_liege_title = {
-					not = { holder = ROOT }
+					owner = {
+						not = { same_realm = ROOT }
+					}
 				}
 			}
 			any_vassal = {
-				tier = baron
+				tier = BARON
 				capital_holding = {
 					dejure_liege_title = {
-						not = { holder = ROOT }
+						owner = {
+							not = { same_realm = ROOT }
+						}
 					}
 				}
 			}
 		}
 	}
+	mean_time_to_happen = {
+		days = 1
+	}
 	immediate = {
 		any_demesne_title = {
 			limit = {
-				tier = baron
+				tier = BARON
 				dejure_liege_title = {
-					not = { holder = ROOT }
+					owner = {
+						not = { same_realm = ROOT }
+					}
 				}
 			}
+			save_event_target_as = barony_to_shed
 			dejure_liege_title = {
 				owner = {
-					grant_title_no_opinion = PREVPREV
+					character_event = {
+						id = emf_borders.2
+					}
 				}
 			}
+			clear_event_target = barony_to_shed
 		}
 		any_vassal = {
 			limit = {
-				tier = baron
+				tier = BARON
 				capital_holding = {
 					dejure_liege_title = {
-						not = { holder = ROOT }
+						owner = {
+							not = { same_realm = ROOT }
+						}
 					}
 				}
 			}
@@ -60,6 +75,7 @@ character_event = {
 					}
 				}
 			}
+			emf_liege_change = yes
 			character_event = {
 				id = emf_borders.1
 			}
@@ -75,37 +91,220 @@ character_event = {
 	war = no
 	ai = yes
 	trigger = {
-		tier = baron
-		capital_holding = {
+		tier = BARON
+		independent = no
+		any_demesne_title = {
 			location = {
-				ROOT = {
-					any_demesne_title = {
-						location = {
-							not = { province = PREVPREVPREV }
-						}
-					}
+				owner = {
+					not = { same_realm = ROOT }
 				}
 			}
 		}
 	}
 	immediate = {
-		capital_holding = {
-			location = {
-				save_event_target_as = cap_prov
-			}
-		}
-		any_demesne_title = {
+		if = {
 			limit = {
+				num_of_baron_titles == 1
+			}
+			capital_holding = {
 				location = {
-					not = { province = event_target:cap_prov }
+					owner = {
+						set_defacto_vassal = ROOT
+					}
 				}
 			}
-			dejure_liege_title = {
+			emf_liege_change = yes
+		}
+		else = {
+			any_demesne_title = {
+				limit = {
+					location = {
+						owner = {
+							not = { same_realm = ROOT }
+						}
+					}
+				}
+				save_event_target_as = barony_to_shed
+				location = {
+					owner = {
+						character_event = {
+							id = emf_borders.2
+						}
+					}
+				}
+				clear_event_target = barony_to_shed
+			}
+		}
+	}
+}
+character_event = {
+	id = emf_borders.2
+	is_triggered_only = yes
+	hide_window = yes
+	trigger = {
+		event_target:barony_to_shed = {
+			location = {
 				owner = {
-					grant_title_no_opinion = PREVPREV
+					character = ROOT
 				}
 			}
 		}
+	}
+	immediate = {
+		if = {
+			limit = {
+				event_target:barony_to_shed = {
+					holding_type = TEMPLE
+				}
+			}
+			if = {
+				limit = {
+					religion_allows_female_temple_holders = no
+				}
+				create_random_priest = {
+					random_traits = yes
+					dynasty = none
+					female = no
+					attributes = {
+						diplomacy = 2
+						martial = 2
+						stewardship = 2
+						intrigue = 2
+						learning = 5
+					}
+				}
+			}
+			else = {
+				random_list = {
+					50 = {
+						create_random_priest = {
+							random_traits = yes
+							dynasty = none
+							female = no
+							attributes = {
+								diplomacy = 2
+								martial = 2
+								stewardship = 2
+								intrigue = 2
+								learning = 5
+							}
+						}
+					}
+					50 = {
+						create_random_priest = {
+							random_traits = yes
+							dynasty = none
+							female = yes
+							attributes = {
+								diplomacy = 2
+								martial = 2
+								stewardship = 2
+								intrigue = 2
+								learning = 5
+							}
+						}
+					}
+				}
+			}
+			new_character = {
+				save_event_target_as = new_baron
+				remove_trait = slow
+				remove_trait = imbecile
+				remove_trait = dull
+				emf_remove_lifestyle_traits = yes
+				random_list = {
+					60 = { }
+					25 = {
+						add_trait = theologian
+					}
+					15 = {
+						add_trait = scholar
+					}
+					15 = {
+						add_trait = erudite
+					}
+					5 = {
+						add_trait = shrewd
+					}
+				}
+				if = {
+					limit = {
+						OR = {
+							religion = cathar
+							religion = bogomilist
+						}
+					}
+					remove_trait = incapable
+					remove_trait = cynical
+					remove_trait = lustful
+					add_trait = zealous
+					add_trait = perfecti
+					set_character_flag = consolamentum_taken
+				}
+				if = {
+					limit = {
+						religion_group = indian_group
+					}
+					add_trait = brahmin
+					character_event = {
+						id = RoI.30121
+					}
+				}
+				emf_new_character = yes
+			}
+		}
+		else_if = {
+			limit = {
+				event_target:barony_to_shed = {
+					holding_type = CITY
+				}
+			}
+			create_random_steward = {
+				random_traits = yes
+				dynasty = none
+				female = no
+				attributes = {
+					diplomacy = 2
+					martial = 2
+					stewardship = 5
+					intrigue = 2
+					learning = 2
+				}
+			}
+			new_character = {
+				save_event_target_as = new_baron
+				remove_trait = slow
+				remove_trait = imbecile
+				remove_trait = dull
+				emf_new_character_noble = yes
+			}
+		}
+		else = {
+			create_random_soldier = {
+				random_traits = yes
+				dynasty = none
+				female = no
+				attributes = {
+					diplomacy = 2
+					martial = 5
+					stewardship = 2
+					intrigue = 2
+					learning = 2
+				}
+			}
+			new_character = {
+				save_event_target_as = new_baron
+				remove_trait = weak
+				remove_trait = slow
+				remove_trait = imbecile
+				remove_trait = dull
+				emf_new_character_noble = yes
+			}
+		}
+		event_target:barony_to_shed = {
+			grant_title = event_target:new_baron
+		}
+		set_defacto_vassal = event_target:new_baron
 	}
 }
 character_event = {
@@ -145,6 +344,7 @@ character_event = {
 				}
 			}
 		}
+		log = "emf_borders.5: DEBUG: relocating disconnected AI capital for [This.GetTitledFirstName]/#[This.GetID] of the [This.PrimaryTitle.GetFullBaseName]/[This.PrimaryTitle.GetID] from [old_cap.GetBaseName]/[old_cap.GetID] to [new_cap.GetBaseName]/[new_cap.GetID]"
 		if = {
 			limit = {
 				num_of_count_titles == 1
@@ -155,7 +355,7 @@ character_event = {
 			set_character_flag = emf_crier_no_title_creation
 			primary_title = {
 				create_title = {
-					tier = emperor
+					tier = EMPEROR
 					landless = yes
 					custom_created = yes
 					base_title = THIS
@@ -171,16 +371,13 @@ character_event = {
 				set_title_flag = emf_autodestroy
 			}
 			any_demesne_title = {
-				limit = {
-					has_title_flag = emf_borders_prior_tmp
-				}
 				clr_title_flag = emf_borders_prior_tmp
 			}
 		}
 		event_target:old_cap = {
 			any_de_jure_vassal = {
 				limit = {
-					tier = baron
+					tier = BARON
 					vassal_of = ROOT
 				}
 				set_defacto_liege = event_target:revokee
@@ -205,7 +402,7 @@ character_event = {
 		event_target:new_cap = {
 			any_de_jure_vassal = {
 				limit = {
-					tier = baron
+					tier = BARON
 					vassal_of = event_target:revokee
 				}
 				set_defacto_liege = ROOT
