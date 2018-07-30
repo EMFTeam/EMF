@@ -27,13 +27,13 @@ NDefines.NCouncil.ENFORCE_PEACE_START_DELAY = 6
 NDefines.NCouncil.LAW_VOTE_CHANGE_TIME_LIMIT = 2
 
 -- Infamy
-NDefines.NInfamy.REALM_SIZE_GROWTH_MODIFIER = 0.002
-NDefines.NInfamy.REALM_SIZE_SHRINK_MODIFIER = 0.001
+NDefines.NInfamy.REALM_SIZE_GROWTH_MODIFIER = 0.005 -- shrunk from v8.06
+NDefines.NInfamy.REALM_SIZE_SHRINK_MODIFIER = 0.005 -- shrunk from v8.06
 NDefines.NInfamy.WAR_REALM_CHANGE_VALUE = 0.5
 NDefines.NInfamy.INDEPENDENCE_REALM_CHANGE_VALUE = 0.1
 NDefines.NInfamy.INHERITANCE_CHANGE_VALUE = 0.05
 NDefines.NInfamy.VASSAL_CHANGE_VALUE = 0
-NDefines.NInfamy.MAX_INFAMY_PER_WAR_PROVINCE = 3
+NDefines.NInfamy.MAX_INFAMY_PER_WAR_PROVINCE = 4 -- shrunk from v8.06 by 1
 NDefines.NInfamy.MIN_INFAMY_PER_WAR_PROVINCE = 0
 
 -- Character
@@ -55,7 +55,7 @@ NDefines.NCharacter.NATURAL_DEATH_CHANCE_AGE_60 = 600
 NDefines.NCharacter.NATURAL_DEATH_CHANCE_AGE_70 = 2100
 NDefines.NCharacter.SECONDARY_SPOUSE_FERTILITY_MULT = 0.33
 NDefines.NCharacter.INFANT_DEATH_CHANCE = 0.03
-NDefines.NCharacter.TREASURY_CHANCE_TO_DISAPPEAR_STANDARD = 0    -- prior EMF v8.02: 0.05
+NDefines.NCharacter.TREASURY_CHANCE_TO_DISAPPEAR_STANDARD = 0
 
 -- Title
 NDefines.NTitle.COUNT_TITLE_PRESTIGE = 0.05
@@ -82,8 +82,8 @@ NDefines.NTitle.GAME_RULES_DEJURE_SHORT = 40
 NDefines.NTitle.GAME_RULES_DEJURE_SHORT_EMPIRE = 40
 NDefines.NTitle.GAME_RULES_DEJURE_SHORTEST = 20
 NDefines.NTitle.GAME_RULES_DEJURE_SHORTEST_EMPIRE = 20
-NDefines.NTitle.REQ_KINGDOMS_FOR_EMPIRE_CREATION = 3 -- from 2
-NDefines.NTitle.ENFORCE_ONE_OF_EACH_HOLDING = 0 -- not needed, esp. on SWMH w/ its more realistic, irregular provinces
+NDefines.NTitle.REQ_KINGDOMS_FOR_EMPIRE_CREATION = 3
+NDefines.NTitle.ENFORCE_ONE_OF_EACH_HOLDING = 0
 NDefines.NTitle.MAX_REPUBLIC_COUNTIES_IN_REALM = 0.2
 NDefines.NTitle.MAX_THEOCRACY_COUNTIES_IN_REALM = 0.2
 NDefines.NTitle.EMPIRE_DEJURE_COUNTY_LIMIT_TO_CREATE = 0.667
@@ -99,10 +99,9 @@ NDefines.NReligion.AUTHORITY_FROM_HOLY_SITE = 0.05
 NDefines.NReligion.AUTHORITY_FROM_ANTIPOPE = -0.1                 -- prior to EMF v8.02: -0.3
 NDefines.NReligion.AUTHORITY_FROM_RELHEAD_PIETY = 0.001           -- prior to EMF v8.02: 0
 NDefines.NReligion.AUTHORITY_FROM_RELHEAD_DIPLOMACY = 0.02
-NDefines.NReligion.AUTHORITY_FROM_RELHEAD_HOLY_SITE = 0.05        -- prior to EMF v8.02: 0, now back to vanilla
 NDefines.NReligion.AUTHORITY_FROM_ORG_RELIGION = 0.3
 NDefines.NReligion.DIVINE_BLOOD_FERTILITY_MULT = 1.0
-NDefines.NReligion.ELECTOR_TITLE_CULTURE_GROUP_FACTOR = 25        -- prior to EMF v8.02: 50
+NDefines.NReligion.ELECTOR_TITLE_CULTURE_GROUP_FACTOR = 50        -- doubled to vanilla from EMF v8.06
 NDefines.NReligion.ELECTOR_TITLE_CULTURE_FACTOR = 50              -- prior to EMF v8.02: 200
 NDefines.NReligion.ELECTOR_FAMOUS_DYNASTY_FACTOR = 0.005
 
@@ -114,8 +113,8 @@ NDefines.NEconomy.TRADE_POST_COST_INC_DIST = 0.0045
 NDefines.NEconomy.PATRICIAN_CITY_TAX_MULT = 0.5                   -- prior to EMF v8.02: 0.25, now back to vanilla
 NDefines.NEconomy.OVER_MAX_DEMESNE_TAX_PENALTY = 0.1              -- doubled tax penalty per holding over demesne limit (still quite flexible, however) from v8.06
 NDefines.NEconomy.LOOTER_ARMY_MAINT_MULT = 0.05                   -- halved looter army maintenance from v8.06
-NDefines.NEconomy.TRADE_ROUTE_SIEGE_MULTIPLIER = 0.8			  -- vanilla: 0.9
-NDefines.NEconomy.TRADE_ROUTE_OCCUPATION_MULTIPLIER = 0.6         -- vanilla: 0.75
+NDefines.NEconomy.TRADE_ROUTE_SIEGE_MULTIPLIER = 0.8			  -- vanilla: 0.9 [also from v8.06]
+NDefines.NEconomy.TRADE_ROUTE_OCCUPATION_MULTIPLIER = 0.6         -- vanilla: 0.75 [also from v8.06]
 
 -- Nomad
 NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 1500
@@ -123,25 +122,28 @@ NDefines.NNomad.STARTING_HORDE_MAX_FRACTION = 1
 
 -- Military
 NDefines.NMilitary.NUMBER_OF_TROOPS_PER_GALLEY = 200
-NDefines.NMilitary.LEVY_MAINTENANCE_FACTOR = 2.4
-NDefines.NMilitary.HOLDING_LEVY_SIZE_OWNER_MARTIAL_BASE = 0.75
-NDefines.NMilitary.HOLDING_LEVY_SIZE_OWNER_MARTIAL_MULT = 0.025
+NDefines.NMilitary.LEVY_MAINTENANCE_FACTOR = 2.7                 -- increased by 0.3 from v8.06
 NDefines.NMilitary.BATTLE_WARSCORE_DEFENDER_MULTIPLIER = 1.6
-NDefines.NMilitary.MIN_LEVY_RAISE_OPINION_THRESHOLD = -50
+--NDefines.NMilitary.MIN_LEVY_RAISE_OPINION_THRESHOLD = -50
+NDefines.NMilitary.MIN_LEVIES_ABOVE_OPINION_THRESHOLD = 0.333 -- at 0 opinion, vassals will send 1/3 of their liege levy (equiv. to v8.06 equation that started at -50 opinion, except hard cutoff at 0 opinion)
 NDefines.NMilitary.ATTACKER_SIEGE_DAMAGE = 0
 NDefines.NMilitary.DEFENDER_SIEGE_DAMAGE = 0
 NDefines.NMilitary.NUM_DAYS_BETWEEN_SIEGE_MORALE_LOSS = 10
 NDefines.NMilitary.REINFORCE_RATE = 0.03
-NDefines.NMilitary.ARMY_LOAD_MOVE_COST = 40.0
-NDefines.NMilitary.CAPTURED_HEIR_WAR_SCORE = 30.0
+NDefines.NMilitary.LEVY_RAISED_REINFORCE_RATE_MULTIPLIER = 0.2        -- vanilla / v8.06 was 0.5
+NDefines.NMilitary.SETTLEMENT_WARSCORE_MULTIPLIER = 0.375             -- in EMF v8.07, more warscore for occupying private demesne holdings of enemy (from 0.3/vanilla)
+NDefines.NMilitary.VASSAL_SETTLEMENT_WARSCORE_MULTIPLIER = 0.225      -- in EMF v8.07, less warscore for occupying enemy's vassals' holdings (from 0.3/vanilla)
+NDefines.NMilitary.NAVAL_ATTRITION = 0.05                             -- units suffer 5% attrition while at sea in EMF v8.07; vanilla and EMF v8.06 were 0%
+NDefines.NMilitary.ARMY_LOAD_MOVE_COST = 30.0                         -- changed by -10 cost from v8.06 (-25% EMF / +50% vanilla instead of +100% vanilla)
+NDefines.NMilitary.WAR_CONTRIBUTION_PROVINCE_WITHOUT_SETTLEMENT_OCCUPATION_PER_DAY = 1.5 -- as of EMF v8.07, half of vanilla
+NDefines.NMilitary.NOMAD_PROVINCE_WAR_CONTRIBUTION_MULTIPLIER = 6                        -- as of EMF v8.07, twice vanilla
+NDefines.NMilitary.CAPTURED_HEIR_WAR_SCORE = 20.0            -- changed by -10 WS from v8.06 (vanilla = 50 WS)
 NDefines.NMilitary.RETINUE_FROM_REALMSIZE = 1.5
 NDefines.NMilitary.RETINUE_INCREASE_PER_TECH = 0.5
 NDefines.NMilitary.RETINUE_HIRE_COST_MULTIPLIER = 0.2
-NDefines.NMilitary.MAX_COMMANDERS_DUKE = 5                   -- from 4
-NDefines.NMilitary.MAX_COMMANDERS_KING = 7                   -- from 6
-NDefines.NMilitary.MAX_COMMANDERS_EMPEROR = 9                -- from 8
-NDefines.NMilitary.LIEGE_LEVY_REINF_RATE = 0.03
-NDefines.NMilitary.LIEGE_LEVY_COST_MULTIPLIER = 0.5
+NDefines.NMilitary.MAX_COMMANDERS_BARON = 2                  -- EMF v8.07: barons should not be deprived of commanders (rest of commander limits reverted to vanilla, a decrease by 1 for each tier)
+NDefines.NMilitary.LIEGE_LEVY_REINF_RATE = 0.01              -- changed by -0.02 from EMF v8.06 (-67%), which is now a fifth of vanilla's rate
+NDefines.NMilitary.LIEGE_LEVY_COST_MULTIPLIER = 0.0          -- as of EMF v8.07, vassals do not pay upkeep on their liege levy contribution
 NDefines.NMilitary.LIGHT_INFANTRY_MORALE = 3
 NDefines.NMilitary.LIGHT_INFANTRY_MAINTENANCE = 1
 NDefines.NMilitary.LIGHT_INFANTRY_PHASE_SKIRMISH_ATTACK = 1
@@ -199,15 +201,17 @@ NDefines.NMilitary.SPECIAL_TROOPS_PHASE_SKIRMISH_DEFENSE = 4
 NDefines.NMilitary.SPECIAL_TROOPS_PHASE_MELEE_DEFENSE = 4
 NDefines.NMilitary.SPECIAL_TROOPS_PHASE_PURSUE_DEFENSE = 7
 NDefines.NMilitary.SPECIAL_TROOPS_GRAPHICAL_FACTOR = 1.5
+NDefines.NMilitary.COMMAND_MODIFIER_MARTIAL_MULTIPLIER = 0.03 -- changed from vanilla by -0.02 (-40%) in EMF v8.07
 NDefines.NMilitary.CAPITAL_DUCHY_LIEGE_LEVY_MULT = 0.75 -- same as vanilla, just here for completeness
 NDefines.NMilitary.CAPITAL_KINGDOM_LIEGE_LEVY_MULT = 0.5 -- same as vanilla, just here for completeness
 NDefines.NMilitary.CAPITAL_EMPIRE_LIEGE_LEVY_MULT = 0.25 -- reduced to be same as "outside capital empire," since most places are "outside" a de jure empire in the default EMF setup (or, rather, it's e_null, which complicates things if they're not the same)
 NDefines.NMilitary.OUTSIDE_LIEGE_LEVY_MULT = 0.25 -- same as vanilla, just here for completeness
+NDefines.NMilitary.FORAGING_PILLAGE_MODIFIER = 0.25 -- changed from 0.15 in vanilla for EMF v8.07 (troops will take more of a province's loot when out of supply)
 NDefines.NMilitary.MONTHS_OF_UNDECIDED_WAR = 0
 NDefines.NMilitary.SHATTERED_RETREAT_MORALE_MULTIPLIER = 1.0
 NDefines.NMilitary.SHATTERED_RETREAT_PREFERRED_PROVINCES = 4
-NDefines.NMilitary.SHATTERED_RETREAT_MAX_PROVINCES = 5 -- reduced by 1 for EMF+V from v8.06 (EMF+SWMH allows 1 more)
-NDefines.NMilitary.MAX_WARSCORE_FROM_BATTLE_DEFENDERS = 200   -- from 100
+NDefines.NMilitary.SHATTERED_RETREAT_MAX_PROVINCES = 5 -- reduced by 1 for EMF+V from v8.06 (EMF+SWMH allows 1 more, tho also reduced by 1 for v8.07)
+NDefines.NMilitary.MAX_WARSCORE_FROM_BATTLE_DEFENDERS = 200   -- from 100 in vanilla
 
 -- Technology
 NDefines.NTechnology.POINTS_PER_ATTRIBUTE = 0.02
@@ -225,10 +229,11 @@ NDefines.NEngine.EVENT_PROCESS_OFFSET = 30
 -- AI
 NDefines.NAI.MARRIAGE_AI_PRESTIGE_VALUE = 0.1    -- worst-case, they marry a lowborn, which EMF will raise to the nobility. prestige effects of marriage tend to greatly get in the way of the AI making good matches that further its dynasty. (vanilla value is 0.33)
 NDefines.NAI.AI_EMPEROR_CREATES_KINGDOMS = 1     -- only now a good idea due to Imperial Kingdom Creation law
-NDefines.NAI.DESIRED_CONSORTS = 1 -- AI will actually try to get a concubine if they lack sons
-NDefines.NAI.RAID_AGGRESSION = 18 -- revert to normal vanilla raid aggression in v8.07 (was weaker)
+NDefines.NAI.DESIRED_CONSORTS = 1        -- as of EMF v8.07, AI will actually try to get a concubine if they lack sons
+NDefines.NAI.AI_ASSAULT_RATIO = 15       -- +50% from vanilla
+NDefines.NAI.RAID_AGGRESSION = 12        -- ultra aggressive as of EMF v8.07 [was twice this value, 24, and although we don't know what kind of scale this is on, lower means more aggro, and this is twice as low]
 NDefines.NAI.TRIBAL_VASSAL_EXTRA_CALL_CHANCE = 30
-NDefines.NAI.CB_SCORE_PROVINCE_WITHOUT_SETTLEMENT_NON_NOMAD = -0.5 -- EXPERIMENTAL: negative values have unknown effect currently. if these scores are weighted and summed as it would seem, it should be WAD and greatly decrease AI war interest in nomadic wastelands.
+NDefines.NAI.CB_SCORE_PROVINCE_WITHOUT_SETTLEMENT_NON_NOMAD = -0.5 -- [v8.07] EXPERIMENTAL: negative values have unknown effect currently. if these scores are weighted and summed as it would seem, it should be WAD and greatly decrease AI war interest in nomadic wastelands.
 
 
 
