@@ -27,13 +27,13 @@ NDefines.NCouncil.ENFORCE_PEACE_START_DELAY = 6
 NDefines.NCouncil.LAW_VOTE_CHANGE_TIME_LIMIT = 2
 
 -- Infamy
-NDefines.NInfamy.REALM_SIZE_GROWTH_MODIFIER = 0.025
-NDefines.NInfamy.REALM_SIZE_SHRINK_MODIFIER = 0.015
+NDefines.NInfamy.REALM_SIZE_GROWTH_MODIFIER = 0.002
+NDefines.NInfamy.REALM_SIZE_SHRINK_MODIFIER = 0.001
 NDefines.NInfamy.WAR_REALM_CHANGE_VALUE = 0.5
 NDefines.NInfamy.INDEPENDENCE_REALM_CHANGE_VALUE = 0.1
 NDefines.NInfamy.INHERITANCE_CHANGE_VALUE = 0.05
 NDefines.NInfamy.VASSAL_CHANGE_VALUE = 0
-NDefines.NInfamy.MAX_INFAMY_PER_WAR_PROVINCE = 5
+NDefines.NInfamy.MAX_INFAMY_PER_WAR_PROVINCE = 3
 NDefines.NInfamy.MIN_INFAMY_PER_WAR_PROVINCE = 0
 
 -- Character
@@ -112,8 +112,10 @@ NDefines.NEconomy.BISHOP_TAX_TO_POPE_FACTOR = 0.25
 NDefines.NEconomy.BISHOP_TAX_TO_ANTI_POPE_FACTOR = 0.025          -- prior to EMF v8.02: 0.05
 NDefines.NEconomy.TRADE_POST_COST_INC_DIST = 0.0045
 NDefines.NEconomy.PATRICIAN_CITY_TAX_MULT = 0.5                   -- prior to EMF v8.02: 0.25, now back to vanilla
-NDefines.NEconomy.OVER_MAX_DEMESNE_TAX_PENALTY = 0.05
-NDefines.NEconomy.LOOTER_ARMY_MAINT_MULT = 0.1
+NDefines.NEconomy.OVER_MAX_DEMESNE_TAX_PENALTY = 0.1              -- doubled tax penalty per holding over demesne limit (still quite flexible, however) from v8.06
+NDefines.NEconomy.LOOTER_ARMY_MAINT_MULT = 0.05                   -- halved looter army maintenance from v8.06
+NDefines.NEconomy.TRADE_ROUTE_SIEGE_MULTIPLIER = 0.8			  -- vanilla: 0.9
+NDefines.NEconomy.TRADE_ROUTE_OCCUPATION_MULTIPLIER = 0.6         -- vanilla: 0.75
 
 -- Nomad
 NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 1500
@@ -204,7 +206,7 @@ NDefines.NMilitary.OUTSIDE_LIEGE_LEVY_MULT = 0.25 -- same as vanilla, just here 
 NDefines.NMilitary.MONTHS_OF_UNDECIDED_WAR = 0
 NDefines.NMilitary.SHATTERED_RETREAT_MORALE_MULTIPLIER = 1.0
 NDefines.NMilitary.SHATTERED_RETREAT_PREFERRED_PROVINCES = 4
-NDefines.NMilitary.SHATTERED_RETREAT_MAX_PROVINCES = 6
+NDefines.NMilitary.SHATTERED_RETREAT_MAX_PROVINCES = 5 -- reduced by 1 for EMF+V from v8.06 (EMF+SWMH allows 1 more)
 NDefines.NMilitary.MAX_WARSCORE_FROM_BATTLE_DEFENDERS = 200   -- from 100
 
 -- Technology
@@ -221,9 +223,15 @@ NDefines.NGraphics.CITY_SPRAWL_AMOUNT = 0.75
 NDefines.NEngine.EVENT_PROCESS_OFFSET = 30
 
 -- AI
+NDefines.NAI.MARRIAGE_AI_PRESTIGE_VALUE = 0.1    -- worst-case, they marry a lowborn, which EMF will raise to the nobility. prestige effects of marriage tend to greatly get in the way of the AI making good matches that further its dynasty. (vanilla value is 0.33)
 NDefines.NAI.AI_EMPEROR_CREATES_KINGDOMS = 1     -- only now a good idea due to Imperial Kingdom Creation law
-NDefines.NAI.RAID_AGGRESSION = 24
+NDefines.NAI.DESIRED_CONSORTS = 1 -- AI will actually try to get a concubine if they lack sons
+NDefines.NAI.RAID_AGGRESSION = 18 -- revert to normal vanilla raid aggression in v8.07 (was weaker)
 NDefines.NAI.TRIBAL_VASSAL_EXTRA_CALL_CHANCE = 30
+NDefines.NAI.CB_SCORE_PROVINCE_WITHOUT_SETTLEMENT_NON_NOMAD = -0.5 -- EXPERIMENTAL: negative values have unknown effect currently. if these scores are weighted and summed as it would seem, it should be WAD and greatly decrease AI war interest in nomadic wastelands.
+
+
+
 -- NDefines.NAI.COALITION_DISTANCE_MULTIPLIER = -1.25
 
 -- RulerDesigner defines are in emf_ruler_designer_defines.lua; if you blank that file, the designer will revert to
