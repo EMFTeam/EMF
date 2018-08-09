@@ -1,0 +1,102 @@
+
+emf_willfully_abdicate {
+  hidden_effect {
+    save_target = emf_abdicator_tmp
+    character_event { id = emf_core.110 }
+    if { is_null != t:emf_abdicate_real_heir } then {
+      t:emf_abdicate_real_heir { save_target = emf_heir_tmp }
+    }
+    else {
+      current_heir { save_target = emf_heir_tmp }
+    }
+    # Non-Dynastic Succession
+    if {
+      ai = no
+      has_game_rule { name = non_dynastic_succession value = on }
+      is_merchant_republic = no
+      is_nomadic = no
+      t:emf_heir_tmp {
+        ai = yes
+        NOT { dynasty = PREV }
+      }
+    }
+    then {
+      set_character_flag = emf_non_dynastic_succession_tmp
+      t:emf_heir_tmp {
+        if { is_lowborn = yes } then { dynasty = father_bastard }
+        t:emf_abdicator_tmp {
+          create_character {
+            religion = PREV
+            culture = PREV
+            dynasty = PREV
+          }
+          new_character { save_event_target_as = emf_sleeve }
+        }
+        dynasty = t:emf_abdicator_tmp
+      }
+    }
+  }
+  if { is_null != t:emf_abdicate_real_heir } then {
+    abdicate_to = t:emf_heir_tmp
+  }
+  else {
+    abdicate = yes
+  }
+  hidden_effect {
+    if { has_character_flag = emf_non_dynastic_succession_tmp } then {
+      t:emf_heir_tmp { character_event { id = emf_core.11 } } # finish Non-Dynastic Succession
+    }
+  }
+  clr_character_flag = emf_non_dynastic_succession_tmp
+  clear_target = emf_heir_tmp
+  clear_target = emf_abdicator_tmp
+  clear_target = emf_abdicate_real_heir
+}
+
+emf_abdicate {
+  hidden_effect {
+    if { is_null = current_heir } then {
+      log = "DEBUG: emf_abdicate: [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (#[This.GetID]/[This.PrimaryTitle.GetID]) has no expected successor."
+    }
+    else {
+      save_target = emf_abdicator_tmp
+
+      while {
+        current_heir {
+          any_opinion_modifier_target {
+            reverse_has_opinion_modifier { who = PREV modifier = overthrew_me }
+            OR {
+              vassal_of = t:emf_abdicator_tmp
+              liege { emf_revolting_against_abdicator_internal = yes }
+              emf_revolting_against_abdicator_internal = yes
+            }
+          }
+        }
+      }
+      do {
+        $n_overlooked_heirs += 1
+        current_heir {
+          reverse_opinion { who = t:emf_abdicator_tmp modifier = opinion_overlooked_heir }
+          add_trait = emf_cannot_inherit
+        }
+        recalc_succession = yes
+      }
+
+      clear_target = emf_abdicator_tmp
+
+      if { is_null = current_heir } then {
+        log = "WARNING: emf_abdicate: [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (#[This.GetID]/[This.PrimaryTitle.GetID]) has no heir at all after disqualifying [This.n_overlooked_heirs.GetValue] potential heirs!"
+      }
+
+      $n_overlooked_heirs = 0
+      emf_willfully_abdicate = yes
+
+      while {
+        any_opinion_modifier_target {
+          reverse_has_opinion_modifier { who = PREV modifier = opinion_overlooked_heir }
+          trait = emf_cannot_inherit
+        }
+      } do { remove_trait = emf_cannot_inherit }
+    }
+  }
+}
