@@ -78,6 +78,8 @@ emf_abdicate {
         $n_overlooked_heirs += 1
         current_heir {
           reverse_opinion { who = t:emf_abdicator_tmp modifier = opinion_overlooked_heir }
+          any_heir_title { owner { reverse_opinion { who = PREVPREV modifier = opinion_cannot_inherit_tmp } } }
+          any_pretender_title { owner { reverse_opinion { who = PREVPREV modifier = opinion_cannot_inherit_tmp } } }
           add_trait = emf_cannot_inherit
         }
         recalc_succession = yes
@@ -93,21 +95,21 @@ emf_abdicate {
       emf_willfully_abdicate = yes
 
       # Cleanup TOMs, traits, and recalculate succession state for disqualified ruler heirs...
-      while {
-        any_opinion_modifier_target {
-          reverse_has_opinion_modifier { who = PREV modifier = opinion_overlooked_heir }
-          trait = emf_cannot_inherit
-        }
+      any_opinion_modifier_target {
+        reverse_has_opinion_modifier { who = PREV modifier = opinion_overlooked_heir }
+        trait = emf_cannot_inherit
       }
       do {
+        reverse_remove_opinion { who = PREV modifier = opinion_overlooked_heir }
+        remove_trait = emf_cannot_inherit
+        # All the rulers which hold titles to which this no-longer-disqualified heir was either heir or pretender to now
+        # recalculate their succession with the inheritance blocking trait removed:
         any_opinion_modifier_target {
-          reverse_has_opinion_modifier { who = PREV modifier = opinion_overlooked_heir }
+          reverse_has_opinion_modifier { who = PREV modifier = opinion_cannot_inherit_tmp }
         }
         do {
-          reverse_remove_opinion { who = PREV modifier = opinion_overlooked_heir }
-          remove_trait = emf_cannot_inherit
-          # Will want to immediately recalculate the disqualified abdication heir's own succession if they're a ruler:
-          if { is_ruler = yes } then { recalc_succession = yes }
+          reverse_remove_opinion { who = PREV modifier = opinion_cannot_inherit_tmp }
+          recalc_succession = yes
         }
       }
     }
