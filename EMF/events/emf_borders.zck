@@ -7,23 +7,40 @@ character_event {
 	hide_window = yes
 
 	only_playable = yes
-	is_patrician = no
 	war = no
 	ai = yes
 
 	trigger {
-		top_liege { in_revolt = no }
+		war = no
+		ai = yes
+		OR {
+			independent = yes
+			NOT { any_liege { in_revolt = yes } }
+		}
+		in_revolt = no
 		controls_religion = no
 		holy_order = no
 		is_merchant_republic = no
+		is_patrician = no
+		NOT {
+			any_liege {
+				OR {
+					controls_religion = yes
+					holy_order = yes
+					is_merchant_republic = yes
+					is_patrician = yes
+				}
+			}
+		}
 		OR {
 			any_demesne_title {
 				tier == BARON
-				dejure_liege_title { owner { same_realm != ROOT } }
+				dejure_liege_title.owner.same_realm != ROOT
 			}
 			any_vassal {
 				tier == BARON
-				capital_holding { dejure_liege_title { owner { same_realm != ROOT } } }
+				is_patrician = no
+				capital_holding.dejure_liege_title.owner.same_realm != ROOT
 			}
 		}
 	}
@@ -34,28 +51,25 @@ character_event {
 		# forfeit owned non-DJ baronies
 		any_demesne_title {
 			tier == BARON
-			dejure_liege_title { owner { same_realm != ROOT } }
+			dejure_liege_title.owner.same_realm != ROOT
 		}
 		do {
 			save_target = barony_to_shed
-			dejure_liege_title { owner { character_event { id = emf_borders.2 } } }
+			dejure_liege_title.owner.character_event { id = emf_borders.2 }
 			clear_target = barony_to_shed
 		}
 		# transfer non-DJ BARON vassals
 		any_vassal {
 			tier == BARON
-			capital_holding { dejure_liege_title { owner { same_realm != ROOT } } }
+			is_patrician = no
+			capital_holding.dejure_liege_title.owner.same_realm != ROOT
 		}
 		do {
-			capital_holding {
-				dejure_liege_title {
-					owner {
-						set_defacto_vassal = PREVPREVPREV
-					}
-				}
-			}
+			capital_holding.dejure_liege_title.owner.set_defacto_vassal = PREVPREVPREV
 			emf_liege_change = yes
-			character_event { id = emf_borders.1 }
+			if { same_realm != ROOT } then {
+				character_event { id = emf_borders.1 }
+			}
 		}
 	}
 }
@@ -68,26 +82,42 @@ character_event {
 	hide_window = yes
 
 	only_rulers = yes
-	is_patrician = no
 	war = no
 	ai = yes
 
 	trigger {
 		tier == BARON
-		top_liege { in_revolt = no }
+		war = no
+		in_revolt = no
 		independent = no
-		any_demesne_title { location { owner { same_realm != ROOT } } }
+		ai = yes
+		is_patrician = no
+		is_merchant_republic = no
+		NOT {
+			any_liege {
+				OR {
+					in_revolt = yes
+					controls_religion = yes
+					holy_order = yes
+					is_merchant_republic = yes
+					is_patrician = yes
+				}
+			}
+		}
+		any_demesne_title {
+			location.owner.same_realm != ROOT
+		}
 	}
 
 	immediate {
 		if { num_of_baron_titles == 1 } then {
-			capital_holding { location { owner { set_defacto_vassal = ROOT } } }
+			capital_holding.location.owner.set_defacto_vassal = ROOT
 			emf_liege_change = yes
 		}
 		else {
-			any_demesne_title { location { owner { same_realm != ROOT } } } do {
+			any_demesne_title { location.owner.same_realm != ROOT } do {
 				save_target = barony_to_shed
-				location { owner { character_event { id = emf_borders.2 } } }
+				location.owner.character_event { id = emf_borders.2 }
 				clear_target = barony_to_shed
 			}
 		}
@@ -103,11 +133,11 @@ character_event {
 	hide_window = yes
 
 	trigger {
-		target:barony_to_shed { location { owner { character = ROOT } } }
+		t:barony_to_shed.location.owner.character = ROOT
 	}
 
 	immediate {
-		if { target:barony_to_shed { holding_type = TEMPLE } } then {
+		if { t:barony_to_shed { holding_type = TEMPLE } } then {
 			if { religion_allows_female_temple_holders = no } then {
 				create_random_priest = {
 					random_traits = yes
@@ -182,7 +212,7 @@ character_event {
 				emf_new_character = yes
 			}
 		}
-		elsif { target:barony_to_shed { holding_type = CITY } } then {
+		elsif { t:barony_to_shed { holding_type = CITY } } then {
 			create_random_steward {
 				random_traits = yes
 				dynasty = none
@@ -225,8 +255,8 @@ character_event {
 				emf_new_character_noble = yes
 			}
 		}
-		target:barony_to_shed { grant_title = target:new_baron }
-		set_defacto_vassal = target:new_baron
+		t:barony_to_shed { grant_title = t:new_baron }
+		set_defacto_vassal = t:new_baron
 	}
 }
 
@@ -248,26 +278,22 @@ character_event {
 
 	trigger {
 		tier > DUKE
-		primary_title {
-			capital_scope {
-				de_jure_liege_or_above = PREVPREV # title's preferred capital hasn't drifted out of title
-				has_province_flag != emf_capital_connected # not connected to current capital
-				owner {
-					is_liege_or_above = ROOT
-					war = no
-					ai = yes
-				}
+		primary_title.capital_scope {
+			de_jure_liege_or_above = PREVPREV # title's preferred capital hasn't drifted out of title
+			has_province_flag != emf_capital_connected # not connected to current capital
+			owner {
+				is_liege_or_above = ROOT
+				war = no
+				ai = yes
 			}
 		}
 	}
 
 	immediate {
-		capital_scope { county { save_target = old_cap } }
-		primary_title {
-			capital_scope {
-				county { save_target = new_cap }
-				owner { save_target = revokee }
-			}
+		capital_scope.county.save_target = old_cap
+		primary_title.capital_scope {
+			county.save_target = new_cap
+			owner.save_target = revokee
 		}
 
 		log = "emf_borders.5: DEBUG: relocating disconnected AI capital for [This.GetTitledFirstName]/#[This.GetID] of the [This.PrimaryTitle.GetFullBaseName]/[This.PrimaryTitle.GetID] from [old_cap.GetBaseName]/[old_cap.GetID] to [new_cap.GetBaseName]/[new_cap.GetID]"
@@ -292,51 +318,51 @@ character_event {
 		}
 
 		# grant our current capital to the owner of our preferred capital
-		target:old_cap {
+		t:old_cap {
 			# transfer barons
 			any_de_jure_vassal { tier = BARON vassal_of = ROOT } do {
-				set_defacto_liege = target:revokee
+				set_defacto_liege = t:revokee
 				emf_liege_change = yes
 			}
 
 			# transfer county
-			gain_title { target = target:revokee type = grant }
+			gain_title { target = t:revokee type = grant }
 			remove_claim = ROOT
 
 			# and subholdings
 			any_direct_de_jure_vassal_title { holder = ROOT } do {
-				gain_title { target = target:revokee type = grant }
+				gain_title { target = t:revokee type = grant }
 				remove_claim = ROOT
 			}
 		}
 
 		# now take our preferred capital
-		target:new_cap {
+		t:new_cap {
 			# transfer barons
-			any_de_jure_vassal { tier = BARON vassal_of = target:revokee } do {
+			any_de_jure_vassal { tier = BARON vassal_of = t:revokee } do {
 				set_defacto_liege = ROOT
 				emf_liege_change = yes
 			}
 
 			# transfer county
 			gain_title { target = ROOT type = revoke }
-			remove_claim = target:revokee
+			remove_claim = t:revokee
 
 			# and subholdings
 			any_direct_de_jure_vassal_title {
 				owner {
 					OR {
-						character = target:revokee
+						character = t:revokee
 						AND {
-							is_liege_or_above = target:revokee
+							is_liege_or_above = t:revokee
 							PREV { is_allowed_holding_type = ROOT }
 						}
 					}
 				}
 			}
 			do {
-				gain_title { target = target:revokee type = revoke }
-				remove_claim = target:revokee
+				gain_title { target = t:revokee type = revoke }
+				remove_claim = t:revokee
 			}
 		}
 
@@ -344,6 +370,6 @@ character_event {
 		random_demesne_title { has_title_flag = emf_autodestroy } do { emf_unsafe_destroy_title = yes }
 
 		# ensure the preferred capital is now our de facto capital
-		capital = target:new_cap
+		capital = t:new_cap
 	}
 }
