@@ -18,18 +18,22 @@ cultural_tactics = {
             "komi":             ("raid_tactic", "quick_attack_tactic"),
             "mordvin":          ("raid_tactic", "quick_attack_tactic"),
             "samoyed":          ("raid_tactic", "quick_attack_tactic"),
+			"mari":             ("raid_tactic", "quick_attack_tactic"),
+			"karelian":         ("raid_tactic", "quick_attack_tactic"),
+			"vepsian":          ("raid_tactic", "quick_attack_tactic"),
+			"khanty":           ("raid_tactic", "quick_attack_tactic"),
             "english":          ("volley_tactic", "longbow_volley_tactic"),
+			"cumbric":          ("volley_tactic", "longbow_volley_tactic"),
             "welsh":            ("volley_tactic", "longbow_volley_tactic"),
+			"g_aramaic":        ("volley_tactic", "longbow_volley_tactic"),
             "ligurian":         ("volley_tactic", "ambush_volley_tactic"),
+			"g_chinese_group":  ("volley_tactic", "ambush_volley_tactic"),
+			"g_east_african":   ("harass_tactic", "ambush_volley_tactic"),
+			"g_altaic":			("swarm_tactic", "retreat_and_ambush_tactic"),
             "g_iranian":        ("swarm_tactic", "retreat_and_ambush_tactic"),
-            "cuman":            ("swarm_tactic", "retreat_and_ambush_tactic"),
-            "khazar":           ("swarm_tactic", "retreat_and_ambush_tactic"),
-            "pecheneg":         ("swarm_tactic", "retreat_and_ambush_tactic"),
-            "mongol":           ("swarm_tactic", "retreat_and_ambush_tactic"),
-            "turkish":          ("swarm_tactic", "retreat_and_ambush_tactic"),
-            "hungarian":        ("swarm_tactic", "retreat_and_ambush_tactic"),
-            "g_west_african":   ("harass_tactic", "missile_harass_tactic"),
-            "g_east_african":   ("harass_tactic", "missile_harass_tactic"),
+            "g_magyar":         ("swarm_tactic", "retreat_and_ambush_tactic"),
+            "g_west_african":   ("harass_tactic", "guerilla_harass_tactic"),
+			"canarian":			("harass_tactic", "guerilla_harass_tactic"),
             "italian":          ("melee_charge_tactic", "awesome_charge_tactic"),
             "lombard":          ("melee_charge_tactic", "awesome_charge_tactic"),
             "sicilian":         ("melee_charge_tactic", "awesome_charge_tactic"),
@@ -37,60 +41,79 @@ cultural_tactics = {
             "polish":           ("melee_charge_tactic", "combined_charge_tactic"),
             "serbian":          ("melee_charge_tactic", "heavy_charge_tactic"),
             "bulgarian":        ("melee_charge_tactic", "heavy_charge_tactic"),
-            "russian":          ("melee_charge_tactic", "embolon_charge_tactic"),
+            "g_east_slavic":    ("melee_charge_tactic", "embolon_charge_tactic"),
             "frankish":         ("melee_charge_tactic", "shock_charge_tactic"),
+			"crusader_culture": ("melee_charge_tactic", "shock_charge_tactic"),
+			"occitan":          ("melee_charge_tactic", "shock_charge_tactic"),
             "norman":           ("melee_charge_tactic", "heavy_charge_tactic"),
             "breton":           ("melee_charge_tactic", "heavy_charge_tactic"),
             "german":           ("melee_charge_tactic", "heavy_charge_tactic"),
+			"low_german":       ("melee_charge_tactic", "heavy_charge_tactic"),
+			"low_saxon":        ("melee_charge_tactic", "heavy_charge_tactic"),
+			"thuringian":       ("melee_charge_tactic", "heavy_charge_tactic"),
+			"franconian":       ("melee_charge_tactic", "heavy_charge_tactic"),
+			"swabian":          ("melee_charge_tactic", "heavy_charge_tactic"),
+			"bavarian":         ("melee_charge_tactic", "heavy_charge_tactic"),
             "alan":             ("melee_charge_tactic", "embolon_charge_tactic"),
             "armenian":         ("melee_charge_tactic", "embolon_charge_tactic"),
             "greek":            ("melee_charge_tactic", "embolon_charge_tactic"),
+			"east_gothic":      ("melee_charge_tactic", "embolon_charge_tactic"),
+			"udi":              ("melee_charge_tactic", "embolon_charge_tactic"),
+			"caucasian_avar":   ("melee_charge_tactic", "embolon_charge_tactic"),
             "georgian":         ("melee_charge_tactic", "heavy_charge_tactic"),
             "sardinian":        ("melee_charge_tactic", "awesome_charge_tactic"),
-            "corsican":         ("melee_charge_tactic", "awesome_charge_tactic"),
-            "central_italian":  ("melee_charge_tactic", "awesome_charge_tactic"),
-            "southern_italian": ("melee_charge_tactic", "awesome_charge_tactic"),
+            "dalmatian":        ("melee_charge_tactic", "awesome_charge_tactic"),
+            "umbrian":          ("melee_charge_tactic", "awesome_charge_tactic"),
+            "laziale":          ("melee_charge_tactic", "awesome_charge_tactic"),
             "neapolitan":       ("melee_charge_tactic", "awesome_charge_tactic"),
             "tuscan":           ("melee_charge_tactic", "awesome_charge_tactic"),
             "karantanci":       ("melee_charge_tactic", "combined_charge_tactic"),
             "moravian":         ("melee_charge_tactic", "heavy_charge_tactic"),
             "bosnian":          ("melee_charge_tactic", "combined_charge_tactic"),
+			"arberian":         ("melee_charge_tactic", "combined_charge_tactic"),
             "cornish":          ("melee_charge_tactic", "heavy_charge_tactic"),
             "arpitan":          ("melee_charge_tactic", "shock_charge_tactic"),
             "romanian":         ("raid_tactic", "horseback_raid_tactic"),
             "portuguese":       ("raid_tactic", "horseback_raid_tactic"),
-            "castillan":        ("raid_tactic", "horseback_raid_tactic"),
+            "castillan":        ("raid_tactic", "combined_charge_tactic"),
             "visigothic":       ("raid_tactic", "horseback_raid_tactic"),
             "catalan":          ("raid_tactic", "quick_attack_tactic"),
+			"suebi":            ("raid_tactic", "quick_attack_tactic"),
+			"g_tibetan_group":  ("raid_tactic", "quick_attack_tactic"),
             "andalusian_arabic":("raid_tactic", "horseback_raid_tactic"),
-            "g_arabic":         ("melee_charge_tactic", "mameluke_raid_tactic"),
-            "aragonese":        ("raid_tactic", "horseback_raid_tactic"),
+            "g_arabic":         ("raid_tactic", "mameluke_raid_tactic"),
+            "aragonese":        ("raid_tactic", "combined_charge_tactic"),
             "galician":         ("raid_tactic", "horseback_raid_tactic"),
-            "leonese":          ("raid_tactic", "horseback_raid_tactic"),
+            "leonese":          ("raid_tactic", "combined_charge_tactic"),
             "albanian":         ("raid_tactic", "horseback_raid_tactic"),
             "g_north_african":  ("raid_tactic", "horseback_raid_tactic"),
             "roman":            ("advance_tactic", "roman_triple_line_tactic"),
             "pommeranian":      ("advance_tactic", "infantry_rush_tactic"),
             "croatian":         ("advance_tactic", "infantry_rush_tactic"),
             "irish":            ("advance_tactic", "shield_rush_tactic"),
+			"pictish":          ("advance_tactic", "shield_rush_tactic"),
             "basque":           ("advance_tactic", "intimidating_advance_tactic"),
             "norse":            ("advance_tactic", "infantry_rush_tactic"),
             "norwegian":        ("advance_tactic", "infantry_rush_tactic"),
+			"swedish":          ("advance_tactic", "infantry_rush_tactic"),
+			"danish":           ("advance_tactic", "infantry_rush_tactic"),
+			"icelandic":        ("advance_tactic", "infantry_rush_tactic"),
+			"old_saxon":        ("advance_tactic", "infantry_rush_tactic"),
             "saxon":            ("advance_tactic", "shield_rush_tactic"),
-            "lettigallish":     ("advance_tactic", "infantry_rush_tactic"),
-            "lithuanian":       ("advance_tactic", "infantry_rush_tactic"),
-            "nahuatl":          ("advance_tactic", "aztec_combined_tactic"),
+            "g_baltic":         ("advance_tactic", "infantry_rush_tactic"),
+			"livonian":         ("advance_tactic", "infantry_rush_tactic"),
+            "g_mesoamerican":   ("advance_tactic", "aztec_combined_tactic"),
             "jewish":           ("advance_tactic", "shield_rush_tactic"),
             "venetian":         ("advance_tactic", "infantry_rush_tactic"),
-            "langobardisch":    ("advance_tactic", "infantry_rush_tactic"),
-            "estonian":         ("advance_tactic", "intimidating_advance_tactic"),
+            "langobardisch":    ("advance_tactic", "awesome_charge_tactic"),
+            "ugricbaltic":      ("advance_tactic", "intimidating_advance_tactic"),
             "norsegaelic":      ("advance_tactic", "infantry_rush_tactic"),
             "gothic":           ("advance_tactic", "infantry_rush_tactic"),
             "anglonorse":       ("advance_tactic", "infantry_rush_tactic"),
-            "cumbric":          ("advance_tactic", "infantry_rush_tactic"),
             "scottish":         ("stand_fast_tactic", "schiltron_tactic"),
             "dutch":            ("stand_fast_tactic", "pike_assault_tactic"),
             "frisian":          ("stand_fast_tactic", "pike_assault_tactic"),
+			"low_frankish":     ("stand_fast_tactic", "pike_assault_tactic"),
             "g_indo_aryan_group":("stand_fast_tactic", "gray_wall_tactic"),
             "g_dravidian_group":("stand_fast_tactic", "gray_wall_tactic")
             }
@@ -114,17 +137,19 @@ for i in cultural_tactics.keys():
         matching_tactics_list[cultural_tactics[i][1]] = cultural_tactics[i][0]
     cultural_tactics_list[cultural_tactics[i][1]] += [i]
 
-base_tactics = """### At the moment we have a pretty basic icon system for combat tactics showing
+base_tactics = """# -*- ck2.combat_tactics -*-
+
+### At the moment we have a pretty basic icon system for combat tactics showing
 ### the uniticon which has the biggest bonus value in the tactic.
 ### This is the sprite number for each unit:
-### GOOD 1=LI 2=HI 3=PIKE 4=LC 5=KNIGHTS 6=ARCHERS 7=HORSE ARCH.
-### Neutral 8=LI 9=HI 10=PIKE 11=LC 12=KNIGHTS 13=ARCHERS 14=HORSE ARCH.
-### Bad 15=LI 16=HI 17=PIKE 18=LC 19=KNIGHTS 20=ARCHERS 21=HORSE ARCH.
+### Good 	 1=LI	 2=HI	 3=PIKE	 4=LC	 5=KNIGHTS	 6=ARCHERS	 7=HORSE ARCH.	 8=GALLEY	 9=ELEPHANT	10=CAMEL
+### Neutral 11=LI	12=HI	13=PIKE	14=LC	15=KNIGHTS	16=ARCHERS	17=HORSE ARCH.	18=GALLEY	19=ELEPHANT	20=CAMEL
+### Bad 	21=LI	22=HI	23=PIKE	24=LC	25=KNIGHTS	26=ARCHERS	27=HORSE ARCH.	28=GALLEY	29=ELEPHANT	30=CAMEL
 
 # Must be first in file. This tactic will be set if anything goes wrong
 no_tactic = {
 	days = 3 # tactic lasts one day
-	sprite = 1 # index of icon
+	sprite = 21 # index of icon
 
 	trigger = {
 		always = no # never use unless set explicitly by code
@@ -151,12 +176,12 @@ no_tactic = {
 
 generic_skirmish_tactic = {
 	days = 5 # tactic lasts one day
-	sprite = 1 # index of icon
+	sprite = 11 # index of icon
 	group = skirmish
 
 	trigger = {
 		phase = skirmish
-			flank_has_leader = no
+		flank_has_leader = no
 	}
 
 	mean_time_to_happen = {
@@ -625,7 +650,7 @@ no_siege_offense_tactic = {
 	days = 3 # tactic lasts one day
 	sprite = 1 # index of icon
 	
-	siege = attacker	
+	siege = attacker
 	
 	trigger = {
 		always = no # never use unless set explicitly by code
@@ -636,7 +661,7 @@ default_siege_offense_tactic = {
 	days = 5
 	sprite = 1
 
-	siege = attacker	
+	siege = attacker
 
 	trigger = {
 		always = yes
@@ -655,7 +680,7 @@ default_siege_offense_tactic = {
 no_siege_defense_tactic = {
 	days = 3 # tactic lasts one day
 	sprite = 1 # index of icon
-	siege = defender	
+	siege = defender
 	trigger = {
 		always = no # never use unless set explicitly by code
 	}
@@ -856,7 +881,7 @@ big_ol_block_of_conditionals = {
 				OR = {
 					pikemen = 0.30
 					archers = 0.30
-					war_elephants = 0.30
+					war_elephants = 0.03
 					AND = {
 						heavy_infantry = 0.30
 						OR = {
@@ -1142,7 +1167,7 @@ for i in xrange(1,len(array[0])):
     combat_tactics += "good_"+tactic_name+" = {\n";
     localization += "good_"+tactic_name+";Devastating "+tactic_values["name"]+" Tactic;;;;;;;;;;;;;x\n"
     combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
-    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-7)+"\n"
+    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-10)+"\n"
     combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
     combat_tactics += "\ttrigger = {\n"
     combat_tactics += "\t\tphase = "+tactic_values["phase"]+"\n"
@@ -1154,7 +1179,7 @@ for i in xrange(1,len(array[0])):
         combat_tactics += "\t\t\t\tOR = {\n"
         for k in exempt_cultures[tactic_name]:
             if k[0:2] == "g_":
-                combat_tactics += "\t\t\t\t\tculture_group = "+k[2:]+"\n"
+				combat_tactics += "\t\t\t\t\tculture_group = "+k[2:]+"\n"
             else:
                 combat_tactics += "\t\t\t\t\tculture = "+k+"\n"
         combat_tactics += "\t\t\t\t}\n"
@@ -1194,7 +1219,7 @@ for i in xrange(1,len(array[0])):
     combat_tactics += tactic_name+" = {\n";
     localization += tactic_name+";"+tactic_values["name"]+" Tactic;;;;;;;;;;;;;x\n"
     combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
-    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-7)+"\n"
+    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"]))+"\n"
     combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
     combat_tactics += "\ttrigger = {\n"
     combat_tactics += "\t\tphase = "+tactic_values["phase"]+"\n"
@@ -1246,7 +1271,7 @@ for i in xrange(1,len(array[0])):
     combat_tactics += "bad_"+tactic_name+" = {\n";
     localization += "bad_"+tactic_name+";Failed "+tactic_values["name"]+" Tactic;;;;;;;;;;;;;x\n"
     combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
-    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-7)+"\n"
+    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])+10)+"\n"
     combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
     combat_tactics += "\ttrigger = {\n"
     combat_tactics += "\t\tphase = "+tactic_values["phase"]+"\n"
@@ -1303,7 +1328,7 @@ for i in xrange(1,len(array2[0])):
     combat_tactics += "good_"+tactic_name+" = {\n";
     localization += "good_"+tactic_name+";Devastating "+tactic_values["name"]+" Tactic;;;;;;;;;;;;;x\n"
     combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
-    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-7)+"\n"
+    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-10)+"\n"
     combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
     combat_tactics += "\ttrigger = {\n"
     combat_tactics += "\t\tphase = "+tactic_values["phase"]+"\n"
@@ -1353,7 +1378,7 @@ for i in xrange(1,len(array2[0])):
     combat_tactics += tactic_name+" = {\n";
     localization += tactic_name+";"+tactic_values["name"]+" Tactic;;;;;;;;;;;;;x\n"
     combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
-    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-7)+"\n"
+    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"]))+"\n"
     combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
     combat_tactics += "\ttrigger = {\n"
     combat_tactics += "\t\tphase = "+tactic_values["phase"]+"\n"
@@ -1403,7 +1428,7 @@ for i in xrange(1,len(array2[0])):
     combat_tactics += "bad_"+tactic_name+" = {\n";
     localization += "bad_"+tactic_name+";Failed "+tactic_values["name"]+" Tactic;;;;;;;;;;;;;x\n"
     combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
-    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-7)+"\n"
+    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])+10)+"\n"
     combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
     combat_tactics += "\ttrigger = {\n"
     combat_tactics += "\t\tphase = "+tactic_values["phase"]+"\n"
@@ -1451,9 +1476,9 @@ for i in xrange(1,len(array2[0])):
     combat_tactics += "}\n"
                 
 combat_tactics = base_tactics + combat_tactics
-f = open(".."+os.sep+"common"+os.sep+"combat_tactics.txt", "w")
+f = open(".."+os.sep+"EMF"+os.sep+"common"+os.sep+"combat_tactics"+os.sep+"00_combat_tactics.txt", "w")
 f.write(combat_tactics)
 f.close()
-f = open(".."+os.sep+"localisation"+os.sep+"emf_sts.csv", "w")
+f = open(".."+os.sep+"EMF"+os.sep+"localisation"+os.sep+"1_emf_sts.csv", "w")
 f.write(localization)
 f.close()
