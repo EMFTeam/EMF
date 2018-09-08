@@ -28,6 +28,7 @@ faction_independence = {
 			is_feudal = yes
 			is_tribal = yes
 			is_nomadic = yes
+			is_merchant_republic = yes
 			higher_tier_than = COUNT
 		}
 		liege = {
@@ -51,9 +52,9 @@ faction_independence = {
 				}
 			}
 		}
-		# No independence factions in merchant republics
+		# No independence factions for patricians in merchant republics
 		NAND = {
-			is_merchant_republic = yes
+			is_patrician = yes
 			liege = {
 				is_merchant_republic = yes
 			}
@@ -86,13 +87,11 @@ faction_independence = {
 					clan_opinion = { who = LIEGE value = 0 }
 				}
 			}
-			# No independence factions in merchant republics
-			NOT = {
-				AND = {
+			# No independence factions for patricians in merchant republics
+			NAND = {
+				is_patrician = yes
+				liege = {
 					is_merchant_republic = yes
-					liege = {
-						is_merchant_republic = yes
-					}
 				}
 			}
 		}
@@ -1283,6 +1282,10 @@ faction_claimant = {
 					NOT = { ROOT = { succ_law_title = { has_law = agnatic_succession } } }
 				}
 			}
+			OR = {
+				is_female = yes
+				NOT = { ROOT = { succ_law_title = { has_law = enatic_succession } } }
+			}
 			# claimant is either not a ruler or has a non-primary-type title and is lower-tier than title
 			OR = {
 				is_ruler = no
@@ -1524,6 +1527,13 @@ faction_claimant = {
 			new_character = { is_female = no }
 			FROM = { emf_feminist_religion = no }
 		}
+		modifier = {
+			factor = 3.0
+			succ_law_title = { has_law = enatic_succession }
+			holder_scope = { is_female = no }
+			new_character = { is_female = yes }
+			FROM = { emf_feminist_religion = yes }
+		}
 		# will not support a woman for an agnatic title unless she has a son (who can inherit) or is formidable
 		modifier = {
 			factor = 0
@@ -1545,6 +1555,25 @@ faction_claimant = {
 				}
 			}
 		}
+		modifier = {
+			factor = 0
+			succ_law_title = { has_law = enatic_succession }
+			FROM = { emf_feminist_religion = no }
+			new_character = {
+				is_female = no
+				NOR = {
+					character = FROM
+					any_child = {
+						is_female = yes
+						emf_can_inherit = yes
+						OR = {
+							dynasty = PREV
+							dynasty = FROM
+						}
+					}
+				}
+			}
+		}
 		# unlikely to support a woman for a cognatic title unless she has a son (who can inherit) or is formidable
 		modifier = {
 			factor = 0.5
@@ -1557,6 +1586,25 @@ faction_claimant = {
 					emf_is_formidable_woman = yes
 					any_child = {
 						is_female = no
+						emf_can_inherit = yes
+						OR = {
+							dynasty = PREV
+							dynasty = FROM
+						}
+					}
+				}
+			}
+		}
+		modifier = {
+			factor = 0.5
+			succ_law_title = { has_law = enatic_cognatic_succession }
+			FROM = { emf_feminist_religion = yes }
+			new_character = {
+				is_female = no
+				NOR = {
+					character = FROM
+					any_child = {
+						is_female = yes
 						emf_can_inherit = yes
 						OR = {
 							dynasty = PREV
@@ -2692,6 +2740,15 @@ faction_claimant = {
 			FROM = { supported_claimant = { is_female = no } }
 			emf_feminist_religion = no
 		}
+		modifier = {
+			factor = 3.0
+			FROMFROM = {
+				succ_law_title = { has_law = enatic_succession }
+				holder_scope = { is_female = no }
+			}
+			FROM = { supported_claimant = { is_female = yes } }
+			emf_feminist_religion = yes
+		}
 		# will not support a woman for an agnatic title unless she has a son (who can inherit) or is formidable
 		modifier = {
 			factor = 0
@@ -2716,6 +2773,28 @@ faction_claimant = {
 			}
 			NOT = {	has_opinion_modifier = { who = FROM modifier = opinion_coerced_into_joining_faction } }
 		}
+		modifier = {
+			factor = 0
+			FROMFROM = { succ_law_title = { has_law = enatic_succession } }
+			emf_feminist_religion = yes
+			FROM = {
+				supported_claimant = {
+					is_female = no
+					NOR = {
+						character = ROOT
+						any_child = {
+							is_female = yes
+							emf_can_inherit = yes
+							OR = {
+								dynasty = PREV
+								dynasty = ROOT
+							}
+						}
+					}
+				}
+			}
+			NOT = {	has_opinion_modifier = { who = FROM modifier = opinion_coerced_into_joining_faction } }
+		}
 		# unlikely to support a woman for a cognatic title unless she has a son (who can inherit) or is formidable
 		modifier = {
 			factor = 0.5
@@ -2729,6 +2808,27 @@ faction_claimant = {
 						emf_is_formidable_woman = yes
 						any_child = {
 							is_female = no
+							emf_can_inherit = yes
+							OR = {
+								dynasty = PREV
+								dynasty = ROOT
+							}
+						}
+					}
+				}
+			}
+		}
+		modifier = {
+			factor = 0.5
+			FROMFROM = { succ_law_title = { has_law = enatic_cognatic_succession } }
+			emf_feminist_religion = yes
+			FROM = {
+				supported_claimant = {
+					is_female = no
+					NOR = {
+						character = ROOT
+						any_child = {
+							is_female = yes
 							emf_can_inherit = yes
 							OR = {
 								dynasty = PREV
@@ -3845,7 +3945,10 @@ faction_antiking = {
 		primary_title = { higher_tier_than = COUNT }
 		liege = {
 			religion = ROOT
-			is_feudal = yes
+			OR = {
+				is_feudal = yes
+				is_tribal = yes
+			}
 			rightful_religious_head_scope = {
 				OR = {
 					has_claim = k_papal_state
@@ -5103,7 +5206,10 @@ faction_increase_council_power = {
 
 	# Target scope
 	allow = {
-		higher_tier_than = COUNT
+		OR = {
+			higher_tier_than = BARON
+			is_patrician = yes
+		}
 		is_primary_holder_title = yes
 		holder_scope = {
 			primary_title = {
@@ -5113,7 +5219,10 @@ faction_increase_council_power = {
 			}
 			NOT = {
 				any_vassal = {
-					higher_tier_than = BARON
+					OR = {
+						higher_tier_than = BARON
+						is_patrician = yes
+					}
 					NOT = { character = FROM }
 					num_of_faction_backers = {
 						faction = faction_increase_council_power
