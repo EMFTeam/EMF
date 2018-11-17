@@ -1103,7 +1103,7 @@ obj_get_married = {
 		}
 		OR = {
 			is_female = no
-			NOT = { age = 40 }
+			age < 40
 		}
 		OR = {
 			is_ruler = no
@@ -1120,6 +1120,16 @@ obj_get_married = {
 		modifier = {
 			factor = 0.1
 			trait = homosexual
+		}
+		modifier = {
+			factor = 0.2
+			is_female = yes
+			has_religion_feature = religion_matriarchal
+		}
+		modifier = {
+			factor = 0.2
+			is_female = no
+			has_religion_feature = religion_patriarchal
 		}
 		modifier = {
 			factor = 0.1
@@ -1229,7 +1239,17 @@ obj_marry_ruler = {
 		is_married = no
 		is_consort = no
 		can_marry = yes
-		is_female = yes
+		age < 45
+		OR = {
+			AND = { 
+				is_female = no 
+				has_religion_feature = religion_matriarchal
+			}
+			AND = { 
+				is_female = yes
+				NOT = { has_religion_feature = religion_matriarchal }
+			}
+		}
 	}
 
 	allow = {
@@ -1238,9 +1258,16 @@ obj_marry_ruler = {
 		is_ruler = no
 		NOT = { trait = celibate }
 		is_incapable = no
+		age < 45
 		OR = {
-			is_female = no
-			NOT = { age = 40 }
+			AND = { 
+				is_female = no 
+				has_religion_feature = religion_matriarchal
+			}
+			AND = { 
+				is_female = yes
+				NOT = { has_religion_feature = religion_matriarchal }
+			}
 		}
 		father = {
 			primary_title = {
@@ -1296,8 +1323,8 @@ obj_marry_ruler = {
 			prisoner = yes
 			can_marry = no
 			AND = {
-				is_female = yes
-				age = 40
+				is_ruler = no
+				age >= 45
 			}
 			trait = celibate
 			is_incapable = yes
@@ -1344,6 +1371,7 @@ obj_have_a_daughter = {
 			ai = no
 			is_female = yes
 			num_of_children = 2
+			has_religion_feature = religion_matriarchal
 		}
 	}
 
@@ -1361,6 +1389,14 @@ obj_have_a_daughter = {
 
 	chance = {
 		factor = 50
+		modifier = {
+			factor = 0.1
+			has_religion_feature = religion_patriarchal
+		}
+		modifier = {
+			factor = 10.0
+			has_religion_feature = religion_matriarchal
+		}
 		modifier = {
 			factor = 0.1
 			is_female = no
@@ -1558,6 +1594,14 @@ obj_have_a_son = {
 			factor = 10.0
 			num_of_children = 5
 		}
+		modifier = {
+			factor = 0.1
+			has_religion_feature = religion_matriarchal
+		}
+		modifier = {
+			factor = 10.0
+			has_religion_feature = religion_patriarchal
+		}
 	}
 	creation_effect = {
 		if = {
@@ -1626,10 +1670,12 @@ obj_wants_landed_title = {
 			is_female = no
 			liege = {
 				primary_title = {
-					OR = {
-						has_law = true_cognatic_succession
-						has_law = enatic_cognatic_succession
-						has_law = enatic_succession
+					succ_law_title = {
+						OR = {
+							has_law = true_cognatic_succession
+							has_law = enatic_cognatic_succession
+							has_law = enatic_succession
+						}
 					}
 				}
 			}
@@ -1750,10 +1796,12 @@ obj_wants_landed_title = {
 				is_female = yes
 				liege = {
 					primary_title = {
-						NOR = {
-							has_law = true_cognatic_succession
-							has_law = enatic_cognatic_succession
-							has_law = enatic_succession
+						succ_law_title = {
+							NOR = {
+								has_law = true_cognatic_succession
+								has_law = enatic_cognatic_succession
+								has_law = enatic_succession
+							}
 						}
 					}
 				}
@@ -1803,8 +1851,12 @@ obj_become_heir = {
 	potential = {
 		liege = { any_child = { character = ROOT } }
 		NAND = {
-			liege = { primary_title = { has_law = agnatic_succession } }
+			liege = { primary_title = { succ_law_title = { has_law = agnatic_succession } } }
 			is_female = yes
+		}
+		NAND = {
+			liege = { primary_title = { succ_law_title = { has_law = enatic_succession } } }
+			is_female = no
 		}
 		emf_can_inherit = yes
 		liege = {
@@ -2405,6 +2457,26 @@ obj_become_king = {
 			any_heir_title = {
 				higher_tier_than = DUKE
 				temporary = no
+			}
+		}
+		capital_scope = {
+			kingdom = {
+				always = yes
+			}
+		}
+		NAND = {
+			ai = yes
+			kingdom = {
+				OR = {
+					title = k_nenets
+					title = k_sapmi
+					title = k_perm
+				}
+			}
+			OR = {
+				culture = lappish
+				culture = samoyed
+				culture = komi
 			}
 		}
 	}
@@ -3288,15 +3360,20 @@ obj_become_paragon_of_enlightenment = {
 
 	potential = {
 		religion_group = indian_group
-		is_ruler = yes
 	}
 
 	allow = {
 		is_adult = yes
-		NOT = { piety = 100 }
+		is_playable = yes
+		is_landed = yes
+		piety < 1000
 		is_dumb_trigger = no
+		OR = {
+			has_education_learning_trigger = yes
+			has_pious_trait_trigger = yes
+		}
+		has_impious_trait_trigger = no
 		NOT = { trait = inbred }
-		NOT = { trait = lunatic }
 		is_incapable = no
 	}
 	chance = {
@@ -3308,25 +3385,18 @@ obj_become_paragon_of_enlightenment = {
 		}
 		modifier = {
 			factor = 0.01
-			NOT = { tier = KING }
-			NOT = { tier = EMPEROR }
-		}
-		modifier = {
-			factor = 10.0
-			OR = {
-				trait = detached_priest
-				trait = martial_cleric
-				trait = scholarly_theologian
-				trait = mastermind_theologian
+			NOR = {
+				higher_real_tier_than = DUKE
+				is_theocracy = yes
 			}
 		}
 		modifier = {
 			factor = 10.0
-			trait = zealous
+			has_education_learning_trigger = yes
 		}
 		modifier = {
-			factor = 0.01
-			trait = cynical
+			factor = 10.0
+			trait = zealous
 		}
 	}
 	creation_effect = {
@@ -3340,13 +3410,13 @@ obj_become_paragon_of_enlightenment = {
 		}
 	}
 	success = {
-		piety = 500
+		piety = 2000
 	}
 	abort = {
 		OR = {
 			is_incapable = yes
-			trait = lunatic
 			is_ruler = no
+			has_impious_trait_trigger = yes
 			NOT = { religion_group = indian_group }
 			AND = {
 				ai = yes
@@ -3400,10 +3470,11 @@ obj_gain_any_title = {
 		always = no
 		is_adult = yes
 		is_playable = yes
+	    #liege = { independent = yes }
 		independent = no
-	   #liege = { independent = yes }
 		is_nomadic = no
 		liege = { is_nomadic = no }
+		is_landed = yes
 		NOT = { has_character_flag = gain_any_title_ambition_success }
 	}
 
@@ -3433,6 +3504,10 @@ obj_gain_any_title = {
 		modifier = {
 			factor = 0.1
 			trait = slothful
+		}
+		modifier = {
+			factor = 0.1
+			is_theocracy = yes
 		}
 	}
 
