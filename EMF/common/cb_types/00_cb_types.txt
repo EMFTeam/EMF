@@ -2011,6 +2011,7 @@ invasion = {
 	hostile_against_others = yes
 	can_ask_to_join_war = no
 	allowed_to_target_tributaries = no
+	sort_priority = 2000
 
 	can_use_gui = {
 		emf_cb_can_use_gui = yes
@@ -2045,8 +2046,9 @@ invasion = {
 		log = "CB(invasion): VICTORY: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
 		emf_cb_victory = yes
 		emf_imperial_decay_victory = yes
-		ROOT = { prestige = 200 }
 		ROOT = {
+			show_scope_change = no
+			prestige = 200
 			participation_scaled_prestige = 200
 		}
 		any_attacker = {
@@ -2082,7 +2084,11 @@ invasion = {
 							has_landed_title = e_byzantium
 							has_landed_title = e_roman_empire
 						}
-						religion_group = christian
+						OR = { 
+							religion_group = christian
+							religion = hellenic_pagan
+							religion = hellenic_pagan_reformed
+						}
 					}
 					character_event = {
 						id = LoR.30
@@ -2091,68 +2097,90 @@ invasion = {
 				}
 			}
 		}
-		FROM = { prestige = -200 }
+		FROM = {
+			show_scope_change = no
+			prestige = -200
+		}
 	}
 
 	on_success_title = {
 		emf_cb_latb = yes
-
 		# Save ROOT's current primary title's succession laws
 		save_event_target_as = new_title
 		ROOT = {
 			primary_title = {
 				if = {
-					limit = { has_law = succ_elective_gavelkind }
-					event_target:new_title = { set_title_flag = set_elective_gavelkind }
-				}
-				if = {
-					limit = { has_law = succ_feudal_elective }
-					event_target:new_title = { set_title_flag = set_feudal_elective }
-				}
-				if = {
 					limit = { has_law = succ_gavelkind }
 					event_target:new_title = { set_title_flag = set_gavelkind }
 				}
-				if = {
+				else_if = {
+					limit = { has_law = succ_elective_gavelkind }
+					event_target:new_title = { set_title_flag = set_elective_gavelkind }
+				}
+				else_if = {
+					limit = { has_law = succ_feudal_elective }
+					event_target:new_title = { set_title_flag = set_feudal_elective }
+				}
+				else_if = {
+					limit = { has_law = succ_hre_elective }
+					event_target:new_title = { set_title_flag = set_hre_elective }
+				}
+				else_if = {
+					limit = { has_law = succ_byzantine_elective }
+					event_target:new_title = { set_title_flag = set_byzantine_elective }
+				}
+				else_if = {
+					limit = { has_law = succ_eldership }
+					event_target:new_title = { set_title_flag = set_eldership }
+				}
+				else_if = {
 					limit = { has_law = succ_primogeniture }
 					event_target:new_title = { set_title_flag = set_primogeniture }
 				}
-				if = {
+				else_if = {
 					limit = { has_law = succ_seniority }
 					event_target:new_title = { set_title_flag = set_seniority }
 				}
-				if = {
+				else_if = {
 					limit = { has_law = succ_tanistry }
 					event_target:new_title = { set_title_flag = set_tanistry }
 				}
-				if = {
+				else_if = {
 					limit = { has_law = succ_turkish_succession }
 					event_target:new_title = { set_title_flag = set_turkish_succession }
 				}
-				if = {
+				else_if = {
 					limit = { has_law = succ_ultimogeniture }
 					event_target:new_title = { set_title_flag = set_ultimogeniture }
 				}
+				# gender
 				if = {
 					limit = { has_law = agnatic_succession }
 					event_target:new_title = { set_title_flag = set_agnatic_succession }
 				}
-				if = {
+				else_if = {
 					limit = { has_law = cognatic_succession }
 					event_target:new_title = { set_title_flag = set_cognatic_succession }
 				}
-				if = {
+				else_if = {
 					limit = { has_law = true_cognatic_succession }
 					event_target:new_title = { set_title_flag = set_true_cognatic_succession }
 				}
+				else_if = {
+					limit = { has_law = enatic_cognatic_succession }
+					event_target:new_title = { set_title_flag = set_enatic_cognatic_succession }
+				}
+				else_if = {
+					limit = { has_law = enatic_succession }
+					event_target:new_title = { set_title_flag = set_enatic_succession }
+				}
 			}
 		}
-
 		# Usurp the title
 		custom_tooltip = {
 			text = emf_cb_ctt_invasion_success
 			hidden_tooltip = {
-				ROOT = { any_vassal = { set_character_flag = emf_prior_vassal } }
+				ROOT = { any_vassal = { set_character_flag = emf_prior_vassal_of_@FROM } }
 				usurp_title_plus_barony_if_unlanded = {
 					target = ROOT
 					type = invasion
@@ -2160,19 +2188,19 @@ invasion = {
 				ROOT = {
 					any_vassal = {
 						limit = {
-							NOT = { has_character_flag = emf_prior_vassal }
+							NOT = { has_character_flag = emf_prior_vassal_of_@FROM }
 							religion = ROOT
 						}
 						opinion = { who = ROOT modifier = opinion_subjugated }
 					}
 					any_vassal = {
 						limit = {
-							NOT = { has_character_flag = emf_prior_vassal }
+							NOT = { has_character_flag = emf_prior_vassal_of_@FROM }
 							NOT = { religion = ROOT }
 						}
 						opinion = { who = ROOT modifier = opinion_subjugated_other_rel }
 					}
-					any_vassal = { clr_character_flag = emf_prior_vassal }
+					any_vassal = { clr_character_flag = emf_prior_vassal_of_@FROM }
 				}
 				FROM = { emf_ROOT_subjugate_ruler = yes }
 				if = {
@@ -2188,25 +2216,8 @@ invasion = {
 				hidden_tooltip = { conquest_culture = ROOT }
 			}
 		}
-
 		# Set new title to former primary title's succession law
 		ROOT = { set_character_flag = emf_no_law_penalties }
-		if = {
-			limit = {
-				has_title_flag = set_elective_gavelkind
-				NOT = { has_law = succ_elective_gavelkind }
-				is_law_potential = succ_elective_gavelkind
-			}
-			add_law = succ_elective_gavelkind
-		}
-		if = {
-			limit = {
-				has_title_flag = set_feudal_elective
-				NOT = { has_law = succ_feudal_elective }
-				is_law_potential = succ_feudal_elective
-			}
-			add_law = succ_feudal_elective
-		}
 		if = {
 			limit = {
 				has_title_flag = set_gavelkind
@@ -2215,7 +2226,47 @@ invasion = {
 			}
 			add_law = succ_gavelkind
 		}
-		if = {
+		else_if = {
+			limit = {
+				has_title_flag = set_elective_gavelkind
+				NOT = { has_law = succ_elective_gavelkind }
+				is_law_potential = succ_elective_gavelkind
+			}
+			add_law = succ_elective_gavelkind
+		}
+		else_if = {
+			limit = {
+				has_title_flag = set_feudal_elective
+				NOT = { has_law = succ_feudal_elective }
+				is_law_potential = succ_feudal_elective
+			}
+			add_law = succ_feudal_elective
+		}
+		else_if = {
+			limit = {
+				has_title_flag = set_hre_elective
+				NOT = { has_law = succ_hre_elective }
+				is_law_potential = succ_hre_elective
+			}
+			add_law = succ_hre_elective
+		}
+		else_if = {
+			limit = {
+				has_title_flag = set_byzantine_elective
+				NOT = { has_law = succ_byzantine_elective }
+				is_law_potential = succ_byzantine_elective
+			}
+			add_law = succ_byzantine_elective
+		}
+		else_if = {
+			limit = {
+				has_title_flag = set_eldership
+				NOT = { has_law = succ_eldership }
+				is_law_potential = succ_eldership
+			}
+			add_law = succ_eldership
+		}
+		else_if = {
 			limit = {
 				has_title_flag = set_primogeniture
 				NOT = { has_law = succ_primogeniture }
@@ -2223,7 +2274,7 @@ invasion = {
 			}
 			add_law = succ_primogeniture
 		}
-		if = {
+		else_if = {
 			limit = {
 				has_title_flag = set_seniority
 				NOT = { has_law = succ_seniority }
@@ -2231,7 +2282,7 @@ invasion = {
 			}
 			add_law = succ_seniority
 		}
-		if = {
+		else_if = {
 			limit = {
 				has_title_flag = set_tanistry
 				NOT = { has_law = succ_tanistry }
@@ -2239,7 +2290,7 @@ invasion = {
 			}
 			add_law = succ_tanistry
 		}
-		if = {
+		else_if = {
 			limit = {
 				has_title_flag = set_turkish_succession
 				NOT = { has_law = succ_turkish_succession }
@@ -2247,7 +2298,7 @@ invasion = {
 			}
 			add_law = succ_turkish_succession
 		}
-		if = {
+		else_if = {
 			limit = {
 				has_title_flag = set_ultimogeniture
 				NOT = { has_law = succ_ultimogeniture }
@@ -2255,6 +2306,7 @@ invasion = {
 			}
 			add_law = succ_ultimogeniture
 		}
+		# gender
 		if = {
 			limit = {
 				has_title_flag = set_agnatic_succession
@@ -2262,7 +2314,7 @@ invasion = {
 			}
 			add_law = agnatic_succession
 		}
-		if = {
+		else_if = {
 			limit = {
 				has_title_flag = set_cognatic_succession
 				NOT = { has_law = cognatic_succession }
@@ -2270,7 +2322,7 @@ invasion = {
 			}
 			add_law = cognatic_succession
 		}
-		if = {
+		else_if = {
 			limit = {
 				has_title_flag = set_true_cognatic_succession
 				NOT = { has_law = true_cognatic_succession }
@@ -2278,19 +2330,54 @@ invasion = {
 			}
 			add_law = true_cognatic_succession
 		}
+		else_if = {
+			limit = {
+				has_title_flag = set_enatic_cognatic_succession
+				NOT = { has_law = enatic_cognatic_succession }
+				is_law_potential = enatic_cognatic_succession
+			}
+			add_law = enatic_cognatic_succession
+		}
+		else_if = {
+			limit = {
+				has_title_flag = set_enatic_succession
+				NOT = { has_law = enatic_succession }
+				is_law_potential = enatic_succession
+			}
+			add_law = enatic_succession
+		}
 		clr_title_flag = set_gavelkind
+		clr_title_flag = set_elective_gavelkind
+		clr_title_flag = set_feudal_elective
+		clr_title_flag = set_hre_elective
+		clr_title_flag = set_byzantine_elective
+		clr_title_flag = set_eldership
 		clr_title_flag = set_seniority
 		clr_title_flag = set_primogeniture
-		clr_title_flag = set_feudal_elective
 		clr_title_flag = set_tanistry
 		clr_title_flag = set_ultimogeniture
 		clr_title_flag = set_cognatic_succession
 		clr_title_flag = set_agnatic_succession
 		clr_title_flag = set_true_cognatic_succession
+		clr_title_flag = set_enatic_cognatic_succession
+		clr_title_flag = set_enatic_succession
 		ROOT = { clr_character_flag = emf_no_law_penalties }
 		ROOT = {
 			if = {
 				limit = { character = 140 }
+				if = {
+					limit = {
+						has_dlc = "Holy Fury"
+						NOT = {
+							any_owned_bloodline = {
+								has_bloodline_flag = william_the_conqueror_bloodline
+							}
+						}
+					}
+					create_bloodline = {
+						type = william_the_conqueror
+					}
+				}
 				if = {
 					limit = { # Help AI William by usurping extra land
 						ai = yes
@@ -2376,15 +2463,20 @@ invasion = {
 				}
 			}
 		}
+		emf_cb_on_success_title = yes
 	}
 
 	on_success_posttitle = { emf_cb_on_success_posttitle = yes }
 
 	on_fail = {
 		log = "CB(invasion): WHITEPEACE: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
-		ROOT = { prestige = -200 }
-		FROM = { prestige = 100 }
+		ROOT = {
+			show_scope_change = no
+			prestige = -200
+		}
 		FROM = {
+			show_scope_change = no
+			prestige = 100
 			participation_scaled_prestige = 100
 		}
 		any_defender = {
@@ -2398,6 +2490,7 @@ invasion = {
 		emf_cb_defeat = yes
 		emf_imperial_decay_loss = yes
 		ROOT = {
+			show_scope_change = no
 			prestige = -200
 			transfer_scaled_wealth = {
 				to = FROM
@@ -2405,6 +2498,7 @@ invasion = {
 			}
 		}
 		FROM = {
+			show_scope_change = no
 			prestige = 200
 			participation_scaled_prestige = 200
 			if = {
@@ -2414,7 +2508,11 @@ invasion = {
 						has_landed_title = e_byzantium
 						has_landed_title = e_roman_empire
 					}
-					religion_group = christian
+					OR = { 
+						religion_group = christian
+						religion = hellenic_pagan
+						religion = hellenic_pagan_reformed
+					}
 				}
 				hidden_tooltip = {
 					character_event = {
@@ -2432,7 +2530,10 @@ invasion = {
 
 	on_reverse_demand_title = {
 		log = "CB(invasion): START: title=[This.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
-		remove_claim = ROOT
+		ROOT = {
+			show_scope_change = no
+			remove_claim = PREV
+		}
 	}
 
 	on_invalidation = {
@@ -2458,6 +2559,69 @@ invasion = {
 
 	defender_ai_defeat_worth = {
 		factor = 100
+	}
+	
+	ai_will_do = { 
+		factor = 1
+		modifier = { #Focus on Coronation first.
+			factor = 0.1
+			has_dlc = "Holy Fury"
+			ROOT = {
+				is_feudal = yes
+				OR = {
+					religion = catholic
+					religion = fraticelli
+				}
+				NOR = {
+					trait = crowned_by_priest
+					trait = crowned_by_bishop
+					trait = crowned_by_pope
+					trait = crowned_by_myself
+				}
+			}
+		}
+		modifier = {
+			factor = 0
+			FROM = {
+				is_nomadic = yes
+			}
+			ROOT = {
+				is_nomadic = no
+				NOT = {
+					is_tribal = yes
+				}
+			}
+			NOT = {
+				any_direct_de_jure_vassal_title = {
+					any_direct_de_jure_vassal_title = {
+						OR = {
+							holding_type = castle
+							holding_type = city
+						}
+					}
+				}
+			}
+		}
+		modifier = {
+			factor = 0
+			FROM = {
+				is_nomadic = yes
+			}
+			ROOT = {
+				is_tribal = yes
+			}
+			NOT = {
+				any_direct_de_jure_vassal_title = {
+					any_direct_de_jure_vassal_title = {
+						OR = {
+							holding_type = castle
+							holding_type = city
+							holding_type = tribal
+						}
+					}
+				}
+			}
+		}
 	}
 }
 
