@@ -2636,10 +2636,16 @@ tribal_invasion = {
 	can_ask_to_join_war = yes
 	check_de_jure_tier = KING # this scans all de jure kingdoms for the counties which are held by or vassals(or below) of selected character. Only valid if is_permanent = yes
 	allowed_to_target_tributaries = no
+	sort_priority = 2000
 
 	can_use_gui = {
 		emf_cb_can_use_gui = yes
 		ROOT = {
+			show_scope_change = no
+			custom_tooltip = {
+				text = NEEDS_500_PRESTIGE_COST
+				prestige = 500
+			}
 			OR = {
 				has_horde_culture = yes
 				has_game_rule = { name = no_cooldowns value = on }
@@ -2689,6 +2695,14 @@ tribal_invasion = {
 							FROM = {
 								NOT = { religion_group = pagan_group } # Should subjugate these instead
 							}
+							OR = {
+								is_tribal = yes
+								primary_title = {
+									has_law = succ_elective_gavelkind
+								}
+								has_landed_title = e_mongol_empire
+								has_landed_title = e_mexikha
+							}
 						}
 					}
 				}
@@ -2718,10 +2732,29 @@ tribal_invasion = {
 							NOT = { religion_group = pagan_group } # Should subjugate these instead
 						}
 					}
+					OR = {
+						has_character_flag = horde_invader
+						is_tribal = yes
+						primary_title = {
+							has_law = succ_elective_gavelkind
+						}
+					}
 				}
 				AND = {
 					mercenary = yes
 					NOT = { num_of_titles = 2 }
+				}
+				AND = {
+					has_character_flag = is_child_of_destiny
+					any_owned_bloodline = {
+						has_bloodline_flag = founder_invasions
+					}
+				}
+				AND = {
+					NOT = { has_character_flag = flag_declared_bloodline_invasion }
+					any_owned_bloodline = {
+						has_bloodline_flag = bloodline_great_conquerors
+					}
 				}
 				# Blank check
 				has_character_flag = tribal_inv_requirements_bypass
@@ -2774,6 +2807,7 @@ tribal_invasion = {
 	on_add = {
 		log = "CB(tribal_invasion): START: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
 		ROOT = {
+			prestige = -500
 			if = {
 				limit = {
 					has_horde_culture = no
@@ -2785,6 +2819,18 @@ tribal_invasion = {
 				}
 			}
 		}
+		if = {
+			limit = { 
+				attacker = { 
+					any_owned_bloodline = {
+						has_bloodline_flag = bloodline_great_conquerors
+					} 
+				} 
+			}
+			attacker = {  
+				set_character_flag = flag_declared_bloodline_invasion
+			}
+		}
 		emf_cb_on_add = yes
 	}
 
@@ -2792,6 +2838,7 @@ tribal_invasion = {
 		emf_cb_victory = yes
 		emf_imperial_decay_victory = yes
 		ROOT = {
+			show_scope_change = no
 			prestige = 200
 			participation_scaled_prestige = 200
 		}
@@ -2799,7 +2846,35 @@ tribal_invasion = {
 			limit = { NOT = { character = ROOT } }
 			hidden_tooltip = { participation_scaled_prestige = 200 }
 		}
-		FROM = { prestige = -200 }
+		FROM = {
+			show_scope_change = no
+			prestige = -200
+		}
+		if = {
+			limit = {
+				ROOT = {
+					OR = {
+						character = 159136
+						character = 159137
+					}
+				}
+			}
+			ROOT = {
+				if = {
+					limit = {
+						has_dlc = "Holy Fury"
+						NOT = {
+							any_owned_bloodline = {
+								has_bloodline_flag = arpad_bloodline
+							}
+						}
+					}
+					create_bloodline = {
+						type = arpad
+					}
+				}
+			}
+		}
 		hidden_tooltip = {
 			ROOT = {
 				set_global_flag = emf_latb_upon_gain
@@ -2868,12 +2943,14 @@ tribal_invasion = {
 				}
 			}
 		}
+		emf_cb_on_success_title = yes
 	}
 
 	on_success_posttitle = { emf_cb_on_success_posttitle = yes }
 
 	on_fail = {
 		FROM = {
+			show_scope_change = no
 			prestige = 100
 			participation_scaled_prestige = 100
 			hidden_tooltip = {
@@ -2893,7 +2970,10 @@ tribal_invasion = {
 			limit = { NOT = { character = FROM } }
 			hidden_tooltip = { participation_scaled_prestige = 100 }
 		}
-		ROOT = { prestige = -200 }
+		ROOT = {
+			show_scope_change = no
+			prestige = -200
+		}
 	}
 
 	on_fail_title = {
@@ -2904,6 +2984,7 @@ tribal_invasion = {
 		emf_cb_defeat = yes
 		emf_imperial_decay_loss = yes
 		ROOT = {
+			show_scope_change = no
 			prestige = -200
 			transfer_scaled_wealth = {
 				to = FROM
@@ -2911,6 +2992,7 @@ tribal_invasion = {
 			}
 		}
 		FROM = {
+			show_scope_change = no
 			prestige = 200
 			participation_scaled_prestige = 200
 			hidden_tooltip = {
@@ -2934,7 +3016,11 @@ tribal_invasion = {
 						has_landed_title = e_byzantium
 						has_landed_title = e_roman_empire
 					}
-					religion_group = christian
+					OR = { 
+						religion_group = christian
+						religion = hellenic_pagan
+						religion = hellenic_pagan_reformed
+					}
 				}
 				hidden_tooltip = {
 					character_event = {
@@ -2956,6 +3042,7 @@ tribal_invasion = {
 
 	on_invalidation = {
 		log = "CB(tribal_invasion): INVALIDATED: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
+		ROOT = { prestige = 500 } # refund
 	}
 
 	attacker_ai_victory_worth = {
@@ -2977,10 +3064,22 @@ tribal_invasion = {
 	# ai importance placed on this CB: scope is the targeted title, ROOT is the attacking character, FROM is the defending character
 	ai_will_do = {
 		factor = 1
-		modifier = {
-			factor = 10
-			ROOT = { has_horde_culture = no }
-			FROM = { ai = no }
+		modifier = { #Focus on Coronation first.
+			factor = 0.1
+			has_dlc = "Holy Fury"
+			ROOT = {
+				is_feudal = yes
+				OR = {
+					religion = catholic
+					religion = fraticelli
+				}
+				NOR = {
+					trait = crowned_by_priest
+					trait = crowned_by_bishop
+					trait = crowned_by_pope
+					trait = crowned_by_myself
+				}
+			}
 		}
 		# Try to guide the Hordes in the right direction
 		modifier = {
@@ -3078,6 +3177,53 @@ tribal_invasion = {
 				has_landed_title = e_china_west_governor
 			}
 		}
+		modifier = {
+			factor = 0
+			FROM = {
+				is_nomadic = yes
+			}
+			ROOT = {
+				is_nomadic = no
+				NOT = {
+					is_tribal = yes
+				}
+			}
+			NOT = {
+				any_direct_de_jure_vassal_title = {
+					any_direct_de_jure_vassal_title = {
+						OR = {
+							holding_type = castle
+							holding_type = city
+						}
+					}
+				}
+			}
+		}
+		modifier = {
+			factor = 0
+			FROM = {
+				is_nomadic = yes
+			}
+			ROOT = {
+				is_tribal = yes
+			}
+			NOT = {
+				any_direct_de_jure_vassal_title = {
+					any_direct_de_jure_vassal_title = {
+						OR = {
+							holding_type = castle
+							holding_type = city
+							holding_type = tribal
+						}
+					}
+				}
+			}
+		}
+		modifier = {
+			factor = 10
+			ROOT = { has_horde_culture = no }
+			FROM = { ai = no }
+		}
 	}
 }
 
@@ -3093,35 +3239,68 @@ crusade = {
 	check_de_jure_tier = KING # this scans all de jure kingdoms for the counties which are held by or vassals(or below) of selected character. Only valid if is_permanent = yes
 	apply_short_occ_mod = no
 	max_defender_occupation_score = 85
+	is_crusade = yes
+	sort_priority = 3000
 
 	can_use_gui = {
 		emf_cb_can_use_gui = yes
 		ROOT = {
+			uses_new_crusade = no
 			has_called_crusade = no
-			religion_authority = 0.4
-			OR = {
-				has_character_flag = reclaim_heresy_crusade
-				religion_group = zoroastrian_group
-				religion_group = jewish_group
-				AND = {
-					religion_group = pagan_group
-					custom_tooltip = {
-						text = CTT_PAGAN_GHWS_UNLOCKED
-						has_global_flag = pagan_ghws_unlocked
+			religion_authority = 0.3
+			conditional_tooltip = {
+				trigger = {
+					is_alternate_start = yes
+					has_alternate_start_parameter = {
+						key = religion_names
+						value = random
 					}
 				}
-				AND = {
-					religion_group = christian
-					custom_tooltip = {
-						text = CTT_CHRISTIAN_CRUSADES_UNLOCKED
-						has_global_flag = christian_crusades_unlocked
+				custom_tooltip = {
+					text = ALT_GHW_STARTED
+					OR = {
+						has_character_flag = reclaim_heresy_crusade
+						AND = {
+							has_global_flag = muslim_jihads_unlocked
+							has_global_flag = pagan_ghws_unlocked
+							has_global_flag = christian_crusades_unlocked
+						}
 					}
 				}
-				AND = {
-					religion_group = muslim
-					custom_tooltip = {
-						text = CTT_MUSLIM_JIHADS_UNLOCKED
-						has_global_flag = muslim_jihads_unlocked
+			}
+			conditional_tooltip = {
+				trigger = {
+					NOT = {
+						has_alternate_start_parameter = {
+							key = religion_names
+							value = random
+						}
+					}
+				}
+				OR = {
+					has_character_flag = reclaim_heresy_crusade
+					religion_group = zoroastrian_group
+					religion_group = jewish_group
+					AND = {
+						religion_group = pagan_group
+						custom_tooltip = {
+							text = CTT_PAGAN_GHWS_UNLOCKED
+							has_global_flag = pagan_ghws_unlocked
+						}
+					}
+					AND = { 
+						religion_group = christian
+						custom_tooltip = {
+							text = CTT_CHRISTIAN_CRUSADES_UNLOCKED
+							has_global_flag = christian_crusades_unlocked
+						}
+					}
+					AND = {
+						religion_group = muslim
+						custom_tooltip = {
+							text = CTT_MUSLIM_JIHADS_UNLOCKED
+							has_global_flag = muslim_jihads_unlocked
+						}
 					}
 				}
 			}
@@ -3142,6 +3321,7 @@ crusade = {
 	can_use = {
 		emf_cb_can_use = yes
 		ROOT = {
+			uses_new_crusade = no
 			can_call_crusade = yes
 			any_demesne_title = { is_titular = no }
 		}
@@ -3402,8 +3582,37 @@ crusade = {
 				}
 				hidden_tooltip = {
 					emf_usurp_revolter_titles = yes # Handle revolters [immediately]
+					if = {
+						limit = {
+							OR = {
+								this_has_lame_nickname_trigger = yes
+								has_nickname = no
+							}
+						}
+						random_list = {
+							10 = {
+								modifier = {
+									factor = 0
+									NOT = { religion_group = christian }
+								}
+								give_nickname = nick_the_crusader
+							}
+							10 = { give_nickname = nick_the_holy }
+							10 = { give_nickname = nick_the_glorious }
+							10 = { give_nickname = nick_the_lionheart }
+							10 = { give_nickname = nick_the_great }
+							10 = { give_nickname = nick_the_hammer }
+							10 = { give_nickname = nick_the_pilgrim }
+							40 = {
+								modifier = {
+									factor = 0
+									religion_group = christian
+								}
+								give_nickname = nick_the_sword_of_god
+							}
+						}
+					}
 				}
-
 				# To whom should the crusade kingdom go?
 				hidden_tooltip = { character_event = { id = emf_crusades.2 } }
 			}
@@ -3428,6 +3637,7 @@ crusade = {
 			set_character_flag = achievement_crusader
 		}
 		ROOT = {
+			show_scope_change = no
 			participation_scaled_prestige = 500
 			participation_scaled_piety = 1000
 			if = {
@@ -3446,6 +3656,7 @@ crusade = {
 				years = 20
 			}
 		}
+		emf_cb_on_success_title = yes
 	}
 
 	on_success_posttitle = { emf_cb_on_success_posttitle = yes }
@@ -3463,7 +3674,10 @@ crusade = {
 				}
 			}
 		}
-		ROOT = { piety = -100 }
+		ROOT = {
+			show_scope_change = no
+			piety = -100
+		}
 		hidden_tooltip = {
 			# Deal with crusader adventurers
 			any_character = {
@@ -3499,7 +3713,11 @@ crusade = {
 						has_landed_title = e_byzantium
 						has_landed_title = e_roman_empire
 					}
-					religion_group = christian
+					OR = { 
+						religion_group = christian
+						religion = hellenic_pagan
+						religion = hellenic_pagan_reformed
+					}
 				}
 				hidden_tooltip = {
 					character_event = {
@@ -3510,19 +3728,26 @@ crusade = {
 			}
 			hidden_tooltip = {
 				if = {
-					limit = { has_nickname = no }
-					random_list = {
-						10 = { give_nickname = nick_the_holy }
-						10 = { give_nickname = nick_the_glorious }
-						10 = { give_nickname = nick_the_lionheart }
-						10 = { give_nickname = nick_the_great }
-						10 = { give_nickname = nick_the_hammer }
-						20 = {
-							modifier = {
-								factor = 0
-								religion_group = christian
+					limit = {
+						OR = {
+							this_has_lame_nickname_trigger = yes
+							has_nickname = no
+						}
+					}
+					hidden_effect = {
+						random_list = {
+							10 = { give_nickname = nick_the_holy }
+							10 = { give_nickname = nick_the_glorious }
+							10 = { give_nickname = nick_the_lionheart }
+							10 = { give_nickname = nick_the_great }
+							10 = { give_nickname = nick_the_hammer }
+							20 = {
+								modifier = {
+									factor = 0
+									religion_group = christian
+								}
+								give_nickname = nick_the_sword_of_god
 							}
-							give_nickname = nick_the_sword_of_god
 						}
 					}
 				}
@@ -3550,6 +3775,7 @@ crusade = {
 			ROOT = { clr_character_flag = reclaim_heresy_crusade }
 		}
 		ROOT = {
+			show_scope_change = no
 			transfer_scaled_wealth = {
 				to = FROM
 				value = 4.0
@@ -3579,7 +3805,11 @@ crusade = {
 						has_landed_title = e_byzantium
 						has_landed_title = e_roman_empire
 					}
-					religion_group = christian
+					OR = { 
+						religion_group = christian
+						religion = hellenic_pagan
+						religion = hellenic_pagan_reformed
+					}
 				}
 				hidden_tooltip = {
 					character_event = {
@@ -3590,19 +3820,26 @@ crusade = {
 			}
 			hidden_tooltip = {
 				if = {
-					limit = { has_nickname = no }
-					random_list = {
-						10 = { give_nickname = nick_the_holy }
-						10 = { give_nickname = nick_the_glorious }
-						10 = { give_nickname = nick_the_lionheart }
-						10 = { give_nickname = nick_the_great }
-						10 = { give_nickname = nick_the_hammer }
-						20 = {
-							modifier = {
-								factor = 0
-								religion_group = christian
+					limit = {
+						OR = {
+							this_has_lame_nickname_trigger = yes
+							has_nickname = no
+						}
+					}
+					hidden_effect = {
+						random_list = {
+							10 = { give_nickname = nick_the_holy }
+							10 = { give_nickname = nick_the_glorious }
+							10 = { give_nickname = nick_the_lionheart }
+							10 = { give_nickname = nick_the_great }
+							10 = { give_nickname = nick_the_hammer }
+							20 = {
+								modifier = {
+									factor = 0
+									religion_group = christian
+								}
+								give_nickname = nick_the_sword_of_god
 							}
-							give_nickname = nick_the_sword_of_god
 						}
 					}
 				}
@@ -3623,6 +3860,11 @@ crusade = {
 			limit = {
 				character = ROOT
 				uses_decadence = yes
+				NOT = {
+					any_liege = {
+						dynasty = PREV
+					}
+				}
 			}
 			participation_scaled_decadence = 35
 		}
@@ -3630,6 +3872,11 @@ crusade = {
 			limit = {
 				NOT = { character = ROOT }
 				uses_decadence = yes
+				NOT = {
+					any_liege = {
+						dynasty = PREV
+					}
+				}
 			}
 			hidden_tooltip = {
 				participation_scaled_decadence = 35
