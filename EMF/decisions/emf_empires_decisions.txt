@@ -5,6 +5,7 @@ decisions = {
 	emf_create_hre = {
 		only_independent = yes
 		is_high_prio = yes
+		ai_check_interval = 24
 
 		potential = {
 			independent = yes
@@ -22,6 +23,7 @@ decisions = {
 				has_landed_title = k_lotharingia
 			}
 			emf_hiprio_decision_basic_potential = yes
+			is_alternate_start = no
 		}
 		allow = {
 			has_landed_title = k_germany
@@ -81,6 +83,7 @@ decisions = {
 				30 = { give_nickname = nick_the_restorer }
 				30 = { give_nickname = nick_the_lawgiver }
 			}
+			add_artifact = crown_hre
 
 			if = {
 				limit = { NOT = { is_title_active = e_hre } }
@@ -97,12 +100,15 @@ decisions = {
 					copy_title_laws = PREV
 					if = {
 						limit = { ROOT = { ai = yes } }
-						add_law = { law = succ_feudal_elective cooldown = no opinion_effect = no }
+						add_law = { law = succ_hre_elective cooldown = no opinion_effect = no }
 					}
 				}
 			}
 			clr_character_flag = emf_no_law_penalties
 
+			hidden_tooltip = {
+				princely_elective_german_elector_setup_effect = yes
+			}
 			# Destroy kingdoms that are no longer needed.
 			any_demesne_title = {
 				limit = {
@@ -242,6 +248,7 @@ decisions = {
 				20 = { give_nickname = nick_the_restorer }
 				20 = { give_nickname = nick_the_lawgiver }
 			}
+			add_artifact = crown_hre
 
 			if = {
 				limit = { NOT = { is_title_active = e_hre_french } }
@@ -259,7 +266,7 @@ decisions = {
 					copy_title_laws = PREV
 					if = {
 						limit = { ROOT = { ai = yes } }
-						add_law = succ_feudal_elective
+						add_law = succ_hre_elective
 					}
 				}
 			}
@@ -610,10 +617,9 @@ decisions = {
 
 	emf_create_custom_kingdom = {
 		is_high_prio = yes
-		ai = no
+		ai_check_interval = 24
 		
 		potential = {
-			ai = no
 			independent = yes
 			real_tier = DUKE
 			is_nomadic = no
@@ -624,19 +630,79 @@ decisions = {
 					value = off
 				}
 			}
+			OR = {
+				ai = no
+				AND = {
+					is_alternate_start = yes
+					has_alternate_start_parameter = {
+						key = dejure_kingdoms
+						value = none
+					}
+				}
+			}
 		}
 		allow = {
 			war = no
 			is_adult = yes
 			prisoner = no
 			has_regent = no
-			wealth = 800
-			prestige = 1000
+			
+			conditional_tooltip = {
+				trigger = {
+					AND = {
+						is_alternate_start = yes
+						has_alternate_start_parameter = {
+							key = dejure_kingdoms
+							value = none
+						}
+					}
+				}
+				prestige = 250
+				wealth = 200
+			}
+			
+			conditional_tooltip = {
+				trigger = {
+					NOT = {
+						is_alternate_start = yes
+						has_alternate_start_parameter = {
+							key = dejure_kingdoms
+							value = none
+						}
+					}
+				}
+				prestige = 1000
+				wealth = 800
+			}
+			
 			realm_size = 35
 			num_of_duke_titles = 3
 		}
 		effect = {
-			wealth = -800
+			if = {
+				limit = {
+					AND = {
+						is_alternate_start = yes
+						has_alternate_start_parameter = {
+							key = dejure_kingdoms
+							value = none
+						}
+					}
+				}
+				wealth = -200
+			}
+			if = {
+				limit = {
+					NOT = {
+						is_alternate_start = yes
+						has_alternate_start_parameter = {
+							key = dejure_kingdoms
+							value = none
+						}
+					}
+				}
+				wealth = -800
+			}
 			primary_title = {
 				save_event_target_as = emf_old_title
 				create_title = {
@@ -682,6 +748,20 @@ decisions = {
 					}
 					de_jure_liege = event_target:emf_new_title
 				}
+				if = {
+					limit = {
+						has_alternate_start_parameter = {
+							key = dejure_kingdoms
+							value = none
+						}
+					}
+					any_title_under = {
+						limit = {
+							tier = DUKE
+						}
+						de_jure_liege = event_target:emf_new_title
+					}
+				}
 				any_title_under = {
 					limit = {
 						tier = COUNT
@@ -699,18 +779,45 @@ decisions = {
 						}
 					}
 				}
+				if = {
+					limit = {
+						has_alternate_start_parameter = {
+							key = dejure_kingdoms
+							value = none
+						}
+					}
+					any_title_under = {
+						limit = {
+							tier = COUNT
+							location = {
+								duchy = {
+									NOT = { de_jure_liege_or_above = event_target:emf_new_title }
+									ROOT = {
+										completely_controls = PREV
+									}
+								}
+							}
+						}
+						location = {
+							duchy = {
+								de_jure_liege = event_target:emf_new_title
+							}
+						}
+					}
+				}
 			}
 		}
 		ai_will_do = {
-			factor = 0
+			factor = 1
 		}
 	}
 
 	emf_create_custom_empire = {
+		only_independent = yes
 		is_high_prio = yes
-		ai = no
+		ai_check_interval = 24
+		
 		potential = {
-			ai = no
 			independent = yes
 			real_tier = KING
 			is_nomadic = no
@@ -721,19 +828,83 @@ decisions = {
 					value = off
 				}
 			}
+			OR = {
+				ai = no
+				AND = {
+					is_alternate_start = yes
+					OR = {
+						has_alternate_start_parameter = {
+							key = dejure_kingdoms
+							value = none
+						}
+						has_alternate_start_parameter = {
+							key = dejure_empires
+							value = none
+						}
+					}
+				}
+			}
 		}
 		allow = {
 			war = no
 			is_adult = yes
 			prisoner = no
 			has_regent = no
-			wealth = 1200
-			prestige = 4000
+			conditional_tooltip = {
+				trigger = {
+					AND = {
+						is_alternate_start = yes
+						has_alternate_start_parameter = {
+							key = dejure_empires
+							value = none
+						}
+					}
+				}
+				prestige = 1000
+				wealth = 300
+			}
+			
+			conditional_tooltip = {
+				trigger = {
+					NOT = {
+						is_alternate_start = yes
+						has_alternate_start_parameter = {
+							key = dejure_empires
+							value = none
+						}
+					}
+				}
+				prestige = 4000
+				wealth = 1200
+			}
 			realm_size = 120
 			num_of_king_titles = 3
 		}
 		effect = {
-			wealth = -1200
+			if = {
+				limit = {
+					AND = {
+						is_alternate_start = yes
+						has_alternate_start_parameter = {
+							key = dejure_empires
+							value = none
+						}
+					}
+				}
+				wealth = -300
+			}
+			if = {
+				limit = {
+					NOT = {
+						is_alternate_start = yes
+						has_alternate_start_parameter = {
+							key = dejure_empires
+							value = none
+						}
+					}
+				}
+				wealth = -1200
+			}
 			primary_title = {
 				save_event_target_as = emf_old_title
 				create_title = {
