@@ -591,6 +591,14 @@ emf_sr_ai_try_to_join_society = {
 					is_priest = yes
 				}
 			}
+			modifier = {
+				factor = 2
+				monastic_order_benedictine = { num_of_society_members < 15 }
+			}
+			modifier = {
+				factor = 2
+				monastic_order_benedictine = { num_of_society_members < 10 }
+			}
 			join_society = monastic_order_benedictine
 			emf_sr_add_random_society_influence_if_small = yes
 			emf_sr_set_grandmaster_if_none = yes
@@ -611,6 +619,14 @@ emf_sr_ai_try_to_join_society = {
 					learning = 16
 					is_priest = yes
 				}
+			}
+			modifier = {
+				factor = 2
+				monastic_order_dominican = { num_of_society_members < 15 }
+			}
+			modifier = {
+				factor = 2
+				monastic_order_dominican = { num_of_society_members < 10 }
 			}
 			join_society = monastic_order_dominican
 			emf_sr_add_random_society_influence_if_small = yes
@@ -633,6 +649,14 @@ emf_sr_ai_try_to_join_society = {
 					is_priest = yes
 				}
 			}
+			modifier = {
+				factor = 2
+				monastic_order_orthodox = { num_of_society_members < 15 }
+			}
+			modifier = {
+				factor = 2
+				monastic_order_orthodox = { num_of_society_members < 10 }
+			}
 			join_society = monastic_order_orthodox
 			emf_sr_add_random_society_influence_if_small = yes
 			emf_sr_set_grandmaster_if_none = yes
@@ -653,6 +677,14 @@ emf_sr_ai_try_to_join_society = {
 					learning = 16
 					is_priest = yes
 				}
+			}
+			modifier = {
+				factor = 2
+				monastic_order_nestorian = { num_of_society_members < 15 }
+			}
+			modifier = {
+				factor = 2
+				monastic_order_nestorian = { num_of_society_members < 10 }
 			}
 			join_society = monastic_order_nestorian
 			emf_sr_add_random_society_influence_if_small = yes
@@ -675,6 +707,14 @@ emf_sr_ai_try_to_join_society = {
 					is_priest = yes
 				}
 			}
+			modifier = {
+				factor = 2
+				monastic_order_monophysite = { num_of_society_members < 15 }
+			}
+			modifier = {
+				factor = 2
+				monastic_order_monophysite = { num_of_society_members < 10 }
+			}
 			join_society = monastic_order_monophysite
 			emf_sr_add_random_society_influence_if_small = yes
 			emf_sr_set_grandmaster_if_none = yes
@@ -693,6 +733,14 @@ emf_sr_ai_try_to_join_society = {
 					learning = 16
 					is_priest = yes
 				}
+			}
+			modifier = {
+				factor = 2
+				monastic_order_hindu = { num_of_society_members < 15 }
+			}
+			modifier = {
+				factor = 2
+				monastic_order_hindu = { num_of_society_members < 10 }
 			}
 			join_society = monastic_order_hindu
 			emf_sr_add_random_society_influence_if_small = yes
@@ -713,6 +761,14 @@ emf_sr_ai_try_to_join_society = {
 					is_priest = yes
 				}
 			}
+			modifier = {
+				factor = 2
+				monastic_order_buddhist = { num_of_society_members < 15 }
+			}
+			modifier = {
+				factor = 2
+				monastic_order_buddhist = { num_of_society_members < 10 }
+			}
 			join_society = monastic_order_buddhist
 			emf_sr_add_random_society_influence_if_small = yes
 			emf_sr_set_grandmaster_if_none = yes
@@ -732,9 +788,64 @@ emf_sr_ai_try_to_join_society = {
 					is_priest = yes
 				}
 			}
+			modifier = {
+				factor = 2
+				monastic_order_jain = { num_of_society_members < 15 }
+			}
+			modifier = {
+				factor = 2
+				monastic_order_jain = { num_of_society_members < 10 }
+			}
 			join_society = monastic_order_jain
 			emf_sr_add_random_society_influence_if_small = yes
 			emf_sr_set_grandmaster_if_none = yes
+		}
+		100 = {
+			trigger = {
+				can_join_society = monastic_order_stoics
+			}
+			modifier = {
+				factor = 3
+				OR = {
+					trait = erudite
+					trait = scholar
+					trait = theologian
+					trait = diligent
+					learning = 16
+				}
+			}
+			modifier = {
+				factor = 2
+				monastic_order_stoics = { num_of_society_members < 15 }
+			}
+			modifier = {
+				factor = 2
+				monastic_order_stoics = { num_of_society_members < 10 }
+			}
+			join_society = monastic_order_stoics
+			random_list = { # Artificially increase society influence for balance purposes
+				75 = {
+					modifier = {
+						factor = 0
+						society_influence >= 30
+					}
+					add_mission_succeed_influence_effect = yes
+				}
+				25 = {
+				}
+			}
+			if = {
+				limit = {
+					NOT = {
+						society = {
+							any_society_member = {
+								is_society_grandmaster = yes
+							}
+						}
+					}
+				}
+				set_society_grandmaster = yes
+			}
 		}
 		150 = {
 			trigger = {
@@ -801,6 +912,14 @@ emf_sr_ai_try_to_join_society = {
 					trait = lunatic
 				}
 			}
+			modifier = {
+				factor = 2
+				the_satanists = { num_of_society_members < 15 }
+			}
+			modifier = {
+				factor = 2
+				the_satanists = { num_of_society_members < 10 }
+			}
 			join_society = the_satanists
 			emf_sr_add_random_society_influence_if_small = yes
 			emf_sr_set_grandmaster_if_none = yes
@@ -818,6 +937,14 @@ emf_sr_ai_try_to_join_society = {
 					trait = possessed
 					trait = lunatic
 				}
+			}
+			modifier = {
+				factor = 2
+				the_trollcrafters = { num_of_society_members < 15 }
+			}
+			modifier = {
+				factor = 2
+				the_trollcrafters = { num_of_society_members < 10 }
 			}
 			join_society = the_trollcrafters
 			emf_sr_add_random_society_influence_if_small = yes
@@ -837,6 +964,14 @@ emf_sr_ai_try_to_join_society = {
 					trait = lunatic
 				}
 			}
+			modifier = {
+				factor = 2
+				the_cult_of_kali = { num_of_society_members < 15 }
+			}
+			modifier = {
+				factor = 2
+				the_cult_of_kali = { num_of_society_members < 10 }
+			}
 			join_society = the_cult_of_kali
 			emf_sr_add_random_society_influence_if_small = yes
 			emf_sr_set_grandmaster_if_none = yes
@@ -854,6 +989,14 @@ emf_sr_ai_try_to_join_society = {
 					trait = possessed
 					trait = lunatic
 				}
+			}
+			modifier = {
+				factor = 2
+				the_cold_ones = { num_of_society_members < 15 }
+			}
+			modifier = {
+				factor = 2
+				the_cold_ones = { num_of_society_members < 10 }
 			}
 			join_society = the_cold_ones
 			emf_sr_add_random_society_influence_if_small = yes
@@ -873,7 +1016,67 @@ emf_sr_ai_try_to_join_society = {
 					trait = lunatic
 				}
 			}
+			modifier = {
+				factor = 2
+				the_plaguebringers = { num_of_society_members < 15 }
+			}
+			modifier = {
+				factor = 2
+				the_plaguebringers = { num_of_society_members < 10 }
+			}
 			join_society = the_plaguebringers
+			emf_sr_add_random_society_influence_if_small = yes
+			emf_sr_set_grandmaster_if_none = yes
+		}
+		50 = {
+			trigger = {
+				can_join_society = the_vodouns
+			}
+			modifier = {
+				factor = 5
+				OR = {
+					has_impious_trait_trigger = yes
+					has_vice_trigger = yes
+					trait = drunkard
+					trait = possessed
+					trait = lunatic
+				}
+			}
+			modifier = {
+				factor = 2
+				the_vodouns = { num_of_society_members < 15 }
+			}
+			modifier = {
+				factor = 2
+				the_vodouns = { num_of_society_members < 10 }
+			}
+			join_society = the_vodouns
+			emf_sr_add_random_society_influence_if_small = yes
+			emf_sr_set_grandmaster_if_none = yes
+		}
+		50 = {
+			trigger = {
+				can_join_society = the_bacchants
+			}
+			modifier = {
+				factor = 5
+				OR = {
+					has_impious_trait_trigger = yes
+					has_vice_trigger = yes
+					trait = drunkard
+					trait = possessed
+					trait = lunatic
+				}
+			}
+			modifier = {
+				factor = 2
+				the_bacchants = { num_of_society_members < 15 }
+			}
+			modifier = {
+				factor = 2
+				the_bacchants = { num_of_society_members < 10 }
+			}
+			join_society = the_bacchants
 			emf_sr_add_random_society_influence_if_small = yes
 			emf_sr_set_grandmaster_if_none = yes
 		}''', file=f)
@@ -994,6 +1197,7 @@ g_rel_adherent_special = {
 	'finnish_pagan_reformed': 'String_Suomenusko_Follower',
 	'west_african_pagan_reformed': 'String_West_African',
 	'zun_pagan_reformed': 'String_Zunist',
+	'bon_reformed': 'String_bon_faithful',
 	'norse_pagan': 'String_Norse_Follower',
 	'slavic_pagan': 'String_Slav',
 	'tengri_pagan': 'String_Tengri',
