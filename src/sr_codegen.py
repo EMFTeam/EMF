@@ -35,19 +35,25 @@ TAB = '\t'
 
 def main():
 	global g_religions, g_rg_religions_map
-	
+
 	# grab a list of religions & a map of religion_groups to their religions from the religions folder
 	g_religions = []
 	g_rg_religions_map = defaultdict(list)
+	parser = ck2parser.SimpleParser(emf_path)
 
-	for _, tree in ck2parser.SimpleParser(emf_path).parse_files('common/religions/*.txt'):
+	for fn, tree in parser.parse_files('common/religions/*.txt'):
 		for n, v in tree:
 			if n.val.endswith('_trigger'):
 				continue
 			for n2, v2 in v:
-				if isinstance(v2, ck2parser.Obj) and n2.val not in ['color', 'male_names', 'female_names']:
-					if v2.has_pair('secret_religion', 'no'):
-						continue
+				if isinstance(v2, ck2parser.Obj) and n2.val not in ['color', 'male_names', 'female_names', 'interface_skin']:
+					try:
+						if v2.has_pair('secret_religion', 'no'):
+							continue
+					except:
+						print("fn = " + str(fn))
+						print("n2 = " + n2.str(parser))
+						print("v2 = " + v2.str(parser))
 					g_religions.append(n2.val)
 					g_rg_religions_map[n.val].append(n2.val)
 
@@ -854,7 +860,7 @@ emf_sr_ai_try_to_join_society = {
 			modifier = {
 				factor = 5
 				is_dumb_trigger = no
-				OR = { 
+				OR = {
 					learning = 12
 					trait = scholar
 					trait = erudite
@@ -870,7 +876,7 @@ emf_sr_ai_try_to_join_society = {
 			emf_sr_add_random_society_influence_if_small = yes
 			emf_sr_set_grandmaster_if_none = yes
 		}
-		100 = { 
+		100 = {
 			trigger = {
 				can_join_society = the_assassins
 			}
@@ -898,7 +904,7 @@ emf_sr_ai_try_to_join_society = {
 			emf_sr_add_random_society_influence_if_small = yes
 			emf_sr_set_grandmaster_if_none = yes
 		}
-		50 = { 
+		50 = {
 			trigger = {
 				can_join_society = the_satanists
 			}
@@ -924,7 +930,7 @@ emf_sr_ai_try_to_join_society = {
 			emf_sr_add_random_society_influence_if_small = yes
 			emf_sr_set_grandmaster_if_none = yes
 		}
-		50 = { 
+		50 = {
 			trigger = {
 				can_join_society = the_trollcrafters
 			}
@@ -950,7 +956,7 @@ emf_sr_ai_try_to_join_society = {
 			emf_sr_add_random_society_influence_if_small = yes
 			emf_sr_set_grandmaster_if_none = yes
 		}
-		50 = { 
+		50 = {
 			trigger = {
 				can_join_society = the_cult_of_kali
 			}
@@ -976,7 +982,7 @@ emf_sr_ai_try_to_join_society = {
 			emf_sr_add_random_society_influence_if_small = yes
 			emf_sr_set_grandmaster_if_none = yes
 		}
-		50 = { 
+		50 = {
 			trigger = {
 				can_join_society = the_cold_ones
 			}
@@ -1112,7 +1118,7 @@ def print_decisions_secretly_convert_to_holy_site(f, loc, new_loc):
 		ai_target_filter = self
 
 		only_playable = yes
-		
+
 		from_potential = {{
 			ai = no
 			is_incapable = no
