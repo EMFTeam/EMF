@@ -2567,6 +2567,7 @@ invasion = {
 			factor = 0.1
 			has_dlc = "Holy Fury"
 			ROOT = {
+				higher_real_tier_than = DUKE
 				is_feudal = yes
 				OR = {
 					religion = catholic
@@ -3068,6 +3069,7 @@ tribal_invasion = {
 			factor = 0.1
 			has_dlc = "Holy Fury"
 			ROOT = {
+				higher_real_tier_than = DUKE
 				is_feudal = yes
 				OR = {
 					religion = catholic
@@ -5766,6 +5768,7 @@ religious = {
 			factor = 0.1
 			has_dlc = "Holy Fury"
 			ROOT = {
+				higher_real_tier_than = DUKE
 				is_feudal = yes
 				OR = {
 					religion = catholic
@@ -8447,6 +8450,7 @@ embargo_cb = {
 			factor = 0.1
 			has_dlc = "Holy Fury"
 			ROOT = {
+				higher_real_tier_than = DUKE
 				is_feudal = yes
 				OR = {
 					religion = catholic
@@ -8653,6 +8657,7 @@ seize_trade_post = {
 			factor = 0.1
 			has_dlc = "Holy Fury"
 			ROOT = {
+				higher_real_tier_than = DUKE
 				is_feudal = yes
 				OR = {
 					religion = catholic
@@ -8912,6 +8917,9 @@ pagan_subjugation = {
 	is_permanent = yes
 	can_ask_to_join_war = yes
 	allowed_to_target_tributaries = no
+	defender_unoccupied_warscore = yes
+	
+	sort_priority = 2000
 
 	can_use_gui = {
 		emf_cb_can_use_gui = yes
@@ -8922,6 +8930,7 @@ pagan_subjugation = {
 		ROOT = {
 			religion_group = pagan_group
 			is_reformed_religion = no
+			NOT = { religion = hellenic_pagan }
 			NOT = { same_realm = FROM }
 			higher_tier_than = COUNT
 			mercenary = no
@@ -8935,7 +8944,12 @@ pagan_subjugation = {
 					has_horde_culture = no # Should use tribal invasion instead
 				}
 			}
-			#NOT = { lower_tier_than = FROM }
+			OR = {
+				is_tribal = yes
+				primary_title = {
+					has_law = succ_elective_gavelkind
+				}
+			}
 			OR = {
 				NOT = { has_character_modifier = launched_subjugation }
 				AND = {
@@ -9117,7 +9131,11 @@ pagan_subjugation = {
 						has_landed_title = e_byzantium
 						has_landed_title = e_roman_empire
 					}
-					religion_group = christian
+					OR = { 
+						religion_group = christian
+						religion = hellenic_pagan
+						religion = hellenic_pagan_reformed
+					}
 				}
 				hidden_tooltip = {
 					character_event = {
@@ -9157,6 +9175,24 @@ pagan_subjugation = {
 
 	ai_will_do = {
 		factor = 1
+		modifier = { #Focus on Coronation first.
+			factor = 0.1
+			has_dlc = "Holy Fury"
+			ROOT = {
+				higher_real_tier_than = DUKE
+				is_feudal = yes
+				OR = {
+					religion = catholic
+					religion = fraticelli
+				}
+				NOR = {
+					trait = crowned_by_priest
+					trait = crowned_by_bishop
+					trait = crowned_by_pope
+					trait = crowned_by_myself
+				}
+			}
+		}
 		modifier = {
 			factor = 10
 			FROM = { ai = no }
@@ -9897,18 +9933,25 @@ kingdom_adventure = { # Used mainly for Muslims adventuring into India
 					ROOT = { 
 						save_event_target_as = nickname_receiver
 					}
-					random_list = {
-						5 = { give_nickname = nick_the_victorious }
-						5 = { give_nickname = nick_the_conqueror }
-						5 = { give_nickname = nick_the_dragon }
-						10 = { give_nickname = nick_the_rel_group }
-						10 = { give_nickname = nick_the_tiger }
-						10 = { give_nickname = nick_the_world_burner }
-						10 = { 
-							give_nickname = nick_the_scourge_of_god
-							modifier = {
-								factor = 0
-								event_target:nickname_target = { religion = ROOT }
+					if = {
+						limit = {
+							NOT = {
+								has_character_flag = is_child_of_destiny
+							}
+						}
+						random_list = {
+							5 = { give_nickname = nick_the_victorious }
+							5 = { give_nickname = nick_the_conqueror }
+							5 = { give_nickname = nick_the_dragon }
+							10 = { give_nickname = nick_the_rel_group }
+							10 = { give_nickname = nick_the_tiger }
+							10 = { give_nickname = nick_the_world_burner }
+							10 = { 
+								give_nickname = nick_the_scourge_of_god
+								modifier = {
+									factor = 0
+									event_target:nickname_target = { religion = ROOT }
+								}
 							}
 						}
 					}
@@ -9925,7 +9968,50 @@ kingdom_adventure = { # Used mainly for Muslims adventuring into India
 		pf_liege_change_under_title_begin_effect = yes
 		custom_tooltip = {
 			text = other_invasion_succ_tip
-			hidden_tooltip = {			  
+			hidden_tooltip = {
+				if = { # Special stuff for player Child of Destiny (AI Children do not have this flag)
+					limit = {
+						ROOT = { has_character_flag = child_of_destiny_outwards_focus }
+					}
+					FROM = { # Ensure that the Child of Destiny always gets one County in the targeted Kingdom (mainly useful when testing with yesmen, but can also happen in rare occurences where the target is imprisoned)
+						random_realm_title = {
+							limit = {
+								tier = COUNT
+								de_jure_liege_or_above = PREVPREV
+							}
+							usurp_title = { target = ROOT type = host }
+						}
+					}
+					ROOT = {
+						liege = { save_event_target_as = old_liege_target }
+						if = { # Abandon all old titles if you were a vassal
+							limit = {
+								independent = no
+							}
+							any_demesne_title = {
+								limit = {
+									NOR = {
+										title = PREVPREV
+										de_jure_liege_or_above = PREVPREV
+									}
+								}
+								grant_title = event_target:old_liege_target
+							}
+							any_vassal = {
+								limit = {
+									capital_scope = {
+										NOR = {
+											title = PREVPREVPREV
+											de_jure_liege_or_above = PREVPREVPREV
+										}
+									}
+								}
+								set_defacto_liege = event_target:old_liege_target
+								emf_liege_change = yes
+							}
+						}
+					}
+				}
 				FROM = { # The adventurer takes ANY demesne title, including the targeted Kingdom, within the area of the targeted kingdom
 					any_demesne_title = {
 						limit = {
@@ -9957,17 +10043,50 @@ kingdom_adventure = { # Used mainly for Muslims adventuring into India
 							}
 						}
 					}
-					ROOT = {
-						create_title = {
-							tier = KING
-							landless = no
-							temporary = no
-							custom_created = yes
-							culture = ROOT
-							holder = ROOT
-							name = "INDIAN_MUSLIM_KINGDOM"
-							base_title = PREV
-							copy_title_laws = yes
+					if = {
+						limit = {
+							ROOT = {
+								NOT = {
+									has_character_flag = is_child_of_destiny
+								}
+							}
+						}
+						ROOT = {
+							create_title = {
+								tier = KING
+								landless = no
+								temporary = no
+								custom_created = yes
+								culture = ROOT
+								holder = ROOT
+								name = "INDIAN_MUSLIM_KINGDOM"
+								base_title = PREV
+								copy_title_laws = yes
+							}
+						}
+					}
+					else = {
+						ROOT = {
+							save_event_target_as = target_name
+							create_title = {
+								tier = KING
+								landless = no
+								temporary = no
+								custom_created = yes
+								culture = ROOT
+								holder = ROOT
+								name = "DESTINY_KINGDOM"
+								base_title = PREV
+								copy_title_laws = yes
+							}
+							capital_scope = {
+								county = {
+									save_event_target_as = coa_target
+								}
+							}
+							primary_title = {
+								set_coa = event_target:coa_target
+							}
 						}
 					}
 				}
@@ -9987,6 +10106,28 @@ kingdom_adventure = { # Used mainly for Muslims adventuring into India
 						type = host
 					}
 					set_defacto_liege = ROOT # Always go Independent
+					emf_liege_change = yes
+				}
+
+				hidden_effect = {
+					if = {
+						limit = {
+							ROOT = {
+								has_character_flag = is_child_of_destiny
+								NOT = {
+									religion_group = muslim
+								}
+							}
+						}
+						ROOT = {
+							any_demesne_title = {
+								limit = {
+									higher_tier_than = COUNT
+								}
+								add_law = { law = succ_primogeniture opinion_effect = no }
+							}
+						}
+					}
 				}
 			}
 		}
@@ -10002,10 +10143,13 @@ kingdom_adventure = { # Used mainly for Muslims adventuring into India
 						culture = ROOT
 					}
 				}
-				if = {
+				else_if = {
 					limit = {
-						NOT = { has_character_flag = rum_creator }
+						has_character_flag = is_child_of_destiny
 					}
+					character_event = { id = HF.303 days = 3 }
+				}
+				else = {
 					capital_scope = {
 						ROOT = { culture = PREV }
 					}
@@ -10024,6 +10168,19 @@ kingdom_adventure = { # Used mainly for Muslims adventuring into India
 						}
 						culture = ROOT
 					}
+				}
+
+				if = { # Give bloodline to Child of Destiny
+					limit = {
+						has_character_flag = is_child_of_destiny
+						higher_real_tier_than = DUKE
+						NOT = {
+							any_owned_bloodline = {
+								has_bloodline_flag = created_bloodline
+							}
+						}
+					}
+					character_event = { id = HF.304 days = 14 }
 				}
 				
 				# Special case: Sultanate of Rum might start yet another war
@@ -10059,10 +10216,25 @@ kingdom_adventure = { # Used mainly for Muslims adventuring into India
 			hidden_tooltip = {
 				disband_event_forces = yes
 				clr_character_flag = duchy_adventurer
+				if = {
+					limit = {
+						has_character_flag = is_child_of_destiny
+					}
+					remove_trait = disinherited
+				}
 			}
 		}
 	
 		ROOT = { prestige = -100 }
+
+		if = {
+			limit = {
+				ROOT = {
+					has_character_flag = is_child_of_destiny
+				}
+			}
+			set_global_flag = child_of_destiny_invasion_fail@ROOT
+		}
 	}
 
 	on_reverse_demand = {
@@ -10085,7 +10257,22 @@ kingdom_adventure = { # Used mainly for Muslims adventuring into India
 			hidden_tooltip = {
 				disband_event_forces = yes
 				clr_character_flag = duchy_adventurer
+				if = {
+					limit = {
+						has_character_flag = is_child_of_destiny
+					}
+					remove_trait = disinherited
+				}
 			}
+		}
+		
+		if = {
+			limit = {
+				ROOT = {
+					has_character_flag = is_child_of_destiny
+				}
+			}
+			set_global_flag = child_of_destiny_invasion_reverse_demand@ROOT
 		}
 	}
 	
@@ -10101,6 +10288,10 @@ kingdom_adventure = { # Used mainly for Muslims adventuring into India
 
 	on_invalidation = {
 		log = "CB(kingdom_adventure): INVALIDATED: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
+		ROOT = {
+			clr_character_flag = child_of_destiny_made_player_choice
+			clr_character_flag = child_of_destiny_adventure
+		}
 	}
 
 	attacker_ai_victory_worth = {
@@ -10168,11 +10359,15 @@ caliphal_subjugation = {
 	can_ask_to_join_war = yes
 	check_de_jure_tier = KING # this scans all de jure kingdoms for the counties which are held by or vassals(or below) of selected character. Only valid if is_permanent = yes
 	allowed_to_target_tributaries = no
+	sort_priority = 1000
 
 	can_use_gui = {
 		emf_cb_can_use_gui = yes
 		ROOT = {
-			piety = 200
+			custom_tooltip = {
+				text = NEEDS_200_PIETY_COST
+				piety = 200
+			}
 		}
 	}
 
@@ -10293,7 +10488,11 @@ caliphal_subjugation = {
 						has_landed_title = e_byzantium
 						has_landed_title = e_roman_empire
 					}
-					religion_group = christian
+					OR = { 
+						religion_group = christian
+						religion = hellenic_pagan
+						religion = hellenic_pagan_reformed
+					}
 				}
 				hidden_tooltip = {
 					character_event = {
@@ -10354,9 +10553,9 @@ muslim_county_conquest = {
 	hostile_against_others = yes
 	is_permanent = yes
 	check_all_titles = yes # if permanent, setting this to true will check against all of someones titles, including vassal held titles
-	press_claim = yes
 	can_ask_to_join_war = no
 	allowed_to_target_tributaries = no
+	sort_priority = 700
 
 	can_use_gui = {
 		emf_cb_can_use_gui = yes
@@ -10530,6 +10729,48 @@ muslim_county_conquest = {
 			}
 			FROM = {
 				has_landed_title = e_china_west_governor
+			}
+		}
+		modifier = {
+			factor = 0
+			FROM = {
+				is_nomadic = yes
+			}
+			ROOT = {
+				is_nomadic = no
+				NOT = {
+					is_tribal = yes
+				}
+			}
+			NOT = {
+				any_direct_de_jure_vassal_title = {
+					any_direct_de_jure_vassal_title = {
+						OR = {
+							holding_type = castle
+							holding_type = city
+						}
+					}
+				}
+			}
+		}
+		modifier = {
+			factor = 0
+			FROM = {
+				is_nomadic = yes
+			}
+			ROOT = {
+				is_tribal = yes
+			}
+			NOT = {
+				any_direct_de_jure_vassal_title = {
+					any_direct_de_jure_vassal_title = {
+						OR = {
+							holding_type = castle
+							holding_type = city
+							holding_type = tribal
+						}
+					}
+				}
 			}
 		}
 		modifier = {
