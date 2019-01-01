@@ -25733,6 +25733,7 @@ shattered_world_county_conquest = {
 	sort_priority = 795
 	
 	can_use_gui = {
+		emf_cb_can_use_gui = yes
 		conditional_tooltip = {
 			trigger = {
 				has_alternate_start_setting = {
@@ -25757,21 +25758,8 @@ shattered_world_county_conquest = {
 		}
 	}
 	
-	on_add = {
-		hidden_tooltip = { fire_haruspicy_event_effect = yes }
-		ROOT = {
-			show_scope_change = no
-			if = {
-				limit = { defender = { is_offmap_governor = offmap_china } }
-				attacker = {  
-					sound_effect = china_angered_emperor
-					detract_grace_super_huge_effect = yes
-				}
-			}
-		}
-	}
-	
 	can_use = {
+		emf_cb_can_use = yes
 		is_shattered_world = yes
 		NOT = {
 			has_alternate_start_setting = {
@@ -25818,7 +25806,6 @@ shattered_world_county_conquest = {
 				NOT = { same_realm = ROOT }
 			}
 		}
-
 		NOR = {
 			ROOT = {
 				has_landed_title = PREV
@@ -25827,60 +25814,39 @@ shattered_world_county_conquest = {
 				is_liege_or_above = ROOT
 			}
 		}
-		
 		location = {
-			#any_neighbor_province = {
-			#	owner = {
-			#		OR = {
-			#			character = ROOT
-			#			is_liege_or_above = ROOT
-			#		}
-			#	}
-			#}
 			any_neighbor_province = {
 				OR = {
-					AND = {
-						has_owner = yes
-						owner = {
-							OR = {
-								character = ROOT
-								is_liege_or_above = ROOT
-							}
-						}
-					}
+					owner_under_ROOT = yes
 					AND = {
 						is_land = no
 						any_neighbor_province = {
-							OR = {
-								AND = {
-									has_owner = yes
-									owner = {
-										OR = {
-											character = ROOT
-											is_liege_or_above = ROOT
-										}
-									}
-								}
-							}
+							owner_under_ROOT = yes
 						}
 					}
 				}
 			}
 		}
+		emf_cb_can_use_title = yes
+		emf_cb_can_use_sahara_title = yes
 	}
 
 	is_valid_title = {
-		OR = {
-			FROM = {
-				has_landed_title = PREV
-			}
-			holder_scope = {
-				is_liege_or_above = FROM
-			}
-		}
+		owner_under_FROM = yes
+	}
+
+	on_add = {
+		log = "CB(shattered_world_county_conquest): START: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
+		emf_cb_on_add = yes
+	}
+
+	on_success = {
+		log = "CB(shattered_world_county_conquest): VICTORY: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
+		emf_cb_victory = yes
 	}
 
 	on_success_title = {
+		emf_cb_latb = yes
 		if = {
 			limit = {
 				holder_scope = {
@@ -25889,45 +25855,31 @@ shattered_world_county_conquest = {
 					lower_tier_than = ROOT
 				}
 			}
-
 			holder_scope = {
-				set_defacto_liege = ROOT
+				emf_ROOT_subjugate_ruler = yes
 			}
 		}
-
-		if = {
-			limit = {
-				holder_scope = {
-					OR = {
-						higher_tier_than = count
-						num_of_count_titles = 2
-						NOT = { lower_tier_than = ROOT }
-					}
-				}
-			}
-
+		else = {
 			usurp_title_plus_barony_if_unlanded = { target = ROOT type = invasion }
 			any_de_jure_vassal_title = { # take all baronies under the one we're fighting for
 				limit = {
-					has_holder = yes
 					NOT = {
 						de_facto_liege = PREV
 					}
-					holder_scope = {
-						is_liege_or_above = FROM
-					}
+					owner_under_FROM = yes
 				}
-
 				usurp_title_plus_barony_if_unlanded = { target = ROOT type = invasion }
 			}
 		}
-		
 		add_pressed_claim = FROM
-		
 		any_attacker = {
 			limit = { NOT = { character = ROOT } }
 			hidden_tooltip = { participation_scaled_prestige = 100 }
 		}
+	}
+
+	on_fail = {
+		log = "CB(shattered_world_county_conquest): WHITEPEACE: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
 	}
 
 	on_fail_title = {
@@ -25944,6 +25896,8 @@ shattered_world_county_conquest = {
 	}
 
 	on_reverse_demand = {
+		log = "CB(shattered_world_county_conquest): DEFEAT: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
+		emf_cb_defeat = yes
 		ROOT = {
 			prestige = -100
 			transfer_scaled_wealth = {
@@ -25958,6 +25912,10 @@ shattered_world_county_conquest = {
 			limit = { NOT = { character = FROM } }
 			hidden_tooltip = { participation_scaled_prestige = 100 }
 		}
+	}
+
+	on_invalidation_title = {
+		log = "CB(shattered_world_county_conquest): INVALIDATED: title=[This.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
 	}
 	
 	attacker_ai_victory_worth = {
@@ -25988,266 +25946,6 @@ shattered_world_county_conquest = {
 	}
 }
 
-#shattered_world_duchy_conquest = {
-#	name = CB_NAME_SHATTERED_DUCHY_CONQUEST
-#	war_name = WAR_NAME_SHATTERED_DUCHY_CONQUEST
-#	sprite = 8
-#	truce_days = 3650
-#	is_permanent = yes
-#	check_de_jure_tier = DUKE # this scans all dejure duchies for the counties which are held by or vassals(or below) of selected character. Only valid if is_permanent = yes
-#	allowed_to_target_tributaries = no
-#	
-#	infamy_modifier = 2
-#	
-#	can_use_gui = {
-#		conditional_tooltip = {
-#			trigger = {
-#				has_alternate_start_setting = {
-#					setting = shattered_cbs
-#					option = on_limited
-#				}
-#			}
-#			NOT = {
-#				total_years_played = 25
-#			}
-#		}
-#		conditional_tooltip = {
-#			trigger = {
-#				has_alternate_start_setting = {
-#					setting = shattered_cbs
-#					option = on_long
-#				}
-#			}
-#			NOT = {
-#				total_years_played = 100
-#			}
-#		}
-#		ROOT = {
-#			show_scope_change = no
-#			prestige = 500
-#			NOR = {
-#				higher_tier_than = DUKE
-#				num_of_count_titles = 20
-#			}
-#		}
-#	}
-#	
-#	can_use = {
-#		is_shattered_world = yes
-#		NOT = {
-#			has_alternate_start_setting = {
-#				setting = shattered_cbs
-#				option = off
-#			}
-#		}
-#		conditional_tooltip = {
-#			trigger = {
-#				has_alternate_start_setting = {
-#					setting = shattered_cbs
-#					option = on_limited
-#				}
-#			}
-#			NOT = {
-#				total_years_played = 25
-#			}
-#		}
-#		conditional_tooltip = {
-#			trigger = {
-#				has_alternate_start_setting = {
-#					setting = shattered_cbs
-#					option = on_long
-#				}
-#			}
-#			NOT = {
-#				total_years_played = 100
-#			}
-#		}
-#		ROOT = {
-#			NOT = { is_liege_or_above = FROM }
-#			mercenary = no
-#		}
-#	}
-#	
-#	can_use_title = {
-#		# The attacker needs at least one county in the target kingdom, or a border, or be only two sea zones away from one of your counties
-#		any_direct_de_jure_vassal_title = {
-#			OR = {
-#				holder_scope = {
-#					OR = {
-#						character = ROOT
-#						is_liege_or_above = ROOT
-#					}
-#				}
-#				location = {
-#					any_neighbor_province = {
-#						has_owner = yes
-#						owner = {
-#							OR = {
-#								character = ROOT
-#								is_liege_or_above = ROOT
-#							}
-#						}
-#					}
-#				}
-#			}
-#		}
-#		
-#		any_de_jure_vassal_title = { # Can only liberate Duchies that are either outside of the Steppe region, or contains a Castle/City/Tribe
-#			tier = COUNT
-#			OR = {
-#				holder_scope = {
-#					character = FROM
-#				}
-#				holder_scope = {
-#					any_liege = {
-#						character = FROM
-#					}
-#				}
-#			}
-#			OR = {
-#				location = {
-#					NOT = {
-#						region = world_steppe
-#					}
-#				}
-#				location = {
-#					any_province_holding = {
-#						OR = {
-#							holding_type = city
-#							holding_type = castle
-#							holding_type = tribal
-#						}
-#					}
-#				}
-#			}
-#		}
-#	}
-#
-#	is_valid = {
-#		ROOT = {
-#			NOT = { same_realm = FROM }
-#			mercenary = no
-#		}
-#	}
-#
-#	on_add = {
-#		ROOT = {
-#			show_scope_change = no
-#			prestige = -500
-#		}
-#		if = {
-#			limit = { defender = { is_offmap_governor = offmap_china } }
-#			attacker = {  
-#				sound_effect = china_angered_emperor
-#				detract_grace_super_huge_effect = yes 
-#			}
-#		}
-#	}
-#	
-#	on_success = {
-#		any_attacker = {
-#			limit = { NOT = { character = ROOT } }
-#			hidden_tooltip = { 
-#				participation_scaled_prestige = 100
-#			}
-#		}
-#		
-#		FROM = { prestige = -100 }
-#	}
-#
-#	on_success_title = {
-#		ROOT = {
-#			vassalize_or_take_under_title = {
-#				title = PREV
-#				enemy = FROM
-#				anti_nomad = yes
-#				type = invasion
-#			}
-#		}
-#	}
-#
-#	on_fail = {
-#		ROOT = { 
-#			prestige = -200
-#		}
-#	}
-#
-#	on_reverse_demand = {
-#		ROOT = {
-#			transfer_scaled_wealth = {
-#				to = FROM
-#				value = 4.0
-#			}
-#			prestige = -200
-#		}
-#		FROM = {
-#			participation_scaled_prestige = 300
-#		}
-#		any_defender = {
-#			limit = { NOT = { character = FROM } }
-#			hidden_tooltip = { 
-#				participation_scaled_prestige = 300
-#			}
-#		}
-#	}
-#
-#	attacker_ai_victory_worth = {
-#		factor = -1 # always accept
-#	}
-#	
-#	attacker_ai_defeat_worth = {
-#		factor = 100
-#	}
-#
-#	defender_ai_victory_worth = {
-#		factor = -1 # always accept
-#	}
-#	
-#	defender_ai_defeat_worth = {
-#		factor = 100
-#	}
-#	
-#	ai_will_do = {
-#		factor = 1
-#		modifier = {
-#			factor = 0
-#			ROOT = {
-#				NOT = {
-#					is_tribal = yes
-#				}
-#			}
-#			NOT = {
-#				any_direct_de_jure_vassal_title = {
-#					any_direct_de_jure_vassal_title = {
-#						OR = {
-#							holding_type = castle
-#							holding_type = city
-#						}
-#					}
-#				}
-#			}
-#		}
-#		modifier = {
-#			factor = 0
-#			ROOT = {
-#				is_tribal = yes
-#			}
-#			NOT = {
-#				any_direct_de_jure_vassal_title = {
-#					any_direct_de_jure_vassal_title = {
-#						OR = {
-#							holding_type = castle
-#							holding_type = city
-#							holding_type = tribal
-#						}
-#					}
-#				}
-#			}
-#		}
-#	}
-#}
-
-
 shattered_invasion = {
 	name = CB_NAME_INVASION
 	war_name = WAR_NAME_INVASION
@@ -26260,11 +25958,15 @@ shattered_invasion = {
 	
 	sort_priority = 1100
 	
+	can_use_gui = {
+		emf_cb_can_use_gui = yes
+	}
+
 	can_use = {
+		emf_cb_can_use = yes
 		ROOT = {
 			has_character_flag = great_conqueror
 		}
-		
 		ROOT = {
 			NOT = { is_liege_or_above = FROM }
 			mercenary = no
@@ -26276,29 +25978,16 @@ shattered_invasion = {
 		any_direct_de_jure_vassal_title = {
 			any_direct_de_jure_vassal_title = {
 				OR = {
-					holder_scope = {
-						OR = {
-							character = ROOT
-							is_liege_or_above = ROOT
-						}
-					}
+					owner_under_ROOT = yes
 					location = {
 						any_neighbor_province = {
-							owner = {
-								OR = {
-									character = ROOT
-									is_liege_or_above = ROOT
-								}
-							}
+							owner_under_ROOT = yes
 						}
 					}
 				}
 			}
 		}
-	}
-	
-	is_valid = {
-		always = yes
+		emf_cb_can_use_de_jure_title = yes
 	}
 	
 	is_valid_title = {
@@ -26310,24 +25999,20 @@ shattered_invasion = {
 	}
 
 	on_add = {
-		hidden_tooltip = { fire_haruspicy_event_effect = yes }
-		if = {
-			limit = { defender = { is_offmap_governor = offmap_china } }
-			attacker = {  
-				sound_effect = china_angered_emperor
-				detract_grace_super_huge_effect = yes 
-			}
-		}
+		log = "CB(shattered_invasion): START: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
+		emf_cb_on_add = yes
 	}
 
 	on_success = {
+		log = "CB(shattered_invasion): VICTORY: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
+		emf_cb_victory = yes
+		emf_imperial_decay_major_victory = yes
 		ROOT = {
 			prestige = 200
 			
 			hidden_tooltip = {
 				occupy_minors_of_occupied_settlements = FROM
 				gain_all_occupied_titles = { who = FROM type = invasion }
-				
 				if = {
 					limit = {
 						has_nickname = no
@@ -26385,6 +26070,7 @@ shattered_invasion = {
 	}
 
 	on_fail = {
+		log = "CB(shattered_invasion): WHITEPEACE: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
 		FROM = {
 			prestige = 100
 		}
@@ -26396,7 +26082,11 @@ shattered_invasion = {
 						has_landed_title = e_byzantium
 						has_landed_title = e_roman_empire
 					}
-					religion_group = christian
+					OR = {
+						religion_group = christian
+						religion = hellenic_pagan
+						religion = hellenic_pagan_reformed
+					}
 				}
 				hidden_tooltip = { character_event = { id = LoR.30 days = 12 } }
 			}
@@ -26412,6 +26102,9 @@ shattered_invasion = {
 	}
 
 	on_reverse_demand = {
+		log = "CB(shattered_invasion): DEFEAT: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
+		emf_cb_defeat = yes
+		emf_imperial_decay_major_loss = yes
 		ROOT = {
 			prestige = -200
 			transfer_scaled_wealth = {
@@ -26439,6 +26132,10 @@ shattered_invasion = {
 			limit = { NOT = { character = FROM } }
 			hidden_tooltip = { participation_scaled_prestige = 200 }
 		}
+	}
+
+	on_invalidation_title = {
+		log = "CB(shattered_invasion): INVALIDATED: title=[This.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
 	}
 
 	attacker_ai_victory_worth = {
