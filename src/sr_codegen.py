@@ -107,6 +107,7 @@ def main():
 
 	with sr_custom_loc_path.open('w', encoding='cp1252', newline='\n') as f:
 		print_file_header(f, 'ck2.custom_loc')
+		print_custom_loc_GetTrueReligionAdjective(f, loc, new_loc)
 		print_custom_loc_GetTrueReligionAdherent(f, loc, new_loc)
 		print_custom_loc_GetReligionAdherent(f, loc, new_loc)
 
@@ -1186,6 +1187,29 @@ def print_decisions_secretly_convert_to_holy_site(f, loc, new_loc):
 
 #### CUSTOM LOCALISATION ####
 
+
+def print_custom_loc_GetTrueReligionAdjective(f, loc, new_loc):
+	print('''
+defined_text = {
+	name = GetTrueReligionAdjective
+''', file=f)
+
+	for r in g_religions:
+		print('''\
+	text = {{
+		localisation_key = {}
+		trigger = {{
+			true_religion = {}
+			NOT = {{ has_alternate_start_parameter = {{ key = religion_names value = random }} }}
+		}}
+	}}'''.format(r, r), file=f)
+
+	print('''fallback_text = {
+		localisation_key = String_adherent_random
+	}''', file=f)
+
+	print('}', file=f)
+
 g_rel_adherent_special = {
 	'catholic': 'String_Catholic',
 	'orthodox': 'String_Orthodox_Christian',
@@ -1215,7 +1239,6 @@ g_rel_adherent_special = {
 	'bon': 'String_bon_faithful',
 }
 
-
 def print_custom_loc_GetTrueReligionAdherent(f, loc, new_loc):
 	print('''
 defined_text = {
@@ -1226,8 +1249,15 @@ defined_text = {
 		print('''\
 	text = {{
 		localisation_key = {}
-		trigger = {{ true_religion = {} }}
-	}}'''.format(g_rel_adherent_special.get(r, r), r), file=f)
+		trigger = {{
+			true_religion = {}
+			NOT = {{ has_alternate_start_parameter = {{ key = religion_names value = random }} }}
+		}}
+	}}'''.format(r, r), file=f)
+
+	print('''fallback_text = {
+		localisation_key = String_adherent_random
+	}''', file=f)
 
 	print('}', file=f)
 
@@ -1241,8 +1271,15 @@ defined_text = {
 		print('''\
 	text = {{
 		localisation_key = {}
-		trigger = {{ religion = {} }}
-	}}'''.format(g_rel_adherent_special.get(r, r), r), file=f)
+		trigger = {{
+			religion = {}
+			NOT = {{ has_alternate_start_parameter = {{ key = religion_names value = random }} }}
+		}}
+	}}'''.format(r, r), file=f)
+
+	print('''fallback_text = {
+		localisation_key = String_adherent_random
+	}''', file=f)
 
 	print('}', file=f)
 
