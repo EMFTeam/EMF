@@ -237,13 +237,7 @@ changeset = {
         ((944, 1, 1), 1, '''
             effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
             '''),
-        ((946, 1, 1), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
-            '''),
-        ((974, 1, 1), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
-            '''),
-        ((978, 1, 1), 1, '''
+        ((945, 1, 1), 1, '''
             effect = { set_variable = { which = "imperial_dynasty_count" value = 0 } }
             ''')
     ],
