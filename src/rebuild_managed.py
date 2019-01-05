@@ -39,6 +39,8 @@ def build_mapcut():
 
 
 def main():
+    rc = 0
+
     if sys.platform.startswith('linux') and mapcut_bin_path_default.exists():
         mapcut_bin_path = mapcut_bin_path_default
     else:
@@ -49,7 +51,7 @@ def main():
         build_mapcut()
     if not mapcut_bin_path.exists():
         sys.stderr.write('mapcut binary not found: {}\n'.format(mapcut_bin_path))
-        return 2
+        rc = 2
 
     print(">> executing mapcut...")
     try:
@@ -59,7 +61,7 @@ def main():
             sys.stdout.write(output)
     except subprocess.CalledProcessError as e:
         sys.stderr.write('> mapcut failed!\n> command: {}\n> exit code: {}\n\n{}'.format(e.cmd, e.returncode, e.output))
-        return 3
+        rc = 3
 
     print(">> executing holding slot trigger generator...")
     try:
@@ -69,7 +71,7 @@ def main():
             sys.stdout.write(output)
     except subprocess.CalledProcessError as e:
         sys.stderr.write('> build failed!\n> command: {}\n> exit code: {}\n\n{}'.format(e.cmd, e.returncode, e.output))
-        return 4
+        rc = 4
 
     print(">> executing EMF+SWMH history generator...")
     try:
@@ -79,12 +81,12 @@ def main():
             sys.stdout.write(output)
     except subprocess.CalledProcessError as e:
         sys.stderr.write('> build failed!\n> command: {}\n> exit code: {}\n\n{}'.format(e.cmd, e.returncode, e.output))
-        return 4
+        rc = 5
 
     with version_path.open('w') as f:
         print('{} - {}'.format(version, datetime.date.today()), file=f)
 
-    return 0
+    return rc
 
 
 if __name__ == '__main__':
