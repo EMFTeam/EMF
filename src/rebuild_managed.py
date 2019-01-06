@@ -14,7 +14,7 @@ from localpaths import rootpath
 # rather than do its full set of operations. additionally, EMF+SWMH history is auto-generated from here, and so are some
 # misc. bits of code (e.g., holding slot trigger for SWMH for the prosperity land reclamation event).
 
-version = 'v8.05-BETA'
+version = 'v9.0-BETA'
 version_path = rootpath / 'EMF/EMF/version.txt'
 emf_src_path = rootpath / 'EMF/src'
 
