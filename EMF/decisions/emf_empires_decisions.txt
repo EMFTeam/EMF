@@ -685,29 +685,19 @@ decisions = {
 	}
 
 	emf_create_custom_kingdom = {
+		only_independent = yes
 		is_high_prio = yes
 		ai_check_interval = 24
 		
 		potential = {
-			independent = yes
 			real_tier = DUKE
 			is_nomadic = no
+			holy_order = no
 			emf_hiprio_decision_basic_potential = yes
-			NOT = {
-				has_game_rule = {
-					name = dynamic_realms
-					value = off
-				}
-			}
+			NOT = { has_game_rule = { name = dynamic_realms value = off } }
 			OR = {
 				ai = no
-				AND = {
-					is_alternate_start = yes
-					has_alternate_start_parameter = {
-						key = dejure_kingdoms
-						value = none
-					}
-				}
+				has_alternate_start_parameter = { key = dejure_kingdoms value = none }
 			}
 		}
 		allow = {
@@ -715,61 +705,30 @@ decisions = {
 			is_adult = yes
 			prisoner = no
 			has_regent = no
-			
-			conditional_tooltip = {
-				trigger = {
-					AND = {
-						is_alternate_start = yes
-						has_alternate_start_parameter = {
-							key = dejure_kingdoms
-							value = none
-						}
-					}
-				}
+			trigger_if = {
+				limit = { has_alternate_start_parameter = { key = dejure_kingdoms value = none } }
 				prestige = 250
-				wealth = 200
-			}
-			
-			conditional_tooltip = {
-				trigger = {
-					NOT = {
-						is_alternate_start = yes
-						has_alternate_start_parameter = {
-							key = dejure_kingdoms
-							value = none
-						}
-					}
+				custom_tooltip = {
+					text = NEEDS_200_GOLD_COST
+					wealth = 200
 				}
-				prestige = 1000
-				wealth = 800
 			}
-			
+			trigger_else = {
+				prestige = 1000
+				custom_tooltip = {
+					text = NEEDS_800_GOLD_COST
+					wealth = 800
+				}
+			}
 			realm_size = 35
-			num_of_duke_titles = 3
+			num_of_duke_titles >= 3
 		}
 		effect = {
 			if = {
-				limit = {
-					AND = {
-						is_alternate_start = yes
-						has_alternate_start_parameter = {
-							key = dejure_kingdoms
-							value = none
-						}
-					}
-				}
+				limit = { has_alternate_start_parameter = { key = dejure_kingdoms value = none } }
 				wealth = -200
 			}
-			if = {
-				limit = {
-					NOT = {
-						is_alternate_start = yes
-						has_alternate_start_parameter = {
-							key = dejure_kingdoms
-							value = none
-						}
-					}
-				}
+			else = {
 				wealth = -800
 			}
 			primary_title = {
@@ -792,86 +751,58 @@ decisions = {
 				entry = CHRONICLE_FOUNDED_NEW_KINGDOM_OR_EMPIRE
 				portrait = [Root.GetID]
 			}
-			hidden_tooltip = {
+			hidden_effect = {
 				event_target:emf_new_title = { set_title_flag = emf_custom_created }
 				event_target:emf_old_title = {
 					if = {
 						limit = { empire = { always = yes } }
 						empire = { event_target:emf_new_title = { de_jure_liege = PREV } }
 					}
-					if = {
-						limit = { NOT = { empire = { always = yes } } }
+					else_if = {
+						limit = { NOT = { has_alternate_start_parameter = { key = dejure_empires value = none } } }
 						event_target:emf_new_title = { de_jure_liege = e_null }
 					}
 				}
-				if = {
-					limit = { NOT = { has_global_flag = emf_dejure_custom_titles } }
-					break = yes
-				}
-				# TODO: Add de jure vassal duchies recursively to ensure they're all contiguous
-				any_title_under = {
-					limit = {
-						tier = DUKE
-						kingdom = { has_holder = no }
-						emf_ROOT_completely_controls_counties = yes
-					}
-					de_jure_liege = event_target:emf_new_title
-				}
-				if = {
-					limit = {
-						has_alternate_start_parameter = {
-							key = dejure_kingdoms
-							value = none
-						}
-					}
-					any_title_under = {
-						limit = {
-							tier = DUKE
-						}
-						de_jure_liege = event_target:emf_new_title
+			}
+			if = {
+				limit = {
+					NOR = {
+						has_alternate_start_parameter = { key = dejure_kingdoms value = none }
+						has_global_flag = emf_config_dejure_custom_kingdom_titles
 					}
 				}
-				any_title_under = {
-					limit = {
-						tier = COUNT
-						location = {
-							duchy = {
-								kingdom = { has_holder = no }
-								NOT = { de_jure_liege = event_target:emf_new_title }
-								emf_ROOT_completely_controls_counties = yes
-							}
-						}
+				break = yes
+			}
+			# MAYBE-TODO: Add de jure vassal duchies in a way that ensures they're all contiguous
+			any_title_under = {
+				limit = {
+					tier = DUKE
+					is_de_jure_title = yes
+					OR = {
+						NOT = { kingdom = { has_holder = yes } }
+						has_alternate_start_parameter = { key = dejure_kingdoms value = none }
 					}
+					emf_ROOT_completely_controls_counties = yes
+				}
+				de_jure_liege = event_target:emf_new_title
+			}
+			any_title_under = {
+				limit = {
+					tier = COUNT
 					location = {
 						duchy = {
-							de_jure_liege = event_target:emf_new_title
+							OR = {
+								NOT = { kingdom = { has_holder = yes } }
+								has_alternate_start_parameter = { key = dejure_kingdoms value = none }
+							}
+							NOT = { de_jure_liege = event_target:emf_new_title }
+							emf_ROOT_completely_controls_counties = yes
 						}
 					}
 				}
-				if = {
-					limit = {
-						has_alternate_start_parameter = {
-							key = dejure_kingdoms
-							value = none
-						}
-					}
-					any_title_under = {
-						limit = {
-							tier = COUNT
-							location = {
-								duchy = {
-									NOT = { de_jure_liege_or_above = event_target:emf_new_title }
-									ROOT = {
-										completely_controls = PREV
-									}
-								}
-							}
-						}
-						location = {
-							duchy = {
-								de_jure_liege = event_target:emf_new_title
-							}
-						}
+				location = {
+					duchy = {
+						de_jure_liege = event_target:emf_new_title
 					}
 				}
 			}
@@ -887,91 +818,56 @@ decisions = {
 		ai_check_interval = 24
 		
 		potential = {
-			independent = yes
 			real_tier = KING
 			is_nomadic = no
-			emf_hiprio_decision_basic_potential = yes
-			NOT = {
-				has_game_rule = {
-					name = dynamic_realms
-					value = off
-				}
-			}
+			holy_order = no
+			NOT = { has_game_rule = { name = dynamic_realms value = off } }
 			OR = {
 				ai = no
-				AND = {
-					is_alternate_start = yes
-					OR = {
-						has_alternate_start_parameter = {
-							key = dejure_kingdoms
-							value = none
-						}
-						has_alternate_start_parameter = {
-							key = dejure_empires
-							value = none
-						}
-					}
-				}
+				has_alternate_start_parameter = { key = dejure_kingdoms value = none }
+				has_alternate_start_parameter = { key = dejure_empires value = none }
 			}
+			emf_hiprio_decision_basic_potential = yes
 		}
 		allow = {
 			war = no
 			is_adult = yes
 			prisoner = no
 			has_regent = no
-			conditional_tooltip = {
-				trigger = {
-					AND = {
-						is_alternate_start = yes
-						has_alternate_start_parameter = {
-							key = dejure_empires
-							value = none
-						}
+			trigger_if = {
+				limit = {
+					OR = {
+						has_alternate_start_parameter = { key = dejure_kingdoms value = none }
+						has_alternate_start_parameter = { key = dejure_empires value = none }
 					}
 				}
 				prestige = 1000
-				wealth = 300
-			}
-			
-			conditional_tooltip = {
-				trigger = {
-					NOT = {
-						is_alternate_start = yes
-						has_alternate_start_parameter = {
-							key = dejure_empires
-							value = none
-						}
-					}
+				custom_tooltip = {
+					text = NEEDS_300_GOLD_COST
+					wealth = 300
 				}
+			}
+			else = {
 				prestige = 4000
-				wealth = 1200
+				custom_tooltip = {
+					text = NEEDS_1200_GOLD_COST
+					wealth = 1200
+				}
 			}
 			realm_size = 120
-			num_of_king_titles = 3
+			num_of_king_titles >= 3
 		}
 		effect = {
 			if = {
 				limit = {
-					AND = {
-						is_alternate_start = yes
-						has_alternate_start_parameter = {
-							key = dejure_empires
-							value = none
-						}
+					OR = {
+						has_alternate_start_parameter = { key = dejure_kingdoms value = none }
+						has_alternate_start_parameter = { key = dejure_empires value = none }
 					}
 				}
 				wealth = -300
 			}
-			if = {
-				limit = {
-					NOT = {
-						is_alternate_start = yes
-						has_alternate_start_parameter = {
-							key = dejure_empires
-							value = none
-						}
-					}
-				}
+			else = {
 				wealth = -1200
 			}
 			primary_title = {
@@ -997,15 +893,23 @@ decisions = {
 			hidden_tooltip = {
 				event_target:emf_new_title = { set_title_flag = emf_custom_created }
 				if = {
-					limit = { NOT = { has_global_flag = emf_dejure_custom_titles } }
+					limit = {
+						NOR = {
+							has_alternate_start_parameter = { key = dejure_kingdoms value = none }
+							has_alternate_start_parameter = { key = dejure_empires value = none }
+							has_global_flag = emf_config_dejure_custom_empire_titles
+						}
+					}
 					break = yes
 				}
-				# TODO: Add de jure vassal kingdoms recursively to ensure they're all contiguous
 				any_title_under = {
 					limit = {
 						tier = KING
-						NOT = {
-							empire = { has_holder = yes }
+						is_de_jure_title = yes
+						OR = {
+							NOT = { empire = { has_holder = yes } }
+							has_alternate_start_parameter = { key = dejure_kingdoms value = none }
+							has_alternate_start_parameter = { key = dejure_empires value = none }
 						}
 						emf_ROOT_completely_controls_counties = yes
 					}
@@ -1016,8 +920,10 @@ decisions = {
 						tier = COUNT
 						location = {
 							kingdom = {
-								NOT = {
-									empire = { has_holder = yes }
+								OR = {
+									NOT = { empire = { has_holder = yes } }
+									has_alternate_start_parameter = { key = dejure_kingdoms value = none }
+									has_alternate_start_parameter = { key = dejure_empires value = none }
 								}
 								NOT = { de_jure_liege = event_target:emf_new_title }
 								emf_ROOT_completely_controls_counties = yes
