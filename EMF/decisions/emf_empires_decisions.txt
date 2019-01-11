@@ -21,8 +21,12 @@ decisions = {
 				has_landed_title = k_italy
 				has_landed_title = k_lotharingia
 			}
+			NOR = {
+				has_alternate_start_setting = { setting = dejure value = random }
+				has_alternate_start_setting = { setting = title_names value = random }
+				has_alternate_start_setting = { setting = title_names value = random_including_duchies }
+			}
 			emf_hiprio_decision_basic_potential = yes
-			is_alternate_start = no
 		}
 		allow = {
 			has_landed_title = k_germany
@@ -200,6 +204,11 @@ decisions = {
 				has_landed_title = k_lotharingia
 				has_landed_title = k_italy
 			}
+			NOR = {
+				has_alternate_start_setting = { setting = dejure value = random }
+				has_alternate_start_setting = { setting = title_names value = random }
+				has_alternate_start_setting = { setting = title_names value = random_including_duchies }
+			}
 			emf_hiprio_decision_basic_potential = yes
 		}
 		allow = {
@@ -358,6 +367,11 @@ decisions = {
 			c_byzantion = { owner_under_ROOT = yes }
 			emf_empires_byz_restorer_potential = yes
 			emf_empires_byz_restoration_potential = yes
+			NOR = {
+				has_alternate_start_setting = { setting = dejure value = random }
+				has_alternate_start_setting = { setting = title_names value = random }
+				has_alternate_start_setting = { setting = title_names value = random_including_duchies }
+			}
 			emf_hiprio_decision_basic_potential = yes
 		}
 		allow = {
@@ -367,6 +381,7 @@ decisions = {
 			realm_size = 50
 			# Must control 100% of the de jure counties of k_byzantium+k_thrace!
 			k_thrace = {
+				show_scope_change = no
 				custom_tooltip = {
 					text = emf_empires_ctt_completely_controls_thrace_counties
 					hidden_tooltip = {
@@ -388,6 +403,7 @@ decisions = {
 			trigger_if = {
 				limit = { NOT = { has_global_flag = SWMH } }
 				k_byzantium = {
+					show_scope_change = no
 					custom_tooltip = {
 						text = emf_empires_ctt_completely_controls_byzantium_counties
 						hidden_tooltip = {
@@ -454,12 +470,6 @@ decisions = {
 				40 = {
 					modifier = {
 						factor = 0
-						# TODO: really should put together some comprehensive scripted triggers for
-						# whether a character has a "mediocre/crappy," "immoral," "moral,"
-						# "special-triggered" or "especially good" nickname so that we can quit w/
-						# the brainless WoL way of assigning permanent nicknames essentially every
-						# damn time the character does something notable at all -- while being able
-						# to preserve particularly important nicknames and replace others coherently
 						OR = {
 							has_nickname = nick_the_restorer
 							has_nickname = nick_the_lawgiver
@@ -473,7 +483,7 @@ decisions = {
 				50 = { give_nickname = nick_the_restorer }
 				10 = { give_nickname = nick_the_lawgiver }
 			}
-			set_character_flag = emf_no_law_penalties
+			set_flag = emf_no_law_penalties
 			primary_title = {
 				e_byzantium = {
 					if = {
@@ -512,16 +522,13 @@ decisions = {
 							add_law = revokation_2
 						}
 					}
-					# We don't use add_law so that it doesn't consume the lifetime cooldown upon
-					# succession law changes, should a player NOT want to be semi-irreversibly forced
-					# into primogeniture. Hence, the recalc_succession afterward.
 					if = {
 						limit = { PREV = { NOT = { has_law = succ_byzantine_elective } } }
-						add_law = { law = succ_byzantine_elective opinion_effect = no }
+						add_law = { law = succ_byzantine_elective cooldown = no opinion_effect = no }
 					}
 				}
 			}
-			clr_character_flag = emf_no_law_penalties
+			clr_flag = emf_no_law_penalties
 			hidden_tooltip = {
 				e_byzantium = { emf_try_to_make_primary_title = yes }
 			}
@@ -605,7 +612,7 @@ decisions = {
 			# and vassalize the religious head title (if any)
 			trigger_switch = {
 				on_trigger = religion
-				orthodox =	{ k_orthodox =	{ owner = { save_event_target_as = emf_relhead } } }
+				orthodox =    { k_orthodox =    { owner = { save_event_target_as = emf_relhead } } }
 				paulician =   { d_paulician =   { owner = { save_event_target_as = emf_relhead } } }
 				monothelite = { d_monothelite = { owner = { save_event_target_as = emf_relhead } } }
 				iconoclast =  { d_iconoclast =  { owner = { save_event_target_as = emf_relhead } } }
@@ -633,7 +640,7 @@ decisions = {
 					}
 					b_hagiasophia = {
 						grant_title_no_opinion = event_target:emf_relhead
-						hidden_tooltip = { remove_claim = event_target:emf_temple_owner }
+						hidden_effect = { remove_claim = event_target:emf_temple_owner }
 					}
 				}
 				event_target:emf_relhead = {
@@ -647,13 +654,57 @@ decisions = {
 				if = {
 					limit = {
 						is_title_active = THIS
-						owner = {
-							liege = { ai = yes }
-						}
+						has_holder = yes
 					}
 					owner = {
 						set_defacto_liege = ROOT
 						emf_liege_change = yes
+					}
+				}
+				else_if = { # Resurrect the Varangians (otherwise, found them in the first place the normal way)
+					limit = { has_global_flag = varangian_guard_founded }
+					activate_title = { title = d_varangian_guard status = yes }
+					hidden_effect = {
+						if = {
+							limit = { any_playable_ruler = { religion = norse_pagan_reformed } }
+							norse_pagan_reformed = { save_event_target_as = emf_varangian_religion }
+						}
+						else = {
+							norse_pagan = { save_event_target_as = emf_varangian_religion }
+						}
+						if = {
+							limit = {
+								gender_equality_trigger = yes
+							}
+							create_character = {
+								random_traits = yes
+								religion = event_target:emf_varangian_religion
+								culture = norse
+								dynasty = NONE
+								female = 50
+								age = 34
+								trait = skilled_tactician
+							}
+						}
+						else = {
+							create_character = {
+								random_traits = yes
+								religion = event_target:emf_varangian_religion
+								culture = norse
+								dynasty = NONE
+								female = no
+								age = 34
+								trait = skilled_tactician
+							}
+						}
+						new_character = {
+							add_trait = varangian
+							set_character_flag = is_chosen_varangian_leader
+							d_varangian_guard = {
+								grant_title = PREV
+							}
+							set_defacto_liege = ROOT
+						}
 					}
 				}
 			}
@@ -661,7 +712,7 @@ decisions = {
 			# TODO: Do similar to the de jure kingdom claim as below with temporarily free access to
 			# king-tier emf_subjugation.
 
-			hidden_tooltip = { # TODO: Custom tooltip.
+			hidden_effect = { # TODO: Custom tooltip.
 				if = {
 					limit = { ai = no }
 					add_character_modifier = {
