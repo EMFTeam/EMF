@@ -11178,10 +11178,7 @@ dejure_county_claim = {
 	}
 
 	is_valid_title = {
-		OR = {
-			FROM = { has_landed_title = PREV }
-			holder_scope = { is_liege_or_above = FROM }
-		}
+		owner_under_FROM = yes
 	}
 
 	on_add = {
@@ -11387,9 +11384,11 @@ dejure_barony_claim = {
 	}
 
 	can_use_title = {
-		emf_cb_can_use_de_jure_title = yes
+		tier = COUNT
 		owner_under_ROOT = yes
 		any_direct_de_jure_vassal_title = { owner_under_FROM = yes }
+		emf_cb_can_use_title = yes
+		#emf_cb_can_use_sahara_title = yes # Commented because we always want to be able to DoW for non-dejure baronies
 	}
 
 	on_add = {
@@ -11575,7 +11574,6 @@ other_dejure_county_claim = {
 		OR = {
 			ROOT = { is_nomadic = yes }
 			location = { emf_nomadic_province = no }
-			ROOT = { ai = no }
 			FROMFROM = { ai = no }
 		}
 		# "Catholics" may not press de jure claims for Rome vs. their rightful religious head (i.e., antipope > pope)
@@ -11590,6 +11588,7 @@ other_dejure_county_claim = {
 			}
 		}
 		emf_cb_thirdparty_can_use_title = yes
+		emf_cb_thirdparty_can_use_sahara_title = yes
 	}
 
 	is_valid_title = {
@@ -22569,34 +22568,28 @@ pepin_religious = {
 		}
 		modifier = { #The Papacy doesn't hold Rome, take action!
 			factor = 5
-			FROM = {
-				d_latium = {
-					OR = {
-						owner_under_PREV = yes
-						any_de_jure_vassal_title = { owner_under_PREVPREV = yes }
-					}
+			d_latium = {
+				OR = {
+					owner_under_FROM = yes
+					any_de_jure_vassal_title = { owner_under_FROM = yes }
 				}
 			}
 		}
 		modifier = { 
 			factor = 2
-			FROM = {
-				d_spoleto = {
-					OR = {
-						owner_under_PREV = yes
-						any_de_jure_vassal_title = { owner_under_PREVPREV = yes }
-					}
+			d_spoleto = {
+				OR = {
+					owner_under_FROM = yes
+					any_de_jure_vassal_title = { owner_under_FROM = yes }
 				}
 			}
 		}
 		modifier = { #Historical tweaking
 			factor = 0.25
-			FROM = {
-				d_benevento = {
-					OR = {
-						owner_under_PREV = yes
-						any_de_jure_vassal_title = { owner_under_PREVPREV = yes }
-					}
+			d_benevento = {
+				OR = {
+					owner_under_FROM = yes
+					any_de_jure_vassal_title = { owner_under_FROM = yes }
 				}
 			}
 		}
@@ -23357,8 +23350,8 @@ childrens_crusade = {
 				grant_title = ROOT
 				hidden_tooltip = { make_primary_title = yes } 
 				ROOT = { set_character_flag = emf_no_law_penalties }
-				add_law = succ_primogeniture
-				add_law = cognatic_succession
+				add_law = { law = succ_primogeniture cooldown = no opinion_effect = no }
+				add_law = { law = cognatic_succession cooldown = no opinion_effect = no }
 				ROOT = { clr_character_flag = emf_no_law_penalties }
 			}
 		}
@@ -25115,7 +25108,7 @@ northern_crusade_war = {
 		kingdom = {
 			has_title_flag = northern_crusade_active_target
 		}
-		# EMF: no standard title checks because this appears fully scripted
+		emf_cb_can_use_de_jure_title = yes
 	}
 
 	is_valid = {
@@ -25423,55 +25416,34 @@ shattered_world_county_conquest = {
 	
 	can_use_gui = {
 		emf_cb_can_use_gui = yes
-		conditional_tooltip = {
-			trigger = {
-				has_alternate_start_setting = {
-					setting = shattered_cbs
-					option = on_limited
-				}
+		trigger_if = {
+			limit = { NOT = { has_global_flag = emf_rapid_conquest } }
+			trigger_if = {
+				limit = { has_alternate_start_setting = { setting = shattered_cbs option = on_limited } }
+				total_years_played < 25
 			}
-			total_years_played < 25
-		}
-		conditional_tooltip = {
-			trigger = {
-				has_alternate_start_setting = {
-					setting = shattered_cbs
-					option = on_long
-				}
+			trigger_else_if = {
+				limit = { has_alternate_start_setting = { setting = shattered_cbs option = on_long } }
+				total_years_played < 100
 			}
-			total_years_played < 100
 		}
 	}
 	
 	can_use = {
 		emf_cb_can_use = yes
-		is_shattered_world = yes
-		NOT = {
-			has_alternate_start_setting = {
-				setting = shattered_cbs
-				option = off
-			}
-		}
-		conditional_tooltip = {
-			trigger = {
-				has_alternate_start_setting = {
-					setting = shattered_cbs
-					option = on_limited
+		OR = {
+			has_global_flag = emf_rapid_conquest
+			AND = {
+				is_shattered_world = yes
+				NOT = { has_alternate_start_setting = { setting = shattered_cbs option = off } }
+				trigger_if = {
+					limit = { has_alternate_start_setting = { setting = shattered_cbs option = on_limited } }
+					total_years_played < 25
 				}
-			}
-			NOT = {
-				total_years_played = 25
-			}
-		}
-		conditional_tooltip = {
-			trigger = {
-				has_alternate_start_setting = {
-					setting = shattered_cbs
-					option = on_long
+				trigger_else_if = {
+					limit = { has_alternate_start_setting = { setting = shattered_cbs option = on_long } }
+					total_years_played < 100
 				}
-			}
-			NOT = {
-				total_years_played = 100
 			}
 		}
 		ROOT = {
@@ -25481,24 +25453,8 @@ shattered_world_county_conquest = {
 	}
 
 	can_use_title = {
-		tier = COUNT
-		OR = {
-			FROM = {
-				has_landed_title = PREV
-			}
-			holder_scope = {
-				is_liege_or_above = FROM
-				NOT = { same_realm = ROOT }
-			}
-		}
-		NOR = {
-			ROOT = {
-				has_landed_title = PREV
-			}
-			holder_scope = {
-				is_liege_or_above = ROOT
-			}
-		}
+		emf_cb_county_conquest_basic_can_use_title = yes
+		emf_cb_can_use_title = yes
 		location = {
 			any_neighbor_province = {
 				OR = {
@@ -25512,8 +25468,6 @@ shattered_world_county_conquest = {
 				}
 			}
 		}
-		emf_cb_can_use_title = yes
-		emf_cb_can_use_sahara_title = yes
 	}
 
 	is_valid_title = {
@@ -25548,9 +25502,7 @@ shattered_world_county_conquest = {
 			usurp_title_plus_barony_if_unlanded = { target = ROOT type = invasion }
 			any_de_jure_vassal_title = { # take all baronies under the one we're fighting for
 				limit = {
-					NOT = {
-						de_facto_liege = PREV
-					}
+					NOT = { de_facto_liege = PREV }
 					owner_under_FROM = yes
 				}
 				usurp_title_plus_barony_if_unlanded = { target = ROOT type = invasion }
@@ -25696,10 +25648,11 @@ shattered_invasion = {
 		emf_imperial_decay_major_victory = yes
 		ROOT = {
 			prestige = 200
-			
 			hidden_tooltip = {
+				set_global_flag = emf_latb_upon_gain
 				occupy_minors_of_occupied_settlements = FROM
 				gain_all_occupied_titles = { who = FROM type = invasion }
+				clr_global_flag = emf_latb_upon_gain
 				if = {
 					limit = {
 						has_nickname = no
@@ -28596,7 +28549,7 @@ emf_norman_county_conquest = {
 
 	# ai importance placed on this CB: scope is the targeted title, ROOT is the attacking character, FROM is the defending character
 	ai_will_do = {
-		factor = 1
+		factor = 2
 		modifier = {
 			factor = 2.1
 			ROOT = { religion_group = FROM }
@@ -29252,7 +29205,7 @@ emf_other_dejure_county_claim_king = {
 		# Receiver is a vassal king and holds the de jure kingdom of this county
 		kingdom = {
 			holder_scope = {
-				is_liege_or_above = ROOT
+				vassal_of = ROOT
 			}
 		}
 		# Must NOT be more immediate de jure pretension in the attacker realm (incl. duchies of the kingdom holder)
@@ -31097,8 +31050,8 @@ emf_special_religious = {
 		emf_cb_can_use_gui = yes
 		ROOT = {
 			show_scope_change = no
-			conditional_tooltip = {
-				trigger = { is_patrician = yes }
+			trigger_if = {
+				limit = { is_patrician = yes }
 				custom_tooltip = {
 					text = emf_mr_ctt_extended_cbs_unlocked
 					hidden_tooltip = { has_game_rule = { name = mr_cb_restriction value = off } }
@@ -31320,11 +31273,7 @@ emf_subjugation = {
 						hidden_tooltip = {
 							crownlaw_title = {
 								owner_under_ROOT = yes
-								OR = {
-									has_law = crown_authority_2
-									has_law = crown_authority_3
-									has_law = crown_authority_4
-								}
+								emf_has_medium_ca_plus = yes
 							}
 						}
 					}
@@ -31336,10 +31285,7 @@ emf_subjugation = {
 						hidden_tooltip = {
 							crownlaw_title = {
 								owner_under_ROOT = yes
-								OR = {
-									has_law = crown_authority_3
-									has_law = crown_authority_4
-								}
+								emf_has_high_ca_plus = yes
 							}
 						}
 					}
@@ -31892,6 +31838,7 @@ emf_magyar_invasion = {
 		FROM = {
 			prestige = -250
 		}
+		pf_liege_change_under_title_begin_effect = yes
 		ROOT = {
 			prestige = 250
 			gain_settlements_under_title = {
@@ -31907,6 +31854,7 @@ emf_magyar_invasion = {
 				}
 			}
 		}
+		pf_liege_change_under_title_end_effect = yes
 	}
 
 	on_success_posttitle = { emf_cb_on_success_posttitle = yes }
@@ -33662,27 +33610,6 @@ emf_seljuk_invasion = {
 
 	defender_ai_defeat_worth = {
 		factor = 100
-		#additive_modifier = {
-		#	value = -20
-		#	NOT = { has_game_rule = { name = railroading value = passive } }
-		#	NOT = { # Sunni Caliph should not give up over k_mesopotamia/k_iraq too easily
-		#		FROM = { controls_religion = sunni }
-		#		c_baghdad = { kingdom = { title = PREVPREV } }
-		#	}
-		#}
-		#additive_modifier = {
-		#	value = -10
-		#	has_game_rule = { name = railroading value = aggressive }
-		#	NOT = { # Sunni Caliph should not give up over k_mesopotamia/k_iraq too easily
-		#		FROM = { controls_religion = sunni }
-		#		c_baghdad = { kingdom = { title = PREVPREV } }
-		#	}
-		#}
-		#additive_modifier = {
-		#	value = 20 # Sunni Caliph should not give up over k_mesopotamia/k_iraq too easily
-		#	FROM = { controls_religion = sunni }
-		#	c_baghdad = { kingdom = { title = PREVPREV } }
-		#}
 	}
 }
 
