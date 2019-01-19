@@ -465,11 +465,15 @@ character_event = {
     	is_female = no
     	OR = {
 	    	top_liege = {
-	    		gender_equality_trigger = yes
-	    	}
+				gender_equality_trigger = yes
+			}
 	    	any_playable_ruler = {
 	    		religion_openly_norse_or_reformed_trigger = yes
-	    		has_religion_feature = religion_matriarchal
+				OR = {
+					has_religion_feature = religion_matriarchal
+					has_religion_feature = religion_equal
+					has_religion_feature = religion_feature_bon
+				}
 	    	}
     	}
     }
@@ -478,43 +482,167 @@ character_event = {
     	set_character_flag = varangian_title_sorted
 
     	liege = { save_event_target_as = true_liege }
-
-    	if = {
-			limit = { gender_equality_trigger = yes }
-			create_character = {
-				random_traits = yes
-				religion = norse_pagan
-				culture = norse
-				dynasty = NONE
-				female = 50
-				age = 34
-				trait = skilled_tactician
-			}
+		
+		if = {
+			limit = { any_playable_ruler = { religion = norse_pagan_reformed } }
+			norse_pagan_reformed = { save_event_target_as = emf_varangian_religion }
 		}
 		else_if = {
 			limit = {
 				any_playable_ruler = {
-		    		religion_openly_norse_or_reformed_trigger = yes
-		    		has_religion_feature = religion_matriarchal
-		    	}
+					religion = norse_pagan
+					OR = {
+						has_religion_feature = religion_matriarchal
+						has_religion_feature = religion_equal
+						has_religion_feature = religion_feature_bon
+					}
+				}
+			}
+			norse_pagan = { save_event_target_as = emf_varangian_religion }
+		}
+		else = {
+			religion_scope = { save_event_target_as = emf_varangian_religion }
+		}
+    	if = {
+			limit = { event_target:emf_varangian_religion = { has_religion_feature = religion_matriarchal } }
+			create_character = {
+				random_traits = yes
+				dynasty = actually_culture
+				religion = event_target:emf_varangian_religion
+				culture = norse
+				female = yes
+				age = 28
+				attributes = { martial = 7 }
+			}
+		}
+		else_if = {
+			limit = {
+				OR = {
+					top_liege = {
+						gender_equality_trigger = yes
+					}
+					event_target:emf_varangian_religion = { has_religion_feature = religion_equal }
+					event_target:emf_varangian_religion = { has_religion_feature = religion_feature_bon }
+				}
 			}
 			create_character = {
 				random_traits = yes
-				religion = norse_pagan
+				dynasty = actually_culture
+				religion = event_target:emf_varangian_religion
 				culture = norse
-				dynasty = NONE
-				female = yes
-				age = 34
-				trait = skilled_tactician
+				female = 50  # 50% chance of being female
+				age = 28
+				attributes = { martial = 7 }
+			}
+		}
+		else = {
+			create_character = {
+				random_traits = yes
+				dynasty = actually_culture
+				religion = event_target:emf_varangian_religion
+				culture = norse
+				female = no
+				age = 28
+				attributes = { martial = 7 }
 			}
 		}
 		new_character = {
+			random_list = {
+				60 = { }
+				40 = { change_martial = 1 }
+				20 = { change_martial = 2 }
+				10 = { change_martial = 3 }
+			}
+			remove_trait = weak
+			remove_trait = slow
+			remove_trait = imbecile
+			remove_trait = dull
+			emf_remove_lifestyle_traits = yes
+			random_list = {
+				50 = { }
+				12 = { add_trait = duelist }
+				12 = { add_trait = hunter }
+				12 = { add_trait = strategist }
+				8  = { add_trait = robust }
+				3  = { add_trait = tall }
+				3  = { add_trait = imposing }
+				2  = {
+					add_trait = tall
+					add_trait = imposing
+				}
+			}
+			random = {
+				chance = 1
+				modifier = {
+					factor = 0
+					NOT = { has_dlc = "Reapers" }
+				}
+				add_trait = one_eyed
+			}
+			if = {
+				limit = { is_female = yes }
+				add_trait = shieldmaiden
+			}
+			clear_education_trait = yes
+			random_list = {
+				10 = { add_trait = misguided_warrior }
+				20 = { add_trait = tough_soldier }
+				30 = { add_trait = skilled_tactician }
+				40 = { add_trait = brilliant_strategist }
+			}
+			if = {
+				limit = {
+					trait = brilliant_strategist
+					leader_traits == 0
+				}
+				random_list = {
+					10 = { add_trait = inspiring_leader }
+					10 = { add_trait = siege_leader }
+					10 = { add_trait = organizer }
+					10 = { add_trait = cavalry_leader }
+					10 = { add_trait = heavy_infantry_leader }
+				}
+			}
+			random = { chance = 50 add_trait = brave }
+			health = 1.5
+			random_list = {
+				10 = { add_age = 1 }
+				10 = { add_age = 2 }
+				20 = { add_age = 3 }
+				40 = { add_age = 4 }
+				20 = { add_age = 5 }
+				10 = { add_age = 6 }
+				10 = { add_age = 7 }
+			}
 			add_trait = varangian
+			emf_new_character_noble = yes
 			set_character_flag = is_chosen_varangian_leader
 			d_varangian_guard = {
 				grant_title = PREV
 			}
 			set_defacto_liege = event_target:true_liege
+			if = {
+				limit = {
+					should_evolve_cultures_trigger = yes
+					has_global_flag = norse_culture_flipping
+					NOT = {
+						any_independent_ruler = { # A culturally unified empire shouldn't shatter norse
+							culture = norse
+							OR = {
+								tier = EMPEROR
+								num_of_king_titles = 2
+							}
+						}
+					}
+					NOT = { religion_head = { culture = norse } }
+				}
+				random_list = {
+					25 = { culture = swedish }
+					25 = { culture = norwegian }
+					25 = { culture = danish }
+					25 = { culture = gothic }
+				}
+			}
 		}
     }
 }
