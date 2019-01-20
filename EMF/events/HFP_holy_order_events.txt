@@ -460,17 +460,35 @@ character_event = {
     id = HFP.44005
     hide_window = yes
     is_triggered_only = yes
+
     trigger = {
-    	year = 1150
-    	NOT = {
-    		has_global_flag = teutons_asked_for_land
-    	}
+    	NOT = { has_global_flag = teutons_asked_for_land }
+		# Checking that the Teutonics don't already have a Duchy (are not currently landed meaningfully)
+		num_of_count_titles_in_realm == 0
+		# Checking that the Teutonics aren't already in a Northern Crusade
+		NOT = { any_war = { using_cb = northern_crusade_war } }
+    	event_target:holy_order_potential_title = {
+			# Checking that FROM doesn't already own the associated Kingdom of THIS title
+			NOT = { kingdom = { holder = FROM } }
+			# Checking that FROM has the whole Duchy
+    		NOT = { any_direct_de_jure_vassal_title = { owner_under_FROM = no } }
+			# Make sure it doesn't have a player's counties in it, unless they're FROM's (because we're going
+			# to take those titles hard and fast, only asking the winner of this war about it)
+			NOT = {
+				any_direct_de_jure_vassal_title = {
+					owner = {
+						OR = {
+							ai = yes
+							NOT = { character = FROM }
+						}
+					}
+				}
+			}
+		}
     }
 
     immediate = {
-    	FROM = {
-    		letter_event = { id = HFP.44006 }
-    	}
+    	FROM = { letter_event = { id = HFP.44006 } }
     	set_global_flag = teutons_asked_for_land
     }
 }
@@ -511,42 +529,15 @@ letter_event = {
 			event_target:holy_order_potential_title = {
 				# Destroy the Duchy title, if there is any
 				if = {
-					limit = {
-						owner = {
-							OR = {
-								character = ROOT
-								any_liege = {
-									character = ROOT
-								}
-							}
-						}
-					}
+					limit = { owner_under_ROOT = yes }
 					destroy_landed_title = THIS
 				}
 				# Give the Teutonics all the land you hold in the area
 				any_direct_de_jure_vassal_title = {
-					limit = {
-						owner = {
-							OR = {
-								character = ROOT
-								any_liege = {
-									character = ROOT
-								}
-							}
-						}
-					}
+					limit = { owner_under_ROOT = yes }
 					grant_title_no_opinion = FROM
 					any_direct_de_jure_vassal_title = {
-						limit = {
-							owner = {
-								OR = {
-									character = ROOT
-									any_liege = {
-										character = ROOT
-									}
-								}
-							}
-						}	
+						limit = { owner_under_ROOT = yes }	
 						grant_title_no_opinion = FROM
 					}
 				}
