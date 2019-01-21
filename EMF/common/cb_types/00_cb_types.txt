@@ -3869,22 +3869,16 @@ new_crusade = {
 	sort_priority = 3000
 
 	can_use_gui = {
+		trigger_if = {
+			limit = { ROOT = { ai = no } }
+			emf_cb_can_use_gui = yes
+		}
 		ROOT = {
 			uses_new_crusade = yes
 			has_called_crusade = no
-			religion_authority = 0.05
+			religion_authority = 0.3
 			trigger_if = {
-				limit = { ai = no }
-				emf_cb_can_use_gui = yes
-			}
-			conditional_tooltip = {
-				trigger = {
-					is_alternate_start = yes
-					has_alternate_start_parameter = {
-						key = religion_names
-						value = random
-					}
-				}
+				limit = { has_random_religion_names = yes }
 				custom_tooltip = {
 					text = ALT_GHW_STARTED
 					has_global_flag = muslim_jihads_unlocked
@@ -3892,54 +3886,62 @@ new_crusade = {
 					has_global_flag = christian_crusades_unlocked
 				}
 			}
-			conditional_tooltip = {
-				trigger = {
-					NOT = {
-						has_alternate_start_parameter = {
-							key = religion_names
-							value = random
-						}
-					}
-				}
+			trigger_else = {
 				religion_group = christian
 				custom_tooltip = {
 					text = CTT_CHRISTIAN_CRUSADES_UNLOCKED
 					has_global_flag = christian_crusades_unlocked
 				}
 			}
-			mercenary = no
 		}
 	}
 
 	can_use = {
+		# emf_cb_can_use might block a crusade from being called for irrelevant reasons
+		# ... but do block the mongol and seljuk invasion AIs from somehow being able to call a crusade
+		trigger_if = {
+			limit = { ROOT = { ai = no } }
+			emf_cb_can_use = yes
+		}
+		trigger_else = {
+			ROOT = {
+				emf_mongol_invasion_mission = no
+				emf_seljuk_invasion_mission = no
+			}
+		}
 		ROOT = {
 			uses_new_crusade = yes
 			can_call_crusade = yes
 			hidden_tooltip = {
 				NOT = { has_character_modifier = cancel_crusade_cooldown }
 			}
+			mercenary = no
 		}
 		FROM = {
 			NOT = { religion = ROOT }
 			OR = {
 				NOT = { religion_group = ROOT }
+				is_heresy_of = ROOT
+				is_parent_religion = ROOT
 				AND = {
 					has_character_flag = fourth_crusade_target
-					NOR = {
-						has_character_flag = fourth_crusade_recipient 
-						religion = ROOT
-					}
+					NOT = { has_character_flag = fourth_crusade_recipient }
 				}
 				AND = {
 					has_global_flag = 4th_crusade_official
 					has_landed_title = e_byzantium
-					NOT = { religion = ROOT }
 				}
-				is_heresy_of = ROOT
-				is_parent_religion = ROOT
-				religion_group = pagan_group
-				ROOT = { religion = paulician }
-				ROOT = { religion = kharijite }
+				ROOT = {
+					OR = {
+						AND = {
+							NOT = { is_reformed_religion = PREV }
+							religion_group = pagan_group
+						}
+						religion_group = muslim
+						religion = paulician
+						religion = kharijite
+					}
+				}
 			}
 		}
 		ROOT = {
@@ -3954,29 +3956,51 @@ new_crusade = {
 				}
 			}
 		}
-		OR = {
-			ROOT = { ai = yes }
-			emf_cb_can_use = yes
-		}
 	}
 
 	can_use_title = {
+		emf_cb_can_use_de_jure_title = yes
 		FROM = {
+			independent = yes # Don't declare Crusades on revolters - chances are high the war will invalidate
 			any_realm_title = {
+				tier = COUNT
 				de_jure_liege_or_above = PREVPREV
 			}
-			independent = yes # Don't declare Crusades on revolters - chances are high the war will invalidate
 			OR = {
-				num_of_realm_counties = {
-					value = 6
-					title = PREV
-				}
-				PREV = {
-					title = k_thrace
+				num_of_realm_counties = { value = 6 title = PREV }
+				AND = {
+					PREV = { title = k_thrace }
+					has_global_flag = 4th_crusade_official
 				}
 			}
 		}
-		emf_cb_can_use_de_jure_title = yes
+		# Restrictions on crusade targets for AI religion heads
+		OR = {
+			ROOT = { ai = no }
+			# The target owns a holy site within that kingdom title
+			FROM = {
+				any_realm_title = {
+					de_jure_liege_or_above = PREVPREV
+					is_holy_site = ROOT
+				}
+			}
+			any_direct_de_jure_vassal_title = {
+				any_direct_de_jure_vassal_title = {
+					location = {
+						OR = {
+							# The target owns a province of their religion within that kingdom title
+							AND = {
+								owner_under_FROM = yes
+								religion = ROOT
+							}
+							# A ruler of the target's religion owns a province in that kingdom or is neighboring it
+							owner = { religion = ROOT }
+							any_neighbor_province = { owner = { religion = ROOT } }
+						}
+					}
+				}
+			}
+		}
 	}
 	
 	is_valid = {
@@ -3986,21 +4010,36 @@ new_crusade = {
 		FROM = {
 			NOT = { religion = ROOT }
 			OR = {
-				NOT = { religion = ROOT }
+				NOT = { religion_group = ROOT }
 				is_heresy_of = ROOT
 				is_parent_religion = ROOT
-				ROOT = { religion_group = pagan_group }
-				ROOT = { religion = paulician }
-				ROOT = { religion = kharijite }
+				AND = {
+					has_character_flag = fourth_crusade_target
+					NOT = { has_character_flag = fourth_crusade_recipient }
+				}
+				AND = {
+					has_global_flag = 4th_crusade_official
+					has_landed_title = e_byzantium
+				}
+				ROOT = {
+					OR = {
+						AND = {
+							NOT = { is_reformed_religion = PREV }
+							religion_group = pagan_group
+						}
+						religion_group = muslim
+						religion = paulician
+						religion = kharijite
+					}
+				}
 			}
 		}
 	}
 
 	is_valid_title = {
-		FROM = {
-			any_realm_province = {
-				de_jure_liege_or_above = PREVPREV
-			}
+		any_de_jure_vassal_title = {
+			tier = COUNT
+			owner_under_FROM = yes
 		}
 	}
 
@@ -4012,6 +4051,7 @@ new_crusade = {
 	on_success = {
 		log = "CB(new_crusade): VICTORY: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
 		emf_cb_holy_victory = yes
+		emf_imperial_decay_major_victory = yes
 	}
 
 	on_success_title = {
@@ -4037,18 +4077,24 @@ new_crusade = {
 			show_scope_change = no
 			participation_scaled_prestige = 500
 			participation_scaled_piety = 1000
-			religion_authority = {
-				modifier = won_crusade
-				years = 20
-			}
+			religion_authority = { modifier = won_crusade years = 20 }
+			pf_tradition_plus4_effect = yes
 		}
 		# Religion Authority and Prestige/Piety loss for the loser (Target of Crusade)
 		FROM = {
 			piety = -100
-			religion_authority = {
-				modifier = lost_crusade
-				years = 20
-			}			
+			religion_authority = { modifier = lost_crusade years = 20 }
+			pf_tradition_minus4_effect = yes
+		}
+		hidden_effect = { 
+			any_attacker = {
+				limit = { NOT = { character = ROOT } }
+				pf_tradition_plus4_effect = yes
+			}
+			any_defender = {
+				limit = { NOT = { character = FROM } }
+				pf_tradition_minus4_effect = yes
+			}
 		}
 		hidden_tooltip = {
 			if = { # Achievement
@@ -4624,17 +4670,24 @@ new_crusade = {
 					# Find a Catholic/Fraticelli lord for Cyprus
 					if = {
 						limit = {
+							OR = {
+								NOT = { has_global_flag = SWMH }
+								c_nicosia = {
+									owner = {
+										religion = FROM
+										ai = yes
+									}
+								}
+							}
 							c_famagusta = {
 								owner = {
 									religion = FROM
-									culture = FROM
 									ai = yes
 								}
 							}
 							c_limisol = {
 								owner = {
 									religion = FROM
-									culture = FROM
 									ai = yes
 								}
 							}
@@ -4654,15 +4707,13 @@ new_crusade = {
 							crusade_beneficiary = {
 								if = {
 									limit = { has_global_flag = SWMH }
-									grant_title_no_opinion = c_nicosia
+									c_nicosia = { usurp_title_plus_barony_if_unlanded = { target = PREV type = invasion } }
 								}
-								grant_title_no_opinion = c_famagusta
-								grant_title_no_opinion = c_limisol
-								grant_title_no_opinion = d_cyprus
-								grant_title_no_opinion = k_cyprus
-								d_cyprus = {
-									de_jure_liege = k_cyprus
-								}
+								c_famagusta = { usurp_title_plus_barony_if_unlanded = { target = PREV type = invasion } }
+								c_limisol = { usurp_title_plus_barony_if_unlanded = { target = PREV type = invasion } }
+								d_cyprus = { usurp_title_plus_barony_if_unlanded = { target = PREV type = invasion } }
+								grant_title = k_cyprus
+								d_cyprus = { de_jure_liege = k_cyprus }
 								set_defacto_liege = THIS
 								emf_liege_change = yes
 								character_event = { id = HFP.41090 days = 1 }
@@ -4810,9 +4861,9 @@ new_crusade = {
 							preferred_limit = {
 								tier = KING
 							}
-							grant_title_no_opinion = d_krete 
-							grant_title_no_opinion = c_kaneia
-							grant_title_no_opinion = c_chandax
+							c_kaneia = { usurp_title_plus_barony_if_unlanded = { target = PREV type = invasion } }
+							c_chandax = { usurp_title_plus_barony_if_unlanded = { target = PREV type = invasion } }
+							d_krete = { usurp_title_plus_barony_if_unlanded = { target = PREV type = invasion } }
 						}
 					}
 					if = {
@@ -5129,16 +5180,18 @@ new_crusade = {
 
 	on_fail = {
 		log = "CB(new_crusade): WHITEPEACE: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
-
 		ROOT = {
 			character_event = { id = HFP.41199 }
 		}
-
 		ROOT = {
 			show_scope_change = no
 			piety = -100
+			pf_tradition_minus2_effect = yes
 		}
-		
+		any_attacker = {
+			limit = { NOT = { character = ROOT } }
+			hidden_tooltip = { pf_tradition_minus2_effect = yes }
+		}
 		any_defender = {
 			limit = { NOT = { character = FROM } }
 			hidden_tooltip = { 
@@ -5147,21 +5200,25 @@ new_crusade = {
 				if = {
 					limit = {
 						uses_decadence = yes
+						NOT = { any_liege = { dynasty = PREV } }
 					}
 					participation_scaled_decadence = -50
 				}
+				pf_tradition_plus2_effect = yes
 			}
 		}
-		
 		FROM = {
+			show_scope_change = no
 			participation_scaled_piety = 200
 			participation_scaled_prestige = 100
 			if = {
 				limit = {
 					uses_decadence = yes
+					NOT = { any_liege = { dynasty = PREV } }
 				}
 				participation_scaled_decadence = -50
 			}
+			pf_tradition_plus2_effect = yes
 			if = {
 				limit = { 
 					has_dlc = "Legacy of Rome"
@@ -5208,10 +5265,10 @@ new_crusade = {
 	on_reverse_demand = {
 		log = "CB(new_crusade): DEFEAT: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
 		emf_cb_holy_defeat = yes
+		emf_imperial_decay_major_loss = yes
 		ROOT = {
 			character_event = { id = HFP.41199 }
 		}
-
 		ROOT = {
 			show_scope_change = no
 			transfer_scaled_wealth = {
@@ -5219,25 +5276,30 @@ new_crusade = {
 				value = 4.0
 			}
 			piety = -200
-			religion_authority = {
-				modifier = lost_crusade
-				years = 20
+			if = {
+				limit = {
+					uses_decadence = yes
+					NOT = { any_liege = { dynasty = PREV } }
+				}
+				participation_scaled_decadence = 35
 			}
+			religion_authority = { modifier = lost_crusade years = 20 }
+			pf_tradition_minus4_effect = yes
 		}
 		FROM = {
-			piety = 100
-			religion_authority = {
-				modifier = won_crusade
-				years = 20
-			}
+			show_scope_change = no
 			participation_scaled_piety = 300
 			participation_scaled_prestige = 150
 			if = {
 				limit = {
 					uses_decadence = yes
+					NOT = { any_liege = { dynasty = PREV } }
 				}
 				participation_scaled_decadence = -100
 			}
+			piety = 100
+			religion_authority = { modifier = won_crusade years = 20 }
+			pf_tradition_plus4_effect = yes
 			if = {
 				limit = { 
 					has_dlc = "Legacy of Rome"
@@ -5286,35 +5348,24 @@ new_crusade = {
 				if = {
 					limit = {
 						uses_decadence = yes
+						NOT = { any_liege = { dynasty = PREV } }
 					}
 					participation_scaled_decadence = -100
 				}
+				pf_tradition_plus4_effect = yes
 			}
 		}
 		any_attacker = {
-			limit = {
-				character = ROOT
-				uses_decadence = yes
-				NOT = {
-					any_liege = {
-						dynasty = PREV
+			limit = { NOT = { character = ROOT } }
+			hidden_tooltip = {
+				if = {
+					limit = {
+						uses_decadence = yes
+						NOT = { any_liege = { dynasty = PREV } }
 					}
+					participation_scaled_decadence = 35
 				}
-			}
-			participation_scaled_decadence = 35
-		}
-		any_attacker = {
-			limit = {
-				NOT = { character = ROOT }
-				uses_decadence = yes
-				NOT = {
-					any_liege = {
-						dynasty = PREV
-					}
-				}
-			}
-			hidden_tooltip = { 
-				participation_scaled_decadence = 35
+				pf_tradition_minus4_effect = yes
 			}
 		}
 
