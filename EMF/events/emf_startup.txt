@@ -80,11 +80,18 @@ character_event = {
 		# Map-specific changes (see emf_startup_map.txt)
 		character_event = { id = emf_startup.30 }
 
+		# Ensure the Persian Emperor doesn't hold the kingdom title too
+		if = {
+			limit = { e_persia = { owner = { has_landed_title = k_persia } } }
+			k_persia = { emf_destroy_title = yes }
+		}
+
 		# Add Court Anarchy trait during Anarchy at Samarra
 		if = {
 			limit = {
 				year >= 862
 				year < 870
+				is_alternate_start = no
 			}
 			d_sunni = {
 				owner = {
@@ -112,7 +119,10 @@ character_event = {
 			c_163119 = { set_character_flag = emf_will_never_bend_the_knee } # Ubbe
 		}
 
-		k_magyar = { set_title_flag = emf_autodestroy_exemption }
+		if = {
+			limit = { is_alternate_start = no }
+			k_magyar = { set_title_flag = emf_autodestroy_exemption }
+		}
 
 		# Run the [unnecessary] titular title autodestruction code upon every playable ruler now
 		any_playable_ruler = {
@@ -129,7 +139,13 @@ character_event = {
 		# Rum's existence always consumes k_anatolia's de jure territory
 		if = {
 			limit = { k_rum = { has_holder = yes } }
-			k_anatolia = { any_direct_de_jure_vassal_title = { de_jure_liege = k_rum } }
+			k_anatolia = {
+				any_direct_de_jure_vassal_title = { de_jure_liege = k_rum }
+				if = {
+					limit = { has_holder = no }
+					activate_title = { title = THIS status = no } # TODO: make sure rum-reclaimed event in PB_historical reactivates if nec.
+				}
+			}
 		}
 
 		# Prevent early mending of the Catholic Schism
@@ -154,9 +170,6 @@ character_event = {
 			limit = { e_mongol_empire = { has_holder = yes } }
 			set_global_flag = mongol_empire_arrival
 		}
-
-		# PB compatibility tweaks and setup
-		character_event = { id = emf_startup.4 }
 
 		# Initialize capital-connected territory tracking (note that this is also done on_startup as its own
 		# on_action, so I'm commenting-out this invocation until/if some code in campaign setup needs to have that
@@ -311,29 +324,7 @@ character_event = {
 	}
 }
 
-
-# emf_startup.4
-#
-# PB compatibility tweaks & setup
-character_event = {
-	id = emf_startup.4
-
-	is_triggered_only = yes
-	hide_window = yes
-
-	immediate = {
-		if = {
-			limit = { year = 1077 }
-			set_global_flag = rum_formed
-		}
-		# Ensure the Persian Emperor doesn't hold the kingdom title too
-		if = {
-			limit = { e_persia = { owner = { has_landed_title = k_persia } } }
-			k_persia = { emf_destroy_title = yes }
-		}
-	}
-}
-
+# emf_startup.4 -- FREE
 
 # emf_startup.5 [Playable ruler, FROM=Isis]
 #
@@ -1032,6 +1023,8 @@ character_event = {
 	hide_window = yes
 	is_triggered_only = yes
 
+	trigger = { has_random_religion_names = no }
+	
 	immediate = {
 		character_event = { id = emf_startup.42 } # Sunni
 		character_event = { id = emf_startup.43 } # Shi'ite
@@ -1160,12 +1153,17 @@ character_event = {
 	trigger = {
 		has_global_flag = varangian_guard_founded # set via history
 		e_byzantium = {
-			has_holder = yes
-			d_varangian_guard = {
-				NAND = {
-					is_title_active = THIS
-					owner = { vassal_of = PREVPREV }
+			owner = {
+				d_varangian_guard = {
+					NAND = {
+						is_title_active = THIS
+						owner = { vassal_of = PREVPREV }
+					}
 				}
+			}
+			OR = {
+				has_random_title_names = no
+				has_title_flag = alternate_byz
 			}
 		}
 	}
