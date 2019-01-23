@@ -2,6 +2,7 @@
 
 namespace = emf_hre
 
+# emf_hre.0 to emf_hre.49 reserved for karling-usurper mechanic
 
 # emf_hre.0 -- handle when a non-karling becomes king of a carolingien kingdom
 character_event = {
@@ -225,6 +226,48 @@ character_event = {
 			log = "---> [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID]) now has:"
 			log = "----> [This.karling_usurper_years_left.GetValue] years remaining"
 			log = "----> [This.karling_usurper_years_elapsed.GetValue] years elapsed"
+		}
+	}
+}
+
+
+# emf_hre.50
+#
+# Event triggered by on_new_holder to set the `emf_global_hre` global event target when `e_hre` or `e_hre_french`
+# are gained. While we're at it, if the _other_ HRE already exists at this time, go ahead and outright destroy the
+# newly-created title (strictly enforcing the invariant that only one HRE can exist at a time).
+character_event = {
+	id = emf_hre.50
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		FROM = {
+			OR = {
+				title = e_hre
+				title = e_hre_french
+			}
+		}
+		NOT = { FROMFROM = { always = yes } }
+		has_random_dejure_or_title_names = no
+	}
+
+	immediate = {
+		if = {
+			limit = { FROM = { title = e_hre } }
+			e_hre = { save_global_event_target_as = emf_global_hre }
+		}
+		else = {
+			e_hre_french = { save_global_event_target_as = emf_global_hre }
+		}
+		if = {
+			limit = {
+				e_hre = { has_holder = yes }
+				e_hre_french = { has_holder = yes }
+			}
+			log = "ERROR: emf_hre.50: somehow [From.GetID] was gained while its sister title was already held. auto-destroying [From.GetID]!"
+			FROM = { emf_destroy_title = yes }
 		}
 	}
 }
