@@ -70,10 +70,10 @@ character_event = {
 		k_italy = {
 			k_papacy = {
 				any_direct_de_jure_vassal_title = {
-					limit = { NOT = { title = d_latium } }
-					set_title_flag = emf_ex_ravenna
+					set_title_flag = emf_exarchate_of_ravenna
 					de_jure_liege = PREVPREV
 				}
+				d_latium = { de_jure_liege = PREV }
 			}
 		}
 
@@ -139,13 +139,7 @@ character_event = {
 		# Rum's existence always consumes k_anatolia's de jure territory
 		if = {
 			limit = { k_rum = { has_holder = yes } }
-			k_anatolia = {
-				any_direct_de_jure_vassal_title = { de_jure_liege = k_rum }
-				if = {
-					limit = { has_holder = no }
-					activate_title = { title = THIS status = no } # TODO: make sure rum-reclaimed event in PB_historical reactivates if nec.
-				}
-			}
+			k_anatolia = { any_direct_de_jure_vassal_title = { de_jure_liege = k_rum } }
 		}
 
 		# Prevent early mending of the Catholic Schism
@@ -626,38 +620,34 @@ character_event = {
 	}
 
 	immediate = {
-		# Recursively attempt to seize capital county baronies
+		# Recursively attempt to seize capital county preferred holdings
 		character_event = { id = emf_startup.11 }
 
-		# Recursively attempt to seize capital duchy baronies
+		# Recursively attempt to seize capital county allowed holdings
 		character_event = { id = emf_startup.12 }
 
-		# Recursively attempt to seize demesne baronies
+		# Recursively attempt to seize capital duchy baronies
 		character_event = { id = emf_startup.13 }
+
+		# Recursively attempt to seize demesne baronies
+		character_event = { id = emf_startup.14 }
 	}
 }
 
-
 # emf_startup.11 [Playable Ruler]
 #
-# Recursively seize baronies in capital county.
+# Recursively seize preferred holding types in capital county.
 character_event = {
 	id = emf_startup.11
 	hide_window = yes
 	is_triggered_only = yes
 
 	trigger = {
-		NOT = { over_max_demesne_size = 0 } # still has free capacity
+		over_max_demesne_size < 0
 		capital_scope = {
 			any_province_holding = {
-				OR = {
-					holding_type = castle
-					AND = {
-						ROOT = { religion_group = muslim }
-						holding_type = temple
-					}
-				}
-				holder_scope = {
+				is_preferred_holding_type = ROOT
+				owner = {
 					tier = BARON
 					vassal_of = ROOT
 					NOT = { historical = yes }
@@ -668,54 +658,81 @@ character_event = {
 
 	option = {
 		name = OK
-
 		capital_scope = {
 			random_province_holding = {
 				limit = {
-					OR = {
-						holding_type = castle
-						AND = {
-							ROOT = { religion_group = muslim }
-							holding_type = temple
-						}
-					}
-					holder_scope = {
+					is_preferred_holding_type = ROOT
+					owner = {
 						tier = BARON
 						vassal_of = ROOT
 						NOT = { historical = yes }
 					}
 				}
-				holder_scope = {
-					PREV = { grant_title_no_opinion = ROOT }
-					if = {
-						limit = {
-							NOR = {
-								is_ruler = yes
-								is_councillor = yes
-							}
-						}
-						emf_see_god = yes
-					}
+				owner = {
+					emf_startup_handle_random_vassal_baron = yes
 				}
 			}
 		}
-
 		# Tail-recurse
 		repeat_event = { id = emf_startup.11 }
 	}
 }
 
-
 # emf_startup.12 [Playable Ruler]
 #
-# Recursively seize baronies in capital duchy.
+# Recursively seize allowed holding types in capital county.
 character_event = {
 	id = emf_startup.12
 	hide_window = yes
 	is_triggered_only = yes
 
 	trigger = {
-		NOT = { over_max_demesne_size = 0 } # still has free capacity
+		over_max_demesne_size < 0
+		capital_scope = {
+			any_province_holding = {
+				is_allowed_holding_type = ROOT
+				owner = {
+					tier = BARON
+					vassal_of = ROOT
+					NOT = { historical = yes }
+				}
+			}
+		}
+	}
+
+	option = {
+		name = OK
+		capital_scope = {
+			random_province_holding = {
+				limit = {
+					is_allowed_holding_type = ROOT
+					owner = {
+						tier = BARON
+						vassal_of = ROOT
+						NOT = { historical = yes }
+					}
+				}
+				owner = {
+					emf_startup_handle_random_vassal_baron = yes
+				}
+			}
+		}
+		# Tail-recurse
+		repeat_event = { id = emf_startup.12 }
+	}
+}
+
+
+# emf_startup.13 [Playable Ruler]
+#
+# Recursively seize preferred holding types in capital duchy.
+character_event = {
+	id = emf_startup.13
+	hide_window = yes
+	is_triggered_only = yes
+
+	trigger = {
+		over_max_demesne_size < 0 # still has free capacity
 		capital_scope = {
 			duchy = {
 				ROOT = {
@@ -724,14 +741,8 @@ character_event = {
 							title = PREVPREVPREV
 						}
 						any_province_holding = {
-							OR = {
-								holding_type = castle
-								AND = {
-									ROOT = { religion_group = muslim }
-									holding_type = temple
-								}
-							}
-							holder_scope = {
+							is_preferred_holding_type = ROOT
+							owner = {
 								tier = BARON
 								vassal_of = ROOT
 								NOT = { historical = yes }
@@ -745,7 +756,6 @@ character_event = {
 
 	option = {
 		name = OK
-
 		capital_scope = {
 			duchy = {
 				ROOT = {
@@ -755,14 +765,8 @@ character_event = {
 								title = PREVPREVPREV
 							}
 							any_province_holding = {
-								OR = {
-									holding_type = castle
-									AND = {
-										ROOT = { religion_group = muslim }
-										holding_type = temple
-									}
-								}
-								holder_scope = {
+								is_preferred_holding_type = ROOT
+								owner = {
 									tier = BARON
 									vassal_of = ROOT
 									NOT = { historical = yes }
@@ -771,63 +775,41 @@ character_event = {
 						}
 						random_province_holding = {
 							limit = {
-								OR = {
-									holding_type = castle
-									AND = {
-										ROOT = { religion_group = muslim }
-										holding_type = temple
-									}
-								}
-								holder_scope = {
+								is_preferred_holding_type = ROOT
+								owner = {
 									tier = BARON
 									vassal_of = ROOT
 									NOT = { historical = yes }
 								}
 							}
 							holder_scope = {
-								PREV = { grant_title_no_opinion = ROOT }
-								if = {
-									limit = {
-										NOR = {
-											is_ruler = yes
-											is_councillor = yes
-										}
-									}
-									emf_see_god = yes
-								}
+								emf_startup_handle_random_vassal_baron = yes
 							}
 						}
 					}
 				}
 			}
 		}
-
 		# Tail-recurse
-		repeat_event = { id = emf_startup.12 }
+		repeat_event = { id = emf_startup.13 }
 	}
 }
 
 
-# emf_startup.13 [Playable Ruler]
+# emf_startup.14 [Playable Ruler]
 #
-# Recursively seize baronies in demesne.
+# Recursively seize preferred holding types in demesne.
 character_event = {
-	id = emf_startup.13
+	id = emf_startup.14
 	hide_window = yes
 	is_triggered_only = yes
 
 	trigger = {
-		NOT = { over_max_demesne_size = 0 } # still has free capacity
+		over_max_demesne_size < 0 # still has free capacity
 		any_demesne_province = {
 			any_province_holding = {
-				OR = {
-					holding_type = castle
-					AND = {
-						ROOT = { religion_group = muslim }
-						holding_type = temple
-					}
-				}
-				holder_scope = {
+				is_preferred_holding_type = ROOT
+				owner = {
 					tier = BARON
 					vassal_of = ROOT
 					NOT = { historical = yes }
@@ -838,18 +820,11 @@ character_event = {
 
 	option = {
 		name = OK
-
 		random_demesne_province = {
 			limit = {
 				any_province_holding = {
-					OR = {
-						holding_type = castle
-						AND = {
-							ROOT = { religion_group = muslim }
-							holding_type = temple
-						}
-					}
-					holder_scope = {
+					is_preferred_holding_type = ROOT
+					owner = {
 						tier = BARON
 						vassal_of = ROOT
 						NOT = { historical = yes }
@@ -858,44 +833,28 @@ character_event = {
 			}
 			random_province_holding = {
 				limit = {
-					OR = {
-						holding_type = castle
-						AND = {
-							ROOT = { religion_group = muslim }
-							holding_type = temple
-						}
-					}
-					holder_scope = {
+					is_preferred_holding_type = ROOT
+					owner = {
 						tier = BARON
 						vassal_of = ROOT
 						NOT = { historical = yes }
 					}
 				}
 				holder_scope = {
-					PREV = { grant_title_no_opinion = ROOT }
-					if = {
-						limit = {
-							NOR = {
-								is_ruler = yes
-								is_councillor = yes
-							}
-						}
-						emf_see_god = yes
-					}
+					emf_startup_handle_random_vassal_baron = yes
 				}
 			}
 		}
-
 		# Tail-recurse
-		repeat_event = { id = emf_startup.13 }
+		repeat_event = { id = emf_startup.14 }
 	}
 }
 
-# emf_startup.14 [Playable Ruler]
+# emf_startup.15 [Playable Ruler]
 #
 # Recursively create extra children for early bookmarks
 character_event = {
-	id = emf_startup.14
+	id = emf_startup.15
 
 	hide_window = yes
 	is_triggered_only = yes
@@ -933,7 +892,7 @@ character_event = {
 		# Move onto the next ruler
 		random_playable_ruler = {
 			limit = { emf_needs_extra_child = yes }
-			character_event = { id = emf_startup.14 }
+			character_event = { id = emf_startup.15 }
 		}
 	}
 }
