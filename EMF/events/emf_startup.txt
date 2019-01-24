@@ -212,11 +212,7 @@ character_event = {
 		character_event = { id = emf_coronation.1100 }
 
 		# Byzantine setup events
-		e_byzantium = {
-			holder_scope = {
-				character_event = { id = emf_imperial.1875 days = 1 }
-			}
-		}
+		e_byzantium = { owner = { character_event = { id = emf_imperial.1875 days = 1 } } }
 
 		# History's Forgotten Daughters
 		random_playable_ruler = {
@@ -1129,30 +1125,52 @@ character_event = {
 
 	trigger = {
 		has_global_flag = varangian_guard_founded # set via history
-		e_byzantium = {
-			owner = {
-				d_varangian_guard = {
-					NAND = {
-						is_title_active = THIS
-						owner = { vassal_of = PREVPREV }
+		OR = {
+			e_byzantium = {
+				owner = {
+					d_varangian_guard = {
+						NAND = {
+							is_title_active = THIS
+							owner = { vassal_of = PREVPREV }
+						}
 					}
 				}
 			}
-			OR = {
-				has_random_title_names = no
-				has_title_flag = alternate_byz
+			event_target:emf_global_alt_byz = {
+				owner = {
+					d_varangian_guard = {
+						NAND = {
+							is_title_active = THIS
+							owner = { vassal_of = PREVPREV }
+						}
+					}
+				}
 			}
 		}
 	}
 	
 	immediate = {
 		if = {
-			limit = { any_character = { religion = norse_pagan_reformed } }
-			norse_pagan_reformed = { save_event_target_as = emf_varangian_religion }
+			limit = {
+				NOT = {
+					event_target:emf_global_alt_byz = {
+						owner = {
+							d_varangian_guard = {
+								NAND = {
+									is_title_active = THIS
+									owner = { vassal_of = PREVPREV }
+								}
+							}
+						}
+					}
+				}
+			}
+			e_byzantium = { save_event_target_as = emf_liege_title }
 		}
 		else = {
-			orthodox = { save_event_target_as = emf_varangian_religion }
+			event_target:emf_global_alt_byz = { save_event_target_as = emf_liege_title }
 		}
+		event_target:emf_liege_title = { owner = { save_event_target_as = emf_liege } }
 		if = {
 			limit = {
 				should_evolve_cultures_trigger = yes
@@ -1168,7 +1186,7 @@ character_event = {
 				}
 				NOT = {
 					any_independent_ruler = {
-						religion = event_target:emf_varangian_religion
+						religion = event_target:emf_liege
 						religion_head = { culture = norse }
 					}
 				}
@@ -1184,15 +1202,15 @@ character_event = {
 			norse = { save_event_target_as = emf_varangian_culture }
 		}
 		d_varangian_guard = {
-			religion = event_target:emf_varangian_religion
+			unsafe_religion = event_target:emf_liege
 			culture = event_target:emf_varangian_culture
 		}
 		if = {
-			limit = { event_target:emf_varangian_religion = { has_religion_feature = religion_matriarchal } }
+			limit = { event_target:emf_liege = { has_religion_feature = religion_matriarchal } }
 			create_character = {
 				random_traits = yes
 				dynasty = actually_culture
-				religion = event_target:emf_varangian_religion
+				religion = event_target:emf_liege
 				culture = event_target:emf_varangian_culture
 				female = yes
 				age = 28
@@ -1201,16 +1219,18 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				OR = {
-					gender_equality_trigger = yes
-					event_target:emf_varangian_religion = { has_religion_feature = religion_equal }
-					event_target:emf_varangian_religion = { has_religion_feature = religion_feature_bon }
+				event_target:emf_liege = {
+					OR = {
+						gender_equality_trigger = yes
+						has_religion_feature = religion_equal
+						has_religion_feature = religion_feature_bon
+					}
 				}
 			}
 			create_character = {
 				random_traits = yes
 				dynasty = actually_culture
-				religion = event_target:emf_varangian_religion
+				religion = event_target:emf_liege
 				culture = event_target:emf_varangian_culture
 				female = 50  # 50% chance of being female
 				age = 28
@@ -1221,7 +1241,7 @@ character_event = {
 			create_character = {
 				random_traits = yes
 				dynasty = actually_culture
-				religion = event_target:emf_varangian_religion
+				religion = event_target:emf_liege
 				culture = event_target:emf_varangian_culture
 				female = no
 				age = 28
@@ -1296,7 +1316,10 @@ character_event = {
 				10 = { add_age = 6 }
 				10 = { add_age = 7 }
 			}
-			add_trait = varangian
+			if = {
+				limit = { has_random_title_names = no }
+				add_trait = varangian
+			}
 			emf_new_character_noble = yes
 			set_character_flag = is_chosen_varangian_leader
 			d_varangian_guard = {
@@ -1304,7 +1327,7 @@ character_event = {
 				grant_title = PREV
 			}
 			emf_create_courtiers = yes
-			set_defacto_liege = e_byzantium
+			set_defacto_liege = event_target:emf_liege
 		}
 	}
 }
