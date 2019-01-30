@@ -303,8 +303,7 @@ def print_triggers_event_desc(f):
 			['shiite', 'druze', 'hurufi',
 			'waqifi', 'zaydi', 'ismaili', 'qarmatian'], # EMF
 		'african_pagan_group':
-			['west_african_pagan_reformed', 'west_african_pagan',
-			'east_african_pagan_reformed', 'east_african_pagan'], # EMF
+			['west_african_pagan_reformed', 'west_african_pagan'],
 	}
 
 	for c in sorted(classes):
