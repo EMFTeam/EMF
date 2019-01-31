@@ -23,15 +23,11 @@ shattered_conqueror_spawn_effect = {
 		}
 		preferred_limit = {
 			is_adult = yes
-			NOT = {
-				age = 40
-			}
+			age < 40
 		}
 		preferred_limit = {
 			is_adult = yes
-			NOT = {
-				age = 60
-			}
+			age < 60
 		}
 		preferred_limit = {
 			is_adult = yes
@@ -223,7 +219,7 @@ shattered_conqueror_spawn_effect = {
 		}
 		if = {
 			limit = {
-				capital_scope = {
+				any_realm_province = {
 					port = yes
 				}
 			}
@@ -344,13 +340,7 @@ spawn_hre_effect = {
 						port = yes
 					}
 				}
-				NOT = {
-					empire = {
-						holder_scope = {
-							always = yes
-						}
-					}
-				}
+				empire = { has_holder = no }
 				holder_scope = {
 					independent = yes
 				}
@@ -373,13 +363,7 @@ spawn_hre_effect = {
 						port = yes
 					}
 				}
-				NOT = {
-					empire = {
-						holder_scope = {
-							always = yes
-						}
-					}
-				}
+				empire = { has_holder = no }
 				holder_scope = {
 					independent = yes
 				}
@@ -486,18 +470,32 @@ spawn_hre_effect = {
 					holder_scope = {
 						if = {
 							limit = {
-								NOT = {
-									character = event_target:target_ruler
-								}
 								independent = yes
+								lower_tier_than = event_target:target_ruler
+								OR = {
+									is_merchant_republic = yes
+									is_patrician = no
+								}
+								is_nomadic = no
+								OR = {
+									controls_religion = no
+									event_target:target_ruler = {
+										religion_head = { character = PREVPREV }
+									}
+								}
+								OR = {
+									holy_order = no
+									religion = event_target:target_ruler
+								}
 							}
 							set_defacto_liege = event_target:target_ruler
 						}
 					}
 				}
+				owner = { set_flag = emf_no_law_penalties }
 				if = {
 					limit = {
-						has_dlc = Zeus
+						has_dlc = "Zeus"
 					}
 					add_law = law_voting_power_1
 					add_law = war_voting_power_1
@@ -506,9 +504,9 @@ spawn_hre_effect = {
 					add_law = grant_title_voting_power_1
 					add_law = banish_voting_power_1
 					add_law = execution_voting_power_1
-					add_law = succession_voting_power_1
 				}
-				add_law = succ_hre_elective
+				add_law = { law = succ_hre_elective opinion_effect = no }
+				owner = { clr_flag = emf_no_law_penalties }
 			}
 			event_target:target_ruler = {
 				wealth = 1000
@@ -535,30 +533,41 @@ spawn_hre_effect = {
 						set_description = "bloodline_desc_great_conqueror"
 					}
 				}
+				any_realm_lord = {
+					limit = {
+						is_patrician = no
+						any_demesne_title = {
+							OR = {
+								is_landless_type_title = yes
+								is_primary_type_title = yes
+							}
+						}
+					}
+					any_demesne_title = {
+						limit = {
+							is_landless_type_title = no
+							is_primary_type_title = no
+						}
+						grant_title_no_opinion = event_target:target_ruler
+					}
+					set_defacto_liege = THIS
+				}
 				any_realm_character = {
 					religion = event_target:target_ruler
 				}
 				any_realm_province = {
 					religion = event_target:target_ruler
 				}
-				any_realm_character = {
-					limit = {
-						any_demesne_title = {
-							tier = KING
-						}
-					}
+				any_vassal = {
+					limit = { tier = KING }
 					any_demesne_title = {
-						limit = {
-							tier = KING
-						}
-						destroy_landed_title = THIS
+						limit = { tier = KING }
+						emf_destroy_title = yes
 					}
 				}
 				any_demesne_title = {
-					limit = {
-						tier = KING
-					}
-					unsafe_destroy_landed_title = THIS
+					limit = { tier = KING }
+					emf_unsafe_destroy_title = yes
 				}
 			}
 		}
@@ -586,9 +595,7 @@ spawn_hre_effect = {
 						has_title_flag = alternate_hre
 						has_title_flag = alternate_byz
 					}
-					holder_scope = {
-						always = yes
-					}
+					has_holder = yes
 				}
 				holder_scope = {
 					independent = yes
@@ -617,9 +624,7 @@ spawn_hre_effect = {
 						has_title_flag = alternate_hre
 						has_title_flag = alternate_byz
 					}
-					holder_scope = {
-						always = yes
-					}
+					has_holder = yes
 				}
 				holder_scope = {
 					independent = yes
@@ -715,12 +720,15 @@ spawn_hre_effect = {
 				}
 			}
 			empire = {
-				any_direct_de_jure_vassal_title = {
-					de_jure_liege = e_hre
-				}
 				save_event_target_as = title_coa
-				destroy_landed_title = THIS
-				activate_title = { title = THIS status = no }
+				if = {
+					limit = { NOT = { title = e_hre } }
+					any_direct_de_jure_vassal_title = {
+						de_jure_liege = e_hre # FIXME: What if e_hre was elsewhere on the map?
+					}
+					emf_destroy_title = yes
+					activate_title = { title = THIS status = no }
+				}
 			}
 			holder_scope = {
 				save_event_target_as = target_ruler
@@ -731,22 +739,36 @@ spawn_hre_effect = {
 				set_name="ALT_HRE"
 				adjective="ALT_HRE_ADJ"
 				set_short_name = yes
-				any_de_jure_vassal_title = {
+				any_de_jure_vassal_title = { # FIXME: wouldn't we want to do this from the top down to preserve structure? else, this guy is going to have 1,000,000 direct vassals
 					holder_scope = {
 						if = {
 							limit = {
-								NOT = {
-									character = event_target:target_ruler
-								}
 								independent = yes
+								lower_tier_than = event_target:target_ruler
+								OR = {
+									is_merchant_republic = yes
+									is_patrician = no
+								}
+								is_nomadic = no
+								OR = {
+									controls_religion = no
+									event_target:target_ruler = {
+										religion_head = { character = PREVPREV }
+									}
+								}
+								OR = {
+									holy_order = no
+									religion = event_target:target_ruler
+								}
 							}
 							set_defacto_liege = event_target:target_ruler
 						}
 					}
 				}
+				owner = { set_flag = emf_no_law_penalties }
 				if = {
 					limit = {
-						has_dlc = Zeus
+						has_dlc = "Zeus"
 					}
 					add_law = law_voting_power_1
 					add_law = war_voting_power_1
@@ -755,9 +777,9 @@ spawn_hre_effect = {
 					add_law = grant_title_voting_power_1
 					add_law = banish_voting_power_1
 					add_law = execution_voting_power_1
-					add_law = succession_voting_power_1
 				}
-				add_law = succ_hre_elective
+				add_law = { law = succ_hre_elective opinion_effect = no }
+				owner = { clr_flag = emf_no_law_penalties }
 			}
 			event_target:target_ruler = {
 				wealth = 1000
@@ -784,30 +806,41 @@ spawn_hre_effect = {
 						set_description = "bloodline_desc_great_conqueror"
 					}
 				}
+				any_realm_lord = {
+					limit = {
+						is_patrician = no
+						any_demesne_title = {
+							OR = {
+								is_landless_type_title = yes
+								is_primary_type_title = yes
+							}
+						}
+					}
+					any_demesne_title = {
+						limit = {
+							is_landless_type_title = no
+							is_primary_type_title = no
+						}
+						grant_title_no_opinion = event_target:target_ruler
+					}
+					set_defacto_liege = THIS
+				}
 				any_realm_character = {
 					religion = event_target:target_ruler
 				}
 				any_realm_province = {
 					religion = event_target:target_ruler
 				}
-				any_realm_character = {
-					limit = {
-						any_demesne_title = {
-							tier = KING
-						}
-					}
+				any_vassal = {
+					limit = { tier = KING }
 					any_demesne_title = {
-						limit = {
-							tier = KING
-						}
-						destroy_landed_title = THIS
+						limit = { tier = KING }
+						emf_destroy_title = yes
 					}
 				}
 				any_demesne_title = {
-					limit = {
-						tier = KING
-					}
-					unsafe_destroy_landed_title = THIS
+					limit = { tier = KING }
+					emf_unsafe_destroy_title = yes
 				}
 			}
 		}
