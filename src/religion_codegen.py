@@ -145,9 +145,9 @@ def print_file_header(f, spec=None):
 def generate_default_sr_localisation(loc, new_loc):
 	for r in g_religions:
 		base_key = 'secret_religious_society_' + r
-		add_loc_if_needed(loc, new_loc, base_key, 'the {} Society'.format(loc[r]))
+		add_loc_if_needed(loc, new_loc, base_key, 'the [{}.GetName] Society'.format(r))
 		add_loc_if_needed(loc, new_loc, base_key + '_desc',
-						  'In this society, secret followers of the {} religion try to advance their true faith and hope to one day be able to openly adopt it.'.format(loc[r]))
+						  'In this society, secret followers of the [{}.GetName] religion try to advance their true faith and hope to one day be able to openly adopt it.'.format(r))
 		add_loc_if_needed(loc, new_loc, base_key + '_leader_desc',
 						  'The High Priest, leading the international effort of bringing more people into the fold.')
 		add_loc_if_needed(loc, new_loc, base_key + '_currency', 'Devotion')
@@ -174,9 +174,9 @@ def print_modifiers_secret_community(f, loc, new_loc):
 		modifier = 'secret_{}_community'.format(r)
 		desc = modifier + '_desc'
 		if not loc.get(modifier):
-			new_loc[modifier] = 'Secret {} Community'.format(loc[r])
+			new_loc[modifier] = 'Secret [{}.GetName] Community'.format(r)
 		if not loc.get(desc):
-			new_loc[desc] = 'In secret, {0} faithfuls have organized around a small community in this province. From there it converts others, grows, and protects its own.'.format(loc[r])
+			new_loc[desc] = 'In secret, the [{}.GetName] faithful have organized around a small community in this province. From there it converts others, grows, and protects its own.'.format(r)
 		print('''\
 {} = {{
 	icon = 18
@@ -1140,7 +1140,7 @@ emf_sr_ai_try_to_join_society = {
 
 	for r in g_religions:
 		print('''\
-		200 = {{
+		150 = {{
 			trigger = {{ can_join_society = secret_religious_society_{0} }}
 			join_society = secret_religious_society_{0}
 			emf_sr_add_random_society_influence_if_small = yes
@@ -1193,21 +1193,21 @@ def print_decisions_secretly_convert_to_holy_site(f, loc, new_loc):
 	print('title_decisions = {', file=f)
 
 	for rel in g_religions:
+		if rel.endswith('_reformed'):
+			continue
 		decision = 'secretly_convert_to_{0}_holy_site'.format(rel)
 		desc = decision + '_desc'
 		if not loc.get(decision):
-			new_loc[decision] = 'Secretly Convert to ' + loc[rel]
+			new_loc[decision] = 'Secretly Convert to [{}.GetName]'.format(rel)
 		if not loc.get(desc):
-			new_loc[desc] = 'The §Y{0}§! pilgrims that flock to the holy site in §Y[Root.Location.GetName]§! impress me with the depth and passion of their faith. I am tempted to convert in secrecy...'.format(loc[rel])
+			new_loc[desc] = 'The §Y[{0}.GetName]§! pilgrims that flock to the holy site in §Y[Root.Location.GetName]§! impress me with the depth and passion of their faith. I am tempted to convert in secrecy...'.format(rel)
 		print('''\
 	{1} = {{
 		filter = owned
 		ai_target_filter = self
-
-		only_playable = yes
+		ai = no
 
 		from_potential = {{
-			ai = no
 			is_incapable = no
 			NOT = {{ secret_religion = {0} }}
 			NOT = {{ religion = {0} }}
@@ -1217,9 +1217,11 @@ def print_decisions_secretly_convert_to_holy_site(f, loc, new_loc):
 					religion = {0}
 					is_heretic = no
 				}}
-				any_character = {{
-					religion = {0}
-					is_heretic = no
+				any_independent_ruler = {{
+					any_realm_lord = {{
+						religion = {0}
+						is_heretic = no
+					}}
 				}}
 			}}
 		}}
@@ -1259,12 +1261,6 @@ def print_decisions_secretly_convert_to_holy_site(f, loc, new_loc):
 				piety = -250
 				set_secret_religion = {0}
 			}}
-		}}
-		revoke_allowed = {{
-			always = no
-		}}
-		ai_will_do = {{
-			factor = 0
 		}}
 	}}'''.format(rel, decision), file=f)
 
