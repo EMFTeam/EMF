@@ -196,15 +196,6 @@ character_event = {
 		# Initialize dynlevy
 		character_event = { id = emf_dynlevy.0 }
 
-		if = {
-			limit = { hip_religion = { is_name_randomized = yes } }
-			hip_religion = { set_name = "Ma’at" } # FIXME: TEST: no clue if this works. and definitely not a way to set the religion group name.
-		}
-		if = {
-			limit = { hip_culture = { is_name_randomized = yes } }
-			hip_culture = { set_name = "Great Pesedjet" } # FIXME: TEST: no clue if this works. and again, no way to set the culture group name for sure.
-		}
-
 		# Primary startup is done, so we raise the EMF flag.
 		set_global_flag = EMF
 
@@ -1288,6 +1279,71 @@ character_event = {
 	}
 }
 
+# emf_startup.100
+# on_alternate_start [ROOT = first character generated in random world]
+character_event = {
+	id = emf_startup.100
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		# Ensure hip_religion features are apt:
+		if = {
+			limit = { has_random_religion_features = yes }
+			log = "INFO: emf_startup.100: religion features randomized, so setting default values for hip_religion."
+			hip_religion = {
+				reset_religion_features_effect = yes
+				set_peace_piety_gain = 1
+				set_pacifist = yes
+				set_convert_other_groups = 0
+				set_convert_same_group = 0
+				set_ai_aggression = 0
+				set_hard_to_convert = yes
+				set_women_can_take_consorts = no
+				set_men_can_take_consorts = no
+				set_feminist = yes
+				set_pc_marriage = yes
+				set_bs_marriage = yes
+				set_divine_blood = yes
+				set_priests_can_inherit = no
+				set_allows_matrilineal_marriage = no
+				clear_intermarry = yes
+				set_religion_head = e_hip
+			}
+		}
+		if = {
+			limit = { e_hip = { has_holder = no } }
+			log = "ERROR: emf_startup.100: e_hip has no holder!"
+			# Create a placeholder e_hip ruler to receive event hip.5 (the on_death/reincarnate event in general):
+			create_character = {
+				random_traits = no
+				religion = hip_religion
+				culture = hip_culture
+				dynasty = none # prevents hip.5 from attaching the [real] new Isis as the daughter of this char
+			}
+			new_character = { grant_title = e_hip }
+		}
+		e_hip = { owner = { save_event_target_as = emf_isis } }
+		# If the real Isis doesn't own e_hip, replace the pretender Isis:
+		if = {
+			limit = { event_target:emf_isis = { NOT = { character = 606060 } } }
+			# Pass e_hip and other associated game state to a new, real Isis:
+			event_target:emf_isis = { character_event = { id = hip.5 } }
+			# Now that we're done with the random-world pretender Isis, execute her:
+			e_hip = {
+				owner = {
+					event_target:emf_isis = {
+						death = { killer = PREV death_reason = death_execution_beheading }
+					}
+				}
+			}
+		}
+		# Invoke the yearly maintenance cleanup event for Isis now:
+		e_hip = { owner = { character_event = { id = hip.0 } } }
+	}
+}
+
 # emf_startup.2000 [Isis]
 # on_startup (incl. save/reload)
 character_event = {
@@ -1300,10 +1356,12 @@ character_event = {
 
 	trigger = {
 		has_landed_title = e_hip
-		NOT = { has_global_flag = emf_v9_0a11 } # TODO / FIXME : CHANGE UPON RELEASE OR SAVE-COMPATIBILITY CHANGE
 	}
 
 	immediate = {
-		set_global_flag = emf_v9_0a11 # TODO / FIXME : CHANGE UPON RELEASE OR SAVE-COMPATIBILITY CHANGE
+		if = {
+			limit = { NOT = { has_global_flag = emf_v9_0a11 } }
+			set_global_flag = emf_v9_0a11 # TODO / FIXME : CHANGE UPON RELEASE OR SAVE-COMPATIBILITY CHANGE
+		}
 	}
 }
