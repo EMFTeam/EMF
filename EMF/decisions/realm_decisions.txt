@@ -1068,10 +1068,12 @@ decisions = {
 
 	expel_jews = {
 		only_independent = yes
-		ai_check_interval = 60
+		ai_check_interval = 240
 
 		potential = {
 			has_dlc = "Sons of Abraham"
+			is_adult = yes
+			holy_order = no
 			OR = {
 				AND = {
 					independent = yes
@@ -1086,111 +1088,200 @@ decisions = {
 			}
 			NOR = {
 				religion_group = jewish_group
+				secret_religion_group = jewish_group
 				has_character_modifier = expelled_jewish
 				is_nomadic = yes
-				secret_religion = jewish
-				secret_religion = samaritan
-				secret_religion = karaite
 			}
-			age = 16
 			NOT = {
 				has_character_flag = currently_considering_expelling_jews
-			}
-			NOT = {
-				government = order_government
 			}
 		}
 		allow = {
 			independent = yes
 			higher_real_tier_than = DUKE
+			prisoner = no
+			has_regent = no
+			is_incapable = no
+			trigger_if = {
+				limit = { real_tier = EMPEROR }
+				custom_tooltip = {
+					text = NEEDS_400_PRESTIGE_COST
+					prestige = 400
+				}
+			}
+			trigger_else = {
+				custom_tooltip = {
+					text = NEEDS_300_PRESTIGE_COST
+					prestige = 300
+				}
+			}
 			OR = {
 				religion_group = christian
 				religion_group = muslim
 				religion_group = zoroastrian_group
 			}
-			conditional_tooltip = {
-				trigger = {
-					any_realm_province = {
-						religion_group = jewish_group
-					}
-				}
-				NOT = { 
-					any_realm_province = { 
-						religion_group = jewish_group 
-					} 
-				}
+			trigger_if = {
+				limit = { any_realm_province = { religion_group = jewish_group } }
+				NOT = { any_realm_province = { religion_group = jewish_group } }
 			}
-			conditional_tooltip = {
-				trigger = {
-					any_realm_lord = {
-						religion_group = jewish_group
-					}
-				}
-				NOT = { 
-					any_realm_lord = { 
-						religion_group = jewish_group 
-					} 
-				}
+			trigger_if = {
+				limit = { any_realm_lord = { religion_group = jewish_group } }
+				NOT = { any_realm_lord = { religion_group = jewish_group } }
 			}
-			conditional_tooltip = {
-				trigger = {
-					has_character_flag = epidemic_blame_game
-				}
+			trigger_if = {
+				limit = { has_character_flag = epidemic_blame_game }
 				custom_tooltip = {
 					text = cannot_expel_jews_during_blame_game_chain_TT
 					always = no
 				}
 			}
-			prisoner = no
-			is_incapable = no
 			custom_tooltip = {
 				text = NOT_DESCENDANT_OF_A_JEWISH_SAINT	
-				hidden_trigger = {
-					NOT = { 
-						any_owned_bloodline = {
-							has_bloodline_flag = jewish_saintly_bloodline
-						}
-					}
-				}
+				hidden_trigger = { NOT = { any_owned_bloodline = { has_bloodline_flag = jewish_saintly_bloodline } } }
 			}
 		}
 		effect = {
 			set_character_flag = emf_context_expelled_jews
-			prestige = -100
-			scaled_wealth = 5
-			banish_religion = jewish
+			# Prestige cost:
+			if = {
+				limit = { real_tier = EMPEROR }
+				prestige = -400
+			}
+			else = {
+				prestige = -300
+			}
+			# Seizure of whatever assets we can get our hands on:
+			if = {
+				limit = { num_of_count_titles_in_realm >= 50 }
+				scaled_wealth = { value = 3.0 max = 1400 }
+			}
+			else_if = {
+				limit = { num_of_count_titles_in_realm >= 40 }
+				scaled_wealth = { value = 2.6 max = 1200 }
+			}
+			else_if = {
+				limit = { num_of_count_titles_in_realm >= 30 }
+				scaled_wealth = { value = 2.2 max = 1000 }
+			}
+			else_if = {
+				limit = { num_of_count_titles_in_realm >= 20 }
+				scaled_wealth = { value = 1.8 max = 800 }
+			}
+			else_if = {
+				limit = { num_of_count_titles_in_realm >= 10 }
+				scaled_wealth = { value = 1.4 max = 600 }
+			}
+			else = {
+				scaled_wealth = { value = 1.0 max = 400 }
+			}
 			if = {
 				limit = { trait = sympathy_judaism }
 				remove_trait = sympathy_judaism
 			}
 			if = {
+				limit = { NOT = { trait = arbitrary } }
+				random = { chance = 50 emf_notify_add_arbitrary = yes }
+			}
+			if = {
 				limit = {
-					NOT = { trait = arbitrary }
-					OR = {
-						has_character_modifier = small_loan
-						has_character_modifier = medium_loan
-						has_character_modifier = large_loan
-						has_character_modifier = huge_loan
+					any_realm_lord = {
+						is_playable = yes
+						OR = {
+							trait = sympathy_judaism
+							educator = { religion_group = jewish_group }
+							betrothed = { religion_group = jewish_group }
+							any_spouse = { religion_group = jewish_group }
+							any_friend = { religion_group = jewish_group }
+							any_close_relative = { religion_group = jewish_group }
+							any_dynasty_member = {
+								religion_group = jewish_group
+								same_realm = ROOT
+							}
+							any_courtier = {
+								religion_group = jewish_group
+								OR = {
+									has_job_title = yes
+									has_minor_title = yes
+									reverse_opinion = { who = PREV value = 20 }
+									any_pupil = {
+										OR = {
+											is_close_relative = PREVPREV
+											dynasty = PREVPREV
+											is_friend = PREVPREV
+											any_spouse = {
+												OR = {
+													character = PREVPREVPREV
+													is_close_relative = PREVPREVPREV
+													dynasty = PREVPREVPREV
+												}
+											}
+											betrothed = {
+												OR = {
+													character = PREVPREVPREV
+													is_close_relative = PREVPREVPREV
+													dynasty = PREVPREVPREV
+												}
+											}
+										}
+									}
+								}
+							}
+						}
 					}
 				}
-				add_trait = arbitrary
+				custom_tooltip = {
+					text = WILL_ANGER_REALM_LORDS_WITH_JEWISH_SYMPATHIES_HEADER
+				}
+				any_realm_lord = {
+					show_scope_change = no
+					limit = {
+						is_playable = yes
+						OR = {
+							trait = sympathy_judaism
+							educator = { religion_group = jewish_group }
+							betrothed = { religion_group = jewish_group }
+							any_spouse = { religion_group = jewish_group }
+							any_friend = { religion_group = jewish_group }
+							any_close_relative = { religion_group = jewish_group }
+							any_dynasty_member = {
+								religion_group = jewish_group
+								same_realm = ROOT
+							}
+							any_courtier = {
+								religion_group = jewish_group
+								OR = {
+									has_job_title = yes
+									has_minor_title = yes
+									reverse_opinion = { who = PREV value = 20 }
+									any_pupil = {
+										OR = {
+											is_close_relative = PREVPREV
+											dynasty = PREVPREV
+											is_friend = PREVPREV
+											any_spouse = {
+												OR = {
+													character = PREVPREVPREV
+													is_close_relative = PREVPREVPREV
+													dynasty = PREVPREVPREV
+												}
+											}
+											betrothed = {
+												OR = {
+													character = PREVPREVPREV
+													is_close_relative = PREVPREVPREV
+													dynasty = PREVPREVPREV
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					opinion = { who = ROOT modifier = opinion_expelled_my_jews }
+				}
 			}
-			if = {
-				limit = { has_character_modifier = small_loan }
-				remove_character_modifier = small_loan
-			}
-			if = {
-				limit = { has_character_modifier = medium_loan }
-				remove_character_modifier = medium_loan
-			}
-			if = {
-				limit = { has_character_modifier = large_loan }
-				remove_character_modifier = large_loan
-			}
-			if = {
-				limit = { has_character_modifier = huge_loan }
-				remove_character_modifier = huge_loan
-			}
+			banish_religion = jewish
 			add_character_modifier = {
 				name = expelled_jewish
 				duration = -1
@@ -1198,8 +1289,6 @@ decisions = {
 			}
 			custom_tooltip = {
 				text = jews_are_expelled
-			}
-			hidden_tooltip = {
 				character_event = { id = SoA.105 }
 				add_character_modifier = {
 					name = expelled_jews_timer
@@ -1212,13 +1301,27 @@ decisions = {
 				remove_friend = ROOT
 				random = { chance = 50 add_rival = ROOT }
 			}
+			any_dynasty_member = {
+				limit = { religion_group = jewish_group }
+				random = { chance = 50 add_rival = ROOT }
+			}
+			any_close_relative = {
+				limit = { religion_group = jewish_group }
+				random = { chance = 60 add_rival = ROOT }
+			}
+			any_spouse = {
+				limit = { religion_group = jewish_group }
+				random = { chance = 70 add_rival = ROOT }
+			}
+			betrothed = {
+				if = {
+					limit = { religion_group = jewish_group }
+					random = { chance = 70 add_rival = ROOT }
+				}
+			}
 		}
 		ai_will_do = {
 			factor = 1
-
-			modifier = {
-				factor = 0.05 # Less likely to do it
-			}
 			modifier = {
 				factor = 0
 				any_courtier = {
@@ -1251,12 +1354,6 @@ decisions = {
 			modifier = {
 				factor = 0
 				trait = just
-				OR = {
-					has_character_modifier = small_loan
-					has_character_modifier = medium_loan
-					has_character_modifier = large_loan
-					has_character_modifier = huge_loan
-				}
 			}
 			modifier = {
 				factor = 1.2
@@ -1265,12 +1362,6 @@ decisions = {
 			}
 			modifier = {
 				factor = 2
-				OR = {
-					has_character_modifier = small_loan
-					has_character_modifier = medium_loan
-					has_character_modifier = large_loan
-					has_character_modifier = huge_loan
-				}
 				trait = greedy
 			}
 		}
