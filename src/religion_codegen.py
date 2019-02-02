@@ -47,7 +47,7 @@ def main():
 			if n.val.endswith('_trigger'):
 				continue
 			for n2, v2 in v:
-				if isinstance(v2, ck2parser.Obj) and n2.val not in ['color', 'male_names', 'female_names', 'interface_skin']:
+				if isinstance(v2, ck2parser.Obj) and n2.val not in ['color', 'male_names', 'female_names', 'interface_skin', 'alternate_start']:
 					if v2.has_pair('secret_religion', 'no'):
 						continue
 					g_religions.append(n2.val)
