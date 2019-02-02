@@ -8812,6 +8812,7 @@ pagan_subjugation = {
 	sprite = 8
 	truce_days = 365
 	is_permanent = yes
+	is_holy_war = yes
 	can_ask_to_join_war = yes
 	allowed_to_target_tributaries = no
 	defender_unoccupied_warscore = yes
@@ -8820,17 +8821,32 @@ pagan_subjugation = {
 
 	can_use_gui = {
 		emf_cb_can_use_gui = yes
+		# Attacker must be same- or higher-tier than defender, except same-tier case not allowed for KING/EMPEROR:
+		ROOT = {
+			OR = {
+				higher_tier_than = FROM
+				AND = {
+					tier = FROM
+					lower_tier_than = KING
+				}
+			}
+		}
 	}
 
 	can_use = {
 		emf_cb_can_use = yes
 		ROOT = {
+			NOT = { same_realm = FROM }
+			# DUKE+ attackers only:
+			higher_tier_than = COUNT
+			# This, but see can_use_gui for expansion of it:
+			NOT = { lower_tier_than = FROM }
+			# Unreformed pagan sans Hellenism:
 			religion_group = pagan_group
 			is_reformed_religion = no
 			NOT = { religion = hellenic_pagan }
-			NOT = { same_realm = FROM }
-			higher_tier_than = COUNT
 			mercenary = no
+			# Prefer other CBs potentially:
 			OR = {
 				AND = {
 					has_dlc = "Horse Lords"
@@ -8841,12 +8857,13 @@ pagan_subjugation = {
 					has_horde_culture = no # Should use tribal invasion instead
 				}
 			}
+			# Tribal government or elective gavelkind succession:
 			OR = {
 				is_tribal = yes
-				primary_title = {
-					has_law = succ_elective_gavelkind
-				}
+				primary_title = { has_law = succ_elective_gavelkind }
 			}
+			# No subjugation cooldown, or attacker has Become King ambition and FROM's realm is within his de jure
+			# capital kingdom:
 			OR = {
 				NOT = { has_character_modifier = launched_subjugation }
 				AND = {
@@ -8858,22 +8875,19 @@ pagan_subjugation = {
 					}
 				}
 			}
+			# Aztecs may only use this CB to attack each other:
 			OR = {
 				NOT = { ROOT = { religion = aztec } }
 				FROM = { religion = aztec }
 			}
 			# Must have a realm border unless Viking, in which case an adjacency through 1 seazone will also suffice
 			any_realm_province = {
+				owner_under_ROOT = yes
 				any_neighbor_province = {
 					OR = {
 						owner_under_FROM = yes
 						AND = {
-							ROOT = {
-								OR = {
-									religion = norse_pagan
-									religion = norse_pagan_reformed
-								}
-							}
+							ROOT = { religion = norse_pagan }
 							is_land = no
 							any_neighbor_province = { owner_under_FROM = yes }
 						}
@@ -8882,23 +8896,26 @@ pagan_subjugation = {
 			}
 		}
 		FROM = {
-			in_revolt = no
+			independent = yes
+			# Only can attack pagan targets (reformed allowed if same base religion as attacker) that are non-nomadic:
 			religion_group = pagan_group
 			is_nomadic = no
-			NOT = { is_offmap_governor = yes }
 			OR = {
 				is_reformed_religion = no
 				is_reformed_religion = ROOT
 			}
+			# Defender cannot already be defending against a subjugation CB:
 			NOT = {
 				any_war = {
-					defender = { character = PREVPREV }
+					defender = { character = ROOT_FROM }
 					OR = {
 						using_cb = pagan_subjugation
 						using_cb = nomad_subjugation
 					}
 				}
 			}
+			# No silliez:
+			NOT = { is_offmap_governor = yes }
 		}
 	}
 
@@ -8918,6 +8935,7 @@ pagan_subjugation = {
 		log = "CB(pagan_subjugation): VICTORY: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
 		emf_cb_victory = yes
 		ROOT = {
+			show_scope_change = no
 			piety = 50
 			participation_scaled_prestige = 100
 		}
@@ -8926,69 +8944,35 @@ pagan_subjugation = {
 			hidden_tooltip = { participation_scaled_prestige = 100 }
 		}
 		FROM = {
+			show_scope_change = no
 			piety = -50
 			prestige = -100
 			if = {
 				limit = {
 					is_reformed_religion = ROOT
-					controls_religion = no
+					emf_can_convert_religion = yes
 				}
 				religion = ROOT # Reformed pagans are forced to convert back
 			}
-			custom_tooltip = { text = tribal_subjugation_tip }
-			hidden_tooltip = {
-				any_demesne_title = {
-					limit = {
-						higher_tier_than = ROOT
-						NOT = { controls_religion = yes }
-					}
-					ROOT = {
-						usurp_title = {
-							target = PREV
-							type = invasion
-						}
-					}
-					add_pressed_claim = PREV
-				}
-				any_demesne_title = {
-					limit = {
-						tier = ROOT
-						NOT = { controls_religion = yes }
-					}
-					emf_cb_latb = yes
-					ROOT = {
-						usurp_title = {
-							target = PREV
-							type = invasion
-						}
-					}
-					add_pressed_claim = PREV
-				}
+			custom_tooltip = {
+				text = tribal_subjugation_tip
 				if = {
-					limit = { NOT = { any_demesne_title = { controls_religion = yes } } }
-					ROOT = { save_event_target_as = emf_cb_new_imperial_liege }
-					emf_set_viceroy_exemption = yes
-					set_defacto_liege = ROOT
-				}
-				if = {
-					limit = { any_demesne_title = { controls_religion = yes } }
-					any_vassal = {
-						ROOT = { save_event_target_as = emf_cb_new_imperial_liege }
-						emf_set_viceroy_exemption = yes
-						set_defacto_liege = ROOT
-						emf_liege_change = yes
-					}
+					limit = { controls_religion = yes }
+					any_vassal = { emf_ROOT_subjugate_ruler = yes }
 					any_demesne_title = {
-						limit = { NOT = { controls_religion = yes } }
-						emf_cb_latb = yes
-						ROOT = {
-							usurp_title = {
-								target = PREV
-								type = invasion
-							}
-						}
+						limit = { controls_religion = no }
+						usurp_title = { target = ROOT type = invasion }
 						add_pressed_claim = PREV
 					}
+					set_defacto_liege = THIS
+				}
+				else = {
+					any_demesne_title = {
+						limit = { tier = ROOT }
+						usurp_title = { target = ROOT type = invasion }
+						add_pressed_claim = PREV
+					}
+					emf_ROOT_subjugate_ruler = yes
 				}
 			}
 		}
@@ -14498,30 +14482,23 @@ nomad_subjugation = {
 
 	can_use_gui = {
 		emf_cb_can_use_gui = yes
-		OR = {
-			ROOT = { higher_tier_than = KING }
-			NOT = { FROM = { tier = EMPEROR } }
-		}
-		FROM = {
-			is_nomadic = no
-			OR = {
-				AND = {
-					is_tribal = yes
-					ROOT = { population = 2500 }
-				}
-				ROOT = { population = 10000 }
-				reverse_has_opinion_modifier = { # Note: my best interpretation of nonsense in 2.6.2
-					who = ROOT
-					modifier = declared_independence_nomad
-				}
-			}
-		}
 		ROOT = {
 			OR = {
-				prestige = 500
-				has_opinion_modifier = {
-					who = FROM
-					modifier = declared_independence_nomad
+				population >= 10000
+				FROM = {
+					is_tribal = yes
+					ROOT = { population >= 2500 }
+				}
+				has_opinion_modifier = { who = FROM modifier = declared_independence_nomad }
+			}
+			trigger_if = {
+				limit = { NOT = { ROOT = { prestige >= 500 } } }
+				OR = {
+					custom_tooltip = {
+						text = NEEDS_500_PRESTIGE_COST
+						prestige >= 500
+					}
+					has_opinion_modifier = { who = FROM modifier = declared_independence_nomad }
 				}
 			}
 		}
@@ -14530,36 +14507,27 @@ nomad_subjugation = {
 	can_use = {
 		emf_cb_can_use = yes
 		ROOT = {
+			is_nomadic = yes
+			NOT = { same_realm = FROM }
+			higher_tier_than = FROM
 			OR = {
 				ai = yes
 				multiplayer = no
-				NOT = {
-					has_game_rule = {
-						name = multiplayer_invasions
-						value = off
-					}
-				}
+				NOT = { has_game_rule = { name = multiplayer_invasions value = off } }
 			}
-			is_nomadic = yes
-			NOT = { same_realm = FROM }
-			NOT = { is_liege_or_above = FROM }
 			mercenary = no
 			OR = {
 				NOT = { has_character_modifier = launched_subjugation }
-				has_opinion_modifier = {
-					who = FROM
-					modifier = declared_independence_nomad
-				}
+				has_opinion_modifier = { who = FROM modifier = declared_independence_nomad }
 			}
 		}
 		FROM = {
-			in_revolt = no
+			independent = yes
 			is_nomadic = no # Nomads cannot be subjugated
 			NOT = { is_offmap_governor = yes }
-			NOT = { higher_tier_than = ROOT }
 			NOT = {
 				any_war = {
-					defender = { character = PREVPREV }
+					defender = { character = ROOT_FROM }
 					OR = {
 						using_cb = nomad_subjugation
 						using_cb = pagan_subjugation
@@ -14568,19 +14536,14 @@ nomad_subjugation = {
 			}
 		}
 		ROOT = {
-			any_realm_province = { any_neighbor_province = { owner_under_FROM = yes } }
+			any_realm_province = {
+				owner_under_ROOT = yes
+				any_neighbor_province = { owner_under_FROM = yes }
+			}
 		}
-		
 		OR = {
-			ROOT = {
-				ai = no
-			}
-			FROM = {
-				any_realm_title = {
-					tier = COUNT
-					count = 5
-				}
-			}
+			ROOT = { ai = no }
+			FROM = { num_of_count_titles_in_realm > 4 }
 		}
 	}
 
@@ -14588,14 +14551,7 @@ nomad_subjugation = {
 		log = "CB(nomad_subjugation): START: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
 		ROOT = {
 			if = {
-				limit = {
-					NOT = {
-						has_opinion_modifier = {
-							who = FROM
-							modifier = declared_independence_nomad
-						}
-					}
-				}
+				limit = { NOT = { has_opinion_modifier = { who = FROM modifier = declared_independence_nomad } } }
 				add_character_modifier = {
 					name = launched_subjugation
 					years = 100
@@ -14666,103 +14622,25 @@ nomad_subjugation = {
 			if = {
 				limit = {
 					is_reformed_religion = ROOT
-					controls_religion = no
+					emf_can_convert_religion = yes
 				}
 				religion = ROOT # Reformed pagans are forced to convert back
 			}
-			custom_tooltip = { text = tribal_subjugation_tip }
-			hidden_tooltip = {
-				set_defacto_liege = ROOT
-				any_demesne_title = {
-					limit = {
-						higher_tier_than = ROOT
-						NOT = { controls_religion = yes }
-					}
-					ROOT = {
-						grant_title_no_opinion = {
-							target = PREV
-							type = invasion
-						}
-					}
-					add_pressed_claim = PREV
-				}
+			custom_tooltip = {
+				text = tribal_subjugation_tip
 				if = {
-					limit = {
-						any_demesne_title = {
-							tier = ROOT
-							higher_tier_than = DUKE
-							NOT = { controls_religion = yes }
-						}
-					}
-					any_vassal = {
-						set_character_flag = emf_prior_vassal
-						set_defacto_liege = ROOT
-					}
+					limit = { controls_religion = yes }
+					any_vassal = { emf_ROOT_subjugate_ruler = yes }
 					any_demesne_title = {
-						limit = {
-							tier = ROOT
-							higher_tier_than = DUKE
-							NOT = { controls_religion = yes }
-						}
-						emf_destroy_title = yes
+						limit = { controls_religion = no }
+						usurp_title = { target = ROOT type = invasion }
 						add_pressed_claim = PREV
 					}
-					ROOT = {
-						any_vassal = {
-							limit = {
-								has_character_flag = emf_prior_vassal
-								lower_tier_than = PREVPREV
-							}
-							set_defacto_liege = PREVPREV
-						}
-						any_vassal = {
-							limit = { has_character_flag = emf_prior_vassal }
-							clr_character_flag = emf_prior_vassal
-							emf_liege_change = yes
-						}
-					}
-					any_vassal = {
-						limit = { has_character_flag = emf_prior_vassal }
-						clr_character_flag = emf_prior_vassal
-					}
+					set_defacto_liege = THIS
 				}
-				any_demesne_title = {
-					limit = {
-						tier = ROOT
-						NOT = { controls_religion = yes }
-					}
-					emf_cb_latb = yes
-					ROOT = {
-						grant_title_no_opinion = {
-							target = PREV
-							type = invasion
-						}
-					}
-					add_pressed_claim = PREV
+				else = {
+					emf_ROOT_subjugate_ruler = yes
 				}
-				if = {
-					limit = { NOT = { any_demesne_title = { controls_religion = yes } } }
-					set_defacto_liege = ROOT
-				}
-				if = {
-					limit = { any_demesne_title = { controls_religion = yes } }
-					any_vassal = {
-						set_defacto_liege = ROOT
-						emf_liege_change = yes
-					}
-					any_demesne_title = {
-						limit = { NOT = { controls_religion = yes } }
-						emf_cb_latb = yes
-						ROOT = {
-							grant_title_no_opinion = {
-								target = PREV
-								type = invasion
-							}
-						}
-						add_pressed_claim = PREV
-					}
-				}
-				emf_liege_change = yes
 			}
 		}
 	}
