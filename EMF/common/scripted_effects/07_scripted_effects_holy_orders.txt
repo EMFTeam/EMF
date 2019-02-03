@@ -1,0 +1,180 @@
+# -*- ck2.scripted_effects -*-
+
+check_holy_order_donation_effect = {
+	hidden_tooltip = {
+		save_event_target_as = holy_order_potential_title
+		emf_ask_for_potential_knights_hospitaler_cb_title = yes
+
+		if = { # Checking if it is a Duchy the Teutonics could be interested in
+			limit = {
+				# Teutons are only interested in Duchies after 1150
+				tier = DUKE
+    			year >= 1150
+				# Teutons active and match religion of the victorious attacker
+				d_teutonic_order = {
+					is_title_active = THIS
+					owner = { religion = ROOT }
+				}
+				ROOT = {
+					is_heretic = no
+					NOT = { has_flag = refused_to_give_land_to_teutonics }
+				}
+				d_teutonic_order = {
+					owner = {
+						# Checking that the Teutonics don't already have a Duchy (are not currently landed meaningfully)
+						num_of_count_titles_in_realm == 0
+						# Checking that the Teutonics aren't already in a Northern Crusade
+						NOT = { any_war = { using_cb = northern_crusade_war } }
+					}
+				}
+				# Checking that ROOT doesn't already own the associated Kingdom of THIS title
+				NOT = { kingdom = { holder = ROOT } }
+				# Checking that ROOT has the whole Duchy
+				NOT = { any_direct_de_jure_vassal_title = { owner_under_ROOT = no } }
+				# Somewhere in the north
+				any_direct_de_jure_vassal_title = {
+					location = {
+						OR = {
+							region = world_europe_north
+							region = custom_eastern_baltic
+							region = custom_russia
+						}
+					}
+				}
+				any_direct_de_jure_vassal_title = {
+					location = {
+						OR = {
+							port = yes # Is by water
+							any_neighbor_province = { # OR includes/borders coreligionists
+								OR = {
+									religion = ROOT
+									owner = { religion = ROOT }
+									owner = { any_liege = { religion = ROOT } }
+								}
+							}
+						}
+					}
+				}
+				# Is adjacent to or includes infidel lords
+				any_direct_de_jure_vassal_title = {
+					location = {
+						any_neighbor_province = {
+							owner = {
+								OR = {
+									NOT = { religion_group = ROOT }
+									any_liege = { NOT = { religion_group = ROOT } }
+								}
+							}
+						}
+					}
+				}
+				# Make sure it doesn't have a player's counties in it, unless they're ROOT's (because we're going
+				# to take those titles hard and fast, only asking the winner of this war about it)
+				NOT = {
+					any_direct_de_jure_vassal_title = {
+						owner = {
+							NOT = { character = ROOT }
+							ai = no
+						}
+					}
+				}
+			}
+			d_teutonic_order = { owner = { character_event = { id = HFP.44005 days = 1 } } }
+		}
+	}
+}
+
+holy_order_set_law_effect = {
+	owner = { set_flag = emf_no_law_penalties }
+	add_law = administration_1
+	add_law = centralization_3
+	if = {
+		limit = {
+			has_dlc = "Zeus"
+		}
+		add_law = ze_revokation_2
+		add_law = law_voting_power_0
+		add_law = war_voting_power_0
+		add_law = revoke_title_voting_power_0
+		add_law = imprison_voting_power_0
+		add_law = grant_title_voting_power_0
+		add_law = banish_voting_power_0
+		add_law = execution_voting_power_0
+	}
+	if = {
+		limit = { is_law_potential = crown_authority_2 }
+		add_law = crown_authority_2
+		if = {
+			limit = { is_law_potential = revokation_2 }
+			add_law = revokation_2
+		}
+	}
+	owner = { clr_flag = emf_no_law_penalties }
+}
+
+teutonic_order_upgrade_capital_effect = {
+	any_demesne_title = {
+		limit = {
+			tier = COUNT
+			holding_type = TRIBAL
+		}
+		location = { capital_holding = { convert_to = CASTLE } }
+		if = {
+			limit = {
+				location = { has_empty_holding = yes }
+				NOT = { any_direct_de_jure_vassal_title = { holding_type = CITY } }
+			}
+			location = { build_holding = { type = CITY } }
+		}
+		if = {
+			limit = {
+				location = { has_empty_holding = yes }
+				NOT = { any_direct_de_jure_vassal_title = { holding_type = TEMPLE } }
+			}
+			location = { build_holding = { type = TEMPLE } }
+		}
+	}
+	any_demesne_title = {
+		limit = {
+			tier = BARON
+			holding_type = TRIBAL
+		}
+		convert_to = CITY
+	}
+}
+
+holy_order_distribute_titles_effect = {
+	any_demesne_title = {
+		limit = {
+			NOT = {
+				holding_type = CASTLE
+			}
+			lower_tier_than = DUKE
+		}
+		if = {
+			limit = {
+				holding_type = CITY
+			}
+			create_random_steward = {
+				random_traits = yes
+				dynasty = none
+			}
+		}
+		else_if = {
+			limit = {
+				holding_type = TEMPLE
+			}
+			create_random_priest = {
+				random_traits = yes
+				dynasty = none
+			}
+		}
+		else = {
+			create_random_soldier = {
+				random_traits = yes
+				dynasty = none
+			}
+		}
+		grant_title_no_opinion = new_character
+	}
+}

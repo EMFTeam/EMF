@@ -6,15 +6,16 @@
 emf_cb_can_use_gui = {
 	ROOT = {
 		show_scope_change = no
-		conditional_tooltip = {
-			trigger = { has_character_modifier = emf_peace_pledge }
+		check_if_crusader_trigger = yes
+		trigger_if = {
+			limit = { has_character_modifier = emf_peace_pledge }
 			custom_tooltip = {
 				text = emf_cb_ctt_no_peace_pledge
 				hidden_tooltip = { always = no }
 			}
 		}
-		conditional_tooltip = {
-			trigger = {
+		trigger_if = {
+			limit = {
 				ai = no
 				OR = {
 					has_plot = plot_kidnap_liege
@@ -29,40 +30,14 @@ emf_cb_can_use_gui = {
 		}
 	}
 }
+
 emf_cb_can_use = {
 	ROOT = {
-		OR = {
-			ai = no
-			has_character_flag = emf_cb_pass_tmp
-			NOR = {
-				OR = {
-					emf_mongol_invasion_mission = yes
-					emf_seljuk_invasion_mission = yes
-				}
-				has_character_flag = emf_planning_tournament
-				has_character_flag = emf_holding_tournament
-				has_character_flag = planning_coronation
-				AND = {
-					trait = uncrowned
-					ai = yes
-					NAND = {
-						trait = ambitious
-						NOT = { trait = patient }
-					}
-				}
-			}
-		}
-		# Prevent vassal kings from bypassing Complete King's Peace
-		NAND = {
-			tier = KING
-			independent = no
-			crownlaw_title = {
-				has_law = king_peace_2
-				owner = { is_vassal_or_below = ROOT }
-			}
-		}
+		emf_cb_lacks_main_war_block = yes
+		emf_cb_is_war_blocked_by_laws = no
 	}
 }
+
 emf_cb_can_use_title = {
 	OR = {
 		FROM = { ai = no }
@@ -94,6 +69,7 @@ emf_cb_can_use_title = {
 	mercenary = no
 	emf_cb_can_use_magyar_title = yes
 }
+
 emf_cb_can_use_de_jure_title = {
 	FROM = {
 		OR = {
@@ -104,52 +80,77 @@ emf_cb_can_use_de_jure_title = {
 			NOT = { capital_holding = { de_jure_liege_or_above = PREVPREV } }
 		}
 	}
-	ROOT = {
-		# Prevent vassal kings from bypassing Complete King's Peace
-		NAND = {
-			tier = KING
-			independent = no
-			crownlaw_title = {
-				has_law = king_peace_2
-				owner = { is_vassal_or_below = ROOT }
+	emf_cb_can_use_sahara_title = yes
+	emf_cb_can_use_magyar_title = yes
+}
+
+# Prevent vassal kings from bypassing Complete King's Peace
+emf_cb_is_war_blocked_by_laws = {
+	tier = KING
+	crownlaw_title = {
+		has_law = king_peace_2
+		owner = { is_liege_of = PREVPREV }
+	}
+}
+
+# Does the attacker NOT have a blanket blocker on declaring war?
+emf_cb_lacks_main_war_block = {
+	OR = {
+		ai = no
+		has_flag = emf_cb_pass_tmp
+		NOR = {
+			OR = {
+				emf_mongol_invasion_mission = yes
+				emf_seljuk_invasion_mission = yes
+			}
+			has_flag = emf_planning_tournament
+			has_flag = emf_holding_tournament
+			has_flag = planning_coronation
+			# Prevent AI rulers from inappropriately declaring war before their coronation:
+			AND = {
+				ai = yes
+				emf_needs_coronation = yes
+				NAND = {
+					OR = {
+						trait = ambitious
+						trait = wroth
+					}
+					NOT = { trait = patient }
+				}
+				# HF coronation-for-war flags:
+				NOR = {
+					has_flag = flag_antipope_for_coronation
+					has_flag = flag_excommunicated_for_coronation
+					has_flag = flag_pepin_for_coronation
+				}
 			}
 		}
 	}
-	emf_cb_can_use_sahara_title = yes
-	emf_cb_can_use_magyar_title = yes
+}
+
+# Is THIS title inside the Sahara region?
+emf_cb_is_title_in_sahara = {
+	trigger_if = {
+		limit = { lower_tier_than = DUKE }
+		location = {
+			# Audax Validator "." Ignore_1006
+			region = emf_region_sahara
+		}
+	}
+	trigger_else = {
+		any_de_jure_vassal_title = {
+			lower_tier_than = DUKE
+			location = {
+				# Audax Validator "." Ignore_1006
+				region = emf_region_sahara
+			}
+		}
+	}
 }
 
 ## Helper triggers for the above (used by some non-DJ-title CBs too, like county conquest)
 emf_cb_can_use_sahara_title = {
 	OR = {
-		NOR = {
-			AND = {
-				lower_tier_than = DUKE
-				location = {
-					# Audax Validator "." Ignore_1006
-					region = emf_region_sahara
-				}
-			}
-			AND = {
-				tier = DUKE
-				any_direct_de_jure_vassal_title = {
-					location = {
-						# Audax Validator "." Ignore_1006
-						region = emf_region_sahara
-					}
-				}
-			}
-			AND = {
-				higher_tier_than = DUKE
-				any_de_jure_vassal_title = {
-					lower_tier_than = DUKE
-					location = {
-						# Audax Validator "." Ignore_1006
-						region = emf_region_sahara
-					}
-				}
-			}
-		}
 		ROOT = {
 			OR = {
 				ai = no
@@ -170,101 +171,111 @@ emf_cb_can_use_sahara_title = {
 				}
 			}
 		}
+		emf_cb_is_title_in_sahara = no
 	}
 }
 
 emf_cb_can_use_magyar_title = {
 	OR = {
-		ROOT = {
+		emf_alternate_start = yes
+		AND = {
 			OR = {
-				ai = no
-				NOT = { culture = hungarian }
-				top_liege = { NOT = { culture = hungarian } }
-			}
-		}
-		title = k_hungary
-		de_jure_liege_or_above = k_hungary
-		capital_scope = { region = emf_region_carpathia }
-		has_global_flag = emf_conquest_hungary_completed
-		NOT = { has_global_flag = emf_magyar_migration_completed }
-	}
-	OR = {
-		ROOT = {
-			OR = {
-				ai = no
-				NOR = {
-					culture = hungarian
-					top_liege = { culture = hungarian }
+				ROOT = {
+					OR = {
+						ai = no
+						NOT = { culture = hungarian }
+						top_liege = { NOT = { culture = hungarian } }
+					}
 				}
+				title = k_hungary
+				de_jure_liege_or_above = k_hungary
+				capital_scope = { region = emf_region_carpathia }
+				has_global_flag = emf_conquest_hungary_completed
+				NOT = { has_global_flag = emf_magyar_migration_completed }
+			}
+			OR = {
+				ROOT = {
+					OR = {
+						ai = no
+						NOR = {
+							culture = hungarian
+							top_liege = { culture = hungarian }
+						}
+					}
+				}
+				location = { region = emf_region_etelkoz }
+				capital_scope = { region = emf_region_etelkoz }
+				has_global_flag = emf_magyar_migration_completed
+				year >= 920
 			}
 		}
-		location = { region = emf_region_etelkoz }
-		capital_scope = { region = emf_region_etelkoz }
-		has_global_flag = emf_magyar_migration_completed
-		year = 920
 	}
 }
 
 emf_cb_can_use_thirdparty_magyar_title = {
 	OR = {
-		FROMFROM = {
+		emf_alternate_start = yes
+		AND = {
 			OR = {
-				ai = no
-				NOT = { culture = hungarian }
-				top_liege = { NOT = { culture = hungarian } }
-			}
-		}
-		title = k_hungary
-		de_jure_liege_or_above = k_hungary
-		capital_scope = { region = emf_region_carpathia }
-		has_global_flag = emf_conquest_hungary_completed
-		NOT = { has_global_flag = emf_magyar_migration_completed }
-	}
-	OR = {
-		FROMFROM = {
-			OR = {
-				ai = no
-				NOR = {
-					culture = hungarian
-					top_liege = { culture = hungarian }
+				FROMFROM = {
+					OR = {
+						ai = no
+						NOT = { culture = hungarian }
+						top_liege = { NOT = { culture = hungarian } }
+					}
 				}
+				title = k_hungary
+				de_jure_liege_or_above = k_hungary
+				capital_scope = { region = emf_region_carpathia }
+				has_global_flag = emf_conquest_hungary_completed
+				NOT = { has_global_flag = emf_magyar_migration_completed }
+			}
+			OR = {
+				FROMFROM = {
+					OR = {
+						ai = no
+						NOR = {
+							culture = hungarian
+							top_liege = { culture = hungarian }
+						}
+					}
+				}
+				location = { region = emf_region_etelkoz }
+				capital_scope = { region = emf_region_etelkoz }
+				has_global_flag = emf_magyar_migration_completed
+				year = 920
 			}
 		}
-		location = { region = emf_region_etelkoz }
-		capital_scope = { region = emf_region_etelkoz }
-		has_global_flag = emf_magyar_migration_completed
-		year = 920
 	}
 }
 
 #### Standard global CB triggers (third-party variants) ####
 
 emf_cb_thirdparty_can_use_gui = {
-	FROMFROM = {
-		show_scope_change = no
-		conditional_tooltip = {
-			trigger = { has_character_modifier = emf_peace_pledge }
-			custom_tooltip = {
-				text = emf_cb_ctt_no_peace_pledge
-				hidden_tooltip = { always = no }
-			}
+	check_if_crusader_thirdparty_trigger = yes
+	trigger_if = {
+		limit = { has_character_modifier = emf_peace_pledge }
+		custom_tooltip = {
+			text = emf_cb_ctt_no_peace_pledge
+			hidden_tooltip = { always = no }
 		}
-		conditional_tooltip = {
-			trigger = {
-				ai = no
-				OR = {
-					has_plot = plot_kidnap_liege
-					has_plot = plot_kidnapping
-				}
-				plot_target_char = { character = ROOT_FROM }
+	}
+	trigger_if = {
+		limit = {
+			ai = no
+			OR = {
+				has_plot = plot_kidnap_liege
+				has_plot = plot_kidnapping
 			}
-			custom_tooltip = {
-				text = emf_cb_ctt_target_must_not_be_kidnap_plot_target
-				hidden_tooltip = { always = no }
-			}
+			plot_target_char = { character = FROM }
+		}
+		custom_tooltip = {
+			text = emf_cb_ctt_target_must_not_be_kidnap_plot_target
+			hidden_tooltip = { always = no }
 		}
 	}
 }
+
 emf_cb_thirdparty_can_use = {
 	# WHY AM I COMMENTED-OUT: issue w/ FROMFROM scope in other_de_jure_county_claim being invalid in its can_use clause
 	#						 plus the fact that we don't really care about this case currently, so just disabling for
@@ -279,7 +290,12 @@ emf_cb_thirdparty_can_use = {
 	#	}
 	#}
 }
+
 emf_cb_thirdparty_can_use_title = {
+	FROMFROM = {
+		emf_cb_lacks_main_war_block = yes
+		emf_cb_is_war_blocked_by_laws = no
+	}
 	OR = {
 		FROM = { ai = no }
 		FROMFROM = { ai = no }
@@ -308,50 +324,13 @@ emf_cb_thirdparty_can_use_title = {
 	}
 	holy_order = no
 	mercenary = no
-	FROMFROM = {
-		OR = {
-			ai = no
-			has_character_flag = emf_cb_pass_tmp
-			NOR = {
-				OR = {
-					emf_mongol_invasion_mission = yes
-					emf_seljuk_invasion_mission = yes
-				}
-				has_character_flag = emf_planning_tournament
-				has_character_flag = emf_holding_tournament
-				has_character_flag = planning_coronation
-			}
-		}
-	}
-	# Prevent vassal kings from bypassing Complete King's Peace
-	FROMFROM = {
-		NAND = {
-			tier = KING
-			independent = no
-			NOT = { same_realm = ROOT_FROM }
-			crownlaw_title = {
-				has_law = king_peace_2
-				owner = { is_liege_of = ROOT_FROMFROM }
-			}
-		}
-	}
 	emf_cb_can_use_thirdparty_magyar_title = yes
 }
+
 emf_cb_thirdparty_can_use_de_jure_title = {
-	OR = {
-		NOT = { region = emf_region_sahara }
-		FROMFROM = {
-			OR = {
-				ai = no
-				capital_scope = { region = emf_region_sahara }
-			}
-		}
-		FROM = {
-			OR = {
-				ai = no
-				capital_scope = { NOT = { region = emf_region_sahara } }
-			}
-		}
+	FROMFROM = {
+		emf_cb_lacks_main_war_block = yes
+		emf_cb_is_war_blocked_by_laws = no
 	}
 	OR = {
 		FROM = { ai = no }
@@ -361,20 +340,35 @@ emf_cb_thirdparty_can_use_de_jure_title = {
 		NOT = { FROM = { capital_holding = { de_jure_liege_or_above = PREVPREV } } }
 	}
 	# Prevent vassal kings from bypassing Complete King's Peace
-	FROMFROM = {
-		NAND = {
-			tier = KING
-			independent = no
-			NOT = { same_realm = ROOT_FROM }
-			crownlaw_title = {
-				has_law = king_peace_2
-				owner = { is_liege_of = ROOT }
-			}
-		}
-	}
 	emf_cb_can_use_thirdparty_magyar_title = yes
+	emf_cb_thirdparty_can_use_sahara_title = yes
 }
 
+emf_cb_thirdparty_can_use_sahara_title = {
+	OR = {
+		FROMFROM = {
+			OR = {
+				ai = no
+				capital_scope = {
+					# Audax Validator "." Ignore_1006
+					region = emf_region_sahara
+				}
+			}
+		}
+		FROM = {
+			OR = {
+				ai = no
+				capital_scope = {
+					NOT = {
+						# Audax Validator "." Ignore_1006
+						region = emf_region_sahara
+					}
+				}
+			}
+		}
+		emf_cb_is_title_in_sahara = no
+	}
+}
 
 #### Other, specific triggers ####
 
@@ -438,10 +432,7 @@ emf_cb_is_weak_claim_pressable = {
 		is_pretender = yes # CAUTION: checks vs ROOT implicitly!
 		is_contested = yes
 		holder_scope = { has_regent = yes }
-		holder_scope = {
-			trait = uncrowned
-			higher_real_tier_than = DUKE # JIC
-		}
+		holder_scope = { emf_needs_coronation = yes }
 		AND = {
 			succ_law_title = { has_law = agnatic_succession }
 			ROOT = { is_female = no }
@@ -473,10 +464,24 @@ emf_cb_can_use_religious = {
 			pacifist = yes
 			religion = taoist
 		}
+		NAND = {
+			OR = {
+				has_landed_title = k_teutonic_state
+				has_landed_title = d_teutonic_order
+			}
+			has_global_flag = northern_crusades_active
+		}
+		NOR = {
+			has_character_flag = currently_reconquering_iberia
+			reconquista_check_trigger = yes
+		}
 		emf_hostile_religion_to_FROM = yes
 		OR = { # Allow reformed pagans [only]
 			NOT = { religion_group = pagan_group }
-			is_reformed_religion = yes
+			AND = {
+				is_reformed_religion = yes
+				NOT = { has_religion_feature = religion_peaceful }
+			}
 		}
 		OR = { # Hindus can only wage holy war on non-Indian rulers
 			NOT = { religion = hindu }
@@ -635,6 +640,50 @@ emf_cb_special_religious_basic_can_use_title = {
 	}
 }
 
+emf_cb_dejure_duchy_claim_basic_can_use_title = {
+	tier = DUKE
+	# Cannot fuck with your religious head's holy sites
+	NAND = {
+		ROOT = { rightful_religious_head = FROM }
+		any_de_jure_vassal_title = {
+			is_holy_site = FROM
+			owner_under_FROM = yes
+		}
+	}
+	# ROOT holds the de jure kingdom, empire, OR both of the duchy
+	# and at least one of the de jure liege titles has at least
+	# Medium CA.
+	any_de_jure_liege_title = {
+		holder = ROOT
+		emf_laws_has_medium_ca_plus = yes
+	}
+	# FROM controls at least 2 counties in this duchy
+	# Otherwise, use de_jure_county_claim.
+	FROM = { num_of_realm_counties = { title = PREV value = 2 } }
+}
+
+emf_cb_dejure_kingdom_claim_basic_can_use_title = {
+	tier = KING
+	NAND = {
+		ROOT = { rightful_religious_head = FROM }
+		any_de_jure_vassal_title = {
+			is_holy_site = FROM
+			owner_under_FROM = yes
+		}
+	}
+	empire = {
+		holder = ROOT
+		OR = {
+			has_law = crown_authority_4 # Always available at Absolute CA
+			# Also available on any [de jure] held empire when CB granted by event/decision
+			ROOT = { has_character_modifier = emf_cb_mod_dejure_kingdom_claim }
+		}
+	}
+	# FROM controls at least 2 counties in this kingdom
+	# Otherwise, use de_jure_county_claim.
+	FROM = { num_of_realm_counties = { title = PREV value = 2 } }
+}
+
 emf_cb_religious_reconquest_basic_can_use_title = {
 	# Muslim reconquest does not make much sense
 	NAND = {
@@ -730,40 +779,42 @@ emf_cb_tributary_basic_can_use = {
 			year >= 920
 			has_global_flag = emf_magyar_migration_completed
 		}
+		emf_alternate_start = no
 	}
 }
 
 emf_cb_border_dispute_basic_can_use_title = {
-	tier = COUNT
-	owner_under_FROM = yes
-	best_de_jure_liege_title_holder_FROM = no
-	location = {
-		NOT = { has_province_flag = emf_capital_connected }
-		any_neighbor_province = {
-			owner_under_ROOT = yes
-			has_province_flag = emf_capital_connected
-		}
-		OR = {
-			ROOT = { is_nomadic = yes }
-			emf_nomadic_province = no
-		}
-	}
+	always = no
+#	tier = COUNT
+#	owner_under_FROM = yes
+#	best_de_jure_liege_title_holder_FROM = no
+#	location = {
+#		NOT = { has_province_flag = emf_capital_connected }
+#		any_neighbor_province = {
+#			owner_under_ROOT = yes
+#			has_province_flag = emf_capital_connected
+#		}
+#		OR = {
+#			ROOT = { is_nomadic = yes }
+#			emf_nomadic_province = no
+#		}
+#	}
 }
 
 # should be used in CB target title scope, returns false if border dispute CB can be used
 emf_cb_prefer_border_dispute = {
-	NAND = {
-		always = no # Disabled in alpha, WIP on feature/clean-borders
-		ROOT = {
-			NOT = { same_realm = FROM }
-			OR = {
-				ai = yes
-				piety = 50
-			}
-		}
-		FROM = { independent = yes } # Can't attack revolters
-		emf_cb_border_dispute_basic_can_use_title = yes
-	}
+	always = no # Disabled in alpha, WIP on feature/clean-borders
+	#NAND = {
+	#	ROOT = {
+	#		NOT = { same_realm = FROM }
+	#		OR = {
+	#			ai = yes
+	#			piety = 50
+	#		}
+	#	}
+	#	FROM = { independent = yes } # Can't attack revolters
+	#	emf_cb_border_dispute_basic_can_use_title = yes
+	#}
 }
 
 emf_cb_unexpelled_holy_order = {

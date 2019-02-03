@@ -30,55 +30,20 @@ character_event = {
 					emf_imperial_government = no
 					real_tier = EMPEROR
 				}
-				NOR = {
-					trait = crowned
-					trait = uncrowned
-					trait = crowned_by_pope
-					trait = strong_basileus
-					trait = weak_basileus
-				}
+				emf_is_crowned = no
+				emf_uses_furry_coronation = no
 			}
 			if = {
 				limit = { emf_uses_byzantine_coronation = yes }
 				add_trait = weak_basileus
 			}
-			if = {
+			else_if = {
 				limit = { emf_uses_hre_coronation = yes }
-				add_trait = crowned_by_pope
+				add_trait = emf_crowned_by_pope
 			}
-			if = {
-				limit = {
-					emf_uses_byzantine_coronation = no
-					emf_uses_hre_coronation = no
-				}
-				add_trait = crowned
+			else = {
+				add_trait = emf_crowned
 			}
-		}
-
-		# Add Uncrowned to everyone else
-		any_playable_ruler = {
-			limit = {
-				higher_real_tier_than = DUKE
-				is_feudal = yes
-				has_horde_culture = no
-				is_nomadic = no
-				primary_title = {
-					is_primary_type_title = no
-					is_vice_royalty = no
-				}
-				OR = {
-					emf_imperial_government = no
-					real_tier = EMPEROR
-				}
-				NOR = {
-					trait = crowned
-					trait = uncrowned
-					trait = crowned_by_pope
-					trait = strong_basileus
-					trait = weak_basileus
-				}
-			}
-			add_trait = uncrowned
 		}
 
 		# Initialize Imperial Decay
@@ -90,7 +55,7 @@ character_event = {
 	}
 }
 
-# Add Uncrowned trait to new kings and emperors
+# Handle crown-tier title flip re: coronation traits
 character_event = {
 	id = emf_coronation.1101
 
@@ -106,111 +71,49 @@ character_event = {
 	}
 
 	immediate = {
-		character_event = { id = emf_coronation.1103 days = 1 } # check for Uncrowned
-
 		# Remove old ruler's coronation traits, if necessary
 		FROMFROM = {
 			if = {
 				limit = {
 					is_alive = yes
-					OR = {
-						trait = crowned
-						trait = uncrowned
-						trait = crowned_by_pope
-						trait = strong_basileus
-						trait = weak_basileus
-					}
+					emf_is_crowned = yes
 				}
 				if = {
 					limit = {
-						OR = {
-							is_ruler = no
-							lower_real_tier_than = KING
-							AND = {
-								real_tier = KING
-								emf_imperial_government = yes
-							}
-						}
+						emf_uses_native_coronation = no
+						emf_uses_furry_coronation = no
 					}
-					remove_trait = crowned
-					remove_trait = uncrowned
-					remove_trait = crowned_by_pope
+					# If wouldn't be allowed to be crowned under either system, they lose their crowns.
+					remove_trait = emf_crowned
+					remove_trait = emf_crowned_by_pope
 					remove_trait = strong_basileus
 					remove_trait = weak_basileus
-					break = yes
+					remove_trait = crowned_by_priest
+					remove_trait = crowned_by_bishop
+					remove_trait = crowned_by_pope
+					remove_trait = crowned_by_myself
 				}
-				if = {
+				else_if = {
 					limit = {
-						trait = crowned_by_pope
+						trait = emf_crowned_by_pope
 						emf_uses_hre_coronation = no
+						emf_uses_native_coronation = yes
 					}
-					add_trait = crowned
+					add_trait = emf_crowned
 				}
-				if = {
+				else_if = {
 					limit = {
 						OR = {
 							trait = strong_basileus
 							trait = weak_basileus
 						}
 						emf_uses_byzantine_coronation = no
+						emf_uses_native_coronation = yes
 					}
-					add_trait = crowned
+					add_trait = emf_crowned
 				}
 			}
 		}
-	}
-}
-
-character_event = {
-	id = emf_coronation.1102
-
-	is_triggered_only = yes
-	hide_window = yes
-
-	trigger = {
-		FROM = {
-			higher_tier_than = DUKE
-			temporary = no
-		}
-		NOT = { has_landed_title = e_hip }
-	}
-
-	immediate = {
-		character_event = { id = emf_coronation.1103 days = 1 } # check for Uncrowned
-	}
-}
-
-# Add Uncrowned trait for non-viceroy kings & emperors
-character_event = {
-	id = emf_coronation.1103
-
-	is_triggered_only = yes
-	hide_window = yes
-
-	trigger = {
-		higher_real_tier_than = DUKE
-		is_feudal = yes
-		has_horde_culture = no
-		is_nomadic = no
-		primary_title = {
-			is_primary_type_title = no
-			is_vice_royalty = no
-		}
-		OR = {
-			emf_imperial_government = no
-			real_tier = EMPEROR
-		}
-		NOR = {
-			trait = crowned
-			trait = uncrowned
-			trait = crowned_by_pope
-			trait = strong_basileus
-			trait = weak_basileus
-		}
-	}
-
-	immediate = {
-		add_trait = uncrowned
 	}
 }
 
@@ -809,8 +712,8 @@ letter_event = {
 				limit = {
 					FROM = {
 						NOR = {
-							trait = crowned
-							trait = crowned_by_pope
+							trait = emf_crowned
+							trait = emf_crowned_by_pope
 							trait = strong_basileus
 							trait = weak_basileus
 						}
@@ -942,7 +845,7 @@ narrative_event = {
 		name = EVTOPTA_emf_coronation_1215
 		trigger = { character = FROM }
 		piety = 100
-		add_trait = crowned
+		add_trait = emf_crowned
 
 		if = {
 			limit = { trait = humble }
@@ -2059,57 +1962,7 @@ character_event = {
 	option = {
 		name = EVTOPTA_emf_coronation_1240 # Pursue him/her
 		add_lover = FROM
-		hidden_tooltip = {
-			if = {
-				limit = {
-					is_female = no
-					fertility = 0.33
-					FROM = {
-						is_female = yes
-						fertility = 0.33
-					}
-				}
-				if = {
-					limit = { FROM = { is_married = no } }
-					random = {
-						chance = 50
-						ROOT = { impregnate = FROM }
-					}
-				}
-				if = {
-					limit = { FROM = { is_married = yes } }
-					random = {
-						chance = 50
-						ROOT = { impregnate_cuckoo = FROM }
-					}
-				}
-			}
-			if = {
-				limit = {
-					NOT = { age = 45 }
-					is_female = yes
-					fertility = 0.33
-					FROM = {
-						is_female = no
-						fertility = 0.33
-					}
-				}
-				if = {
-					limit = { is_married = no }
-					random = {
-						chance = 50
-						FROM = { impregnate = ROOT }
-					}
-				}
-				if = {
-					limit = { is_married = yes }
-					random = {
-						chance = 50
-						FROM = { impregnate_cuckoo = ROOT }
-					}
-				}
-			}
-		}
+		unprotected_sex_effect = yes
 	}
 	option = {
 		name = EVTOPTB_emf_coronation_1240 # A dance is more than enough
@@ -5035,7 +4888,7 @@ narrative_event = {
 		}
 		piety = 100
 		prestige = 250
-		add_trait = crowned_by_pope
+		add_trait = emf_crowned_by_pope
 
 		if = {
 			limit = { trait = humble }

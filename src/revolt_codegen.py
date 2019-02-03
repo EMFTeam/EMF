@@ -39,7 +39,7 @@ def main():
 			if n.val.endswith('_trigger'):
 				continue
 			for n2, v2 in v:
-				if isinstance(v2, ck2parser.Obj) and n2.val not in ['color', 'male_names', 'female_names']:
+				if isinstance(v2, ck2parser.Obj) and n2.val not in ['color', 'male_names', 'female_names', 'interface_skin', 'alternate_start']:
 					g_religions.append(n2.val)
 
 	with revolt_trigger_path.open('w', encoding='cp1252', newline='\n') as f:
