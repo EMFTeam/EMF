@@ -26,8 +26,8 @@ character_event = {
 				set_character_flag = emf_toggle_employment
 			}
 			if = {
-				limit = { ROOT = { has_character_flag = loan_decisions } }
-				set_character_flag = loan_decisions
+				limit = { ROOT = { has_character_flag = emf_show_loan_decisions } }
+				set_character_flag = emf_show_loan_decisions
 			}
 			clear_focus = yes
 			cancel_ambition = yes
@@ -249,54 +249,133 @@ character_event = {
 	}
 }
 
-# emf_core.25
-#
-# Prevent the ERE from gaining the k_orthodox title-- or rather, when
-# they do, fix the situation.
 character_event = {
-	id = emf_core.25
+	id = emf_core.20
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	only_rulers = yes
+
+	trigger = {
+		trait = peasant_leader
+		FROM = {
+			temporary = no
+			rebel = no
+			NOT = { has_title_flag = emf_revolt }
+			OR = {
+				is_landless_type_title = no
+				mercenary = yes
+				holy_order = yes
+				controls_religion = yes
+				ROOT = { is_patrician = yes }
+			}
+		}
+	}
+
+	immediate = {
+		add_trait = peasant_ruler
+		if = {
+			limit = { is_lowborn = yes }
+			dynasty = father_bastard
+		}
+		log = "INFO: emf_core.20: [Root.GetTitledName] (#[Root.GetID]), a Peasant Leader, has gained the [From.GetFullBaseName] ([From.GetID]) and become a Peasant Ruler!"
+	}
+}
+
+# emf_core.21
+#
+# Event triggered by on_new_holder to set the `emf_global_hre` global event target when `e_hre` or `e_hre_french`
+# are gained. Assumes that the titles cannot be created if the alternative title is already held.
+character_event = {
+	id = emf_core.21
 
 	is_triggered_only = yes
 	hide_window = yes
 
 	trigger = {
-		FROM = { title = k_orthodox }
-		OR = {
-			has_landed_title = e_byzantium
-			has_landed_title = e_roman_empire
+		FROM = {
+			OR = {
+				title = e_hre
+				title = e_hre_french
+			}
 		}
+		NOT = { FROMFROM = { always = yes } }
 	}
 
 	immediate = {
-		log = "WARNING: ERE gained k_orthodox somehow, granting to random priest..."
-
-		create_random_priest = {
-			random_traits = yes
-			female = no
-			dynasty = none
-			culture = ROOT
-			religion = orthodox
+		if = {
+			limit = { FROM = { title = e_hre } }
+			e_hre = { save_global_event_target_as = emf_global_hre }
 		}
-		new_character = {
-			k_orthodox = { grant_title = PREV }
-			b_hagiasophia = {
-				if = {
-					limit = { owner_under_ROOT = yes }
-					grant_title = PREV
-				}
+		else = {
+			e_hre_french = { save_global_event_target_as = emf_global_hre }
+		}
+		if = {
+			limit = {
+				e_hre = { has_holder = yes }
+				e_hre_french = { has_holder = yes }
 			}
-			set_defacto_liege = ROOT
+			log = "WARNING: emf_core.21: after creating [From.GetID], both e_hre and e_hre_french are held!"
+		}
+	}
+}
+
+# emf_core.22
+#
+# Event triggered by on_new_holder to set the `emf_global_byz` global event target when `e_byzantium` or
+# `e_roman_empire` are gained. Assumes that the titles cannot be created if the alternative title is already held,
+# with the exception of `e_roman_empire`.
+character_event = {
+	id = emf_core.22
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		FROM = {
+			OR = {
+				title = e_byzantium
+				title = e_roman_empire
+			}
+		}
+		NOT = { FROMFROM = { always = yes } }
+	}
+
+	immediate = {
+		if = {
+			limit = { FROM = { title = e_byzantium } }
+			e_byzantium = { save_global_event_target_as = emf_global_byz }
+		}
+		else = {
+			e_roman_empire = { save_global_event_target_as = emf_global_byz }
 		}
 		if = {
-			limit = { primary_title = { has_law = administration_2 } }
-			emf_switch_to_imperial = yes
-			break = yes
+			limit = {
+				e_byzantium = { has_holder = yes }
+				e_roman_empire = { has_holder = yes }
+				FROM = { NOT = { title = e_roman_empire } } # The RE is created before auto-destroying the ERE
+			}
+			log = "WARNING: emf_core.22: after creating [From.GetID], both e_byzantium and e_roman_empire are held!"
 		}
-		if = {
-			limit = { is_feudal = yes }
-			break = yes
-		}
-		emf_switch_to_feudal_gov = yes
+	}
+}
+
+# emf_core.23 -- Ensure nobody ever holds e_null by any means!
+character_event = {
+	id = emf_core.23
+
+	is_triggered_only = yes # on_action: on_new_holder, on_new_holder_usurpation
+	hide_window = yes
+
+	trigger = {
+		FROM = { title = e_null }
+	}
+
+	immediate = {
+		log = "ERROR: emf_core.23: [Root.GetTitledName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) somehow gained [From.GetID]! auto-destroying it!"
+		destroy_landed_title = FROM
+		FROM = { set_flag = emf_defunct } # Not that anything is going to pay attention this part...
 	}
 }
 
@@ -1188,7 +1267,7 @@ character_event = {
 			modifier = {
 				factor = 2
 				event_target:new_suzerain = {
-					is_rival = ROOT
+					is_foe = ROOT
 				}
 			}
 			modifier = {
@@ -1570,12 +1649,17 @@ character_event = {
 
 	immediate = {
 		log = "INFO: emf_core.110: ruler abdicating: [Root.GetTitledFirstName] [Root.GetOnlyDynastyName] of the [Root.PrimaryTitle.GetFullName] (#[Root.GetID]/[Root.PrimaryTitle.GetID])"
-		remove_trait = uncrowned
-		remove_trait = crowned
-		remove_trait = karling_usurper
-		remove_trait = crowned_by_pope
+		remove_trait = emf_crowned
+		remove_trait = emf_crowned_by_pope
 		remove_trait = strong_basileus
 		remove_trait = weak_basileus
+		remove_trait = crowned_by_priest
+		remove_trait = crowned_by_bishop
+		remove_trait = crowned_by_pope
+		remove_trait = crowned_by_myself
+		remove_character_modifiers = { modifier = uncrowned_modifier amount = 30 } 	
+		set_variable = { which = uncrowned_count value = 0 }
+		remove_trait = karling_usurper
 		if = {
 			limit = { NOT = { event_target:emf_abdicate_real_heir = { always = yes } } } # Not using abdicate_to
 			current_heir = {

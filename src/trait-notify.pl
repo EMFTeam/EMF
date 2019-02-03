@@ -183,8 +183,8 @@ EOS
 	for my $tag (sort { $traits->{$a}{id} <=> $traits->{$b}{id} } keys %$traits) {
 		my $t = $traits->{$tag};
 
-		my $gain_effect = "emf_notify_add_${tag}_effect";
-		my $loss_effect = "emf_notify_remove_${tag}_effect";
+		my $gain_effect = "emf_notify_add_${tag}";
+		my $loss_effect = "emf_notify_remove_${tag}";
 
 		my $gain_evt = 'emf_notify.'.($t->{id} + $EVT_ID_OFFSET_GAIN);
 		my $loss_evt = 'emf_notify.'.($t->{id} + $EVT_ID_OFFSET_LOSS);
@@ -193,12 +193,6 @@ EOS
 
 #### [$t->{id}] $t->{name}: $tag ####
 $gain_effect = {
-	#hidden_tooltip = {
-	#	if = {
-	#		limit = { trait = $tag }
-	#		log = "WARNING: $gain_effect: [This.GetBestName] ([This.GetID]) already has the trait to be added!"
-	#	}
-	#}
 	if = {
 		limit = { NOT = { trait = $tag } }
 		add_trait = $tag
@@ -236,12 +230,6 @@ $gain_effect = {
 	}
 }
 $loss_effect = {
-	#hidden_tooltip = {
-	#	if = {
-	#		limit = { NOT = { trait = $tag } }
-	#		log = "WARNING: $loss_effect: [This.GetBestName] ([This.GetID]) doesn't have the trait to be removed!"
-	#	}
-	#}
 	if = {
 		limit = { trait = $tag }
 		remove_trait = $tag

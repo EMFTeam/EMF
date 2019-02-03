@@ -320,10 +320,179 @@ character_event = {
 			has_character_flag = low_food
 		}
 	}
+	
+	immediate = {
+		if = {
+			limit = {
+				any_artifact = {
+					has_artifact_flag = cooking
+				}
+			}
+			random_artifact = {
+				limit = {
+					has_artifact_flag = cooking
+					OR = {
+						is_artifact_equipped = yes
+						AND = {
+							artifact_type = the_omnivore #If you're not a cannibal, it's not active, so...
+							PREV = { NOT = { trait = cannibal_trait } }
+						}
+						AND = {
+							artifact_type = the_omnivore #If ROOT already cannibal, someone else should be around to become cannical...
+							PREV = {
+								any_courtier = {
+									NOT = { trait = cannibal_trait }
+									is_adult = yes
+									is_inaccessible_or_incapable_trigger = no
+								}
+							}
+						}
+					}
+					NOT = { artifact_type = gastronomic_tonics } #Not really about food
+				}
+				preferred_limit = {
+					quality = 3
+				}
+				preferred_limit = {
+					quality = 2
+				}
+				preferred_limit = {
+					quality = 1
+				}
+				save_event_target_as = book_target
+			}
+			if = { #If ROOT is already a cannibal_trait...
+				limit = {
+					event_target:book_target = {
+						artifact_type = the_omnivore
+					}
+					trait = cannibal_trait
+				}
+				random_courtier = {
+					limit = {
+						NOT = { trait = cannibal_trait }
+						is_adult = yes
+						is_inaccessible_or_incapable_trigger = no
+					}
+					preferred_limit = {
+						has_education_stewardship_trigger = yes
+						family_of_root_trigger = yes
+						is_evil_trigger = yes
+					}
+					preferred_limit = {
+						has_education_stewardship_trigger = yes
+						family_of_root_trigger = yes
+					}
+					preferred_limit = {
+						family_of_root_trigger = yes
+					}
+					preferred_limit = {
+						has_education_stewardship_trigger = yes
+					}
+					save_event_target_as = potential_cannibal
+				}
+			}
+		}
+	}
+
+	option = {
+		name = {
+			text = EVTOPTD72003 #Why don't we use this as inspiration?
+			trigger = {
+				event_target:book_target = { quality > 1 }
+			}
+		}
+		name = {
+			text = EVTOPTD72003_cheap #Let's make use of this little thing
+			trigger = {
+				event_target:book_target = { quality < 2 }
+			}
+		}
+
+		tooltip_info_custom = available_because_books_tt
+
+		if = {
+			limit = {
+				event_target:book_target = {
+					quality < 2
+				}
+			}
+			set_character_flag = low_food
+			prestige = -5
+		}
+		else_if = {
+			limit = {
+				event_target:book_target = {
+					quality = 2
+					NOT = { quality = 3 }
+				}
+			}
+			if = {
+				limit = {
+					event_target:book_target = {
+						artifact_type = the_omnivore
+					}
+				}
+				if = {
+					limit = { NOT = { trait = cannibal_trait } }
+					custom_tooltip = { text = EVTOPTD72003_cannibal_tt }
+					add_trait = cannibal_trait
+				}
+				else = {
+					custom_tooltip = { text = EVTOPTD72003_buddy_cannibal_tt }
+					event_target:potential_cannibal = {
+						show_scope_change = no
+						add_trait = cannibal_trait
+					}
+				}
+				set_character_flag = lavishly_food
+				treasury = -10
+				prestige = 20
+			}
+			else = {
+				set_character_flag = medium_food
+				prestige = 5
+				treasury = -5
+			}
+		}
+		else = { #means it's quality 3/higher
+			set_character_flag = lavishly_food
+			treasury = -10
+			prestige = 20
+		}
+		hidden_tooltip = {
+			character_event = {
+				id = 72010
+				days = 2
+				random = 5
+			}
+		}
+		ai_chance = {
+			factor = 50
+
+			modifier = {
+				factor = 0.5
+				NOT = { trait = greedy }
+			}
+			modifier = {
+				factor = 2
+				NOT = { trait = gluttonous }
+			}
+			modifier = {
+				factor = 2
+				primary_title = { tier = DUKE }
+			}
+		}
+		trigger = {
+			event_target:book_target = { always = yes }
+		}
+	}
 
 	option = {
 		name = "EVTOPTA72003" #Spend lavishly on food
 		trigger = { NOT = { trait = temperate } }
+		gain_weight_small_effect = yes
+		weight_trait_check_effect = yes
 		ai_chance = {
 
 			factor = 30
@@ -1708,6 +1877,7 @@ character_event = {
 											NOR = {
 												is_close_relative = ROOT
 												age = 40
+												fertility = 0.4
 												trait = celibate
 												trait = chaste
 												trait = homosexual
@@ -1725,6 +1895,7 @@ character_event = {
 										NOR = {
 											is_close_relative = ROOT
 											age = 40
+											fertility = 0.4
 											trait = celibate
 											trait = chaste
 											trait = homosexual
@@ -2056,6 +2227,8 @@ character_event = {
 		trigger = {
 			NOT = { trait = temperate }
 		}
+		gain_weight_small_effect = yes
+		weight_trait_check_effect = yes
 		ai_chance = {
 			factor = 40
 
@@ -2533,7 +2706,6 @@ character_event = {
 	picture = GFX_evt_melee
 
 	min_age = 16
-	only_men = yes
 	capable_only = yes
 	prisoner = no
 	war = no
@@ -2542,6 +2714,13 @@ character_event = {
 	is_triggered_only = yes
 
 	trigger = {
+		OR = {
+			is_female = no
+			trait = shieldmaiden
+			has_religion_feature = religion_equal
+			has_religion_feature = religion_feature_bon
+			has_religion_feature = religion_matriarchal
+		}
 		NOT = {
 			trait = wounded
 		}
@@ -3118,6 +3297,7 @@ character_event = {
 					NOT = { is_close_relative = root }
 					OR = {
 						AND = {
+							fertility = 0.4
 							is_female = yes
 							is_pregnant = no
 							ROOT = {
@@ -3127,6 +3307,7 @@ character_event = {
 						AND = {
 							is_female = no
 							ROOT = {
+								fertility = 0.4
 								is_female = yes
 								is_pregnant = no
 							}
@@ -3157,40 +3338,14 @@ character_event = {
 		trigger = {
 			is_female = yes
 		}
-		random = {
-			chance = 25
-
-			FROM = {
-				impregnate = ROOT
-				character_event = {
-					id = 72042
-					days = 60
-					tooltip = "EVTTOOLTIP72042"
-				}
-			}
-		}
+		unprotected_sex_effect = yes
 	}
 	option = {
 		name = "EVTOPTB72041"
 		trigger = {
 			is_female = no
 		}
-		random = {
-			chance = 25
-
-			impregnate = FROM
-			character_event = {
-				id = 72042
-				days = 60
-				tooltip = "EVTTOOLTIP72042"
-			}
-		}
-		hidden_tooltip = {
-			random = {
-				chance = 50
-				venereal_disease_effect = yes
-			}
-		}
+		unprotected_sex_effect = yes
 	}
 	option = {
 		name = "EVTOPTC72041"
@@ -4221,7 +4376,6 @@ character_event = {
 			trait = celibate
 			trait = chaste
 			trait = eunuch
-			trait = homosexual
 		}
 		fertility = 0.4
 		any_vassal = {
@@ -4229,18 +4383,17 @@ character_event = {
 			has_character_flag = guest_feast_started
 			OR = {
 				AND = {
-					is_female = no
 					is_married = yes
 					spouse = {
 						is_adult = yes
 						NOR = {
 							is_close_relative = ROOT
 							age = 40
+							fertility = 0.4
 							trait = celibate
 							trait = chaste
-							trait = homosexual
 						}
-						is_female = yes
+						root_mutual_attraction_trigger = yes
 						is_pregnant = no
 						is_alive = yes
 						is_abroad = no
@@ -4253,11 +4406,11 @@ character_event = {
 					NOR = {
 						is_close_relative = ROOT
 						age = 40
+						fertility = 0.4
 						trait = celibate
 						trait = chaste
-						trait = homosexual
 					}
-					is_female = yes
+					root_mutual_attraction_trigger = yes
 					is_pregnant = no
 					is_alive = yes
 					is_abroad = no
@@ -4275,18 +4428,17 @@ character_event = {
 				has_character_flag = guest_feast_started
 				OR = {
 					AND = {
-						is_female = no
 						is_married = yes
 						spouse = {
 							is_adult = yes
 							NOR = {
 								is_close_relative = ROOT
 								age = 40
+								fertility = 0.4
 								trait = celibate
 								trait = chaste
-								trait = homosexual
 							}
-							is_female = yes
+							root_mutual_attraction_trigger = yes
 							is_pregnant = no
 							is_alive = yes
 							is_abroad = no
@@ -4299,11 +4451,11 @@ character_event = {
 						NOR = {
 							is_close_relative = ROOT
 							age = 40
+							fertility = 0.4
 							trait = celibate
 							trait = chaste
-							trait = homosexual
 						}
-						is_female = yes
+						root_mutual_attraction_trigger = yes
 						is_pregnant = no
 						is_alive = yes
 						is_abroad = no
@@ -4351,18 +4503,7 @@ character_event = {
 
 	option = {
 		name = "EVTOPTA72076"
-		random = {
-			chance = 25
-
-			FROM = {
-				impregnate = ROOT
-				character_event = {
-					id = 72077
-					days = 60
-					tooltip = "EVTTOOLTIP72077"
-				}
-			}
-		}
+		unprotected_sex_effect = yes
 	}
 	option = {
 		name = "EVTOPTB72076"
@@ -4650,6 +4791,7 @@ character_event = {
 					has_character_flag = host_feast_started
 					has_character_modifier = holding_large_feast
 				}
+				save_event_target_as = sons_parent
 				random_vassal = {
 					limit = {
 						has_character_flag = guest_feast_started
@@ -4666,6 +4808,38 @@ character_event = {
 							is_adult = yes
 							NOT = { age = 26 }
 							opinion = { who = ROOT value = 20 }
+							root_mutual_attraction_trigger = yes
+						}
+						save_event_target_as = vassals_daughter
+						break = yes
+					}
+				}
+			}
+		}
+		mother = {
+			if = {
+				limit = {
+					has_character_flag = host_feast_started
+					has_character_modifier = holding_large_feast
+				}
+				save_event_target_as = sons_parent
+				random_vassal = {
+					limit = {
+						has_character_flag = guest_feast_started
+					}
+					random_child = {
+						limit = {
+							is_female = yes
+							is_married = no
+							is_pregnant = no
+							is_betrothed = no
+							has_lover = no
+							fertility = 0.4
+							NOT = { is_close_relative = ROOT }
+							is_adult = yes
+							NOT = { age = 26 }
+							opinion = { who = ROOT value = 20 }
+							root_mutual_attraction_trigger = yes
 						}
 						save_event_target_as = vassals_daughter
 						break = yes
@@ -4689,10 +4863,11 @@ character_event = {
 						has_lover = no
 						is_pregnant = no
 						fertility = 0.4
-						NOT = { is_close_relative = root }
+						NOT = { is_close_relative = ROOT }
 						is_adult = yes
 						NOT = { age = 26 }
 						opinion = { who = ROOT value = 20 }
+						root_mutual_attraction_trigger = yes
 					}
 					save_event_target_as = vassals_daughter
 				}
@@ -4723,20 +4898,30 @@ character_event = {
 		name = "EVTOPTB72090" #Tumble
 
 		prestige = 15
+		ROOT = { save_event_target_as = sex_partner }
 		event_target:vassals_daughter = {
-			random = {
-				chance = 25
-				impregnate = ROOT
-				set_character_flag = impregnated_by_root
-				ROOT = { set_character_flag = impregnated_vassal_daughter }
-				hidden_tooltip = { father = { character_event = { id = 72097 days = 60 random = 15 } } }
+			if = {
+				limit = {
+					is_pregnant = no
+				}
+				set_character_flag = can_be_impregnated
 			}
+			unprotected_sex_effect_event_target = yes
 			add_lover = ROOT
 			father = {
 				character_event = {
 					id = 72092
 					tooltip = "EVTTOOLTIP72092"
 				}
+			}
+			if = {
+				limit = {
+					is_pregnant = yes
+					has_character_flag = can_be_impregnated
+				}
+				set_character_flag = impregnated_by_root
+				ROOT = { set_character_flag = impregnated_vassal_daughter }
+				hidden_tooltip = { father = { character_event = { id = 72097 days = 60 random = 15 } } }
 			}
 		}
 	}
@@ -4767,20 +4952,16 @@ character_event = {
 	option = {
 		name = "EVTOPTA72092"
 		trigger = {
-			FROM = {
-				father = {
-					has_character_flag = host_feast_started
-					has_character_modifier = holding_large_feast
-				}
+			event_target:sons_parent = {
+				has_character_flag = host_feast_started
+				has_character_modifier = holding_large_feast
 			}
 		}
 		prestige = -10
-		FROM = {
-			father = {
-				character_event = {
-					id = 72093
-					tooltip = "EVTTOOLTIP72093"
-				}
+		event_target:sons_parent = {
+			character_event = {
+				id = 72093
+				tooltip = "EVTTOOLTIP72093"
 			}
 		}
 	}
@@ -4803,20 +4984,16 @@ character_event = {
 	option = {
 		name = "EVTOPTC72092" #Grovel
 		trigger = {
-			FROM = {
-				father = {
-					has_character_flag = host_feast_started
-					has_character_modifier = holding_large_feast
-				}
+			event_target:sons_parent = {
+				has_character_flag = host_feast_started
+				has_character_modifier = holding_large_feast
 			}
 		}
 		prestige = -10
-		FROM = {
-			father = {
-				character_event = {
-					id = 72095
-					tooltip = "EVTTOOLTIP72095"
-				}
+		event_target:sons_parent = {
+			character_event = {
+				id = 72095
+				tooltip = "EVTTOOLTIP72095"
 			}
 		}
 	}
@@ -5225,7 +5402,6 @@ character_event = {
 
 	min_age = 20
 	only_playable = yes
-	only_men = yes
 	capable_only = yes
 	prisoner = no
 	war = no
