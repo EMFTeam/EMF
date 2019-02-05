@@ -1208,8 +1208,8 @@ emf_randomize_relhead_title_names = {''', file=f)
 	if = {{
 		limit = {{ {0} = {{ is_name_randomized = yes }} }}
 		{1} = {{
-			set_name = {2}
-			adjective = {2}
+			set_name = "{2}"
+			adjective = "{2}_ADJ"
 		}}
 	}}'''.format(r, g_relhead_title_map[r], key), file=f)
 
