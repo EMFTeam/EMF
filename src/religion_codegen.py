@@ -33,6 +33,15 @@ g_codegen_file_hdr = '''
 #TAB = ' ' * TAB_WIDTH
 TAB = '\t'
 
+
+class RelHeadTitle:
+	def __init__(self, tag, religion, landless=False, reformed=False):
+		self.tag = tag
+		self.religion = religion
+		self.landless = landless
+		self.reformed = reformed
+
+
 def main():
 	global g_religions, g_rg_religions_map, g_relhead_title_map
 
@@ -56,12 +65,21 @@ def main():
 
 	for _, tree in parser.parse_files('common/landed_titles/*.txt'):
 		for n, v in tree:
+			landless = False
+			reformed = False
+			if v.has_pair('landless', 'yes'):
+				landless = True
+			if re.search(r'_(pagan_)?reformed$', n.val):
+				reformed = True
 			for n2, v2 in v:
-				try:
-					if n2.val == 'controls_religion':
-						g_relhead_title_map[v2.val] = n.val
-				except:
-					pass
+				if n2.val == 'controls_religion':
+					religion = v2.val
+					if religion not in g_religions and religion != 'hip_religion':
+						print("religion " + religion + " not recognized", file=sys.stderr)
+					if religion in g_relhead_title_map:
+						g_relhead_title_map[religion].landless = landless
+					else:
+						g_relhead_title_map[religion] = RelHeadTitle(n.val, religion, landless, reformed)
 
 	assert g_rg_religions_map.get('pagan_group')
 
@@ -121,6 +139,7 @@ def main():
 	with as_effect_path.open('w', encoding='cp1252', newline='\n') as f:
 		print_file_header(f, 'ck2.scripted_effects')
 		print_effect_randomize_relhead_title_names(f)
+		print_effect_activate_randomized_relhead_titles(f, loc)
 
 	# generate "secretly convert to this holy site's religion" decisions
 	with sr_holy_site_decisions_path.open('w', encoding='cp1252', newline='\n') as f:
@@ -1211,7 +1230,24 @@ emf_randomize_relhead_title_names = {''', file=f)
 			set_name = "{2}"
 			adjective = "{2}_ADJ"
 		}}
-	}}'''.format(r, g_relhead_title_map[r], key), file=f)
+	}}'''.format(r, g_relhead_title_map[r].tag, key), file=f)
+
+	print('}', file=f)
+
+
+def print_effect_activate_randomized_relhead_titles(f, loc):
+	print('''
+emf_activate_randomized_relhead_titles = {''', file=f)
+
+	for rt in [g_relhead_title_map[r] for r in sorted(g_relhead_title_map.keys()) if r != 'hip_religion']:
+		if not rt.landless or rt.reformed:
+			continue
+		loc_val = loc.get(rt.religion, rt.religion + ' (unlocalised)')
+		print('''\
+	# {}
+	{} = {{ save_event_target_as = emf_rel }}
+	{} = {{ save_event_target_as = emf_rel_title }}
+	emf_activate_randomized_relhead_title = yes'''.format(loc_val, rt.religion, rt.tag), file=f)
 
 	print('}', file=f)
 
