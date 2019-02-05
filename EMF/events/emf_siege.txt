@@ -1927,8 +1927,8 @@ character_event = {
 
 	trigger = {
 		rebel = no
-		NOT = { has_landed_title = e_rebels }
-		NOT = {
+		NOR = {
+			has_landed_title = e_rebels
 			any_liege = {
 				OR = {
 					rebel = yes
@@ -1938,6 +1938,8 @@ character_event = {
 		}
 		location = {
 			FROM = {
+				tier = BARON
+				is_occupied = yes # Filters out raids (ziji after 3.0: or does it? added real war check below)
 				owner = {
 					NOT = { character = ROOT } # Absolutely no silliness allowed
 					OR = { # Must be a hostile ruler
@@ -1946,9 +1948,48 @@ character_event = {
 							any_liege = { war_with = PREVPREV }
 						}
 					}
+					OR = { # Must be in actual war, because war_with doesn't filter raids
+						ROOT = { # Is ROOT at war with owner?
+							any_current_enemy = { character = PREVPREV }
+						}
+						any_liege = { # Is ROOT at war with any liege of owner?
+							ROOT = {
+								any_current_enemy = { character = PREVPREV }
+							}
+						}
+						ROOT = { # Is any liege of ROOT at war with owner?
+							any_liege = {
+								any_war = {
+									OR = {
+										any_attacker = { character = PREVPREVPREVPREV }
+										any_defender = { character = PREVPREVPREVPREV }
+									}
+									OR = {
+										any_attacker = { character = PREVPREV }
+										any_defender = { character = PREVPREV }
+									}
+								}
+							}
+						}
+						any_liege = { # Is any liege of owner at war with any liege of ROOT?
+							ROOT = {
+								any_liege = {
+									any_war = {
+										OR = {
+											any_attacker = { character = PREVPREVPREVPREV }
+											any_defender = { character = PREVPREVPREVPREV }
+										}
+										OR = {
+											any_attacker = { character = PREVPREV }
+											any_defender = { character = PREVPREV }
+										}
+									}
+								}
+							}
+						}
+					}
 					capital_scope = { province = PREVPREVPREV } # Must be capital province
 					any_demesne_title = { # Allow only one holding in the capital province to be occupied
-						count = 1
 						tier = BARON
 						location = { province = PREVPREVPREVPREV }
 						is_occupied = yes
@@ -1962,8 +2003,6 @@ character_event = {
 						}
 					}
 				}
-				tier = BARON
-				is_occupied = yes # Filters out raids
 			}
 		}
 	}
@@ -3522,7 +3561,51 @@ character_event = {
 				}
 			}
 		}
-		FROM = { is_occupied = no } # Looted, NOT occupied
+		FROM = {
+			is_occupied = no # Looted, NOT occupied
+			owner = {
+				NOR = { # Must NOT be in actual war, because in 3.0, is_occupied=no doesn't seem to be good enough to filter for raids
+					new_character = { # Is new_character at war with owner?
+						any_current_enemy = { character = PREVPREV }
+					}
+					any_liege = { # Is new_character at war with any liege of owner?
+						new_character = {
+							any_current_enemy = { character = PREVPREV }
+						}
+					}
+					new_character = { # Is any liege of new_character at war with owner?
+						any_liege = {
+							any_war = {
+								OR = {
+									any_attacker = { character = PREVPREVPREVPREV }
+									any_defender = { character = PREVPREVPREVPREV }
+								}
+								OR = {
+									any_attacker = { character = PREVPREV }
+									any_defender = { character = PREVPREV }
+								}
+							}
+						}
+					}
+					any_liege = { # Is any liege of owner at war with any liege of new_character?
+						new_character = {
+							any_liege = {
+								any_war = {
+									OR = {
+										any_attacker = { character = PREVPREVPREVPREV }
+										any_defender = { character = PREVPREVPREVPREV }
+									}
+									OR = {
+										any_attacker = { character = PREVPREV }
+										any_defender = { character = PREVPREV }
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
 		is_ruler = no # Not for rulers, who don't show up anyway; we've got a separate event for them
 		NOT = { is_inaccessible_trigger = yes }
 	}
@@ -3591,13 +3674,55 @@ character_event = {
 		}
 		FROM = {
 			tier = BARON
-			NOT = { is_occupied = yes } # Looted, NOT occupied
+			is_occupied = no # Looted, NOT occupied
 			location = {
 				FROM = {
 					owner = {
 						capital_holding = { title = FROM } # Only at capital
 						capital_scope = { province = PREVPREVPREV } # Must be capital province
 						war_with = ROOT # Must be hostile ruler
+					}
+				}
+			}
+			owner = {
+				NOR = { # Must NOT be in actual war, because war_with doesn't filter raids & is_occupied trick is falling short in 3.0
+					ROOT = { # Is ROOT at war with owner?
+						any_current_enemy = { character = PREVPREV }
+					}
+					any_liege = { # Is ROOT at war with any liege of owner?
+						ROOT = {
+							any_current_enemy = { character = PREVPREV }
+						}
+					}
+					ROOT = { # Is any liege of ROOT at war with owner?
+						any_liege = {
+							any_war = {
+								OR = {
+									any_attacker = { character = PREVPREVPREVPREV }
+									any_defender = { character = PREVPREVPREVPREV }
+								}
+								OR = {
+									any_attacker = { character = PREVPREV }
+									any_defender = { character = PREVPREV }
+								}
+							}
+						}
+					}
+					any_liege = { # Is any liege of owner at war with any liege of ROOT?
+						ROOT = {
+							any_liege = {
+								any_war = {
+									OR = {
+										any_attacker = { character = PREVPREVPREVPREV }
+										any_defender = { character = PREVPREVPREVPREV }
+									}
+									OR = {
+										any_attacker = { character = PREVPREV }
+										any_defender = { character = PREVPREV }
+									}
+								}
+							}
+						}
 					}
 				}
 			}
@@ -3831,35 +3956,47 @@ character_event = {
 			NOT = { religion_group = pagan_group }
 		}
 		FROM = {
-			NOT = { is_occupied = yes } # Looted, NOT occupied
+			is_occupied = no # Looted, NOT occupied
 			holding_type = temple
 			owner = {
 				is_theocracy = yes
 				religion = ROOT
 				war_with = ROOT # Must be hostile to ruler
-				NOR = {
-					any_war = {
-						OR = {
-							AND = {
-								any_attacker = { character = PREVPREV }
-								any_defender = { character = ROOT }
-							}
-							AND = {
-								any_defender = { character = ROOT }
-								any_attacker = { character = PREVPREV }
+				NOR = { # Must NOT be in actual war, because war_with doesn't filter raids, and is_occupied=no doesn't seem to work after 3.0
+					ROOT = { # Is ROOT at war with owner?
+						any_current_enemy = { character = PREVPREV }
+					}
+					any_liege = { # Is ROOT at war with any liege of owner?
+						ROOT = {
+							any_current_enemy = { character = PREVPREV }
+						}
+					}
+					ROOT = { # Is any liege of ROOT at war with owner?
+						any_liege = {
+							any_war = {
+								OR = {
+									any_attacker = { character = PREVPREVPREVPREV }
+									any_defender = { character = PREVPREVPREVPREV }
+								}
+								OR = {
+									any_attacker = { character = PREVPREV }
+									any_defender = { character = PREVPREV }
+								}
 							}
 						}
 					}
-					any_liege = {
-						any_war = {
-							OR = {
-								AND = {
-									any_attacker = { character = PREVPREV }
-									any_defender = { character = ROOT }
-								}
-								AND = {
-									any_defender = { character = ROOT }
-									any_attacker = { character = PREVPREV }
+					any_liege = { # Is any liege of owner at war with any liege of ROOT?
+						ROOT = {
+							any_liege = {
+								any_war = {
+									OR = {
+										any_attacker = { character = PREVPREVPREVPREV }
+										any_defender = { character = PREVPREVPREVPREV }
+									}
+									OR = {
+										any_attacker = { character = PREVPREV }
+										any_defender = { character = PREVPREV }
+									}
 								}
 							}
 						}
