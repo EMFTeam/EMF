@@ -7917,10 +7917,8 @@ imperial_reconquest = {
 		emf_cb_can_use_gui = yes
 		ROOT = {
 			show_scope_change = no
-			OR = {
-				trait = strong_basileus
-				AND = {
-					prestige = 500
+			trigger_if = {
+				limit = {
 					NOR = {
 						religion = orthodox
 						religion = iconoclast
@@ -7928,10 +7926,17 @@ imperial_reconquest = {
 						religion = monothelite
 					}
 				}
+				prestige >= 500
+			}
+			trigger_else = {
+				trait = strong_basileus
 			}
 			custom_tooltip = {
-				text = NEEDS_150_PRESTIGE_COST
-				hidden_tooltip = { prestige = 150 }
+				text = NEEDS_200_PRESTIGE_COST
+				OR = {
+					ai = yes
+					prestige >= 200
+				}
 			}
 		}
 	}
@@ -7939,7 +7944,10 @@ imperial_reconquest = {
 	can_use = {
 		emf_cb_can_use = yes
 		ROOT = {
-			primary_title = { emf_is_roman_empire = yes }
+			primary_title = {
+				emf_is_roman_empire = yes
+				NOT = { has_title_flag = alternate_byz }
+			}
 			independent = yes
 			religion_group = christian
 			NOT = { same_realm = FROM }
@@ -7956,10 +7964,10 @@ imperial_reconquest = {
 			}
 			AND = {
 				NOT = {
-					any_province = {
-						has_owner = yes
+					any_landed_title = {
+						tier = COUNT
+						location = { region = emf_region_ir_tier_1 }
 						owner_under_ROOT = no
-						region = emf_region_ir_tier_1
 					}
 				}
 				OR = {
@@ -7969,10 +7977,10 @@ imperial_reconquest = {
 					}
 					AND = {
 						NOT = {
-							any_province = {
-								has_owner = yes
+							any_landed_title = {
+								tier = COUNT
+								location = { region = emf_region_ir_tier_2 }
 								owner_under_ROOT = no
-								region = emf_region_ir_tier_2
 							}
 						}
 						OR = {
@@ -7982,10 +7990,10 @@ imperial_reconquest = {
 							}
 							AND = {
 								NOT = {
-									any_province = {
-										has_owner = yes
+									any_landed_title = {
+										tier = COUNT
+										location = { region = emf_region_ir_tier_3 }
 										owner_under_ROOT = no
-										region = emf_region_ir_tier_3
 									}
 								}
 								OR = {
@@ -7995,10 +8003,10 @@ imperial_reconquest = {
 									}
 									AND = {
 										NOT = {
-											any_province = {
-												has_owner = yes
+											any_landed_title = {
+												tier = COUNT
+												location = { region = emf_region_ir_tier_4 }
 												owner_under_ROOT = no
-												region = emf_region_ir_tier_4
 											}
 										}
 										OR = {
@@ -8012,10 +8020,10 @@ imperial_reconquest = {
 													owner_under_FROM = yes
 												}
 												NOT = {
-													any_province = {
-														has_owner = yes
+													any_landed_title = {
+														tier = COUNT
+														location = { region = emf_region_ir_tier_5 }
 														owner_under_ROOT = no
-														region = emf_region_ir_tier_5
 													}
 												}
 											}
@@ -8045,7 +8053,10 @@ imperial_reconquest = {
 
 	on_add = {
 		log = "CB(imperial_reconquest): START: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
-		ROOT = { prestige = -150 }
+		if = {
+			limit = { ROOT = { ai = no } }
+			ROOT = { prestige = -200 }
+		}
 		emf_cb_on_add = yes
 	}
 
@@ -8053,7 +8064,10 @@ imperial_reconquest = {
 		log = "CB(imperial_reconquest): VICTORY: title=[FromFrom.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
 		emf_cb_victory = yes
 		emf_imperial_decay_victory = yes
-		ROOT = { participation_scaled_prestige = 100 }
+		ROOT = {
+			show_scope_change = no
+			participation_scaled_prestige = 100
+		}
 		any_attacker = {
 			limit = { NOT = { character = ROOT } }
 			hidden_tooltip = { participation_scaled_prestige = 100 }
@@ -8063,38 +8077,91 @@ imperial_reconquest = {
 
 	on_success_title = {
 		emf_cb_latb = yes
-		hidden_tooltip = {
+		hidden_effect = {
 			if = {
-				limit = { owner_under_FROM = yes }
-				set_title_flag = can_be_usurped_tmp
+				limit = {
+					ROOT = { emf_imperial_government = yes }
+					FROM = { emf_imperial_government = no }
+				}
+				ROOT = {
+					any_realm_lord = {
+						set_flag = emf_prior_realm_lord_of_@ROOT
+					}
+				}
 			}
+		}
+		if = {
+			limit = {
+				owner = {
+					# Can't usurp duchy if the owner isn't in the target realm!
+					under_FROM = yes
+					OR = {
+						# Can safely usurp duchy, because owner has another title of at least the same tier
+						any_demesne_title = {
+							NOR = {
+								title = PREVPREV
+								lower_tier_than = PREVPREV
+							}
+						}
+						# Can safely usurp duchy, because owner subrealm is 100% contained within de jure duchy
+						NOT = {
+							any_realm_title = {
+								tier = COUNT
+								NOT = { de_jure_liege = PREVPREV }
+							}
+						}
+					}
+				}
+			}
+			custom_tooltip = { text = ROOT_USURPS_THIS_TITLE_FROM_HOLDER }
+			set_flag = emf_usurp_tmp
+		}
+		else_if = {
+			limit = { has_holder = no }
+			grant_title = { target = ROOT type = created }
 		}
 		custom_tooltip = {
 			text = other_invasion_succ_tip
-			hidden_tooltip = {
-				pf_liege_change_under_title_begin_effect = yes
-				ROOT = {
-					vassalize_or_take_under_title = {
-						title = PREV
-						enemy = FROM
-						type = invasion
-					}
-				}
-				pf_liege_change_under_title_end_effect = yes
-			}
-		}
-		hidden_tooltip = {
-			if = {
-				limit = {
-					owner_under_ROOT = yes
-					has_title_flag = can_be_usurped_tmp
-				}
-				usurp_title = {
-					target = ROOT
+			pf_liege_change_under_title_begin_effect = yes
+			ROOT = {
+				vassalize_or_take_under_title = {
+					title = PREV
+					enemy = FROM
 					type = invasion
 				}
 			}
-			clr_title_flag = can_be_usurped_tmp
+			pf_liege_change_under_title_end_effect = yes
+		}
+		hidden_effect = {
+			if = {
+				limit = { has_flag = emf_usurp_tmp }
+				usurp_title = { target = ROOT type = invasion }
+			}
+			clr_flag = emf_usurp_tmp
+		}
+		hidden_effect = {
+			if = {
+				limit = {
+					ROOT = { emf_imperial_government = yes }
+					FROM = { emf_imperial_government = no }
+				}
+				ROOT = {
+					any_realm_lord = {
+						limit = {
+							OR = {
+								is_feudal = yes
+								is_tribal = yes
+							}
+							NOR = {
+								has_flag = emf_prior_realm_lord_of_@ROOT
+								primary_title = { has_flag = viceroy_exemption }
+							}
+						}
+						opinion = { who = ROOT modifier = opinion_forced_into_imperial_government }
+					}
+				}
+			}
+			ROOT = { any_realm_lord = { clr_flag = emf_prior_realm_lord_of_@ROOT } }
 		}
 	}
 
@@ -8110,14 +8177,16 @@ imperial_reconquest = {
 		emf_cb_defeat = yes
 		emf_imperial_decay_loss = yes
 		ROOT = {
-			transfer_scaled_wealth = {
-				to = FROM
-				value = 4.0
-			}
-			ROOT = { prestige = -250 }
+			show_scope_change = no
+			transfer_scaled_wealth = { to = FROM value = 4.0 }
+			prestige = -300
 		}
 		FROM = {
-			participation_scaled_piety = 100
+			show_scope_change = no
+			if = {
+				limit = { emf_hostile_religion_to_ROOT = yes }
+				participation_scaled_piety = 100
+			}
 			participation_scaled_prestige = 250
 			if = {
 				limit = { uses_decadence = yes }
@@ -8127,7 +8196,10 @@ imperial_reconquest = {
 		any_defender = {
 			limit = { NOT = { character = FROM } }
 			hidden_tooltip = {
-				participation_scaled_piety = 100
+				if = {
+					limit = { emf_hostile_religion_to_ROOT = yes }
+					participation_scaled_piety = 100
+				}
 				participation_scaled_prestige = 250
 				if = {
 					limit = { uses_decadence = yes }
@@ -8137,8 +8209,12 @@ imperial_reconquest = {
 		}
 	}
 
-	on_invalidation = {
-		log = "CB(imperial_reconquest): INVALIDATED: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
+	on_invalidation_title = {
+		log = "CB(imperial_reconquest): INVALIDATED: title=[This.GetID]: [Root.GetTitledFirstName] of [Root.PrimaryTitle.GetBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID]) vs. [From.GetTitledFirstName] of [From.PrimaryTitle.GetBaseName] (#[From.GetID]/[From.PrimaryTitle.GetID])"
+		if = { # Prestige cost refund
+			limit = { ROOT = { ai = no } }
+			ROOT = { prestige = 200 }
+		}
 	}
 
 	attacker_ai_victory_worth = {
