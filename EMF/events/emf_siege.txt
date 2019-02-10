@@ -1918,20 +1918,25 @@ character_event = {
 }
 
 ## Attacker Events
-## 50-59 Reserved
+## 50-59 & 5000 Reserved, 5000 sets up 50
+
+# emf_siege.5000
 # Send attacker options - from on_siege_over_leader
 character_event = {
-	id = emf_siege.50
-	hide_window = yes
+	id = emf_siege.5000
+
 	is_triggered_only = yes
+	hide_window = yes
 
 	trigger = {
-		rebel = no
 		NOR = {
+			rebel = yes
+			primary_title = { has_flag = emf_revolt }
 			has_landed_title = e_rebels
 			any_liege = {
 				OR = {
 					rebel = yes
+					primary_title = { has_flag = emf_revolt }
 					has_landed_title = e_rebels
 				}
 			}
@@ -1939,7 +1944,6 @@ character_event = {
 		location = {
 			FROM = {
 				tier = BARON
-				is_occupied = yes # Filters out raids (ziji after 3.0: or does it? added real war check below)
 				owner = {
 					NOT = { character = ROOT } # Absolutely no silliness allowed
 					OR = { # Must be a hostile ruler
@@ -1948,59 +1952,41 @@ character_event = {
 							any_liege = { war_with = PREVPREV }
 						}
 					}
-					OR = { # Must be in actual war, because war_with doesn't filter raids
-						ROOT = { # Is ROOT at war with owner?
-							any_current_enemy = { character = PREVPREV }
-						}
-						any_liege = { # Is ROOT at war with any liege of owner?
-							ROOT = {
-								any_current_enemy = { character = PREVPREV }
-							}
-						}
-						ROOT = { # Is any liege of ROOT at war with owner?
-							any_liege = {
-								any_war = {
-									OR = {
-										any_attacker = { character = PREVPREVPREVPREV }
-										any_defender = { character = PREVPREVPREVPREV }
-									}
-									OR = {
-										any_attacker = { character = PREVPREV }
-										any_defender = { character = PREVPREV }
-									}
-								}
-							}
-						}
-						any_liege = { # Is any liege of owner at war with any liege of ROOT?
-							ROOT = {
-								any_liege = {
-									any_war = {
-										OR = {
-											any_attacker = { character = PREVPREVPREVPREV }
-											any_defender = { character = PREVPREVPREVPREV }
-										}
-										OR = {
-											any_attacker = { character = PREVPREV }
-											any_defender = { character = PREVPREV }
-										}
-									}
-								}
-							}
-						}
-					}
 					capital_scope = { province = PREVPREVPREV } # Must be capital province
-					any_demesne_title = { # Allow only one holding in the capital province to be occupied
+				}
+			}
+		}
+	}
+
+	immediate = {
+		save_event_target_as = emf_leader
+		location = { save_event_target_as = emf_location }
+		FROM = { save_event_target_as = emf_holding }
+		character_event = { id = emf_siege.50 days = 1 }
+	}
+}
+
+character_event = {
+	id = emf_siege.50
+	hide_window = yes
+	is_triggered_only = yes
+
+	trigger = {
+		event_target:emf_holding = {
+			is_occupied = yes
+			controller = {
+				OR = {
+					character = event_target:emf_leader
+					is_vassal_or_below = event_target:emf_leader
+				}
+			}
+			owner = {
+				NOT = {
+					any_demesne_title = { # Same as above, prevents folks showing up at secondary holdings
+						count = 2
 						tier = BARON
-						location = { province = PREVPREVPREVPREV }
+						location = { province = event_target:emf_location }
 						is_occupied = yes
-					}
-					NOT = {
-						any_demesne_title = { # Same as above, prevents folks showing up at secondary holdings
-							count = 2
-							tier = BARON
-							location = { province = PREVPREVPREVPREV }
-							is_occupied = yes
-						}
 					}
 				}
 			}
@@ -2008,41 +1994,33 @@ character_event = {
 	}
 
 	immediate = {
-		if = { # ROOT is owner
+		if = { # event_target:emf_leader is owner
 			limit = {
-				FROM = { controlled_by = ROOT }
+				event_target:emf_holding = { controlled_by = event_target:emf_leader }
 			}
-			save_event_target_as = emf_siege_unit_owner
+			save_event_target_as = emf_unit_owner
 		}
-		any_liege = { # ROOT's liege is owner
+		any_liege = { # event_target:emf_leader's liege is owner
 			limit = {
-				FROM = { controlled_by = PREV }
+				event_target:emf_holding = { controlled_by = PREV }
 			}
-			save_event_target_as = emf_siege_unit_owner
-		}
-		if = { # No owner?
-			limit = {
-				NOT = {
-					event_target:emf_siege_unit_owner = { always = yes }
-				}
-			}
-			log = "emf_siege_unit_owner not found - ROOT: [Root.GetTitledName] - FROM: [From.GetName]"
+			save_event_target_as = emf_unit_owner
 		}
 		if = { # For desc triggers
 			limit = {
-				FROM = {
+				event_target:emf_holding = {
 					location = {
-						event_target:emf_siege_unit_owner = { at_location = PREV }
+						event_target:emf_unit_owner = { at_location = PREV }
 					}
 				}
 			}
-			event_target:emf_siege_unit_owner = { set_flag = emf_siege_unit_owner_present }
+			event_target:emf_unit_owner = { set_flag = emf_unit_owner_present }
 		}
-		FROM = { # Send attacking owner the options
+		event_target:emf_holding = { # Send attacking owner the options
 			owner = {
 				any_courtier = { # Modifier cleanup
 					limit = {
-						at_location = ROOT
+						at_location = event_target:emf_location
 						NOT = { character = PREV }
 					}
 					remove_character_modifier = emf_siege_defender
@@ -2051,13 +2029,12 @@ character_event = {
 				}
 				if = { # Enemy leader is present
 					limit = {
-						at_location = ROOT
+						at_location = event_target:emf_location
 						is_abroad = no
 						NOT = { is_inaccessible_trigger = yes }
 						NOT = { trait = on_hajj }
 						NOT = { trait = on_pilgrimage }
 						NOT = { trait = traveling } # VIET compatibility
-#						NOT = { trait = on_retreat } # VIET compatibility
 					}
 					random = { # Bonus, sometimes
 						chance = 10
@@ -2065,23 +2042,22 @@ character_event = {
 					}
 					remove_character_modifier = emf_siege_defender			 # Clean
 					remove_character_modifier = emf_siege_failed_escape	 # Up
-					event_target:emf_siege_unit_owner = {
+					event_target:emf_unit_owner = {
 						character_event = { id = emf_siege.51 }
 					}
 				}
 				if = { # Enemy leader nowhere to be found
 					limit = {
 						OR = {
-							NOT = { at_location = ROOT }
+							NOT = { at_location = event_target:emf_location }
 							is_abroad = yes
 							is_inaccessible_trigger = yes
 							trait = on_hajj
 							trait = on_pilgrimage
 							trait = traveling # VIET compatibility
-#							trait = on_retreat # VIET compatibility
 						}
 						any_courtier = {
-							at_location = ROOT
+							at_location = event_target:emf_location
 							NOT = { character = PREV }
 							has_job_action = no
 							OR = {
@@ -2100,26 +2076,25 @@ character_event = {
 							NOT = { is_inaccessible_trigger = yes }
 						}
 					}
-					event_target:emf_siege_unit_owner = {
+					event_target:emf_unit_owner = {
 						character_event = { id = emf_siege.52 }
 					}
 				}
 				if = {
 					limit = {
 						any_courtier = {
-							at_location = ROOT
+							at_location = event_target:emf_location
 							host = { character = PREVPREV }
 							prisoner = yes
 						}
 					}
-					event_target:emf_siege_unit_owner = {
+					event_target:emf_unit_owner = {
 						character_event = { id = emf_siege.53 }
 					}
 				}
 			}
 		}
-		event_target:emf_siege_unit_owner = { clr_flag = emf_siege_unit_owner_present }
-		clear_event_target = emf_siege_unit_owner
+		event_target:emf_unit_owner = { clr_flag = emf_unit_owner_present }
 	}
 
 	option = {
@@ -2165,10 +2140,10 @@ character_event = {
 	immediate = {
 		if = {
 			limit = {
-				FROMFROM = {
+				event_target:emf_holding = {
 					owner = {
 						any_courtier = {
-							at_location = FROMFROM
+							at_location = event_target:emf_location
 							NOT = { character = PREV }
 							has_job_action = no
 							OR = {
@@ -2222,14 +2197,10 @@ character_event = {
 				NOT = { has_flag = emf_siege_courtiers_present }
 			}
 		}
-
-		FROMFROM = {
+		event_target:emf_holding = {
 			owner = {
 				hidden_tooltip = { # Clear guardians
-					if = {
-						limit = { guardian = { always = yes } }
-						character_event = { id = emf_siege.71 }
-					}
+					remove_guardian = yes
 				}
 				imprison = ROOT
 				hidden_tooltip = { # Notify players
@@ -2254,25 +2225,25 @@ character_event = {
 			}
 			modifier = {
 				factor = 2
-				FROMFROM = {
+				event_target:emf_holding = {
 					owner = { higher_tier_than = COUNT }
 				}
 			}
 			modifier = {
 				factor = 2
-				FROMFROM = {
+				event_target:emf_holding = {
 					owner = { higher_tier_than = DUKE }
 				}
 			}
 			modifier = {
 				factor = 2
-				FROMFROM = {
+				event_target:emf_holding = {
 					owner = { higher_tier_than = KING }
 				}
 			}
 			modifier = { # Owner is likely an important war target
 				factor = 128
-				FROMFROM = {
+				event_target:emf_holding = {
 					owner = {
 						ROOT = {
 							any_current_enemy = { character = PREVPREV }
@@ -2294,14 +2265,10 @@ character_event = {
 				NOT = { has_flag = emf_siege_unit_owner_present }
 			}
 		}
-
-		FROMFROM = {
+		event_target:emf_holding = {
 			owner = {
 				hidden_tooltip = { # Clear guardians
-					if = {
-						limit = { guardian = { always = yes } }
-						character_event = { id = emf_siege.71 }
-					}
+					remove_guardian = yes
 				}
 				imprison = ROOT
 				hidden_tooltip = { # Notify players
@@ -2309,7 +2276,7 @@ character_event = {
 				}
 				any_courtier = {
 					limit = {
-						at_location = FROMFROM
+						at_location = event_target:emf_location
 						NOT = { character = PREV }
 						has_job_action = no
 						OR = {
@@ -2328,10 +2295,7 @@ character_event = {
 						NOT = { is_inaccessible_trigger = yes }
 					}
 					hidden_tooltip = { # Clear guardians
-						if = {
-							limit = { guardian = { always = yes } }
-							character_event = { id = emf_siege.71 }
-						}
+						remove_guardian = yes
 					}
 					imprison = ROOT
 					hidden_tooltip = { # Notify players
@@ -2352,25 +2316,25 @@ character_event = {
 			}
 			modifier = {
 				factor = 2
-				FROMFROM = {
+				event_target:emf_holding = {
 					owner = { higher_tier_than = COUNT }
 				}
 			}
 			modifier = {
 				factor = 2
-				FROMFROM = {
+				event_target:emf_holding = {
 					owner = { higher_tier_than = DUKE }
 				}
 			}
 			modifier = {
 				factor = 2
-				FROMFROM = {
+				event_target:emf_holding = {
 					owner = { higher_tier_than = KING }
 				}
 			}
 			modifier = { # Owner is likely an important war target
 				factor = 128
-				FROMFROM = {
+				event_target:emf_holding = {
 					owner = {
 						ROOT = {
 							any_current_enemy = { character = PREVPREV }
@@ -2392,15 +2356,11 @@ character_event = {
 				NOT = { has_flag = emf_siege_unit_owner_present }
 			}
 		}
-
 		custom_tooltip = { text = emf_siege.51.c_tt }
-		FROMFROM = {
+		event_target:emf_holding = {
 			owner = {
 				hidden_tooltip = { # Clear guardians
-					if = {
-						limit = { guardian = { always = yes } }
-						character_event = { id = emf_siege.71 }
-					}
+					remove_guardian = yes
 				}
 				imprison = ROOT
 				hidden_tooltip = { # Notify players
@@ -2409,7 +2369,7 @@ character_event = {
 				}
 				any_courtier = {
 					limit = {
-						at_location = FROMFROM
+						at_location = event_target:emf_location
 						NOT = { character = PREV }
 						has_job_action = no
 						OR = {
@@ -2427,15 +2387,9 @@ character_event = {
 						}
 						NOT = { is_inaccessible_trigger = yes }
 					}
-					if = {
-						limit = {
-							dynasty = ROOT
-							ROOT = {
-								NOT = { trait = kinslayer }
-								NOT = { religion_group = muslim }
-							}
-						}
-						add_trait = kinslayer
+					save_event_target_as = kinslayer_target
+					tooltip = {
+						ROOT = { add_kinslayer_trait_effect = yes }
 					}
 					hidden_tooltip = {
 						save_event_target_as = emf_siege_massacre_victim
@@ -2480,7 +2434,7 @@ character_event = {
 			}
 			modifier = { # More likely if religious enemies
 				factor = 2
-				FROMFROM = {
+				event_target:emf_holding = {
 					owner = {
 						NOT = { religion_group = ROOT }
 					}
@@ -2525,16 +2479,16 @@ character_event = {
 		}
 
 		custom_tooltip = { text = emf_siege.51.d_tt }
-		FROMFROM = {
+		event_target:emf_holding = {
 			owner = {
 				opinion = {
 					modifier = opinion_gained_respect
 					who = ROOT
-					months = 12
+					months = 24
 				}
 				any_courtier = {
 					limit = {
-						at_location = FROMFROM
+						at_location = event_target:emf_location
 						NOT = { character = PREV }
 						has_job_action = no
 						OR = {
@@ -2603,12 +2557,11 @@ character_event = {
 				NOT = { has_flag = emf_siege_unit_owner_present }
 			}
 		}
-
-		FROMFROM = {
+		event_target:emf_holding = {
 			owner = {
 				any_courtier = {
 					limit = {
-						at_location = FROMFROM
+						at_location = event_target:emf_location
 						NOT = { character = PREV }
 						has_job_action = no
 						OR = {
@@ -2627,10 +2580,7 @@ character_event = {
 						NOT = { is_inaccessible_trigger = yes }
 					}
 					hidden_tooltip = { # Clear guardians
-						if = {
-							limit = { guardian = { always = yes } }
-							character_event = { id = emf_siege.71 }
-						}
+						remove_guardian = yes
 					}
 					imprison = ROOT
 					hidden_tooltip = { # Notify players
@@ -2650,19 +2600,19 @@ character_event = {
 			}
 			modifier = {
 				factor = 2
-				FROMFROM = {
+				event_target:emf_holding = {
 					owner = { higher_tier_than = COUNT }
 				}
 			}
 			modifier = {
 				factor = 2
-				FROMFROM = {
+				event_target:emf_holding = {
 					owner = { higher_tier_than = DUKE }
 				}
 			}
 			modifier = {
 				factor = 2
-				FROMFROM = {
+				event_target:emf_holding = {
 					owner = { higher_tier_than = KING }
 				}
 			}
@@ -2681,14 +2631,14 @@ character_event = {
 		}
 
 		custom_tooltip = { text = emf_siege.52.b_tt }
-		FROMFROM = {
+		event_target:emf_holding = {
 			owner = {
 				hidden_tooltip = { # Notify players of massacre
 					character_event = { id = emf_siege.55 }
 				}
 				any_courtier = {
 					limit = {
-						at_location = FROMFROM
+						at_location = event_target:emf_location
 						NOT = { character = PREV }
 						has_job_action = no
 						OR = {
@@ -2706,15 +2656,9 @@ character_event = {
 						}
 						NOT = { is_inaccessible_trigger = yes }
 					}
-					if = {
-						limit = {
-							dynasty = ROOT
-							ROOT = {
-								NOT = { trait = kinslayer }
-								NOT = { religion_group = muslim }
-							}
-						}
-						add_trait = kinslayer
+					save_event_target_as = kinslayer_target
+					tooltip = {
+						ROOT = { add_kinslayer_trait_effect = yes }
 					}
 					hidden_tooltip = {
 						save_event_target_as = emf_siege_massacre_victim
@@ -2758,7 +2702,7 @@ character_event = {
 			}
 			modifier = { # More likely if religious enemies
 				factor = 2
-				FROMFROM = {
+				event_target:emf_holding = {
 					owner = {
 						NOT = { religion_group = ROOT }
 					}
@@ -2783,18 +2727,17 @@ character_event = {
 				NOT = { has_flag = emf_siege_unit_owner_present }
 			}
 		}
-
 		custom_tooltip = { text = emf_siege.52.c_tt }
-		FROMFROM = {
+		event_target:emf_holding = {
 			owner = {
 				opinion = {
 					modifier = opinion_gained_respect
 					who = ROOT
-					months = 12
+					months = 24
 				}
 				any_courtier = {
 					limit = {
-						at_location = FROMFROM
+						at_location = event_target:emf_location
 						NOT = { character = PREV }
 						has_job_action = no
 						OR = {
@@ -2853,10 +2796,10 @@ character_event = {
 
 	option = { # Release all prisoners
 		trigger = {
-			FROMFROM = {
+			event_target:emf_holding = {
 				owner = {
 					any_courtier = {
-						at_location = FROMFROM
+						at_location = event_target:emf_location
 						host = { character = PREVPREV }
 						prisoner = yes
 					}
@@ -2873,12 +2816,11 @@ character_event = {
 				NOT = { has_flag = emf_siege_unit_owner_present }
 			}
 		}
-
-		FROMFROM = {
+		event_target:emf_holding = {
 			owner = {
 				any_courtier = {
 					limit = {
-						at_location = FROMFROM
+						at_location = event_target:emf_location
 						host = { character = PREVPREV }
 						prisoner = yes
 					}
@@ -2886,6 +2828,7 @@ character_event = {
 					opinion = {
 						who = ROOT
 						modifier = opinion_grateful
+						multiplier = 2
 						months = 120
 					}
 				}
@@ -2905,10 +2848,10 @@ character_event = {
 	}
 	option = { # Release all friendlies
 		trigger = {
-			FROMFROM = {
+			event_target:emf_holding = {
 				owner = {
 					any_courtier = {
-						at_location = FROMFROM
+						at_location = event_target:emf_location
 						host = { character = PREVPREV }
 						prisoner = yes
 						religion_group = ROOT
@@ -2930,15 +2873,14 @@ character_event = {
 			}
 		}
 
-		FROMFROM = {
+		event_target:emf_holding = {
 			owner = {
 				any_courtier = {
 					limit = {
-						at_location = FROMFROM
+						at_location = event_target:emf_location
 						host = { character = PREVPREV }
 						prisoner = yes
-						religion_group = ROOT
-						NOT = { is_heresy_of = ROOT }
+						emf_hostile_religion_to_ROOT = no
 						NOT = { war_with = ROOT }
 						NOT = { is_foe = ROOT }
 					}
@@ -2946,6 +2888,7 @@ character_event = {
 					opinion = {
 						who = ROOT
 						modifier = opinion_grateful
+						multiplier = 2
 						months = 120
 					}
 				}
@@ -2957,10 +2900,10 @@ character_event = {
 	}
 	option = { # Release only my family members
 		trigger = {
-			FROMFROM = {
+			event_target:emf_holding = {
 				owner = {
 					any_courtier = {
-						at_location = FROMFROM
+						at_location = event_target:emf_location
 						host = { character = PREVPREV }
 						OR = {
 							is_close_relative = ROOT
@@ -2986,12 +2929,11 @@ character_event = {
 				NOT = { has_flag = emf_siege_unit_owner_present }
 			}
 		}
-
-		FROMFROM = {
+		event_target:emf_holding = {
 			owner = {
 				any_courtier = {
 					limit = {
-						at_location = FROMFROM
+						at_location = event_target:emf_location
 						host = { character = PREVPREV }
 						OR = {
 							is_close_relative = ROOT
@@ -3008,6 +2950,7 @@ character_event = {
 					opinion = {
 						who = ROOT
 						modifier = opinion_grateful
+						multiplier = 2
 						months = 120
 					}
 				}
@@ -3019,10 +2962,10 @@ character_event = {
 	}
 	option = { # Release nobody
 		trigger = {
-			FROMFROM = {
+			event_target:emf_holding = {
 				owner = {
 					any_courtier = {
-						at_location = FROMFROM
+						at_location = event_target:emf_location
 						host = { character = PREVPREV }
 						prisoner = yes
 					}
@@ -3039,22 +2982,21 @@ character_event = {
 				NOT = { has_flag = emf_siege_unit_owner_present }
 			}
 		}
-
-		FROMFROM = { # Friendlies will be angry
+		event_target:emf_holding = { # Friendlies will be angry
 			owner = {
 				any_courtier = {
 					limit = {
-						at_location = FROMFROM
+						at_location = event_target:emf_location
 						host = { character = PREVPREV }
 						prisoner = yes
-						religion_group = ROOT
-						NOT = { is_heresy_of = ROOT }
+						emf_hostile_religion_to_ROOT = no
 						NOT = { war_with = ROOT }
 						NOT = { is_foe = ROOT }
 					}
 					opinion = {
 						modifier = opinion_furious
 						who = ROOT
+						multiplier = 2
 						months = 12
 					}
 				}
@@ -3304,16 +3246,9 @@ character_event = {
 	is_triggered_only = yes
 
 	immediate = {
-		if = {
-			limit = {
-				event_target:emf_siege_massacre_victim = { dynasty = ROOT }
-				NOT = { trait = kinslayer }
-				NOT = { religion_group = muslim }
-			}
-			add_trait = kinslayer
-		}
-
 		event_target:emf_siege_massacre_victim = {
+			save_event_target_as = kinslayer_target
+			add_kinslayer_trait_effect = yes
 			if = {
 				limit = {
 					NOT = { dynasty = ROOT }
@@ -3431,28 +3366,6 @@ character_event = {
 	}
 }
 
-# Remove guardians - This was a deeply silly event, but now there's a proper `remove_guardian` effect
-character_event = {
-	id = emf_siege.71
-	hide_window = yes
-	is_triggered_only = yes
-
-	immediate = {
-		# e_hip = {
-		#	 owner = {
-		#		 ROOT = { set_guardian = PREV }
-		#		 add_trait = incapable
-		#		 remove_trait = incapable
-		#	 }
-		# }
-		remove_guardian = yes
-	}
-
-	option = {
-		name = OK
-	}
-}
-
 # Clear pointless modifiers - from on_siege_over_loc_chars
 # Siege winner unit owner in the 'new_character' scope, lost holding title in FROM, local character in ROOT.
 character_event = {
@@ -3540,99 +3453,73 @@ character_event = {
 # If non-tribal AND non-Pagan OR reformed Pagan, there are piety penalties for looting temples of your own religion
 
 ## Attacker Events
-## 100-119 Reserved
+## 100-119 & 10000 & 10100 Reserved, 10000 defers to 100, 10100 defers to 101
+
 # Divvy up that shiny loot - from on_siege_over_loc_chars
 # Siege winner unit owner in the 'new_character' scope, lost holding title in FROM, local character in ROOT.
+character_event = {
+	id = emf_siege.10000
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		new_character = {
+			NOR = {
+				rebel = yes
+				primary_title = { has_flag = emf_revolt }
+				has_landed_title = e_rebels
+				any_liege = {
+					OR = {
+						rebel = yes
+						primary_title = { has_flag = emf_revolt }
+						has_landed_title = e_rebels
+					}
+				}
+			}
+		}
+		FROM = { is_occupied = no }
+		is_ruler = no # Not for rulers, who don't show up anyway; we've got a separate event for them
+		NOT = { is_inaccessible_trigger = yes }
+	}
+
+	immediate = {
+		new_character = { save_event_target_as = emf_looter }
+		FROM = { save_event_target_as = emf_holding }
+		character_event = { id = emf_siege.100 days = 1 }
+	}
+}
+
 character_event = {
 	id = emf_siege.100
 	hide_window = yes
 	is_triggered_only = yes
 
 	trigger = {
-		new_character = {
-			rebel = no
-			NOT = { has_landed_title = e_rebels }
-			NOT = {
-				any_liege = {
-					OR = {
-						rebel = yes
-						has_landed_title = e_rebels
-					}
-				}
-			}
-		}
-		FROM = {
-			is_occupied = no # Looted, NOT occupied
-			owner = {
-				NOR = { # Must NOT be in actual war, because in 3.0, is_occupied=no doesn't seem to be good enough to filter for raids
-					new_character = { # Is new_character at war with owner?
-						any_current_enemy = { character = PREVPREV }
-					}
-					any_liege = { # Is new_character at war with any liege of owner?
-						new_character = {
-							any_current_enemy = { character = PREVPREV }
-						}
-					}
-					new_character = { # Is any liege of new_character at war with owner?
-						any_liege = {
-							any_war = {
-								OR = {
-									any_attacker = { character = PREVPREVPREVPREV }
-									any_defender = { character = PREVPREVPREVPREV }
-								}
-								OR = {
-									any_attacker = { character = PREVPREV }
-									any_defender = { character = PREVPREV }
-								}
-							}
-						}
-					}
-					any_liege = { # Is any liege of owner at war with any liege of new_character?
-						new_character = {
-							any_liege = {
-								any_war = {
-									OR = {
-										any_attacker = { character = PREVPREVPREVPREV }
-										any_defender = { character = PREVPREVPREVPREV }
-									}
-									OR = {
-										any_attacker = { character = PREVPREV }
-										any_defender = { character = PREVPREV }
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		is_ruler = no # Not for rulers, who don't show up anyway; we've got a separate event for them
-		NOT = { is_inaccessible_trigger = yes }
+		event_target:emf_holding = { is_occupied = no }
 	}
 
 	option = { # I am safe
 		name = OK
-
 		ai_chance = {
 			factor = 10
 		}
 	}
 	option = { # I am caught
 		name = OK
-
-		new_character = {
+		event_target:emf_looter = {
 			ROOT = { imprison = PREV }
 		}
 		ai_chance = {
 			factor = 1
 			modifier = {
 				factor = 0.5
-				NOT = { dynasty = none }
+				is_lowborn = no
 			}
 			modifier = {
 				factor = 2
 				is_female = yes
-				new_character = {
+				event_target:emf_looter = {
 					OR = {
 						religion_group = pagan_group
 						religion_group = zoroastrian_group
@@ -3642,13 +3529,13 @@ character_event = {
 			modifier = {
 				factor = 2
 				is_theocracy = yes
-				new_character = {
+				event_target:emf_looter = {
 					NOT = { religion = ROOT }
 				}
 			}
 			modifier = {
 				factor = 3
-				dynasty = none
+				is_lowborn = yes
 			}
 		}
 	}
@@ -3657,72 +3544,32 @@ character_event = {
 # Divvy up that shiny loot, ruler edition - from on_siege_over_winner
 # Siege winner unit owner = ROOT, barony title = FROM
 character_event = {
-	id = emf_siege.101
-	hide_window = yes
+	id = emf_siege.10100
+
 	is_triggered_only = yes
+	hide_window = yes
 
 	trigger = {
-		rebel = no
-		NOT = { has_landed_title = e_rebels }
-		NOT = {
+		NOR = {
+			rebel = yes
+			primary_title = { has_flag = emf_revolt }
+			has_landed_title = e_rebels
 			any_liege = {
 				OR = {
 					rebel = yes
+					primary_title = { has_flag = emf_revolt }
 					has_landed_title = e_rebels
 				}
 			}
 		}
 		FROM = {
-			tier = BARON
-			is_occupied = no # Looted, NOT occupied
+			is_occupied = no
 			location = {
-				FROM = {
+				ROOT_FROM = {
 					owner = {
-						capital_holding = { title = FROM } # Only at capital
+						capital_holding = { title = ROOT_FROM } # Only at capital
 						capital_scope = { province = PREVPREVPREV } # Must be capital province
 						war_with = ROOT # Must be hostile ruler
-					}
-				}
-			}
-			owner = {
-				NOR = { # Must NOT be in actual war, because war_with doesn't filter raids & is_occupied trick is falling short in 3.0
-					ROOT = { # Is ROOT at war with owner?
-						any_current_enemy = { character = PREVPREV }
-					}
-					any_liege = { # Is ROOT at war with any liege of owner?
-						ROOT = {
-							any_current_enemy = { character = PREVPREV }
-						}
-					}
-					ROOT = { # Is any liege of ROOT at war with owner?
-						any_liege = {
-							any_war = {
-								OR = {
-									any_attacker = { character = PREVPREVPREVPREV }
-									any_defender = { character = PREVPREVPREVPREV }
-								}
-								OR = {
-									any_attacker = { character = PREVPREV }
-									any_defender = { character = PREVPREV }
-								}
-							}
-						}
-					}
-					any_liege = { # Is any liege of owner at war with any liege of ROOT?
-						ROOT = {
-							any_liege = {
-								any_war = {
-									OR = {
-										any_attacker = { character = PREVPREVPREVPREV }
-										any_defender = { character = PREVPREVPREVPREV }
-									}
-									OR = {
-										any_attacker = { character = PREVPREV }
-										any_defender = { character = PREVPREV }
-									}
-								}
-							}
-						}
 					}
 				}
 			}
@@ -3730,9 +3577,28 @@ character_event = {
 	}
 
 	immediate = {
-		FROM = {
+		save_event_target_as = emf_looter
+		FROM = { save_event_target_as = emf_holding }
+		character_event = { id = emf_siege.101 days = 1 }
+	}
+}
+
+character_event = {
+	id = emf_siege.101
+	hide_window = yes
+	is_triggered_only = yes
+
+	trigger = {
+		event_target:emf_looter = { is_alive = yes }
+		event_target:emf_holding = {
+			is_occupied = no # Looted, NOT occupied
+		}
+	}
+
+	immediate = {
+		event_target:emf_holding = {
 			location = {
-				FROM = {
+				event_target:emf_holding = {
 					owner = {
 						if = { # Owner is present, attempt capture
 							limit = {
@@ -3742,19 +3608,18 @@ character_event = {
 								NOT = { trait = on_hajj }
 								NOT = { trait = on_pilgrimage }
 								NOT = { trait = traveling } # VIET compatibility
-#								NOT = { trait = on_retreat } # VIET compatibility
 							}
 							character_event = { id = emf_siege.102 }
 						}
 						any_courtier = { # Attempt capture of other present rulers
 							limit = {
+								is_ruler = yes
 								NOT = { character = PREV }
 								host = { character = PREVPREV }
 								at_location = PREVPREVPREV
 								is_abroad = yes
 								prisoner = no
 								has_job_action = no
-								is_ruler = yes
 								has_regent = no
 								NOT = { is_inaccessible_trigger = yes }
 							}
@@ -3776,29 +3641,27 @@ character_event = {
 
 	option = { # Ruler evades capture
 		name = OK
-
 		ai_chance = {
 			factor = 10
 		}
 	}
 	option = { # Ruler is caught
 		name = OK
-
 		if = { # Players get flavor event
 			limit = { ai = no }
 			long_character_event = { id = emf_siege.105 }
 		}
 		if = { # AI does NOT
 			limit = { ai = yes }
-			imprison = FROM
+			imprison = event_target:emf_looter
 		}
 		if = { # Non-tribal rulers get a chance to release bishops of the same religion
 			limit = {
-				FROMFROM = {
+				event_target:emf_holding = {
 					owner = { character = ROOT }
 				}
 			}
-			FROM = {
+			event_target:emf_looter = {
 				character_event = { id = emf_siege.106 days = 7 random = 7 }
 			}
 		}
@@ -3810,16 +3673,16 @@ character_event = {
 			}
 			modifier = {
 				factor = 0.5
-				NOT = { dynasty = none }
+				is_lowborn = no
 			}
 			modifier = {
 				factor = 3
-				dynasty = none
+				is_lowborn = yes
 			}
 			modifier = {
 				factor = 2
 				is_theocracy = yes
-				NOT = { religion = FROM }
+				NOT = { religion = event_target:emf_looter }
 			}
 		}
 	}
@@ -3835,19 +3698,19 @@ long_character_event = {
 	desc = {
 		text = emf_siege.105.desc_castle
 		trigger = {
-			FROMFROMFROM = { holding_type = castle }
+			event_target:emf_holding = { holding_type = castle }
 		}
 	}
 	desc = {
 		text = emf_siege.105.desc_city
 		trigger = {
-			FROMFROMFROM = { holding_type = city }
+			event_target:emf_holding = { holding_type = city }
 		}
 	}
 	desc = {
 		text = emf_siege.105.desc_temple
 		trigger = {
-			FROMFROMFROM = { holding_type = temple }
+			event_target:emf_holding = { holding_type = temple }
 		}
 	}
 	picture = GFX_evt_burning_house
@@ -3855,7 +3718,7 @@ long_character_event = {
 	is_triggered_only = yes
 
 	immediate = {
-		imprison = FROMFROM
+		imprison = event_target:emf_looter
 	}
 
 	option = {
@@ -3876,7 +3739,7 @@ character_event = {
 
 	trigger = {
 		is_tribal = no
-		FROMFROMFROM = {
+		event_target:emf_holding = {
 			owner = {
 				host = { character = ROOT }
 				prisoner = yes
@@ -3903,7 +3766,7 @@ character_event = {
 			trigger = { trait = zealous }
 		}
 
-		FROMFROMFROM = {
+		event_target:emf_holding = {
 			owner = { prisoner = no }
 		}
 	}
@@ -3930,27 +3793,61 @@ character_event = {
 }
 
 ## Other Looting Mechanics
-## 120-129 Reserved
+## 120-129 & 12000 Reserved, 12000 defers to 120
+
+# Non-tribal raiders looted a church of their own faith - Proxy event
+character_event = {
+	id = emf_siege.12000
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	ai = no
+
+	trigger = {
+		is_tribal = no
+		NOR = {
+			rebel = yes
+			primary_title = { has_flag = emf_revolt }
+			has_landed_title = e_rebels
+			any_liege = {
+				OR = {
+					rebel = yes
+					primary_title = { has_flag = emf_revolt }
+					has_landed_title = e_rebels
+				}
+			}
+		}
+		OR = {
+			is_reformed_religion = yes
+			NOT = { religion_group = pagan_group }
+		}
+		FROM = {
+			is_occupied = no # Looted, NOT occupied [NOTE: won't know this for sure until the next day in emf_siege.120]
+			holding_type = temple
+			owner = {
+				is_theocracy = yes
+				religion = ROOT
+				war_with = ROOT # Must be hostile to ruler
+			}
+		}
+	}
+
+	immediate = {
+		save_event_target_as = emf_looter
+		FROM = { save_event_target_as = emf_holding }
+		character_event = { id = emf_siege.120 days = 1 }
+	}
+}
+
 # Non-tribal raiders looted a church of their own faith - Proxy event
 character_event = {
 	id = emf_siege.120
 	hide_window = yes
 	is_triggered_only = yes
 
-	ai = no
-
 	trigger = {
 		is_tribal = no
-		rebel = no
-		NOR = {
-			has_landed_title = e_rebels
-			any_liege = {
-				OR = {
-					rebel = yes
-					has_landed_title = e_rebels
-				}
-			}
-		}
 		OR = {
 			is_reformed_religion = yes
 			NOT = { religion_group = pagan_group }
@@ -3961,47 +3858,6 @@ character_event = {
 			owner = {
 				is_theocracy = yes
 				religion = ROOT
-				war_with = ROOT # Must be hostile to ruler
-				NOR = { # Must NOT be in actual war, because war_with doesn't filter raids, and is_occupied=no doesn't seem to work after 3.0
-					ROOT = { # Is ROOT at war with owner?
-						any_current_enemy = { character = PREVPREV }
-					}
-					any_liege = { # Is ROOT at war with any liege of owner?
-						ROOT = {
-							any_current_enemy = { character = PREVPREV }
-						}
-					}
-					ROOT = { # Is any liege of ROOT at war with owner?
-						any_liege = {
-							any_war = {
-								OR = {
-									any_attacker = { character = PREVPREVPREVPREV }
-									any_defender = { character = PREVPREVPREVPREV }
-								}
-								OR = {
-									any_attacker = { character = PREVPREV }
-									any_defender = { character = PREVPREV }
-								}
-							}
-						}
-					}
-					any_liege = { # Is any liege of owner at war with any liege of ROOT?
-						ROOT = {
-							any_liege = {
-								any_war = {
-									OR = {
-										any_attacker = { character = PREVPREVPREVPREV }
-										any_defender = { character = PREVPREVPREVPREV }
-									}
-									OR = {
-										any_attacker = { character = PREVPREV }
-										any_defender = { character = PREVPREV }
-									}
-								}
-							}
-						}
-					}
-				}
 			}
 		}
 	}
@@ -4031,7 +3887,7 @@ character_event = {
 	desc = {
 		text = emf_siege.121.desc_present
 		trigger = {
-			FROMFROM = {
+			event_target:emf_holding = {
 				location = {
 					ROOT = { at_location = PREV }
 				}
@@ -4041,7 +3897,7 @@ character_event = {
 	desc = {
 		text = emf_siege.121.desc_distant
 		trigger = {
-			FROMFROM = {
+			event_target:emf_holding = {
 				location = {
 					ROOT = {
 						NOT = { at_location = PREV }
@@ -4073,13 +3929,13 @@ character_event = {
 
 		if = {
 			limit = {
-				FROMFROM = { is_holy_site = ROOT }
+				event_target:emf_holding = { is_holy_site = ROOT }
 			}
 			piety = -100
 		}
 		if = {
 			limit = {
-				FROMFROM = {
+				event_target:emf_holding = {
 					NOT = { is_holy_site = ROOT }
 				}
 			}
@@ -4100,7 +3956,7 @@ character_event = {
 	desc = {
 		text = emf_siege.122.desc_reg
 		trigger = {
-			FROMFROM = {
+			event_target:emf_holding = {
 				NOT = { is_holy_site = ROOT }
 			}
 		}
@@ -4108,7 +3964,7 @@ character_event = {
 	desc = {
 		text = emf_siege.122.desc_holy
 		trigger = {
-			FROMFROM = { is_holy_site = ROOT }
+			event_target:emf_holding = { is_holy_site = ROOT }
 		}
 	}
 	picture = GFX_evt_burning_house
@@ -4119,13 +3975,13 @@ character_event = {
 	immediate = {
 		if = {
 			limit = {
-				FROMFROM = { is_holy_site = ROOT }
+				event_target:emf_holding = { is_holy_site = ROOT }
 			}
 			piety = -100
 		}
 		if = {
 			limit = {
-				FROMFROM = {
+				event_target:emf_holding = {
 					NOT = { is_holy_site = ROOT }
 				}
 			}
@@ -4138,13 +3994,13 @@ character_event = {
 
 		if = {
 			limit = {
-				FROMFROM = { is_holy_site = ROOT }
+				event_target:emf_holding = { is_holy_site = ROOT }
 			}
 			tooltip = { piety = -100 }
 		}
 		if = {
 			limit = {
-				FROMFROM = {
+				event_target:emf_holding = {
 					NOT = { is_holy_site = ROOT }
 				}
 			}
