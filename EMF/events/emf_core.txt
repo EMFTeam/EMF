@@ -1091,12 +1091,11 @@ character_event = {
 
 	trigger = {
 		mercenary = no
-		is_tributary = no
 		current_heir = { is_alive = yes }
-		any_independent_ruler = {
+		any_tributary = {
 			OR = {
-				is_tributary = { type = default suzerain = ROOT }
-				is_tributary = { type = nomadic suzerain = ROOT }
+				is_tributary = { type = default }
+				is_tributary = { type = nomadic }
 			}
 			any_realm_province = { any_neighbor_province = { owner_under_ROOT = yes } }
 			NOR = {
@@ -1110,33 +1109,32 @@ character_event = {
 	}
 
 	immediate = {
-		current_heir = { save_event_target_as = new_suzerain }
-		any_independent_ruler = {
+		save_event_target_as = emf_old_suzerain
+		current_heir = { save_event_target_as = emf_new_suzerain }
+		primary_title = { save_event_target_as = emf_suzerain_primary }
+		any_tributary = {
 			limit = {
-				NOT = { character = event_target:new_suzerain }
+				NOT = { character = event_target:emf_new_suzerain }
 				OR = {
-					is_tributary = { type = default suzerain = ROOT }
-					is_tributary = { type = nomadic suzerain = ROOT }
+					is_tributary = { type = default }
+					is_tributary = { type = nomadic }
 				}
 			}
 			if = {
-				limit = {
-					is_tributary = { type = default suzerain = ROOT }
-				}
-				set_flag = default_tributary_of_@event_target:new_suzerain
+				limit = { is_tributary = { type = default } }
+				set_flag = default_tribute_of_@event_target:emf_new_suzerain
 			}
 			else_if = {
-				limit = {
-					is_tributary = { type = nomadic suzerain = ROOT }
-				}
-				set_flag = nomadic_tributary_of_@event_target:new_suzerain
+				limit = { is_tributary = { type = nomadic } }
+				set_flag = nomadic_tribute_of_@event_target:emf_new_suzerain
 			}
-			character_event = { id = emf_core.93 days = 1 } # renew tribute status
+			character_event = { id = emf_core.93 days = 1 } # Renew tribute status
 		}
 	}
 }
 
-# Tribute accepted
+# emf_core.91 [Renewed Tributary]
+# Tribute renewal accepted
 character_event = {
 	id = emf_core.91
 	desc = EVTDESC_emf_core_91
@@ -1146,16 +1144,15 @@ character_event = {
 
 	option = {
 		name = EXCELLENT
-		hidden_tooltip = {
-			FROM = {
-				clr_flag = default_tributary_of_@ROOT 
-				clr_flag = nomadic_tributary_of_@ROOT 
-			}
+		hidden_effect = {
+			clr_flag = default_tribute_of_@FROM
+			clr_flag = nomadic_tribute_of_@FROM
 		}
 	}
 }
 
-# Tribute refused
+# emf_core.92 [Former Tributary]
+# Tribute renewal refused
 character_event = {
 	id = emf_core.92
 	desc = EVTDESC_emf_core_92
@@ -1165,16 +1162,15 @@ character_event = {
 
 	option = {
 		name = EVTOPTA_emf_core_92
-		hidden_tooltip = {
-			FROM = {
-				clr_flag = default_tributary_of_@ROOT 
-				clr_flag = nomadic_tributary_of_@ROOT 
-			}
+		hidden_effect = {
+			clr_flag = default_tribute_of_@FROM
+			clr_flag = nomadic_tribute_of_@FROM
 		}
 	}
 }
 
-# Tributes decide whether or not to break tribute with heir
+# emf_core.93 [Tributary]
+# Tributes decides whether or not to break tribute with heir; fires day after death of previous suzerain
 character_event = {
 	id = emf_core.93
 	desc = EVTDESC_emf_core_93
@@ -1183,9 +1179,15 @@ character_event = {
 	is_triggered_only = yes
 
 	trigger = {
-		event_target:new_suzerain = {
-			ROOT = { NOT = { higher_tier_than = PREV } }
-			NOT = { war_with = ROOT }
+		independent = yes
+		NOT = { war_with = event_target:emf_new_suzerain }
+		event_target:emf_new_suzerain = {
+			independent = yes
+			has_landed_title = event_target:emf_suzerain_primary # Sanity check
+		}
+		OR = {
+			has_flag = default_tribute_of_@event_target:emf_new_suzerain # Sanity check
+			has_flag = nomadic_tribute_of_@event_target:emf_new_suzerain # Sanity check
 		}
 	}
 	
@@ -1195,13 +1197,12 @@ character_event = {
 			factor = 50
 			modifier = {
 				factor = 3
-				war = yes
 				is_primary_war_defender = yes
 			}
 			modifier = {
 				factor = 1.5
-				event_target:new_suzerain = {
-					any_realm_province = { any_neighbor_province = { owner = { same_realm = ROOT } } }
+				event_target:emf_new_suzerain = {
+					any_realm_province = { any_neighbor_province = { owner_under_ROOT = yes } }
 				}
 			}
 			modifier = {
@@ -1218,7 +1219,7 @@ character_event = {
 			}
 			modifier = {
 				factor = 2
-				event_target:new_suzerain = {
+				event_target:emf_new_suzerain = {
 					OR = {
 						dynasty = ROOT
 						is_allied_with = ROOT
@@ -1228,25 +1229,22 @@ character_event = {
 				}
 			}
 		}
-		event_target:new_suzerain = {
-			if = {
-				limit = {
-					ROOT = { has_flag = default_tributary_of_@PREV }
-				}
-				tooltip = {
-					make_tributary = { who = ROOT percentage = 0.4 tributary_type = default }
-				}
-			}
-			else_if = {
-				limit = {
-					ROOT = { has_flag = nomadic_tributary_of_@PREV }
-				}
-				tooltip = {
+		if = {
+			limit = { has_flag = nomadic_tribute_of_@event_target:emf_new_suzerain }
+			tooltip = {
+				event_target:emf_new_suzerain = {
 					make_tributary = { who = ROOT percentage = 0.5 tributary_type = nomadic }
 				}
 			}
-			hidden_tooltip = { character_event = { id = emf_core.94 } }
 		}
+		else = {
+			tooltip = {
+				event_target:emf_new_suzerain = {
+					make_tributary = { who = ROOT percentage = 0.4 tributary_type = default }
+				}
+			}
+		}
+		hidden_effect = { event_target:emf_new_suzerain = { character_event = { id = emf_core.94 } } }
 	}
 	option = {
 		name = EVTOPTB_emf_core_93 # Break tribute status
@@ -1259,23 +1257,19 @@ character_event = {
 			factor = 50
 			modifier = {
 				factor = 0
-				event_target:new_suzerain = {
-					any_realm_province = { any_neighbor_province = { owner = { same_realm = ROOT } } }
+				event_target:emf_new_suzerain = {
+					any_realm_province = { any_neighbor_province = { owner_under_ROOT = yes } }
 					realm_levy_diff = { who = ROOT value = 5000 }
 				}
 			}
 			modifier = {
 				factor = 2
-				event_target:new_suzerain = {
-					is_foe = ROOT
-				}
+				is_foe = event_target:emf_new_suzerain
 			}
 			modifier = {
 				factor = 1.5
-				event_target:new_suzerain = {
-					NOT = {
-						any_realm_province = { any_neighbor_province = { owner = { same_realm = ROOT } } }
-					}
+				event_target:emf_new_suzerain = {
+					NOT = { any_realm_province = { any_neighbor_province = { owner_under_ROOT = yes } } }
 				}
 			}
 			modifier = {
@@ -1292,39 +1286,40 @@ character_event = {
 			}
 			modifier = {
 				factor = 1.5
-				event_target:new_suzerain = { reverse_realm_levy_diff = { who = ROOT value = 10000 } }
+				event_target:emf_new_suzerain = { reverse_realm_levy_diff = { who = ROOT value = 10000 } }
 			}
 			modifier = {
 				factor = 1.5
-				event_target:new_suzerain = { reverse_realm_levy_diff = { who = ROOT value = 7500 } }
+				event_target:emf_new_suzerain = { reverse_realm_levy_diff = { who = ROOT value = 7500 } }
 			}
 			modifier = {
 				factor = 1.5
-				event_target:new_suzerain = { reverse_realm_levy_diff = { who = ROOT value = 5000 } }
+				event_target:emf_new_suzerain = { reverse_realm_levy_diff = { who = ROOT value = 5000 } }
 			}
 			modifier = {
 				factor = 1.25
-				event_target:new_suzerain = { reverse_realm_levy_diff = { who = ROOT value = 1000 } }
+				event_target:emf_new_suzerain = { reverse_realm_levy_diff = { who = ROOT value = 1000 } }
 			}
 			modifier = {
 				factor = 0.5
-				event_target:new_suzerain = { realm_levy_diff = { who = ROOT value = 5000 } }
+				event_target:emf_new_suzerain = { realm_levy_diff = { who = ROOT value = 5000 } }
 			}
 			modifier = {
 				factor = 0.5
-				event_target:new_suzerain = { realm_levy_diff = { who = ROOT value = 7500 } }
+				event_target:emf_new_suzerain = { realm_levy_diff = { who = ROOT value = 7500 } }
 			}
 			modifier = {
 				factor = 0.5
-				event_target:new_suzerain = { realm_levy_diff = { who = ROOT value = 10000 } }
+				event_target:emf_new_suzerain = { realm_levy_diff = { who = ROOT value = 10000 } }
 			}
 		}
-		event_target:new_suzerain = {
+		event_target:emf_new_suzerain = {
 			character_event = { id = emf_core.95 tooltip = BREAK_TRIBUTE_STATUS }
 		}
 	}
 }
 
+# emf_core.94 [Former Tribute]
 # Former tribute offers to become tribute of heir
 character_event = {
 	id = emf_core.94
@@ -1336,20 +1331,13 @@ character_event = {
 	option = {
 		name = EVTOPTA_emf_core_94 # Accept tribute
 		if = {
-			limit = {
-				has_flag = default_tributary_of_@FROM
-			}
-			FROM = { make_tributary = { who = ROOT percentage = 0.4 tributary_type = default } }
+			limit = { FROM = { has_flag = nomadic_tribute_of_@ROOT } }
+			make_tributary = { who = FROM percentage = 0.5 tributary_type = nomadic }
 		}
-		else_if = {
-			limit = {
-				has_flag = nomadic_tributary_of_@FROM
-			}
-			FROM = { make_tributary = { who = ROOT percentage = 0.5 tributary_type = nomadic } }
+		else = {
+			make_tributary = { who = FROM percentage = 0.4 tributary_type = default }
 		}
-		FROM = {
-			hidden_tooltip = { character_event = { id = emf_core.91 } }
-		}
+		hidden_effect = { FROM = { character_event = { id = emf_core.91 } } } # Notify acceptance
 	}
 	option = {
 		name = EVTOPTB_emf_core_94 # Refuse tribute
@@ -1374,11 +1362,15 @@ character_event = {
 			factor = 50
 			modifier = {
 				factor = 3
-				war = yes
+				is_primary_war_defender = yes
 			}
 			modifier = {
 				factor = 2
-				NOT = { any_realm_province = { any_neighbor_province = { owner = { same_realm = FROM } } } }
+				is_primary_war_participant = yes
+			}
+			modifier = {
+				factor = 2
+				NOT = { any_realm_province = { any_neighbor_province = { owner_under_FROM = yes } } }
 			}
 			modifier = {
 				factor = 2
@@ -1410,12 +1402,6 @@ character_event = {
 			}
 		}
 		opinion = { who = FROM modifier = opinion_outraged years = 10 }
-		hidden_tooltip = {
-			FROM = {
-				clr_flag = default_tributary_of_@ROOT 
-				clr_flag = nomadic_tributary_of_@ROOT 
-			}
-		}
 	}
 	option = {
 		name = EVTOPTB_emf_core_95 # Attack them
@@ -1454,36 +1440,24 @@ character_event = {
 			}
 			modifier = {
 				factor = 0.5
-				NOT = { any_realm_province = { any_neighbor_province = { owner = { same_realm = FROM } } } }
+				NOT = { any_realm_province = { any_neighbor_province = { owner_under_FROM = yes } } }
 			}
 		}
-		if = {
-			limit = {
-				FROM = {
-					has_flag = default_tributary_of_@ROOT
-				}
+		FROM = {
+			if = {
+				limit = { has_flag = default_tribute_of_@ROOT }
+				reverse_war = { target = ROOT casus_belli = tributary_cb }
 			}
-			war = {
-				target = FROM
-				casus_belli = tributary_cb
+			else = {
+				reverse_war = { target = ROOT casus_belli = tributary_nomad_cb }
 			}
 		}
-		else_if = {
-			limit = {
-				FROM = {
-					has_flag = nomadic_tributary_of_@ROOT
-				}
-			}
-			war = {
-				target = FROM
-				casus_belli = tributary_nomad_cb
-			}
-		}
-		hidden_tooltip = {
-			FROM = {
-				clr_flag = default_tributary_of_@ROOT 
-				clr_flag = nomadic_tributary_of_@ROOT 
-			}
+	}
+
+	after = {
+		FROM = {
+			clr_flag = default_tribute_of_@ROOT 
+			clr_flag = nomadic_tribute_of_@ROOT 
 		}
 	}
 }
