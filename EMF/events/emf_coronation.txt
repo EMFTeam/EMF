@@ -20,17 +20,7 @@ character_event = {
 		# Add Crowned/Crowned by Pope/Weak Basileus traits
 		any_playable_ruler = {
 			limit = {
-				higher_real_tier_than = DUKE
-				is_adult = yes
-				is_feudal = yes
-				has_horde_culture = no
-				is_nomadic = no
-				primary_title = { is_vice_royalty = no }
-				OR = {
-					emf_imperial_government = no
-					real_tier = EMPEROR
-				}
-				emf_is_crowned = no
+				emf_needs_coronation = yes
 				emf_uses_furry_coronation = no
 			}
 			if = {
@@ -1121,7 +1111,10 @@ character_event = {
 					has_opinion_modifier = { who = PREV modifier = attending_coronation }
 					war = no
 					is_adult = yes
-					is_female = no
+					OR = {
+						is_female = no
+						emf_accepts_shieldmaiden_trigger = yes
+					}
 					prisoner = no
 					is_foe = ROOT
 					NOR = {
@@ -1415,6 +1408,7 @@ character_event = {
 
 	immediate = {
 		set_character_flag = coronation_duelist
+		save_event_target_as = combatant_1
 		FROMFROM = {
 			character_event = { id = emf_coronation.1229 }
 		}
@@ -1431,7 +1425,29 @@ character_event = {
 
 	immediate = {
 		set_character_flag = coronation_duelist
-		e_rebels = { holder_scope = { character_event = { id = DuelEngine.0 } } }
+        clr_character_flag = flag_duel_no_backsies
+		save_event_target_as = combatant_2
+        if = {
+            limit = { trait = craven }
+            random = {
+                chance = 20
+                emf_notify_remove_craven = yes
+            }
+        }
+        pacifists_lose_piety_effect = yes
+        if = { #If they previously offended you, this rectifies that.
+            limit = { event_target:combatant_1 = { has_opinion_modifier = { who = ROOT modifier = grievously_offended } } }
+            event_target:combatant_1 = { remove_opinion = { who = ROOT modifier = grievously_offended } }
+        }
+        if = {
+            limit = { #Warriors like a warrior who acts like one...
+                is_member_of_any_warrior_lodge_trigger = yes
+            }
+            add_legend_progress_trivial_effect = yes
+        }
+        event_target:combatant_1 = { character_event = { id = HFP.10096 days = 1 } }
+        set_character_flag = add_duel_xp
+        clr_character_flag = punish_declining
 	}
 }
 
@@ -2271,10 +2287,13 @@ character_event = {
 					limit = {
 						reverse_has_opinion_modifier = { who = ROOT modifier = attending_coronation }
 						has_opinion_modifier = { who = ROOT modifier = attending_coronation }
-						is_female = no
+						OR = {
+							is_female = no
+							emf_accepts_shieldmaiden_trigger = yes
+						}
 						higher_tier_than = BARON
 						OR = {
-							martial = 8
+							martial > 5
 							trait = duelist
 							trait = lunatic
 							trait = possessed
@@ -2290,7 +2309,10 @@ character_event = {
 								has_opinion_modifier = { who = PREV modifier = attending_coronation }
 								war = no
 								is_adult = yes
-								is_female = no
+								OR = {
+									is_female = no
+									emf_accepts_shieldmaiden_trigger = yes
+								}
 								prisoner = no
 								is_foe = PREVPREV
 								NOR = {
@@ -4245,7 +4267,7 @@ narrative_event = {
 			limit = { trait = humble }
 			random = {
 				chance = 50
-				remove_trait = humble
+				emf_notify_remove_humble = yes
 			}
 		}
 		if = {
@@ -4255,14 +4277,11 @@ narrative_event = {
 			}
 			random = {
 				chance = 50
-				add_trait = proud
-				hidden_tooltip = { character_event = { id = 38261 } } # notify proud
+				emf_notify_add_proud = yes
 			}
 		}
-
 		pf_court_plus2_effect = yes
 		pf_tradition_plus2_effect = yes
-
 		hidden_tooltip = {
 #			if = {
 #				limit = { is_ironman = no }
@@ -4343,11 +4362,9 @@ narrative_event = {
 		piety = 100
 		add_trait = weak_basileus
 		religion_authority = { modifier = weak_emperor_byz }
-
 		pf_court_plus1_effect = yes
 		pf_tradition_plus1_effect = yes
 		emf_imperial_decay_minus_1 = yes
-
 		hidden_tooltip = {
 			character_event = { id = emf_coronation.1216 days = 1 } # the feast begins
 		}
@@ -4599,10 +4616,7 @@ character_event = {
 
 	trigger = {
 		FROM = {
-			OR = {
-				title = e_byzantium
-				title = e_roman_empire
-			}
+			emf_is_roman_empire = yes
 			is_primary_holder_title = yes
 		}
 		emf_uses_byzantine_coronation = yes
@@ -4894,7 +4908,7 @@ narrative_event = {
 			limit = { trait = humble }
 			random = {
 				chance = 50
-				remove_trait = humble
+				emf_notify_remove_humble = yes
 			}
 		}
 		if = {
@@ -4904,19 +4918,15 @@ narrative_event = {
 			}
 			random = {
 				chance = 50
-				add_trait = proud
-				hidden_tooltip = { character_event = { id = 38261 } } # notify proud
+				emf_notify_add_proud = yes
 			}
 		}
-
 		pf_court_plus2_effect = yes
 		pf_tradition_plus2_effect = yes
 		emf_imperial_decay_minus_2 = yes
-
 		hidden_tooltip = {
 			character_event = { id = emf_coronation.1216 days = 1 } # the feast begins
 		}
-
 		if = {
 			limit = { ai = no }
 			chronicle = {
