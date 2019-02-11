@@ -197,19 +197,24 @@ title_decisions = {
 
 		from_potential = {
 			is_nomadic = yes
+			clan_title = {
+				is_title_active = THIS
+				holder = PREV
+			}
 			is_landed = yes
 			OR = {
 				ai = yes
-				emf_unsafe_religion_if_not_nomad = no
+				emf_religion_unsafe_for_player_if_not_nomad = no
 			}
+			NOT = { any_demesne_title = { adventurer = yes } }
 		}
 		potential = {
 			tier = COUNT
 			owner = {
 				OR = {
 					character = FROM
-					AND = {
-						ai = yes
+					trigger_if = {
+						limit = { ai = yes }
 						is_liege_or_above = FROM
 						NOR = {
 							is_nomadic = yes
@@ -228,11 +233,31 @@ title_decisions = {
 				war = no
 			}
 			location = {
+				custom_tooltip = {
+					text = HAS_NO_ONGOING_SIEGE_OR_OCCUPIED_HOLDINGS
+					NOT = {
+						any_province_holding = {
+							OR = {
+								has_siege = yes
+								is_occupied = yes
+							}
+						}
+					}
+				}
 				OR = {
 					custom_tooltip = {
 						text = CONTAINS_TRIBAL_HOLDING
 						hidden_tooltip = {
-							any_province_holding = { holding_type = tribal }
+							any_province_holding = {
+								holding_type = tribal
+								owner = {
+									OR = {
+										ai = yes
+										character = FROM
+										PREVPREV = { is_capital = no }
+									}
+								}
+							}
 						}
 					}
 					custom_tooltip = {
@@ -262,6 +287,7 @@ title_decisions = {
 							any_province_holding = {
 								holding_type = nomad
 								has_building = no_baghatur_council_2
+								holder = FROM
 							}
 						}
 					}
@@ -269,11 +295,105 @@ title_decisions = {
 			}
 		}
 		effect = {
-			log = "INFO: emf_nomad_adopt_tribalism: [From.GetTitledFirstName] of the [From.PrimaryTitle.GetFullName] (#[From.GetID]/[From.PrimaryTitle.GetID]) settling in [Root.GetBaseName] ([Root.GetID])..."
+			log = "INFO: emf_nomad_adopt_tribalism: [From.EMF_GetDebugName] settling in [This.EMF_GetDebugTitleNameWithDeJureLieges]:"
+			log = "-> current government group: [From.EMF_GetGovernmentGroupName]"
+			FROM = {
+				capital_holding = {
+					log = "-> current capital: [This.EMF_GetDebugTitleNameWithDeJureLieges]"
+					log = "---> holding type: [This.EMF_GetHoldingType]"
+				}
+			}
+			location = {
+				if = {
+					limit = { num_of_max_settlements == 7 }
+					log = "-> target province has 7 holding slots"
+				}
+				else_if = {
+					limit = { num_of_max_settlements == 6 }
+					log = "-> target province has 6 holding slots"
+				}
+				else_if = {
+					limit = { num_of_max_settlements == 5 }
+					log = "-> target province has 5 holding slots"
+				}
+				else_if = {
+					limit = { num_of_max_settlements == 4 }
+					log = "-> target province has 4 holding slots"
+				}
+				else_if = {
+					limit = { num_of_max_settlements == 3 }
+					log = "-> target province has 3 holding slots"
+				}
+				else_if = {
+					limit = { num_of_max_settlements == 2 }
+					log = "-> target province has 2 holding slots"
+				}
+				else_if = {
+					limit = { num_of_max_settlements == 1 }
+					log = "-> target province has 1 holding slot"
+				}
+				else_if = {
+					limit = { num_of_max_settlements < 1 }
+					log = "-> target province has 0 holding slots"
+				}
+				if = {
+					limit = { num_of_settlements == 7 }
+					log = "---> 7 slots are used"
+				}
+				else_if = {
+					limit = { num_of_settlements == 6 }
+					log = "---> 6 slots are used"
+				}
+				else_if = {
+					limit = { num_of_settlements == 5 }
+					log = "---> 5 slots are used"
+				}
+				else_if = {
+					limit = { num_of_settlements == 4 }
+					log = "---> 4 slots are used"
+				}
+				else_if = {
+					limit = { num_of_settlements == 3 }
+					log = "---> 3 slots are used"
+				}
+				else_if = {
+					limit = { num_of_settlements == 2 }
+					log = "---> 2 slots are used"
+				}
+				else_if = {
+					limit = { num_of_settlements == 1 }
+					log = "---> 1 slots are used"
+				}
+				else_if = {
+					limit = { num_of_settlements < 1 }
+					log = "---> 0 slots are used"
+				}
+				if = {
+					limit = { any_province_holding = { holding_type = nomad } }
+					log = "-----> has at least 1 nomad holding"
+				}
+				if = {
+					limit = { any_province_holding = { holding_type = castle } }
+					log = "-----> has at least 1 castle holding"
+				}
+				if = {
+					limit = { any_province_holding = { holding_type = tribal } }
+					log = "-----> has at least 1 tribal holding"
+				}
+				if = {
+					limit = { any_province_holding = { holding_type = temple } }
+					log = "-----> has at least 1 temple holding"
+				}
+				if = {
+					limit = { any_province_holding = { holding_type = city } }
+					log = "-----> has at least 1 city holding"
+				}
+			}
 			save_event_target_as = new_base_title
-			FROM = { capital_holding = { save_event_target_as = current_capital } }
+			FROM = { capital_holding = { save_event_target_as = emf_current_capital } }
 			# Change culture and religion of new capital province and possibly more provinces depending on nomad population_and_manpower
 			location = {
+				show_scope_change = no
 				if = {
 					limit = { NOT = { culture = FROM } }
 					culture = FROM
@@ -284,7 +404,7 @@ title_decisions = {
 				}
 			}
 			if = {
-				limit = { FROM = { population_and_manpower = 5000 } }
+				limit = { FROM = { population_and_manpower >= 5000 } }
 				custom_tooltip = { text = nomad_settle_conversion_tooltip }
 			}
 			hidden_tooltip = { # Pre-settlement accounting
@@ -293,6 +413,7 @@ title_decisions = {
 			# Change name of Avaria to Hungary if relevant.
 			if = {
 				limit = {
+					has_random_title_names = no
 					FROM = { culture = hungarian }
 					location = { kingdom = { title = k_hungary } }
 					k_hungary = {
@@ -311,10 +432,7 @@ title_decisions = {
 					reset_coa = THIS
 					set_name = ""
 					adjective = ""
-					grant_title = {
-						target = FROM
-						type = created
-					}
+					grant_title = { target = FROM type = created }
 				}
 			}
 			# Spawn event troops based on amount of empty holdings abandoned.
@@ -329,16 +447,38 @@ title_decisions = {
 				}
 			}
 			# Usurp any vassal king titles, plus the county and its duchy
-			hidden_tooltip = {
+			hidden_effect = {
 				# Usurp any non-nomadic vassals' king titles; if can't usurp king title, set them independent and take
 				# all their other titles
 				FROM = {
+					if = {
+						limit = {
+							any_vassal = {
+								real_tier = KING
+								is_nomadic = no
+								any_demesne_title = {
+									tier = KING
+									NOR = {
+										is_primary_type_title = yes
+										is_landless_type_title = yes
+										temporary = yes
+										controls_religion = yes
+										holy_order = yes
+										mercenary = yes
+									}
+								}
+							}
+						}
+						log = "-> usurping kingdoms from non-nomadic vassal(s):"
+					}
 					any_vassal = {
 						limit = {
+							real_tier = KING
 							is_nomadic = no
 							any_demesne_title = {
-								higher_tier_than = DUKE
-								OR = {
+								tier = KING
+								NOR = {
+									is_primary_type_title = yes
 									is_landless_type_title = yes
 									temporary = yes
 									controls_religion = yes
@@ -349,7 +489,9 @@ title_decisions = {
 						}
 						any_demesne_title = {
 							limit = {
+								tier = KING
 								NOR = {
+									is_primary_type_title = yes
 									is_landless_type_title = yes
 									temporary = yes
 									controls_religion = yes
@@ -357,23 +499,30 @@ title_decisions = {
 									mercenary = yes
 								}
 							}
+							log = "---> usurping [This.EMF_GetDebugTitleNameWithDeJureLieges]"
 							usurp_title = ROOT_FROM
 						}
-						set_defacto_liege = THIS
 					}
-					any_vassal = {
-						limit = { is_nomadic = no }
-						any_demesne_title = {
-							limit = { tier = KING }
-							usurp_title = ROOT_FROM
+					if = {
+						limit = {
+							any_vassal = {
+								is_nomadic = no
+								tier = KING
+							}
 						}
+						log = "-> [This.GetFirstName] has at least one non-nomadic vassal king (post-usurpation phase)"
 					}
 				}
-				# Usurp duchy of target title, if in realm
+				# Usurp/create duchy of target county, if in own realm or no holder
 				location = {
 					duchy = {
 						if = {
-							limit = { owner_under_FROM = yes }
+							limit = {
+								OR = {
+									has_holder = no
+									owner_under_FROM = yes
+								}
+							}
 							usurp_title = FROM
 						}
 					}
@@ -381,18 +530,23 @@ title_decisions = {
 				# Usurp the county
 				if = {
 					limit = { NOT = { holder = FROM } }
+					log = "-> usurping the target county, because it was not personally held"
 					usurp_title = FROM
 				}
 			}
 			custom_tooltip = { text = TT_BUILD_TRIBAL_HOLDINGS }
 			# Switch capital to the new province, creating a tribal holding if necessary
-			hidden_tooltip = {
+			hidden_effect = {
+				log = "-> selecting new capital holding:"
 				location = {
 					random_province_holding = {
 						limit = {
 							OR = {
 								holding_type = tribal
-								holding_type = nomad
+								AND = {
+									holding_type = nomad
+									holder = FROM
+								}
 							}
 						}
 						preferred_limit = {
@@ -402,61 +556,92 @@ title_decisions = {
 							holding_type = tribal
 							is_capital = yes
 						}
-						preferred_limit = {
-							holding_type = tribal
+						if = {
+							limit = { NOT = { holder = FROM } }
+							log = "---> usurping holding"
+							usurp_title = FROM
 						}
 						if = {
-							limit = {
-								holding_type = tribal
-								is_capital = no
-							}
+							limit = { is_capital = no }
+							log = "---> making holding county capital"
 							make_capital_holding = yes
 						}
-						save_event_target_as = new_capital
+						save_event_target_as = emf_new_capital_holding
 					}
 					if = {
-						limit = { NOT = { event_target:new_capital = { always = yes } } }
+						limit = { NOT = { event_target:emf_new_capital_holding = { always = yes } } }
+						log = "---> building new tribal holding"
 						build_holding = { type = tribal holder = FROM }
 						random_province_holding = {
 							limit = { holding_type = tribal }
+							log = "---> making holding county capital"
 							make_capital_holding = yes
-							save_event_target_as = new_capital
-							emf_transfer_nomad_buildings = yes
+							save_event_target_as = emf_new_capital_holding
+						}
+					}
+				}
+				event_target:emf_new_capital_holding = {
+					if = {
+						limit = { holding_type = tribal }
+						emf_transfer_nomad_buildings = yes
+						log = "---> new capital holding selected: [This.EMF_GetDebugTitleNameWithDeJureLieges]"
+						# Actually set new capital holding:
+						FROM = { capital = PREV }
+						if = {
+							limit = { FROM = { capital_holding = { NOT = { title = PREVPREV } } } }
+							log = "-----> ERROR: could not set capital to newly-selected holding!"
 						}
 					}
 				}
 			}
 			FROM = {
-				clr_flag = emf_context_nomadic_to_tribal
-				set_flag = emf_context_nomadic_to_tribal
-				if = {
-					limit = { ai = no }
-					chronicle = {
-						entry = CHRONICLE_ADOPTED_TRIBALISM
-						picture = GFX_evt_tribal_lands
-					}
-				}
 				hidden_effect = {
+					clr_flag = emf_context_nomadic_to_tribal
+					set_flag = emf_context_nomadic_to_tribal
+					if = {
+						limit = { ai = no }
+						chronicle = {
+							entry = CHRONICLE_ADOPTED_TRIBALISM
+							picture = GFX_evt_tribal_lands
+						}
+					}
+					# Give nomadic vassals the option to settle down as well:
 					any_vassal = {
 						limit = { is_nomadic = yes }
 						character_event = { id = emf_nomad.100 days = 1 }
 					}
+					# Mark Khaganate title so it can be found in post-settlement code:
+					primary_title = { set_flag = emf_settling_khanate }
 				}
+				# Finally, do the nasty and become a tribe:
+				log = "-> setting tribal government type"
 				set_government_type = tribal_government
 				set_flag = emf_no_law_penalties
 				hidden_effect = {
 					if = {
 						limit = { lower_tier_than = KING }
+						event_target:new_base_title = { empire = { save_event_target_as = emf_empire } }
+						save_event_target_as = title_name_target
 						create_title = {
 							tier = KING
 							landless = no
 							temporary = no
 							custom_created = yes
-							culture = FROM
-							holder = FROM
+							culture = THIS
+							holder = THIS
 							name = "TRIBAL_CUSTOM"
 							base_title = event_target:new_base_title
 							copy_title_laws = yes
+						}
+						new_title = {
+							if = {
+								limit = { event_target:emf_empire = { always = yes } }
+								de_jure_liege = event_target:emf_empire
+							}
+							else = {
+								de_jure_liege = e_null
+							}
+							log = "-> created custom kingdom title of [This.EMF_GetDebugTitleNameWithDeJureLieges]"
 						}
 					}
 					if = {
@@ -489,9 +674,33 @@ title_decisions = {
 					character_event = { id = emf_nomad.1 }
 				}
 				clr_flag = emf_no_law_penalties
+				hidden_effect = {
+					# Debugging stuff:
+					log = "-> properties immediately after settlement of [From.EMF_GetDebugName]:"
+					if = {
+						limit = { any_demesne_title = { tier = EMPEROR } }
+						log = "---> empire titles:"
+						any_demesne_title = {
+							limit = { tier = EMPEROR }
+							log = "-----> [This.EMF_GetDebugTitleNameWithDeJureLieges]"
+						}
+					}
+					if = {
+						limit = { any_demesne_title = { tier = KING } }
+						log = "---> kingdom titles:"
+						any_demesne_title = {
+							limit = { tier = KING }
+							log = "-----> [This.EMF_GetDebugTitleNameWithDeJureLieges]"
+						}
+					}
+					capital_holding = {
+						log = "---> capital holding: [This.EMF_GetDebugTitleNameWithDeJureLieges]"
+						log = "-----> holding type: [This.EMF_GetHoldingType]"
+					}
+					log = "---> government group: [From.EMF_GetGovernmentGroupName]"
+				}
 			}
 			hidden_effect = {
-				FROM = { capital = event_target:new_capital }
 				any_player = {
 					limit = { NOT = { character = FROM } }
 					narrative_event = { id = HL.2 }
@@ -516,16 +725,17 @@ title_decisions = {
 				location = {
 					any_province_holding = { holding_type = nomad }
 				}
+				# Exclude counties that are not potential de jure kingdom capital counties if those are options
 				FROM = {
 					any_realm_province = {
-						owner_under_PREV = yes
 						owner = {
+							under_PREVPREV = yes
 							OR = {
 								is_nomadic = no
-								character = PREVPREV
+								character = ROOT_FROM
 							}
 							OR = {
-								any_liege = { character = PREVPREVPREV }
+								any_liege = { character = ROOT_FROM }
 								NOT = { any_liege = { is_nomadic = yes } }
 							}
 						}
@@ -541,16 +751,17 @@ title_decisions = {
 				location = {
 					any_province_holding = { count = 5 }
 				}
+				# Exclude counties that are not potential de jure kingdom capital counties if those are options
 				FROM = {
 					any_realm_province = {
-						owner_under_PREV = yes
 						owner = {
+							under_PREVPREV = yes
 							OR = {
 								is_nomadic = no
-								character = PREVPREV
+								character = ROOT_FROM
 							}
 							OR = {
-								any_liege = { character = PREVPREVPREV }
+								any_liege = { character = ROOT_FROM }
 								NOT = { any_liege = { is_nomadic = yes } }
 							}
 						}
@@ -614,6 +825,10 @@ title_decisions = {
 					capital_scope = { kingdom = { title = k_hungary } }
 				}
 				emf_alternate_start = no
+			}
+			modifier = {
+				factor = 0
+				is_random_world = yes
 			}
 		}
 	}
