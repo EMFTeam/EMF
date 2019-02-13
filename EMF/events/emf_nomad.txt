@@ -111,7 +111,7 @@ character_event = {
 					}
 				}
 			}
-			set_province_flag = emf_old_khan_claim
+			set_flag = emf_old_khan_claim
 		}
 	}
 }
@@ -126,76 +126,67 @@ character_event = {
 	is_triggered_only = yes
 
 	immediate = {
-
 		# "Press" our settlement claim upon provinces that the settlement
 		# hard-code did in fact give us.
 		any_realm_province = {
-			clr_province_flag = emf_old_khan_claim
+			clr_flag = emf_old_khan_claim
 		}
 
 		# Settle new capital ...
-
 		capital_scope = {
 			religion = ROOT
 			culture = ROOT
-			set_province_flag = emf_nomad_settled
+			set_flag = emf_nomad_settled
 		}
 
 		# Settle up to `n_convert` provinces with our religion/culture via
 		# "cluster-blobbing" technique, starting at new capital ...
-
 		character_event = { id = emf_nomad.2 }
-
-		any_realm_province = {
-			clr_province_flag = emf_nomad_settled
-		}
-
+		any_realm_province = { clr_flag = emf_nomad_settled }
 		set_variable = { which = n_convert value = 0 }
-
-		# Find previous nomadic title holder
-
-		random_independent_ruler = {
+		# Find new nomadic title holder
+		random_landed_title = {
 			limit = {
 				tier = EMPEROR
-				is_nomadic = yes
-				primary_title = {
-					any_previous_holder = {
-						character = ROOT
-					}
-				}
+				has_flag = emf_settling_khanate
 			}
-			save_event_target_as = emf_new_khan
+			save_event_target_as = emf_khanate
+			owner = { save_event_target_as = emf_new_khan }
+			clr_flag = emf_settling_khanate
 		}
-
+		# Sanity checks:
 		if = {
-			limit = { NOT = { event_target:emf_new_khan = { always = yes } } }
-
-			log = "emf_nomad.1: SERIOUS: could not find new khan of prior nomad title"
-
-			any_province = { clr_province_flag = emf_old_khan_claim }
-
+			limit = { NOT = { event_target:emf_khanate = { always = yes } } }
+			log = "ERROR: emf_nomad.1: Could not locate prior Khanate title after settlement of [Root.EMF_GetDebugName]"
+			any_province = { clr_flag = emf_old_khan_claim }
 			break = yes
 		}
-
+		else_if = {
+			limit = { NOT = { event_target:emf_new_khan = { always = yes } } }
+			log = "ERROR: emf_nomad.1: Could not find new Khan of the [emf_khanate.GetFullName] after settlement of [Root.EMF_GetDebugName]"
+			any_province = { clr_flag = emf_old_khan_claim }
+			break = yes
+		}
+		else_if = {
+			limit = { character = event_target:emf_new_khan }
+			log = "ERROR: emf_nomad.1: Old Khan is still ruling the [emf_khanate.GetFullName] after settlement: [Root.EMF_GetDebugName]"
+			any_province = { clr_flag = emf_old_khan_claim }
+			break = yes
+		}
 		# Mark all the provinces within the prior nomadic realm that are contiguous
 		# to its capital...
-
 		event_target:emf_new_khan = {
-			capital_scope = { set_province_flag = emf_capital_path }
+			capital_scope = { set_flag = emf_capital_path }
 			character_event = { id = emf_nomad.3 }
 		}
-
 		# Reclaim any provinces not marked contiguous-to-capitals that we have
 		# claim upon and are connected to our own non-nomadic realm.
-
 		character_event = { id = emf_nomad.4 }
-
 		# Cleanup...
-
 		event_target:emf_new_khan = {
 			any_realm_province = {
-				clr_province_flag = emf_capital_path
-				clr_province_flag = emf_old_khan_claim
+				clr_flag = emf_capital_path
+				clr_flag = emf_old_khan_claim
 			}
 		}
 	}
@@ -221,7 +212,7 @@ character_event = {
 
 		random_realm_province = {
 			limit = {
-				has_province_flag = emf_nomad_settled
+				has_flag = emf_nomad_settled
 				any_neighbor_province = {
 					NAND = {
 						religion = ROOT
@@ -235,7 +226,6 @@ character_event = {
 					}
 				}
 			}
-
 			# Mark any already same-religion/culture neighbors as settled,
 			# but don't count them towards conversion total.
 			any_neighbor_province = {
@@ -249,9 +239,8 @@ character_event = {
 						same_realm = ROOT
 					}
 				}
-				set_province_flag = emf_nomad_settled
+				set_flag = emf_nomad_settled
 			}
-
 			# Select a random eligible neighbor province to settle
 			random_neighbor_province = {
 				limit = {
@@ -268,7 +257,7 @@ character_event = {
 				}
 				religion = ROOT
 				culture = ROOT
-				set_province_flag = emf_nomad_settled
+				set_flag = emf_nomad_settled
 				ROOT = {
 					change_variable = { which = n_convert value = -1 }
 					character_event = { id = emf_nomad.2 } # Recurse
@@ -276,15 +265,13 @@ character_event = {
 				}
 			}
 		}
-
 		# If we reach this point, we couldn't find any conversion targets next to
 		# already-settled provinces, so we should branch-out and find a new seed
 		# province from which to continue trying to cluster randomly.
-
+		#
 		# First, let's prefer new seeds that have the potential to grow to at least
 		# a 2-cluster (it's too easy to select a province with, say, just a temple
 		# in the middle of nomadic lands)
-
 		random_realm_province = {
 			limit = {
 				NAND = {
@@ -309,18 +296,16 @@ character_event = {
 			}
 			religion = ROOT
 			culture = ROOT
-			set_province_flag = emf_nomad_settled
+			set_flag = emf_nomad_settled
 			ROOT = {
 				change_variable = { which = n_convert value = -1 }
 				character_event = { id = emf_nomad.2 } # Recurse
 				break = yes # <-- Very important
 			}
 		}
-
 		# If we reach this point, we first failed to grow the current cluster, then
 		# we failed to seed a province that had the potential to be a 2-cluster, so
 		# now we're just going to try converting any random non-nomadic province.
-
 		random_realm_province = {
 			limit = {
 				any_province_holding = {
@@ -333,7 +318,7 @@ character_event = {
 			}
 			religion = ROOT
 			culture = ROOT
-			set_province_flag = emf_nomad_settled
+			set_flag = emf_nomad_settled
 			ROOT = {
 				change_variable = { which = n_convert value = -1 }
 				character_event = { id = emf_nomad.2 } # Recurse
@@ -354,34 +339,32 @@ character_event = {
 
 	trigger = {
 		any_realm_province = {
-			has_province_flag = emf_capital_path
+			has_flag = emf_capital_path
 			any_neighbor_province = {
 				owner = { same_realm = ROOT }
-				NOT = { has_province_flag = emf_capital_path }
+				NOT = { has_flag = emf_capital_path }
 			}
 		}
 	}
 
 	option = {
 		name = OK
-
 		random_realm_province = {
 			limit = {
-				has_province_flag = emf_capital_path
+				has_flag = emf_capital_path
 				any_neighbor_province = {
 					owner = { same_realm = ROOT }
-					NOT = { has_province_flag = emf_capital_path }
+					NOT = { has_flag = emf_capital_path }
 				}
 			}
 			any_neighbor_province = {
 				limit = {
 					owner = { same_realm = ROOT }
-					NOT = { has_province_flag = emf_capital_path }
+					NOT = { has_flag = emf_capital_path }
 				}
-				set_province_flag = emf_capital_path
+				set_flag = emf_capital_path
 			}
 		}
-
 		repeat_event = { id = emf_nomad.3 } # Recurse
 	}
 }
@@ -408,8 +391,8 @@ character_event = {
 		any_realm_province = {
 			any_neighbor_province = {
 				owner = { same_realm = event_target:emf_new_khan }
-				has_province_flag = emf_old_khan_claim
-				NOT = { has_province_flag = emf_capital_path }
+				has_flag = emf_old_khan_claim
+				NOT = { has_flag = emf_capital_path }
 			}
 		}
 	}
@@ -419,31 +402,24 @@ character_event = {
 			limit = {
 				any_neighbor_province = {
 					owner = { same_realm = event_target:emf_new_khan }
-					has_province_flag = emf_old_khan_claim
-					NOT = { has_province_flag = emf_capital_path }
+					has_flag = emf_old_khan_claim
+					NOT = { has_flag = emf_capital_path }
 				}
 			}
-
 			random_neighbor_province = {
 				limit = {
 					owner = { same_realm = event_target:emf_new_khan }
-					has_province_flag = emf_old_khan_claim
-					NOT = { has_province_flag = emf_capital_path }
+					has_flag = emf_old_khan_claim
+					NOT = { has_flag = emf_capital_path }
 				}
-
 				# Reclaim ...
-
-				clr_province_flag = emf_old_khan_claim
-
+				clr_flag = emf_old_khan_claim
 				if = {
 					limit = { owner = { is_nomadic = no } }
-
 					# I don't believe that the settlement hardcode will ever
 					# actually hit this case, but I'd like to know about if it
 					# does.
-
 					log = "emf_nomad.4: INFO: found a non-nomadic county owner among emf_old_khan_claim that didn't transfer to non-nomadic realm"
-
 					if = {
 						limit = {
 							owner = {
@@ -452,7 +428,7 @@ character_event = {
 									any_realm_province = {
 										NOR = {
 											province = PREVPREV # Already stripped the flag here
-											has_province_flag = emf_old_khan_claim
+											has_flag = emf_old_khan_claim
 										}
 									}
 								}
@@ -462,15 +438,13 @@ character_event = {
 							set_defacto_liege = ROOT
 							emf_liege_change = yes
 							any_realm_province = {
-								clr_province_flag = emf_old_khan_claim
+								clr_flag = emf_old_khan_claim
 							}
 						}
 					}
-
 					ROOT = { repeat_event = { id = emf_nomad.4 } }
 					break = yes
 				}
-
 				# Just take it back...
 				set_global_flag = emf_latb_upon_gain
 				county = { gain_title = ROOT }
@@ -496,7 +470,7 @@ character_event = {
 
 		any_realm_province = {
 			limit = {
-				has_province_flag = emf_old_khan_claim
+				has_flag = emf_old_khan_claim
 				NOR = {
 					num_of_settlements = 2
 					any_province_holding = {
@@ -604,12 +578,10 @@ character_event = {
 					province_event = { id = emf_nomad.22 }
 					break = yes
 				}
-
 				# If we get here, that means there was no empty holding slot
 				# available for the tribal holding (nomadic holding must be
 				# occupying the only holding slot, by current game constraints),
 				# so try to build it on the next game day.
-
 				if = {
 					limit = { NOT = { any_province_holding = { holding_type = nomad } } }
 					log = "SERIOUS: emf_nomad.20: conquered empty province '[This.GetName]' seems to have 0 holding slots, or else game constraints have changed"
@@ -661,12 +633,10 @@ character_event = {
 					province_event = { id = emf_nomad.22 }
 					break = yes
 				}
-
 				# If we get here, that means there was no empty holding slot
 				# available for the tribal holding (nomadic holding must be
 				# occupying the only holding slot, by current game constraints),
 				# so try to build it on the next game day.
-
 				if = {
 					limit = { NOT = { any_province_holding = { holding_type = nomad } } }
 					log = "SERIOUS: emf_nomad.21: conquered empty province '[This.GetName]' seems to have 0 holding slots, or else game constraints have changed"
@@ -710,7 +680,7 @@ province_event = {
 		}
 		random_province_holding = {
 			limit = { holding_type = tribal }
-			set_title_flag = emf_built_by_latb
+			set_flag = emf_built_by_latb
 			log = "DEBUG: LATB: built tribal holding [This.GetID] ([This.GetBaseName]) in [Root.GetName] ([Root.County.GetID]) -- via on_action"
 		}
 		religion = event_target:emf_prior_holder
@@ -766,7 +736,6 @@ character_event = {
 				factor = 0.1
 				NOT = {
 					any_realm_title = {
-						owner_under_ROOT = yes
 						tier = BARON
 						holding_type = castle
 					}
@@ -775,7 +744,6 @@ character_event = {
 			modifier = {
 				factor = 2
 				any_realm_title = {
-					owner_under_ROOT = yes
 					tier = COUNT
 					count = 9
 				}
@@ -783,10 +751,101 @@ character_event = {
 			modifier = {
 				factor = 2
 				any_realm_title = {
-					owner_under_ROOT = yes
 					tier = COUNT
 					count = 12
 				}
+			}
+		}
+		log = "INFO: emf_nomad.100: vassal khan [This.EMF_GetDebugName] settling as tribe..."
+		log = "-> current government group: [This.EMF_GetGovernmentGroupName]"
+		capital_holding = {
+			log = "-> current capital: [This.EMF_GetDebugTitleNameWithDeJureLieges]"
+			log = "---> holding type: [This.EMF_GetHoldingType]"
+		}
+		capital_scope = {
+			if = {
+				limit = { num_of_max_settlements == 7 }
+				log = "-> capital province has 7 holding slots"
+			}
+			else_if = {
+				limit = { num_of_max_settlements == 6 }
+				log = "-> capital province has 6 holding slots"
+			}
+			else_if = {
+				limit = { num_of_max_settlements == 5 }
+				log = "-> capital province has 5 holding slots"
+			}
+			else_if = {
+				limit = { num_of_max_settlements == 4 }
+				log = "-> capital province has 4 holding slots"
+			}
+			else_if = {
+				limit = { num_of_max_settlements == 3 }
+				log = "-> capital province has 3 holding slots"
+			}
+			else_if = {
+				limit = { num_of_max_settlements == 2 }
+				log = "-> capital province has 2 holding slots"
+			}
+			else_if = {
+				limit = { num_of_max_settlements == 1 }
+				log = "-> capital province has 1 holding slot"
+			}
+			else_if = {
+				limit = { num_of_max_settlements < 1 }
+				log = "-> capital province has 0 holding slots"
+			}
+			if = {
+				limit = { num_of_settlements == 7 }
+				log = "---> 7 slots are used"
+			}
+			else_if = {
+				limit = { num_of_settlements == 6 }
+				log = "---> 6 slots are used"
+			}
+			else_if = {
+				limit = { num_of_settlements == 5 }
+				log = "---> 5 slots are used"
+			}
+			else_if = {
+				limit = { num_of_settlements == 4 }
+				log = "---> 4 slots are used"
+			}
+			else_if = {
+				limit = { num_of_settlements == 3 }
+				log = "---> 3 slots are used"
+			}
+			else_if = {
+				limit = { num_of_settlements == 2 }
+				log = "---> 2 slots are used"
+			}
+			else_if = {
+				limit = { num_of_settlements == 1 }
+				log = "---> 1 slots are used"
+			}
+			else_if = {
+				limit = { num_of_settlements < 1 }
+				log = "---> 0 slots are used"
+			}
+			if = {
+				limit = { any_province_holding = { holding_type = nomad } }
+				log = "-----> has at least 1 nomad holding"
+			}
+			if = {
+				limit = { any_province_holding = { holding_type = castle } }
+				log = "-----> has at least 1 castle holding"
+			}
+			if = {
+				limit = { any_province_holding = { holding_type = tribal } }
+				log = "-----> has at least 1 tribal holding"
+			}
+			if = {
+				limit = { any_province_holding = { holding_type = temple } }
+				log = "-----> has at least 1 temple holding"
+			}
+			if = {
+				limit = { any_province_holding = { holding_type = city } }
+				log = "-----> has at least 1 city holding"
 			}
 		}
 		if = {
@@ -797,27 +856,103 @@ character_event = {
 		custom_tooltip = { text = TT_BUILD_TRIBAL_HOLDINGS }
 		if = {
 			limit = {
+				any_vassal = {
+					real_tier = KING
+					is_nomadic = no
+					any_demesne_title = {
+						tier = KING
+						NOR = {
+							is_primary_type_title = yes
+							is_landless_type_title = yes
+							temporary = yes
+							controls_religion = yes
+							holy_order = yes
+							mercenary = yes
+						}
+					}
+				}
+			}
+			log = "-> usurping kingdoms from non-nomadic vassal(s):"
+		}
+		any_vassal = {
+			limit = {
+				real_tier = KING
+				is_nomadic = no
+				any_demesne_title = {
+					tier = KING
+					NOR = {
+						is_primary_type_title = yes
+						is_landless_type_title = yes
+						temporary = yes
+						controls_religion = yes
+						holy_order = yes
+						mercenary = yes
+					}
+				}
+			}
+			any_demesne_title = {
+				limit = {
+					tier = KING
+					NOR = {
+						is_primary_type_title = yes
+						is_landless_type_title = yes
+						temporary = yes
+						controls_religion = yes
+						holy_order = yes
+						mercenary = yes
+					}
+				}
+				log = "---> usurping [This.EMF_GetDebugTitleNameWithDeJureLieges]"
+				usurp_title = ROOT
+			}
+		}
+		if = {
+			limit = {
+				any_vassal = {
+					is_nomadic = no
+					tier = KING
+				}
+			}
+			log = "-> [This.GetFirstName] has at least one non-nomadic vassal king (post-usurpation phase)"
+		}
+		# Usurp/create duchy of target county, if in own realm or no holder
+		capital_scope = {
+			duchy = {
+				if = {
+					limit = {
+						OR = {
+							has_holder = no
+							owner_under_ROOT = yes
+						}
+					}
+					usurp_title = ROOT
+				}
+			}
+		}
+		if = {
+			limit = {
 				NOT = { any_demesne_title = { tier = DUKE } }
 			}
 			any_vassal = {
 				limit = { tier = COUNT }
 				set_defacto_liege = FROMFROM
+				emf_liege_change = yes
 			}
 		}
 		any_vassal = {
 			limit = { tier = DUKE }
 			set_defacto_liege = FROMFROM
+			emf_liege_change = yes
 		}
 		any_demesne_title = {
 			limit = {
 				tier = KING
-				is_nomadic = no
+				NOT = { ROOT = { clan_title = { title = PREVPREV } } }
 			}
 			usurp_title_only = FROMFROM
 		}
-		hidden_tooltip = {
+		hidden_effect = {
 			capital_scope = { save_event_target_as = emf_new_capital }
-			character_event = { id = emf_nomad.0 }
 			character_event = { id = emf_nomad.5 }
 		}
 		if = {
@@ -827,10 +962,14 @@ character_event = {
 				picture = GFX_evt_tribal_lands
 			}
 		}
+		clr_flag = emf_context_nomadic_to_tribal
+		set_flag = emf_context_nomadic_to_tribal
+		log = "-> setting tribal government type"
 		set_government_type = tribal_government
 		set_defacto_liege = FROMFROM
-		set_character_flag = emf_no_law_penalties
-		hidden_tooltip = {
+		emf_liege_change = yes
+		set_flag = emf_no_law_penalties
+		hidden_effect = {
 			if = {
 				limit = {
 					religion_group = pagan_group
@@ -841,38 +980,45 @@ character_event = {
 					add_law = centralization_0
 				}
 			}
-			if = {
+			else_if = {
 				limit = {
-					OR = {
-						NOT = { religion_group = pagan_group }
-						is_reformed_religion = yes
-					}
 					capital_scope = { NOT = { any_province_holding = { holding_type = castle } } }
 				}
 				primary_title = {
 					add_law = tribal_organization_2
-					add_law = centralization_0
+					add_law = centralization_1
+				}
+			}
+			else = {
+				primary_title = {
+					add_law = tribal_organization_3
+					add_law = centralization_1
+				}
+			}
+			log = "-> properties immediately after settlement of [This.EMF_GetDebugName]:"
+			if = {
+				limit = { any_demesne_title = { tier = EMPEROR } }
+				log = "---> empire titles:"
+				any_demesne_title = {
+					limit = { tier = EMPEROR }
+					log = "-----> [This.EMF_GetDebugTitleNameWithDeJureLieges]"
 				}
 			}
 			if = {
-				limit = {
-					OR = {
-						NOT = { religion_group = pagan_group }
-						is_reformed_religion = yes
-					}
-					capital_scope = { any_province_holding = { holding_type = castle } }
-				}
-				primary_title = {
-					add_law = tribal_organization_3
-					add_law = centralization_0
+				limit = { any_demesne_title = { tier = KING } }
+				log = "---> kingdom titles:"
+				any_demesne_title = {
+					limit = { tier = KING }
+					log = "-----> [This.EMF_GetDebugTitleNameWithDeJureLieges]"
 				}
 			}
-			set_character_flag = emf_context_nomadic_to_tribal
-			# Post-settlement effects / adjustments (incl. culture
-			# settlement and anti-border-gore measures) ...
-			character_event = { id = emf_nomad.1 }
+			capital_holding = {
+				log = "---> capital holding: [This.EMF_GetDebugTitleNameWithDeJureLieges]"
+				log = "-----> holding type: [This.EMF_GetHoldingType]"
+			}
+			log = "---> government group: [This.EMF_GetGovernmentGroupName]"
 		}
-		clr_character_flag = emf_no_law_penalties
+		clr_flag = emf_no_law_penalties
 	}
 	option = {
 		name = EVTOPTB_emf_nomad_100 # Become independent
@@ -999,5 +1145,48 @@ narrative_event = {
 	option = {
 		name = EXCELLENT
 		trigger = { NOT = { character = ROOT } }
+	}
+}
+
+# emf_nomad.120 -- on_new_holder handler for unwanted, auto-created empire titles when converting to/from nomad
+character_event = {
+	id = emf_nomad.120
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		NOT = { FROMFROM = { always = yes } }
+		FROM = {
+			OR = {
+				tier = EMPEROR
+				tier = KING
+			}
+			is_de_jure_title = no
+		}
+		has_flag = emf_context_nomadic_to_tribal
+		NOT = { had_flag = { flag = emf_context_nomadic_to_tribal days = 1 } }
+		NAND = {
+			has_flag = emf_context_tribal_to_nomadic
+			NOT = { had_flag = { flag = emf_context_tribal_to_nomadic days = 3 } }
+		}
+	}
+
+	immediate = {
+		log = "DEBUG: emf_nomad.120: titular [From.EMF_GetTierNoun] created for [Root.EMF_GetDebugName] via nomad->tribal conversion: [From.GetFullName] ([From.GetID])"
+		log = "-> current government group: [Root.EMF_GetGovernmentGroupName]"
+		capital_holding = {
+			log = "-> capital holding: [This.EMF_GetDebugTitleNameWithDeJureLieges]"
+			log = "---> holding type: [This.EMF_GetHoldingType]"
+		}
+		clan_title = {
+			log = "-> clan title: [This.GetFullName] ([This.GetID])"
+		}
+		FROM = {
+			if = {
+				limit = { tier = EMPEROR }
+				emf_destroy_title = yes
+			}
+		}
 	}
 }

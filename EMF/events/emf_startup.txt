@@ -14,13 +14,20 @@ character_event = {
 
 	trigger = {
 		has_landed_title = e_hip
-		# The EMF flag should not be set until this event is done.
-		# The EMF_prestartup flag is set via title history if the HIP installer was used to compile EMF, however.
-		NOT = { has_global_flag = EMF }
+		is_save_game = no
 	}
 
 	immediate = {
-		set_global_flag = emf_v9_0b1_at_game_start # FIXME / TODO: CHANGE UPON RELEASE
+		# The EMF flag should not be set until this event is done.
+		# The EMF_prestartup flag is set via title history if the HIP installer was used to compile EMF, however.
+		if = {
+			limit = { has_global_flag = EMF }
+			log = "CRITICAL ERROR: emf_startup.0: global flag EMF was already set before startup event; aborting game after error event!"
+			any_player = { character_event = { id = emf_startup.2 } }
+			break = yes
+		}
+
+		set_global_flag = emf_v9_0_at_game_start # FIXME / TODO: CHANGE UPON RELEASE
 
 		# Global EMF config pre-startup settings (great for easy tweaking of EMF behavior in your submod):
 		character_event = { id = emf_config.0 }
@@ -142,7 +149,7 @@ character_event = {
 
 		# Initialize playable ruler demesne (limit random vassal barons)
 		any_playable_ruler = {
-			character_event = { id = emf_startup.10 }
+			character_event = { id = emf_startup.15 }
 		}
 
 		# Track historical dynasties already in the game at start
@@ -155,15 +162,19 @@ character_event = {
 		}
 
 		if = {
-			limit = { NOT = { has_global_flag = emf_config_antinomad_disabled } }
+			limit = {
+				NOT = { has_global_flag = emf_config_antinomad_disabled }
+				has_random_religions_or_cultures = no
+				has_random_religion_or_culture_names = no
+			}
 			# Antinomad setup (preserve province history culture & religion)
 			character_event = { id = emf_nomad.1000 }
 		}
 
 		# Combat & diplo trait distribution
 		any_character = {
-			character_event = { id = emf_startup.5 }
-			character_event = { id = emf_startup.6 }
+			character_event = { id = emf_startup.10 }
+			character_event = { id = emf_startup.11 }
 		}
 
 		# Apply Islamic handicap to religious authority
@@ -178,7 +189,7 @@ character_event = {
 		# History's Forgotten Daughters
 		random_playable_ruler = {
 			limit = { emf_startup_ruler_needs_extra_daughter = yes }
-			character_event = { id = emf_startup.15 }
+			character_event = { id = emf_startup.25 }
 		}
 
 		# Mongol startup event
@@ -204,11 +215,14 @@ character_event = {
 		# just finished).
 		character_event = { id = emf_config.1 }
 
-		narrative_event = { id = emf_startup.1 } # Welcome event
+		# Welcome event
+		any_player = {
+			narrative_event = { id = emf_startup.1 }
+		}
 	}
 }
 
-# emf_startup.1
+# emf_startup.1 [Player]
 #
 # Initial welcome event
 narrative_event = {
@@ -219,66 +233,63 @@ narrative_event = {
 	border  = GFX_event_narrative_frame_diplomacy
 
 	is_triggered_only = yes
-	major = yes
-
-	major_trigger = { ai = no }
 
 	option = {
 		name = emf_startup.1.opt.a
+		custom_tooltip = { text = EMF_TEAM_CREDITS_TT }
 	}
 }
 
-# emf_startup.3
+# emf_startup.2 [Player]
 #
-# Detect a ruler-designed character acquiring their titles upon game initialization
-# through on_new_holder_inheritance (neat trick from Rylock to workaround silly way
-# of inserting ruler-designed characters into an already-initialized game without
-# waiting for a maintenance event).
-#
-# Technically this thing fires for a lot more than RDed characters, but is our secondary hook into
-# 2nd-stage campaign setup (setup which requires the presence of a possibly-RDed player's character
-# inserted into the game world).
-character_event = {
-	id = emf_startup.3
+# Campaign initialization fatal error event
+narrative_event = {
+	id      = emf_startup.2
+	desc    = emf_startup.2.desc
+	title   = emf_startup.2.title
+	picture = GFX_evt_rainy_lanterns_error
+	border  = GFX_event_normal_frame_war
 
 	is_triggered_only = yes
-	hide_window = yes
 
-	only_playable = yes
-	has_global_flag = EMF # After the main on_startup only ...
-#	ai = no # Cannot use, because apparently the RD character is still AI at this point.
-
-	trigger = {
-		FROM = { is_primary_holder_title = yes }
-		NOT = { had_global_flag = { flag = EMF days = 1 } } # ... but not before unpausing
-	}
-
-	immediate = {
-		log = "DEBUG: emf_startup.3: day-1 primary-inheritance of [From.GetID] by [Root.GetTitledName] ([Root.GetID]) from [FromFrom.GetTitledName] ([FromFrom.GetID])"
-
-		# Remove any temp. age customization traits from Ruler Designer
-		remove_trait = age_1
-		remove_trait = age_2
-		remove_trait = age_4
-		remove_trait = age_8
-		remove_trait = age_16
-		remove_trait = age_32
-
-		# Remove the customize ruler dynasty trait in 15 days (if unused)
-		if = {
-			limit = { trait = emf_customize_ruler }
-			character_event = { id = emf_startup.1002 days = 15 }
+	option = {
+		name = emf_startup.2.opt.a
+		custom_tooltip = {
+			text = EMF_GAME_OVER_TT
+			set_global_flag = emf_nondynastic_succession_disabled
+			any_dynasty_member = {
+				limit = { NOT = { character = PREV } }
+				emf_vanish_character = yes
+			}
+			any_close_relative = {
+				limit = { NOT = { character = PREV } }
+				emf_vanish_character = yes
+			}
+			any_demesne_title = {
+				save_event_target_as = emf_title
+				if = {
+					limit = {
+						OR = {
+							higher_tier_than = COUNT
+							PREV = { family_palace = { title = event_target:emf_title } }
+						}
+					}
+					emf_unsafe_destroy_title = yes
+				}
+			}
+			any_demesne_title = { gain_title = FROM }
+			emf_vanish_character = yes
 		}
 	}
 }
 
-# emf_startup.4 -- FREE
+# emf_startup.2 thru emf_startup.9 -- FREE
 
-# emf_startup.5 [Playable ruler, FROM=Isis]
+# emf_startup.10 [Any Character]
 #
 # Combat trait distribution
 character_event = {
-	id = emf_startup.5
+	id = emf_startup.10
 
 	hide_window = yes
 	is_triggered_only = yes
@@ -419,9 +430,10 @@ character_event = {
 	}
 }
 
+# emf_startup.11 [Any Character]
 # Diplomat trait distribution
 character_event = {
-	id = emf_startup.6
+	id = emf_startup.11
 
 	hide_window = yes
 	is_triggered_only = yes
@@ -574,14 +586,14 @@ character_event = {
 }
 
 
-# emf_startup.10 [Playable Ruler]
+# emf_startup.15 [Playable Ruler]
 #
 # If the ruler has vassal feudal baronies in their capital county or in their
 # capital duchy or in their general demesne (in that order of preference), seize
 # them from ahistorical (randomly-generated) feudal barons until the ruler no
 # longer has free demesne capacity (or runs out of such potential baronies to seize).
 character_event = {
-	id = emf_startup.10
+	id = emf_startup.15
 	hide_window = yes
 	is_triggered_only = yes
 
@@ -593,24 +605,24 @@ character_event = {
 
 	immediate = {
 		# Recursively attempt to seize capital county preferred holdings
-		character_event = { id = emf_startup.11 }
+		character_event = { id = emf_startup.16 }
 
 		# Recursively attempt to seize capital county allowed holdings
-		character_event = { id = emf_startup.12 }
+		character_event = { id = emf_startup.17 }
 
 		# Recursively attempt to seize capital duchy baronies
-		character_event = { id = emf_startup.13 }
+		character_event = { id = emf_startup.18 }
 
 		# Recursively attempt to seize demesne baronies
-		character_event = { id = emf_startup.14 }
+		character_event = { id = emf_startup.19 }
 	}
 }
 
-# emf_startup.11 [Playable Ruler]
+# emf_startup.16 [Playable Ruler]
 #
 # Recursively seize preferred holding types in capital county.
 character_event = {
-	id = emf_startup.11
+	id = emf_startup.16
 	hide_window = yes
 	is_triggered_only = yes
 
@@ -646,15 +658,15 @@ character_event = {
 			}
 		}
 		# Tail-recurse
-		repeat_event = { id = emf_startup.11 }
+		repeat_event = { id = emf_startup.16 }
 	}
 }
 
-# emf_startup.12 [Playable Ruler]
+# emf_startup.17 [Playable Ruler]
 #
 # Recursively seize allowed holding types in capital county.
 character_event = {
-	id = emf_startup.12
+	id = emf_startup.17
 	hide_window = yes
 	is_triggered_only = yes
 
@@ -690,16 +702,16 @@ character_event = {
 			}
 		}
 		# Tail-recurse
-		repeat_event = { id = emf_startup.12 }
+		repeat_event = { id = emf_startup.17 }
 	}
 }
 
 
-# emf_startup.13 [Playable Ruler]
+# emf_startup.18 [Playable Ruler]
 #
 # Recursively seize preferred holding types in capital duchy.
 character_event = {
-	id = emf_startup.13
+	id = emf_startup.18
 	hide_window = yes
 	is_triggered_only = yes
 
@@ -763,16 +775,16 @@ character_event = {
 			}
 		}
 		# Tail-recurse
-		repeat_event = { id = emf_startup.13 }
+		repeat_event = { id = emf_startup.18 }
 	}
 }
 
 
-# emf_startup.14 [Playable Ruler]
+# emf_startup.19 [Playable Ruler]
 #
 # Recursively seize preferred holding types in demesne.
 character_event = {
-	id = emf_startup.14
+	id = emf_startup.19
 	hide_window = yes
 	is_triggered_only = yes
 
@@ -818,15 +830,59 @@ character_event = {
 			}
 		}
 		# Tail-recurse
-		repeat_event = { id = emf_startup.14 }
+		repeat_event = { id = emf_startup.19 }
 	}
 }
 
-# emf_startup.15 [Playable Ruler]
+# emf_startup.20
+#
+# Detect a ruler-designed character acquiring their titles upon game initialization
+# through on_new_holder_inheritance (neat trick from Rylock to workaround silly way
+# of inserting ruler-designed characters into an already-initialized game without
+# waiting for a maintenance event).
+#
+# Technically this thing fires for a lot more than RDed characters, but is our secondary hook into
+# 2nd-stage campaign setup (setup which requires the presence of a possibly-RDed player's character
+# inserted into the game world).
+character_event = {
+	id = emf_startup.20
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	only_playable = yes
+	has_global_flag = EMF # After the main on_startup only ...
+#	ai = no # Cannot use, because apparently the RD character is still AI at this point.
+
+	trigger = {
+		FROM = { is_primary_holder_title = yes }
+		NOT = { had_global_flag = { flag = EMF days = 1 } } # ... but not before unpausing
+	}
+
+	immediate = {
+		log = "DEBUG: emf_startup.20: day-1 primary-inheritance of [From.GetID] by [Root.EMF_GetDebugName] from [FromFrom.EMF_GetDebugName]"
+
+		# Remove any temp. age customization traits from Ruler Designer
+		remove_trait = age_1
+		remove_trait = age_2
+		remove_trait = age_4
+		remove_trait = age_8
+		remove_trait = age_16
+		remove_trait = age_32
+
+		# Remove the customize ruler dynasty trait in 15 days (if unused)
+		if = {
+			limit = { trait = emf_customize_ruler }
+			character_event = { id = emf_startup.1002 days = 15 }
+		}
+	}
+}
+
+# emf_startup.25 [Playable Ruler]
 #
 # Recursively create extra daughters where they're lacking in scripted history and will not affect succession
 character_event = {
-	id = emf_startup.15
+	id = emf_startup.25
 
 	hide_window = yes
 	is_triggered_only = yes
@@ -893,14 +949,13 @@ character_event = {
 		# Move onto the next ruler
 		random_playable_ruler = {
 			limit = { emf_startup_ruler_needs_extra_daughter = yes }
-			character_event = { id = emf_startup.15 }
+			character_event = { id = emf_startup.25 }
 		}
 	}
 }
 
-
-# emf_startup.30-39 reserved for map-specific de jure adjustments and such
-
+# emf_startup.30-39 reserved for map-specific de jure adjustments and such (see the map-specific emf_startup_map.txt
+# variants)
 
 # emf_startup.40
 #
@@ -1379,8 +1434,8 @@ character_event = {
 
 	immediate = {
 		if = {
-			limit = { NOT = { has_global_flag = emf_v9_0b1 } }
-			set_global_flag = emf_v9_0b1 # TODO / FIXME : CHANGE UPON RELEASE OR SAVE-COMPATIBILITY CHANGE
+			limit = { NOT = { has_global_flag = emf_v9_0 } }
+			set_global_flag = emf_v9_0 # TODO / FIXME : CHANGE UPON RELEASE OR SAVE-COMPATIBILITY CHANGE
 		}
 	}
 }

@@ -7,14 +7,13 @@ emf_cb_on_success_posttitle = {
 		# Double-check Imperial Government status
 		FROM = { character_event = { id = emf_imperial.3299 } }
 		ROOT = { character_event = { id = emf_imperial.3299 } }
-
 		# Top realm capital-contiguous province tracking (a hint for better accuracy post-war only, as this is also
 		# done on annual maintenance)
 		ROOT = {
 			# Only do anything if the CB hasn't told us that top realm province changes for both giver/receiver
 			# can't happen (skip_capconnect_chk_tmp set on ROOT by CB)
 			if = {
-				limit = { NOT = { has_character_flag = skip_capconnect_chk_tmp } }
+				limit = { NOT = { has_flag = skip_capconnect_chk_tmp } }
 				# Also skip recalculation if [still] part of a temp-independent revolt realm, but emf_core.65
 				# filters that in its trigger already ...
 				top_liege = { character_event = { id = emf_core.65 } }
@@ -30,11 +29,15 @@ emf_cb_on_success_posttitle = {
 					}
 				}
 			}
-			clr_character_flag = skip_capconnect_chk_tmp
+			clr_flag = skip_capconnect_chk_tmp
 		}
 		check_if_reconquista_finished_effect = yes
-		FROM = { landless_pope_effect = yes }
+		FROM = {
+			landless_pope_effect = yes
+			character_event = { id = emf_core.15 } # AI claims a vassal county if reduced to a barony
+		}
 		ROOT = {
+			emf_fix_wrong_religion_lieges_in_realm = yes # Ensure relheads and holy orders are under same-religion liege
 			character_event = { id = meneth.423 } # Check for Byzantine reconquest of Rum
 			character_event = { id = emf_historical.18 } # Automatic de jure expansion of Christian Iberia [SWMH only]
 		}
@@ -71,14 +74,30 @@ emf_cb_reset_peace_years = {
 
 emf_cb_victory = {
 	emf_cb_obj_win_war = yes
-	ROOT = { if = { limit = { rebel = no } pf_glory_plus2_effect = yes } }
-	FROM = { pf_glory_minus2_effect = yes }
+	ROOT = {
+		show_scope_change = no
+		if = {
+			limit = { rebel = no }
+			pf_glory_plus2_effect = yes
+		}
+	}
+	FROM = {
+		pf_glory_minus2_effect = yes
+	}
 }
 
 emf_cb_defeat = {
 	emf_cb_obj_win_war_reverse = yes
-	ROOT = { if = { limit = { rebel = no } pf_glory_minus2_effect = yes } }
-	FROM = { pf_glory_plus2_effect = yes }
+	ROOT = {
+		show_scope_change = no
+		if = {
+			limit = { rebel = no }
+			pf_glory_minus2_effect = yes
+		}
+	}
+	FROM = {
+		pf_glory_plus2_effect = yes
+	}
 }
 
 emf_cb_victory_other = { # 3rd-party (assumes enclosing scope is attacker)
@@ -97,43 +116,67 @@ emf_cb_holy_victory = {
 	emf_cb_obj_win_war = yes
 	emf_cb_obj_win_holy_war = yes
 	ROOT = {
+		show_scope_change = no
 		if = {
 			limit = { rebel = no }
 			pf_glory_plus2_effect = yes
 			pf_tradition_plus4_effect = yes
 		}
 	}
-	FROM = { pf_glory_minus2_effect = yes }
-	FROM = { pf_tradition_minus4_effect = yes }
+	FROM = {
+		pf_glory_minus2_effect = yes
+		pf_tradition_minus4_effect = yes
+	}
 }
 
 emf_cb_holy_defeat = {
 	emf_cb_obj_win_war_reverse = yes
 	emf_cb_obj_win_holy_war_reverse = yes
 	ROOT = {
+		show_scope_change = no
 		if = {
 			limit = { rebel = no }
 			pf_glory_minus2_effect = yes
 			pf_tradition_minus4_effect = yes
 		}
 	}
-	FROM = { pf_glory_plus2_effect = yes }
-	FROM = { pf_tradition_plus4_effect = yes }
+	FROM = {
+		pf_glory_plus2_effect = yes
+		pf_tradition_plus4_effect = yes
+	}
 }
 
+emf_cb_byzantine_defensive_victory_check = {
+	hidden_effect = {
+		FROM = {
+			if = {
+				limit = {
+					has_dlc = "Legacy of Rome"
+					emf_is_roman_empire = yes
+					OR = {
+						religion_group = christian
+						religion = hellenic_pagan
+						religion = hellenic_pagan_reformed
+					}
+				}
+				character_event = { id = LoR.30 days = 12 }
+			}
+		}
+	}
+}
 
 ## DYNLEVY AUTO-ADJUSTMENT CB EFFECTS FOR MAJOR REVOLTS ##
 
 # regular major_revolt CBs
 emf_cb_dynlevy_begin = {
-	hidden_tooltip = {
+	hidden_effect = {
 		# ROOT = { primary_title = { emf_dynlevy_remove = yes } }
 		FROM = { emf_dynlevy_update = yes }
 	}
 }
 
 emf_cb_dynlevy_end = {
-	hidden_tooltip = {
+	hidden_effect = {
 		ROOT = { emf_dynlevy_update = yes }
 		FROM = { emf_dynlevy_update = yes }
 	}
@@ -141,7 +184,7 @@ emf_cb_dynlevy_end = {
 
 # 3rd-party CBs: assumes enclosing scope is attacker
 emf_cb_dynlevy_other_begin = {
-	hidden_tooltip = {
+	hidden_effect = {
 		FROM = { emf_dynlevy_update = yes }
 		# primary_title = { emf_dynlevy_remove = yes }
 	}
@@ -149,7 +192,7 @@ emf_cb_dynlevy_other_begin = {
 
 # 3rd-party CBs: assumes enclosing scope is attacker
 emf_cb_dynlevy_other_end = {
-	hidden_tooltip = {
+	hidden_effect = {
 		FROM = { emf_dynlevy_update = yes }
 		emf_dynlevy_update = yes
 	}
@@ -159,7 +202,7 @@ emf_cb_dynlevy_other_end = {
 
 emf_cb_start_subjugation_opinions = {
 	hidden_effect = {
-		ROOT = { any_vassal = { set_character_flag = emf_subj_opinion_prior_vassal } }
+		ROOT = { any_vassal = { set_flag = emf_subj_opinion_prior_vassal } }
 	}
 }
 
@@ -168,19 +211,19 @@ emf_cb_finish_subjugation_opinions = {
 		ROOT = {
 			any_vassal = {
 				limit = {
-					NOT = { has_character_flag = emf_subj_opinion_prior_vassal }
+					NOT = { has_flag = emf_subj_opinion_prior_vassal }
 					religion = ROOT
 				}
 				opinion = { who = ROOT modifier = opinion_subjugated }
 			}
 			any_vassal = {
 				limit = {
-					NOT = { has_character_flag = emf_subj_opinion_prior_vassal }
+					NOT = { has_flag = emf_subj_opinion_prior_vassal }
 					NOT = { religion = ROOT }
 				}
 				opinion = { who = ROOT modifier = opinion_subjugated_other_rel }
 			}
-			any_vassal = { clr_character_flag = emf_subj_opinion_prior_vassal }
+			any_vassal = { clr_flag = emf_subj_opinion_prior_vassal }
 		}
 	}
 }
@@ -190,7 +233,7 @@ emf_cb_ROOT_ensure_feudal = {
 	if = {
 		limit = {
 			higher_tier_than = ROOT
-			holder_scope = {
+			owner = {
 				OR = {
 					is_feudal = yes
 					is_tribal = yes
@@ -205,7 +248,7 @@ emf_cb_ROOT_ensure_feudal = {
 				}
 			}
 		}
-		holder_scope = {
+		owner = {
 			ROOT = {
 				emf_willfully_abdicate = yes
 				if = {
@@ -269,7 +312,7 @@ emf_cb_latb = {
 			any_de_jure_vassal_title = {
 				limit = {
 					tier = COUNT
-					holder_scope = {
+					owner = {
 						OR = {
 							character = ROOT_FROM
 							is_liege_or_above = ROOT_FROM
@@ -311,7 +354,7 @@ emf_cb_latb_build = {
 		}
 		random_province_holding = {
 			limit = { holding_type = tribal }
-			set_title_flag = emf_built_by_latb
+			set_flag = emf_built_by_latb
 			log = "DEBUG: LATB: built tribal holding [This.GetID] ([This.GetBaseName]) in [Prev.GetName] ([PrevPrev.GetID])"
 		}
 	}
@@ -320,9 +363,9 @@ emf_cb_latb_build = {
 
 ## WAR AMBITION EFFECT HELPERS (not used directly in CBs) ##
 emf_cb_obj_win_war = {
-	hidden_tooltip = {
+	hidden_effect = {
 		any_attacker = {
-			add_character_modifier = { name = emf_victory_timer duration = 1 hidden = yes }
+			add_character_modifier = { name = emf_victory_timer duration = 3 hidden = yes }
 		}
 		any_attacker = {
 			limit = { has_ambition = obj_win_war }
@@ -331,9 +374,9 @@ emf_cb_obj_win_war = {
 	}
 }
 emf_cb_obj_win_war_reverse = {
-	hidden_tooltip = {
+	hidden_effect = {
 		any_defender = {
-			add_character_modifier = { name = emf_victory_timer duration = 1 hidden = yes }
+			add_character_modifier = { name = emf_victory_timer duration = 3 hidden = yes }
 		}
 		any_defender = {
 			limit = { has_ambition = obj_win_war }
@@ -342,9 +385,9 @@ emf_cb_obj_win_war_reverse = {
 	}
 }
 emf_cb_obj_win_holy_war = {
-	hidden_tooltip = {
+	hidden_effect = {
 		any_attacker = {
-			add_character_modifier = { name = emf_holy_victory_timer duration = 1 hidden = yes }
+			add_character_modifier = { name = emf_holy_victory_timer duration = 3 hidden = yes }
 		}
 		any_attacker = {
 			limit = { has_ambition = obj_win_holy_war }
@@ -353,9 +396,9 @@ emf_cb_obj_win_holy_war = {
 	}
 }
 emf_cb_obj_win_holy_war_reverse = {
-	hidden_tooltip = {
+	hidden_effect = {
 		any_defender = {
-			add_character_modifier = { name = emf_holy_victory_timer duration = 1 hidden = yes }
+			add_character_modifier = { name = emf_holy_victory_timer duration = 3 hidden = yes }
 		}
 		any_defender = {
 			limit = { has_ambition = obj_win_holy_war }
@@ -373,7 +416,7 @@ emf_cb_imperial_decay_overthrow = {
 			custom_tooltip = { text = IMPERIAL_DECAY_MINUS_10 }
 			hidden_tooltip = {
 				primary_title = {
-					set_title_flag = emf_decay_overthrow
+					set_flag = emf_decay_overthrow
 				}
 			}
 		}
@@ -433,8 +476,8 @@ emf_cb_religious_on_success_title = {
 			}
 		}
 		pf_liege_change_under_title_end_effect = yes
+		hidden_effect = { check_holy_order_donation_effect = yes }
 	}
-	hidden_tooltip = { check_holy_order_donation_effect = yes }
 }
 
 #### CHINA ####
@@ -442,7 +485,7 @@ emf_cb_religious_on_success_title = {
 emf_cb_offmap_submission_failure_cleanup = {
 	ROOT = {
 		if = {
-			limit = { has_character_flag = is_rebel_general }
+			limit = { has_flag = is_rebel_general }
 			hidden_effect = {
 				any_courtier = {
 					move_character = FROM
@@ -456,6 +499,6 @@ emf_cb_offmap_submission_failure_cleanup = {
 				imprison = FROM
 			}
 		}
-		# clr_character_flag = is_rebel_general ? MAYBE? FIXME
+		# clr_flag = is_rebel_general ? MAYBE? FIXME
 	}
 }

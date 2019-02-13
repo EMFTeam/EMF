@@ -18,16 +18,16 @@ character_event = {
 	immediate = {
 		current_heir = {
 			if = {
-				limit = { ROOT = { has_character_flag = emf_toggle_customization_off } }
-				set_character_flag = emf_toggle_customization_off
+				limit = { ROOT = { has_flag = emf_toggle_customization_off } }
+				set_flag = emf_toggle_customization_off
 			}
 			if = {
-				limit = { ROOT = { has_character_flag = emf_toggle_employment } }
-				set_character_flag = emf_toggle_employment
+				limit = { ROOT = { has_flag = emf_toggle_employment } }
+				set_flag = emf_toggle_employment
 			}
 			if = {
-				limit = { ROOT = { has_character_flag = emf_show_loan_decisions } }
-				set_character_flag = emf_show_loan_decisions
+				limit = { ROOT = { has_flag = emf_show_loan_decisions } }
+				set_flag = emf_show_loan_decisions
 			}
 			clear_focus = yes
 			cancel_ambition = yes
@@ -188,6 +188,7 @@ character_event = {
 				}
 			}
 		}
+		NOT = { has_global_flag = emf_nondynastic_succession_disabled }
 	}
 
 	immediate = {
@@ -249,6 +250,92 @@ character_event = {
 	}
 }
 
+# emf_core.15 -- AI liege with only a barony usurps a county from an AI vassal
+#
+# Called from ai_claim_county_if_baron decision & emf_cb_on_success_posttitle
+character_event = {
+	id = emf_core.15
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	ai = yes
+
+	trigger = {
+		higher_tier_than = COUNT
+		# war = no # commented-out so that it can be called immediately on war end
+		is_landed = yes
+		is_patrician = no
+		num_of_count_titles == 0
+		any_realm_title = {
+			tier = COUNT
+			owner = { ai = yes }
+		}
+	}
+
+	immediate = {
+		random_realm_title = {
+			limit = {
+				tier = COUNT
+				owner = { ai = yes }
+			}
+			preferred_limit = {
+				ROOT = {
+					primary_title = {
+						capital_scope = {
+							county = {
+								title = PREVPREVPREVPREV
+							}
+						}
+					}
+				}
+			}
+			preferred_limit = {
+				owner = { NOT = { has_dynasty_flag = emf_is_historical } }
+				location = { is_capital = no }
+			}
+			preferred_limit = {
+				owner = {
+					NOT = { has_dynasty_flag = emf_is_historical }
+					num_of_count_titles > 1
+				}
+			}
+			preferred_limit = {
+				location = { is_capital = no }
+			}
+			preferred_limit = {
+				owner = { num_of_count_titles > 1 }
+			}
+			preferred_limit = {
+				owner = { NOT = { has_dynasty_flag = emf_is_historical } }
+			}
+			grant_title_no_opinion = { target = ROOT type = revoke }
+			any_direct_de_jure_vassal_title = {
+				limit = {
+					owner = {
+						is_liege_or_above = ROOT
+						ai = yes
+					}
+					is_preferred_holding_type = ROOT
+				}
+				grant_title_no_opinion = { target = ROOT type = revoke }
+			}
+			if = {
+				limit = { NOT = { capital_holding = { is_preferred_holding_type = ROOT } } }
+				random_direct_de_jure_vassal_title = {
+					limit = {
+						holder = ROOT
+						is_preferred_holding_type = ROOT
+					}
+					make_capital_holding = yes
+				}
+			}
+			ROOT = { capital = PREV }
+		}
+		character_event = { id = emf_borders.0 }
+	}
+}
+
 character_event = {
 	id = emf_core.20
 
@@ -262,7 +349,7 @@ character_event = {
 		FROM = {
 			temporary = no
 			rebel = no
-			NOT = { has_title_flag = emf_revolt }
+			NOT = { has_flag = emf_revolt }
 			OR = {
 				is_landless_type_title = no
 				mercenary = yes
@@ -425,8 +512,8 @@ character_event = {
 		remove_trait = nun
 		remove_trait = desert_father
 		remove_trait = desert_mother
-		clr_character_flag = title_monk
-		clr_character_flag = title_nun
+		clr_flag = title_monk
+		clr_flag = title_nun
 		remove_special_character_title = MONK_BROTHER
 		remove_special_character_title = NUN_SISTER
 	}
@@ -456,12 +543,12 @@ character_event = {
 		any_title_under = {
 			limit = {
 				tier = BARON
-				had_title_flag = {
+				had_flag = {
 					flag = emf_refill_levy
 					days = 3
 				}
 			}
-			clr_title_flag = emf_refill_levy
+			clr_flag = emf_refill_levy
 			refill_holding_levy = yes
 		}
 	}
@@ -649,37 +736,37 @@ character_event = {
 		# log = "DEBUG: emf_core.65: calculating emf_capital_connected for [This.GetTitledFirstName] of [This.PrimaryTitle.GetBaseName] ([This.GetID]/[This.PrimaryTitle.GetID])"
 		any_realm_province = { # Remove old state
 			limit = { owner = { same_realm = ROOT } } # any_realm_province includes provinces in which we have a realm barony
-			clr_province_flag = emf_capital_connected
-			clr_province_flag = emf_capital_connected_by_seazone
+			clr_flag = emf_capital_connected
+			clr_flag = emf_capital_connected_by_seazone
 		}
 		capital_scope = { # Seed the capital
-			set_province_flag = emf_capital_connected
+			set_flag = emf_capital_connected
 			any_neighbor_province = { # Handle near-OPMs quickly (loop below makes it technically redundant)
 				limit = { owner = { same_realm = ROOT } }
-				set_province_flag = emf_capital_connected
+				set_flag = emf_capital_connected
 			}
 		}
 		while = {
 			limit = {
 				any_realm_province = {
 					owner = { same_realm = ROOT }
-					NOT = { has_province_flag = emf_capital_connected }
+					NOT = { has_flag = emf_capital_connected }
 					any_neighbor_province = {
 						owner = { same_realm = ROOT }
-						has_province_flag = emf_capital_connected
+						has_flag = emf_capital_connected
 					}
 				}
 			}
 			any_realm_province = {
 				limit = {
 					owner = { same_realm = ROOT }
-					NOT = { has_province_flag = emf_capital_connected }
+					NOT = { has_flag = emf_capital_connected }
 					any_neighbor_province = {
 						owner = { same_realm = ROOT }
-						has_province_flag = emf_capital_connected
+						has_flag = emf_capital_connected
 					}
 				}
-				set_province_flag = emf_capital_connected
+				set_flag = emf_capital_connected
 			}
 		}
 		# Now path through any independent revolt realms of ours
@@ -698,8 +785,8 @@ character_event = {
 				reverse_opinion = { who = ROOT modifier = opinion_my_rebel }
 				any_realm_province = {
 					limit = { owner_under_PREV = yes }
-					clr_province_flag = emf_capital_connected
-					clr_province_flag = emf_capital_connected_by_seazone
+					clr_flag = emf_capital_connected
+					clr_flag = emf_capital_connected_by_seazone
 				}
 			}
 		}
@@ -709,9 +796,9 @@ character_event = {
 					reverse_has_opinion_modifier = { who = PREV modifier = opinion_my_rebel }
 					any_realm_province = {
 						owner_under_PREV = yes
-						NOT = { has_province_flag = emf_capital_connected }
+						NOT = { has_flag = emf_capital_connected }
 						any_neighbor_province = {
-							has_province_flag = emf_capital_connected
+							has_flag = emf_capital_connected
 							owner = {
 								top_liege = {
 									OR = {
@@ -734,9 +821,9 @@ character_event = {
 					reverse_has_opinion_modifier = { who = PREV modifier = opinion_my_rebel }
 					any_realm_province = {
 						owner_under_PREV = yes
-						NOT = { has_province_flag = emf_capital_connected }
+						NOT = { has_flag = emf_capital_connected }
 						any_neighbor_province = {
-							has_province_flag = emf_capital_connected
+							has_flag = emf_capital_connected
 							owner = {
 								top_liege = {
 									OR = {
@@ -756,9 +843,9 @@ character_event = {
 				any_realm_province = {
 					limit = {
 						owner_under_PREV = yes
-						NOT = { has_province_flag = emf_capital_connected }
+						NOT = { has_flag = emf_capital_connected }
 						any_neighbor_province = {
-							has_province_flag = emf_capital_connected
+							has_flag = emf_capital_connected
 							owner = {
 								top_liege = {
 									OR = {
@@ -774,7 +861,7 @@ character_event = {
 							}
 						}
 					}
-					set_province_flag = emf_capital_connected
+					set_flag = emf_capital_connected
 				}
 			}
 		}
@@ -783,16 +870,16 @@ character_event = {
 			limit = {
 				port = yes
 				owner = { same_realm = ROOT }
-				NOT = { has_province_flag = emf_capital_connected }
+				NOT = { has_flag = emf_capital_connected }
 				any_neighbor_province = {
 					is_land = no
 					any_neighbor_province = {
 						owner = { same_realm = ROOT }
-						has_province_flag = emf_capital_connected
+						has_flag = emf_capital_connected
 					}
 				}
 			}
-			set_province_flag = emf_capital_connected_by_seazone # might want to make this into a modifier w/ slight malus
+			set_flag = emf_capital_connected_by_seazone # might want to make this into a modifier w/ slight malus
 		}
 		# Now, do the same through any of our revolt realms
 		any_opinion_modifier_target = {
@@ -801,11 +888,11 @@ character_event = {
 				limit = {
 					port = yes
 					owner_under_PREV = yes
-					NOT = { has_province_flag = emf_capital_connected }
+					NOT = { has_flag = emf_capital_connected }
 					any_neighbor_province = {
 						is_land = no
 						any_neighbor_province = {
-							has_province_flag = emf_capital_connected
+							has_flag = emf_capital_connected
 							owner = {
 								top_liege = {
 									OR = {
@@ -822,7 +909,7 @@ character_event = {
 						}
 					}
 				}
-				set_province_flag = emf_capital_connected_by_seazone
+				set_flag = emf_capital_connected_by_seazone
 			}
 		}
 		# Now, mark those provinces connected to provinces which are capital-connected only via a seazone adjacency
@@ -830,23 +917,23 @@ character_event = {
 			limit = {
 				any_realm_province = {
 					owner = { same_realm = ROOT }
-					NOT = { has_province_flag = emf_capital_connected_by_seazone }
+					NOT = { has_flag = emf_capital_connected_by_seazone }
 					any_neighbor_province = {
 						owner = { same_realm = ROOT }
-						has_province_flag = emf_capital_connected_by_seazone
+						has_flag = emf_capital_connected_by_seazone
 					}
 				}
 			}
 			any_realm_province = {
 				limit = {
 					owner = { same_realm = ROOT }
-					NOT = { has_province_flag = emf_capital_connected_by_seazone }
+					NOT = { has_flag = emf_capital_connected_by_seazone }
 					any_neighbor_province = {
 						owner = { same_realm = ROOT }
-						has_province_flag = emf_capital_connected_by_seazone
+						has_flag = emf_capital_connected_by_seazone
 					}
 				}
-				set_province_flag = emf_capital_connected_by_seazone
+				set_flag = emf_capital_connected_by_seazone
 			}
 		}
 		# Finally, propogate the capital-connected-via-seazone adjacencies through our rebel realms
@@ -856,9 +943,9 @@ character_event = {
 					reverse_has_opinion_modifier = { who = PREV modifier = opinion_my_rebel }
 					any_realm_province = {
 						owner_under_PREV = yes
-						NOT = { has_province_flag = emf_capital_connected_by_seazone }
+						NOT = { has_flag = emf_capital_connected_by_seazone }
 						any_neighbor_province = {
-							has_province_flag = emf_capital_connected_by_seazone
+							has_flag = emf_capital_connected_by_seazone
 							owner = {
 								top_liege = {
 									OR = {
@@ -881,9 +968,9 @@ character_event = {
 					reverse_has_opinion_modifier = { who = PREV modifier = opinion_my_rebel }
 					any_realm_province = {
 						owner_under_PREV = yes
-						NOT = { has_province_flag = emf_capital_connected_by_seazone }
+						NOT = { has_flag = emf_capital_connected_by_seazone }
 						any_neighbor_province = {
-							has_province_flag = emf_capital_connected_by_seazone
+							has_flag = emf_capital_connected_by_seazone
 							owner = {
 								top_liege = {
 									OR = {
@@ -903,9 +990,9 @@ character_event = {
 				any_realm_province = {
 					limit = {
 						owner_under_PREV = yes
-						NOT = { has_province_flag = emf_capital_connected_by_seazone }
+						NOT = { has_flag = emf_capital_connected_by_seazone }
 						any_neighbor_province = {
-							has_province_flag = emf_capital_connected_by_seazone
+							has_flag = emf_capital_connected_by_seazone
 							owner = {
 								top_liege = {
 									OR = {
@@ -921,7 +1008,7 @@ character_event = {
 							}
 						}
 					}
-					set_province_flag = emf_capital_connected_by_seazone
+					set_flag = emf_capital_connected_by_seazone
 				}
 			}
 		}
@@ -945,11 +1032,11 @@ character_event = {
 	ai = yes
 
 	trigger = {
-		NOT = { has_character_flag = skip_titular_duchy }
+		NOT = { has_flag = skip_titular_duchy }
 		any_demesne_title = { mercenary = yes }
 		FROM = {
 			mercenary = no
-			NOT = { has_title_flag = emf_check_mercenary_titles }
+			NOT = { has_flag = emf_check_mercenary_titles }
 		}
 	}
 
@@ -957,7 +1044,7 @@ character_event = {
 		add_trait = adventurer
 		primary_title = {
 			save_event_target_as = mercenary_title
-			set_title_flag = emf_check_mercenary_titles
+			set_flag = emf_check_mercenary_titles
 		}
 		# They have 5 years before they must surrender the mercenary title
 		isis = {
@@ -978,7 +1065,7 @@ character_event = {
 			limit = {
 				event_target:mercenary_title = {
 					has_holder = yes
-					has_title_flag = emf_check_mercenary_titles
+					has_flag = emf_check_mercenary_titles
 					holder_scope = {
 						ai = yes
 						war = yes
@@ -994,7 +1081,7 @@ character_event = {
 			limit = {
 				event_target:mercenary_title = {
 					has_holder = yes
-					has_title_flag = emf_check_mercenary_titles
+					has_flag = emf_check_mercenary_titles
 					holder_scope = {
 						ai = yes
 						any_demesne_title = { mercenary = no }
@@ -1002,7 +1089,7 @@ character_event = {
 				}
 			}
 			event_target:mercenary_title = {
-				clr_title_flag = emf_check_mercenary_titles
+				clr_flag = emf_check_mercenary_titles
 				# First check if I need to give him a Duke-tier title to replace the mecenary company
 				holder_scope = {
 					save_event_target_as = current_merc
@@ -1028,13 +1115,13 @@ character_event = {
 							duchy = {
 								if = {
 									limit = { has_holder = no }
-									event_target:current_merc = { set_character_flag = skip_titular_duchy }
+									event_target:current_merc = { set_flag = skip_titular_duchy }
 									grant_title = event_target:current_merc
 								}
 							}
 							if = {
 								limit = {
-									event_target:current_merc = { NOT = { has_character_flag = skip_titular_duchy } }
+									event_target:current_merc = { NOT = { has_flag = skip_titular_duchy } }
 								}
 								county = {
 									create_title = {
@@ -1049,7 +1136,7 @@ character_event = {
 									}
 								}
 							}
-							event_target:current_merc = { clr_character_flag = skip_titular_duchy }
+							event_target:current_merc = { clr_flag = skip_titular_duchy }
 						}
 					}
 				}
@@ -1071,7 +1158,7 @@ character_event = {
 			break = yes
 		}
 		event_target:mercenary_title = {
-			clr_title_flag = emf_check_mercenary_titles
+			clr_flag = emf_check_mercenary_titles
 		}
 	}
 }
@@ -1080,7 +1167,7 @@ character_event = {
 # emf_core.90
 # Prompt tributes to either declare independence or continue as tributes after overlord's death
 
-# Ruler dies who has tributes
+# Ruler dies who has tributes - on_death
 character_event = {
 	id = emf_core.90
 
@@ -1091,12 +1178,11 @@ character_event = {
 
 	trigger = {
 		mercenary = no
-		is_tributary = no
 		current_heir = { is_alive = yes }
-		any_independent_ruler = {
+		any_tributary = {
 			OR = {
-				is_tributary = { type = default suzerain = ROOT }
-				is_tributary = { type = nomadic suzerain = ROOT }
+				is_tributary = { type = default }
+				is_tributary = { type = nomadic }
 			}
 			any_realm_province = { any_neighbor_province = { owner_under_ROOT = yes } }
 			NOR = {
@@ -1110,33 +1196,32 @@ character_event = {
 	}
 
 	immediate = {
-		current_heir = { save_event_target_as = new_suzerain }
-		any_independent_ruler = {
+		save_event_target_as = emf_old_suzerain
+		current_heir = { save_event_target_as = emf_new_suzerain }
+		primary_title = { save_event_target_as = emf_suzerain_primary }
+		any_tributary = {
 			limit = {
-				NOT = { character = event_target:new_suzerain }
+				NOT = { character = event_target:emf_new_suzerain }
 				OR = {
-					is_tributary = { type = default suzerain = ROOT }
-					is_tributary = { type = nomadic suzerain = ROOT }
+					is_tributary = { type = default }
+					is_tributary = { type = nomadic }
 				}
 			}
 			if = {
-				limit = {
-					is_tributary = { type = default suzerain = ROOT }
-				}
-				set_character_flag = default_tributary_of_@event_target:new_suzerain
+				limit = { is_tributary = { type = default } }
+				set_flag = default_tribute_of_@event_target:emf_new_suzerain
 			}
 			else_if = {
-				limit = {
-					is_tributary = { type = nomadic suzerain = ROOT }
-				}
-				set_character_flag = nomadic_tributary_of_@event_target:new_suzerain
+				limit = { is_tributary = { type = nomadic } }
+				set_flag = nomadic_tribute_of_@event_target:emf_new_suzerain
 			}
-			character_event = { id = emf_core.93 days = 1 } # renew tribute status
+			character_event = { id = emf_core.93 days = 1 } # Renew tribute status
 		}
 	}
 }
 
-# Tribute accepted
+# emf_core.91 [Renewed Tributary]
+# Tribute renewal accepted
 character_event = {
 	id = emf_core.91
 	desc = EVTDESC_emf_core_91
@@ -1146,16 +1231,15 @@ character_event = {
 
 	option = {
 		name = EXCELLENT
-		hidden_tooltip = {
-			FROM = {
-				clr_character_flag = default_tributary_of_@ROOT 
-				clr_character_flag = nomadic_tributary_of_@ROOT 
-			}
+		hidden_effect = {
+			clr_flag = default_tribute_of_@FROM
+			clr_flag = nomadic_tribute_of_@FROM
 		}
 	}
 }
 
-# Tribute refused
+# emf_core.92 [Former Tributary]
+# Tribute renewal refused
 character_event = {
 	id = emf_core.92
 	desc = EVTDESC_emf_core_92
@@ -1165,16 +1249,15 @@ character_event = {
 
 	option = {
 		name = EVTOPTA_emf_core_92
-		hidden_tooltip = {
-			FROM = {
-				clr_character_flag = default_tributary_of_@ROOT 
-				clr_character_flag = nomadic_tributary_of_@ROOT 
-			}
+		hidden_effect = {
+			clr_flag = default_tribute_of_@FROM
+			clr_flag = nomadic_tribute_of_@FROM
 		}
 	}
 }
 
-# Tributes decide whether or not to break tribute with heir
+# emf_core.93 [Tributary]
+# Tributes decides whether or not to break tribute with heir; fires day after death of previous suzerain
 character_event = {
 	id = emf_core.93
 	desc = EVTDESC_emf_core_93
@@ -1183,9 +1266,15 @@ character_event = {
 	is_triggered_only = yes
 
 	trigger = {
-		event_target:new_suzerain = {
-			ROOT = { NOT = { higher_tier_than = PREV } }
-			NOT = { war_with = ROOT }
+		independent = yes
+		NOT = { war_with = event_target:emf_new_suzerain }
+		event_target:emf_new_suzerain = {
+			independent = yes
+			has_landed_title = event_target:emf_suzerain_primary # Sanity check
+		}
+		OR = {
+			has_flag = default_tribute_of_@event_target:emf_new_suzerain # Sanity check
+			has_flag = nomadic_tribute_of_@event_target:emf_new_suzerain # Sanity check
 		}
 	}
 	
@@ -1195,13 +1284,12 @@ character_event = {
 			factor = 50
 			modifier = {
 				factor = 3
-				war = yes
 				is_primary_war_defender = yes
 			}
 			modifier = {
 				factor = 1.5
-				event_target:new_suzerain = {
-					any_realm_province = { any_neighbor_province = { owner = { same_realm = ROOT } } }
+				event_target:emf_new_suzerain = {
+					any_realm_province = { any_neighbor_province = { owner_under_ROOT = yes } }
 				}
 			}
 			modifier = {
@@ -1218,7 +1306,7 @@ character_event = {
 			}
 			modifier = {
 				factor = 2
-				event_target:new_suzerain = {
+				event_target:emf_new_suzerain = {
 					OR = {
 						dynasty = ROOT
 						is_allied_with = ROOT
@@ -1228,25 +1316,22 @@ character_event = {
 				}
 			}
 		}
-		event_target:new_suzerain = {
-			if = {
-				limit = {
-					ROOT = { has_character_flag = default_tributary_of_@PREV }
-				}
-				tooltip = {
-					make_tributary = { who = ROOT percentage = 0.4 tributary_type = default }
-				}
-			}
-			else_if = {
-				limit = {
-					ROOT = { has_character_flag = nomadic_tributary_of_@PREV }
-				}
-				tooltip = {
+		if = {
+			limit = { has_flag = nomadic_tribute_of_@event_target:emf_new_suzerain }
+			tooltip = {
+				event_target:emf_new_suzerain = {
 					make_tributary = { who = ROOT percentage = 0.5 tributary_type = nomadic }
 				}
 			}
-			hidden_tooltip = { character_event = { id = emf_core.94 } }
 		}
+		else = {
+			tooltip = {
+				event_target:emf_new_suzerain = {
+					make_tributary = { who = ROOT percentage = 0.4 tributary_type = default }
+				}
+			}
+		}
+		hidden_effect = { event_target:emf_new_suzerain = { character_event = { id = emf_core.94 } } }
 	}
 	option = {
 		name = EVTOPTB_emf_core_93 # Break tribute status
@@ -1259,23 +1344,19 @@ character_event = {
 			factor = 50
 			modifier = {
 				factor = 0
-				event_target:new_suzerain = {
-					any_realm_province = { any_neighbor_province = { owner = { same_realm = ROOT } } }
+				event_target:emf_new_suzerain = {
+					any_realm_province = { any_neighbor_province = { owner_under_ROOT = yes } }
 					realm_levy_diff = { who = ROOT value = 5000 }
 				}
 			}
 			modifier = {
 				factor = 2
-				event_target:new_suzerain = {
-					is_foe = ROOT
-				}
+				is_foe = event_target:emf_new_suzerain
 			}
 			modifier = {
 				factor = 1.5
-				event_target:new_suzerain = {
-					NOT = {
-						any_realm_province = { any_neighbor_province = { owner = { same_realm = ROOT } } }
-					}
+				event_target:emf_new_suzerain = {
+					NOT = { any_realm_province = { any_neighbor_province = { owner_under_ROOT = yes } } }
 				}
 			}
 			modifier = {
@@ -1292,39 +1373,40 @@ character_event = {
 			}
 			modifier = {
 				factor = 1.5
-				event_target:new_suzerain = { reverse_realm_levy_diff = { who = ROOT value = 10000 } }
+				event_target:emf_new_suzerain = { reverse_realm_levy_diff = { who = ROOT value = 10000 } }
 			}
 			modifier = {
 				factor = 1.5
-				event_target:new_suzerain = { reverse_realm_levy_diff = { who = ROOT value = 7500 } }
+				event_target:emf_new_suzerain = { reverse_realm_levy_diff = { who = ROOT value = 7500 } }
 			}
 			modifier = {
 				factor = 1.5
-				event_target:new_suzerain = { reverse_realm_levy_diff = { who = ROOT value = 5000 } }
+				event_target:emf_new_suzerain = { reverse_realm_levy_diff = { who = ROOT value = 5000 } }
 			}
 			modifier = {
 				factor = 1.25
-				event_target:new_suzerain = { reverse_realm_levy_diff = { who = ROOT value = 1000 } }
+				event_target:emf_new_suzerain = { reverse_realm_levy_diff = { who = ROOT value = 1000 } }
 			}
 			modifier = {
 				factor = 0.5
-				event_target:new_suzerain = { realm_levy_diff = { who = ROOT value = 5000 } }
+				event_target:emf_new_suzerain = { realm_levy_diff = { who = ROOT value = 5000 } }
 			}
 			modifier = {
 				factor = 0.5
-				event_target:new_suzerain = { realm_levy_diff = { who = ROOT value = 7500 } }
+				event_target:emf_new_suzerain = { realm_levy_diff = { who = ROOT value = 7500 } }
 			}
 			modifier = {
 				factor = 0.5
-				event_target:new_suzerain = { realm_levy_diff = { who = ROOT value = 10000 } }
+				event_target:emf_new_suzerain = { realm_levy_diff = { who = ROOT value = 10000 } }
 			}
 		}
-		event_target:new_suzerain = {
+		event_target:emf_new_suzerain = {
 			character_event = { id = emf_core.95 tooltip = BREAK_TRIBUTE_STATUS }
 		}
 	}
 }
 
+# emf_core.94 [Former Tribute]
 # Former tribute offers to become tribute of heir
 character_event = {
 	id = emf_core.94
@@ -1336,20 +1418,13 @@ character_event = {
 	option = {
 		name = EVTOPTA_emf_core_94 # Accept tribute
 		if = {
-			limit = {
-				has_character_flag = default_tributary_of_@FROM
-			}
-			FROM = { make_tributary = { who = ROOT percentage = 0.4 tributary_type = default } }
+			limit = { FROM = { has_flag = nomadic_tribute_of_@ROOT } }
+			make_tributary = { who = FROM percentage = 0.5 tributary_type = nomadic }
 		}
-		else_if = {
-			limit = {
-				has_character_flag = nomadic_tributary_of_@FROM
-			}
-			FROM = { make_tributary = { who = ROOT percentage = 0.5 tributary_type = nomadic } }
+		else = {
+			make_tributary = { who = FROM percentage = 0.4 tributary_type = default }
 		}
-		FROM = {
-			hidden_tooltip = { character_event = { id = emf_core.91 } }
-		}
+		hidden_effect = { FROM = { character_event = { id = emf_core.91 } } } # Notify acceptance
 	}
 	option = {
 		name = EVTOPTB_emf_core_94 # Refuse tribute
@@ -1374,11 +1449,15 @@ character_event = {
 			factor = 50
 			modifier = {
 				factor = 3
-				war = yes
+				is_primary_war_defender = yes
 			}
 			modifier = {
 				factor = 2
-				NOT = { any_realm_province = { any_neighbor_province = { owner = { same_realm = FROM } } } }
+				is_primary_war_participant = yes
+			}
+			modifier = {
+				factor = 2
+				NOT = { any_realm_province = { any_neighbor_province = { owner_under_FROM = yes } } }
 			}
 			modifier = {
 				factor = 2
@@ -1410,12 +1489,6 @@ character_event = {
 			}
 		}
 		opinion = { who = FROM modifier = opinion_outraged years = 10 }
-		hidden_tooltip = {
-			FROM = {
-				clr_character_flag = default_tributary_of_@ROOT 
-				clr_character_flag = nomadic_tributary_of_@ROOT 
-			}
-		}
 	}
 	option = {
 		name = EVTOPTB_emf_core_95 # Attack them
@@ -1454,36 +1527,24 @@ character_event = {
 			}
 			modifier = {
 				factor = 0.5
-				NOT = { any_realm_province = { any_neighbor_province = { owner = { same_realm = FROM } } } }
+				NOT = { any_realm_province = { any_neighbor_province = { owner_under_FROM = yes } } }
 			}
 		}
-		if = {
-			limit = {
-				FROM = {
-					has_character_flag = default_tributary_of_@ROOT
-				}
+		FROM = {
+			if = {
+				limit = { has_flag = default_tribute_of_@ROOT }
+				reverse_war = { target = ROOT casus_belli = tributary_cb }
 			}
-			war = {
-				target = FROM
-				casus_belli = tributary_cb
+			else = {
+				reverse_war = { target = ROOT casus_belli = tributary_nomad_cb }
 			}
 		}
-		else_if = {
-			limit = {
-				FROM = {
-					has_character_flag = nomadic_tributary_of_@ROOT
-				}
-			}
-			war = {
-				target = FROM
-				casus_belli = tributary_nomad_cb
-			}
-		}
-		hidden_tooltip = {
-			FROM = {
-				clr_character_flag = default_tributary_of_@ROOT 
-				clr_character_flag = nomadic_tributary_of_@ROOT 
-			}
+	}
+
+	after = {
+		FROM = {
+			clr_flag = default_tribute_of_@ROOT 
+			clr_flag = nomadic_tribute_of_@ROOT 
 		}
 	}
 }
@@ -1524,6 +1585,7 @@ character_event = {
 				}
 			}
 		}
+		has_random_dejure = no
 	}
 
 	mean_time_to_happen = { days = 0 }
@@ -1539,7 +1601,7 @@ character_event = {
 					is_primary_holder_title = no
 				}
 				ROOT = {
-					NOT = { has_character_flag = emf_autodestroy_exemption_for_@PREV }
+					NOT = { has_flag = emf_autodestroy_exemption_for_@PREV }
 				}
 				OR = {
 					lower_tier_than = ROOT # Lower-tier titular titles are always forfeit
@@ -1605,8 +1667,8 @@ character_event = {
 					limit = { emf_can_safely_autodestroy_title = no }
 					emf_unsafe_destroy_title = yes
 				}
-				set_title_flag = emf_autodestroy_defunct
-				set_title_flag = emf_defunct
+				set_flag = emf_autodestroy_defunct
+				set_flag = emf_defunct
 			}
 		}
 	}
@@ -1630,7 +1692,7 @@ character_event = {
 	}
 
 	immediate = {
-		set_character_flag = emf_autodestroy_exemption_for_@FROM
+		set_flag = emf_autodestroy_exemption_for_@FROM
 	}
 }
 

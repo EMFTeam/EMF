@@ -23,18 +23,17 @@ character_event = {
 			has_game_rule = { name = turkic_invasions value = off }
 			has_game_rule = { name = adventurers value = none }
 			emf_seljuk_invader = { is_alive = yes }
-			has_global_flag = seljuk_spawned # FIXME TMP-SAVE-COMPAT: not set in Hydra3 and beyond, drop after Hydra
 		}
 		OR = {
 			AND = {
 				NOT = { has_game_rule = { name = turkic_invasions value = random } }
-				year = 965
-				NOT = { year = 985 }
+				year >= 965
+				year < 985
 			}
 			AND = {
 				has_game_rule = { name = turkic_invasions value = random }
-				year = 809
-				NOT = { year = 1200 }
+				year >= 809
+				year < 1200
 			}
 		}
 		OR = {
@@ -412,7 +411,7 @@ character_event = {
 	option = {
 		name = OK
 		event_target:emf_seljuk_invader = {
-			log = "INFO: emf_seljuk.3: selected landed, independent Seljuk Invader: [This.GetTitledName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+			log = "INFO: emf_seljuk.3: selected landed, independent Seljuk Invader: [This.EMF_GetDebugName]"
 			emf_seljuk_become_invader = yes
 			emf_seljuk_refresh_retinue = yes
 		}
@@ -428,9 +427,9 @@ character_event = {
 
 	immediate = {
 		event_target:seljuk_target_province = { duchy = { save_event_target_as = emf_cb_title } }
-		log = "--> origin province (troops spawn here): [seljuk_origin.GetName] (#[seljuk_origin.GetID]/[seljuk_origin.County.GetID])"
-		log = "--> target ruler: [seljuk_target_ruler.GetTitledFirstName] [seljuk_target_ruler.GetOnlyDynastyName] (#[seljuk_target_ruler.GetID]/[seljuk_target_ruler.PrimaryTitle.GetID])"
-		log = "--> target duchy: [emf_cb_title.GetBaseName] ([emf_cb_title.GetID])"
+		log = "--> origin county (troops spawn here): [seljuk_origin.County.EMF_GetDebugTitleNameWithDeJureLieges]"
+		log = "--> target ruler: [seljuk_target_ruler.EMF_GetDebugName]"
+		log = "--> target duchy: [emf_cb_title.EMF_GetDebugTitleNameWithDeJureLieges]"
 		wealth = 500
 		prestige = 500
 		# Give adventurer title and start war
@@ -632,19 +631,19 @@ character_event = {
 	immediate = {
 		# TODO: this is going to get a lot more complicated when Islamic Succession Laws == Historical (i.e., Seljuks will
 		# follow a custom succession type based upon seniority and merit instead of gavelkind or forced primogeniture)
-		log = "DEBUG: emf_seljuk.11: invader dying: [Root.GetBestName] of the [Root.PrimaryTitle.GetFullBaseName] (#[Root.GetID]/[Root.PrimaryTitle.GetID])"
+		log = "DEBUG: emf_seljuk.11: invader dying: [Root.EMF_GetDebugName]"
 		current_heir = {
 			if = {
 				limit = {
 					ai = yes
 					dynasty = ROOT
 				}
-				log = "--> passing on invader status to heir: [This.GetTitledName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+				log = "--> passing on invader status to heir: [This.EMF_GetDebugName]"
 				emf_seljuk_become_invader = yes
 				character_event = { id = emf_seljuk.12 days = 1 }
 			}
 			else = {
-				log = "--> couldn't pass on invader status to heir: [This.GetTitledName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+				log = "--> couldn't pass on invader status to heir: [This.EMF_GetDebugName]"
 			}
 		}
 	}
@@ -806,7 +805,7 @@ character_event = {
 		name = OK
 		trigger = { event_target:emf_seljuk_invader = { always = yes } }
 		event_target:emf_seljuk_invader = {
-			log = "--> selected new invader: [This.GetBestName] of the [This.PrimaryTitle.GetFullBaseName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+			log = "--> selected new invader: [This.EMF_GetDebugName]"
 			emf_seljuk_become_invader = yes
 			emf_seljuk_refresh_retinue = yes
 		}
@@ -914,7 +913,10 @@ character_event = {
 	ai = yes
 
 	trigger = {
-		FROM = { title = e_persia }
+		FROM = {
+			tier = EMPEROR
+			is_de_jure_title = yes
+		}
 	}
 
 	immediate = {
@@ -1047,11 +1049,12 @@ character_event = {
 
 		if = { # Must have formed an empire before we can invade tier 3
 			limit = {
-				NOT = {
+				NOR = {
 					primary_title = {
 						tier = EMPEROR
 						is_de_jure_title = yes
 					}
+					has_random_dejure = yes
 				}
 			}
 			break = yes
