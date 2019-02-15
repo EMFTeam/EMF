@@ -72,7 +72,7 @@ emf_revolt_ROOT_religion_matches_rebel_victory_title = {
 	for r in g_religions:
 		print('''\
 		AND = {{
-			has_title_flag = emf_revolt_religious_victory_title_{0}
+			has_flag = emf_revolt_religious_victory_title_{0}
 			ROOT = {{ religion = {0} }}
 		}}'''.format(r), file=f)
 
@@ -99,7 +99,7 @@ emf_revolt_set_religion_title_flag = {''', file=f)
 		print('''\
 	if = {{
 		limit = {{ owner = {{ religion = {0} }} }}
-		set_title_flag = emf_revolt_religious_victory_title_{0}
+		set_flag = emf_revolt_religious_victory_title_{0}
 	}}'''.format(rel), file=f)
 
 	print('}', file=f)

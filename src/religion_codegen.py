@@ -221,7 +221,7 @@ emf_sr_has_any_religion_char_flag = {
 	OR = {''', file=f)
 
 	for r in g_religions:
-		print(TAB*2 + 'has_character_flag = character_was_' + r, file=f)
+		print(TAB*2 + 'has_flag = character_was_' + r, file=f)
 
 	print(TAB + '}\n}', file=f)
 
@@ -249,7 +249,7 @@ emf_sr_has_any_char_old_religion = {
 	for r in g_religions:
 		print('''\
 		AND = {{
-			has_character_flag = character_was_{0}
+			has_flag = character_was_{0}
 			any_character = {{ religion = {0} }}
 		}}'''.format(r), file=f)
 
@@ -386,7 +386,7 @@ emf_sr_old_religion_is_liege_sr = {
 	for r in g_religions:
 		print('''\
 		AND = {{
-			has_character_flag = character_was_{0}
+			has_flag = character_was_{0}
 			liege = {{ secret_religion = {0} }}
 		}}'''.format(r), file=f)
 
@@ -442,7 +442,7 @@ emf_sr_set_sr_and_clr_religion_char_flag = {''', file=f)
 	if = {{
 		limit = {{
 			OR = {{
-				has_character_flag = character_was_{0}
+				has_flag = character_was_{0}
 				AND = {{
 					religion = {0}
 					emf_sr_has_any_religion_char_flag = no
@@ -450,7 +450,7 @@ emf_sr_set_sr_and_clr_religion_char_flag = {''', file=f)
 			}}
 		}}
 		set_secret_religion = {0}
-		clr_character_flag = character_was_{0}
+		clr_flag = character_was_{0}
 		break = yes
 	}}'''.format(rel), file=f)
 
@@ -464,7 +464,7 @@ emf_sr_add_religion_char_flag = {
 		on_trigger = religion''', file=f)
 
 	for rel in g_religions:
-		print(TAB*2 + '{0} = {{ set_character_flag = character_was_{0} }}'.format(rel), file=f)
+		print(TAB*2 + '{0} = {{ set_flag = character_was_{0} }}'.format(rel), file=f)
 
 	print(TAB + '}\n}', file=f)
 
@@ -474,7 +474,7 @@ def print_effect_clr_religion_char_flag(f):
 emf_sr_clr_religion_char_flag = {''', file=f)
 
 	for rel in g_religions:
-		print(TAB + 'clr_character_flag = character_was_{}'.format(rel), file=f)
+		print(TAB + 'clr_flag = character_was_{}'.format(rel), file=f)
 
 	print('}', file=f)
 
@@ -483,7 +483,7 @@ def print_effect_event_target_old_religion_from_flag(f):
 	print('''
 emf_sr_event_target_old_religion_from_flag = {
 	trigger_switch = {
-		on_trigger = has_character_flag''', file=f)
+		on_trigger = has_flag''', file=f)
 
 	for rel in g_religions:
 		print('''\
@@ -569,7 +569,7 @@ emf_sr_set_adopt_faith_flag_of_my_cult_on_ROOT = {
 	for rel in g_religions:
 		print('''\
 		secret_religious_society_{0} = {{
-			ROOT = {{ set_character_flag = adopt_faith_{0} }}
+			ROOT = {{ set_flag = adopt_faith_{0} }}
 		}}'''.format(rel), file=f)
 
 	print(TAB + '}\n}', file=f)
@@ -579,7 +579,7 @@ def print_effect_adopt_faith_from_flag(f):
 	print('''
 emf_sr_adopt_faith_from_flag = {
 	trigger_switch = {
-		on_trigger = has_character_flag''', file=f)
+		on_trigger = has_flag''', file=f)
 
 	for rel in g_religions:
 		print(TAB*2 + 'adopt_faith_{0} = {{ religion = {0} }}'.format(rel), file=f)
@@ -592,7 +592,7 @@ def print_effect_clr_adopt_faith_flag(f):
 emf_sr_clr_adopt_faith_flag = {''', file=f)
 
 	for rel in g_religions:
-		print(TAB + 'clr_character_flag = adopt_faith_' + rel, file=f)
+		print(TAB + 'clr_flag = adopt_faith_' + rel, file=f)
 
 	print('}', file=f)
 
@@ -607,7 +607,7 @@ emf_sr_set_prov_flip_char_flag_of_my_cult_on_ROOT = {
 	for rel in g_religions:
 		print('''\
 		secret_religious_society_{0} = {{
-			ROOT = {{ set_character_flag = sr_{0}_prov_flip }}
+			ROOT = {{ set_flag = sr_{0}_prov_flip }}
 		}}'''.format(rel), file=f)
 
 	print(TAB + '}\n}', file=f)
@@ -618,7 +618,7 @@ def print_effect_flip_secret_community_provinces_by_prov_flip_char_flag(f):
 # THIS owns the provinces which may need flipping, and we base the flip on THIS's flag sr_X_prov_flip
 emf_sr_flip_secret_community_provinces_by_prov_flip_char_flag = {
 	trigger_switch = {
-		on_trigger = has_character_flag''', file=f)
+		on_trigger = has_flag''', file=f)
 
 	for rel in g_religions:
 		print('''\
@@ -628,7 +628,7 @@ emf_sr_flip_secret_community_provinces_by_prov_flip_char_flag = {
 				religion = {0}
 				remove_province_modifier = secret_{0}_community
 			}}
-			clr_character_flag = sr_{0}_prov_flip
+			clr_flag = sr_{0}_prov_flip
 		}}'''.format(rel), file=f)
 
 	print(TAB + '}\n}', file=f)
