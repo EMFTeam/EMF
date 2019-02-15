@@ -1,33 +1,73 @@
 # -*- ck2.scripted_triggers -*-
 
+# After patch 3.0/HF, the simple check of `NOT = { higher_tier_than = event_target:emf_cb_winner }` failed to work correctly
+# (in literally all cases, at least in singleplayer where the RelSub events are definitely executing before the end of a CB's
+# on_success_title), so we have this terrible hack instead (which, mind you, has slightly different logical behavior than
+# what it replaced):
+emf_relsub_can_submit_tier_check = {
+	trigger_if = {
+		limit = {
+			event_target:emf_cb_winner = {
+				OR = {
+					real_tier = BARON
+					is_ruler = no
+				}
+			}
+		}
+		always = no
+	}
+	trigger_else_if = {
+		limit = { event_target:emf_cb_winner = { real_tier = COUNT } }
+		tier = BARON # Cannot be same-tier if counts, wouldn't be able to destroy same-tier titles to subjugate
+	}
+	trigger_else_if = {
+		limit = { event_target:emf_cb_winner = { real_tier = DUKE } }
+		lower_tier_than = KING
+	}
+	trigger_else_if = {
+		limit = { event_target:emf_cb_winner = { real_tier = KING } }
+		lower_tier_than = EMPEROR
+	}
+	trigger_else = {
+		always = yes
+	}
+}
+
 emf_relsub_can_submit = {
+	# Can only submit if same- or lower-tier than CB winner (except for when the winner is below DUKE-tier, as then the same-
+	# tier case isn't possible):
+	emf_relsub_can_submit_tier_check = yes
 	NOR = {
-		# Bending the knee requires also converting religion unless same religion already
+		# Bending the knee requires also converting religion unless same religion already:
 		AND = {
 			emf_can_convert_religion = no
 			NOT = { religion = event_target:emf_cb_winner }
 		}
-		# Can only submit if same- or lower-tier than CB winner
-		higher_tier_than = event_target:emf_cb_winner
-		# An emperor can never submit
-		tier = EMPEROR
+		#higher_tier_than = event_target:emf_cb_winner
 		# Patricians may not be vassalized unless they are the Doge
 		AND = {
 			is_patrician = yes
 			is_merchant_republic = no
 		}
 		# These types should never submit:
-		controls_religion = yes
-		mercenary = yes
-		holy_order = yes
-		clan = yes
+		any_demesne_title = {
+			OR = {
+				controls_religion = yes
+				temporary = yes
+				mercenary = yes
+				holy_order = yes
+				clan = yes
+				adventurer = yes
+				rebel = yes
+				has_flag = emf_revolt
+			}
+		}
 		# Cannot submit unless it's safe to destroy all same-tier titles in same-tier case
 		any_demesne_title = {
 			tier = event_target:emf_cb_winner
 			OR = {
-				is_primary_type_title = yes
-				is_landless_type_title = yes
 				lower_tier_than = DUKE
+				emf_is_title_type_special = yes
 			}
 		}
 	}
