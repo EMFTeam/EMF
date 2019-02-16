@@ -34,7 +34,7 @@ emf_cb_can_use_gui = {
 emf_cb_can_use = {
 	ROOT = {
 		emf_cb_lacks_main_war_block = yes
-		emf_cb_is_war_blocked_by_laws = no
+		emf_cb_is_war_legal = yes
 	}
 }
 
@@ -85,11 +85,34 @@ emf_cb_can_use_de_jure_title = {
 }
 
 # Prevent vassal kings from bypassing Complete King's Peace
-emf_cb_is_war_blocked_by_laws = {
-	tier = KING
-	crownlaw_title = {
-		has_law = king_peace_2
-		owner = { is_liege_of = PREVPREV }
+emf_cb_is_war_legal = {
+	OR = {
+		vassal_of = ROOT_FROM # Can always declare war on your de facto liege
+		NOT = { crownlaw_title = { has_holder = yes } } # No crown law title, no restrictions
+		crownlaw_title = {
+			owner = {
+				# To be affected, the base scope must be a vassal or below of their crown law title holder:
+				is_liege_or_above_of = PREVPREV
+				NOR = {
+					PREV = { has_law = king_peace_2 } # Blocks both internal & external wars
+					AND = {
+						PREV = { has_law = king_peace_1 } # Blocks internal wars
+						ROOT_FROM = {
+							OR = {
+								NOT = { is_vassal_or_below_of = PREV } # Not under attacker's crownlaw_title holder
+								NOT = { crownlaw_title = { always = yes } } # Defender has no crown law title, attack him
+								crownlaw_title = {
+									NOR = { # Defender's crown law title has no King's Peace at all, attack him
+										has_law = king_peace_1
+										has_law = king_peace_2
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -294,7 +317,7 @@ emf_cb_thirdparty_can_use = {
 emf_cb_thirdparty_can_use_title = {
 	FROMFROM = {
 		emf_cb_lacks_main_war_block = yes
-		emf_cb_is_war_blocked_by_laws = no
+		emf_cb_is_war_legal = yes
 	}
 	OR = {
 		FROM = { ai = no }
@@ -330,7 +353,7 @@ emf_cb_thirdparty_can_use_title = {
 emf_cb_thirdparty_can_use_de_jure_title = {
 	FROMFROM = {
 		emf_cb_lacks_main_war_block = yes
-		emf_cb_is_war_blocked_by_laws = no
+		emf_cb_is_war_legal = yes
 	}
 	OR = {
 		FROM = { ai = no }
@@ -596,7 +619,7 @@ emf_cb_is_valid_religious = {
 		top_liege = {
 			religion_group = ROOT
 			OR = {
-				NOT = { religion = FROM }
+				emf_hostile_religion_to_FROM = yes
 				AND = {
 					religion_group = FROM
 					FROM = { has_character_modifier = known_satanist }
