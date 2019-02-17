@@ -220,7 +220,7 @@ NDefines.NTechnology.MAX_DEMESNE_BONUS = 0.5
 NDefines.NTechnology.TRADEPOST_SPREAD_BONUS = 0.01
 
 -- Graphics
-NDefines.NGraphics.CITY_SPRAWL_AMOUNT = 0.75
+NDefines.NGraphics.CITY_SPRAWL_AMOUNT = 0.5
 
 -- Engine
 NDefines.NEngine.EVENT_PROCESS_OFFSET = 30
@@ -230,7 +230,6 @@ NDefines.NAI.MARRIAGE_AI_PRESTIGE_VALUE = 0.1    -- worst-case, they marry a low
 NDefines.NAI.AI_EMPEROR_CREATES_KINGDOMS = 1     -- only now a good idea due to Imperial Kingdom Creation law
 NDefines.NAI.DESIRED_CONSORTS = 1        -- as of EMF v8.07, AI will actually try to get a concubine if they lack sons
 NDefines.NAI.AI_ASSAULT_RATIO = 15       -- +50% from vanilla
-NDefines.NAI.RAID_AGGRESSION = 12        -- ultra aggressive as of EMF v8.07 [was twice this value, 24, and although we don't know what kind of scale this is on, lower means more aggro, and this is twice as low]
 NDefines.NAI.TRIBAL_VASSAL_EXTRA_CALL_CHANCE = 30
 NDefines.NAI.CB_SCORE_PROVINCE_WITHOUT_SETTLEMENT_NON_NOMAD = -0.5 -- [v8.07] EXPERIMENTAL: negative values have unknown effect currently. if these scores are weighted and summed as it would seem, it should be WAD and greatly decrease AI war interest in nomadic wastelands.
 
