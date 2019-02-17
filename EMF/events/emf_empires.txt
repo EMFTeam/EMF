@@ -727,3 +727,227 @@ character_event = {
 		}
 	}
 }
+
+
+# emf_empires.60 -- Restored Rome [Restorer]
+#
+# Called from restore_roman_empire decision
+narrative_event = {
+	id = emf_empires.60
+
+	is_triggered_only = yes
+
+	title = emf_empires_60_title
+	picture = GFX_evt_rome_restored_byzantine
+
+	desc = {
+		text = emf_empires_60_desc_byz
+		trigger = { 
+			is_alternate_start = no
+			primary_title = { title = e_byzantium }
+		}
+	}
+	desc = {
+		text = emf_empires_60_desc_latin
+		trigger = { 
+			is_alternate_start = no
+			primary_title = { title = e_latin_empire }
+		}
+	}
+	desc = {
+		text = emf_empires_60_desc_altstart
+		trigger = { 
+			is_alternate_start = yes
+		}
+	}
+	
+	immediate = {
+		set_global_flag = rome_restored
+		set_flag = emf_context_restored_roman_empire
+		e_roman_empire = { set_flag = emf_context_restored_by_@ROOT }
+		primary_title = {
+			save_event_target_as = emf_old_empire_title
+			if = {
+				limit = { title = e_byzantium }
+				set_flag = emf_context_absorbed_into_roman_empire_by_@ROOT
+				e_roman_empire = { set_flag = emf_context_restored_from_byzantium_by_@ROOT }
+				ROOT = { set_flag = emf_context_restored_roman_empire_from_byzantium }
+			}
+			else_if = {
+				limit = { title = e_latin_empire }
+				set_flag = emf_context_absorbed_into_roman_empire_by_@ROOT
+				e_roman_empire = { set_flag = emf_context_restored_from_latin_empire_by_@ROOT }
+				ROOT = { set_flag = emf_context_restored_roman_empire_from_latin_empire }
+			}
+		}
+		if = {
+			limit = { ai = no }
+			set_character_flag = achievement_legacy_of_rome
+		}
+	}
+	
+	option = {
+		name = emf_empires_60_opt_a
+		hidden_effect = {
+			primary_title = { any_direct_de_jure_vassal_title = { de_jure_liege = e_roman_empire } }
+		}
+		primary_title = {
+			show_scope_change = no
+			e_roman_empire = {
+				show_scope_change = no
+				grant_title = ROOT
+				emf_copy_title_state_from_PREV = yes
+				emf_try_to_make_primary_title = yes
+				copy_title_laws = PREV
+				copy_title_history = PREV
+			}
+			emf_destroy_title = yes
+			e_hre_french = {
+				show_scope_change = no
+				if = {
+					limit = { has_holder = yes }
+					custom_tooltip = { text = THIS_HRE_TITLE_IS_NOW_KNOWN_AS_FRANCIA_TT }
+				}
+				hidden_effect = {
+					set_name = "Francia"
+					set_short_name = no
+				}
+			}
+			e_hre = {
+				show_scope_change = no
+				if = {
+					limit = { has_holder = yes }
+					custom_tooltip = { text = THIS_HRE_TITLE_IS_NOW_KNOWN_AS_GERMANIA_TT }
+				}
+				hidden_effect = {
+					set_name = "Germania"
+					set_short_name = no
+				}
+			}
+			hidden_effect = {
+				activate_title = { title = THIS status = no }
+				any_player = {
+					limit = { NOT = { character = ROOT } }
+					narrative_event = { id = emf_empires.61 }
+				}
+				if = { #Hellenic Resurgence
+					limit = { 
+						has_dlc = "Holy Fury" 
+						religion_group = christian
+						has_game_rule = { name = hellenism_rule value = on }
+						OR = { 
+							culture = greek
+							culture = italian
+							culture = roman
+							culture_group = italian_group # SWMH
+						}
+					}
+					character_event = { id = HF.23106 days = 15 }				
+				}
+				if = { #Burn and Rebuild Rome.
+					limit = { 
+						has_dlc = "Holy Fury" 
+						333 = { any_province_holding = { holding_type = temple count = 2 } } #Check if Gengis Khan or whomever hasn't already leveled the place down.
+					}
+					333 = { province_event = { id = HF.23100 days = 155 } }				
+				}
+			}
+		}
+		add_trait = augustus
+		give_nickname = nick_the_glorious
+		if = {
+			limit = { 
+				has_dlc = "Holy Fury" 
+				is_female = yes
+				OR = { 
+					religion_group = christian
+					religion = hellenic_pagan
+					religion = hellenic_pagan_reformed
+				}
+    			NOT = { any_owned_bloodline = { has_bloodline_flag = roman_bloodline } }
+			}
+			if = {
+				limit = { is_female = no }
+				create_bloodline = { type = roman_emperor_male }
+			}
+			else = {
+				create_bloodline = { type = roman_emperor_female }
+			}
+			new_bloodline = { set_description = "bloodline_desc_roman" }
+			sound_effect = bloodline_added
+		}
+	}
+}
+
+# emf_empires.61 -- Informed about the restoration of Rome [Third-Party]
+#
+# Called from emf_empires.60
+narrative_event = {
+	id = emf_empires.61
+
+	is_triggered_only = yes
+	title = emf_empires_61_title
+	picture = GFX_evt_rome_restored_byzantine
+
+	desc = {
+		text = emf_empires_61_desc_byz
+		trigger = { 
+			is_alternate_start = no
+			event_target:emf_old_empire_title = { title = e_byzantium }
+		}
+	}
+	desc = {
+		text = emf_empires_61_desc_latin
+		trigger = { 
+			is_alternate_start = no
+			event_target:emf_old_empire_title = { title = e_latin_empire }
+		}
+	}
+	desc = {
+		text = emf_empires_61_desc_altstart
+		trigger = { 
+			is_alternate_start = yes
+		}
+	}
+	
+	option = {
+		name = emf_empires_61_opt_a
+		trigger = { NOT = { top_liege = { has_landed_title = event_target:emf_global_hre } } }
+	}
+	option = {
+		name = emf_empires_61_opt_b
+		trigger = { has_landed_title = event_target:emf_global_hre }
+		custom_tooltip = { text = MY_HRE_TITLE_HAS_BECOME_KNOWN_AS_TT }
+		prestige = -500
+	}
+	option = {
+		name = emf_empires_61_opt_c
+		trigger = {
+			independent = no
+			real_tier = KING
+			top_liege = { has_landed_title = event_target:emf_global_hre }
+		}
+		custom_tooltip = { text = OUR_HRE_TITLE_HAS_BECOME_KNOWN_AS_TT }
+		prestige = -300
+	}
+	option = {
+		name = emf_empires_61_opt_c
+		trigger = {
+			independent = no
+			real_tier = DUKE
+			top_liege = { has_landed_title = event_target:emf_global_hre }
+		}
+		custom_tooltip = { text = OUR_HRE_TITLE_HAS_BECOME_KNOWN_AS_TT }
+		prestige = -200
+	}
+	option = {
+		name = emf_empires_61_opt_c
+		trigger = {
+			independent = no
+			real_tier = COUNT
+			top_liege = { has_landed_title = event_target:emf_global_hre }
+		}
+		custom_tooltip = { text = OUR_HRE_TITLE_HAS_BECOME_KNOWN_AS_TT }
+		prestige = -100
+	}
+}
