@@ -84,25 +84,28 @@ emf_cb_can_use_de_jure_title = {
 	emf_cb_can_use_magyar_title = yes
 }
 
-# Prevent vassal kings from bypassing Complete King's Peace
+# Is this war legal according to the laws which affect the attacker and defender?
+#
+# NOTE: This is used in both regular and third-party CBs in the attacker scope (ROOT or FROMFROM, respectively), so if
+# referring to the defender, always use ROOT_FROM for safety (else it'd be a FROM nested inside of a FROMFROM for 3rd-party)
+# and refrain from using the ROOT scope (is the 3rd-party in those CBs, attacker otherwise), instead using PREV gymnastics to
+# refer to whatever scope is the scripted trigger's base scope.
 emf_cb_is_war_legal = {
 	OR = {
 		vassal_of = ROOT_FROM # Can always declare war on your de facto liege
-		NOT = { crownlaw_title = { has_holder = yes } } # No crown law title, no restrictions
-		crownlaw_title = {
-			owner = {
-				# To be affected, the base scope must be a vassal or below of their crown law title holder:
-				is_liege_or_above_of = PREVPREV
-				NOR = {
-					PREV = { has_law = king_peace_2 } # Blocks both internal & external wars
-					AND = {
-						PREV = { has_law = king_peace_1 } # Blocks internal wars
-						ROOT_FROM = {
-							OR = {
-								NOT = { is_vassal_or_below_of = PREV } # Not under attacker's crownlaw_title holder
-								NOT = { crownlaw_title = { always = yes } } # Defender has no crown law title, attack him
+		NOT = {
+			crownlaw_title = {
+				owner = {
+					# To be affected, the attacker must be a vassal or below of their crown law title holder:
+					is_vassal_or_below = PREVPREV
+					OR = {
+						PREV = { has_law = king_peace_2 } # Blocks both internal & external wars
+						AND = {
+							PREV = { has_law = king_peace_1 } # Blocks internal wars
+							ROOT_FROM = {
+								is_liege_or_above = PREV # Under attacker's crown law title holder
 								crownlaw_title = {
-									NOR = { # Defender's crown law title has no King's Peace at all, attack him
+									OR = { # Defender's crown laws include at least Internal King's Peace, so he's covered
 										has_law = king_peace_1
 										has_law = king_peace_2
 									}
@@ -117,6 +120,11 @@ emf_cb_is_war_legal = {
 }
 
 # Does the attacker NOT have a blanket blocker on declaring war?
+#
+# NOTE: This is used in both regular and third-party CBs in the attacker scope (ROOT or FROMFROM, respectively), so if
+# referring to the defender, always use ROOT_FROM for safety (else it'd be a FROM nested inside of a FROMFROM for 3rd-party)
+# and refrain from using the ROOT scope (is the 3rd-party in those CBs, attacker otherwise), instead using PREV gymnastics to
+# refer to whatever scope is the scripted trigger's base scope.
 emf_cb_lacks_main_war_block = {
 	OR = {
 		ai = no
@@ -131,7 +139,6 @@ emf_cb_lacks_main_war_block = {
 			has_flag = planning_coronation
 			# Prevent AI rulers from inappropriately declaring war before their coronation:
 			AND = {
-				ai = yes
 				emf_needs_coronation = yes
 				NAND = {
 					OR = {
@@ -140,11 +147,18 @@ emf_cb_lacks_main_war_block = {
 					}
 					NOT = { trait = patient }
 				}
-				# HF coronation-for-war flags:
+				# HF coronation-for-war flags that obviously must exempt the needs-to-be-coronated ruler from DoWs:
 				NOR = {
 					has_flag = flag_antipope_for_coronation
 					has_flag = flag_excommunicated_for_coronation
 					has_flag = flag_pepin_for_coronation
+				}
+			}
+			# Prevent AI from declaring war if already in a war (even as an ally) unless scripted to do so (emf_cb_pass_tmp)
+			any_war = {
+				OR = {
+					any_attacker = { character = PREVPREV }
+					any_defender = { character = PREVPREV }
 				}
 			}
 		}

@@ -384,6 +384,22 @@ changeset = {
                 change_variable = { which = "imperial_decay" value = 10 }
             }
             ''')
+    ],
+    'd_hashshashin': [
+        ((20, 1, 1), 1, '''
+            law = crown_authority_2
+            law = revokation_2
+            law = ze_revokation_2
+            law = administration_1
+            law = law_voting_power_0
+            law = war_voting_power_0
+            law = revoke_title_voting_power_0
+            law = imprison_voting_power_0
+            law = grant_title_voting_power_0
+            law = banish_voting_power_0
+            law = execution_voting_power_0
+            law = centralization_3
+            ''')
     ]
 }
 
