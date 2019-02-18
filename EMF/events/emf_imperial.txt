@@ -18,13 +18,13 @@ character_event = {
 	hide_window = yes
 
 	trigger = {
-		is_vice_royalty = no
+		#is_vice_royalty = no
 		independent = no
 		in_revolt = no
 		higher_real_tier_than = COUNT
 		top_liege = { emf_imperial_government = yes }
 		FROM = {
-			is_titular = no
+			is_de_jure_title = yes
 			is_primary_type_title = no
 			OR = {
 				is_primary_holder_title = yes
@@ -54,7 +54,7 @@ character_event = {
 		higher_real_tier_than = COUNT
 		top_liege = { emf_imperial_government = yes }
 		FROM = {
-			is_titular = no
+			is_de_jure_title = yes
 			is_primary_type_title = no
 			OR = {
 				is_primary_holder_title = yes
@@ -111,7 +111,7 @@ character_event = {
 		emf_imperial_government = yes
 		top_liege = { emf_imperial_government = yes }
 		FROM = {
-			is_vice_royalty = no
+			#is_vice_royalty = no
 			emf_imperial_government = yes
 			vassal_of = ROOT
 			has_landed_title = event_target:viceroy_title
@@ -1867,7 +1867,7 @@ character_event = {
 	}
 
 	immediate = {
-		log = "emf_imperial.3297: [From.GetFullName] ([From.GetID]) created by [Root.GetBestName] ([Root.GetID]), requires viceroy_exemption flag"
+		log = "emf_imperial.3297: [From.EMF_GetDebugTitleNameWithDeJureLieges] created by [Root.EMF_GetDebugName], requires viceroy_exemption flag"
 		any_demesne_title = { clr_flag = viceroy_exemption }
 		FROM = { set_flag = viceroy_exemption }
 	}
@@ -1885,7 +1885,7 @@ character_event = {
 	}
 
 	immediate = {
-		log = "emf_imperial.3298: [From.GetFullName] ([From.GetID]) usurped by [Root.GetBestName] ([Root.GetID]), viceroy_exemption flag removed"
+		log = "emf_imperial.3298: [From.EMF_GetDebugTitleNameWithDeJureLieges] usurped by [Root.EMF_GetDebugName], viceroy_exemption flag removed"
 		FROM = { clr_flag = viceroy_exemption }
 	}
 }
@@ -1916,7 +1916,10 @@ character_event = {
 				}
 			}
 			revoke_law = administration_2
-			add_law = administration_1
+			if = {
+				limit = { is_law_potential = administration_1 }
+				add_law = administration_1
+			}
 		}
 		clr_flag = emf_no_law_penalties
 
@@ -1949,21 +1952,37 @@ character_event = {
 				NOT = { any_liege = { in_revolt = yes } }
 			}
 			any_demesne_title = {
-				limit = { has_flag = viceroy_exemption }
 				clr_flag = viceroy_exemption
 			}
 		}
 		# Ruler in imperial realm has a non-primary title with the exemption flag, but primary title does not
 		if = {
 			limit = {
-				top_liege = { emf_imperial_government = yes }
-				any_demesne_title = { has_flag = viceroy_exemption }
-				primary_title = { NOT = { has_flag = viceroy_exemption } }
 				is_feudal = yes
 				in_revolt = no
 				NOT = { any_liege = { in_revolt = yes } }
+				top_liege = { emf_imperial_government = yes }
+				primary_title = {
+					NOT = { has_flag = viceroy_exemption }
+					ROOT = {
+						any_demesne_title = {
+							NOT = { lower_tier_than = PREVPREV }
+							has_flag = viceroy_exemption
+						}
+					}
+				}
 			}
-			log = "emf_imperial.3299: [Root.GetBestName] ([Root.GetID]) had [Root.PrimaryTitle.GetID] set to viceroy_exemption, as a non-primary title had the flag set"
+			primary_title = {
+				ROOT = {
+					random_demesne_title = {
+						limit = {
+							NOT = { lower_tier_than = PREVPREV }
+							has_flag = viceroy_exemption
+						}
+						log = "emf_imperial.3299: [Root.EMF_GetDebugName] had non-primary title [This.EMF_GetDebugTitleNameWithDeJureLieges] set to viceroy_exemption, so elevating exemption to primary title"
+					}
+				}
+			}
 			any_demesne_title = { clr_flag = viceroy_exemption }
 			primary_title = { set_flag = viceroy_exemption }
 		}
@@ -5307,7 +5326,7 @@ character_event = {
 				# usurp primary title
 				primary_title = {
 					usurp_title_plus_barony_if_unlanded = { target = ROOT type = claim }
-					emf_try_to_make_primary_title = yes
+					emf_make_primary_title = yes
 				}
 
 				# ruler stays within the realm
