@@ -5,9 +5,9 @@ targetted_decisions = {
 		only_playable = yes
 		filter = vassals
 		ai_target_filter = vassals
+		ai_check_interval = 3
 
 		from_potential = {
-			is_playable = yes
 			OR = {
 				AND = {
 					independent = yes
@@ -22,71 +22,58 @@ targetted_decisions = {
 			}
 		}
 		potential = {
-			ai = yes
+			OR = {
+				ai = yes
+				AND = {
+					FROM = { ai = no }
+					ai = no
+				}
+			}
 			is_playable = yes
 			vassal_of = FROM
-			NOT = { character = FROM }
 			emf_imperial_government = yes
 			primary_title = {
 				higher_tier_than = COUNT
 				NOT = { has_flag = viceroy_exemption }
-				OR = {
-					has_law = succ_gavelkind
-					has_law = succ_elective_gavelkind
-					has_law = succ_seniority
-					has_law = succ_primogeniture
-					has_law = succ_feudal_elective
-					has_law = succ_tanistry
-					has_law = succ_ultimogeniture
-					has_law = succ_turkish_succession
-				}
+				NOT = { temporary = yes }
+				emf_has_succ_law_unfit_for_feudal = no
 			}
+			NOT = { character = FROM }
 		}
 		allow = {
-			ROOT = {
-				war = no
-				has_regent = no
-			}
+			ROOT = { war = no }
 			FROM = {
-				prestige = 200
+				custom_tooltip = {
+					text = NEEDS_200_PRESTIGE_COST
+					prestige >= 200
+				}
 				war = no
 				has_regent = no
 			}
 		}
 		effect = {
 			FROM = { prestige = -200 }
-			ROOT = {
-				prestige = 200
-				primary_title = { set_flag = viceroy_exemption }
-				emf_switch_to_feudal_gov = yes
-				if = {
-					limit = { is_rival = FROM }
-					remove_rival = FROM
-				}
-				if = {
-					limit = { tier = DUKE }
-					any_demesne_title = {
-						limit = { tier = DUKE }
-						ROOT = { opinion = { who = FROM modifier = opinion_granted_duchy } }
-					}
-				}
-				if = {
-					limit = { tier = KING }
-					any_demesne_title = {
-						limit = { tier = KING }
-						ROOT = { opinion = { who = FROM modifier = opinion_granted_kingdom } }
-					}
-				}
+			prestige = 200
+			primary_title = { set_flag = viceroy_exemption }
+			emf_switch_to_feudal_gov = yes
+			if = {
+				limit = { is_rival = FROM }
+				remove_rival = FROM
+			}
+			any_demesne_title = {
+				limit = { tier = DUKE }
+				ROOT = { opinion = { who = FROM modifier = opinion_granted_duchy } }
+			}
+			any_demesne_title = {
+				limit = { tier = KING }
+				ROOT = { opinion = { who = FROM modifier = opinion_granted_kingdom } }
 			}
 		}
 		ai_will_do = {
 			factor = 1
 			modifier = {
 				factor = 0
-				FROM = {
-					emf_imperial_government = yes
-					independent = yes
-				}
+				FROM = { emf_imperial_government = yes }
 			}
 		}
 	}
@@ -95,6 +82,7 @@ targetted_decisions = {
 		only_independent = yes
 		filter = realm
 		ai_target_filter = realm
+		ai_check_interval = 12
 
 		from_potential = {
 			independent = yes
@@ -293,10 +281,6 @@ targetted_decisions = {
 		ai_will_do = {
 			factor = 1
 			modifier = {
-				factor = 0.1
-				always = yes
-			}
-			modifier = {
 				factor = 0
 				FROM = {
 					OR = {
@@ -382,13 +366,12 @@ targetted_decisions = {
 }
 
 decisions = {
-
 	emf_claim_the_imperial_throne = {
-		only_playable = yes
 		is_high_prio = yes
+		only_playable = yes
+		ai_check_interval = 20
 
 		potential = {
-			is_playable = yes
 			independent = no
 			higher_real_tier_than = COUNT
 			is_feudal = yes
@@ -406,10 +389,16 @@ decisions = {
 		}
 		allow = {
 			war = no
+			prisoner = no
+			is_incapable = no
 			has_regent = no
-			prestige = 1000
+			NOT = { is_inaccessible_trigger = yes }
+			custom_tooltip = {
+				text = NEEDS_1000_PRESTIGE_COST
+				prestige >= 1000
+			}
 			piety = 100
-			wealth = 0
+			wealth > 0
 			OR = {
 				trait = proud
 				trait = ambitious
@@ -420,10 +409,8 @@ decisions = {
 				trait = content
 				trait = craven
 			}
-			liege = {
-				war = no
-				religion = ROOT
-			}
+			religion = LIEGE
+			liege = { war = no }
 		}
 		effect = {
 			prestige = -1000
@@ -436,10 +423,6 @@ decisions = {
 		}
 		ai_will_do = {
 			factor = 1
-			modifier = {
-				factor = 0.05
-				always = yes
-			}
 			modifier = {
 				factor = 0
 				NOT = { prestige = 1250 }
@@ -471,65 +454,6 @@ decisions = {
 					liege = { NOT = { culture = ROOT } }
 				}
 			}
-		}
-	}
-
-	emf_imperial_coronation = {
-		only_independent = yes
-		is_high_prio = yes
-
-		potential = {
-			independent = yes
-			tier = EMPEROR
-			emf_uses_native_coronation = yes
-			emf_is_crowned = no
-			NOR = {
-				emf_uses_byzantine_coronation = yes
-				emf_uses_hre_coronation = yes
-				has_flag = planning_coronation
-			}
-			emf_hiprio_decision_basic_potential = yes
-		}
-		allow = {
-			war = no
-			has_regent = no
-			is_adult = yes
-			scaled_wealth = 1.0
-			piety = 25
-			NOT = { trait = excommunicated }
-			custom_tooltip = {
-				text = HAS_BISHOP_WILLING_TO_CORONATE
-				hidden_tooltip = {
-					any_realm_lord = {
-						capital_holding = { holding_type = temple }
-						is_ruler = yes
-						is_adult = yes
-						religion = ROOT
-						prisoner = no
-						is_incapable = no
-						NOT = { is_inaccessible_trigger = yes }
-					}
-				}
-			}
-			custom_tooltip = {
-				text = IS_NOT_BUSY
-				hidden_tooltip = {
-					emf_can_disturb = yes
-					NOT = { is_inaccessible_trigger = yes }
-				}
-			}
-		}
-		effect = {
-			set_flag = planning_coronation
-			scaled_wealth = -1.0
-			character_event = { id = emf_coronation.1200 } # send invitations
-			hidden_tooltip = {
-				emf_do_not_disturb = yes
-				narrative_event = { id = emf_coronation.1215 days = 30 } # coronation start
-			}
-		}
-		ai_will_do = {
-			factor = 1
 		}
 	}
 
@@ -670,8 +594,8 @@ decisions = {
 	}
 
 	emf_prove_strong_basileus = {
-		only_independent = yes
 		is_high_prio = yes
+		only_independent = yes
 
 		potential = {
 			independent = yes
@@ -710,140 +634,6 @@ decisions = {
 			add_trait = strong_basileus
 			hidden_tooltip = {
 				narrative_event = { id = emf_coronation.1338 }
-			}
-		}
-		ai_will_do = {
-			factor = 1
-		}
-	}
-
-	emf_request_byzantine_coronation = {
-		only_independent = yes
-		is_high_prio = yes
-
-		potential = {
-			independent = yes
-			emf_uses_native_coronation = yes
-			emf_uses_byzantine_coronation = yes
-			emf_is_crowned = no
-			religion_head = {
-				OR = {
-					NOT = { has_flag = refused_to_coronate }
-					had_flag = { flag = refused_to_coronate days = 1095 }
-				}
-			}
-			NOR = {
-				has_flag = wants_coronation
-				has_flag = planning_coronation
-			}
-			emf_hiprio_decision_basic_potential = yes
-		}
-		allow = {
-			war = no
-			has_regent = no
-			is_adult = yes
-			piety = 25
-			scaled_wealth = 1.0
-		}
-		effect = {
-			set_flag = wants_coronation
-			religion_head = {
-				character_event = { id = emf_coronation.1321 tooltip = WILL_CONSIDER_REQUEST }
-			}
-		}
-		ai_will_do = {
-			factor = 1
-		}
-	}
-
-	emf_request_papal_coronation  = {
-		only_independent = yes
-		is_high_prio = yes
-
-		potential = {
-			independent = yes
-			emf_uses_native_coronation = yes
-			emf_uses_hre_coronation = yes
-			emf_is_crowned = no
-			NOR = {
-				has_flag = wants_coronation
-				has_flag = planning_coronation
-			}
-			emf_hiprio_decision_basic_potential = yes
-		}
-		allow = {
-			war = no
-			has_regent = no
-			is_adult = yes
-			prestige = 1000
-			scaled_wealth = 1.0
-			piety = 200
-			custom_tooltip = {
-				text = POPE_WOULD_HEAR_REQUEST
-				hidden_tooltip = {
-					NOT = { trait = excommunicated }
-					religion_head = {
-						NOT = { has_opinion_modifier = { who = ROOT modifier = coronation_rejected } }
-					}
-				}
-			}
-		}
-		effect = {
-			set_flag = wants_coronation
-			character_event = { id = emf_coronation.1475 tooltip = PLAN_FOR_CORONATION }
-		}
-		ai_will_do = {
-			factor = 1
-		}
-	}
-
-	emf_royal_coronation = {
-		only_playable = yes
-		is_high_prio = yes
-
-		potential = {
-			real_tier = KING
-			emf_uses_native_coronation = yes
-			emf_is_crowned = no
-			NOT = { has_flag = planning_coronation }
-			emf_hiprio_decision_basic_potential = yes
-		}
-		allow = {
-			war = no
-			has_regent = no
-			is_adult = yes
-			scaled_wealth = 1.0
-			piety = 25
-			NOT = { trait = excommunicated }
-			custom_tooltip = {
-				text = HAS_BISHOP_WILLING_TO_CORONATE
-				hidden_tooltip = {
-					any_realm_lord = {
-						capital_holding = { holding_type = temple }
-						is_ruler = yes
-						religion = ROOT
-						is_adult = yes
-						prisoner = no
-						is_incapable = no
-						NOT = { is_inaccessible_trigger = yes }
-					}
-				}
-			}
-			custom_tooltip = {
-				text = IS_NOT_BUSY
-				hidden_tooltip = {
-					emf_can_disturb = yes
-					NOT = { is_inaccessible_trigger = yes }
-				}
-			}
-		}
-		effect = {
-			set_flag = planning_coronation
-			scaled_wealth = -1.0
-			character_event = { id = emf_coronation.1200 } # send invitations
-			hidden_tooltip = {
-				emf_do_not_disturb = yes
-				narrative_event = { id = emf_coronation.1215 days = 30 } # coronation start
 			}
 		}
 		ai_will_do = {
