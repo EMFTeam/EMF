@@ -206,9 +206,9 @@ changeset = {
                 change_variable = { which = "imperial_dynasty_count" value = 1 }
                 set_variable = { which = "imperial_decay" value = 50 }
             }
-			law = law_voting_power_1
-			law = war_voting_power_1
-			law = titles_voting_power_1
+            law = law_voting_power_1
+            law = war_voting_power_1
+            law = titles_voting_power_1
             '''),
         ((869, 1, 1), 1, '''
             effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
@@ -395,9 +395,9 @@ changeset = {
             law = ze_revokation_2
             law = administration_1
             law = law_voting_power_0
-			law = war_voting_power_0
-			law = titles_voting_power_0
-			law = justice_voting_power_0
+            law = war_voting_power_0
+            law = titles_voting_power_0
+            law = justice_voting_power_0
             law = centralization_3
             ''')
     ]
