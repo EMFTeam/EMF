@@ -4,9 +4,9 @@
 emf_destroy_title = {
 	if = {
 		limit = { has_holder = yes }
-		hidden_effect = { # Hopefully this stops the `log` commands from executing when just generating a tooltip
-			holder_scope = {
-				log = "DEBUG: emf_destroy_title: [Prev.GetID] ([Prev.GetFullName]), held by [This.GetTitledName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+		hidden_effect = { # This stops the `log` commands from executing when just generating a tooltip
+			owner = {
+				log = "DEBUG: emf_destroy_title: [Prev.EMF_GetDebugTitleNameWithDeJureLieges], held by [This.EMF_GetDebugName]"
 			}
 		}
 	}
@@ -23,9 +23,9 @@ emf_destroy_title = {
 emf_unsafe_destroy_title = {
 	if = {
 		limit = { has_holder = yes }
-		hidden_effect = { # Hopefully this stops the `log` commands from executing when just generating a tooltip
-			holder_scope = {
-				log = "DEBUG: emf_unsafe_destroy_title: [Prev.GetID] ([Prev.GetFullName]), held by [This.GetTitledName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+		hidden_effect = { # This stops the `log` commands from executing when just generating a tooltip
+			owner = {
+				log = "DEBUG: emf_unsafe_destroy_title: [Prev.EMF_GetDebugTitleNameWithDeJureLieges], held by [This.EMF_GetDebugName]"
 			}
 		}
 	}
@@ -70,7 +70,7 @@ emf_clear_standard_title_state = {
 	}
 }
 
-emf_try_to_make_primary_title = {
+emf_make_primary_title = {
 	hidden_effect = {
 		if = {
 			limit = {
@@ -85,7 +85,7 @@ emf_try_to_make_primary_title = {
 				}
 			}
 			owner = {
-				log = "DEBUG: emf_try_to_make_primary_title: [Prev.GetID] ([Prev.GetFullName]), held by [This.GetTitledName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+				log = "DEBUG: emf_make_primary_title: [Prev.EMF_GetDebugTitleNameWithDeJureLieges], held by [This.EMF_GetDebugName]"
 			}
 			if = {
 				limit = { owner = { primary_title = { has_flag = viceroy_exemption } } }
@@ -104,17 +104,40 @@ emf_try_to_make_primary_title = {
 				}
 			}
 		}
+		else = {
+			log = "WARNING: emf_make_primary_title: could not proceed for [Prev.EMF_GetDebugTitleNameWithDeJureLieges], held by [This.EMF_GetDebugName]"
+			if = {
+				limit = { has_holder = no }
+				log = "-> title has no holder"
+			}
+			else = {
+				owner = {
+					primary_title = {
+						if = {
+							limit = { title = PREVPREV }
+							log = "-> title is same as owner's current primary title"
+						}
+						if = {
+							limit = { higher_tier_than = PREVPREV }
+							log = "-> owner's current primary title is higher tier than the intended new primary title"
+						}
+						if = {
+							limit = { is_primary_type_title = yes }
+							log = "-> owner's current primary title is a primary-type title and thus cannot be switched"
+						}
+					}
+				}
+			}
+		}
 	}
 }
 
 emf_copy_title_state_from_PREV = {
 	hidden_effect = {
-		PREV = { save_event_target_as = emf_copied_from_title }
-		save_event_target_as = emf_copied_to_title
 		if = {
 			limit = {
 				tier = EMPEROR
-				tier = PREV
+				PREV = { tier = EMPEROR }
 			}
 			set_variable = { which = "imperial_decay" which = PREV }
 			set_variable = { which = "imperial_dynasty_count" which = PREV }
@@ -128,40 +151,38 @@ emf_copy_title_state_from_PREV = {
 			set_flag = viceroy_exemption
 		}
 		emf_transfer_claims_from_PREV = yes
-		clear_event_target = emf_copied_from_title
-		clear_event_target = emf_copied_to_title
 	}
 }
 
 emf_transfer_claims_from_PREV = {
 	hidden_effect = {
-		PREV = { save_event_target_as = emf_transfer_from_title }
-		save_event_target_as = emf_transfer_to_title
-		event_target:emf_transfer_from_title = {
+		PREV = { save_event_target_as = emf_claim_src_title_tmp }
+		save_event_target_as = emf_claim_dst_title_tmp
+		event_target:emf_claim_src_title_tmp = {
 			any_claimant = {
 				limit = { has_strong_pressed_claim = PREV }
-				event_target:emf_transfer_to_title = { add_pressed_claim = PREV }
+				event_target:emf_claim_dst_title_tmp = { add_pressed_claim = PREV }
 			}
 			any_claimant = {
 				limit = {
 					has_strong_claim = PREV
 					NOT = { has_strong_pressed_claim = PREV }
 				}
-				event_target:emf_transfer_to_title = { add_claim = PREV }
+				event_target:emf_claim_dst_title_tmp = { add_claim = PREV }
 			}
 			any_claimant = {
 				limit = { has_weak_pressed_claim = PREV }
-				event_target:emf_transfer_to_title = { add_weak_pressed_claim = PREV }
+				event_target:emf_claim_dst_title_tmp = { add_weak_pressed_claim = PREV }
 			}
 			any_claimant = {
 				limit = {
 					has_weak_claim = PREV
 					NOT = { has_weak_pressed_claim = PREV }
 				}
-				event_target:emf_transfer_to_title = { add_weak_claim = PREV }
+				event_target:emf_claim_dst_title_tmp = { add_weak_claim = PREV }
 			}
 		}
-		clear_event_target = emf_transfer_from_title
-		clear_event_target = emf_transfer_to_title
+		clear_event_target = emf_claim_src_title_tmp
+		clear_event_target = emf_claim_dst_title_tmp
 	}
 }
