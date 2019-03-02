@@ -36,8 +36,31 @@ character_event = {
 	immediate = {
 		random_demesne_title = {
 			limit = { emf_empires_aed_valid_title = yes }
-			log = "INFO: AED: disentegrating [This.GetID] ([This.GetFullName])..."
+			log = "INFO: AED: disentegrating [This.GetID] ([This.GetFullName]), held by [Root.EMF_GetDebugName]..."
 			save_event_target_as = emf_empire_title
+		}
+
+		# Workaround for issue #574; ex-nomads with spurious clan titles will have the hard-code auto-create a new empire
+		# title immediately after AED destroys their current one. Solution: get rid of the spurious clan title before
+		# destroying the empire (and don't bug players with an announcement event about this).
+		if = {
+			limit = {
+				any_demesne_title = {
+					tier = KING
+					clan = yes
+				}
+			}
+			set_flag = emf_aed_skip_announcement
+			set_flag = emf_aed_had_spurious_clan_title
+			log = "-> ruler has a spurious clan title (announcement event will be skipped), destroying:"
+			any_demesne_title = {
+				limit = {
+					tier = KING
+					clan = yes
+				}
+				log = "---> destroying [This.GetID] ([This.GetFullName])"
+				emf_unsafe_destroy_title = yes
+			}
 		}
 
 		if = { # If we have another empire or king title to fallback-upon, then skip searching for a kingdom
@@ -54,10 +77,12 @@ character_event = {
 					}
 				}
 			}
+			log = "-> already has another crown-tier title to fallback upon, skipping search"
 			break = yes
 		}
 
 		# Then we will try to find one...
+		log = "-> searching for a fallback kingdom:"
 
 		set_flag = emf_skip_title_basic_allow_tmp # Temporarily disables title_king_basic_allow requirements
 
@@ -76,8 +101,9 @@ character_event = {
 			capital_scope = { kingdom = { save_event_target_as = emf_king_title } }
 			character_event = { id = emf_empires.4 } # Check 51% rule
 			if = {
-				limit = { check_variable = { which = king_county value = 1 } } # 51% rule passes
+				limit = { check_variable = { which = king_county value > 0 } } # 51% rule passes
 				event_target:emf_king_title = { save_event_target_as = emf_new_title }
+				log = "---> chose capital kingdom: [emf_new_title.EMF_GetDebugTitleNameWithDeJureLieges]"
 				break = yes
 			}
 		}
@@ -96,10 +122,12 @@ character_event = {
 				save_event_target_as = emf_king_title
 				ROOT = { character_event = { id = emf_empires.4 } } # Check 50% rule
 				if = {
-					limit = { ROOT = { check_variable = { which = king_county value = 1 } } } # 51% rule passes
+					limit = { ROOT = { check_variable = { which = king_county value > 0 } } } # 51% rule passes
 					event_target:emf_king_title = { save_event_target_as = emf_new_title }
+					log = "---> chose de jure vassal kingdom: [emf_new_title.EMF_GetDebugTitleNameWithDeJureLieges]"
 					break = yes
 				}
+				clear_event_target = emf_king_title
 			}
 		}
 
@@ -115,8 +143,9 @@ character_event = {
 			save_event_target_as = emf_king_title
 			ROOT = { character_event = { id = emf_empires.4 } } # Check 50% rule
 			if = {
-				limit = { ROOT = { check_variable = { which = king_county value = 1 } } } # 51% rule passes
+				limit = { ROOT = { check_variable = { which = king_county value > 0 } } } # 51% rule passes
 				event_target:emf_king_title = { save_event_target_as = emf_new_title }
+				log = "---> chose any old de jure kingdom: [emf_new_title.EMF_GetDebugTitleNameWithDeJureLieges]"
 				break = yes
 			}
 			clear_event_target = emf_king_title
@@ -138,7 +167,7 @@ character_event = {
 					base_title = THIS
 				}
 				new_title = {
-					log = "INFO: AED: created custom titular title [This.GetID] ([This.GetBaseName]) from base county title [Prev.GetID] ([Prev.GetBaseName]) for [Root.GetTitledName] ([Root.GetID])"
+					log = "---> created custom titular kingdom [This.GetID] ([This.GetBaseName]) from base county title [Prev.GetID] ([Prev.GetBaseName])"
 					save_event_target_as = emf_new_title
 					set_flag = emf_autodestroy
 					if = {
@@ -168,6 +197,7 @@ character_event = {
 			# We will not be able to bind king-tier vassals after the empire is destroyed
 			any_vassal = {
 				limit = { tier = KING }
+				log = "-> setting vassal king independent: [This.EMF_GetDebugName]"
 				set_defacto_liege = THIS
 				emf_liege_change = yes
 			}
@@ -180,6 +210,7 @@ character_event = {
 				event_target:emf_new_title = {
 					if = {
 						limit = { NOT = { holder = ROOT } }
+						log = "-> granting fallback kingdom: [This.EMF_GetDebugTitleNameWithDeJureLieges]"
 						grant_title = { target = ROOT type = created }
 					}
 					copy_title_laws = PREV
@@ -197,16 +228,19 @@ character_event = {
 		event_target:emf_empire_title = {
 			set_flag = emf_aed_destroyed
 			emf_unsafe_destroy_title = yes
-			hidden_tooltip = {
+			hidden_effect = {
 				ROOT = { character_event = { id = emf_imperial.3299 } }
 			}
-			hidden_tooltip = {
-				save_event_target_as = emf_crier_dead_title
-				any_playable_ruler = {
-					limit = { ai = no }
-					narrative_event = { id = emf_crier.253 }
+			hidden_effect = {
+				if = {
+					limit = { NOT = { ROOT = { has_flag = emf_aed_skip_announcement } } }
+					save_event_target_as = emf_crier_dead_title
+					any_playable_ruler = {
+						limit = { ai = no }
+						narrative_event = { id = emf_crier.253 }
+					}
+					clear_event_target = emf_crier_dead_title
 				}
-				clear_event_target = emf_crier_dead_title
 			}
 		}
 		prestige = -500
@@ -216,6 +250,7 @@ character_event = {
 		hidden_effect = {
 			set_variable = { which = king_county value = 0 }
 			clr_flag = emf_skip_title_basic_allow_tmp
+			clr_flag = emf_aed_skip_announcement
 		}
 	}
 }
