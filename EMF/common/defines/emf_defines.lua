@@ -117,7 +117,7 @@ NDefines.NEconomy.TRADE_ROUTE_SIEGE_MULTIPLIER = 0.8			  -- vanilla: 0.9 [also f
 NDefines.NEconomy.TRADE_ROUTE_OCCUPATION_MULTIPLIER = 0.6         -- vanilla: 0.75 [also from v8.06]
 
 -- Nomad
-NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 1500
+NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 1250
 NDefines.NNomad.STARTING_HORDE_MAX_FRACTION = 1
 
 -- Military
