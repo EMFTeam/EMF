@@ -112,17 +112,16 @@ NDefines.NEconomy.BISHOP_TAX_TO_ANTI_POPE_FACTOR = 0.025          -- prior to EM
 NDefines.NEconomy.TRADE_POST_COST_INC_DIST = 0.0045
 NDefines.NEconomy.PATRICIAN_CITY_TAX_MULT = 0.5                   -- prior to EMF v8.02: 0.25, now back to vanilla
 NDefines.NEconomy.OVER_MAX_DEMESNE_TAX_PENALTY = 0.1              -- doubled tax penalty per holding over demesne limit (still quite flexible, however) from v8.06
-NDefines.NEconomy.LOOTER_ARMY_MAINT_MULT = 0.05                   -- halved looter army maintenance from v8.06
 NDefines.NEconomy.TRADE_ROUTE_SIEGE_MULTIPLIER = 0.8			  -- vanilla: 0.9 [also from v8.06]
 NDefines.NEconomy.TRADE_ROUTE_OCCUPATION_MULTIPLIER = 0.6         -- vanilla: 0.75 [also from v8.06]
 
 -- Nomad
-NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 1500
+NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 1250
 NDefines.NNomad.STARTING_HORDE_MAX_FRACTION = 1
 
 -- Military
 NDefines.NMilitary.NUMBER_OF_TROOPS_PER_GALLEY = 200
-NDefines.NMilitary.LEVY_MAINTENANCE_FACTOR = 2.7                 -- increased by 0.3 from v8.06
+NDefines.NMilitary.LEVY_MAINTENANCE_FACTOR = 2.4
 NDefines.NMilitary.BATTLE_WARSCORE_DEFENDER_MULTIPLIER = 1.6
 --NDefines.NMilitary.MIN_LEVY_RAISE_OPINION_THRESHOLD = -50
 NDefines.NMilitary.MIN_LEVIES_ABOVE_OPINION_THRESHOLD = 0.333 -- at 0 opinion, vassals will send 1/3 of their liege levy (equiv. to v8.06 equation that started at -50 opinion, except hard cutoff at 0 opinion)
