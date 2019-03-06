@@ -321,7 +321,7 @@ character_event = {
 				grant_title_no_opinion = { target = ROOT type = revoke }
 			}
 			if = {
-				limit = { NOT = { capital_scope = { capital_holding = { is_preferred_holding_type = ROOT } } } }
+				limit = { NOT = { capital_holding = { is_preferred_holding_type = ROOT } } }
 				random_direct_de_jure_vassal_title = {
 					limit = {
 						holder = ROOT
@@ -578,6 +578,86 @@ character_event = {
 				refill_holding_levy = yes
 			}
 		}
+	}
+}
+
+# emf_core.45 [Dying Father]
+#
+# 45-47 fix a hard-coded bug in patch 3.0 regarding incorrect posthumous dynasties of children. For more information
+# on the issue and explanation of what is going on here, see: https://github.com/EMFTeam/EMF/issues/635
+#
+# Triggered on_death of a married father with at least one patrilineally married & pregnant wife.
+character_event = {
+	id = emf_core.45
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	only_men = yes
+	is_married = yes
+
+	trigger = {
+		any_spouse = {
+			is_pregnant = yes
+			NOT = { is_married_matrilineally = yes }
+		}
+	}
+
+	immediate = {
+		any_spouse = {
+			limit = {
+				is_pregnant = yes
+				NOT = { is_married_matrilineally = yes }
+			}
+			save_persistent_event_target = {
+				name = emf_dead_father_of_unborn
+				scope = ROOT
+			}
+		}
+	}
+}
+
+# emf_core.46 [Child Being Born]
+#
+# Triggered on_birth of a child from a mother that has a saved event target pointing to the child's dead father. See
+# emf_core.45 for more info.
+character_event = {
+	id = emf_core.46
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		mother = {
+			persistent_event_target:emf_dead_father_of_unborn = { always = yes }
+		}
+	}
+
+	immediate = {
+		mother = {
+			persistent_event_target:emf_dead_father_of_unborn = {
+				ROOT = { dynasty = PREV }
+			}
+			character_event = { id = emf_core.47 days = 1 } # Cleanup target next day in case she had twins today
+		}
+	}
+}
+
+# emf_core.47 [Mother Who Gave Birth Yesterday]
+#
+# Triggered by emf_core.46
+character_event = {
+	id = emf_core.47
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		persistent_event_target:emf_dead_father_of_unborn = { always = yes }
+	}
+
+	immediate = {
+		clear_persistent_event_target = emf_dead_father_of_unborn
 	}
 }
 
