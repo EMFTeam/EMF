@@ -251,21 +251,12 @@ changeset = {
                 set_variable = { which = "imperial_decay" value = 10 }
             }
             '''),
-        ((1025, 12, 15), 1, '''
-            law = crown_authority_1
-            '''),
         ((1055, 1, 11), 1, '''
             clr_global_flag = byz_empire_flourishes
             set_global_flag = byz_empire_cracking
             effect = {
                 set_variable = { which = "imperial_decay" value = 30 }
             }
-            '''),
-        ((1057, 8, 31), 1, '''
-            law = crown_authority_2
-            '''),
-        ((1059, 11, 22), 1, '''
-            law = crown_authority_1
             '''),
         ((1071, 8, 26), 1, '''
             clr_global_flag = byz_empire_cracking
@@ -275,7 +266,6 @@ changeset = {
             }
             '''),
         ((1081, 4, 1), 1, '''
-            law = crown_authority_2
             clr_global_flag = byz_empire_falling
             set_global_flag = byz_empire_cracking
             effect = {
@@ -290,7 +280,6 @@ changeset = {
             effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
             '''),
         ((1180, 9, 24), 1, '''
-            law = crown_authority_1
             clr_global_flag = byz_empire_cracking
             set_global_flag = byz_empire_falling
             effect = {
@@ -311,11 +300,9 @@ changeset = {
             effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
             '''),
         ((1204, 1, 28), 1, '''
-            law = crown_authority_2
             effect = { set_variable = { which = "imperial_dynasty_count" value = 0 } }
             '''),
         ((1282, 12, 11), 1, '''
-            law = crown_authority_1
             clr_global_flag = byz_empire_falling
             set_global_flag = byz_empire_shattered
             effect = {
