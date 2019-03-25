@@ -170,7 +170,7 @@ emf_cb_restore_hre_on_success_title = {
 					}
 				}
 				hidden_tooltip = {
-					log = "---> usurping kingdom capital, [This.GetBaseName] ([This.GetID])"
+					log = "---> usurping kingdom capital, [This.EMF_GetDebugTitleNameWithDeJureLieges]"
 				}
 				emf_cb_latb = yes
 				hidden_tooltip = {
@@ -235,7 +235,7 @@ emf_cb_restore_hre_on_success_title = {
 						}
 					}
 				}
-				log = "---> loser will retract count-tier vassal(s) from [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID]) (phase 1):"
+				log = "---> loser will retract count-tier vassal(s) from [This.EMF_GetDebugName] (phase 1):"
 				any_vassal = {
 					limit = {
 						tier = COUNT
@@ -250,16 +250,15 @@ emf_cb_restore_hre_on_success_title = {
 							}
 						}
 					}
-					log = "----> retracting: [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+					log = "----> retracting: [This.EMF_GetDebugName]"
 					set_defacto_liege = ROOT_FROM
-					if = {
-						limit = { NOT = { vassal_of = ROOT_FROM } }
-						log = "------> ERROR: loser could not vassalize [This.GetObjectPronoun]"
-					}
 					if = {
 						limit = { vassal_of = ROOT_FROM }
 						# Mark duke as their former liege temporarily
 						reverse_opinion = { who = PREV modifier = my_prior_vassal }
+					}
+					else = {
+						log = "------> ERROR: loser could not vassalize [This.GetObjectPronoun]"
 					}
 				}
 			}
@@ -291,7 +290,7 @@ emf_cb_restore_hre_on_success_title = {
 						}
 					}
 				}
-				log = "---> loser will retract count-tier vassal(s) from [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID]) (phase 2):"
+				log = "---> loser will retract count-tier vassal(s) from [This.EMF_GetDebugName] (phase 2):"
 				any_vassal = {
 					limit = {
 						tier = COUNT
@@ -306,16 +305,15 @@ emf_cb_restore_hre_on_success_title = {
 							}
 						}
 					}
-					log = "----> retracting: [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+					log = "----> retracting: [This.EMF_GetDebugName]"
 					set_defacto_liege = ROOT_FROM
-					if = {
-						limit = { NOT = { vassal_of = ROOT_FROM } }
-						log = "------> ERROR: loser could not vassalize [This.GetObjectPronoun]"
-					}
 					if = {
 						limit = { vassal_of = ROOT_FROM }
 						# Mark duke as their former liege temporarily
 						reverse_opinion = { who = PREV modifier = my_prior_vassal }
+					}
+					else = {
+						log = "------> ERROR: loser could not vassalize [This.GetObjectPronoun]"
 					}
 				}
 			}
@@ -345,7 +343,7 @@ emf_cb_restore_hre_on_success_title = {
 						}
 					}
 				}
-				log = "---> invader vassalizing: [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+				log = "---> invader vassalizing: [This.EMF_GetDebugName]"
 				ROOT = { save_event_target_as = emf_cb_new_imperial_liege }
 				emf_set_viceroy_exemption = yes
 				set_defacto_liege = ROOT
@@ -356,9 +354,12 @@ emf_cb_restore_hre_on_success_title = {
 			}
 		}
 	}
-	# And a good ol' VTUT before we hit them with the finisher.
+	# Now, we finally usurp the CB target kingdom title; it may bring more vassals with it (but they are still marked with
+	# my_prior_vassal TOMs from FROM, so no biggie).
+	usurp_title = { target = ROOT type = invasion }
+	# And hit the de jure kingdom with a proper VoTuT, as the hard-code can handle some cases we cannot handle very well
+	# ourselves:
 	pf_liege_change_under_title_begin_effect = yes
-	# TODO: custom_tooltip this bitch! [not just this VOTUT-- almost all of this scripted effect]
 	ROOT = {
 		vassalize_or_take_under_title = {
 			title = PREV
@@ -377,30 +378,10 @@ emf_cb_restore_hre_on_success_title = {
 					# Whom also has at least one my_prior_vassal directed at *their* former vassal(s)
 					has_any_opinion_modifier = my_prior_vassal
 				}
-				log = "---> checking necessity of vassal retractions for [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID]):"
+				log = "---> checking necessity of vassal retractions for [This.EMF_GetDebugName]:"
 				any_opinion_modifier_target = { # Their former vassals; PREV is their liege before retraction
 					limit = {
 						reverse_has_opinion_modifier = { who = PREV modifier = my_prior_vassal }
-					}
-					if = {
-						limit = {
-							NAND = {
-								OR = {
-									same_realm = PREV
-									AND = {
-										independent = yes
-										PREV = { independent = yes }
-									}
-								}
-								lower_tier_than = PREV
-							}
-						}
-						# We shouldn't undo this retraction. However, we'll give the former liege a
-						# rightful subjugation TOM which may (actually is fairly likely for this CB)
-						# allow them to use the emf_revassalize CB to get their vassal back in the
-						# future.
-						reverse_opinion = { who = PREV modifier = opinion_rightful_subjugation }
-						log = "----> retraction OK: [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
 					}
 					if = {
 						limit = {
@@ -414,41 +395,37 @@ emf_cb_restore_hre_on_success_title = {
 							lower_tier_than = PREV
 						}
 						# Woot. We can stitch this back together no problem.
-						log = "----> retraction unnecessary -- fixing: [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+						log = "----> retraction unnecessary -- fixing: [This.EMF_GetDebugName]"
 						set_defacto_liege = PREV
-						# No need for an emf_liege_change; liege didn't actually change!
-						if = {
-							limit = { NOT = { vassal_of = PREV } }
-							log = "------> ERROR: former liege could not vassalize unnecessarily retracted vassal"
-						}
 						if = {
 							limit = { vassal_of = PREV }
-							# Even with the TOM, it's more or less like the vassal retraction
-							# never happened
-							reverse_remove_opinion = {
-								who = ROOT_FROM
-								modifier = my_prior_vassal
-							}
+							reverse_remove_opinion = { who = ROOT_FROM modifier = my_prior_vassal }
 						}
+						else = {
+							log = "------> ERROR: former liege could not vassalize unnecessarily retracted vassal"
+						}
+					}
+					else = {
+						# We shouldn't undo this retraction. However, we'll give the former liege a
+						# rightful subjugation TOM which may (actually is fairly likely for this CB)
+						# allow them to use the emf_revassalize CB to get their vassal back in the
+						# future.
+						reverse_opinion = { who = PREV modifier = opinion_rightful_subjugation }
+						log = "----> retraction OK: [This.EMF_GetDebugName]"
 					}
 					# Cleanup all my_prior_vassal temporary TOMs for vassals (i.e., not FROM's) here:
 					reverse_remove_opinion = { who = PREV modifier = my_prior_vassal }
 				}
 			}
 		}
-	}
-	# Now, we finally usurp the CB target kingdom title; it may bring more vassals with it.
-	usurp_title = { target = ROOT type = invasion }
-	hidden_tooltip = {
 		# Properly subjugate (add opinions & process liege change) all those whom have been vassalized by ROOT but
 		# were formerly vassals of FROM. Note that any successful undo of vassal retractions will properly skip the
 		# now [again] indirect vassals.
-
 		log = "---> invader finalizing subjugation of:"
 		ROOT = {
 			any_vassal = {
 				limit = { reverse_has_opinion_modifier = { who = FROM modifier = my_prior_vassal } }
-				log = "----> [This.GetTitledFirstName] [This.GetOnlyDynastyName] (#[This.GetID]/[This.PrimaryTitle.GetID])"
+				log = "----> [This.EMF_GetDebugName]"
 				if = {
 					limit = { religion = ROOT }
 					opinion = { who = ROOT modifier = opinion_subjugated }
