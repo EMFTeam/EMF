@@ -1215,7 +1215,7 @@ emf_calc_realm_province_religion_breakdown_of_THIS_for_ROOT = {
 	for r in g_religions:
 		print('''\
 			if = {{
-				limit = {{ check_variable = {{ which = r_prov_rel_{0} value > 0 }}
+				limit = {{ check_variable = {{ which = r_prov_rel_{0} value > 0 }} }}
 				set_variable = {{ which = r_prov_rel_{0}_pct which = r_prov_rel_{0} }}
 				multiply_variable = {{ which = r_prov_rel_{0}_pct value = 100 }}
 				divide_variable = {{ which = r_prov_rel_{0}_pct which = r_prov }}
