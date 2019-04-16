@@ -9,6 +9,7 @@ emf_path = ck2parser.rootpath / 'EMF/EMF'
 sr_modifier_path = emf_path / 'common/event_modifiers/emf_sr_codegen_modifiers.txt'
 sr_effect_path = emf_path / 'common/scripted_effects/emf_sr_codegen_effects.txt'
 sr_trigger_path = emf_path / 'common/scripted_triggers/emf_sr_codegen_triggers.txt'
+rel_effect_path = emf_path / 'common/scripted_effects/emf_religion_codegen_effects.txt'
 bl_effect_path = emf_path / 'common/scripted_effects/emf_bloodline_codegen_effects.txt'
 bl_trigger_path = emf_path / 'common/scripted_triggers/emf_bloodline_codegen_triggers.txt'
 as_effect_path = emf_path / 'common/scripted_effects/emf_altstart_codegen_effects.txt'
@@ -124,6 +125,11 @@ def main():
 		print_effect_flip_secret_community_provinces_by_prov_flip_char_flag(f)
 		print_effect_add_secret_community_to_target_province(f)
 		print_effect_ai_try_to_join_society(f)
+
+	# generate religion scripted effects
+	with rel_effect_path.open('w', encoding='cp1252', newline='\n') as f:
+		print_file_header(f, 'ck2.scripted_effects')
+		print_effect_calc_realm_province_religion_breakdown_of_THIS_for_ROOT(f, loc)
 
 	# generate bloodline scripted triggers
 	with bl_trigger_path.open('w', encoding='cp1252', newline='\n') as f:
@@ -1176,6 +1182,48 @@ emf_sr_ai_try_to_join_society = {
 		}}'''.format(r), file=f)
 
 	print(TAB + '}\n}', file=f)
+
+
+def print_effect_calc_realm_province_religion_breakdown_of_THIS_for_ROOT(f, loc):
+	print('''
+emf_calc_realm_province_religion_breakdown_of_THIS_for_ROOT = {
+	ROOT = {
+		set_variable = { which = r_prov value = 0 }''', file=f)
+
+	for r in g_religions:
+		print('\t\tset_variable = {{ which = r_prov_rel_{} value = 0 }}'.format(r), file=f)
+		print('\t\tset_variable = {{ which = r_prov_rel_{}_pct value = 0 }}'.format(r), file=f)
+
+	print('''\
+	}
+	if = {
+		limit = { num_of_count_titles_in_realm > 0 }
+		ROOT = { export_to_variable = { which = r_prov value = num_of_count_titles_in_realm who = PREV } }''', file=f)
+
+	for r in g_religions:
+		print('''\
+		any_realm_province = {{
+			limit = {{
+				owner_under_PREV = yes
+				religion = {0}
+			}}
+			ROOT = {{ change_variable = {{ which = r_prov_rel_{0} value = 1 }} }}
+		}}'''.format(r), file=f)
+
+	print('\t\tROOT = {', file=f)
+
+	for r in g_religions:
+		print('''\
+			if = {{
+				limit = {{ check_variable = {{ which = r_prov_rel_{0} value > 0 }}
+				set_variable = {{ which = r_prov_rel_{0}_pct which = r_prov_rel_{0} }}
+				multiply_variable = {{ which = r_prov_rel_{0}_pct value = 100 }}
+				divide_variable = {{ which = r_prov_rel_{0}_pct which = r_prov }}
+			}}'''.format(r), file=f)
+
+	print('\t\t}', file=f)
+	print('\t}', file=f)
+	print('}', file=f)
 
 
 def print_effect_set_bloodline_founder_religion_flag(f):
