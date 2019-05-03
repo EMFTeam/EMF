@@ -16,6 +16,7 @@ namespace = emf_dna
 # chance for the character to get the negative trait.																	   #
 ############################################################################################################################
 
+
 # emf_dna.0 -- Initialize randomly-generated start-of-game characters' traits. [Isis]
 character_event = {
 	id = emf_dna.0
@@ -24,6 +25,7 @@ character_event = {
 	hide_window = yes
 
 	immediate = {
+		set_global_flag = emf_dna_init # Mark that we did in fact do startup DNA initialization upon this campaign
 		any_character = {
 			limit = {
 				is_adult = yes # Game doesn't spawn children randomly
@@ -34,7 +36,7 @@ character_event = {
 					has_landed_title = e_hip
 				}
 			}
-			character_event = { id = emf_dna.1 }
+			character_event = { id = emf_dna.10 }
 		}
 		# And flag the complement set of characters as possibly historical characters (notably, characters that we don't want
 		# to later think was a randomly-generated courtier after game start):
@@ -52,15 +54,46 @@ character_event = {
 			}
 			set_flag = emf_maybe_historical
 		}
-		set_global_flag = emf_dna_init
 	}
 }
 
-# emf_dna.1 -- Initialize a character's genetic traits. [Character]
+
+# emf_dna.1 -- MTTH event to find randomly-generated courtiers and initialize their genetic traits. [Character]
 #
-# Called from the emf_new_character effect as well as from emf_dna.0 on campaign initialization.
+# Only runs if this savegame/campaign was started with a proper game-wide genetics initialization, because otherwise,
+# it'll start mistaking characters that aren't randomly-generated for ones that are and scrambling their traits with respect
+# to their genetics. This is achieved through the global flag emf_dna_init to signal that startup initialization was done.
 character_event = {
 	id = emf_dna.1
+	hide_window = yes
+
+	has_global_flag = emf_dna_init
+
+	trigger = {
+		NOR = {
+			has_flag = emf_dna_check
+			has_flag = emf_maybe_historical
+		}
+	}
+
+	mean_time_to_happen = {
+		days = 0
+	}
+
+	immediate = {
+		set_flag = emf_randomly_generated
+		character_event = { id = emf_dna.10 }
+	}
+}
+
+
+# emf_dna.10 -- Initialize a character's genetic traits. [Character]
+#
+# Called from the emf_new_character effect as well as from emf_dna.0 on campaign initialization and emf_dna.1 when
+# discovering a new randomly-generated courtier (or a character that was spawned by script but for some reason lacked a call
+# to the emf_new_character effect).
+character_event = {
+	id = emf_dna.10
 
 	is_triggered_only = yes
 	hide_window = yes
@@ -165,17 +198,17 @@ character_event = {
 				}
 			}
 			random_list = {
-				50 = {
-					add_trait = tall
-				}
 				5 = {
 					add_trait = giant
 				}
-				5 = {
-					add_trait = tiny
+				50 = {
+					add_trait = tall
 				}
 				50 = {
 					add_trait = short
+				}
+				5 = {
+					add_trait = tiny
 				}
 				890 = {
 					## Nothing
@@ -239,43 +272,26 @@ character_event = {
 			1995 = {
 			}
 		}
-		random_list = {
-			10 = {
-				add_trait = perceptive
+		if = {
+			limit = {
+				NOR = {
+					trait = perceptive
+					trait = absentminded
+				}
 			}
-			10 = {
-				add_trait = absentminded
-			}
-			1980 = {
+			random_list = {
+				10 = {
+					add_trait = perceptive
+				}
+				10 = {
+					add_trait = absentminded
+				}
+				1980 = {
+				}
 			}
 		}
 		# Done!
 		set_flag = emf_dna_check
-	}
-}
-
-
-# emf_dna.2 -- MTTH event to find randomly-generated courtiers and initialize their genetics
-character_event = {
-	id = emf_dna.2
-	hide_window = yes
-
-	has_global_flag = emf_dna_init
-
-	trigger = {
-		NOR = {
-			has_flag = emf_dna_check
-			has_flag = emf_maybe_historical
-		}
-	}
-
-	mean_time_to_happen = {
-		days = 0
-	}
-
-	immediate = {
-		set_flag = emf_randomly_generated
-		character_event = { id = emf_dna.1 }
 	}
 }
 
