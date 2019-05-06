@@ -7,46 +7,140 @@ targeted_decisions = {
 
 		from_potential = {
 			higher_tier_than = COUNT
-			war = no
-			in_revolt = no
 		}
 		potential = {
 			vassal_of = FROM
 			higher_tier_than = BARON
-			NOT = { any_demesne_title = { temporary = yes } }
 			FROM = {
 				any_vassal = {
-					de_jure_liege = ROOT
-					lower_tier_than = ROOT
+					higher_tier_than = BARON # Else, show the baron-only vassal transfer decision instead.
+					primary_title = {
+						any_de_jure_liege_title = {
+							holder = ROOT
+						}
+					}
 					OR = {
 						is_patrician = no
 						is_merchant_republic = yes
 					}
 					war = no
 					in_revolt = no
-					NOT = { any_demesne_title = { temporary = yes } }
 				}
 			}
 		}
 		allow = {
 			war = no
 			in_revolt = no
+			FROM = {
+				war = no
+				in_revolt = no
+			}
 		}
 		effect = {
-			liege = {
+			if = {
+				limit = { has_dlc = "Zeus" }
+				reverse_add_favor = FROM
+			}
+			FROM = {
 				show_scope_change = no
 				any_vassal = {
 					show_scope_change = no
 					limit = {
-						de_jure_liege = ROOT
-						lower_tier_than = ROOT
+						higher_tier_than = BARON
+						primary_title = {
+							any_de_jure_liege_title = {
+								holder = ROOT
+							}
+						}
 						OR = {
 							is_patrician = no
 							is_merchant_republic = yes
 						}
 						war = no
 						in_revolt = no
-						NOT = { any_demesne_title = { temporary = yes } }
+					}
+					set_defacto_liege = ROOT # TODO: actual liege change should occur in notification event
+					emf_liege_change = yes
+					if = {
+						limit = { NOT = { has_dlc = "Zeus" } }
+						ROOT = {
+							show_scope_change = no
+							opinion = { who = LIEGE modifier = opinion_vassal_transfer }
+						}
+					}
+				}
+			}
+		}
+	}
+
+	# Same as above but used when only barons can be transferred, in which case we do not award a favor but only
+	# opinion_vassal_transfer. This will prevent an exploit wherein you can, e.g., build a temple in a high-tier character's
+	# lands, click Create New Vassal on it, and then collect a free favor owed to you by the target character. More commonly,
+	# you'll usurp such a barony in a holy war or the like, and you'll purposefully neglect to "Grant Lower Titles" when you
+	# grant the duchy to the new holder in order to get a free favor out of it too.
+	emf_transfer_de_jure_vassals_only_barons = {
+		ai = no
+		filter = vassals
+
+		from_potential = {
+			higher_tier_than = COUNT
+		}
+		potential = {
+			vassal_of = FROM
+			higher_tier_than = BARON
+			FROM = {
+				any_vassal = {
+					tier = BARON
+					primary_title = {
+						any_de_jure_liege_title = {
+							holder = ROOT
+						}
+					}
+					is_patrician = no
+					war = no
+					in_revolt = no
+				}
+				NOT = {
+					any_vassal = {
+						higher_tier_than = BARON
+						primary_title = {
+							any_de_jure_liege_title = {
+								holder = ROOT
+							}
+						}
+						OR = {
+							is_patrician = no
+							is_merchant_republic = yes
+						}
+						war = no
+						in_revolt = no
+					}
+				}
+			}
+		}
+		allow = {
+			war = no
+			in_revolt = no
+			FROM = {
+				war = no
+				in_revolt = no
+			}
+		}
+		effect = {
+			FROM = {
+				show_scope_change = no
+				any_vassal = {
+					show_scope_change = no
+					limit = {
+						tier = BARON
+						primary_title = {
+							any_de_jure_liege_title = {
+								holder = ROOT
+							}
+						}
+						is_patrician = no
+						war = no
+						in_revolt = no
 					}
 					set_defacto_liege = ROOT
 					emf_liege_change = yes
@@ -61,8 +155,24 @@ targeted_decisions = {
 }
 
 decisions = {
-	# TODO: add emf_transfer_all_de_jure_vassals, which will transfer all of your vassals under their most immediate de jure
-	# liege in one click.
+	emf_transfer_all_de_jure_vassals = {
+		is_playable = yes
+		ai_check_interval = 12
+
+		potential = {
+			always = no
+		}
+		allow = {
+			war = no
+			in_revolt = no
+			custom_tooltip = {
+				text = HAS_AT_LEAST_ONE_VASSAL_WHOM_BELONGS_DE_JURE_TO_ANOTHER_VASSAL_AND_BOTH_ARE_AT_PEACE
+				always = yes
+			}
+		}
+		effect = {
+		}
+	}
 
 	emf_request_dejure_vassal_transfer = {
 		only_playable = yes
