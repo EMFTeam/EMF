@@ -92,6 +92,12 @@ character_event = {
 # Called from the emf_new_character effect as well as from emf_dna.0 on campaign initialization and emf_dna.1 when
 # discovering a new randomly-generated courtier (or a character that was spawned by script but for some reason lacked a call
 # to the emf_new_character effect).
+#
+# NOTE: When generating new characters for which you want to assign your own congenital traits and/or disable any further
+# random congenital trait assignment, set_flag = emf_dna_check before calling emf_new_character = yes (or any of its
+# wrappers, e.g., emf_new_character_noble = yes). Likewise, if you want them to inherit from the traits of a spawned mother
+# and father as if they'd been born the normal way unto them, ensure that the mother and father are alive and assigned as
+# mother and father (set_mother, set_father/set_real_father) for the character before calling emf_new_character.
 character_event = {
 	id = emf_dna.10
 
@@ -103,6 +109,31 @@ character_event = {
 	}
 
 	immediate = {
+		if = {
+			limit = {
+				mother = {
+					character = yes
+					is_alive = yes
+				}
+				trigger_if = {
+					limit = { is_father_real_father = yes }
+					father = {
+						character = yes
+						is_alive = yes
+					}
+				}
+				trigger_else = {
+					real_father = {
+						character = yes
+						is_alive = yes
+					}
+				}
+			}
+			# Since father and mother are alive already, then skip random DNA initialization and use on_birth DNA inheritance
+			# and mutation instead:
+			character_event = { id = emf_dna.1000 }
+			break = yes
+		}
 		set_flag = emf_dna_check
 		if = {
 			limit = {
@@ -313,13 +344,22 @@ character_event = {
 
 	trigger = {
 		NOT = { has_flag = emf_dna_check }
-		mother = { is_alive = yes }
+		mother = {
+			character = yes
+			is_alive = yes
+		}
 		trigger_if = {
 			limit = { is_father_real_father = yes }
-			father = { is_alive = yes }
+			father = {
+				character = yes
+				is_alive = yes
+			}
 		}
 		trigger_else = {
-			real_father = { is_alive = yes }
+			real_father = {
+				character = yes
+				is_alive = yes
+			}
 		}
 	}
 
@@ -341,18 +381,6 @@ character_event = {
 			real_father = {
 				save_event_target_as = dad
 			}
-		}
-		# Cautionary only:
-		if = {
-			limit = {
-				event_target:dad = {
-					NAND = {
-						character = yes
-						is_alive = yes
-					}
-				}
-			}
-			clear_event_target = dad # Let it be null instead in this odd case.
 		}
 		## 1. Initialization. Only executes for characters without flags
 		if = {
