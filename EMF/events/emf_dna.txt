@@ -92,13 +92,49 @@ character_event = {
 # Called from the emf_new_character effect as well as from emf_dna.0 on campaign initialization and emf_dna.1 when
 # discovering a new randomly-generated courtier (or a character that was spawned by script but for some reason lacked a call
 # to the emf_new_character effect).
+#
+# NOTE: When generating new characters for which you want to assign your own congenital traits and/or disable any further
+# random congenital trait assignment, set_flag = emf_dna_check before calling emf_new_character = yes (or any of its
+# wrappers, e.g., emf_new_character_noble = yes). Likewise, if you want them to inherit from the traits of a spawned mother
+# and father as if they'd been born the normal way unto them, ensure that the mother and father are alive and assigned as
+# mother and father (set_mother, set_father/set_real_father) for the character before calling emf_new_character.
 character_event = {
 	id = emf_dna.10
 
 	is_triggered_only = yes
 	hide_window = yes
 
+	trigger = {
+		NOT = { has_flag = emf_dna_check }
+	}
+
 	immediate = {
+		if = {
+			limit = {
+				mother = {
+					character = yes
+					is_alive = yes
+				}
+				trigger_if = {
+					limit = { is_father_real_father = yes }
+					father = {
+						character = yes
+						is_alive = yes
+					}
+				}
+				trigger_else = {
+					real_father = {
+						character = yes
+						is_alive = yes
+					}
+				}
+			}
+			# Since father and mother are alive already, then skip random DNA initialization and use on_birth DNA inheritance
+			# and mutation instead:
+			character_event = { id = emf_dna.1000 }
+			break = yes
+		}
+		set_flag = emf_dna_check
 		if = {
 			limit = {
 				NOR = {
@@ -150,10 +186,10 @@ character_event = {
 				15 = {
 					add_trait = strong
 				}
-				12 = {
+				15 = {
 					add_trait = weak
 				}
-				40 = {
+				50 = {
 					add_trait = delicate
 				}
 				870 = {
@@ -171,16 +207,16 @@ character_event = {
 				}
 			}
 			random_list = {
-				50 = {
+				15 = {
 					add_trait = fair
 				}
-				15 = {
+				50 = {
 					add_trait = comely
 				}
-				12 = {
+				40 = {
 					add_trait = homely
 				}
-				40 = {
+				12 = {
 					add_trait = ugly
 				}
 				870 = {
@@ -290,8 +326,6 @@ character_event = {
 				}
 			}
 		}
-		# Done!
-		set_flag = emf_dna_check
 	}
 }
 
@@ -307,6 +341,27 @@ character_event = {
 
 	is_triggered_only = yes
 	hide_window = yes
+
+	trigger = {
+		NOT = { has_flag = emf_dna_check }
+		mother = {
+			character = yes
+			is_alive = yes
+		}
+		trigger_if = {
+			limit = { is_father_real_father = yes }
+			father = {
+				character = yes
+				is_alive = yes
+			}
+		}
+		trigger_else = {
+			real_father = {
+				character = yes
+				is_alive = yes
+			}
+		}
+	}
 
 	immediate = {
 		# Mark this character as having received a DNA check so that they're not later mistaken for a randomly-generated courtier:
@@ -326,18 +381,6 @@ character_event = {
 			real_father = {
 				save_event_target_as = dad
 			}
-		}
-		# Cautionary only:
-		if = {
-			limit = {
-				event_target:dad = {
-					NAND = {
-						character = yes
-						is_alive = yes
-					}
-				}
-			}
-			clear_event_target = dad # Let it be null instead in this odd case.
 		}
 		## 1. Initialization. Only executes for characters without flags
 		if = {
@@ -3837,13 +3880,7 @@ character_event = {
 				check_variable = { which = local_r_alleles value = 3 }
 				NOT = { trait = dwarf }
 			}
-			random_list = {
-				75 = {
-					add_trait = dwarf
-				}
-				25 = {
-				}
-			}
+			add_trait = dwarf
 		}
 		else_if = {
 			limit = {
@@ -3851,10 +3888,10 @@ character_event = {
 				NOT = { trait = dwarf }
 			}
 			random_list = {
-				15 = {
+				10 = {
 					add_trait = dwarf
 				}
-				185 = {
+				90 = {
 				}
 			}
 		}
@@ -3864,10 +3901,10 @@ character_event = {
 				NOT = { trait = dwarf }
 			}
 			random_list = {
-				2 = {
+				1 = {
 					add_trait = dwarf
 				}
-				998 = {
+				99 = {
 				}
 			}
 		}
@@ -9274,26 +9311,17 @@ character_event = {
 
 	immediate = {
 		random_list = {
-			100 = { # 50 + 50 = 100 (50 for perceptive, 50 for absentminded)
-				# Mutation, so fall through this random_list...
-			}
-			9900 = {
-				# No mutation, so skip to the next phenotype event:
-				character_event = { id = emf_dna.2010 }
-				break = yes
-			}
-		}
-		# Mutation occurred. Clear our genes for this phenotype:
-		emf_dna_clear_flags_for_perc = yes
-		# Which mutation?
-		random_list = {
 			50 = {
+				emf_dna_clear_flags_for_perc = yes
 				add_trait = perceptive
 				emf_dna_set_flags_for_perceptive = yes
 			}
 			50 = {
+				emf_dna_clear_flags_for_perc = yes
 				add_trait = absentminded
 				emf_dna_set_flags_for_absentminded = yes
+			}
+			9900 = {
 			}
 		}
 		character_event = { id = emf_dna.2010 }
@@ -9491,34 +9519,27 @@ character_event = {
 		# Short: 80
 		# Tiny:  15
 		random_list = {
-			190 = { # 15*2 + 80*2 = 30 + 160 = 190
-				# Mutation, so fall through this random_list...
-			}
-			9810 = {
-				# No mutation, so skip to the next phenotype event:
-				character_event = { id = emf_dna.2100 }
-				break = yes
-			}
-		}
-		# Mutation occurred. Clear our genes for this phenotype:
-		emf_dna_clear_flags_for_hgt = yes
-		# Which mutation?
-		random_list = {
 			15 = {
+				emf_dna_clear_flags_for_hgt = yes
 				add_trait = giant
 				emf_dna_set_flags_for_giant = yes
 			}
-			30 = {
+			80 = {
+				emf_dna_clear_flags_for_hgt = yes
 				add_trait = tall
 				emf_dna_set_flags_for_tall = yes
 			}
-			25 = {
+			80 = {
+				emf_dna_clear_flags_for_hgt = yes
 				add_trait = short
 				emf_dna_set_flags_for_short = yes
 			}
 			15 = {
+				emf_dna_clear_flags_for_hgt = yes
 				add_trait = tiny
 				emf_dna_set_flags_for_tiny = yes
+			}
+			9810 = {
 			}
 		}
 		character_event = { id = emf_dna.2100 }
@@ -9540,34 +9561,27 @@ character_event = {
 		# Delicate: 100
 		# Weak:     40
 		random_list = {
-			280 = { # 40 + 100 + 100 + 40 = 200 + 80 = 280
-				# Mutation, so fall through this random_list...
-			}
-			9720 = {
-				# No mutation, so skip to the next phenotype event:
-				character_event = { id = emf_dna.2110 }
-				break = yes
-			}
-		}
-		# Mutation occurred. Clear our genes for this phenotype:
-		emf_dna_clear_flags_for_str = yes
-		# Which mutation?
-		random_list = {
 			40 = {
+				emf_dna_clear_flags_for_str = yes
 				add_trait = strong
 				emf_dna_set_flags_for_strong = yes
 			}
 			100 = {
+				emf_dna_clear_flags_for_str = yes
 				add_trait = burly
 				emf_dna_set_flags_for_burly = yes
 			}
 			100 = {
+				emf_dna_clear_flags_for_str = yes
 				add_trait = delicate
 				emf_dna_set_flags_for_delicate = yes
 			}
 			40 = {
+				emf_dna_clear_flags_for_str = yes
 				add_trait = weak
 				emf_dna_set_flags_for_weak = yes
+			}
+			9720 = {
 			}
 		}
 		character_event = { id = emf_dna.2110 }
@@ -9589,34 +9603,27 @@ character_event = {
 		# Homely: 100
 		# Ugly:   40
 		random_list = {
-			280 = { # 40 + 100 + 100 + 40 = 200 + 80 = 280
-				# Mutation, so fall through this random_list...
-			}
-			9720 = {
-				# No mutation, so skip to the next phenotype event:
-				character_event = { id = emf_dna.2120 }
-				break = yes
-			}
-		}
-		# Mutation occurred. Clear our genes for this phenotype:
-		emf_dna_clear_flags_for_attr = yes
-		# Which mutation?
-		random_list = {
 			40 = {
+				emf_dna_clear_flags_for_attr = yes
 				add_trait = fair
 				emf_dna_set_flags_for_fair = yes
 			}
 			100 = {
+				emf_dna_clear_flags_for_attr = yes
 				add_trait = comely
 				emf_dna_set_flags_for_comely = yes
 			}
 			100 = {
+				emf_dna_clear_flags_for_attr = yes
 				add_trait = homely
 				emf_dna_set_flags_for_homely = yes
 			}
 			40 = {
+				emf_dna_clear_flags_for_attr = yes
 				add_trait = ugly
 				emf_dna_set_flags_for_ugly = yes
+			}
+			9720 = {
 			}
 		}
 		character_event = { id = emf_dna.2120 }
@@ -9640,42 +9647,37 @@ character_event = {
 		# Slow:     40
 		# Imbecile: 20
 		random_list = {
-			320 = { # 20 + 20 + 40 + 40 + 100 + 100 = 120 + 200 = 320
-				# Mutation, so fall through this random_list...
-			}
-			9680 = {
-				# No mutation, so skip to the next phenotype event:
-				character_event = { id = emf_dna.2120 }
-				break = yes
-			}
-		}
-		# Mutation occurred. Clear our genes for this phenotype:
-		emf_dna_clear_flags_for_int = yes
-		# Which mutation?
-		random_list = {
 			20 = {
+				emf_dna_clear_flags_for_int = yes
 				add_trait = genius
 				emf_dna_set_flags_for_genius = yes
 			}
 			40 = {
+				emf_dna_clear_flags_for_int = yes
 				add_trait = quick
 				emf_dna_set_flags_for_quick = yes
 			}
 			100 = {
+				emf_dna_clear_flags_for_int = yes
 				add_trait = bright
 				emf_dna_set_flags_for_bright = yes
 			}
 			100 = {
+				emf_dna_clear_flags_for_int = yes
 				add_trait = dim
 				emf_dna_set_flags_for_dim = yes
 			}
 			40 = {
+				emf_dna_clear_flags_for_int = yes
 				add_trait = slow
 				emf_dna_set_flags_for_slow = yes
 			}
 			20 = {
+				emf_dna_clear_flags_for_int = yes
 				add_trait = imbecile
 				emf_dna_set_flags_for_imbecile = yes
+			}
+			9680 = {
 			}
 		}
 		# Done! End of event chain.
