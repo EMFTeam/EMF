@@ -643,47 +643,140 @@ province_event = {
 #Rulers' culture changed to that of his capital
 character_event = {
 	id = emf_culture.5
-	desc = meneth.0.desc # FIXME: Very, very bland (and keyed incorrectly)
-	picture = GFX_evt_throne_room
+	desc = emf_culture.05.desc
+	picture = GFX_evt_culture_change
 	border = GFX_event_normal_frame_diplomacy
 
-	only_rulers = yes
+	only_playable = yes
 
 	trigger = {
+		primary_title = { is_landless_type_title = no }
+		emf_can_convert_culture = yes
 		capital_scope = {
 			NOT = { culture = ROOT }
 			religion = ROOT
 			# Prevent silly stuff
-			NOT = {
+			NAND = {
 				ROOT = { religion_group = christian }
 				OR = {
 					culture_group = arabic
 					culture = andalusian_arabic
+					culture_group = israelite
 				}
 			}
-			NOT = {
+			NAND = {
 				ROOT = { culture = pecheneg }
 				culture = romanian
 			}
-			OR = { # Not when Norman culture should appear
-				ROOT = { NOT = { culture = norse } }
-				AND = {
-					NOT = { culture = frankish }
-					NOT = {	culture = breton }
-					NOT = { culture = occitan }
+			# Melting pot exemptions:
+			trigger_if = {
+				limit = { has_random_culture_names = no }
+				ROOT = {
+					emf_is_ruler_protected_by_english_melt = no
+					emf_is_ruler_protected_by_neapolitan_melt = no
+					emf_is_ruler_protected_by_sicilian_melt = no
+					emf_is_ruler_protected_by_sicilian_arabic_melt = no
 				}
-				NOT = { has_dlc = "The Old Gods" }
+				# Vanilla melting pots:
+				NAND = {
+					ROOT = { culture = scottish }
+					culture = pictish
+				}
+				# Vanilla melting pots only relevant to 769:
+				trigger_if = {
+					limit = { start_date < 867.1.1 }
+					NAND = {
+						ROOT = { culture = russian }
+						culture_group = east_slavic
+					}
+					NAND = {
+						ROOT = { culture = italian }
+						culture = lombard
+					}
+					NAND = {
+						ROOT = { culture = frankish }
+						culture = old_frankish
+					}
+					NAND = {
+						ROOT = { culture = dutch }
+						culture = frisian
+					}
+					NAND = {
+						ROOT = { culture = german }
+						culture = old_saxon
+					}
+					NAND = {
+						ROOT = {
+							OR = {
+								culture_group = iberian
+								culture = andalusian_arabic
+								culture = occitan
+								religion_group = muslim
+							}
+						}
+						culture = visigothic
+					}
+				}
+				trigger_if = {
+					limit = { has_global_flag = SWMH }
+					NAND = {
+						ROOT = { culture = german }
+						OR = {
+							culture = franconian
+							culture = bavarian
+							culture = swabian
+							culture = thuringian
+						}
+					}
+					NAND = {
+						ROOT = { culture = low_german }
+						culture = low_saxon
+					}
+					NAND = {
+						ROOT = { culture = dutch }
+						culture = low_frankish
+					}
+					NAND = {
+						ROOT = { culture = turkmen }
+						culture = oghuz
+					}
+					NAND = {
+						ROOT = { culture = turkish }
+						culture = turkmen
+					}
+				}
+				# Norse/Norman shouldn't convert to anything else but Norman locally in Normandy:
+				NAND = {
+					ROOT = {
+						OR = {
+							culture = norse
+							culture = norman
+						}
+					}
+					NOT = { culture = norman }
+					duchy = { title = d_normandy }
+				}
+				# Norse cultural split -- don't revert:
+				NAND = {
+					NOT = { has_global_flag = norse_culture_flipping }
+					culture = norse
+					ROOT = {
+						OR = {
+							culture = swedish
+							culture = norwegian
+							culture = danish
+							culture = norman
+							culture = gothic
+							culture = icelandic
+						}
+					}
+				}
+				NAND = {
+					ROOT = { culture_group = celtic }
+					culture_group = north_germanic
+				}
 			}
 		}
-		# These setups use melting pot events instead
-		NAND = {
-			culture_group = celtic
-			capital_scope = { culture_group = north_germanic }
-		}
-		emf_is_ruler_protected_by_english_melt = no
-		emf_is_ruler_protected_by_neapolitan_melt = no
-		emf_is_ruler_protected_by_sicilian_melt = no
-		emf_is_ruler_protected_by_sicilian_arabic_melt = no
 		NOT = { government = chinese_imperial_government }
 	}
 
@@ -761,24 +854,64 @@ character_event = {
 	}
 
 	immediate = {
-		ROOT = { capital_scope = { save_event_target_as = emf_capital } }
+		capital_scope = { save_event_target_as = emf_capital }
+		culture_scope = { save_event_target_as = emf_old_culture }
 	}
 
 	option = {
-		name = "meneth.0.a"
-		ai_chance = { factor = 100 }
+		name = emf_culture.05.opt.embrace
 		culture = event_target:emf_capital
-		any_child = {
+		# Convert appropriate non-adult courtiers in our family:
+		any_courtier = {
 			limit = {
-				dynasty = ROOT
-				is_adult = no
 				liege = { character = ROOT }
+				is_ruler = no
+				NOT = { culture = event_target:emf_capital }
+				emf_can_convert_culture = yes
+				OR = {
+					obedient = ROOT
+					AND = {
+						is_adult = no
+						OR = {
+							dynasty = ROOT
+							is_close_relative = ROOT
+							is_cousin_of = ROOT
+							father_even_if_dead = { is_grandchild_of = ROOT }
+							mother_even_if_dead = { is_grandchild_of = ROOT }
+						}
+					}
+				}
+			}
+			culture = event_target:emf_capital
+		}
+		# Convert non-playable vassal barons of the same prior culture that aren't prisoners or foes:
+		any_vassal = {
+			limit = {
+				real_tier = BARON
+				is_playable = no # Patricians convert the normal way
+				NOT = { culture = event_target:emf_capital }
+				emf_can_convert_culture = yes
+				OR = {
+					prisoner = no
+					AND = {
+						obedient = ROOT
+						host = { character = ROOT }
+					}
+				}
+				OR = {
+					obedient = ROOT
+					AND = {
+						culture = event_target:emf_old_culture
+						NOT = { is_foe = ROOT }
+					}
+				}
 			}
 			culture = event_target:emf_capital
 		}
 	}
 	option = {
-		name = "meneth.0.b"
+		name = emf_culture.05.opt.resist
+		trigger = { ai = no }
 	}
 }
 
@@ -798,7 +931,6 @@ character_event = {
 		NOT = { has_game_rule = { name = liege_culture_conversion value = off } }
 		independent = no
 		in_revolt = no
-		is_landed = yes
 		emf_can_convert_culture = yes
 		liege = {
 			NOT = { culture = ROOT }
@@ -888,10 +1020,14 @@ character_event = {
 					liege = { culture = turkmen }
 				}
 			}
-			# Prevent Normans in Normandy from converting to anything else
+			# Prevent Normans in Normandy from converting to anything else:
 			NAND = {
-				culture = norman
-				capital_scope = { de_jure_liege_or_above = d_normandy }
+				OR = {
+					culture = norman
+					culture = norse
+				}
+				NOT = { liege = { culture = norman } }
+				capital_scope = { duchy = { title = d_normandy } }
 			}
 			# Norse cultural split:
 			NAND = {
@@ -910,10 +1046,7 @@ character_event = {
 			NAND = {
 				culture_group = celtic
 				liege = { culture_group = north_germanic }
-				capital_scope = {
-					culture_group = ROOT
-					religion = ROOT
-				}
+				capital_scope = { culture_group = ROOT } # FIXME: not sure if this is actually correct
 			}
 		}
 		NOT = { government = chinese_imperial_government }
@@ -980,10 +1113,6 @@ character_event = {
 		modifier = {
 			factor = 0.85
 			age < 20
-		}
-		modifier = {
-			factor = 0.85
-			age < 22
 		}
 		modifier = {
 			factor = 1.15
@@ -1107,9 +1236,13 @@ character_event = {
 			factor = 0.85
 			learning >= 18
 		}
+		modifier = {
+			factor = 0.85
+			learning >= 20
+		}
 		# Different culture group as liege:
 		modifier = {
-			factor = 1.75
+			factor = 2
 			NOT = { liege = { culture_group = ROOT } }
 		}
 		# Capital province has same culture as liege:
@@ -1467,18 +1600,44 @@ character_event = {
 		}
 		if = {
 			limit = {
-				num_of_count_titles > 1
 				liege = {
 					ROOT = {
-						NOT = {
-							any_demesne_province = {
-								NOT = { culture = PREVPREV }
-							}
+						any_demesne_province = {
+							is_capital = no
+							culture = PREVPREV
 						}
 					}
 				}
 			}
-			log = " ----> all_extra_provinces_same_as_liege"
+			log = " ----> at_least_1_extra_prov_same_as_liege"
+		}
+		if = {
+			limit = {
+				liege = {
+					ROOT = {
+						any_demesne_province = {
+							count = 2
+							is_capital = no
+							culture = PREVPREV
+						}
+					}
+				}
+			}
+			log = " ----> at_least_2_extra_prov_same_as_liege"
+		}
+		if = {
+			limit = {
+			num_of_count_titles > 3
+			liege = {
+				ROOT = {
+					NOT = {
+						any_demesne_province = {
+							NOT = { culture = PREVPREV }
+						}
+					}
+				}
+			}
+			log = " ----> at_least_4_prov_and_all_same_as_liege"
 		}
 		if = {
 			limit = { opinion = { who = LIEGE value = 80 } }
