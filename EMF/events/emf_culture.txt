@@ -911,7 +911,7 @@ character_event = {
 }
 
 
-# emf_culture.10 -- AI ruler converts to liege's culture (governed by Liege Culture Conversion game rule)
+# emf_culture.10 -- AI ruler converts to liege's culture (governed by 'Liege Culture Conversion' game rule)
 character_event = {
 	id = emf_culture.10
 	hide_window = yes
@@ -1052,20 +1052,20 @@ character_event = {
 
 		# Base speed adjustments due to game rule setting:
 		additive_modifier = {
-			value = 5400 # +450 years = 600 years
+			value = 3600 # +300 years = 450 years (3x Medium)
 			has_game_rule = { name = liege_culture_conversion value = slowest }
 		}
 		additive_modifier = {
-			value = 1800 # +150 years = 300 years
+			value = 1800 # +150 years = 300 years (2x Medium)
 			has_game_rule = { name = liege_culture_conversion value = slow }
 		}
 		# Setting of 'Medium' == 150 years
 		additive_modifier = {
-			value = -900 # -75 years = 75 years
+			value = -900 # -75 years = 75 years (1/2x Medium)
 			has_game_rule = { name = liege_culture_conversion value = fast }
 		}
 		additive_modifier = {
-			value = -1350 # -112.5 years = 37.5 years
+			value = -1200 # -100 years = 50 years (1/3x Medium)
 			has_game_rule = { name = liege_culture_conversion value = fastest }
 		}
 		# Ruler age:
@@ -1107,7 +1107,7 @@ character_event = {
 		}
 		modifier = {
 			factor = 0.85
-			age < 20
+			age <= 20
 		}
 		modifier = {
 			factor = 1.15
@@ -1237,8 +1237,30 @@ character_event = {
 		}
 		# Different culture group as liege:
 		modifier = {
-			factor = 2
+			factor = 2.0
 			NOT = { liege = { culture_group = ROOT } }
+		}
+		# Liege and top liege have differing cultures, and neither culture matches ROOT:
+		modifier = {
+			factor = 1.4
+			liege = {
+				top_liege = {
+					NOR = {
+						culture = PREV
+						culture = ROOT
+					}
+				}
+			}
+		}
+		# Liege and top liege have same culture and are not the same guy:
+		modifier = {
+			factor = 0.75
+			liege = {
+				top_liege = {
+					NOT = { character = PREV }
+					culture = PREV
+				}
+			}
 		}
 		# Capital province has same culture as liege:
 		modifier = {
@@ -1380,21 +1402,21 @@ character_event = {
 		}
 		# Excessive relative power to liege:
 		modifier = {
-			factor = 2
+			factor = 2.0
 			relative_power_to_liege > 1
 		}
 		modifier = {
-			factor = 2
+			factor = 2.0
 			relative_power_to_liege > 0.75
 		}
 		modifier = {
-			factor = 2
+			factor = 2.0
 			relative_power_to_liege > 0.5
 		}
 		# Civilized vassals will almost never convert to an uncivilized liege's culture (culture conversion to nomads,
 		# unless nomadic ourselves, is disabled in the trigger):
 		modifier = {
-			factor = 10
+			factor = 7.5
 			liege = {
 				is_tribal = yes
 			}
@@ -1403,6 +1425,11 @@ character_event = {
 				is_republic = yes
 				is_theocracy = yes
 			}
+		}
+		modifier = {
+			factor = 3.5
+			has_horde_culture = no
+			liege = { has_horde_culture = yes }
 		}
 		# Government group affinities (nomads are guaranteed by trigger to have a nomadic liege):
 		modifier = {
@@ -1489,202 +1516,230 @@ character_event = {
 		# Save prior culture:
 		culture_scope = { save_event_target_as = emf_old_culture }
 		# Debug logging for calibration:
-		log = "DEBUG: emf_culture.10: AI ruler converting to liege culture:"
-		# Don't think [GetID] works on cultures and religions, but let's find out!
-		log = " ----> culture: [emf_old_culture.GetName] ([emf_old_culture.GetID])"
-		log = " ----> culture_group: [emf_old_culture.GetGroupName]"
-		log = " ----> liege/culture: [This.Liege.Culture.GetName] ([This.Liege.Culture.GetID])"
-		log = " ----> liege/culture_group: [This.Liege.Culture.GetGroupName]"
-		log = " ----> religion: [This.Religion.GetName] ([This.Religion.GetID])"
-		log = " ----> government_group: [This.EMF_GetGovernmentGroupName]"
-		log = " ----> liege/government_group: [This.Liege.EMF_GetGovernmentGroupName]"
-		log = " ----> tier: [This.EMF_GetDebugTier]"
-		log = " ----> liege/tier: [This.Liege.EMF_GetDebugTier]"
-		log = " ----> primary_title: [This.PrimaryTitle.EMF_GetDebugTitleNameWithDeJureLieges]"
-		log = " ----> liege/primary_title: [This.Liege.PrimaryTitle.EMF_GetDebugTitleNameWithDeJureLieges]"
-		log = " ----> top_liege/primary_title: [This.TopLiege.PrimaryTitle.EMF_GetDebugTitleNameWithDeJureLieges]"
-		export_to_variable = { which = local_age value = age }
-		log = " ----> age: [local_age.GetValue]"
-		export_to_variable = { which = local_learning value = learning }
-		log = " ----> learning: [local_learning.GetValue]"
-		export_to_variable = { which = local_relative_power_to_liege value = relative_power_to_liege }
-		log = " ----> relative_power_to_liege: [local_relative_power_to_liege.GetValue]"
 		if = {
-			limit = {
-				liege = {
-					OR = {
-						is_married = ROOT
-						is_consort = ROOT
-					}
-				}
-			}
-			log = " ----> royal_marriage"
-		}
-		if = {
-			limit = {
-				liege = {
-					is_close_relative = ROOT
-					NOR = {
-						is_married = ROOT
-						is_consort = ROOT
-					}
-				}
-			}
-			log = " ----> close_relative"
-		}
-		if = {
-			limit = { liege = { dynasty = ROOT } }
-			log = " ----> dynasty"
-		}
-		if = {
-			limit = { liege = { is_friend = ROOT } }
-			log = " ----> friend"
-		}
-		if = {
-			limit = { liege = { is_lover = ROOT } }
-			log = " ----> lover"
-		}
-		if = {
-			limit = {
-				liege = {
-					any_close_relative = {
-						is_married = ROOT
-					}
-				}
-			}
-			log = " ----> marriage_ties"
-		}
-		if = {
-			limit = { emf_is_voter = yes }
-			log = " ----> voter"
-		}
-		if = {
-			limit = {
-				age > 6
-				trait = imbecile
-			}
-			log = " ----> dumb/imbecile"
-		}
-		if = {
-			limit = {
-				age > 6
-				trait = slow
-			}
-			log = " ----> dumb/slow"
-		}
-		if = {
-			limit = {
-				age > 6
-				trait = dull
-			}
-			log = " ----> dumb/dull"
-		}
-		if = {
-			limit = {
-				age > 6
-				trait = dim
-			}
-			log = " ----> dumb/dim"
-		}
-		if = {
-			limit = { trait = bright }
-			log = " ----> smart/bright"
-		}
-		if = {
-			limit = { trait = shrewd }
-			log = " ----> smart/shrewd"
-		}
-		if = {
-			limit = { trait = quick }
-			log = " ----> smart/quick"
-		}
-		if = {
-			limit = { trait = genius }
-			log = " ----> smart/genius"
-		}
-		if = {
-			limit = {
-				liege = {
-					ROOT = {
-						capital_scope = {
-							culture = PREVPREV
+			limit = { has_global_flag = emf_debug_liege_culture_conversion }
+			log = "DEBUG: emf_culture.10: AI ruler converting to liege culture:"
+			# Don't think [GetID] works on cultures and religions, but let's find out!
+			log = " ----> culture: [emf_old_culture.GetName] ([emf_old_culture.GetID])"
+			log = " ----> culture_group: [emf_old_culture.GetGroupName]"
+			log = " ----> liege/culture: [This.Liege.Culture.GetName] ([This.Liege.Culture.GetID])"
+			log = " ----> liege/culture_group: [This.Liege.Culture.GetGroupName]"
+			log = " ----> religion: [This.Religion.GetName] ([This.Religion.GetID])"
+			log = " ----> government_group: [This.EMF_GetGovernmentGroupName]"
+			log = " ----> liege/government_group: [This.Liege.EMF_GetGovernmentGroupName]"
+			log = " ----> tier: [This.EMF_GetDebugTier]"
+			log = " ----> liege/tier: [This.Liege.EMF_GetDebugTier]"
+			log = " ----> primary_title: [This.PrimaryTitle.EMF_GetDebugTitleNameWithDeJureLieges]"
+			log = " ----> liege/primary_title: [This.Liege.PrimaryTitle.EMF_GetDebugTitleNameWithDeJureLieges]"
+			log = " ----> top_liege/primary_title: [This.TopLiege.PrimaryTitle.EMF_GetDebugTitleNameWithDeJureLieges]"
+			export_to_variable = { which = local_age value = age }
+			log = " ----> age: [local_age.GetValue]"
+			export_to_variable = { which = local_learning value = learning }
+			log = " ----> learning: [local_learning.GetValue]"
+			export_to_variable = { which = local_relative_power_to_liege value = relative_power_to_liege }
+			log = " ----> relative_power_to_liege: [local_relative_power_to_liege.GetValue]"
+			if = {
+				limit = {
+					liege = {
+						OR = {
+							is_married = ROOT
+							is_consort = ROOT
 						}
 					}
 				}
+				log = " ----> royal_marriage"
 			}
-			log = " ----> capital_same_as_liege"
-		}
-		if = {
-			limit = {
-				liege = {
-					ROOT = {
-						any_demesne_province = {
-							is_capital = no
-							culture = PREVPREV
+			if = {
+				limit = {
+					liege = {
+						is_close_relative = ROOT
+						NOR = {
+							is_married = ROOT
+							is_consort = ROOT
 						}
 					}
 				}
+				log = " ----> close_relative"
 			}
-			log = " ----> at_least_1_extra_prov_same_as_liege"
-		}
-		if = {
-			limit = {
-				liege = {
-					ROOT = {
-						any_demesne_province = {
-							count = 2
-							is_capital = no
-							culture = PREVPREV
+			if = {
+				limit = { liege = { dynasty = ROOT } }
+				log = " ----> dynasty"
+			}
+			if = {
+				limit = { liege = { is_friend = ROOT } }
+				log = " ----> friend"
+			}
+			if = {
+				limit = { liege = { is_lover = ROOT } }
+				log = " ----> lover"
+			}
+			if = {
+				limit = {
+					liege = {
+						any_close_relative = {
+							is_married = ROOT
 						}
 					}
 				}
+				log = " ----> marriage_ties"
 			}
-			log = " ----> at_least_2_extra_prov_same_as_liege"
-		}
-		if = {
-			limit = {
-				liege = {
-					ROOT = {
-						NOT = {
-							any_demesne_province = {
-								is_capital = no
-								NOT = { culture = PREVPREV }
+			if = {
+				limit = { emf_is_voter = yes }
+				log = " ----> voter"
+			}
+			if = {
+				limit = {
+					age > 6
+					trait = imbecile
+				}
+				log = " ----> dumb/imbecile"
+			}
+			if = {
+				limit = {
+					age > 6
+					trait = slow
+				}
+				log = " ----> dumb/slow"
+			}
+			if = {
+				limit = {
+					age > 6
+					trait = dull
+				}
+				log = " ----> dumb/dull"
+			}
+			if = {
+				limit = {
+					age > 6
+					trait = dim
+				}
+				log = " ----> dumb/dim"
+			}
+			if = {
+				limit = { trait = bright }
+				log = " ----> smart/bright"
+			}
+			if = {
+				limit = { trait = shrewd }
+				log = " ----> smart/shrewd"
+			}
+			if = {
+				limit = { trait = quick }
+				log = " ----> smart/quick"
+			}
+			if = {
+				limit = { trait = genius }
+				log = " ----> smart/genius"
+			}
+			if = {
+				limit = {
+					liege = {
+						top_liege = {
+							NOR = {
+								culture = PREV
+								culture = ROOT
 							}
 						}
 					}
 				}
+				log = " ----> liege_and_top_liege_have_different_cultures_from_each_other_and_ROOT"
 			}
-			log = " ----> all_extra_prov_same_as_liege"
-		}
-		if = {
-			limit = { opinion = { who = LIEGE value = 80 } }
-			log = " ----> liege_opinion: 80,100"
-		}
-		else_if = {
-			limit = { opinion = { who = LIEGE value = 60 } }
-			log = " ----> liege_opinion: 60,79"
-		}
-		else_if = {
-			limit = { opinion = { who = LIEGE value = 40 } }
-			log = " ----> liege_opinion: 40,59"
-		}
-		else_if = {
-			limit = { opinion = { who = LIEGE value = 20 } }
-			log = " ----> liege_opinion: 20,39"
-		}
-		else_if = {
-			limit = { opinion = { who = LIEGE value = 0 } }
-			log = " ----> liege_opinion: 0,19"
-		}
-		else_if = {
-			limit = { opinion = { who = LIEGE value = -10 } }
-			log = " ----> liege_opinion: -10,-1"
-		}
-		else = {
-			log = " ----> liege_opinion: -20,-11"
+			if = {
+				limit = {
+					liege = {
+						top_liege = {
+							NOT = { character = PREV }
+							culture = PREV
+						}
+					}
+				}
+				log = " ----> liege_and_top_liege_have_same_culture"
+			}
+			if = {
+				limit = {
+					liege = {
+						ROOT = {
+							capital_scope = {
+								culture = PREVPREV
+							}
+						}
+					}
+				}
+				log = " ----> capital_same_as_liege"
+			}
+			if = {
+				limit = {
+					liege = {
+						ROOT = {
+							any_demesne_province = {
+								is_capital = no
+								culture = PREVPREV
+							}
+						}
+					}
+				}
+				log = " ----> at_least_1_extra_prov_same_as_liege"
+			}
+			if = {
+				limit = {
+					liege = {
+						ROOT = {
+							any_demesne_province = {
+								count = 2
+								is_capital = no
+								culture = PREVPREV
+							}
+						}
+					}
+				}
+				log = " ----> at_least_2_extra_prov_same_as_liege"
+			}
+			if = {
+				limit = {
+					liege = {
+						ROOT = {
+							NOT = {
+								any_demesne_province = {
+									is_capital = no
+									NOT = { culture = PREVPREV }
+								}
+							}
+						}
+					}
+				}
+				log = " ----> all_extra_prov_same_as_liege"
+			}
+			if = {
+				limit = { opinion = { who = LIEGE value = 80 } }
+				log = " ----> liege_opinion: 80,100"
+			}
+			else_if = {
+				limit = { opinion = { who = LIEGE value = 60 } }
+				log = " ----> liege_opinion: 60,79"
+			}
+			else_if = {
+				limit = { opinion = { who = LIEGE value = 40 } }
+				log = " ----> liege_opinion: 40,59"
+			}
+			else_if = {
+				limit = { opinion = { who = LIEGE value = 20 } }
+				log = " ----> liege_opinion: 20,39"
+			}
+			else_if = {
+				limit = { opinion = { who = LIEGE value = 0 } }
+				log = " ----> liege_opinion: 0,19"
+			}
+			else_if = {
+				limit = { opinion = { who = LIEGE value = -10 } }
+				log = " ----> liege_opinion: -10,-1"
+			}
+			else = {
+				log = " ----> liege_opinion: -20,-11"
+			}
 		}
 		# Convert own culture:
 		liege = { ROOT = { culture = PREV } }
+		change_variable = { which = global_rulers_converted_to_liege_culture value = 1 }
 		# Convert appropriate non-adult courtiers in our family:
 		any_courtier = {
 			limit = {
@@ -1707,6 +1762,7 @@ character_event = {
 				}
 			}
 			culture = ROOT
+			change_variable = { which = global_courtiers_converted_to_liege_of_liege_culture value = 1 }
 		}
 		# Convert non-playable vassal barons of the same prior culture that aren't prisoners or foes:
 		any_vassal = {
@@ -1731,6 +1787,24 @@ character_event = {
 				}
 			}
 			culture = ROOT
+			change_variable = { which = global_rulers_converted_to_liege_culture value = 1 }
+		}
+		# Global stats tracking (simple):
+		change_variable = { which = global_playable_rulers_converted_to_liege_culture value = 1 }
+		if = {
+			limit = { real_tier = BARON }
+			change_variable = { which = global_baron_playable_rulers_converted_to_liege_culture value = 1 }
+		}
+		else_if = {
+			limit = { real_tier = COUNT }
+			change_variable = { which = global_count_playable_rulers_converted_to_liege_culture value = 1 }
+		}
+		else_if = {
+			limit = { real_tier = DUKE }
+			change_variable = { which = global_duke_playable_rulers_converted_to_liege_culture value = 1 }
+		}
+		else = {
+			change_variable = { which = global_king_playable_rulers_converted_to_liege_culture value = 1 }
 		}
 		# Notify liege:
 		liege = { character_event = { id = emf_culture.11 } }
