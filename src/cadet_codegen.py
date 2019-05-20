@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import sys
+import re
 import ck2parser
 from ck2parser import rootpath
 from pathlib import Path
@@ -44,6 +45,7 @@ class Culture:
 		self.name = name
 		self.founder_named_dynasties = False
 		self.from_dynasty_prefix = None
+		self.from_dynasty_suffix = None
 
 
 def load_cultures(parser, loc):
@@ -57,8 +59,10 @@ def load_cultures(parser, loc):
 					if v2.has_pair('founder_named_dynasties', 'yes'):
 						c.founder_named_dynasties = True
 					for n3, v3 in v2:
-						if n3.val == 'from_dynasty_prefix':
+						if n3.val == 'from_dynasty_prefix' and not re.match(r'^\s*$', v3.val):
 							c.from_dynasty_prefix = v3.val
+						if n3.val == 'from_dynasty_suffix' and not re.match(r'^\s*$', v3.val):
+							c.from_dynasty_suffix = v3.val
 	return cultures
 
 ###
