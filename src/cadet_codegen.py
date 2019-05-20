@@ -96,6 +96,7 @@ def main():
 		with cloc_paths[i].open('w', encoding='cp1252', newline='\n') as f:
 			print_header(f, 'ck2.custom_loc')
 			print_cloc_GetFromDynastyPrefix(f, cultures, new_loc)
+			print_cloc_GetFromDynastySuffix(f, cultures, new_loc)
 
 		with loc_paths[i].open('w', encoding='cp1252', newline='\n') as f:
 			print('#CODE;ENGLISH;FRENCH;GERMAN;;SPANISH;;;;;;;;;x', file=f)
@@ -125,8 +126,27 @@ def print_cloc_GetFromDynastyPrefix(f, cultures, new_loc):
 	print('\tname = EMF_GetFromDynastyPrefix', file=f)
 	for c in cultures:
 		if c.from_dynasty_prefix:
-			key = 'EMF_String_from_dynasty_prefix_{}'.format(c.tag)
+			key = 'EMF_String_GetFromDynastyPrefix_{}'.format(c.tag)
 			new_loc[key] = c.from_dynasty_prefix
+			print('\ttext = {{ # {}'.format(c.name), file=f)
+			print('\t\tlocalisation_key = {}'.format(key), file=f)
+			print('\t\ttrigger = {{ culture = {} }}'.format(c.tag), file=f)
+			print('\t}', file=f)
+	print('\tfallback_text = {', file=f)
+	print('\t\tlocalisation_key = ""', file=f)
+	print('\t}', file=f)
+	print('}', file=f)
+
+
+def print_cloc_GetFromDynastySuffix(f, cultures, new_loc):
+	print(file=f)
+	print("# Return THIS culture's from_dynasty_suffix", file=f)
+	print('defined_text = {', file=f)
+	print('\tname = EMF_GetFromDynastySuffix', file=f)
+	for c in cultures:
+		if c.from_dynasty_suffix:
+			key = 'EMF_String_GetFromDynastySuffix_{}'.format(c.tag)
+			new_loc[key] = c.from_dynasty_suffix
 			print('\ttext = {{ # {}'.format(c.name), file=f)
 			print('\t\tlocalisation_key = {}'.format(key), file=f)
 			print('\t\ttrigger = {{ culture = {} }}'.format(c.tag), file=f)
