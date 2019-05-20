@@ -1,0 +1,465 @@
+# -*- ck2.events -*-
+
+# emf_cadet.0 -- inherit dynasty founder PET [on_birth & triggered by legitimization events + emf_new_character]
+character_event = {
+	id = emf_cadet.0
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		is_lowborn = no
+		OR = {
+			father_even_if_dead = {
+				dynasty = ROOT
+				persistent_event_target:emf_dynasty_founder = {
+					dynasty = ROOT
+				}
+			}
+			mother_even_if_dead = {
+				dynasty = ROOT
+				persistent_event_target:emf_dynasty_founder = {
+					dynasty = ROOT
+				}
+			}
+		}
+	}
+
+	immediate = {
+		# Determine which parent holds the PET we want to inherit:
+		if = {
+			limit = {
+				father_even_if_dead = {
+					dynasty = ROOT
+					persistent_event_target:emf_dynasty_founder = {
+						dynasty = ROOT
+					}
+				}
+			}
+			father_even_if_dead = {
+				save_event_target_as = emf_dynastic_parent
+			}
+		}
+		else = {
+			mother_even_if_dead = {
+				save_event_target_as = emf_dynastic_parent
+			}
+		}
+		# Inherit the PET:
+		event_target:emf_dynastic_parent = {
+			persistent_event_target:emf_dynasty_founder = {
+				ROOT = {
+					save_persistent_event_target = {
+						name = emf_dynasty_founder
+						scope = PREV
+					}
+				}
+			}
+		}
+	}
+}
+
+# emf_cadet.1 -- character is born unto a `bastard` of a cadet dynasty member, so the emf_dynasty_founder PET must
+# be cleared on both parent and child, because the hard-code will have randomly flipped them to a new, random
+# dynasty. in the future, it'd be nice if we could, instead of erasing the dynasty founder PET, set the PET to
+# point at the bastard, but for now, no fanciness for bastard dynasties. [on_birth]
+character_event = {
+	id = emf_cadet.1
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		OR = {
+			father_even_if_dead = {
+				dynasty = ROOT
+				persistent_event_target:emf_dynasty_founder = {
+					NOT = { dynasty = ROOT }
+				}
+			}
+			mother_even_if_dead = {
+				dynasty = ROOT
+				persistent_event_target:emf_dynasty_founder = {
+					NOT = { dynasty = ROOT }
+				}
+			}
+		}
+	}
+
+	immediate = {
+		# Determine which parent(s) created the PET incoherency (e.g., were a bastard) & clear their PETs:
+		if = {
+			limit = {
+				father_even_if_dead = {
+					dynasty = ROOT
+					persistent_event_target:emf_dynasty_founder = {
+						NOT = { dynasty = ROOT }
+					}
+				}
+			}
+			father_even_if_dead = {
+				clear_persistent_event_target = emf_dynasty_founder
+			}
+		}
+		if = {
+			limit = {
+				mother_even_if_dead = {
+					dynasty = ROOT
+					persistent_event_target:emf_dynasty_founder = {
+						NOT = { dynasty = ROOT }
+					}
+				}
+			}
+			mother_even_if_dead = {
+				clear_persistent_event_target = emf_dynasty_founder
+			}
+		}
+	}
+}
+
+# emf_cadet.10 -- flag potential cadets [on_yearly_pulse]
+character_event = {
+	id = emf_cadet.10
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+	}
+
+	immediate = {
+	}
+}
+
+# emf_cadet.20 -- potential cadet gains a title [on_new_holder, on_new_holder_usurpation]
+character_event = {
+	id = emf_cadet.20
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+	}
+
+	immediate = {
+	}
+}
+
+# emf_cadet.21 -- potential cadet gains a title [on_new_holder_inheritance]
+character_event = {
+	id = emf_cadet.21
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+	}
+
+	immediate = {
+	}
+}
+
+# emf_cadet.22 -- potential cadet gained title(s) (continued 1 day after either title gain event)
+character_event = {
+	id = emf_cadet.22
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+	}
+
+	immediate = {
+	}
+}
+
+# emf_cadet.30 -- titled cadet gains a potential heir [on_birth]
+character_event = {
+	id = emf_cadet.30
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+	}
+
+	immediate = {
+	}
+}
+
+# emf_cadet.31 -- titled cadet still has a potential heir (continued 1 year after birth of potential heir)
+character_event = {
+	id = emf_cadet.31
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+	}
+
+	immediate = {
+	}
+}
+
+# emf_cadet.100 -- ruler founds a cadet dynasty
+character_event = {
+	id = emf_cadet.100
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		# Can't be lowborn for this to work:
+		is_lowborn = no
+		# Cannot form a cadet dynasty with the same character twice in their lifetime:
+		NOT = { has_flag = emf_founded_cadet_dynasty }
+		# Must own the county of our own capital:
+		capital_scope = { owner = { character = ROOT } }
+		# At least one of our parents has to share our own dynasty:
+		OR = {
+			father_even_if_dead = { dynasty = ROOT }
+			mother_even_if_dead = { dynasty = ROOT }
+		}
+		# Bastard dynasties are a different thing than cadet dynasties (and the hard-coded dynasty change mechanics for
+		# the bastard trait would make creating a cadet dynasty pointless anyhow):
+		NOT = { trait = bastard }
+		# Must not have a temporary title of any kind:
+		emf_has_temporary_title = no
+	}
+
+	immediate = {
+		log = "DEBUG: emf_cadet.100: forming new cadet dynasty: [This.EMF_GetDebugName]"
+		log = " --> government group: [This.EMF_GetGovernmentGroupName]"
+		log = " --> real tier:        [This.EMF_GetDebugTier]"
+		log = " --> primary title:    [This.PrimaryTitle.EMF_GetDebugTitleNameWithDeJureLieges]"
+		set_flag = emf_founded_cadet_dynasty
+		save_event_target_as = emf_cadet
+		# Save event target to parent of the old dynasty & instantiate a new dynasty in ROOT:
+		if = {
+			limit = {
+				father_even_if_dead = {
+					dynasty = ROOT
+				}
+			}
+			father_even_if_dead = { save_event_target_as = emf_old_dynasty }
+			dynasty = father_bastard
+		}
+		else = {
+			mother_even_if_dead = { save_event_target_as = emf_old_dynasty }
+			dynasty = mother_bastard
+		}
+		log = " --> parent dynasty: [emf_old_dynasty.GetOnlyDynastyName]"
+		# Save a PET pointing to that parent so that we can later determine our parent dynasty conveniently:
+		save_persistent_event_target = {
+			name = emf_parent_dynasty
+			scope = event_target:emf_old_dynasty
+		}
+		# If we were already of a cadet dynasty, save an event target to the dynasty's founder, else we'd overwrite
+		# it forever in the following step:
+		persistent_event_target:emf_dynasty_founder = {
+			log = " --> parent dynasty is a cadet dynasty, and its founder was: [This.EMF_GetDebugName]"
+			save_event_target_as = emf_old_dynasty_founder
+		}
+		# Recursively convert all dynastic progeny (old dynasty) to ROOT's new dynasty:
+		log = " --> converting all dynastic progeny to new dynasty:"
+		character_event = { id = emf_cadet.101 }
+		# Recalculate succession for rulers of the old and new dynasty (and ourselves):
+		event_target:emf_old_dynasty = {
+			any_dynasty_member = {
+				limit = { is_ruler = yes }
+				recalc_succession = yes
+			}
+		}
+		any_dynasty_member = {
+			limit = {
+				is_ruler = yes
+				NOT = { character = ROOT }
+			}
+			recalc_succession = yes
+		}
+		recalc_succession = yes
+		# Create two dummy characters (we'll throw them away afterward) for crazy workarounds to improve dynasty naming
+		# despite lack of any string processing capabilities in CK2script.
+		create_character = { random_traits = no dynasty = random }
+		new_character = { save_event_target_as = emf_dummy1 }
+		create_character = { random_traits = no dynasty = random }
+		new_character = { save_event_target_as = emf_dummy2 }
+		# Now, let's rename this new dynasty to something remotely intelligible. We have 3 main cases:
+		# 1. ROOT's tier is higher than DUKE, or their primary title is a special-type title
+		# 2. ROOT's parent dynasty has a paired title PET (ergo, must be cadet of cadet)
+		# 3. ROOT's parent dynasty has no paired title PET (might be standard cadet formation or a cadet of case 1)
+		if = {
+			limit = {
+				higher_tier_than = DUKE
+			}
+			log = " --> cadet dynasty name will be composed from a single title name (case 1)"
+			# In this case, we're not going to try to pair a prior dynasty name component with a title, and we're going to
+			# use a non-hyphenated format. Our concern shifts to making sure that we select a title which does not amount to
+			# generating basically (or exactly) the same cadet dynasty name as its parent dynasty name.
+			#
+			# Set the first dummy's given name to the last word in the parent dynasty's name:
+			event_target:emf_dummy1 = {
+				set_dynasty_name = "[emd_old_dynasty.GetOnlyDynastyName]"
+				set_name = "[This.GetLastWordInDynastyName]"
+			}
+			# Find a suitable demesne title to use as our new dynasty base name:
+			emf_find_title_for_cadet_dynasty_name = yes
+			if = {
+				limit = { event_target:emf_selected_title = { always = yes } }
+				set_dynasty_name = "[This.EMF_GetFromDynastyPrefix][emf_dummy2.GetFirstName]"
+			}
+			else = {
+				log = " ----> SHIT! unable to find suitable title from which to form new dynasty name: using whatever the game auto-generated..."
+			}
+		}
+		else_if = {
+			limit = {
+				event_target:emf_old_dynasty_founder = {
+					persistent_event_target:emf_dynasty_paired_title = { always = yes }
+				}
+			}
+			log = " --> trying to compose cadet dynasty from the parent dynasty's paired title and a demesne title (case 2)"
+			event_target:emf_old_dynasty_founder = {
+				persistent_event_target:emf_dynasty_paired_title = {
+					save_event_target_as = emf_paired_title
+				}
+			}
+			log = " ----> parent dynasty's paired title: [emf_paired_title.EMF_GetDebugTitleNameWithDeJureLieges]"
+			# Set the first dummy's given name to the last word in the parent dynasty's paired title:
+			event_target:emf_dummy1 = {
+				set_dynasty_name = "[emf_paired_title.GetBaseName]"
+				set_name = "[This.GetLastWordInDynastyName]"
+			}
+			# Now, starting with our primary title and descending downward among demesne titles, find the first demesne
+			# title that wouldn't result in a "double-hyphenation" (e.g., de Valois-Valois should fail and then de
+			# Valois-Vermandois could be a valid fallback):
+			emf_find_title_for_cadet_dynasty_name = yes
+			if = {
+				limit = { event_target:emf_selected_title = { always = yes } }
+				set_dynasty_name = "[This.EMF_GetFromDynastyPrefix][emf_dummy1.GetFirstName]-[emf_dummy2.GetFirstName]"
+				save_persistent_event_target = {
+					name = emf_dynasty_paired_title
+					scope = event_target:emf_selected_title
+				}
+			}
+			else = {
+				log = " ----> SHIT! unable to find suitable title with which to pair parent dynasty's name component: using whatever the game auto-generated..."
+			}
+		}
+		else = {
+			log = " --> trying to compose dynasty name from the parent dynasty's name and our primary title (case 3)"
+			# Set the first dummy's given name to the last word in the parent dynasty's name:
+			event_target:emf_dummy1 = {
+				set_dynasty_name = "[emd_old_dynasty.GetOnlyDynastyName]"
+				set_name = "[This.GetLastWordInDynastyName]"
+			}
+			# Now, starting with our primary title and descending downward among demesne titles, find the first demesne
+			# title that wouldn't result in a "double-hyphenation" or similar:
+			emf_find_title_for_cadet_dynasty_name = yes
+			if = {
+				limit = { event_target:emf_selected_title = { always = yes } }
+				set_dynasty_name = "[emf_old_dynasty.GetOnlyDynastyName]-[emf_dummy2.GetFirstName]"
+				save_persistent_event_target = {
+					name = emf_dynasty_paired_title
+					scope = event_target:emf_selected_title
+				}
+			}
+			else = {
+				log = " ----> SHIT! unable to find suitable title with which to pair parent dynasty's name component: using whatever the game auto-generated..."
+			}
+		}
+		# Cleanup dummy characters:
+		event_target:emf_dummy1 = { emf_vanish_character = yes }
+		event_target:emf_dummy2 = { emf_vanish_character = yes }
+		log = " --> final dynasty name: [This.GetOnlyDynastyName]"
+	}
+}
+
+# emf_cadet.101 -- recursively convert ROOT and all emf_old_dynasty dynastic progeny to the dynasty of emf_cadet &
+# save persistent event targets in them also pointing to emf_cadet
+character_event = {
+	id = emf_cadet.101
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		any_child_even_if_dead = {
+			limit = { dynasty = event_target:emf_old_dynasty }
+			character_event = { id = emf_cadet.101 } # Recurse
+		}
+		log = " ----> switching to cadet dynasty: [This.EMF_GetDebugName]"
+		dynasty = event_target:emf_cadet
+		save_persistent_event_target = {
+			name = emf_dynasty_founder
+			scope = event_target:emf_cadet
+		}
+		if = {
+			limit = {
+				is_alive = yes
+				ai = no
+				NOT = { character = event_target:emf_cadet }
+			}
+			log = " ------> is a player!"
+			character_event = { id = emf_cadet.202 days = 1 } # Notify of dynasty change
+		}
+	}
+}
+
+#### NOTIFICATIONS ####
+
+# emf_cadet.200 -- notify vassals & close relatives not of the new cadet dynasty of the cadet dynasty formation
+character_event = {
+	id = emf_cadet.200
+	desc = placeholder_a # FIXME
+	picture = GFX_evt_bloody_man # FIXME: an event picture appropriate for a cadet dynasty formation!
+	border = GFX_event_normal_frame_diplomacy
+
+	is_triggered_only = yes
+
+	option = {
+		name = OK # FIXME
+	}
+}
+
+# emf_cadet.201 -- notify members of the old dynasty of the cadet dynasty formation
+character_event = {
+	id = emf_cadet.201
+	desc = placeholder_b # FIXME
+	picture = GFX_evt_bloody_man # FIXME: an event picture appropriate for a cadet dynasty formation!
+	border = GFX_event_normal_frame_diplomacy
+
+	is_triggered_only = yes
+
+	option = {
+		name = OK # FIXME
+	}
+}
+
+# emf_cadet.202 -- notify new members of the cadet dynasty of the cadet dynasty formation
+character_event = {
+	id = emf_cadet.202
+	desc = placeholder_c # FIXME
+	picture = GFX_evt_bloody_man # FIXME: an event picture appropriate for a cadet dynasty formation!
+	border = GFX_event_normal_frame_diplomacy
+
+	is_triggered_only = yes
+
+	option = {
+		name = OK # FIXME
+	}
+}
+
+# emf_cadet.203 -- notify the cadet of the cadet dynasty's formation
+character_event = {
+	id = emf_cadet.203
+	desc = placeholder_d # FIXME
+	picture = GFX_evt_bloody_man # FIXME: an event picture appropriate for a cadet dynasty formation!
+	border = GFX_event_normal_frame_diplomacy
+
+	is_triggered_only = yes
+
+	option = {
+		name = OK # FIXME
+	}
+}
