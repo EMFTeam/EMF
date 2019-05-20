@@ -83,11 +83,11 @@ def print_header(f, spec=None):
 
 
 def main():
-	new_loc = {}
 	for i, md in enumerate(mod_dirs):
 		loc = ck2parser.get_localisation(moddirs=md)
 		parser = ck2parser.SimpleParser(*md)
 		cultures = load_cultures(parser, loc)
+		new_loc = {}
 
 		with trigger_paths[i].open('w', encoding='cp1252', newline='\n') as f:
 			print_header(f, 'ck2.scripted_triggers')
