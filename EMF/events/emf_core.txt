@@ -95,6 +95,143 @@ character_event = {
 	}
 }
 
+# emf_core.5 -- distribute wealth of dying ruler to eligible heir children. primary heir gets 4 shares, other
+# eligible-for-inheritance direct progeny get 2 shares, and bastards that are otherwise eligible for inheritance
+# get 1 share. [on_death]
+character_event = {
+	id = emf_core.5
+
+	is_triggered_only = yes # on_death
+	hide_window = yes
+
+	only_playable = yes
+
+	trigger = {
+		is_theocracy = no
+		OR = {
+			is_republic = no
+			is_patrician = yes
+		}
+		mercenary = no
+		holy_order = no
+		# Don't bother splitting wealth if it's going to be a paltry amount:
+		OR = {
+			wealth > 100
+			wealth < -100
+		}
+		# Need at least a direct heir or any child that could inherit were they not a bastard or a Free Investiture
+		# bishop nominee and are of the gender preferred by ROOT's gender succession law:
+		OR = {
+			player_heir = { is_alive = yes }
+			any_child = {
+				emf_is_preferred_gender_for_laws_of_PREV = yes
+				emf_can_inherit_if_not_bastard_or_bishop_nominee = yes
+			}
+		}
+	}
+
+	immediate = {
+		log = "DEBUG: emf_core.5: dying ruler shall distribute wealth: [This.EMF_GetDebugName]"
+		export_to_variable = { which = local_wealth value = treasury }
+		log = " ----> Treasury: [local_wealth.GetValue]"
+		log = " ----> Allocating shares:"
+		set_variable = { which = local_shares value = 0 }
+		player_heir = {
+			log = " ------> Direct heir gets 4 shares: [This.EMF_GetDebugName]"
+			set_flag = emf_tmp_allocated_shares
+			change_variable = { which = local_shares value = 4 }
+		}
+		any_child = {
+			limit = {
+				NOT = { has_flag = emf_tmp_allocated_shares }
+				emf_is_preferred_gender_for_laws_of_PREV = yes
+				emf_can_inherit_if_not_bishop_nominee = yes
+			}
+			log = " ------> Legitimate direct progeny gets 2 shares: [This.EMF_GetDebugName]"
+			set_flag = emf_tmp_allocated_shares
+			change_variable = { which = local_shares value = 2 }
+		}
+		any_child = {
+			limit = {
+				NOT = { has_flag = emf_tmp_allocated_shares }
+				emf_is_preferred_gender_for_laws_of_PREV = yes
+				emf_can_inherit_if_not_bastard_or_bishop_nominee = yes
+			}
+			log = " ------> Bastard direct progeny gets 1 share: [This.EMF_GetDebugName]"
+			set_flag = emf_tmp_allocated_shares
+			change_variable = { which = local_shares value = 1 }
+		}
+		# Calculate share value:
+		set_variable = { which = local_share_value which = local_wealth }
+		divide_variable = { which = local_share_value which = local_shares }
+		# Transfer total shares' value to each of the 3 classes' treasuries:
+		log = " ----> Transferring share values:"
+		# For player_heir (4x):
+		set_variable = { which = local_value which = local_share_value }
+		multiply_variable = { which = local_value value = 4 }
+		set_variable = { which = local_value_neg which = local_value }
+		multiply_variable = { which = local_value_neg value = -1 }
+		player_heir = {
+			wealth = local_value
+			ROOT = {
+				wealth = local_value_neg
+				export_to_variable = { which = local_wealth value = treasury }
+			}
+			log = " ------> Direct heir: [local_value.GetValue]"
+			log = " --------> Remainder: [local_wealth.GetValue]"
+			set_flag = emf_tmp_paid_share_value
+		}
+		# For legit direct progeny (2x):
+		set_variable = { which = local_value which = local_share_value }
+		multiply_variable = { which = local_value value = 2 }
+		set_variable = { which = local_value_neg which = local_value }
+		multiply_variable = { which = local_value_neg value = -1 }
+		any_child = {
+			limit = {
+				NOT = { has_flag = emf_tmp_paid_share_value }
+				emf_is_preferred_gender_for_laws_of_PREV = yes
+				emf_can_inherit_if_not_bishop_nominee = yes
+			}
+			wealth = local_value
+			ROOT = {
+				wealth = local_value_neg
+				export_to_variable = { which = local_wealth value = treasury }
+			}
+			log = " ------> Legitimate direct progeny: [local_value.GetValue]"
+			log = " --------> Remainder: [local_wealth.GetValue]"
+			set_flag = emf_tmp_paid_share_value
+		}
+		# For bastard direct progeny (1x):
+		set_variable = { which = local_value which = local_share_value }
+		set_variable = { which = local_value_neg which = local_value }
+		multiply_variable = { which = local_value_neg value = -1 }
+		any_child = {
+			limit = {
+				NOT = { has_flag = emf_tmp_paid_share_value }
+				emf_is_preferred_gender_for_laws_of_PREV = yes
+				emf_can_inherit_if_not_bastard_or_bishop_nominee = yes
+			}
+			wealth = local_value
+			ROOT = {
+				wealth = local_value_neg
+				export_to_variable = { which = local_wealth value = treasury }
+			}
+			log = " ------> Bastard direct progeny: [local_value.GetValue]"
+			log = " --------> Remainder: [local_wealth.GetValue]"
+			set_flag = emf_tmp_paid_share_value
+		}
+		# We're done, so clear temporary flags:
+		player_heir = {
+			clr_flag = emf_tmp_allocated_shares
+			clr_flag = emf_tmp_paid_share_value
+		}
+		any_child = {
+			clr_flag = emf_tmp_allocated_shares
+			clr_flag = emf_tmp_paid_share_value
+		}
+	}
+}
+
 # emf_core.10 -- if game rule Non-Dynastic Succession is 'Allowed', prevent game over with non-dynastic heir on_death.
 character_event = {
 	id = emf_core.10
