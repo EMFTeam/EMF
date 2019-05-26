@@ -117,17 +117,209 @@ character_event = {
 	}
 }
 
-# emf_cadet.10 -- flag potential cadets [on_yearly_pulse]
+# emf_cadet.10 -- flag maybe-cadets [on_yearly_pulse]
 character_event = {
 	id = emf_cadet.10
 
 	is_triggered_only = yes
 	hide_window = yes
 
+	ai = yes
+	only_capable = yes
+
 	trigger = {
+		is_adult = yes
+		is_ruler = no
+		is_lowborn = no
+		# Note that we don't evaluate gender preference until/if the potential cadet gains a title (and then use that
+		# title's gender succession law for preference).
+		NOR = {
+			# Not already a maybe-cadet & not a maybe-cadet that was later disqualified
+			has_flag = emf_maybe_cadet
+			has_flag = emf_disqualified_cadet
+			# No matrilineally married males:
+			AND = {
+				is_female = no
+				is_married_matrilineally = yes
+			}
+			# No females with a regular marriage:
+			AND = {
+				is_female = yes
+				is_married = yes
+				NOT = { is_married_matrilineally = yes }
+			}
+			# Cannot be heir to any title that's not a barony in someone else's capital county (emf_gavelkind would take
+			# their barony away anyway). Note if they were actually heir to the associated county, this would fail:
+			any_heir_title = {
+				NAND = {
+					tier = BARON
+					location = {
+						is_capital = yes
+						owner = {
+							higher_real_tier_than = COUNT
+							is_nomadic = no
+							is_merchant_republic = no
+						}
+					}
+				}
+			}
+		}
+		# Must have an older sibling that could technically inherit (if anything to inherit), sans gender concerns:
+		OR = {
+			father_even_if_dead = {
+				dynasty = ROOT
+				any_child = {
+					NOT = { character = ROOT }
+					dynasty = PREV
+					is_older_than = ROOT
+					emf_can_inherit = yes
+				}
+			}
+			mother_even_if_dead = {
+				dynasty = ROOT
+				any_child = {
+					NOT = { character = ROOT }
+					dynasty = PREV
+					is_older_than = ROOT
+					emf_can_inherit = yes
+				}
+			}
+		}
+		dynasty_head = {
+			NOR = {
+				character = ROOT # Cadets are not dynasty heads.
+				# Cadet should have no marriage ties to the dynasty head:
+				ROOT = {
+					any_spouse = {
+						is_close_relative = PREVPREV
+					}
+				}
+			}
+			trigger_if = {
+				limit = { culture = ROOT }
+				# Since of same culture as dynasty head, neither cadet's parents nor himself should be close relatives of
+				# THIS dynasty_head.
+				NOR = {
+					is_close_relative = ROOT
+					ROOT = {
+						father_even_if_dead = {
+							is_close_relative = PREVPREV
+						}
+					}
+					ROOT = {
+						mother_even_if_dead = {
+							is_close_relative = PREVPREV
+						}
+					}
+				}
+			}
+			trigger_else = {
+				# Since of different culture as dynasty head, we only require that the dynasty head is neither the father nor
+				# the mother of the cadet.
+				NOR = {
+					is_father = ROOT
+					is_mother = ROOT
+				}
+			}
+		}
+		# Dynasty must have at least 35 (technically 36 incl. ROOT) living members:
+		any_dynasty_member = { count = 35 is_alive = yes }
 	}
 
 	immediate = {
+		set_flag = emf_maybe_cadet
+	}
+}
+
+# emf_cadet.11 -- disqualify maybe-cadets [on_yearly_pulse]
+character_event = {
+	id = emf_cadet.11
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	has_character_flag = emf_maybe_cadet # exclusive with emf_disqualified_cadet
+
+	trigger = {
+		OR = {
+			# No players permitted to become cadets via this mechanic, for now:
+			ai = no
+			# No matrilineally married males:
+			AND = {
+				is_female = no
+				is_married_matrilineally = yes
+			}
+			# No females with a regular marriage:
+			AND = {
+				is_female = yes
+				is_married = yes
+				NOT = { is_married_matrilineally = yes }
+			}
+			# Cannot be heir to any title that's not a barony in someone else's capital county (emf_gavelkind would take
+			# their barony away anyway). Note if they were actually heir to the associated county, this would fail. For
+			# disqualification, we only require that such heir titles aren't owned by close relatives of the cadet.
+			any_heir_title = {
+				owner = { is_close_relative = ROOT }
+				NAND = {
+					tier = BARON
+					location = {
+						is_capital = yes
+						owner = {
+							higher_real_tier_than = COUNT
+							is_nomadic = no
+							is_merchant_republic = no
+						}
+					}
+				}
+			}
+			# Disqualifying relations to the current dynasty_head:
+			dynasty_head = {
+				OR = {
+					character = ROOT # Cadets are not dynasty heads
+					AND = { # If dynasty head becomes same-cultured and a close relative of cadet, disqualify.
+						culture = ROOT
+						is_close_relative = ROOT
+					}
+					# No marriage ties to cadet spouses or close relative relationship to cadet's children:
+					ROOT = {
+						OR = {
+							any_child = {
+								is_close_relative = PREVPREV
+							}
+							any_spouse = {
+								is_close_relative = PREVPREV
+							}
+						}
+					}
+				}
+			}
+			# Must have an older sibling that could technically inherit (if anything to inherit), sans gender concerns:
+			NOR = {
+				father_even_if_dead = {
+					dynasty = ROOT
+					any_child = {
+						NOT = { character = ROOT }
+						dynasty = PREV
+						is_older_than = ROOT
+						emf_can_inherit = yes
+					}
+				}
+				mother_even_if_dead = {
+					dynasty = ROOT
+					any_child = {
+						NOT = { character = ROOT }
+						dynasty = PREV
+						is_older_than = ROOT
+						emf_can_inherit = yes
+					}
+				}
+			}
+		}
+	}
+
+	immediate = {
+		clr_flag = emf_maybe_cadet
+		set_flag = emf_disqualified_cadet
 	}
 }
 
