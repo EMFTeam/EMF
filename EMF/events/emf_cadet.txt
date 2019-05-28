@@ -117,34 +117,37 @@ character_event = {
 	}
 }
 
-# emf_cadet.10 -- flag maybe-cadets [on_yearly_pulse]
+# emf_cadet.10 -- flag cadets [on_yearly_pulse]
 character_event = {
 	id = emf_cadet.10
 
 	is_triggered_only = yes
 	hide_window = yes
 
-	ai = yes
 	only_capable = yes
+	min_age = 16 # Adults only
+	ai = yes
 
 	trigger = {
-		is_adult = yes
-		is_ruler = no
+		# No females permitted to become cadets unless Gender Equality GR is set to Full
+		OR = {
+			is_female = no
+			has_game_rule = { name = gender value = all }
+		}
 		is_lowborn = no
+		is_ruler = no
 		# Note that we don't evaluate gender preference until/if the potential cadet gains a title (and then use that
 		# title's gender succession law for preference).
 		NOR = {
-			# Not already a maybe-cadet & not a maybe-cadet that was later disqualified
-			has_flag = emf_maybe_cadet
+			# Not already a cadet & not a cadet that was later disqualified
+			has_flag = emf_cadet
 			has_flag = emf_disqualified_cadet
-			# No matrilineally married males:
-			AND = {
-				is_female = no
-				is_married_matrilineally = yes
+			trigger_if = {
+				limit = { is_female = no }
+				is_married_matrilineally = yes # No matrilineally married males
 			}
-			# No females with a regular marriage:
-			AND = {
-				is_female = yes
+			trigger_else = {
+				# No females with regular marriages:
 				is_married = yes
 				NOT = { is_married_matrilineally = yes }
 			}
@@ -164,7 +167,7 @@ character_event = {
 				}
 			}
 		}
-		# Must have an older sibling that could technically inherit (if anything to inherit), sans gender concerns:
+		# Must have an older sibling that could technically inherit:
 		OR = {
 			father_even_if_dead = {
 				dynasty = ROOT
@@ -172,6 +175,10 @@ character_event = {
 					NOT = { character = ROOT }
 					dynasty = PREV
 					is_older_than = ROOT
+					OR = {
+						is_female = no
+						has_game_rule = { name = gender value = all }
+					}
 					emf_can_inherit = yes
 				}
 			}
@@ -181,6 +188,10 @@ character_event = {
 					NOT = { character = ROOT }
 					dynasty = PREV
 					is_older_than = ROOT
+					OR = {
+						is_female = no
+						has_game_rule = { name = gender value = all }
+					}
 					emf_can_inherit = yes
 				}
 			}
@@ -188,10 +199,15 @@ character_event = {
 		dynasty_head = {
 			NOR = {
 				character = ROOT # Cadets are not dynasty heads.
-				# Cadet should have no marriage ties to the dynasty head:
+				# No marriage ties to cadet spouses or close relative relationship to cadet's children:
 				ROOT = {
-					any_spouse = {
-						is_close_relative = PREVPREV
+					OR = {
+						any_child_even_if_dead = {
+							is_close_relative = PREVPREV
+						}
+						any_spouse = {
+							is_close_relative = PREVPREV
+						}
 					}
 				}
 			}
@@ -202,13 +218,13 @@ character_event = {
 				NOR = {
 					is_close_relative = ROOT
 					ROOT = {
-						father_even_if_dead = {
-							is_close_relative = PREVPREV
-						}
-					}
-					ROOT = {
-						mother_even_if_dead = {
-							is_close_relative = PREVPREV
+						OR = {
+							father_even_if_dead = {
+								is_close_relative = PREVPREV
+							}
+							mother_even_if_dead = {
+								is_close_relative = PREVPREV
+							}
 						}
 					}
 				}
@@ -222,36 +238,40 @@ character_event = {
 				}
 			}
 		}
-		# Dynasty must have at least 35 (technically 36 incl. ROOT) living members:
-		any_dynasty_member = { count = 35 is_alive = yes }
+		# Dynasty must have at least 30 other living members:
+		any_dynasty_member = { count = 30 is_alive = yes }
 	}
 
 	immediate = {
-		set_flag = emf_maybe_cadet
+		set_flag = emf_cadet
+		log = "DEBUG: emf_cadet.10: potential cadet: [This.EMF_GetDebugName]"
 	}
 }
 
-# emf_cadet.11 -- disqualify maybe-cadets [on_yearly_pulse]
+# emf_cadet.11 -- disqualify cadets [on_yearly_pulse]
 character_event = {
 	id = emf_cadet.11
 
 	is_triggered_only = yes
 	hide_window = yes
 
-	has_character_flag = emf_maybe_cadet # exclusive with emf_disqualified_cadet
+	has_character_flag = emf_cadet # exclusive with emf_disqualified_cadet
+	ai = yes
 
 	trigger = {
 		OR = {
-			# No players permitted to become cadets via this mechanic, for now:
-			ai = no
-			# No matrilineally married males:
-			AND = {
-				is_female = no
-				is_married_matrilineally = yes
-			}
-			# No females with a regular marriage:
+			is_lowborn = yes
+			# No females permitted to become cadets unless Gender Equality is set to Full
 			AND = {
 				is_female = yes
+				NOT = { has_game_rule = { name = gender value = all } }
+			}
+			trigger_if = {
+				limit = { is_female = no }
+				is_married_matrilineally = yes # No matrilineally married males
+			}
+			trigger_else = {
+				# No females with regular marriages:
 				is_married = yes
 				NOT = { is_married_matrilineally = yes }
 			}
@@ -283,7 +303,7 @@ character_event = {
 					# No marriage ties to cadet spouses or close relative relationship to cadet's children:
 					ROOT = {
 						OR = {
-							any_child = {
+							any_child_even_if_dead = {
 								is_close_relative = PREVPREV
 							}
 							any_spouse = {
@@ -293,13 +313,17 @@ character_event = {
 					}
 				}
 			}
-			# Must have an older sibling that could technically inherit (if anything to inherit), sans gender concerns:
+			# Must have an older sibling that could technically inherit:
 			NOR = {
 				father_even_if_dead = {
 					dynasty = ROOT
 					any_child = {
 						NOT = { character = ROOT }
 						dynasty = PREV
+						OR = {
+							is_female = no
+							has_game_rule = { name = gender value = all }
+						}
 						is_older_than = ROOT
 						emf_can_inherit = yes
 					}
@@ -309,6 +333,10 @@ character_event = {
 					any_child = {
 						NOT = { character = ROOT }
 						dynasty = PREV
+						OR = {
+							is_female = no
+							has_game_rule = { name = gender value = all }
+						}
 						is_older_than = ROOT
 						emf_can_inherit = yes
 					}
@@ -318,7 +346,8 @@ character_event = {
 	}
 
 	immediate = {
-		clr_flag = emf_maybe_cadet
+		log = "DEBUG: emf_cadet.11: disqualifying potential cadet: [This.EMF_GetDebugName]"
+		clr_flag = emf_cadet
 		set_flag = emf_disqualified_cadet
 	}
 }
@@ -330,10 +359,14 @@ character_event = {
 	is_triggered_only = yes
 	hide_window = yes
 
+	has_character_flag = emf_cadet
+
 	trigger = {
+		FROM = { is_primary_holder_title = yes }
 	}
 
 	immediate = {
+		character_event = { id = emf_cadet.22 days = 1 }
 	}
 }
 
@@ -344,24 +377,59 @@ character_event = {
 	is_triggered_only = yes
 	hide_window = yes
 
-	trigger = {
-	}
+	has_character_flag = emf_cadet
 
 	immediate = {
+		# If any title other than one which emf_gavelkind will seize is inherited from a close relative, clear
+		# maybe-cadet status, else proceed to day-after processing.
+		if = {
+			limit = {
+				FROMFROM = {
+					is_close_relative = ROOT
+				}
+				FROM = {
+					NAND = {
+						tier = BARON
+						location = {
+							is_capital = yes
+							owner = {
+								higher_real_tier_than = COUNT
+								is_nomadic = no
+								is_merchant_republic = no
+							}
+						}
+					}
+				}
+			}
+			log = "DEBUG: emf_cadet.21: disqualifying potential cadet due to inheritance from close relative: [This.EMF_GetDebugName]"
+			clr_flag = emf_cadet
+			set_flag = emf_disqualified_cadet
+		}
+		else = {
+			# Allow an additional day (beyond 1) in case something like emf_gavelkind seizes our titles from us
+			character_event = { id = emf_cadet.22 days = 2 }
+		}
 	}
 }
 
-# emf_cadet.22 -- potential cadet gained title(s) (continued 1 day after either title gain event)
+# emf_cadet.22 -- potential cadet gained title(s) (continued 1-2 days after either title gain event)
 character_event = {
 	id = emf_cadet.22
 
 	is_triggered_only = yes
 	hide_window = yes
 
+	has_character_flag = emf_cadet
+
 	trigger = {
+		is_ruler = yes
 	}
 
 	immediate = {
+		clr_flag = emf_cadet
+		set_flag = emf_ruler_cadet
+		# TODO: send them the "can we become a cadet dynasty? if so, do so." event right now, in case they already
+		# qualify.
 	}
 }
 
