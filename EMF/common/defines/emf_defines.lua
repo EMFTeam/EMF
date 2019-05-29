@@ -119,7 +119,7 @@ NDefines.NNomad.STARTING_HORDE_MAX_FRACTION = 1
 
 -- Military
 NDefines.NMilitary.NUMBER_OF_TROOPS_PER_GALLEY = 100              -- prior to EMF v9.06: 200 (has been since the days of Project Balance); vanilla is 100
-NDefines.NMilitary.LEVY_MAINTENANCE_FACTOR = 2.7                  -- prior to EMF v9.06: 2.4; prior to EMF v9.01: 2.7
+NDefines.NMilitary.LEVY_MAINTENANCE_FACTOR = 2.3                  -- prior to EMF v10.0: 2.7; prior to EMF v9.06: 2.4; prior to EMF v9.01: 2.7
 NDefines.NMilitary.BATTLE_WARSCORE_DEFENDER_MULTIPLIER = 1.6
 --NDefines.NMilitary.MIN_LEVY_RAISE_OPINION_THRESHOLD = -50
 NDefines.NMilitary.MIN_LEVIES_ABOVE_OPINION_THRESHOLD = 0         -- prior to EMF v9.06: 0.333
