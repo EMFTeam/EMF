@@ -120,6 +120,7 @@ character_event = {
 	only_playable = yes
 
 	trigger = {
+		NOT = { primary_title = { has_law = succ_mirath } }
 		is_theocracy = no
 		OR = {
 			is_republic = no
@@ -148,9 +149,124 @@ character_event = {
 		set_variable = { which = local_shares value = 0 }
 		player_heir = {
 			set_flag = emf_tmp_allocated_shares
+			#log = " ------> Direct heir gets 8 shares: [This.EMF_GetDebugName]"
+			change_variable = { which = local_shares value = 8 }
+		}
+		any_child = {
+			limit = {
+				NOT = { has_flag = emf_tmp_allocated_shares }
+				emf_is_preferred_gender_for_laws_of_PREV = yes
+				emf_can_inherit_if_not_bishop_nominee = yes
+			}
+			set_flag = emf_tmp_allocated_shares
+			#log = " ------> Legitimate direct progeny gets 4 shares: [This.EMF_GetDebugName]"
+			change_variable = { which = local_shares value = 4 }
+		}
+		any_child = {
+			limit = {
+				NOT = { has_flag = emf_tmp_allocated_shares }
+				emf_is_preferred_gender_for_laws_of_PREV = yes
+				emf_can_inherit_if_not_bastard_or_bishop_nominee = yes
+			}
+			set_flag = emf_tmp_allocated_shares
+			#log = " ------> Bastard direct progeny gets 2 shares: [This.EMF_GetDebugName]"
+			change_variable = { which = local_shares value = 2 }
+		}
+		# Calculate share value:
+		set_variable = { which = local_share_value which = local_wealth }
+		divide_variable = { which = local_share_value which = local_shares }
+		#log = " ----> Total shares: [local_shares.GetValue]"
+		#log = " ----> Share value: [local_share_value.GetValue]"
+		# Transfer total shares' value to each of the 3 classes' treasuries:
+		#log = " ----> Transferring inheritance:"
+		# For player_heir (8x):
+		set_variable = { which = local_value which = local_share_value }
+		multiply_variable = { which = local_value value = 8 }
+		player_heir = {
+			wealth = local_value
+			#log = " ------> Direct heir: [local_value.GetValue]"
+			set_flag = emf_tmp_paid_share_value
+		}
+		# For legit direct progeny (4x):
+		set_variable = { which = local_value which = local_share_value }
+		multiply_variable = { which = local_value value = 4 }
+		any_child = {
+			limit = {
+				NOT = { has_flag = emf_tmp_paid_share_value }
+				emf_is_preferred_gender_for_laws_of_PREV = yes
+				emf_can_inherit_if_not_bishop_nominee = yes
+			}
+			wealth = local_value
+			#log = " ------> Legitimate direct progeny: [local_value.GetValue]"
+			set_flag = emf_tmp_paid_share_value
+		}
+		# For bastard direct progeny (2x):
+		set_variable = { which = local_value which = local_share_value }
+		multiply_variable = { which = local_value value = 2 }
+		any_child = {
+			limit = {
+				NOT = { has_flag = emf_tmp_paid_share_value }
+				emf_is_preferred_gender_for_laws_of_PREV = yes
+				emf_can_inherit_if_not_bastard_or_bishop_nominee = yes
+			}
+			wealth = local_value
+			#log = " ------> Bastard direct progeny: [local_value.GetValue]"
+			set_flag = emf_tmp_paid_share_value
+		}
+		# We're done, so clear temporary flags:
+		player_heir = {
+			clr_flag = emf_tmp_allocated_shares
+			clr_flag = emf_tmp_paid_share_value
+		}
+		any_child = {
+			clr_flag = emf_tmp_allocated_shares
+			clr_flag = emf_tmp_paid_share_value
+		}
+		# And clear our wealth from our ledger, since it's all been distributed:
+		clear_wealth = yes
+	}
+}
+
+# emf_core.6 -- split wealth inheritance under Mirath Succession. [on_death]
+character_event = {
+	id = emf_core.6
+
+	is_triggered_only = yes # on_death
+	hide_window = yes
+
+	only_playable = yes
+
+	trigger = {
+		primary_title = { has_law = succ_mirath }
+		is_theocracy = no
+		OR = {
+			is_republic = no
+			is_patrician = yes
+		}
+		mercenary = no
+		holy_order = no
+		# Don't bother splitting wealth if it's going to be a paltry amount or if it's going to be a debt:
+		wealth > 100
+		# Need at least a direct heir or any child that could inherit were they not a bastard or a Free Investiture
+		# bishop nominee and are of the gender preferred by ROOT's gender succession law:
+		OR = {
+			player_heir = { is_alive = yes }
+			any_child = {
+				emf_can_inherit_if_not_bastard_or_bishop_nominee = yes
+			}
+		}
+	}
+
+	immediate = {
+		#log = "DEBUG: emf_core.6: dying ruler shall distribute wealth under Mirath: [This.EMF_GetDebugName]"
+		export_to_variable = { which = local_wealth value = treasury }
+		#log = " ----> Treasury: [local_wealth.GetValue]"
+		#log = " ----> Allocating shares:"
+		set_variable = { which = local_shares value = 0 }
+		player_heir = {
+			set_flag = emf_tmp_allocated_shares
 			if = {
 				limit = {
-					ROOT = { primary_title = { has_law = succ_mirath } }
 					is_female = yes
 				}
 				#log = " ------> Female, direct heir under Mirath gets 4 shares: [This.EMF_GetDebugName]"
@@ -164,16 +280,11 @@ character_event = {
 		any_child = {
 			limit = {
 				NOT = { has_flag = emf_tmp_allocated_shares }
-				OR = {
-					emf_is_preferred_gender_for_laws_of_PREV = yes
-					ROOT = { primary_title = { has_law = succ_mirath } }
-				}
 				emf_can_inherit_if_not_bishop_nominee = yes
 			}
 			set_flag = emf_tmp_allocated_shares
 			if = {
 				limit = {
-					ROOT = { primary_title = { has_law = succ_mirath } }
 					is_female = yes
 				}
 				#log = " ------> Female, legitimate direct progeny under Mirath gets 2 shares: [This.EMF_GetDebugName]"
@@ -187,16 +298,11 @@ character_event = {
 		any_child = {
 			limit = {
 				NOT = { has_flag = emf_tmp_allocated_shares }
-				OR = {
-					emf_is_preferred_gender_for_laws_of_PREV = yes
-					ROOT = { primary_title = { has_law = succ_mirath } }
-				}
 				emf_can_inherit_if_not_bastard_or_bishop_nominee = yes
 			}
 			set_flag = emf_tmp_allocated_shares
 			if = {
 				limit = {
-					ROOT = { primary_title = { has_law = succ_mirath } }
 					is_female = yes
 				}
 				#log = " ------> Female, bastard direct progeny under Mirath gets 1 share: [This.EMF_GetDebugName]"
@@ -207,17 +313,26 @@ character_event = {
 				change_variable = { which = local_shares value = 2 }
 			}
 		}
-		if = {
-			limit = { primary_title = { has_law = succ_mirath } }
-			mother = {
+		mother = {
+			if = {
+				limit = { NOT = { has_flag = emf_tmp_allocated_shares } }
+				set_flag = emf_tmp_allocated_shares
 				#log = " ------> Mother under Mirath gets 1 share: [This.EMF_GetDebugName]"
 				change_variable = { which = local_shares value = 1 }
 			}
-			father = {
+		}
+		father = {
+			if = {
+				limit = { NOT = { has_flag = emf_tmp_allocated_shares } }
+				set_flag = emf_tmp_allocated_shares
 				#log = " ------> Father under Mirath gets 2 shares: [This.EMF_GetDebugName]"
 				change_variable = { which = local_shares value = 2 }
 			}
-			spouse = {
+		}
+		spouse = {
+			if = {
+				limit = { NOT = { has_flag = emf_tmp_allocated_shares } }
+				set_flag = emf_tmp_allocated_shares
 				if = {
 					limit = { is_female = yes }
 					#log = " ------> Female spouse under Mirath gets 1 share: [This.EMF_GetDebugName]"
@@ -234,115 +349,113 @@ character_event = {
 		divide_variable = { which = local_share_value which = local_shares }
 		#log = " ----> Total shares: [local_shares.GetValue]"
 		#log = " ----> Share value: [local_share_value.GetValue]"
-		# Transfer total shares' value to each of the 3 classes' treasuries:
+		# Transfer total shares' value to each of the classes' treasuries:
 		#log = " ----> Transferring inheritance:"
-		# For player_heir (8x):
+		# For player_heir (4-8x):
 		set_variable = { which = local_value which = local_share_value }
-		multiply_variable = { which = local_value value = 8 }
-		if = {
-			limit = {
-				primary_title = { has_law = succ_mirath }
-				player_heir = { is_female = yes }
-			}
-			divide_variable = { which = local_value value = 2 }
-		}
 		player_heir = {
+			if = {
+				limit = {
+					is_female = yes
+				}
+				multiply_variable = { which = local_value value = 4 }
+				#log = " ------> Direct female heir: [local_value.GetValue]"
+			}
+			else = {
+				multiply_variable = { which = local_value value = 8 }
+				#log = " ------> Direct male heir: [local_value.GetValue]"
+			}
 			wealth = local_value
-			#log = " ------> Direct heir: [local_value.GetValue]"
 			set_flag = emf_tmp_paid_share_value
 		}
-		# For legit direct progeny and female direct heir under Mirath (4x):
+		# For legit male direct progeny (4x):
 		set_variable = { which = local_value which = local_share_value }
 		multiply_variable = { which = local_value value = 4 }
 		any_child = {
 			limit = {
 				NOT = { has_flag = emf_tmp_paid_share_value }
-				OR = {
-					emf_is_preferred_gender_for_laws_of_PREV = yes
-					ROOT = { primary_title = { has_law = succ_mirath } }
-				}
-				OR = {
-					is_female = no
-					NOT = { ROOT = { primary_title = { has_law = succ_mirath } } }
-				}
+				is_female = no
 				emf_can_inherit_if_not_bishop_nominee = yes
 			}
 			wealth = local_value
-			#log = " ------> Legitimate direct progeny: [local_value.GetValue]"
+			#log = " ------> Legitimate male direct progeny: [local_value.GetValue]"
 			set_flag = emf_tmp_paid_share_value
 		}
-		# For bastard direct progeny and female direct progeny under Mirath (2x):
+		# For bastard male direct progeny, legit female direct progeny, living father, and male spouse (2x):
 		set_variable = { which = local_value which = local_share_value }
 		multiply_variable = { which = local_value value = 2 }
 		any_child = {
 			limit = {
 				NOT = { has_flag = emf_tmp_paid_share_value }
-				OR = {
-					emf_is_preferred_gender_for_laws_of_PREV = yes
-					ROOT = { primary_title = { has_law = succ_mirath } }
-				}
-				OR = {
-					AND = {
-						emf_can_inherit_if_not_bastard_or_bishop_nominee = yes
-						OR = {
-							is_female = no
-							NOT = { ROOT = { primary_title = { has_law = succ_mirath } } }
-						}
-					}
-					AND = {
-						emf_can_inherit_if_not_bishop_nominee = yes
-						is_female = yes
-						ROOT = { primary_title = { has_law = succ_mirath } }
-					}
-				}
+				is_female = no
+				emf_can_inherit_if_not_bastard_or_bishop_nominee = yes
 			}
 			wealth = local_value
-			#log = " ------> Bastard direct progeny: [local_value.GetValue]"
+			#log = " ------> Bastard male direct progeny: [local_value.GetValue]"
 			set_flag = emf_tmp_paid_share_value
 		}
-		if = {
-			limit = { primary_title = { has_law = succ_mirath } }
-			father = {
+		any_child = {
+			limit = {
+				NOT = { has_flag = emf_tmp_paid_share_value }
+				is_female = yes
+				emf_can_inherit_if_not_bishop_nominee = yes
+			}
+			wealth = local_value
+			#log = " ------> Legitimate female direct progeny: [local_value.GetValue]"
+			set_flag = emf_tmp_paid_share_value
+		}
+		father = {
+			if = {
+				limit = {
+					NOT = { has_flag = emf_tmp_paid_share_value }
+				}
 				wealth = local_value
 				#log = " ------> Father under Mirath: [local_value.GetValue]"
-			}
-			spouse = {
-				if = {
-					limit = { is_female = no }
-					#log = " ------> Male spouse under Mirath: [local_value.GetValue]"
-					wealth = local_value
-				}
+				set_flag = emf_tmp_paid_share_value
 			}
 		}
-		# For bastard female direct progeny under Mirath (1x):
+		spouse = {
+			if = {
+				limit = {
+					NOT = { has_flag = emf_tmp_paid_share_value }
+					is_female = no
+				}
+				#log = " ------> Male spouse under Mirath: [local_value.GetValue]"
+				wealth = local_value
+				set_flag = emf_tmp_paid_share_value
+			}
+		}
+		# For bastard female direct progeny, living mother, and female primary spouse (1x):
 		set_variable = { which = local_value which = local_share_value }
 		any_child = {
 			limit = {
 				NOT = { has_flag = emf_tmp_paid_share_value }
-				OR = {
-					emf_is_preferred_gender_for_laws_of_PREV = yes
-					ROOT = { primary_title = { has_law = succ_mirath } }
-				}
-				emf_can_inherit_if_not_bastard_or_bishop_nominee = yes
 				is_female = yes
-				ROOT = { primary_title = { has_law = succ_mirath } }
+				emf_can_inherit_if_not_bastard_or_bishop_nominee = yes
 			}
 			wealth = local_value
 			#log = " ------> Female bastard direct progeny under Mirath: [local_value.GetValue]"
 			set_flag = emf_tmp_paid_share_value
 		}
-		if = {
-			limit = { primary_title = { has_law = succ_mirath } }
-			mother = {
-				wealth = local_value
-				#log = " ------> Mother under Mirath: [local_value.GetValue]"
-			}
-			spouse = {
-				if = {
-					limit = { is_female = yes }
-					#log = " ------> Female spouse under Mirath: [local_value.GetValue]"
-					wealth = local_value
+		mother = {
+			if = {
+				limit = {
+					NOT = { has_flag = emf_tmp_paid_share_value }
 				}
+				#log = " ------> Mother under Mirath: [local_value.GetValue]"
+				wealth = local_value
+				set_flag = emf_tmp_paid_share_value
+			}
+		}
+		spouse = {
+			if = {
+				limit = {
+					NOT = { has_flag = emf_tmp_paid_share_value }
+					is_female = yes
+				}
+				#log = " ------> Female spouse under Mirath: [local_value.GetValue]"
+				wealth = local_value
+				set_flag = emf_tmp_paid_share_value
 			}
 		}
 		# We're done, so clear temporary flags:
@@ -351,6 +464,18 @@ character_event = {
 			clr_flag = emf_tmp_paid_share_value
 		}
 		any_child = {
+			clr_flag = emf_tmp_allocated_shares
+			clr_flag = emf_tmp_paid_share_value
+		}
+		father = {
+			clr_flag = emf_tmp_allocated_shares
+			clr_flag = emf_tmp_paid_share_value
+		}
+		mother = {
+			clr_flag = emf_tmp_allocated_shares
+			clr_flag = emf_tmp_paid_share_value
+		}
+		spouse = {
 			clr_flag = emf_tmp_allocated_shares
 			clr_flag = emf_tmp_paid_share_value
 		}
