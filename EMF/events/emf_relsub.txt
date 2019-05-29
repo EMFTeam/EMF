@@ -227,6 +227,7 @@ letter_event = {
 				set_flag = king_converted
 				event_target:emf_cb_winner = { set_flag = converted_king }
 			}
+			emf_relsub_disinherit_from_religion_group = yes
 			if = {
 				limit = { has_secret_religion = yes }
 				clear_secret_religion = yes
@@ -288,6 +289,7 @@ letter_event = {
 			}
 			event_target:emf_cb_winner = { set_flag = converted_king }
 		}
+		emf_relsub_disinherit_from_religion_group = yes
 		if = {
 			limit = { higher_tier_than = BARON }
 			religion_authority = { modifier = ruler_mass_converted_from years = 20 }
@@ -598,6 +600,7 @@ letter_event = {
 		hidden_tooltip = {
 			event_target:emf_cb_winner = { change_variable = { which = "emf_relsub_lords_converted" value = 1 } }
 		}
+		emf_relsub_disinherit_from_religion_group = yes
 		if = {
 			limit = { has_secret_religion = yes }
 			clear_secret_religion = yes
@@ -619,8 +622,8 @@ letter_event = {
 			}
 		}
 		emf_relsub_convert_court = yes
-		opinion = { who = LIEGE modifier = opinion_relsub_converted_with_my_liege }
-		reverse_opinion = { who = LIEGE modifier = opinion_relsub_converted_with_me }
+		opinion = { who = LIEGE modifier = emf_relsub_opinion_converted_with_my_liege }
+		reverse_opinion = { who = LIEGE modifier = emf_relsub_opinion_converted_with_me }
 		# Since we chose to convert, pass the choice on to our direct vassals
 		emf_relsub_ask_vassals_to_convert = yes
 	}
@@ -641,6 +644,7 @@ letter_event = {
 		hidden_tooltip = {
 			event_target:emf_cb_winner = { change_variable = { which = "emf_relsub_lords_converted" value = 1 } }
 		}
+		emf_relsub_disinherit_from_religion_group = yes
 		if = {
 			limit = { higher_tier_than = BARON }
 			religion_authority = { modifier = ruler_mass_converted_from years = 15 }
@@ -656,8 +660,8 @@ letter_event = {
 			yes = { custom_tooltip = { text = RELSUB_CONTINUE_OBSERVING_SECRET_FAITH } }
 			no  = { set_secret_religion = event_target:emf_old_religion }
 		}
-		opinion = { who = LIEGE modifier = opinion_relsub_converted_with_my_liege }
-		reverse_opinion = { who = LIEGE modifier = opinion_relsub_converted_with_me }
+		opinion = { who = LIEGE modifier = emf_relsub_opinion_converted_with_my_liege }
+		reverse_opinion = { who = LIEGE modifier = emf_relsub_opinion_converted_with_me }
 		emf_relsub_ask_vassals_to_convert = yes
 	}
 
@@ -670,8 +674,8 @@ letter_event = {
 			# Counterbalance modifiers that differ between convert vs. convert & follow secret religion
 			modifier = { factor = 1.5 OR = { trait = honest trait = deceitful } }
 		}
-		opinion = { who = event_target:emf_cb_loser modifier = opinion_relsub_submitted_to_infidel_conqueror }
-		reverse_opinion = { who = LIEGE modifier = opinion_relsub_refused_to_convert_with_me }
+		opinion = { who = event_target:emf_cb_loser modifier = emf_relsub_opinion_submitted_to_infidel_conqueror }
+		reverse_opinion = { who = LIEGE modifier = emf_relsub_opinion_refused_to_convert_with_me }
 		# Since we won't recurse here, add all same-religion-as-attacker lords under this guy now to the appropriate
 		# statistic
 		any_realm_lord = {
@@ -1329,7 +1333,7 @@ character_event = {
 		}
 		any_opinion_modifier_target = {
 			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = submits_to_my_relsub } }
-			opinion = { who = ROOT modifier = opinion_relsub_disrespected_peace_deal }
+			opinion = { who = ROOT modifier = emf_relsub_opinion_disrespected_peace_deal }
 		}
 	}
 
@@ -1358,7 +1362,7 @@ character_event = {
 		}
 		any_opinion_modifier_target = {
 			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = submits_to_my_relsub } }
-			opinion = { who = ROOT modifier = opinion_relsub_disrespected_peace_deal }
+			opinion = { who = ROOT modifier = emf_relsub_opinion_disrespected_peace_deal }
 		}
 	}
 
@@ -1387,7 +1391,7 @@ character_event = {
 		}
 		any_opinion_modifier_target = {
 			limit = { reverse_has_opinion_modifier = { who = ROOT modifier = submits_to_my_relsub } }
-			opinion = { who = ROOT modifier = opinion_relsub_disrespected_peace_deal }
+			opinion = { who = ROOT modifier = emf_relsub_opinion_disrespected_peace_deal }
 		}
 	}
 
@@ -1576,6 +1580,234 @@ province_event = {
 					set_flag = emf_revolt_tmp_triggered
 					province_event = { id = emf_revolt.0 }
 				}
+			}
+		}
+	}
+}
+
+# emf_relsub.50 -- prevent relsub-converted vassals from externally inheriting titles from rulers of their old
+# religion group. fires on_death of such a ruler from their old religion group.
+character_event = {
+	id = emf_relsub.50
+
+	is_triggered_only = yes # on_death
+	hide_window = yes
+
+	only_playable = yes
+
+	trigger = {
+		any_demesne_title = {
+			current_heir = {
+				is_ruler = yes
+				NOT = { same_realm = ROOT }
+				NOT = { religion = ROOT }
+				has_flag = emf_relsub_disinherit
+				trigger_if = {
+					limit = { has_flag = emf_relsub_disinherit_christian }
+					ROOT = { religion_group = christian }
+				}
+				trigger_else_if = {
+					limit = { has_flag = emf_relsub_disinherit_muslim }
+					ROOT = { religion_group = muslim }
+				}
+				trigger_else_if = {
+					limit = { has_flag = emf_relsub_disinherit_pagan_group }
+					ROOT = { religion_group = pagan_group }
+				}
+				trigger_else_if = {
+					limit = { has_flag = emf_relsub_disinherit_zoroastrian_group }
+					ROOT = { religion_group = zoroastrian_group }
+				}
+				trigger_else_if = {
+					limit = { has_flag = emf_relsub_disinherit_jewish_group }
+					ROOT = { religion_group = jewish_group }
+				}
+				trigger_else_if = {
+					limit = { has_flag = emf_relsub_disinherit_indian_group }
+					ROOT = { religion_group = indian_group }
+				}
+			}
+		}
+	}
+
+	immediate = {
+		log = "DEBUG: emf_relsub.50: preventing relsub-conquered from inheriting titles from dying ruler: [This.EMF_GetDebugName]"
+		log = " ----> religion: [This.Religion.GetName]"
+		log = " ----> temporarily disinheriting affected heir(s):"
+		while = {
+			limit = {
+				any_demesne_title = {
+					current_heir = {
+						is_ruler = yes
+						NOT = { same_realm = ROOT }
+						has_flag = emf_relsub_disinherit
+						trigger_if = {
+							limit = { has_flag = emf_relsub_disinherit_christian }
+							ROOT = { religion_group = christian }
+						}
+						trigger_else_if = {
+							limit = { has_flag = emf_relsub_disinherit_muslim }
+							ROOT = { religion_group = muslim }
+						}
+						trigger_else_if = {
+							limit = { has_flag = emf_relsub_disinherit_pagan_group }
+							ROOT = { religion_group = pagan_group }
+						}
+						trigger_else_if = {
+							limit = { has_flag = emf_relsub_disinherit_zoroastrian_group }
+							ROOT = { religion_group = zoroastrian_group }
+						}
+						trigger_else_if = {
+							limit = { has_flag = emf_relsub_disinherit_jewish_group }
+							ROOT = { religion_group = jewish_group }
+						}
+						trigger_else_if = {
+							limit = { has_flag = emf_relsub_disinherit_indian_group }
+							ROOT = { religion_group = indian_group }
+						}
+					}
+				}
+			}
+			any_demesne_title = {
+				limit = {
+					current_heir = {
+						is_ruler = yes
+						NOT = { same_realm = ROOT }
+						has_flag = emf_relsub_disinherit
+						trigger_if = {
+							limit = { has_flag = emf_relsub_disinherit_christian }
+							ROOT = { religion_group = christian }
+						}
+						trigger_else_if = {
+							limit = { has_flag = emf_relsub_disinherit_muslim }
+							ROOT = { religion_group = muslim }
+						}
+						trigger_else_if = {
+							limit = { has_flag = emf_relsub_disinherit_pagan_group }
+							ROOT = { religion_group = pagan_group }
+						}
+						trigger_else_if = {
+							limit = { has_flag = emf_relsub_disinherit_zoroastrian_group }
+							ROOT = { religion_group = zoroastrian_group }
+						}
+						trigger_else_if = {
+							limit = { has_flag = emf_relsub_disinherit_jewish_group }
+							ROOT = { religion_group = jewish_group }
+						}
+						trigger_else_if = {
+							limit = { has_flag = emf_relsub_disinherit_indian_group }
+							ROOT = { religion_group = indian_group }
+						}
+					}
+				}
+				current_heir = {
+					log = " ------> [This.EMF_GetDebugName]"
+					log = " --------> religion: [This.Religion.GetName]"
+					add_trait = emf_cannot_inherit
+					reverse_opinion = {
+						who = ROOT
+						modifier = emf_relsub_opinion_disinherited
+					}
+				}
+			}
+			log = " ----> a round of disinheritance is complete. recalculating title succession..."
+			recalc_succession = yes
+		}
+		# Phew. Now send an event to each temporarily disinherited ruler tomorrow to clear emf_cannot_inherit, and allow
+		# succession to happen now.
+		any_opinion_modifier_target = {
+			limit = {
+				reverse_has_opinion_modifier = {
+					who = ROOT
+					modifier = emf_relsub_opinion_disinherited
+				}
+			}
+			reverse_remove_opinion = {
+				who = ROOT
+				modifier = emf_relsub_opinion_disinherited
+			}
+			character_event = { id = emf_relsub.51 days = 1 }
+		}
+	}
+}
+
+# emf_relsub.51 -- clear emf_cannot_inherit from ROOT (continued 1 day after emf_relsub.50)
+character_event = {
+	id = emf_relsub.51
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		remove_trait = emf_cannot_inherit
+	}
+}
+
+# emf_relsub.52 -- inherit disinherited-from-religion-group status for 1 generation [on_birth]
+character_event = {
+	id = emf_relsub.52
+
+	is_triggered_only = yes # on_birth
+	hide_window = yes
+
+	trigger = {
+		OR = {
+			father_even_if_dead = {
+				is_ruler = yes
+				dynasty = ROOT
+				has_flag = emf_relsub_disinherit
+				NOT = { has_flag = emf_relsub_disinherit_2 }
+			}
+			mother_even_if_dead = {
+				is_ruler = yes
+				dynasty = ROOT
+				has_flag = emf_relsub_disinherit
+				NOT = { has_flag = emf_relsub_disinherit_2 }
+			}
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = {
+				father_even_if_dead = {
+					is_ruler = yes
+					dynasty = ROOT
+					has_flag = emf_relsub_disinherit
+					NOT = { has_flag = emf_relsub_disinherit_2 }
+				}
+			}
+			father_even_if_dead = { save_event_target_as = emf_parent }
+		}
+		else = {
+			mother_even_if_dead = { save_event_target_as = emf_parent }
+		}
+		set_flag = emf_relsub_disinherit
+		set_flag = emf_relsub_disinherit_2 # Don't inherit the disinherited-from-religion-group status further
+		event_target:emf_parent = {
+			if = {
+				limit = { has_flag = emf_relsub_disinherit_christian }
+				ROOT = { set_flag = emf_relsub_disinherit_christian }
+			}
+			else_if = {
+				limit = { has_flag = emf_relsub_disinherit_muslim }
+				ROOT = { set_flag = emf_relsub_disinherit_muslim }
+			}
+			else_if = {
+				limit = { has_flag = emf_relsub_disinherit_pagan_group }
+				ROOT = { set_flag = emf_relsub_disinherit_pagan_group }
+			}
+			else_if = {
+				limit = { has_flag = emf_relsub_disinherit_zoroastrian_group }
+				ROOT = { set_flag = emf_relsub_disinherit_zoroastrian_group }
+			}
+			else_if = {
+				limit = { has_flag = emf_relsub_disinherit_jewish_group }
+				ROOT = { set_flag = emf_relsub_disinherit_jewish_group }
+			}
+			else_if = {
+				limit = { has_flag = emf_relsub_disinherit_indian_group }
+				ROOT = { set_flag = emf_relsub_disinherit_indian_group }
 			}
 		}
 	}
