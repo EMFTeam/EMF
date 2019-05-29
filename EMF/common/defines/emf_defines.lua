@@ -198,6 +198,7 @@ NDefines.NMilitary.SPECIAL_TROOPS_PHASE_SKIRMISH_DEFENSE = 4
 NDefines.NMilitary.SPECIAL_TROOPS_PHASE_MELEE_DEFENSE = 4
 NDefines.NMilitary.SPECIAL_TROOPS_PHASE_PURSUE_DEFENSE = 7
 NDefines.NMilitary.SPECIAL_TROOPS_GRAPHICAL_FACTOR = 1.5
+NDefines.NMilitary.GALLEYS_MAINTENANCE = 200 -- prior to EMF v10.0: 300 (vanilla)
 NDefines.NMilitary.COMMAND_MODIFIER_MARTIAL_MULTIPLIER = 0.03 -- changed from vanilla by -0.02 (-40%) in EMF v8.07
 NDefines.NMilitary.CAPITAL_DUCHY_LIEGE_LEVY_MULT = 0.75 -- same as vanilla, just here for completeness
 NDefines.NMilitary.CAPITAL_KINGDOM_LIEGE_LEVY_MULT = 0.5 -- same as vanilla, just here for completeness
