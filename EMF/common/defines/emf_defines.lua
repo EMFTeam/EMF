@@ -119,7 +119,7 @@ NDefines.NNomad.STARTING_HORDE_MAX_FRACTION = 1
 
 -- Military
 NDefines.NMilitary.NUMBER_OF_TROOPS_PER_GALLEY = 100              -- prior to EMF v9.06: 200 (has been since the days of Project Balance); vanilla is 100
-NDefines.NMilitary.LEVY_MAINTENANCE_FACTOR = 2.7                  -- prior to EMF v9.06: 2.4; prior to EMF v9.01: 2.7
+NDefines.NMilitary.LEVY_MAINTENANCE_FACTOR = 2.3                  -- prior to EMF v10.0: 2.7; prior to EMF v9.06: 2.4; prior to EMF v9.01: 2.7
 NDefines.NMilitary.BATTLE_WARSCORE_DEFENDER_MULTIPLIER = 1.6
 --NDefines.NMilitary.MIN_LEVY_RAISE_OPINION_THRESHOLD = -50
 NDefines.NMilitary.MIN_LEVIES_ABOVE_OPINION_THRESHOLD = 0         -- prior to EMF v9.06: 0.333
@@ -140,7 +140,7 @@ NDefines.NMilitary.RETINUE_INCREASE_PER_TECH = 0.5
 NDefines.NMilitary.RETINUE_HIRE_COST_MULTIPLIER = 0.25       -- prior to EMF v9.06: 0.2
 NDefines.NMilitary.MAX_COMMANDERS_BARON = 2                  -- EMF v8.07: barons should not be deprived of commanders (rest of commander limits reverted to vanilla, a decrease by 1 for each tier)
 NDefines.NMilitary.LIEGE_LEVY_REINF_RATE = 0.01              -- changed by -0.02 from EMF v8.06 (-67%), which is now a fifth of vanilla's rate
-NDefines.NMilitary.LIEGE_LEVY_COST_MULTIPLIER = 0.0          -- as of EMF v8.07, vassals do not pay upkeep on their liege levy contribution
+NDefines.NMilitary.LIEGE_LEVY_COST_MULTIPLIER = 0.25         -- as of EMF v10.0, vassals pay 25% of the upkeep on their liege levy contribution
 NDefines.NMilitary.LIGHT_INFANTRY_MORALE = 3
 NDefines.NMilitary.LIGHT_INFANTRY_MAINTENANCE = 1
 NDefines.NMilitary.LIGHT_INFANTRY_PHASE_SKIRMISH_ATTACK = 1
@@ -198,6 +198,7 @@ NDefines.NMilitary.SPECIAL_TROOPS_PHASE_SKIRMISH_DEFENSE = 4
 NDefines.NMilitary.SPECIAL_TROOPS_PHASE_MELEE_DEFENSE = 4
 NDefines.NMilitary.SPECIAL_TROOPS_PHASE_PURSUE_DEFENSE = 7
 NDefines.NMilitary.SPECIAL_TROOPS_GRAPHICAL_FACTOR = 1.5
+NDefines.NMilitary.GALLEYS_MAINTENANCE = 200 -- prior to EMF v10.0: 300 (vanilla)
 NDefines.NMilitary.COMMAND_MODIFIER_MARTIAL_MULTIPLIER = 0.03 -- changed from vanilla by -0.02 (-40%) in EMF v8.07
 NDefines.NMilitary.CAPITAL_DUCHY_LIEGE_LEVY_MULT = 0.75 -- same as vanilla, just here for completeness
 NDefines.NMilitary.CAPITAL_KINGDOM_LIEGE_LEVY_MULT = 0.5 -- same as vanilla, just here for completeness

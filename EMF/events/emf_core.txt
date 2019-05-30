@@ -72,16 +72,7 @@ character_event = {
 				}
 				FROM = { is_primary_type_title = no } # Nor pope, holy orders, etc.
 			}
-			remove_character_modifiers = { modifier = emf_recent_succession amount = 5 } # Reset any previous modifiers
-			# Apply decaying succession malus:
-			if = {
-				limit = { ai = no }
-				add_character_modifier = { name = emf_recent_succession duration = 1825 stacking = yes }
-				add_character_modifier = { name = emf_recent_succession duration = 1460 stacking = yes }
-				add_character_modifier = { name = emf_recent_succession duration = 1095 stacking = yes }
-			}
-			add_character_modifier = { name = emf_recent_succession duration = 730 stacking = yes }
-			add_character_modifier = { name = emf_recent_succession duration = 365 stacking = yes }
+			character_event = { id = emf_core.2 days = 1 }
 		}
 		# Protected Appointments opinion validation:
 		if = {
@@ -95,9 +86,31 @@ character_event = {
 	}
 }
 
+# emf_core.2 -- continuation of emf_core.1 after 1 day for succession malus
+character_event = {
+	id = emf_core.2
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	only_playable = yes
+
+	immediate = {
+		remove_character_modifiers = { modifier = emf_recent_succession amount = 5 } # Reset any previous modifiers
+		if = {
+			limit = { ai = no }
+			add_character_modifier = { name = emf_recent_succession duration = 1825 stacking = yes }
+			add_character_modifier = { name = emf_recent_succession duration = 1460 stacking = yes }
+			add_character_modifier = { name = emf_recent_succession duration = 1095 stacking = yes }
+		}
+		add_character_modifier = { name = emf_recent_succession duration = 730 stacking = yes }
+		add_character_modifier = { name = emf_recent_succession duration = 365 stacking = yes }
+	}
+}
+
 # emf_core.5 -- distribute wealth of dying ruler to eligible heir children. primary heir gets 4 shares, other
 # eligible-for-inheritance direct progeny get 2 shares, and bastards that are otherwise eligible for inheritance
-# get 1 share. [on_death]
+# get 1 share. standard version. [on_death]
 character_event = {
 	id = emf_core.5
 
@@ -107,6 +120,7 @@ character_event = {
 	only_playable = yes
 
 	trigger = {
+		NOT = { religion_group = muslim }
 		is_theocracy = no
 		OR = {
 			is_republic = no
@@ -134,9 +148,9 @@ character_event = {
 		#log = " ----> Allocating shares:"
 		set_variable = { which = local_shares value = 0 }
 		player_heir = {
-			#log = " ------> Direct heir gets 4 shares: [This.EMF_GetDebugName]"
 			set_flag = emf_tmp_allocated_shares
-			change_variable = { which = local_shares value = 4 }
+			#log = " ------> Direct heir gets 8 shares: [This.EMF_GetDebugName]"
+			change_variable = { which = local_shares value = 8 }
 		}
 		any_child = {
 			limit = {
@@ -144,9 +158,9 @@ character_event = {
 				emf_is_preferred_gender_for_laws_of_PREV = yes
 				emf_can_inherit_if_not_bishop_nominee = yes
 			}
-			#log = " ------> Legitimate direct progeny gets 2 shares: [This.EMF_GetDebugName]"
 			set_flag = emf_tmp_allocated_shares
-			change_variable = { which = local_shares value = 2 }
+			#log = " ------> Legitimate direct progeny gets 4 shares: [This.EMF_GetDebugName]"
+			change_variable = { which = local_shares value = 4 }
 		}
 		any_child = {
 			limit = {
@@ -154,9 +168,9 @@ character_event = {
 				emf_is_preferred_gender_for_laws_of_PREV = yes
 				emf_can_inherit_if_not_bastard_or_bishop_nominee = yes
 			}
-			#log = " ------> Bastard direct progeny gets 1 share: [This.EMF_GetDebugName]"
 			set_flag = emf_tmp_allocated_shares
-			change_variable = { which = local_shares value = 1 }
+			#log = " ------> Bastard direct progeny gets 2 shares: [This.EMF_GetDebugName]"
+			change_variable = { which = local_shares value = 2 }
 		}
 		# Calculate share value:
 		set_variable = { which = local_share_value which = local_wealth }
@@ -165,17 +179,17 @@ character_event = {
 		#log = " ----> Share value: [local_share_value.GetValue]"
 		# Transfer total shares' value to each of the 3 classes' treasuries:
 		#log = " ----> Transferring inheritance:"
-		# For player_heir (4x):
+		# For player_heir (8x):
 		set_variable = { which = local_value which = local_share_value }
-		multiply_variable = { which = local_value value = 4 }
+		multiply_variable = { which = local_value value = 8 }
 		player_heir = {
 			wealth = local_value
 			#log = " ------> Direct heir: [local_value.GetValue]"
 			set_flag = emf_tmp_paid_share_value
 		}
-		# For legit direct progeny (2x):
+		# For legit direct progeny (4x):
 		set_variable = { which = local_value which = local_share_value }
-		multiply_variable = { which = local_value value = 2 }
+		multiply_variable = { which = local_value value = 4 }
 		any_child = {
 			limit = {
 				NOT = { has_flag = emf_tmp_paid_share_value }
@@ -186,8 +200,9 @@ character_event = {
 			#log = " ------> Legitimate direct progeny: [local_value.GetValue]"
 			set_flag = emf_tmp_paid_share_value
 		}
-		# For bastard direct progeny (1x):
+		# For bastard direct progeny (2x):
 		set_variable = { which = local_value which = local_share_value }
+		multiply_variable = { which = local_value value = 2 }
 		any_child = {
 			limit = {
 				NOT = { has_flag = emf_tmp_paid_share_value }
@@ -204,6 +219,263 @@ character_event = {
 			clr_flag = emf_tmp_paid_share_value
 		}
 		any_child = {
+			clr_flag = emf_tmp_allocated_shares
+			clr_flag = emf_tmp_paid_share_value
+		}
+		# And clear our wealth from our ledger, since it's all been distributed:
+		clear_wealth = yes
+	}
+}
+
+# emf_core.6 -- split wealth inheritance under Mirath. [on_death]
+character_event = {
+	id = emf_core.6
+
+	is_triggered_only = yes # on_death
+	hide_window = yes
+
+	only_playable = yes
+	religion_group = muslim
+
+	trigger = {
+		is_theocracy = no
+		OR = {
+			is_republic = no
+			is_patrician = yes
+		}
+		mercenary = no
+		holy_order = no
+		# Don't bother splitting wealth if it's going to be a paltry amount or if it's going to be a debt:
+		wealth > 100
+		# Need at least a direct heir or any child that could inherit were they not a bastard or a Free Investiture
+		# bishop nominee and are of the gender preferred by ROOT's gender succession law:
+		OR = {
+			player_heir = { is_alive = yes }
+			any_child = {
+				emf_can_inherit_if_not_bastard_or_bishop_nominee = yes
+			}
+		}
+	}
+
+	immediate = {
+		#log = "DEBUG: emf_core.6: dying ruler shall distribute wealth under Mirath: [This.EMF_GetDebugName]"
+		export_to_variable = { which = local_wealth value = treasury }
+		#log = " ----> Treasury: [local_wealth.GetValue]"
+		#log = " ----> Allocating shares:"
+		set_variable = { which = local_shares value = 0 }
+		player_heir = {
+			set_flag = emf_tmp_allocated_shares
+			if = {
+				limit = {
+					is_female = yes
+				}
+				#log = " ------> Female, direct heir gets 4 shares: [This.EMF_GetDebugName]"
+				change_variable = { which = local_shares value = 4 }
+			}
+			else = {
+				#log = " ------> Direct heir gets 8 shares: [This.EMF_GetDebugName]"
+				change_variable = { which = local_shares value = 8 }
+			}
+		}
+		any_child = {
+			limit = {
+				NOT = { has_flag = emf_tmp_allocated_shares }
+				emf_can_inherit_if_not_bishop_nominee = yes
+			}
+			set_flag = emf_tmp_allocated_shares
+			if = {
+				limit = {
+					is_female = yes
+				}
+				#log = " ------> Female, legitimate direct progeny gets 2 shares: [This.EMF_GetDebugName]"
+				change_variable = { which = local_shares value = 2 }
+			}
+			else = {
+				#log = " ------> Legitimate direct progeny gets 4 shares: [This.EMF_GetDebugName]"
+				change_variable = { which = local_shares value = 4 }
+			}
+		}
+		any_child = {
+			limit = {
+				NOT = { has_flag = emf_tmp_allocated_shares }
+				emf_can_inherit_if_not_bastard_or_bishop_nominee = yes
+			}
+			set_flag = emf_tmp_allocated_shares
+			if = {
+				limit = {
+					is_female = yes
+				}
+				#log = " ------> Female, bastard direct progeny gets 1 share: [This.EMF_GetDebugName]"
+				change_variable = { which = local_shares value = 1 }
+			}
+			else = {
+				#log = " ------> Bastard direct progeny gets 2 shares: [This.EMF_GetDebugName]"
+				change_variable = { which = local_shares value = 2 }
+			}
+		}
+		mother = {
+			if = {
+				limit = { NOT = { has_flag = emf_tmp_allocated_shares } }
+				set_flag = emf_tmp_allocated_shares
+				#log = " ------> Mother gets 1 share: [This.EMF_GetDebugName]"
+				change_variable = { which = local_shares value = 1 }
+			}
+		}
+		father = {
+			if = {
+				limit = { NOT = { has_flag = emf_tmp_allocated_shares } }
+				set_flag = emf_tmp_allocated_shares
+				#log = " ------> Father gets 2 shares: [This.EMF_GetDebugName]"
+				change_variable = { which = local_shares value = 2 }
+			}
+		}
+		spouse = {
+			if = {
+				limit = { NOT = { has_flag = emf_tmp_allocated_shares } }
+				set_flag = emf_tmp_allocated_shares
+				if = {
+					limit = { is_female = yes }
+					#log = " ------> Female spouse gets 1 share: [This.EMF_GetDebugName]"
+					change_variable = { which = local_shares value = 1 }
+				}
+				else = {
+					#log = " ------> Male spouse gets 2 shares: [This.EMF_GetDebugName]"
+					change_variable = { which = local_shares value = 2 }
+				}
+			}
+		}
+		# Calculate share value:
+		set_variable = { which = local_share_value which = local_wealth }
+		divide_variable = { which = local_share_value which = local_shares }
+		#log = " ----> Total shares: [local_shares.GetValue]"
+		#log = " ----> Share value: [local_share_value.GetValue]"
+		# Transfer total shares' value to each of the classes' treasuries:
+		#log = " ----> Transferring inheritance:"
+		# For player_heir (4-8x):
+		set_variable = { which = local_value which = local_share_value }
+		player_heir = {
+			if = {
+				limit = {
+					is_female = yes
+				}
+				multiply_variable = { which = local_value value = 4 }
+				#log = " ------> Direct female heir: [local_value.GetValue]"
+			}
+			else = {
+				multiply_variable = { which = local_value value = 8 }
+				#log = " ------> Direct male heir: [local_value.GetValue]"
+			}
+			wealth = local_value
+			set_flag = emf_tmp_paid_share_value
+		}
+		# For legit male direct progeny (4x):
+		set_variable = { which = local_value which = local_share_value }
+		multiply_variable = { which = local_value value = 4 }
+		any_child = {
+			limit = {
+				NOT = { has_flag = emf_tmp_paid_share_value }
+				is_female = no
+				emf_can_inherit_if_not_bishop_nominee = yes
+			}
+			wealth = local_value
+			#log = " ------> Legitimate male direct progeny: [local_value.GetValue]"
+			set_flag = emf_tmp_paid_share_value
+		}
+		# For bastard male direct progeny, legit female direct progeny, living father, and male spouse (2x):
+		set_variable = { which = local_value which = local_share_value }
+		multiply_variable = { which = local_value value = 2 }
+		any_child = {
+			limit = {
+				NOT = { has_flag = emf_tmp_paid_share_value }
+				is_female = no
+				emf_can_inherit_if_not_bastard_or_bishop_nominee = yes
+			}
+			wealth = local_value
+			#log = " ------> Bastard male direct progeny: [local_value.GetValue]"
+			set_flag = emf_tmp_paid_share_value
+		}
+		any_child = {
+			limit = {
+				NOT = { has_flag = emf_tmp_paid_share_value }
+				is_female = yes
+				emf_can_inherit_if_not_bishop_nominee = yes
+			}
+			wealth = local_value
+			#log = " ------> Legitimate female direct progeny: [local_value.GetValue]"
+			set_flag = emf_tmp_paid_share_value
+		}
+		father = {
+			if = {
+				limit = {
+					NOT = { has_flag = emf_tmp_paid_share_value }
+				}
+				wealth = local_value
+				#log = " ------> Father: [local_value.GetValue]"
+				set_flag = emf_tmp_paid_share_value
+			}
+		}
+		spouse = {
+			if = {
+				limit = {
+					NOT = { has_flag = emf_tmp_paid_share_value }
+					is_female = no
+				}
+				#log = " ------> Male spouse: [local_value.GetValue]"
+				wealth = local_value
+				set_flag = emf_tmp_paid_share_value
+			}
+		}
+		# For bastard female direct progeny, living mother, and female primary spouse (1x):
+		set_variable = { which = local_value which = local_share_value }
+		any_child = {
+			limit = {
+				NOT = { has_flag = emf_tmp_paid_share_value }
+				is_female = yes
+				emf_can_inherit_if_not_bastard_or_bishop_nominee = yes
+			}
+			wealth = local_value
+			#log = " ------> Female bastard direct progeny: [local_value.GetValue]"
+			set_flag = emf_tmp_paid_share_value
+		}
+		mother = {
+			if = {
+				limit = {
+					NOT = { has_flag = emf_tmp_paid_share_value }
+				}
+				#log = " ------> Mother: [local_value.GetValue]"
+				wealth = local_value
+				set_flag = emf_tmp_paid_share_value
+			}
+		}
+		spouse = {
+			if = {
+				limit = {
+					NOT = { has_flag = emf_tmp_paid_share_value }
+					is_female = yes
+				}
+				#log = " ------> Female spouse: [local_value.GetValue]"
+				wealth = local_value
+				set_flag = emf_tmp_paid_share_value
+			}
+		}
+		# We're done, so clear temporary flags:
+		player_heir = {
+			clr_flag = emf_tmp_allocated_shares
+			clr_flag = emf_tmp_paid_share_value
+		}
+		any_child = {
+			clr_flag = emf_tmp_allocated_shares
+			clr_flag = emf_tmp_paid_share_value
+		}
+		father = {
+			clr_flag = emf_tmp_allocated_shares
+			clr_flag = emf_tmp_paid_share_value
+		}
+		mother = {
+			clr_flag = emf_tmp_allocated_shares
+			clr_flag = emf_tmp_paid_share_value
+		}
+		spouse = {
 			clr_flag = emf_tmp_allocated_shares
 			clr_flag = emf_tmp_paid_share_value
 		}
@@ -636,86 +908,6 @@ character_event = {
 	}
 }
 
-# emf_core.45 [Dying Father]
-#
-# 45-47 fix a hard-coded bug in patch 3.0 regarding incorrect posthumous dynasties of children. For more information
-# on the issue and explanation of what is going on here, see: https://github.com/EMFTeam/EMF/issues/635
-#
-# Triggered on_death of a married father with at least one patrilineally married & pregnant wife.
-character_event = {
-	id = emf_core.45
-
-	is_triggered_only = yes
-	hide_window = yes
-
-	only_men = yes
-	is_married = yes
-
-	trigger = {
-		any_spouse = {
-			is_pregnant = yes
-			NOT = { is_married_matrilineally = yes }
-		}
-	}
-
-	immediate = {
-		any_spouse = {
-			limit = {
-				is_pregnant = yes
-				NOT = { is_married_matrilineally = yes }
-			}
-			save_persistent_event_target = {
-				name = emf_dead_father_of_unborn
-				scope = ROOT
-			}
-		}
-	}
-}
-
-# emf_core.46 [Child Being Born]
-#
-# Triggered on_birth of a child from a mother that has a saved event target pointing to the child's dead father. See
-# emf_core.45 for more info.
-character_event = {
-	id = emf_core.46
-
-	is_triggered_only = yes
-	hide_window = yes
-
-	trigger = {
-		mother = {
-			persistent_event_target:emf_dead_father_of_unborn = { always = yes }
-		}
-	}
-
-	immediate = {
-		mother = {
-			persistent_event_target:emf_dead_father_of_unborn = {
-				ROOT = { dynasty = PREV }
-			}
-			character_event = { id = emf_core.47 days = 1 } # Cleanup target next day in case she had twins today
-		}
-	}
-}
-
-# emf_core.47 [Mother Who Gave Birth Yesterday]
-#
-# Triggered by emf_core.46
-character_event = {
-	id = emf_core.47
-
-	is_triggered_only = yes
-	hide_window = yes
-
-	trigger = {
-		persistent_event_target:emf_dead_father_of_unborn = { always = yes }
-	}
-
-	immediate = {
-		clear_persistent_event_target = emf_dead_father_of_unborn
-	}
-}
-
 # For emf_core.50, see emf_core_map.txt (SWMH only)
 
 # emf_core.55 -- Impose costs of war when armies are in unowned territory
@@ -750,6 +942,34 @@ character_event = {
 	immediate = {
 		remove_character_modifier = war_costs_modifier
 		add_character_modifier = { name = war_costs_modifier duration = 60 hidden = yes }
+	}
+}
+
+# emf_core.56 -- Give AIs a break every once in awhile on heavily negative opinions due to raised vassal levies
+character_event = {
+	id = emf_core.56
+
+	is_triggered_only = yes # on_bi_yearly_pulse
+	hide_window = yes
+
+	only_playable = yes
+	ai = yes
+
+	trigger = {
+		any_vassal = {
+			opinion_levy_raised_days = { who = ROOT days = 365 }
+			ai = yes
+		}
+	}
+
+	immediate = {
+		any_vassal = {
+			limit = {
+				opinion_levy_raised_days = { who = ROOT days = 365 }
+				ai = yes
+			}
+			set_opinion_levy_raised_days = { who = ROOT days = 0 }
+		}
 	}
 }
 
