@@ -259,90 +259,7 @@ character_event = {
 	ai = yes
 
 	trigger = {
-		OR = {
-			is_lowborn = yes
-			# No females permitted to become cadets unless Gender Equality is set to Full
-			AND = {
-				is_female = yes
-				NOT = { has_game_rule = { name = gender value = all } }
-			}
-			trigger_if = {
-				limit = { is_female = no }
-				is_married_matrilineally = yes # No matrilineally married males
-			}
-			trigger_else = {
-				# No females with regular marriages:
-				is_married = yes
-				NOT = { is_married_matrilineally = yes }
-			}
-			# Cannot be heir to any title that's not a barony in someone else's capital county (emf_gavelkind would take
-			# their barony away anyway). Note if they were actually heir to the associated county, this would fail. For
-			# disqualification, we only require that such heir titles aren't owned by close relatives of the cadet.
-			any_heir_title = {
-				owner = { is_close_relative = ROOT }
-				NAND = {
-					tier = BARON
-					location = {
-						is_capital = yes
-						owner = {
-							higher_real_tier_than = COUNT
-							is_nomadic = no
-							is_merchant_republic = no
-						}
-					}
-				}
-			}
-			# Disqualifying relations to the current dynasty_head:
-			dynasty_head = {
-				OR = {
-					character = ROOT # Cadets are not dynasty heads
-					AND = { # If dynasty head becomes same-cultured and a close relative of cadet, disqualify.
-						culture = ROOT
-						is_close_relative = ROOT
-					}
-					# No marriage ties to cadet spouses or close relative relationship to cadet's children:
-					ROOT = {
-						OR = {
-							any_child_even_if_dead = {
-								is_close_relative = PREVPREV
-							}
-							any_spouse = {
-								is_close_relative = PREVPREV
-							}
-						}
-					}
-				}
-			}
-			# Must have an older sibling that could technically inherit:
-			NOR = {
-				father_even_if_dead = {
-					dynasty = ROOT
-					any_child = {
-						NOT = { character = ROOT }
-						dynasty = PREV
-						OR = {
-							is_female = no
-							has_game_rule = { name = gender value = all }
-						}
-						is_older_than = ROOT
-						emf_can_inherit = yes
-					}
-				}
-				mother_even_if_dead = {
-					dynasty = ROOT
-					any_child = {
-						NOT = { character = ROOT }
-						dynasty = PREV
-						OR = {
-							is_female = no
-							has_game_rule = { name = gender value = all }
-						}
-						is_older_than = ROOT
-						emf_can_inherit = yes
-					}
-				}
-			}
-		}
+		emf_is_cadet_disqualified = yes
 	}
 
 	immediate = {
@@ -366,7 +283,7 @@ character_event = {
 	}
 
 	immediate = {
-		character_event = { id = emf_cadet.22 days = 1 }
+		character_event = { id = emf_cadet.22 days = 2 }
 	}
 }
 
@@ -381,7 +298,7 @@ character_event = {
 
 	immediate = {
 		# If any title other than one which emf_gavelkind will seize is inherited from a close relative, clear
-		# maybe-cadet status, else proceed to day-after processing.
+		# cadet status, else proceed to day-after processing.
 		if = {
 			limit = {
 				FROMFROM = {
@@ -406,7 +323,6 @@ character_event = {
 			set_flag = emf_disqualified_cadet
 		}
 		else = {
-			# Allow an additional day (beyond 1) in case something like emf_gavelkind seizes our titles from us
 			character_event = { id = emf_cadet.22 days = 2 }
 		}
 	}
@@ -427,37 +343,115 @@ character_event = {
 
 	immediate = {
 		clr_flag = emf_cadet
-		set_flag = emf_ruler_cadet
-		# TODO: send them the "can we become a cadet dynasty? if so, do so." event right now, in case they already
-		# qualify.
+		if = {
+			limit = { emf_is_cadet_disqualified = yes }
+			set_flag = emf_disqualified_cadet
+			log = "DEBUG: emf_cadet.22: unlanded cadet became ruler but was coincidentally disqualified: [This.EMF_GetDebugName]"
+		}
+		else = {
+			set_flag = emf_ruler_cadet
+			log = "DEBUG: emf_cadet.22: unlanded cadet became ruler: [This.EMF_GetDebugName]"
+			character_event = { id = emf_cadet.30 } # Form cadet dynasty now if requirements are met
+		}
 	}
 }
 
-# emf_cadet.30 -- titled cadet gains a potential heir [on_birth]
+# emf_cadet.30 -- check whether an emf_ruler_cadet can form a cadet dynasty [on_yearly_pulse & event-triggered]
 character_event = {
 	id = emf_cadet.30
 
 	is_triggered_only = yes
 	hide_window = yes
 
+	only_playable = yes # COUNT+ (or patrician) required to advance to cadet dynasty formation
+	only_capable = yes
+	prisoner = no
+	war = no
+	has_character_flag = emf_ruler_cadet
+
 	trigger = {
+		# Proper type of government and primary title:
+		OR = {
+			is_feudal = yes
+			is_tribal = yes
+			is_patrician = yes
+		}
+		primary_title = {
+			NOR = {
+				mercenary = yes
+				holy_order = yes
+				temporary = yes
+				rebel = yes
+				has_flag = emf_revolt
+			}
+		}
+		emf_is_cadet_disqualified = no
+		# Avoid forming cadet dynasties with player dynastic progeny (players don't want to have their dynasty up and
+		# switched on them, although mechanically it's fine):
+		NOT = {
+			any_player = {
+				dynasty = ROOT
+				OR = {
+					is_child_of = ROOT
+					is_grandchild_of = ROOT
+					father_even_if_dead = { is_grandchild_of = ROOT }
+					mother_even_if_dead = { is_grandchild_of = ROOT }
+				}
+			}
+		}
+		# Must have a valid direct heir of our own dynastic progeny:
+		player_heir = {
+			is_alive = yes
+			dynasty = ROOT
+			OR = {
+				is_child_of = ROOT
+				is_grandchild_of = ROOT
+				father_even_if_dead = { is_grandchild_of = ROOT }
+				mother_even_if_dead = { is_grandchild_of = ROOT }
+			}
+		}
+		# Dynasty must have at least 30 other living members:
+		any_dynasty_member = { count = 30 is_alive = yes }
 	}
 
 	immediate = {
-	}
-}
-
-# emf_cadet.31 -- titled cadet still has a potential heir (continued 1 year after birth of potential heir)
-character_event = {
-	id = emf_cadet.31
-
-	is_triggered_only = yes
-	hide_window = yes
-
-	trigger = {
-	}
-
-	immediate = {
+		log = "DEBUG: emf_cadet.30: ruler cadet qualified for formation of a cadet dynasty: [This.EMF_GetDebugName]"
+		# Give 'em a little boost to help improve their odds of survival as a cadet dynasty -- they've gotten this far,
+		# after all, and some cured diseases or an extra child sure wouldn't hurt:
+		emf_boost_cadet_wellness = yes
+		any_spouse = { emf_boost_cadet_wellness = yes }
+		if = {
+			limit = { is_female = no }
+			spouse = { impregnate = PREV }
+		}
+		else = {
+			impregnate = SPOUSE
+		}
+		player_heir = {
+			emf_boost_cadet_wellness = yes
+			any_spouse = { emf_boost_cadet_wellness = yes }
+			if = {
+				limit = { is_female = no }
+				spouse = { impregnate = PREV }
+			}
+			else = {
+				impregnate = SPOUSE
+			}
+		}
+		any_child = {
+			limit = {
+				trigger_if = {
+					limit = { is_female = yes }
+					NOT = { ROOT = { primary_title = { succ_law_title = { has_law = agnatic_succession } } } }
+				}
+				trigger_else = {
+					NOT = { ROOT = { primary_title = { succ_law_title = { has_law = enatic_succession } } } }
+				}
+			}
+			emf_boost_cadet_wellness = yes
+		}
+		# Actually found the cadet dynasty:
+		character_event = { id = emf_cadet.100 }
 	}
 }
 
