@@ -40,17 +40,8 @@ phenotypes = [
 	Phenotype('perc', 'Perceptiveness', Phenotype.POLYGENIC),
 ]
 
-genes = [
-	'AA',
-	'Aa',
-	'aa',
-	'BB',
-	'Bb',
-	'bb',
-	'CC',
-	'Cc',
-	'cc',
-]
+genes = ['AA', 'Aa', 'aa', 'BB', 'Bb', 'bb', 'CC', 'Cc', 'cc']
+homozygous_recessive_to_dominant_genes = {'aa': 'AA', 'bb': 'BB', 'cc': 'CC'}
 
 ###
 
@@ -75,6 +66,9 @@ def main():
 		print_clear_flags_for_phenotype_effects(f)
 		print_set_flags_for_phenotype_effects(f)
 		print_set_flags_for_phenotype_if_no_trait_effects(f)
+		print_reverse_homozygous_recessive_effect(f)
+		print_reset_flags_positively_effect(f)
+		print_remove_negative_mendelian_traits_effect(f)
 	return 0
 
 
@@ -186,6 +180,47 @@ def print_set_flags_for_phenotype_if_no_trait_effects(f):
 		}}
 	}}
 }}'''.format(p.id, *p.gene_weights_if_no_trait), file=f)
+
+
+def print_reverse_homozygous_recessive_effect(f):
+	print(file=f)
+	print('# Flip all homozygous recessive genes into homozygous dominant genes', file=f)
+	print('emf_dna_reverse_homozygous_recessive = {', file=f)
+	for p in phenotypes:
+		for rg in sorted(homozygous_recessive_to_dominant_genes):
+			print('\tif = {', file=f)
+			print('\t\tlimit = {{ has_flag = {}_{} }}'.format(p.id, rg), file=f)
+			print('\t\tclr_flag = {}_{}'.format(p.id, rg), file=f)
+			print('\t\tset_flag = {}_{}'.format(p.id, homozygous_recessive_to_dominant_genes[rg]), file=f)
+			print('\t}', file=f)
+	print('}', file=f)
+
+
+def print_reset_flags_positively_effect(f):
+	ok_genes = [('AA', 'Aa'), ('BB', 'Bb'), ('CC', 'Cc')]
+	print(file=f)
+	print('# Reset genes to only be neutral or positive (do not modify any expressed phenotypes)', file=f)
+	print('emf_dna_reset_flags_positively = {', file=f)
+	for p in phenotypes:
+		print('\temf_dna_clear_flags_for_{} = yes'.format(p.id), file=f)
+		for g1, g2 in ok_genes:
+			print('\trandom_list = {', file=f)
+			print('\t\t2 = {{ set_flag = {}_{} }}'.format(p.id, g1), file=f)
+			print('\t\t2 = {{ set_flag = {}_{} }}'.format(p.id, g2), file=f)
+			print('\t}', file=f)
+	print('}', file=f)
+
+
+def	print_remove_negative_mendelian_traits_effect(f):
+	print(file=f)
+	print('# Remove all negative genetic traits subject to Mendelian inheritance', file=f)
+	print('emf_dna_remove_negative_mendelian_traits = {', file=f)
+	for p in phenotypes:
+		if p.type != Phenotype.MENDELIAN:
+			continue
+		print('\tremove_trait = {}'.format(p.id), file=f)
+	print('}', file=f)
+
 
 ###
 
