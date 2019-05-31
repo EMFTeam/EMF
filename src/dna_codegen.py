@@ -40,17 +40,8 @@ phenotypes = [
 	Phenotype('perc', 'Perceptiveness', Phenotype.POLYGENIC),
 ]
 
-genes = [
-	'AA',
-	'Aa',
-	'aa',
-	'BB',
-	'Bb',
-	'bb',
-	'CC',
-	'Cc',
-	'cc',
-]
+genes = ['AA', 'Aa', 'aa', 'BB', 'Bb', 'bb', 'CC', 'Cc', 'cc']
+homozygous_recessive_to_dominant_genes = {'aa': 'AA', 'bb': 'BB', 'cc': 'CC'}
 
 ###
 
@@ -75,6 +66,7 @@ def main():
 		print_clear_flags_for_phenotype_effects(f)
 		print_set_flags_for_phenotype_effects(f)
 		print_set_flags_for_phenotype_if_no_trait_effects(f)
+		print_reverse_homozygous_recessive(f)
 	return 0
 
 
@@ -186,6 +178,21 @@ def print_set_flags_for_phenotype_if_no_trait_effects(f):
 		}}
 	}}
 }}'''.format(p.id, *p.gene_weights_if_no_trait), file=f)
+
+
+def print_reverse_homozygous_recessive(f):
+	print(file=f)
+	print('# Flip all homozygous recessive genes into homozygous dominant genes', file=f)
+	print('emf_dna_reverse_homozygous_recessive = {', file=f)
+	for p in phenotypes:
+		for rg in sorted(homozygous_recessive_to_dominant_genes):
+			print('\tif = {', file=f)
+			print('\t\tlimit = {{ has_flag = {}_{} }}'.format(p.id, rg), file=f)
+			print('\t\tclr_flag = {}_{}'.format(p.id, rg), file=f)
+			print('\t\tset_flag = {}_{}'.format(p.id, homozygous_recessive_to_dominant_genes[rg]), file=f)
+			print('\t}', file=f)
+	print('}', file=f)
+
 
 ###
 
