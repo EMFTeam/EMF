@@ -1,0 +1,88 @@
+# -*- ck2.scripted_triggers -*-
+
+emf_is_cadet_disqualified = {
+	OR = {
+		is_lowborn = yes
+		# No females permitted to become cadets unless Gender Equality is set to Full
+		AND = {
+			is_female = yes
+			NOT = { has_game_rule = { name = gender value = all } }
+		}
+		trigger_if = {
+			limit = { is_female = no }
+			is_married_matrilineally = yes # No matrilineally married males
+		}
+		trigger_else = {
+			# No females with regular marriages:
+			is_married = yes
+			NOT = { is_married_matrilineally = yes }
+		}
+		# Disqualifying relations to the current dynasty_head:
+		dynasty_head = {
+			OR = {
+				character = ROOT # Cadets are not dynasty heads
+				AND = { # If dynasty head becomes same-cultured and a close relative of cadet, disqualify.
+					culture = ROOT
+					is_close_relative = ROOT
+				}
+				# No marriage ties to cadet spouses or close relative relationship to cadet's children:
+				ROOT = {
+					OR = {
+						any_child_even_if_dead = {
+							is_close_relative = PREVPREV
+						}
+						any_spouse = {
+							is_close_relative = PREVPREV
+						}
+					}
+				}
+			}
+		}
+		# Cannot be heir to any title that's not a barony in someone else's capital county (emf_gavelkind would take
+		# their barony away anyway). Note if they were actually heir to the associated county, this would fail. For
+		# disqualification, we only require that such heir titles aren't owned by close relatives of the cadet.
+		any_heir_title = {
+			owner = { is_close_relative = ROOT }
+			NAND = {
+				tier = BARON
+				location = {
+					is_capital = yes
+					owner = {
+						higher_real_tier_than = COUNT
+						is_nomadic = no
+						is_merchant_republic = no
+					}
+				}
+			}
+		}
+		# Must have an older sibling that could technically inherit:
+		NOR = {
+			father_even_if_dead = {
+				dynasty = ROOT
+				any_child = {
+					NOT = { character = ROOT }
+					dynasty = PREV
+					OR = {
+						is_female = no
+						has_game_rule = { name = gender value = all }
+					}
+					is_older_than = ROOT
+					emf_can_inherit = yes
+				}
+			}
+			mother_even_if_dead = {
+				dynasty = ROOT
+				any_child = {
+					NOT = { character = ROOT }
+					dynasty = PREV
+					OR = {
+						is_female = no
+						has_game_rule = { name = gender value = all }
+					}
+					is_older_than = ROOT
+					emf_can_inherit = yes
+				}
+			}
+		}
+	}
+}
