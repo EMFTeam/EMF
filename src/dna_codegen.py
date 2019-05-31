@@ -66,7 +66,8 @@ def main():
 		print_clear_flags_for_phenotype_effects(f)
 		print_set_flags_for_phenotype_effects(f)
 		print_set_flags_for_phenotype_if_no_trait_effects(f)
-		print_reverse_homozygous_recessive(f)
+		print_reverse_homozygous_recessive_effect(f)
+		print_reset_flags_positively_effect(f)
 	return 0
 
 
@@ -180,7 +181,7 @@ def print_set_flags_for_phenotype_if_no_trait_effects(f):
 }}'''.format(p.id, *p.gene_weights_if_no_trait), file=f)
 
 
-def print_reverse_homozygous_recessive(f):
+def print_reverse_homozygous_recessive_effect(f):
 	print(file=f)
 	print('# Flip all homozygous recessive genes into homozygous dominant genes', file=f)
 	print('emf_dna_reverse_homozygous_recessive = {', file=f)
@@ -193,6 +194,20 @@ def print_reverse_homozygous_recessive(f):
 			print('\t}', file=f)
 	print('}', file=f)
 
+
+def print_reset_flags_positively_effect(f):
+	ok_genes = [('AA', 'Aa'), ('BB', 'Bb'), ('CC', 'Cc')]
+	print(file=f)
+	print('# Reset genes to only be neutral or positive (do not modify any expressed phenotypes)', file=f)
+	print('emf_dna_reset_flags_positively = {', file=f)
+	for p in phenotypes:
+		print('\temf_dna_clear_flags_for_{} = yes'.format(p.id), file=f)
+		for g1, g2 in ok_genes:
+			print('\trandom_list = {', file=f)
+			print('\t\t2 = {{ set_flag = {}_{} }}'.format(p.id, g1), file=f)
+			print('\t\t2 = {{ set_flag = {}_{} }}'.format(p.id, g2), file=f)
+			print('\t}', file=f)
+	print('}', file=f)
 
 ###
 
