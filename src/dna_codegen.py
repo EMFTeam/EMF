@@ -68,6 +68,7 @@ def main():
 		print_set_flags_for_phenotype_if_no_trait_effects(f)
 		print_reverse_homozygous_recessive_effect(f)
 		print_reset_flags_positively_effect(f)
+		print_remove_negative_mendelian_traits_effect(f)
 	return 0
 
 
@@ -208,6 +209,18 @@ def print_reset_flags_positively_effect(f):
 			print('\t\t2 = {{ set_flag = {}_{} }}'.format(p.id, g2), file=f)
 			print('\t}', file=f)
 	print('}', file=f)
+
+
+def	print_remove_negative_mendelian_traits_effect(f):
+	print(file=f)
+	print('# Remove all negative genetic traits subject to Mendelian inheritance', file=f)
+	print('emf_dna_remove_negative_mendelian_traits = {', file=f)
+	for p in phenotypes:
+		if p.type != Phenotype.MENDELIAN:
+			continue
+		print('\tremove_trait = {}'.format(p.id), file=f)
+	print('}', file=f)
+
 
 ###
 
