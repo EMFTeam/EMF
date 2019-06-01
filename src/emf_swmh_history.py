@@ -407,6 +407,13 @@ def main():
     # shutil.rmtree(str(emfswmhhistory), ignore_errors=True)
     # emfswmhhistory.mkdir(parents=True)
 
+    valid_laws = set()
+    for path, tree in parser.parse_files('common/laws/*',
+                                         basedir=emfpath):
+        for n, v in tree:
+            if n.val != 'laws_groups':
+                valid_laws.update(n2.val for n2, v2 in v)
+
     shutil.rmtree(str(emfswmhhistory / 'characters'), ignore_errors=True)
 
     parser.newlines_to_depth = 0
@@ -461,12 +468,6 @@ def main():
     for path, tree in parser.parse_files('history/titles/*',
                                          basedir=swmhpath):
         changed = False
-        for n, v in tree:
-            if any(n2.val == 'vice_royalty' for n2, _ in v):
-                changed = True
-                # removes attached comments, eh, whatever
-                v.contents = [p2 for p2 in v.contents
-                              if p2.key.val != 'vice_royalty']
         if path.stem in changeset:
             changed = True
             for date, where, text in changeset[path.stem]:
@@ -575,6 +576,14 @@ def main():
                 ''').contents
             tree.contents[0].pre_comments = tree.contents[3].pre_comments
             tree.contents[3].pre_comments = []
+        for n, v in tree:
+            # removes attached comments, eh, whatever
+            bad = {p2 for p2 in v.contents
+                if p2.key.val == 'vice_royalty' or
+                    p2.key.val == 'law' and p2.value.val not in valid_laws}
+            if len(bad) > 0:
+                changed = True
+                v.contents = [p2 for p2 in v.contents if p2 not in bad]
         if changed:
             tree.contents = [p for p in tree.contents
                              if p.value.contents or p.has_comments]
