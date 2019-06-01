@@ -408,7 +408,7 @@ def main():
     # emfswmhhistory.mkdir(parents=True)
 
     valid_laws = set()
-    for path, tree in parser.parse_files('common/laws/*',
+    for path, tree in parser.parse_files('common/laws/*.txt',
                                          basedir=emfpath):
         for n, v in tree:
             if n.val != 'laws_groups':
@@ -465,7 +465,7 @@ def main():
     parser.no_fold_to_depth = 0
     parser.fq_keys = ['which']
     (emfswmhhistory / 'titles').mkdir()
-    for path, tree in parser.parse_files('history/titles/*',
+    for path, tree in parser.parse_files('history/titles/*.txt',
                                          basedir=swmhpath):
         changed = False
         if path.stem in changeset:
