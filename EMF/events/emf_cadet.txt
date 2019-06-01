@@ -383,6 +383,14 @@ character_event = {
 			dynasty = mother_bastard
 		}
 		log = " --> parent dynasty: [emf_old_dynasty.GetOnlyDynastyName]"
+		event_target:emf_old_dynasty = {
+			primary_title = {
+				if = {
+					limit = { emf_has_any_succ_law = yes }
+					log = " ----> succession law: [This.EMF_GetFullSuccLaw]"
+				}
+			}
+		}
 		# Save a PET pointing to that parent so that we can later determine our parent dynasty conveniently:
 		save_persistent_event_target = {
 			name = emf_parent_dynasty
@@ -391,13 +399,13 @@ character_event = {
 		# If we were already of a cadet dynasty, save an event target to the dynasty's founder, else we'd overwrite
 		# it forever in the following step:
 		persistent_event_target:emf_dynasty_founder = {
-			log = " --> parent dynasty is a cadet dynasty, and its founder was: [This.EMF_GetDebugName]"
+			log = " ----> is a cadet dynasty, and its founder was: [This.EMF_GetDebugName]"
 			save_event_target_as = emf_old_dynasty_founder
 		}
-		# Recursively convert all dynastic progeny (old dynasty) to ROOT's new dynasty:
-		log = " --> converting all dynastic progeny to new dynasty:"
+		# Recursively convert all dynastic progeny (old dynasty) to ROOT's new dynasty (incl. ROOT):
+		log = " --> converting to new dynasty:"
 		character_event = { id = emf_cadet.101 }
-		# Recalculate succession for rulers of the old and new dynasty (and ourselves):
+		# Recalculate succession for rulers of the old and new dynasty:
 		event_target:emf_old_dynasty = {
 			any_dynasty_member = {
 				limit = { is_ruler = yes }
@@ -412,13 +420,32 @@ character_event = {
 			recalc_succession = yes
 		}
 		recalc_succession = yes
-		# Create two dummy characters (we'll throw them away afterward) for crazy workarounds to improve dynasty naming
-		# despite lack of any string processing capabilities in CK2script.
+		# Create three dummy characters (we'll throw them away afterward) for crazy workarounds to improve dynasty naming
+		# despite lack of any string processing capabilities in CK2script. We marshal various types of names into their
+		# actual dynasty names, and then we marshal the last word in those "dynasty names" into the dummy characters'
+		# first name so that we can use the same_regnal_name trigger to compare names of things for equality.
+		#
+		# Dummy1's usage is dependent upon the type of dynasty naming schema we're going to use and is used to prevent
+		# things like a cadet dynasty forming with the same name as its parent dynasty or creating a cadet dynasty name
+		# with a douple-hyphenation such as "de Valois-Valois."
+		#
+		# Dummy2's usage will hold the last word of a title name as we try to select an appropriate match with Dummy1. If
+		# an appropriate selection is made at this stage, then Dummy2 is overwritten with the proposed dynasty name based
+		# upon the chosen naming schema.
+		#
+		# Dummy3 will hold the dynasty name (as the first name) of every playable ruler in the world as we loop over all
+		# of them looking for a dynasty name collision with the proposed dynasty name. If we collide, the title we
+		# selected for dynasty naming will be marked as such and the process will start over, falling back to
+		# lower-priority title names, and failing all of that, eventually stop caring about the dynasty name collision
+		# and return to the highest-priority selections.
 		create_character = { random_traits = no dynasty = random }
 		new_character = { save_event_target_as = emf_dummy1 }
 		create_character = { random_traits = no dynasty = random }
 		new_character = { save_event_target_as = emf_dummy2 }
-		# Now, let's rename this new dynasty to something remotely intelligible. We have 3 main cases:
+		create_character = { random_traits = no dynasty = random }
+		new_character = { save_event_target_as = emf_dummy3 }
+		# Now, let's rename this new dynasty to something remotely intelligible. We have 4 main cases:
+		# 0. ROOT's culture uses founder-named dynasties
 		# 1. ROOT's tier is higher than DUKE, or their primary title is a special-type title
 		# 2. ROOT's parent dynasty has a paired title PET (ergo, must be cadet of cadet)
 		# 3. ROOT's parent dynasty has no paired title PET (might be standard cadet formation or a cadet of case 1)
@@ -509,10 +536,33 @@ character_event = {
 				log = " ----> SHIT! unable to find suitable title with which to pair parent dynasty's name component: using whatever the game auto-generated..."
 			}
 		}
+		log = " --> final dynasty name: [This.GetOnlyDynastyName]"
 		# Cleanup dummy characters:
 		event_target:emf_dummy1 = { emf_vanish_character = yes }
 		event_target:emf_dummy2 = { emf_vanish_character = yes }
-		log = " --> final dynasty name: [This.GetOnlyDynastyName]"
+		event_target:emf_dummy3 = { emf_vanish_character = yes }
+		# Onward!
+		set_variable = { which = local_alive_dynasts value = 0 }
+		set_variable = { which = local_dead_dynasts value = 0 }
+		if = {
+			limit = { is_alive = yes }
+			change_variable = { which = local_alive_dynasts value = 1 }
+		}
+		else = {
+			change_variable = { which = local_dead_dynasts value = 1 }
+		}
+		any_dynasty_member_even_if_dead = {
+			limit = { NOT = { character = ROOT } }
+			if = {
+				limit = { is_alive = yes }
+				change_variable = { which = local_alive_dynasts value = 1 }
+			}
+			else = {
+				change_variable = { which = local_dead_dynasts value = 1 }
+			}
+		}
+		log = " --> living members of new dynasty: [local_alive_dynasts.GetValue]"
+		log = " --> dead members of new dynasty: [local_dead_dynasts.GetValue]"
 	}
 }
 
