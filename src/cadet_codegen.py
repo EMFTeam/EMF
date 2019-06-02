@@ -15,7 +15,7 @@ emfv_path = rootpath / 'EMF/EMF+Vanilla'
 
 rel_trigger_path = Path('common/scripted_triggers/emf_cadet_codegen_triggers.txt')
 rel_cloc_path = Path('localisation/customizable_localisation/emf_cadet_codegen_custom_loc.txt')
-rel_loc_path = Path('localisation/emf_cadet_codegen.csv')
+rel_loc_path = Path('localisation/1_emf_cadet_codegen.csv')
 
 trigger_paths = [
 	emf_path / rel_trigger_path,
