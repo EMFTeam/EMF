@@ -8,11 +8,11 @@ emf_select_cadet_dynasty_name = {
 	if = {
 		limit = { NOT = { event_target:emf_selected_title = { always = yes } } }
 		log = " --> failed to select a dynasty name. retrying without dynasty name collision checking..."
-	}
-	emf_try_to_select_cadet_dynasty_name = yes
-	if = {
-		limit = { NOT = { event_target:emf_selected_title = { always = yes } } }
-		log = " --> ARGH! still failed to select a dynasty name! defaulting to the game-generated name..."
+		emf_try_to_select_cadet_dynasty_name = yes
+		if = {
+			limit = { NOT = { event_target:emf_selected_title = { always = yes } } }
+			log = " --> ARGH! still failed to select a dynasty name! defaulting to the game-generated name..."
+		}
 	}
 	clear_flags_with_prefix = emf_cadet_tmp_name_schema
 }
@@ -187,6 +187,7 @@ emf_select_title_for_cadet_dynasty_name = {
 		set_name = "[This.GetLastWordInDynastyName]"
 		if = {
 			limit = { same_regnal_name = event_target:emf_dummy1 }
+			log = " ------> disqualified by parent name compatibility check"
 			clear_event_target = emf_potential_title # Disqualified
 		}
 	}
@@ -209,32 +210,44 @@ emf_select_title_for_cadet_dynasty_name = {
 			else = {
 				log = " ASSERT: emf_select_title_for_cadet_dynasty_name: unknown dynasty naming schema!"
 			}
-			set_name = "[This.GetOnlyDynastyName]"
 		}
 		if = {
 			limit = { has_flag = emf_cadet_tmp_dynasty_name_collision_check }
+			# We will compare the last word in our proposed dynasty name with the last word in every playable ruler's
+			# dynasty name. We cannot compare the full dynasty names, because the `same_regnal_name` trigger will interpret
+			# a space separator in the dynasty name as the end of the first name and beginning of the middle name, the
+			# latter of which it discards. E.g., if our proposed dynasty name were 'de Lisboa' and we were comparing against
+			# a dynasty name of 'de Guarda', `same_regnal_name` will treat the names as equivalent, because it regards 'de'
+			# as the regnal name of both.
+			event_target:emf_dummy2 = {
+				set_name = "[This.GetLastWordInDynastyName]"
+			}
 			# emf_dummy2 is now ready to have its name compared with the dynasty names of every playable ruler (but
-			# ourselves). We need to marshal any_playable_ruler's dynasty name into the first name of emf_dummy3 for
-			# comparison.
-			log = " ------> proposed dynasty name: [emf_dummy2.GetFirstName]"
-			log = " ------> comparing to dynasty name of all playable rulers:"
+			# ourselves). We need to marshal any_playable_ruler's [last word in] dynasty name into the first name of
+			# emf_dummy3 for comparison.
+			log = " ------> proposed dynasty base name: [emf_dummy2.GetFirstName] (from '[emf_dummy2.GetOnlyDynastyName]')"
+			log = " ------> comparing to dynasty base name of all playable rulers:"
 			any_playable_ruler = {
-				limit = { NOT = { dynasty = ROOT } }
+				limit = {
+					NOT = { dynasty = ROOT }
+					is_lowborn = no
+				}
 				if = {
 					limit = { NOT = { ROOT = { has_flag = emf_cadet_tmp_collision } } }
 					event_target:emf_dummy3 = {
-						set_name = "[Prev.GetOnlyDynastyName]"
-						log = " --------> [This.GetFirstName]"
+						set_name = "[Prev.GetLastWordInDynastyName]"
+						#log = " --------> [This.GetFirstName]"
 						if = {
 							limit = { same_regnal_name = event_target:emf_dummy2 }
 							ROOT = { set_flag = emf_cadet_tmp_collision }
-							log = " ----------> DYNASTY NAME COLLISION!"
+							#log = " ----------> DYNASTY NAME COLLISION!"
 						}
 					}
 				}
 			}
 			if = {
 				limit = { has_flag = emf_cadet_tmp_collision }
+				log = " ------> disqualified by dynasty name collision check"
 				clear_event_target = emf_potential_title # Disqualified
 			}
 			clr_flag = emf_cadet_tmp_collision
