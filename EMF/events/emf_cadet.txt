@@ -12,49 +12,91 @@ character_event = {
 	trigger = {
 		is_lowborn = no
 		OR = {
-			father_even_if_dead = {
+			father = {
 				dynasty = ROOT
-				persistent_event_target:emf_dynasty_founder = {
+				persistent_event_target:emf_cadet_dyn_founder = {
 					dynasty = ROOT
 				}
 			}
-			mother_even_if_dead = {
-				dynasty = ROOT
-				persistent_event_target:emf_dynasty_founder = {
-					dynasty = ROOT
+			mother = {
+				OR = {
+					AND = {
+						dynasty = ROOT
+						persistent_event_target:emf_cadet_dyn_founder = {
+							dynasty = ROOT
+						}
+					}
+					# If the father dies during pregnancy, we use this PET saved before he died:
+					persistent_event_target:emf_cadet_dyn_founder_of_unborn = {
+						dynasty = ROOT
+					}
 				}
 			}
 		}
 	}
 
 	immediate = {
-		# Determine which parent holds the PET we want to inherit:
+		# Determine which PETs we want to inherit:
 		if = {
 			limit = {
-				father_even_if_dead = {
+				father = {
 					dynasty = ROOT
-					persistent_event_target:emf_dynasty_founder = {
+					persistent_event_target:emf_cadet_dyn_founder = {
 						dynasty = ROOT
 					}
 				}
 			}
-			father_even_if_dead = {
-				save_event_target_as = emf_dynastic_parent
+			father = {
+				persistent_event_target:emf_cadet_dyn_founder = {
+					save_event_target_as = emf_dynasty_founder
+				}
+				persistent_event_target:emf_parent_dyn = {
+					save_event_target_as = emf_parent_dynasty
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				mother = {
+					dynasty = ROOT
+					persistent_event_target:emf_cadet_dyn_founder = {
+						dynasty = ROOT
+					}
+				}
+			}
+			mother = {
+				persistent_event_target:emf_cadet_dyn_founder = {
+					save_event_target_as = emf_dynasty_founder
+				}
+				persistent_event_target:emf_parent_dyn = {
+					save_event_target_as = emf_parent_dynasty
+				}
 			}
 		}
 		else = {
-			mother_even_if_dead = {
-				save_event_target_as = emf_dynastic_parent
+			mother = {
+				persistent_event_target:emf_cadet_dyn_founder_of_unborn = {
+					save_event_target_as = emf_dynasty_founder
+				}
+				persistent_event_target:emf_parent_dyn_of_unborn = {
+					save_event_target_as = emf_parent_dynasty
+				}
 			}
 		}
-		# Inherit the PET:
-		event_target:emf_dynastic_parent = {
-			persistent_event_target:emf_dynasty_founder = {
-				ROOT = {
-					save_persistent_event_target = {
-						name = emf_dynasty_founder
-						scope = PREV
-					}
+		# Inherit the PETs:
+		event_target:emf_dynasty_founder = {
+			ROOT = {
+				save_persistent_event_target = {
+					name = emf_cadet_dyn_founder
+					scope = PREV
+				}
+			}
+		}
+		event_target:emf_parent_dynasty = {
+			ROOT = {
+				save_persistent_event_target = {
+					name = emf_parent_dyn
+					scope = PREV
 				}
 			}
 		}
@@ -72,17 +114,22 @@ character_event = {
 	hide_window = yes
 
 	trigger = {
+		is_lowborn = no
 		OR = {
-			father_even_if_dead = {
-				dynasty = ROOT
-				persistent_event_target:emf_dynasty_founder = {
-					NOT = { dynasty = ROOT }
+			father = {
+				persistent_event_target:emf_cadet_dyn_founder = {
+					NOT = { dynasty = PREV }
 				}
 			}
-			mother_even_if_dead = {
-				dynasty = ROOT
-				persistent_event_target:emf_dynasty_founder = {
-					NOT = { dynasty = ROOT }
+			mother = {
+				OR = {
+					persistent_event_target:emf_cadet_dyn_founder = {
+						NOT = { dynasty = PREV }
+					}
+					# If the father dies during pregnancy, we use this PET saved before he died:
+					persistent_event_target:emf_cadet_dyn_founder_of_unborn = {
+						NOT = { dynasty = ROOT }
+					}
 				}
 			}
 		}
@@ -92,31 +139,148 @@ character_event = {
 		# Determine which parent(s) created the PET incoherency (e.g., were a bastard) & clear their PETs:
 		if = {
 			limit = {
-				father_even_if_dead = {
-					dynasty = ROOT
-					persistent_event_target:emf_dynasty_founder = {
-						NOT = { dynasty = ROOT }
+				father = {
+					persistent_event_target:emf_cadet_dyn_founder = {
+						NOT = { dynasty = PREV }
 					}
 				}
 			}
-			father_even_if_dead = {
-				clear_persistent_event_target = emf_dynasty_founder
+			father = {
+				clear_persistent_event_target = emf_cadet_dyn_founder
+				clear_persistent_event_target = emf_parent_dyn
 			}
 		}
 		if = {
 			limit = {
-				mother_even_if_dead = {
-					dynasty = ROOT
-					persistent_event_target:emf_dynasty_founder = {
-						NOT = { dynasty = ROOT }
+				mother = {
+					persistent_event_target:emf_cadet_dyn_founder = {
+						NOT = { dynasty = PREV }
 					}
 				}
 			}
-			mother_even_if_dead = {
-				clear_persistent_event_target = emf_dynasty_founder
+			mother = {
+				clear_persistent_event_target = emf_cadet_dyn_founder
+				clear_persistent_event_target = emf_parent_dyn
 			}
 		}
-		clear_persistent_event_target = emf_dynasty_founder
+		clear_persistent_event_target = emf_cadet_dyn_founder
+		clear_persistent_event_target = emf_parent_dyn
+	}
+}
+
+# emf_cadet.2 -- clear temporary unborn cadet PETs saved on mother (ROOT) when father dies prematurely [on_birth,
+# on_postbirth_stillbirth]
+character_event = {
+	id = emf_cadet.2
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		OR = {
+			persistent_event_target:emf_cadet_dyn_founder_of_unborn = { always = yes }
+			persistent_event_target:emf_parent_dyn_of_unborn = { always = yes }
+		}
+		# Don't clear the PETs if the woman is again somehow already pregnant and the father has yet again died
+		# prematurely:
+		OR = {
+			is_pregnant = no
+			father_of_unborn = { is_alive = yes }
+		}
+	}
+
+	immediate = {
+		# We delay the actual PET clearing by 1 day in case we're having twins today:
+		character_event = { id = emf_cadet.3 days = 1 }
+	}
+}
+
+# emf_cadet.3 -- actually clear the unborn cadet PETs 1 day after firing emf_cadet.2 from on_actions
+character_event = {
+	id = emf_cadet.3
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		OR = {
+			persistent_event_target:emf_cadet_dyn_founder_of_unborn = { always = yes }
+			persistent_event_target:emf_parent_dyn_of_unborn = { always = yes }
+		}
+		# Don't clear the PETs if the woman is again somehow already pregnant and the father has yet again died
+		# prematurely:
+		OR = {
+			is_pregnant = no
+			father_of_unborn = { is_alive = yes }
+		}
+	}
+
+	immediate = {
+		clear_persistent_event_target = emf_cadet_dyn_founder_of_unborn
+		clear_persistent_event_target = emf_parent_dyn_of_unborn
+	}
+}
+
+# emf_cadet.4 -- when father carrying cadet dynasty PETs dies with a pregnant wife in a patrilineal marriage, save
+# copies of their cadet PETs to the mother for usage upon birth of the child [on_death]
+character_event = {
+	id = emf_cadet.4
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	only_men = yes
+
+	trigger = {
+		persistent_event_target:emf_cadet_dyn_founder = { always = yes }
+		persistent_event_target:emf_parent_dyn = { always = yes }
+		OR = {
+			any_spouse = {
+				is_pregnant = yes
+				NOT = { is_married_matrilineally = yes }
+			}
+			any_consort = {
+				is_pregnant = yes
+				is_consort = yes # junior party
+			}
+		}
+	}
+
+	immediate = {
+		persistent_event_target:emf_cadet_dyn_founder = {
+			save_event_target_as = emf_dynasty_founder
+		}
+		persistent_event_target:emf_parent_dyn = {
+			save_event_target_as = emf_parent_dynasty
+		}
+		any_spouse = {
+			limit = {
+				is_pregnant = yes
+				NOT = { is_married_matrilineally = yes }
+			}
+			save_persistent_event_target = {
+				name = emf_cadet_dyn_founder_of_unborn
+				scope = event_target:emf_dynasty_founder
+			}
+			save_persistent_event_target = {
+				name = emf_parent_dyn_of_unborn
+				scope = event_target:emf_parent_dynasty
+			}
+		}
+		any_consort = {
+			limit = {
+				is_pregnant = yes
+				is_consort = yes # junior party
+			}
+			save_persistent_event_target = {
+				name = emf_cadet_dyn_founder_of_unborn
+				scope = event_target:emf_dynasty_founder
+			}
+			save_persistent_event_target = {
+				name = emf_parent_dyn_of_unborn
+				scope = event_target:emf_parent_dynasty
+			}
+		}
 	}
 }
 
@@ -350,8 +514,6 @@ character_event = {
 		}
 		# Dynasty must have at least 30 other living members:
 		any_dynasty_member = { count = 30 is_alive = yes }
-		# Must own the county of our own capital:
-		capital_scope = { owner = { character = ROOT } }
 	}
 
 	immediate = {
@@ -369,20 +531,18 @@ character_event = {
 	hide_window = yes
 
 	trigger = {
-		# Can't be lowborn for this to work:
-		is_lowborn = no
 		# Cannot form a cadet dynasty with the same character twice in their lifetime:
 		NOT = { has_flag = emf_founded_cadet_dynasty }
-		# Must own the county of our own capital:
-		capital_scope = { owner = { character = ROOT } }
+		# Can't be lowborn for this to work:
+		is_lowborn = no
+		# Bastard dynasties are a different thing than cadet dynasties (and the hard-coded dynasty change mechanics for
+		# the bastard trait would make creating a cadet dynasty pointless anyhow):
+		NOT = { trait = bastard }
 		# At least one of our parents has to share our own dynasty:
 		OR = {
 			father_even_if_dead = { dynasty = ROOT }
 			mother_even_if_dead = { dynasty = ROOT }
 		}
-		# Bastard dynasties are a different thing than cadet dynasties (and the hard-coded dynasty change mechanics for
-		# the bastard trait would make creating a cadet dynasty pointless anyhow):
-		NOT = { trait = bastard }
 		# Must not have a temporary title of any kind:
 		emf_has_no_temporary_title = yes
 	}
@@ -417,16 +577,62 @@ character_event = {
 				}
 			}
 		}
-		# Save a PET pointing to that parent so that we can later determine our parent dynasty conveniently:
-		save_persistent_event_target = {
-			name = emf_parent_dynasty
-			scope = event_target:emf_old_dynasty
+		# Clone the old dynasty character into an immortal character to hold our PETs forever (dead characters lose their
+		# PETs after some number of game days)
+		event_target:isis = {
+			if = {
+				limit = { event_target:emf_old_dynasty = { is_female = no } }
+				create_character = {
+					random_traits = no
+					trait = immortal
+					religion = event_target:emf_old_dynasty
+					culture = event_target:emf_old_dynasty
+					dynasty = random
+					health = 10
+					age = 32
+					female = no
+				}
+			}
+			else = {
+				create_character = {
+					random_traits = no
+					trait = immortal
+					religion = event_target:emf_old_dynasty
+					culture = event_target:emf_old_dynasty
+					dynasty = random
+					health = 10
+					age = 32
+					female = yes
+				}
+			}
+			new_character = {
+				save_event_target_as = emf_immortal
+				set_immune_to_pruning = yes
+				set_flag = no_court_invites # Instructs AI to never accept an invitation to another court
+				set_flag = ai_flag_refuse_conversion # Instructs AI to never accept Demand Religious Conversion
+				set_flag = emf_cadet_immortal
+				set_graphical_culture = hip_culture # Isis hive mind, but still the correct culture in case that matters
+				set_dynasty_name = "[emf_old_dynasty.GetOnlyDynastyName]"
+				copy_name = event_target:emf_old_dynasty
+			}
 		}
-		# If we were already of a cadet dynasty, save an event target to the dynasty's founder, else we'd overwrite
-		# it forever in the following step:
-		persistent_event_target:emf_dynasty_founder = {
-			log = " ----> is a cadet dynasty, and its founder was: [This.EMF_GetDebugName]"
-			save_event_target_as = emf_old_dynasty_founder
+		# Copy our own emf_parent_dyn PET to the immortal (PET exists when we are part of a cadet dynasty)
+		persistent_event_target:emf_parent_dyn = {
+			event_target:emf_immortal = {
+				save_persistent_event_target = {
+					name = emf_parent_dyn
+					scope = PREV
+				}
+			}
+		}
+		# Copy our own emf_cadet_dyn_founder PET to the immortal (PET exists when we are part of a cadet dynasty)
+		persistent_event_target:emf_cadet_dyn_founder = {
+			event_target:emf_immortal = {
+				save_persistent_event_target = {
+					name = emf_cadet_dyn_founder
+					scope = PREV
+				}
+			}
 		}
 		# Recursively convert all dynastic progeny (old dynasty) to ROOT's new dynasty (incl. ROOT):
 		log = " --> converting to new dynasty:"
@@ -515,14 +721,18 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:emf_old_dynasty_founder = {
-					persistent_event_target:emf_dynasty_paired_title = { always = yes }
+				event_target:emf_immortal = {
+					persistent_event_target:emf_parent_dyn = {
+						persistent_event_target:emf_dyn_title = { always = yes }
+					}
 				}
 			}
 			log = " --> trying to compose cadet dynasty from the parent dynasty's paired title and a demesne title (case 2)"
-			event_target:emf_old_dynasty_founder = {
-				persistent_event_target:emf_dynasty_paired_title = {
-					save_event_target_as = emf_paired_title
+			event_target:emf_immortal = {
+				persistent_event_target:emf_parent_dyn = {
+					persistent_event_target:emf_dyn_title = {
+						save_event_target_as = emf_paired_title
+					}
 				}
 			}
 			log = " ----> parent dynasty's paired title: [emf_paired_title.EMF_GetDebugTitleNameWithDeJureLieges]"
@@ -539,9 +749,11 @@ character_event = {
 			if = {
 				limit = { event_target:emf_selected_title = { always = yes } }
 				set_dynasty_name = "[emf_dummy2.GetOnlyDynastyName]"
-				save_persistent_event_target = {
-					name = emf_dynasty_paired_title
-					scope = event_target:emf_selected_title
+				event_target:emf_immortal = {
+					save_persistent_event_target = {
+						name = emf_dyn_title
+						scope = event_target:emf_selected_title
+					}
 				}
 				change_variable = { which = global_cadet_dynasties_formed_w_naming_schema_2 value = 1 }
 			}
@@ -563,9 +775,11 @@ character_event = {
 			if = {
 				limit = { event_target:emf_selected_title = { always = yes } }
 				set_dynasty_name = "[emf_dummy2.GetOnlyDynastyName]"
-				save_persistent_event_target = {
-					name = emf_dynasty_paired_title
-					scope = event_target:emf_selected_title
+				event_target:emf_immortal = {
+					save_persistent_event_target = {
+						name = emf_dyn_title
+						scope = event_target:emf_selected_title
+					}
 				}
 				change_variable = { which = global_cadet_dynasties_formed_w_naming_schema_3 value = 1 }
 			}
@@ -609,7 +823,11 @@ character_event = {
 		log = " ----> switching to cadet dynasty: [This.EMF_GetDebugName]"
 		dynasty = event_target:emf_cadet
 		save_persistent_event_target = {
-			name = emf_dynasty_founder
+			name = emf_parent_dyn
+			scope = event_target:emf_immortal
+		}
+		save_persistent_event_target = {
+			name = emf_cadet_dyn_founder
 			scope = event_target:emf_cadet
 		}
 		if = {
