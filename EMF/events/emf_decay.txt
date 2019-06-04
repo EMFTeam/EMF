@@ -1,22 +1,14 @@
 # -*- ck2.events -*-
 
-namespace = emf_imperial
 
-# file range: emf_imperial.1850-1899
+namespace = emf_decay
 
-#######################################
-# IMPERIAL DECAY EVENTS
-# Written by Rylock
-#######################################
-
-### MAINTENANCE EVENTS
-
-# Main decay event upon an imperial title being inherited/usurped
+# emf_decay.0 -- decay event upon imperial title being usurped
 character_event = {
-	id = emf_imperial.1850
+	id = emf_decay.0
 
-	hide_window = yes
 	is_triggered_only = yes
+	hide_window = yes
 
 	trigger = {
 		emf_uses_imperial_decay = yes
@@ -32,10 +24,11 @@ character_event = {
 	}
 
 	immediate = {
-		FROMFROM = { save_event_target_as = former_owner }
-		character_event = { id = emf_imperial.1851 days = 1 }
-
-		# Remove the decay modifier from the former owner, if alive
+		log = "INFO: emf_decay.0: imperial title gained: [From.GetID] -- [From.GetFullName]"
+		log = " ---> new holder:    [Root.EMF_GetDebugName]"
+		log = " ---> former holder: [FromFrom.EMF_GetDebugName]"
+		log = " ---> title decay:   [From.imperial_decay.GetValue]"
+		# Remove the decay modifier from the former owner
 		FROMFROM = {
 			if = {
 				limit = {
@@ -45,14 +38,89 @@ character_event = {
 				emf_remove_decay_modifier = yes
 			}
 		}
-
-		log = "INFO: DECAY: emf_imperial.1850: [Root.GetBestName] inherits/usurps title [From.GetID] (decay: [From.imperial_decay.GetValue]) from [FromFrom.GetBestName]"
+		character_event = { id = emf_decay.5 days = 1 }
 	}
 }
 
-# emf_imperial.1851 -- deferred calculation of decay rating change due to primary imperial title transfer
+# emf_decay.1 -- decay event upon imperial title being inherited
 character_event = {
-	id = emf_imperial.1851
+	id = emf_decay.1
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		emf_uses_imperial_decay = yes
+		FROM = {
+			tier = EMPEROR
+			is_primary_holder_title = yes
+			is_tribal_type_title = no
+			temporary = no
+			rebel = no
+		}
+		FROMFROM = { always = yes }
+		had_global_flag = { flag = EMF days = 1 }
+	}
+
+	immediate = {
+		log = "INFO: emf_decay.1: imperial title inherited: [From.GetID] -- [From.GetFullName]"
+		log = " ---> new holder:    [Root.EMF_GetDebugName]"
+		log = " ---> former holder: [FromFrom.EMF_GetDebugName]"
+		log = " ---> title decay:   [From.imperial_decay.GetValue]"
+		# Remove the decay modifier from the former owner
+		FROMFROM = {
+			if = {
+				limit = {
+					is_alive = yes
+					lower_real_tier_than = EMPEROR
+				}
+				emf_remove_decay_modifier = yes
+			}
+		}
+		character_event = { id = emf_decay.6 days = 1 }
+	}
+}
+
+# emf_decay.2 -- decay event upon imperial title being usurped
+character_event = {
+	id = emf_decay.2
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		emf_uses_imperial_decay = yes
+		FROM = {
+			tier = EMPEROR
+			is_primary_holder_title = yes
+			is_tribal_type_title = no
+			temporary = no
+			rebel = no
+		}
+		FROMFROM = { is_alive = yes }
+		had_global_flag = { flag = EMF days = 1 }
+	}
+
+	immediate = {
+		log = "INFO: emf_decay.2: imperial title usurped: [From.GetID] -- [From.GetFullName]"
+		log = " ---> new holder:    [Root.EMF_GetDebugName]"
+		log = " ---> former holder: [FromFrom.EMF_GetDebugName]"
+		log = " ---> title decay:   [From.imperial_decay.GetValue]"
+		# Remove the decay modifier from the former owner
+		FROMFROM = {
+			if = {
+				limit = { lower_real_tier_than = EMPEROR }
+				emf_remove_decay_modifier = yes
+			}
+		}
+		character_event = { id = emf_decay.7 days = 1 }
+	}
+}
+
+# emf_decay.5 -- handle decay modifiers for a title gain/grant (no change in actual decay rating), continued from
+# emf_decay.0 after a day
+character_event = {
+	id = emf_decay.5
 
 	is_triggered_only = yes
 	hide_window = yes
@@ -63,8 +131,26 @@ character_event = {
 	}
 
 	immediate = {
-		log = "INFO: DECAY: emf_imperial.1851: deferred processing of: [Root.GetBestName] inherits/usurps title [Root.PrimaryTitle.GetID] (decay: [Root.PrimaryTitle.imperial_decay.GetValue]) from [FromFromFrom.GetBestName]"
+		emf_remove_decay_modifier = yes
+		emf_add_decay_modifier = yes
+	}
+}
 
+# emf_decay.6 -- handle decay change for imperial title inheritance, continued from emf_decay.1 after a day
+character_event = {
+	id = emf_decay.6
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		primary_title = { title = FROMFROM }
+		emf_uses_imperial_decay = yes
+	}
+
+	immediate = {
+		FROMFROMFROM = { save_event_target_as = emf_former_owner }
+		log = "INFO: emf_decay.6: deferred processing of imperial title inheritance: [FromFrom.GetID] -- [FromFrom.GetFullName]"
 		primary_title = {
 			# Skip the increase if title was overthrown
 			if = {
@@ -80,77 +166,112 @@ character_event = {
 			log = "--> title not overthrown, so decay change is now [This.imperial_decay_change.GetValue]"
 			# Reset dynasty count if this is a new dynasty
 			if = {
-				limit = { NOT = { ROOT = { dynasty = event_target:former_owner } } }
+				limit = { NOT = { ROOT = { dynasty = event_target:emf_former_owner } } }
 				set_variable = { which = "imperial_dynasty_count" value = 0 }
 				log = "--> ruling dynasty changed"
 			}
 			# Increase dynasty count if this is an ongoing dynasty
 			if = {
-				limit = { ROOT = { dynasty = event_target:former_owner } }
+				limit = { ROOT = { dynasty = event_target:emf_former_owner } }
 				change_variable = { which = "imperial_dynasty_count" value = 1 }
 				log = "--> ruling dynasty stayed the same"
 			}
-			# Decay value goes higher for long-running dynasties, curve is pseudo-logarithmic
+			# Decay value goes higher for long-running dynasties, esp. player dynasties past the first 2 generations of
+			# rule
 			if = {
 				limit = { check_variable = { which = "imperial_dynasty_count" value = 1 } }
 				change_variable = { which = "imperial_decay_change" value = 1 }
 			}
 			if = {
 				limit = { check_variable = { which = "imperial_dynasty_count" value = 2 } }
-				change_variable = { which = "imperial_decay_change" value = 0.5 }
+				change_variable = { which = "imperial_decay_change" value = 1 }
 			}
 			if = {
-				limit = { check_variable = { which = "imperial_dynasty_count" value = 3 } }
-				change_variable = { which = "imperial_decay_change" value = 0.5 }
+				limit = { ROOT = { ai = yes } }
+				if = {
+					limit = { check_variable = { which = "imperial_dynasty_count" value = 3 } }
+					change_variable = { which = "imperial_decay_change" value = 0.6 }
+				}
+				if = {
+					limit = { check_variable = { which = "imperial_dynasty_count" value = 4 } }
+					change_variable = { which = "imperial_decay_change" value = 0.5 }
+				}
+				if = {
+					limit = { check_variable = { which = "imperial_dynasty_count" value = 5 } }
+					change_variable = { which = "imperial_decay_change" value = 0.4 }
+				}
+				if = {
+					limit = { check_variable = { which = "imperial_dynasty_count" value = 6 } }
+					change_variable = { which = "imperial_decay_change" value = 0.35 }
+				}
+				if = {
+					limit = { check_variable = { which = "imperial_dynasty_count" value = 7 } }
+					change_variable = { which = "imperial_decay_change" value = 0.3 }
+				}
+				if = {
+					limit = { check_variable = { which = "imperial_dynasty_count" value = 8 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { check_variable = { which = "imperial_dynasty_count" value = 9 } }
+					change_variable = { which = "imperial_decay_change" value = 0.25 }
+				}
+				if = {
+					limit = { check_variable = { which = "imperial_dynasty_count" value = 10 } }
+					change_variable = { which = "imperial_decay_change" value = 0.2 }
+				}
+				if = {
+					limit = { check_variable = { which = "imperial_dynasty_count" value = 11 } }
+					change_variable = { which = "imperial_decay_change" value = 0.2 }
+				}
+				if = {
+					limit = { check_variable = { which = "imperial_dynasty_count" value = 12 } }
+					change_variable = { which = "imperial_decay_change" value = 0.2 }
+				}
 			}
-			if = {
-				limit = { check_variable = { which = "imperial_dynasty_count" value = 4 } }
-				change_variable = { which = "imperial_decay_change" value = 0.25 }
-			}
-			if = {
-				limit = { check_variable = { which = "imperial_dynasty_count" value = 5 } }
-				change_variable = { which = "imperial_decay_change" value = 0.25 }
-			}
-			if = {
-				limit = { check_variable = { which = "imperial_dynasty_count" value = 6 } }
-				change_variable = { which = "imperial_decay_change" value = 0.25 }
-			}
-			if = {
-				limit = { check_variable = { which = "imperial_dynasty_count" value = 7 } }
-				change_variable = { which = "imperial_decay_change" value = 0.25 }
-			}
-			if = {
-				limit = { check_variable = { which = "imperial_dynasty_count" value = 8 } }
-				change_variable = { which = "imperial_decay_change" value = 0.2 }
-			}
-			if = {
-				limit = { check_variable = { which = "imperial_dynasty_count" value = 9 } }
-				change_variable = { which = "imperial_decay_change" value = 0.2 }
-			}
-			if = {
-				limit = { check_variable = { which = "imperial_dynasty_count" value = 10 } }
-				change_variable = { which = "imperial_decay_change" value = 0.2 }
-			}
-			if = {
-				limit = { check_variable = { which = "imperial_dynasty_count" value = 11 } }
-				change_variable = { which = "imperial_decay_change" value = 0.2 }
-			}
-			if = {
-				limit = { check_variable = { which = "imperial_dynasty_count" value = 12 } }
-				change_variable = { which = "imperial_decay_change" value = 0.2 }
+			else = {
+				if = {
+					limit = { check_variable = { which = "imperial_dynasty_count" value = 3 } }
+					change_variable = { which = "imperial_decay_change" value = 1 }
+				}
+				if = {
+					limit = { check_variable = { which = "imperial_dynasty_count" value = 4 } }
+					change_variable = { which = "imperial_decay_change" value = 1 }
+				}
+				if = {
+					limit = { check_variable = { which = "imperial_dynasty_count" value = 5 } }
+					change_variable = { which = "imperial_decay_change" value = 0.9 }
+				}
+				if = {
+					limit = { check_variable = { which = "imperial_dynasty_count" value = 6 } }
+					change_variable = { which = "imperial_decay_change" value = 0.9 }
+				}
+				if = {
+					limit = { check_variable = { which = "imperial_dynasty_count" value = 7 } }
+					change_variable = { which = "imperial_decay_change" value = 0.9 }
+				}
+				if = {
+					limit = { check_variable = { which = "imperial_dynasty_count" value = 8 } }
+					change_variable = { which = "imperial_decay_change" value = 0.8 }
+				}
+				if = {
+					limit = { check_variable = { which = "imperial_dynasty_count" value = 9 } }
+					change_variable = { which = "imperial_decay_change" value = 0.8 }
+				}
+				if = {
+					limit = { check_variable = { which = "imperial_dynasty_count" value = 10 } }
+					change_variable = { which = "imperial_decay_change" value = 0.7 }
+				}
+				if = {
+					limit = { check_variable = { which = "imperial_dynasty_count" value = 11 } }
+					change_variable = { which = "imperial_decay_change" value = 0.6 }
+				}
+				if = {
+					limit = { check_variable = { which = "imperial_dynasty_count" value = 12 } }
+					change_variable = { which = "imperial_decay_change" value = 0.4 }
+				}
 			}
 			log = "--> imperial dynasty count for title is now [This.imperial_dynasty_count.GetValue], so decay change is now [This.imperial_decay_change.GetValue]"
-			# Increase more if this is an usurpation
-			if = {
-				limit = {
-					event_target:former_owner = {
-						is_alive = yes
-						has_claim = FROMFROM
-					}
-				}
-				change_variable = { which = "imperial_decay_change" value = 2 }
-				log = "--> title was usurped, so decay change is now [This.imperial_decay_change.GetValue]"
-			}
 			# Imperial Administration gets an additional +1
 			if = {
 				limit = { has_law = administration_2 }
@@ -419,23 +540,52 @@ character_event = {
 			# Round imperial_decay_change to nearest integer
 			# Since we have a limited range of possible change that could've been induced in this event,
 			# this is actually tractable, though still very annoying, in CK2script (oh my!).
-			# Range from dynastic continuity: [0,4]
-			# Range from usurpation [0,2]
+			# Range from dynastic continuity: [0,10]
 			# Range from imperial admin [0,1]
 			# Range from crown authority [0,3]
 			# Range from horde culture [-2,0]
 			# Range from realm size [-2,7]
-			# Max. range: [-4,17] --> [1,17] after enforcing minimum gain rule
-
+			# Max. range: [-4,21] --> [1,21] after enforcing minimum gain rule
 			log = "--> before normalization, decay change is [This.imperial_decay_change.GetValue]"
 			emf_normalize_decay_change_on_new_holder = yes
 			log = "--> after normalization, decay change is [This.imperial_decay_change.GetValue]"
 		}
-
 		# Commit the change
 		character_event = { id = emf_imperial.1852 }
 	}
 }
+
+# emf_decay.7 -- set decay change for a regular usurpation, continued from emf_decay.2 after a day
+character_event = {
+	id = emf_decay.7
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		primary_title = { title = FROMFROM }
+		emf_uses_imperial_decay = yes
+	}
+
+	immediate = {
+		primary_title = {
+			if = {
+				limit = { ROOT = { ai = yes } }
+				set_variable = { which = imperial_decay_change value = 1 }
+			}
+			else = {
+				set_variable = { which = imperial_decay_change value = 4 }
+			}
+		}
+		character_event = { id = emf_imperial.1852 } # Commit the change
+	}
+}
+
+namespace = emf_imperial
+
+# file range: emf_imperial.1850-1899
+
+### MAINTENANCE EVENTS
 
 # emf_imperial.1852 -- Event for actually changing imperial decay rating by title variable `imperial_decay_change`
 # All dynamic (i.e., everything but history effects) changes to imperial decay should use this event -- do not bypass it
@@ -533,6 +683,11 @@ character_event = {
 		}
 	}
 }
+
+#######################################
+# IMPERIAL DECAY EVENTS
+# Written by Rylock
+#######################################
 
 ### RANDOM EVENTS
 
