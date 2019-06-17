@@ -7797,15 +7797,32 @@ cb_faction_independence = {
 		log = "CB(cb_faction_independence): VICTORY: [Root.EMF_GetDebugName] vs. [From.EMF_GetDebugName]"
 		emf_cb_victory = yes
 		emf_imperial_decay_victory = yes
-		FROM = { pf_prosperity_minus2_effect = yes }
+		FROM = {
+			show_scope_change = no
+			pf_prosperity_minus2_effect = yes
+			hidden_tooltip = { disband_event_forces = faction_loyalists }
+			pf_lower_CA_effect = yes
+			pf_lower_TO_effect = yes
+		}
 		any_attacker = {
+			show_scope_change = no
 			limit = {
 				OR = {
 					vassal_of = FROM
 					liege_before_war = { character = FROM }
 				}
 			}
-			set_defacto_liege = THIS
+			if = {
+				limit = { FROM = { liege = { character = PREV } } }
+				set_defacto_liege = THIS
+			}
+			else = {
+				FROM = {
+					liege = {
+						set_defacto_vassal = PREVPREV # any_attacker
+					}
+				}
+			}
 			emf_liege_change = yes
 			hidden_tooltip = {
 				prestige = 100
@@ -7814,6 +7831,7 @@ cb_faction_independence = {
 			}
 		}
 		ROOT = {
+			show_scope_change = no
 			participation_scaled_prestige = 100
 			hidden_tooltip = { disband_event_forces = faction_revolters }
 		}
@@ -7824,11 +7842,6 @@ cb_faction_independence = {
 				disband_event_forces = faction_revolters
 			}
 		}
-		FROM = {
-			hidden_tooltip = { disband_event_forces = faction_loyalists }
-			pf_lower_CA_effect = yes
-			pf_lower_TO_effect = yes
-		}
 		emf_cb_dynlevy_end = yes
 	}
 
@@ -7837,6 +7850,7 @@ cb_faction_independence = {
 	on_fail = {
 		log = "CB(cb_faction_independence): WHITEPEACE: [Root.EMF_GetDebugName] vs. [From.EMF_GetDebugName]"
 		ROOT = {
+			show_scope_change = no
 			prestige = -50
 			add_character_modifier = {
 				name = faction_independence_ultimatum_timer
@@ -7867,6 +7881,7 @@ cb_faction_independence = {
 		emf_cb_defeat = yes
 		emf_imperial_decay_loss = yes
 		ROOT = {
+			show_scope_change = no
 			prestige = -100
 			prisoner = FROM
 			add_character_modifier = {
@@ -7894,15 +7909,13 @@ cb_faction_independence = {
 			}
 		}
 		FROM = {
+			show_scope_change = no
 			prestige = 50
 			hidden_tooltip = { disband_event_forces = faction_loyalists }
-			hidden_tooltip = { 
+			hidden_tooltip = {
 				if = { 
-					limit = { NOT = { has_opinion_modifier = { modifier = opinion_traitor who = ROOT } } } #Allow free revocation of a title.
-					opinion = {
-						who = ROOT
-						modifier = opinion_traitor
-					}
+					limit = { NOT = { has_opinion_modifier = { who = ROOT modifier = opinion_traitor } } } #Allow free revocation of a title.
+					opinion = { who = ROOT modifier = opinion_traitor }
 				}
 			}
 		}
@@ -18609,6 +18622,48 @@ ducal_county_conquest = { # New4
 		}
 	}
 	
+	can_use = {
+		emf_cb_can_use = yes
+		has_dlc = "Jade Dragon"
+		ROOT = {
+			NOT = {
+				has_game_rule = {
+					name = jade_dragon_cbs
+					value = off
+				}
+			}
+			NOR = { # These all have other ways to expand in the early game
+				religion_group = muslim
+				religion_group = pagan_group
+				is_nomadic = yes
+			}
+			OR = {
+				tier = COUNT
+				tier = DUKE
+			}
+			NOR = {
+				is_liege_or_above = FROM
+				is_vassal_or_below = FROM
+			}
+		}
+	}
+	
+	can_use_title = {
+		emf_cb_county_conquest_basic_can_use_title = yes
+		location = { any_neighbor_province = { owner_under_ROOT = yes } }
+		dejure_liege_title = {
+			has_holder = no
+			any_direct_de_jure_vassal_title = {
+				holder = ROOT
+			}
+		}
+		emf_cb_can_use_title = yes
+	}
+
+	is_valid_title = {
+		owner_under_FROM = yes
+	}
+	
 	on_add = {
 		log = "CB(ducal_county_conquest): START: title=[FromFrom.GetID]: [Root.EMF_GetDebugName] vs. [From.EMF_GetDebugName]"
 		ROOT = {
@@ -18628,46 +18683,6 @@ ducal_county_conquest = { # New4
 			}
 		}
 		emf_cb_on_add = yes
-	}
-	
-	can_use = {
-		emf_cb_can_use = yes
-		has_dlc = "Jade Dragon"
-		ROOT = {
-			NOT = {
-				has_game_rule = {
-					name = jade_dragon_cbs
-					value = off
-				}
-			}
-		}
-	}
-	
-	can_use_title = {
-		emf_cb_county_conquest_basic_can_use_title = yes
-		ROOT = {
-			NOR = { # These all have other ways to expand in the early game
-				religion_group = muslim
-				religion_group = pagan_group
-				is_nomadic = yes
-			}
-			OR = { # Only Counts and Dukes can use this
-				tier = COUNT
-				tier = DUKE
-			}
-		}
-		location = { any_neighbor_province = { owner_under_ROOT = yes } }
-		dejure_liege_title = {
-			has_holder = no
-			any_direct_de_jure_vassal_title = {
-				holder = ROOT
-			}
-		}
-		emf_cb_can_use_title = yes
-	}
-
-	is_valid_title = {
-		owner_under_FROM = yes
 	}
 
 	on_success = {
