@@ -115,6 +115,8 @@ NDefines.NEconomy.PATRICIAN_CITY_TAX_MULT = 0.5                   -- prior to EM
 NDefines.NEconomy.OVER_MAX_DEMESNE_TAX_PENALTY = 0.1              -- doubled tax penalty per holding over demesne limit (still quite flexible, however) from v8.06
 NDefines.NEconomy.TRADE_ROUTE_SIEGE_MULTIPLIER = 0.75			  -- prior to EMF v9.06: 0.8; vanilla: 0.9 [also from v8.06]
 NDefines.NEconomy.TRADE_ROUTE_OCCUPATION_MULTIPLIER = 0.5         -- prior to EMF v9.06: 0.6; vanilla: 0.75 [also from v8.06]
+NDefines.NEconomy.PATRICIAN_INHERITANCE_FROM_RELATIVE_MULT = 1
+NDefines.NEconomy.PATRICIAN_GOLD_TO_MONTHLY_PRESTIGE = 0
 
 -- Nomad
 NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 1250
