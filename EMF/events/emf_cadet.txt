@@ -215,17 +215,15 @@ character_event = {
 	hide_window = yes
 
 	trigger = {
-		persistent_event_target:pet_parent_dyn_of_unborn = { always = yes }
-		# Don't clear the PETs if the woman is again somehow already pregnant and the father has yet again died
-		# prematurely:
 		OR = {
-			is_pregnant = no
-			father_of_unborn = { is_alive = yes }
+			persistent_event_target:pet_parent_dyn_of_unborn = { always = yes }
+			persistent_event_target:pet_father_of_unborn = { always = yes }
 		}
 	}
 
 	immediate = {
 		clear_persistent_event_target = pet_parent_dyn_of_unborn
+		clear_persistent_event_target = pet_father_of_unborn
 	}
 }
 
@@ -267,6 +265,10 @@ character_event = {
 				name = pet_parent_dyn_of_unborn
 				scope = event_target:emf_parent_dynasty
 			}
+			save_persistent_event_target = {
+				name = pet_father_of_unborn
+				scope = ROOT
+			}
 		}
 		any_consort = {
 			limit = {
@@ -276,6 +278,10 @@ character_event = {
 			save_persistent_event_target = {
 				name = pet_parent_dyn_of_unborn
 				scope = event_target:emf_parent_dynasty
+			}
+			save_persistent_event_target = {
+				name = pet_father_of_unborn
+				scope = ROOT
 			}
 		}
 	}
@@ -1120,18 +1126,6 @@ character_event = {
 		}
 		# NOTE: emf_cadet.202 -- for members of the new dynasty -- is sent in emf_cadet.101
 		character_event = { id = emf_cadet.203 }
-		# Debug notifications, send all of them to the player character(s):
-		if = {
-			limit = { has_global_flag = emf_debug }
-			any_player = {
-				# By giving it an extra delay, hopefully it will be easy to understand what's going on if the
-				# player was actually already notified in one of the above (or below, in emf_cadet.101) cases.
-				character_event = { id = emf_cadet.200 days = 11 }
-				character_event = { id = emf_cadet.201 days = 12 }
-				character_event = { id = emf_cadet.202 days = 13 }
-				character_event = { id = emf_cadet.203 days = 14 }
-			}
-		}
 	}
 }
 
@@ -1156,11 +1150,32 @@ character_event = {
 			character_event = { id = emf_cadet.101 } # Recurse
 		}
 		remove_trait = emf_temporary
-		log = " ----> switching to cadet dynasty: [This.EMF_GetDebugName]"
+		log = " ----> switching to new cadet dynasty: [This.EMF_GetDebugName]"
 		dynasty = event_target:emf_cadet
 		save_persistent_event_target = {
 			name = pet_parent_dyn
 			scope = event_target:emf_immortal
+		}
+		# In case we are a cadet dynasty splitting from another cadet dynasty and ROOT is a dead father to an unborn
+		# child, switch the mother's pet_parent_dyn_of_unborn PET to now point at the newly-forming grandcadet dynasty.
+		if = {
+			limit = {
+				is_alive = no
+				is_female = no
+				is_marriage_adult = yes
+			}
+			any_character = {
+				limit = {
+					is_female = yes
+					is_pregnant = yes
+					persistent_event_target:pet_father_of_unborn = { character = ROOT }
+				}
+				log = " ------> setting pet_parent_dyn_of_unborn for: [This.EMF_GetDebugName]"
+				save_persistent_event_target = {
+					name = pet_parent_dyn_of_unborn
+					scope = event_target:emf_immortal
+				}
+			}
 		}
 		if = {
 			limit = {
