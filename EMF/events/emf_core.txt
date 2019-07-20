@@ -696,7 +696,7 @@ character_event = {
 			limit = { is_lowborn = yes }
 			dynasty = father_bastard
 		}
-		log = "INFO: emf_core.20: [Root.GetTitledName] (#[Root.GetID]), a Peasant Leader, has gained the [From.GetFullBaseName] ([From.GetID]) and become a Peasant Ruler!"
+		log = "INFO: emf_core.20: [Root.EMF_GetDebugName], a Peasant Leader, has become a Peasant Ruler! gained title: [From.EMF_GetDebugTitleNameWithDeJureLieges]"
 	}
 }
 
@@ -832,6 +832,13 @@ character_event = {
 			# Must also remove negative traits subject to Mendelian inheritance, or else their presence will override their
 			# gene flags during genetic inheritance (not an issue with traits subject to Polygenic inheritance):
 			emf_dna_remove_negative_mendelian_traits = yes
+			if = {
+				limit = {
+					is_ruler = no
+					NOT = { religion = FROM }
+				}
+				religion = FROM
+			}
 		}
 	}
 }
@@ -845,28 +852,91 @@ character_event = {
 	hide_window = yes
 
 	trigger = {
-		OR = {
-			trait = monk
-			trait = nun
-			trait = desert_father
-			trait = desert_mother
-		}
+		is_ascetic_trigger = yes
 	}
 
 	immediate = {
+		log = "INFO: emf_core.27: ascetic gained a title: [This.EMF_GetDebugName]"
+		log = " ---> title: [From.EMF_GetDebugTitleNameWithDeJureLieges]"
 		remove_trait = monk
 		remove_trait = nun
 		remove_trait = desert_father
 		remove_trait = desert_mother
+		remove_trait = muni
+		remove_trait = aryika
+		remove_trait = bhikkhu
+		remove_trait = bhikkhuni
+		remove_trait = sanyasi
+		remove_trait = sanyasini
 		clr_flag = title_monk
 		clr_flag = title_nun
+		clr_flag = title_desert_father
+		clr_flag = title_desert_mother
+		clr_flag = is_desert_mother_father
 		remove_special_character_title = MONK_BROTHER
 		remove_special_character_title = NUN_SISTER
+		remove_special_character_title = DESERT_FATHER_TITLE
+		remove_special_character_title = DESERT_MOTHER_TITLE
 	}
 }
 
-# For emf_core.30-emf_core.31, see emf_hre_map.txt
+# emf_core.28 -- Upon the death of a feudal, tribal, or nomadic ruler, if their heir is a ruler and none of those 3
+# groups of government types AND is lower tier than the title they'd be assuming, then force them to abdicate and
+# adopt the correct government type.
+character_event = {
+	id = emf_core.28
 
+	is_triggered_only = yes # on_death
+	hide_window = yes
+
+	only_playable = yes
+
+	trigger = {
+		OR = {
+			is_feudal = yes
+			is_tribal = yes
+			is_nomadic = yes
+		}
+		current_heir = {
+			is_ruler = yes
+			lower_tier_than = ROOT
+			OR = {
+				is_theocracy = yes
+				is_republic = yes
+			}
+			is_patrician = no
+		}
+	}
+
+	immediate = {
+		current_heir = {
+			emf_willfully_abdicate = yes
+			if = {
+				limit = { NOT = { liege = { character = ROOT } } }
+				move_character = ROOT
+			}
+			if = {
+				limit = { ROOT = { emf_imperial_government = yes } }
+				emf_switch_to_imperial = yes
+			}
+			else_if = {
+				limit = { ROOT = { government = order_government } }
+				set_government_type = order_government
+			}
+			else_if = {
+				limit = { ROOT = { government = tribal_government } }
+				set_government_type = tribal_government
+			}
+			else_if = {
+				limit = { ROOT = { government = nomadic_government } }
+				set_government_type = nomadic_government
+			}
+			else = {
+				emf_switch_to_feudal_gov = yes
+			}
+		}
+	}
+}
 
 # emf_core.40 [Ruler]
 #

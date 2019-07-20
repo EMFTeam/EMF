@@ -289,14 +289,14 @@ character_event = {
 	is_triggered_only = yes
 
 	only_playable = yes
+	ai = no
 
 	trigger = {
 		FROM = { higher_tier_than = DUKE }
 	}
 
 	immediate = {
-		# NOTE: Don't technically need emf_no_law_penalties because we're lowering CA. One SHOULD generally make no
-		# assumptions about whether an `add_law` will incur penalties as if the player had passed it himself, though.
+		set_flag = emf_no_law_penalties
 		FROM = {
 			if = {
 				limit = { has_law = crown_authority_1 }
@@ -315,6 +315,7 @@ character_event = {
 				add_law = crown_authority_3
 			}
 		}
+		clr_flag = emf_no_law_penalties
 	}
 }
 
@@ -354,6 +355,222 @@ character_event = {
 	}
 }
 
+# emf_laws.6 -- when a de jure vassal king (i.e., their kingdom's crown laws are dictated by their liege's imperial
+# title) creates another kingdom that isn't subject to their empire's crown laws (i.e., it can have its own crown
+# laws), copy their empire's [relevant] crown laws to the newly-created kingdom. otherwise, even if the vassal
+# king's primary de jure kingdom effectively had, say, High Crown Authority due to being locked to the imperial
+# crown laws, no crown laws will be copied to the new kingdom at all, and it'll have Autonomous Vassals (Min CA).
+character_event = {
+	id = emf_laws.6
+
+	is_triggered_only = yes # on_new_holder
+	hide_window = yes
+
+	trigger = {
+		NOT = { FROMFROM = { always = yes } } # Title creation only
+		primary_title = {
+			tier = KING
+			temporary = no
+			crownlaw_title = {
+				tier = EMPEROR
+				owner = {
+					is_liege_of = ROOT
+					NOT = { character = ROOT }
+				}
+			}
+		}
+		FROM = {
+			tier = KING
+			temporary = no
+			is_primary_holder_title = no # Is not the first kingdom held
+			crownlaw_title = { title = PREV } # Is its own crown law title
+			NOR = { # Not if for some reason non-default crown laws are already on the title (:shrug:)
+				emf_laws_has_limited_ca_plus = yes
+				has_law = revokation_1
+				has_law = revokation_2
+				has_law = king_peace_1
+				has_law = king_peace_2
+				has_law = inheritance_1
+				# Note that Investiture doesn't actually have a single default
+			}
+			is_de_jure_title = yes
+		}
+	}
+
+	immediate = {
+		primary_title = { crownlaw_title = { save_event_target_as = emf_empire } }
+		set_flag = emf_no_law_penalties
+		event_target:emf_empire = {
+			# Crown Authority
+			if = {
+				limit = {
+					has_law = crown_authority_0
+					FROM = { is_law_potential = crown_authority_0 }
+				}
+				FROM = { add_law = crown_authority_0 }
+			}
+			else_if = {
+				limit = { has_law = crown_authority_1 }
+				if = {
+					limit = { FROM = { is_law_potential = crown_authority_1 } }
+					FROM = { add_law = crown_authority_1 }
+				}
+				else_if = {
+					limit = { FROM = { is_law_potential = crown_authority_0 } }
+					FROM = { add_law = crown_authority_0 }
+				}
+			}
+			else_if = {
+				limit = { has_law = crown_authority_2 }
+				if = {
+					limit = { FROM = { is_law_potential = crown_authority_2 } }
+					FROM = { add_law = crown_authority_2 }
+				}
+				else_if = {
+					limit = { FROM = { is_law_potential = crown_authority_1 } }
+					FROM = { add_law = crown_authority_1 }
+				}
+				else_if = {
+					limit = { FROM = { is_law_potential = crown_authority_0 } }
+					FROM = { add_law = crown_authority_0 }
+				}
+			}
+			else_if = {
+				limit = { has_law = crown_authority_3 }
+				if = {
+					limit = { FROM = { is_law_potential = crown_authority_3 } }
+					FROM = { add_law = crown_authority_3 }
+				}
+				else_if = {
+					limit = { FROM = { is_law_potential = crown_authority_2 } }
+					FROM = { add_law = crown_authority_2 }
+				}
+				else_if = {
+					limit = { FROM = { is_law_potential = crown_authority_1 } }
+					FROM = { add_law = crown_authority_1 }
+				}
+				else_if = {
+					limit = { FROM = { is_law_potential = crown_authority_0 } }
+					FROM = { add_law = crown_authority_0 }
+				}
+			}
+			else_if = {
+				limit = { has_law = crown_authority_4 }
+				if = {
+					limit = { FROM = { is_law_potential = crown_authority_4 } }
+					FROM = { add_law = crown_authority_4 }
+				}
+				else_if = {
+					limit = { FROM = { is_law_potential = crown_authority_3 } }
+					FROM = { add_law = crown_authority_3 }
+				}
+				else_if = {
+					limit = { FROM = { is_law_potential = crown_authority_2 } }
+					FROM = { add_law = crown_authority_2 }
+				}
+				else_if = {
+					limit = { FROM = { is_law_potential = crown_authority_1 } }
+					FROM = { add_law = crown_authority_1 }
+				}
+				else_if = {
+					limit = { FROM = { is_law_potential = crown_authority_0 } }
+					FROM = { add_law = crown_authority_0 }
+				}
+			}
+			# CA sub-laws, in case ROOT isn't AI (AIs always have their sub-laws auto-set by CA) -- or if the emperor isn't
+			# AI and has non-default sublaws for his level of CA
+			#
+			# Non-Zeus title revocation:
+			if = {
+				limit = {
+					has_law = revokation_0
+					FROM = { is_law_potential = revokation_0 }
+				}
+				FROM = { add_law = revokation_0 }
+			}
+			else_if = {
+				limit = { has_law = revokation_1 }
+				if = {
+					limit = { FROM = { is_law_potential = revokation_1 } }
+					FROM = { add_law = revokation_1 }
+				}
+				else_if = {
+					limit = { FROM = { is_law_potential = revokation_0 } }
+					FROM = { add_law = revokation_0 }
+				}
+			}
+			else_if = {
+				limit = { has_law = revokation_2 }
+				if = {
+					limit = { FROM = { is_law_potential = revokation_2 } }
+					FROM = { add_law = revokation_2 }
+				}
+				else_if = {
+					limit = { FROM = { is_law_potential = revokation_1 } }
+					FROM = { add_law = revokation_1 }
+				}
+				else_if = {
+					limit = { FROM = { is_law_potential = revokation_0 } }
+					FROM = { add_law = revokation_0 }
+				}
+			}
+			# King's peace:
+			if = {
+				limit = {
+					has_law = king_peace_0
+					FROM = { is_law_potential = king_peace_0 }
+				}
+				FROM = { add_law = king_peace_0 }
+			}
+			else_if = {
+				limit = { has_law = king_peace_1 }
+				if = {
+					limit = { FROM = { is_law_potential = king_peace_1 } }
+					FROM = { add_law = king_peace_1 }
+				}
+				else_if = {
+					limit = { FROM = { is_law_potential = king_peace_0 } }
+					FROM = { add_law = king_peace_0 }
+				}
+			}
+			else_if = {
+				limit = { has_law = king_peace_2 }
+				if = {
+					limit = { FROM = { is_law_potential = king_peace_2 } }
+					FROM = { add_law = king_peace_2 }
+				}
+				else_if = {
+					limit = { FROM = { is_law_potential = king_peace_1 } }
+					FROM = { add_law = king_peace_1 }
+				}
+				else_if = {
+					limit = { FROM = { is_law_potential = king_peace_0 } }
+					FROM = { add_law = king_peace_0 }
+				}
+			}
+			# External inheritance:
+			if = {
+				limit = {
+					has_law = inheritance_0
+					FROM = { is_law_potential = inheritance_0 }
+				}
+				FROM = { add_law = inheritance_0 }
+			}
+			else_if = {
+				limit = { has_law = inheritance_1 }
+				if = {
+					limit = { FROM = { is_law_potential = inheritance_1 } }
+					FROM = { add_law = inheritance_1 }
+				}
+				else_if = {
+					limit = { FROM = { is_law_potential = inheritance_0 } }
+					FROM = { add_law = inheritance_0 }
+				}
+			}
+		}
+		clr_flag = emf_no_law_penalties
+	}
+}
 
 #######################################
 # REACTIONS TO SUCCESSION LAW CHANGES
@@ -1210,6 +1427,11 @@ character_event = {
 				is_law_potential = crown_authority_1
 			}
 			add_law = crown_authority_1 # CA system will handle downgrading any CA sub-laws as appropriate
+			# Manually add CA change cooldown:
+			ROOT = {
+				clr_flag = emf_ca_cooldown_@PREV
+				set_flag = emf_ca_cooldown_@PREV
+			}
 		}
 		any_demesne_title = {
 			limit = {
@@ -1219,6 +1441,11 @@ character_event = {
 				is_law_potential = crown_authority_0
 			}
 			add_law = crown_authority_0
+			# Manually add CA change cooldown:
+			ROOT = {
+				clr_flag = emf_ca_cooldown_@PREV
+				set_flag = emf_ca_cooldown_@PREV
+			}
 		}
 		any_demesne_title = {
 			limit = {
@@ -1243,6 +1470,9 @@ character_event = {
 			revoke_law = inheritance_0
 			revoke_law = inheritance_1
 			ROOT = {
+				# Manually add CA change cooldown:
+				clr_flag = emf_ca_cooldown_@PREV
+				set_flag = emf_ca_cooldown_@PREV
 				primary_title = {
 					if = {
 						limit = { is_law_potential = ze_revokation_0 }

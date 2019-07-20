@@ -27,7 +27,7 @@ character_event = {
 			break = yes
 		}
 
-		set_global_flag = emf_game_start_v10_0_beta # FIXME / TODO: CHANGE UPON RELEASE
+		set_global_flag = emf_game_start_v10_1_beta # FIXME / TODO: CHANGE UPON RELEASE
 
 		# Global EMF config pre-startup settings (great for easy tweaking of EMF behavior in your submod):
 		character_event = { id = emf_config.0 }
@@ -870,10 +870,50 @@ character_event = {
 	trigger = {
 		FROM = { is_primary_holder_title = yes }
 		NOT = { had_global_flag = { flag = EMF days = 1 } } # ... but not before unpausing
+		# Ruler-designed characters can have no father nor mother nor multiple wives or any consorts (etc.):
+		NOR = {
+			father_even_if_dead = { always = yes }
+			mother_even_if_dead = { always = yes }
+			num_of_spouses > 1
+			num_of_consorts > 0
+			num_of_lovers > 0
+			num_of_friends > 0
+			num_of_rivals > 0
+			num_of_claims > 0
+			spouse = { father_even_if_dead = { always = yes } }
+			spouse = { mother_even_if_dead = { always = yes } }
+			spouse = { num_of_claims > 0 }
+		}
 	}
 
 	immediate = {
-		log = "DEBUG: emf_startup.20: day-1 primary-inheritance of [From.GetID] by [Root.EMF_GetDebugName] from [FromFrom.EMF_GetDebugName]"
+		log = "DEBUG: emf_startup.20: day-1 suspected Ruler Designer inheritance: [This.EMF_GetDebugName]"
+		log = " --> inherited title: [From.EMF_GetDebugTitleNameWithDeJureLieges]"
+		log = " --> previous holder: [FromFrom.EMF_GetDebugName]"
+
+		# Guard against this character receiving any random genetic traits -- they already picked them:
+		set_flag = emf_dna_check
+
+		# If there is a Ruler-designed wife, she cannot inherit traits from her nonexistent parents, but allow her to go
+		# through the standard birth chance (i.e., random genetic mutation) sequence:
+		spouse = {
+			character_event = { id = emf_dna.2000 }
+		}
+
+		# Allow any potential kids to possibly inherit traits from the ruler (barring that, let them also just go through
+		# the standard birth chances):
+		any_child = {
+			if = {
+				limit = {
+					father = { is_alive = yes }
+					mother = { is_alive = yes }
+				}
+				character_event = { id = emf_dna.1000 }
+			}
+			else = {
+				character_event = { id = emf_dna.2000 }
+			}
+		}
 
 		# Remove any temp. age customization traits from Ruler Designer
 		remove_trait = age_1
@@ -1255,6 +1295,13 @@ character_event = {
 						gender_equality_trigger = yes
 						has_religion_feature = religion_equal
 						has_religion_feature = religion_feature_bon
+						AND = {
+							OR = {
+								religion = bon
+								religion = bon_reformed
+							}
+							has_religion_features = no
+						}
 					}
 				}
 				create_character = {
@@ -1445,9 +1492,10 @@ character_event = {
 	}
 
 	immediate = {
+		clr_global_flag = emf_debug
 		if = {
-			limit = { NOT = { has_global_flag = emf_v10_0_beta } }
-			set_global_flag = emf_v10_0_beta # TODO / FIXME : CHANGE UPON RELEASE OR SAVE-COMPATIBILITY CHANGE
+			limit = { NOT = { has_global_flag = emf_v10_1_beta } }
+			set_global_flag = emf_v10_1_beta # TODO / FIXME : CHANGE UPON RELEASE OR SAVE-COMPATIBILITY CHANGE
 		}
 	}
 }

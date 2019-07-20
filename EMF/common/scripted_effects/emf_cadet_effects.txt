@@ -1,0 +1,481 @@
+# -*- ck2.scripted_effects -*-
+
+emf_select_cadet_dynasty_name = {
+	clear_event_target = emf_selected_title
+	set_flag = emf_cadet_tmp_dynasty_name_collision_check
+	emf_try_to_select_cadet_dynasty_name = yes
+	clr_flag = emf_cadet_tmp_dynasty_name_collision_check
+	if = {
+		limit = { NOT = { event_target:emf_selected_title = { always = yes } } }
+		log = " --> failed to select a dynasty name. retrying without dynasty name collision checking..."
+		emf_try_to_select_cadet_dynasty_name = yes
+		if = {
+			limit = { NOT = { event_target:emf_selected_title = { always = yes } } }
+			log = " --> ARGH! still failed to select a dynasty name! defaulting to the game-generated name..."
+		}
+	}
+	clear_flags_with_prefix = emf_cadet_tmp_name_schema
+}
+
+emf_try_to_select_cadet_dynasty_name = {
+	log = " --> searching for title name compatible with '[emf_dummy1.GetFirstName]':"
+	while = {
+		limit = {
+			NOT = { event_target:emf_selected_title = { always = yes } }
+			any_demesne_title = {
+				NOT = { has_flag = emf_cadet_tmp_checked_title }
+				lower_tier_than = KING # We don't want KING+ title name components in our dynasty name
+				OR = {
+					is_primary_holder_title = yes # Primary titles may still be used if titular
+					is_de_jure_title = yes # Otherwise, stick to de jure, as titular titles can be named oddly
+				}
+				emf_is_title_type_special = no
+			}
+		}
+		emf_select_title_for_cadet_dynasty_name = yes
+	}
+	any_demesne_title = { clr_flag = emf_cadet_tmp_checked_title }
+}
+
+emf_select_title_for_cadet_dynasty_name = {
+	random_demesne_title = {
+		limit = {
+			NOT = { has_flag = emf_cadet_tmp_checked_title }
+			lower_tier_than = KING # We don't want KING+ title name components in our dynasty name
+			OR = {
+				is_primary_holder_title = yes # Primary titles may still be used if titular
+				is_de_jure_title = yes # Otherwise, stick to de jure, as titular titles can be named oddly
+			}
+			emf_is_title_type_special = no
+		}
+		preferred_limit = {
+			is_primary_holder_title = yes
+		}
+		preferred_limit = { # Capital duchy
+			tier = DUKE
+			ROOT = {
+				capital_scope = {
+					duchy = {
+						title = PREVPREVPREV # random_demesne_title
+					}
+				}
+			}
+		}
+		preferred_limit = { # Capital county
+			tier = COUNT
+			location = { is_capital = yes }
+		}
+		preferred_limit = { # De jure duchy bordering a de jure primary title
+			tier = DUKE
+			any_direct_de_jure_vassal_title = {
+				location = {
+					any_neighbor_province = {
+						county = {
+							ROOT = {
+								primary_title = {
+									OR = {
+										title = PREVPREV # county
+										de_jure_vassal_or_below = PREVPREV # county
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		preferred_limit = { # Any de jure duchy in which we own 3+ counties
+			tier = DUKE
+			any_direct_de_jure_vassal_title = { count = 3 holder = ROOT }
+		}
+		preferred_limit = { # Any de jure duchy in which we own 2+ counties
+			tier = DUKE
+			any_direct_de_jure_vassal_title = { count = 2 holder = ROOT }
+		}
+		preferred_limit = { # Any de jure duchy in which we own a county
+			tier = DUKE
+			any_direct_de_jure_vassal_title = { holder = ROOT }
+		}
+		preferred_limit = { # Capital holding
+			tier = BARON
+			ROOT = {
+				capital_holding = {
+					title = PREVPREV
+				}
+			}
+		}
+		preferred_limit = { # Any de jure duchy
+			tier = DUKE
+		}
+		preferred_limit = { # County bordering capital county
+			tier = COUNT
+			location = {
+				any_neighbor_province = {
+					ROOT = {
+						capital_scope = {
+							province = PREVPREV # any_neighbor_province
+						}
+					}
+				}
+			}
+		}
+		preferred_limit = { # County in capital duchy
+			tier = COUNT
+			dejure_liege_title = {
+				ROOT = {
+					capital_scope = {
+						duchy = {
+							title = PREVPREVPREV
+						}
+					}
+				}
+			}
+		}
+		preferred_limit = { # Any county w/i 50 distance of capital county
+			tier = COUNT
+			location = {
+				NOT = { distance = { who = ROOT value = 50 } }
+			}
+		}
+		preferred_limit = { # Any county w/i 75 distance of capital county
+			tier = COUNT
+			location = {
+				NOT = { distance = { who = ROOT value = 75 } }
+			}
+		}
+		preferred_limit = { # Any county w/i 100 distance of capital county
+			tier = COUNT
+			location = {
+				NOT = { distance = { who = ROOT value = 100 } }
+			}
+		}
+		preferred_limit = { # Any non-capital barony in capital county
+			tier = BARON
+			location = {
+				ROOT = {
+					capital_scope = {
+						province = PREVPREV
+					}
+				}
+			}
+		}
+		preferred_limit = { # Any county w/i 150 distance of capital county, used
+			tier = COUNT
+			location = {
+				NOT = { distance = { who = ROOT value = 150 } }
+			}
+		}
+		preferred_limit = { # Any county w/i 200 distance of capital county
+			tier = COUNT
+			location = {
+				NOT = { distance = { who = ROOT value = 200 } }
+			}
+		}
+		preferred_limit = {
+			tier = COUNT
+		}
+		set_flag = emf_cadet_tmp_checked_title
+		save_event_target_as = emf_potential_title
+		# As always, log like a maniac until the new feature is stable and well-calibrated, and then charge on ahead and
+		# log some more, since something is bound to go haywire eventually:
+		emf_log_potential_title_for_cadet_dynasty_name = yes
+	}
+	# Now load up emf_dummy2 with the last word in the base name of this title and check for mismatch.
+	# Mismatch is what we want, remember?
+	event_target:emf_dummy2 = {
+		set_dynasty_name = "[emf_potential_title.GetBaseName]"
+		set_name = "[This.GetLastWordInDynastyName]"
+		if = {
+			limit = { same_regnal_name = event_target:emf_dummy1 }
+			log = " ------> disqualified by parent name compatibility check"
+			clear_event_target = emf_potential_title # Disqualified
+		}
+	}
+	if = {
+		limit = { event_target:emf_potential_title = { always = yes } }
+		# Now, load emf_dummy2 up with the actual proposed dynasty name as per our given naming schema:
+		event_target:emf_dummy2 = {
+			if = {
+				limit = { ROOT = { has_flag = emf_cadet_tmp_name_schema_1 } }
+				set_dynasty_name = "[Root.EMF_GetFromDynastyPrefix][emf_dummy2.GetFirstName][Root.EMF_GetFromDynastySuffix]"
+			}
+			else_if = {
+				limit = { ROOT = { has_flag = emf_cadet_tmp_name_schema_2 } }
+				set_dynasty_name = "[Root.EMF_GetFromDynastyPrefix][emf_dummy1.GetFirstName]-[emf_dummy2.GetFirstName][Root.EMF_GetFromDynastySuffix]"
+			}
+			else_if = {
+				limit = { ROOT = { has_flag = emf_cadet_tmp_name_schema_3 } }
+				set_dynasty_name = "[emf_old_dynasty.GetOnlyDynastyName]-[emf_dummy2.GetFirstName][emf_old_dynasty.EMF_GetFromDynastySuffix]"
+			}
+			else = {
+				log = " ASSERT: emf_select_title_for_cadet_dynasty_name: unknown dynasty naming schema!"
+			}
+		}
+		if = {
+			limit = { has_flag = emf_cadet_tmp_dynasty_name_collision_check }
+			# We will compare the last word in our proposed dynasty name with the last word in every playable ruler's
+			# dynasty name. We cannot compare the full dynasty names, because the `same_regnal_name` trigger will interpret
+			# a space separator in the dynasty name as the end of the first name and beginning of the middle name, the
+			# latter of which it discards. E.g., if our proposed dynasty name were 'de Lisboa' and we were comparing against
+			# a dynasty name of 'de Guarda', `same_regnal_name` will treat the names as equivalent, because it regards 'de'
+			# as the regnal name of both.
+			event_target:emf_dummy2 = {
+				set_name = "[This.GetLastWordInDynastyName]"
+			}
+			# emf_dummy2 is now ready to have its name compared with the dynasty names of every playable ruler (but
+			# ourselves). We need to marshal any_playable_ruler's [last word in] dynasty name into the first name of
+			# emf_dummy3 for comparison.
+			log = " ------> proposed dynasty base name: [emf_dummy2.GetFirstName] (from '[emf_dummy2.GetOnlyDynastyName]')"
+			log = " ------> comparing to dynasty base name of all playable rulers:"
+			any_playable_ruler = {
+				limit = {
+					NOT = { dynasty = ROOT }
+					is_lowborn = no
+				}
+				if = {
+					limit = { NOT = { ROOT = { has_flag = emf_cadet_tmp_collision } } }
+					event_target:emf_dummy3 = {
+						set_name = "[Prev.GetLastWordInDynastyName]"
+						#log = " --------> [This.GetFirstName]"
+						if = {
+							limit = { same_regnal_name = event_target:emf_dummy2 }
+							ROOT = { set_flag = emf_cadet_tmp_collision }
+							#log = " ----------> DYNASTY NAME COLLISION!"
+						}
+					}
+				}
+			}
+			if = {
+				limit = { has_flag = emf_cadet_tmp_collision }
+				log = " ------> disqualified by dynasty name collision check"
+				clear_event_target = emf_potential_title # Disqualified
+			}
+			clr_flag = emf_cadet_tmp_collision
+		}
+	}
+	event_target:emf_potential_title = {
+		log = " ----> selected title for cadet dynasty name: [This.EMF_GetDebugTitleNameWithDeJureLieges]"
+		save_event_target_as = emf_selected_title
+	}
+	clear_event_target = emf_potential_title
+}
+
+emf_log_potential_title_for_cadet_dynasty_name = {
+	log = " ----> potential title: [This.EMF_GetDebugTitleNameWithDeJureLieges]:"
+	if = {
+		limit = { is_primary_holder_title = yes }
+		log = " ------> is primary title"
+	}
+	else_if = {
+		limit = {
+			tier = DUKE
+			any_direct_de_jure_vassal_title = {
+				location = {
+					any_neighbor_province = {
+						county = {
+							ROOT = {
+								primary_title = {
+									OR = {
+										title = PREVPREV # county
+										de_jure_vassal_or_below = PREVPREV # county
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		log = " ------> is duchy bordering primary title"
+	}
+	if = {
+		limit = {
+			tier = DUKE
+			ROOT = {
+				capital_scope = {
+					duchy = {
+						title = PREVPREVPREV
+					}
+				}
+			}
+		}
+		log = " ------> is capital duchy"
+	}
+	if = {
+		limit = {
+			tier = DUKE
+			any_direct_de_jure_vassal_title = { count = 3 holder = ROOT }
+		}
+		log = " ------> is duchy in which 3+ de jure vassal counties are held"
+	}
+	else_if = {
+		limit = {
+			tier = DUKE
+			any_direct_de_jure_vassal_title = { count = 2 holder = ROOT }
+		}
+		log = " ------> is duchy in which 2 de jure vassal counties are held"
+	}
+	else_if = {
+		limit = {
+			tier = DUKE
+			any_direct_de_jure_vassal_title = { holder = ROOT }
+		}
+		log = " ------> is duchy in which a de jure vassal county is held"
+	}
+	if = {
+		limit = {
+			tier = COUNT
+			location = { is_capital = yes }
+		}
+		log = " ------> is capital county"
+	}
+	else_if = {
+		limit = {
+			tier = COUNT
+			dejure_liege_title = {
+				ROOT = {
+					capital_scope = {
+						duchy = {
+							title = PREVPREVPREV
+						}
+					}
+				}
+			}
+		}
+		log = " ------> is county within capital duchy"
+	}
+	if = {
+		limit = {
+			tier = COUNT
+			location = {
+				any_neighbor_province = {
+					ROOT = {
+						capital_scope = {
+							province = PREVPREV # any_neighbor_province
+						}
+					}
+				}
+			}
+		}
+		log = " ------> is county bordering capital county"
+	}
+	if = {
+		limit = {
+			tier = BARON
+			ROOT = {
+				capital_holding = {
+					title = PREVPREV
+				}
+			}
+		}
+		log = " ------> is capital barony"
+	}
+	else_if = {
+		limit = {
+			tier = BARON
+			location = {
+				ROOT = {
+					capital_scope = {
+						province = PREVPREV
+					}
+				}
+			}
+		}
+		log = " ------> is secondary barony in capital county"
+	}
+}
+
+emf_log_cadet_info = {
+	log = " --> government group: [This.EMF_GetGovernmentGroupName]"
+	log = " --> real tier:        [This.EMF_GetDebugTier]"
+	log = " --> primary title:    [This.PrimaryTitle.EMF_GetDebugTitleNameWithDeJureLieges]"
+	log = " ----> succession law: [This.PrimaryTitle.EMF_GetFullSuccLaw]"
+	capital_holding = {
+		log = " --> capital holding:  [This.EMF_GetDebugTitleNameWithDeJureLieges]"
+	}
+	log = " --> demesne titles:"
+	any_demesne_title = {
+		limit = { tier = EMPEROR }
+		emf_debug_log_title_info = yes
+	}
+	any_demesne_title = {
+		limit = { tier = KING }
+		emf_debug_log_title_info = yes
+	}
+	any_demesne_title = {
+		limit = { tier = DUKE }
+		emf_debug_log_title_info = yes
+	}
+	any_demesne_title = {
+		limit = { tier = COUNT }
+		emf_debug_log_title_info = yes
+	}
+	any_demesne_title = {
+		limit = { tier = BARON }
+		emf_debug_log_title_info = yes
+	}
+}
+
+emf_count_dynasty_members = {
+	event_target:isis = {
+		set_variable = { which = n_alive value = 0 }
+		set_variable = { which = n_dead value = 0 }
+		set_variable = { which = n_total value = 0 }
+	}
+	emf_count_this_dynasty_member = yes
+	any_dynasty_member_even_if_dead = {
+		limit = { NOT = { character = PREV } }
+		emf_count_this_dynasty_member = yes
+	}
+}
+
+emf_count_this_dynasty_member = {
+	if = {
+		limit = { is_alive = yes }
+		event_target:isis = { change_variable = { which = n_alive value = 1 } }
+	}
+	else = {
+		event_target:isis = { change_variable = { which = n_dead value = 1 } }
+	}
+	event_target:isis = { change_variable = { which = n_total value = 1 } }
+}
+
+emf_boost_cadet_wellness = {
+	if = {
+		limit = { ai = yes }
+		cure_illness = yes
+		remove_symptoms_effect = yes
+		clear_disease_level_effect = yes
+		remove_disease_flags_effect = yes
+		remove_treatment_modifiers_effect = yes
+		remove_trait = has_tuberculosis
+		remove_trait = has_aztec_disease
+		remove_trait = has_small_pox
+		remove_trait = has_bubonic_plague
+		remove_trait = has_typhus
+		remove_trait = has_typhoid_fever
+		remove_trait = has_measles
+		remove_trait = flu
+		remove_trait = food_poisoning
+		remove_trait = gout
+		remove_trait = scurvy
+		remove_trait = lovers_pox
+		remove_trait = cancer
+		remove_trait = pneumonic
+		remove_trait = syphilitic
+		remove_trait = leper
+		while = {
+			limit = { base_health < 6 }
+			health = 1
+		}
+		remove_trait = celibate
+		remove_trait = sterile_secret
+		remove_trait = sterile_known
+		remove_trait = infertile
+		while = {
+			count = 10
+			limit = { fertility < 1 }
+			fertility = 0.15
+		}
+	}
+}

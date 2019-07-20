@@ -1,0 +1,1540 @@
+# -*- ck2.events -*-
+
+namespace = emf_cadet
+
+# emf_cadet.0 -- inherit dynasty founder PET [on_birth & triggered by legitimization events + emf_new_character]
+character_event = {
+	id = emf_cadet.0
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		is_lowborn = no
+		is_alive = yes
+		OR = {
+			father = {
+				dynasty = ROOT
+				persistent_event_target:pet_parent_dyn = {
+					persistent_event_target:pet_cadet_dyn_founder = {
+						dynasty = ROOT
+					}
+				}
+			}
+			mother = {
+				OR = {
+					AND = {
+						dynasty = ROOT
+						persistent_event_target:pet_parent_dyn = {
+							persistent_event_target:pet_cadet_dyn_founder = {
+								dynasty = ROOT
+							}
+						}
+					}
+					# If the father dies during pregnancy, we use this PET saved before he died:
+					persistent_event_target:pet_parent_dyn_of_unborn = {
+						persistent_event_target:pet_cadet_dyn_founder = {
+							dynasty = ROOT
+						}
+					}
+				}
+			}
+		}
+	}
+
+	immediate = {
+		# Determine which PET we want to inherit:
+		if = {
+			limit = {
+				father = {
+					dynasty = ROOT
+					persistent_event_target:pet_parent_dyn = {
+						persistent_event_target:pet_cadet_dyn_founder = {
+							dynasty = ROOT
+						}
+					}
+				}
+			}
+			father = {
+				persistent_event_target:pet_parent_dyn = {
+					save_event_target_as = emf_parent_dynasty
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				mother = {
+					dynasty = ROOT
+					persistent_event_target:pet_parent_dyn = {
+						persistent_event_target:pet_cadet_dyn_founder = {
+							dynasty = ROOT
+						}
+					}
+				}
+			}
+			mother = {
+				persistent_event_target:pet_parent_dyn = {
+					save_event_target_as = emf_parent_dynasty
+				}
+			}
+		}
+		else = {
+			mother = {
+				persistent_event_target:pet_parent_dyn_of_unborn = {
+					save_event_target_as = emf_parent_dynasty
+				}
+			}
+		}
+		# Inherit the PET:
+		event_target:emf_parent_dynasty = {
+			ROOT = {
+				save_persistent_event_target = {
+					name = pet_parent_dyn
+					scope = PREV
+				}
+			}
+		}
+	}
+}
+
+# emf_cadet.1 -- character is born unto a `bastard` of a cadet dynasty member, so the emf_dynasty_founder PET must
+# be cleared on both parent and child, because the hard-code will have randomly flipped them to a new, random
+# dynasty. in the future, it'd be nice if we could, instead of erasing the dynasty founder PET, set the PET to
+# point at the bastard, but for now, no fanciness for bastard dynasties. [on_birth]
+character_event = {
+	id = emf_cadet.1
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		is_lowborn = no
+		OR = {
+			father = {
+				persistent_event_target:pet_parent_dyn = {
+					persistent_event_target:pet_cadet_dyn_founder = {
+						NOT = { dynasty = PREVPREV }
+					}
+				}
+			}
+			mother = {
+				OR = {
+					persistent_event_target:pet_parent_dyn = {
+						persistent_event_target:pet_cadet_dyn_founder = {
+							NOT = { dynasty = PREVPREV }
+						}
+					}
+					# If the father dies during pregnancy, we use this PET saved before he died:
+					persistent_event_target:pet_parent_dyn_of_unborn = {
+						persistent_event_target:pet_cadet_dyn_founder = {
+							NOT = { dynasty = ROOT }
+						}
+					}
+				}
+			}
+		}
+	}
+
+	immediate = {
+		# Determine which parent(s) created the PET incoherency (e.g., were a bastard) & clear their PETs:
+		if = {
+			limit = {
+				father = {
+					persistent_event_target:pet_parent_dyn = {
+						persistent_event_target:pet_cadet_dyn_founder = {
+							NOT = { dynasty = PREVPREV }
+						}
+					}
+				}
+			}
+			father = {
+				clear_persistent_event_target = pet_parent_dyn
+			}
+		}
+		if = {
+			limit = {
+				mother = {
+					persistent_event_target:pet_parent_dyn = {
+						persistent_event_target:pet_cadet_dyn_founder = {
+							NOT = { dynasty = PREVPREV }
+						}
+					}
+				}
+			}
+			mother = {
+				clear_persistent_event_target = pet_parent_dyn
+			}
+		}
+		clear_persistent_event_target = pet_parent_dyn
+	}
+}
+
+# emf_cadet.2 -- clear temporary unborn cadet PETs saved on mother (ROOT) when father dies prematurely [on_birth]
+character_event = {
+	id = emf_cadet.2
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		mother = {
+			persistent_event_target:pet_parent_dyn_of_unborn = { always = yes }
+		}
+	}
+
+	immediate = {
+		# We delay the actual PET clearing by 1 day in case we're having twins today:
+		mother = {
+			character_event = { id = emf_cadet.4 days = 1 }
+		}
+	}
+}
+
+# emf_cadet.3 -- clear temporary unborn cadet PETs saved on mother (ROOT) when father dies prematurely
+# [on_postbirth_stillbirth -- mother scope]
+character_event = {
+	id = emf_cadet.3
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		persistent_event_target:pet_parent_dyn_of_unborn = { always = yes }
+	}
+
+	immediate = {
+		character_event = { id = emf_cadet.4 }
+	}
+}
+
+# emf_cadet.4 -- actually clear the unborn cadet PETs 0-1 days after firing emf_cadet.2-3 from on_actions
+character_event = {
+	id = emf_cadet.4
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		OR = {
+			persistent_event_target:pet_parent_dyn_of_unborn = { always = yes }
+			persistent_event_target:pet_father_of_unborn = { always = yes }
+		}
+	}
+
+	immediate = {
+		clear_persistent_event_target = pet_parent_dyn_of_unborn
+		clear_persistent_event_target = pet_father_of_unborn
+	}
+}
+
+# emf_cadet.5 -- when father carrying cadet dynasty PET dies with a pregnant wife in a patrilineal marriage (or as
+# a senior consort party), save copies of their cadet PET to the mother for usage upon birth of the child
+# [on_death]
+character_event = {
+	id = emf_cadet.5
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	only_men = yes
+
+	trigger = {
+		persistent_event_target:pet_parent_dyn = { always = yes }
+		OR = {
+			any_spouse = {
+				is_pregnant = yes
+				NOT = { is_married_matrilineally = yes }
+			}
+			any_consort = {
+				is_pregnant = yes
+				is_consort = yes # junior party
+			}
+		}
+	}
+
+	immediate = {
+		persistent_event_target:pet_parent_dyn = {
+			save_event_target_as = emf_parent_dynasty
+		}
+		any_spouse = {
+			limit = {
+				is_pregnant = yes
+				NOT = { is_married_matrilineally = yes }
+			}
+			save_persistent_event_target = {
+				name = pet_parent_dyn_of_unborn
+				scope = event_target:emf_parent_dynasty
+			}
+			save_persistent_event_target = {
+				name = pet_father_of_unborn
+				scope = ROOT
+			}
+		}
+		any_consort = {
+			limit = {
+				is_pregnant = yes
+				is_consort = yes # junior party
+			}
+			save_persistent_event_target = {
+				name = pet_parent_dyn_of_unborn
+				scope = event_target:emf_parent_dynasty
+			}
+			save_persistent_event_target = {
+				name = pet_father_of_unborn
+				scope = ROOT
+			}
+		}
+	}
+}
+
+# emf_cadet.6 -- handle the [uncanny] death of an emf_cadet_immortal [on_death]
+character_event = {
+	id = emf_cadet.6
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	has_character_flag = emf_cadet_immortal
+
+	immediate = {
+		# Clone ourselves into Isis's court:
+		event_target:isis = {
+			if = {
+				limit = { ROOT = { is_female = no } }
+				create_character = {
+					random_traits = no
+					trait = emf_cadet_immortal
+					religion = ROOT
+					culture = ROOT
+					dynasty = random
+					health = 10
+					age = 32
+					female = no
+				}
+			}
+			else = {
+				create_character = {
+					random_traits = no
+					trait = emf_cadet_immortal
+					religion = ROOT
+					culture = ROOT
+					dynasty = random
+					health = 10
+					age = 32
+					female = yes
+				}
+			}
+			new_character = {
+				save_event_target_as = emf_immortal
+				set_immune_to_pruning = yes
+				diplomatic_immunity = yes
+				emf_do_not_disturb = yes
+				set_flag = no_court_invites # Instructs AI to never accept an invitation to another court
+				set_flag = ai_flag_refuse_conversion # Instructs AI to never accept Demand Religious Conversion
+				set_flag = emf_ai_never_convert_culture
+				set_flag = emf_cadet_immortal
+				clear_education_trait = yes
+				emf_remove_leader_traits = yes
+				set_graphical_culture = hip_culture # Isis hive mind, but still the correct culture in case that matters
+				set_dynasty_name = "[Root.GetOnlyDynastyName]"
+				copy_name = ROOT
+			}
+		}
+		# Save our PETs into our clone...
+		#
+		# This PET points at the actual cadet dynasty's parent dynasty's founder. It is necessary, because cadet
+		# immortals must use a random dynasty (despite having the same dynasty name) in order to avoid breaking dynasty
+		# trees, and we want to be able to relate any 2 given characters' [perhaps cadet] dynasties to each other:
+		persistent_event_target:pet_dyn_founder = {
+			event_target:emf_immortal = {
+				save_persistent_event_target = {
+					name = pet_dyn_founder
+					scope = PREV
+				}
+			}
+		}
+		# This optional PET points at the parent dynasty (another immortal) if it exists:
+		persistent_event_target:pet_parent_dyn = {
+			event_target:emf_immortal = {
+				save_persistent_event_target = {
+					name = pet_parent_dyn
+					scope = PREV
+				}
+			}
+		}
+		# This PET will always point at the current cadet dynasty's founder:
+		persistent_event_target:pet_cadet_dyn_founder = {
+			event_target:emf_immortal = {
+				save_persistent_event_target = {
+					name = pet_cadet_dyn_founder
+					scope = PREV
+				}
+			}
+		}
+		# This optional PET points at the title used to pair our parent dynasty's name with in order to achieve our
+		# current name:
+		persistent_event_target:pet_cadet_dyn_title = {
+			event_target:emf_immortal = {
+				save_persistent_event_target = {
+					name = pet_cadet_dyn_title
+					scope = PREV
+				}
+			}
+		}
+		# This PET will always point at the original culture scope of the character:
+		persistent_event_target:pet_culture = {
+			event_target:emf_immortal = {
+				save_persistent_event_target = {
+					name = pet_culture
+					scope = PREV
+				}
+			}
+		}
+		# This PET will always point at the original religion scope of the character:
+		persistent_event_target:pet_religion = {
+			event_target:emf_immortal = {
+				save_persistent_event_target = {
+					name = pet_religion
+					scope = PREV
+				}
+			}
+		}
+		# Update every character whose PET was pointing at us, and make them point at the clone instead:
+		any_character = {
+			limit = {
+				is_lowborn = no
+				persistent_event_target:pet_parent_dyn = { character = ROOT }
+			}
+			save_persistent_event_target = {
+				name = pet_parent_dyn
+				scope = event_target:emf_immortal
+			}
+		}
+		any_character = {
+			limit = {
+				is_female = yes
+				persistent_event_target:pet_parent_dyn_of_unborn = { character = ROOT }
+			}
+			save_persistent_event_target = {
+				name = pet_parent_dyn_of_unborn
+				scope = event_target:emf_immortal
+			}
+		}
+		# And now we can die...
+	}
+}
+
+# emf_cadet.7 -- annual maintenance upon emf_cadet_immortal trait holders [triggered by Isis]
+character_event = {
+	id = emf_cadet.7
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		has_landed_title = e_hip
+	}
+
+	immediate = {
+		any_courtier = {
+			limit = { trait = emf_cadet_immortal }
+			# Keep cadet immortals relatively cleaned up re: relations:
+			any_ward = { remove_guardian = yes }
+			any_lover = {
+				log = "DEBUG: emf_cadet.7: cadet immortal had a lover"
+				remove_lover = PREV
+			}
+			any_consort = {
+				log = "DEBUG: emf_cadet.7: cadet immortal had a concubine"
+				remove_consort = PREV
+			}
+			any_spouse = {
+				log = "DEBUG: emf_cadet.7: cadet immortal had a spouse"
+				remove_spouse = PREV
+			}
+			any_friend = { remove_friend = PREV }
+			any_rival = { remove_rival = PREV }
+			any_claim = { remove_claim = PREV }
+			any_child_even_if_dead = {
+				any_child_even_if_dead = {
+					any_child_even_if_dead = {
+						emf_vanish_character = yes
+					}
+					emf_vanish_character = yes
+				}
+				emf_vanish_character = yes
+			}
+			# Ensure that they have their original dynasty culture & religion:
+			if = {
+				limit = {
+					persistent_event_target:pet_culture = {
+						NOT = { culture = PREV }
+					}
+				}
+				log = "DEBUG: emf_cadet.7: cadet immortal had wrong culture"
+				culture = persistent_event_target:pet_culture
+			}
+			if = {
+				limit = {
+					persistent_event_target:pet_religion = {
+						NOT = { religion = PREV }
+					}
+				}
+				log = "DEBUG: emf_cadet.7: cadet immortal had wrong religion"
+				religion = persistent_event_target:pet_religion
+			}
+			clear_focus = yes
+			cancel_ambition = yes
+			emf_do_not_disturb = yes
+		}
+	}
+}
+
+# emf_cadet.8 -- handle cadet immortals changing courts away from isis [on_employer_change, on_host_change]
+character_event	= {
+	id = emf_cadet.8
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	has_character_flag = emf_cadet_immortal
+
+	trigger = {
+		is_alive = yes
+		FROMFROM = {
+			NOT = { character = event_target:isis }
+		}
+	}
+
+	immediate = {
+		log = "DEBUG: emf_cadet.8: cadet immortal escaped from the court of [isis.GetBestName]: [This.EMF_GetDebugName]"
+		liege = {
+			log = " ----> liege:    [This.EMF_GetDebugName]"
+		}
+		employer = {
+			log = " ----> employer: [This.EMF_GetDebugName]"
+		}
+		host = {
+			log = " ----> host:     [This.EMF_GetDebugName]"
+		}
+		if = {
+			limit = { prisoner = yes }
+			log = " ----> is prisoner"
+		}
+		if = {
+			limit = { emf_is_voter = yes }
+			log = " ----> is councillor / voter"
+		}
+		if = {
+			limit = { has_minor_title = yes }
+			log = " ----> has minor title"
+		}
+		prisoner = no
+		move_character = event_target:isis
+		if = {
+			limit = { NOT = { host = { character = event_target:isis } } }
+			force_host = event_target:isis
+		}
+	}
+}
+
+# emf_cadet.10 -- flag cadets [on_yearly_pulse]
+character_event = {
+	id = emf_cadet.10
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	only_capable = yes
+	min_age = 16 # Adults only
+	ai = yes
+
+	trigger = {
+		# No females permitted to become cadets unless Gender Equality GR is set to Full
+		OR = {
+			is_female = no
+			has_game_rule = { name = gender value = all }
+		}
+		is_lowborn = no
+		is_ruler = no
+		NOR = {
+			# Not already a cadet & not a cadet that was later disqualified
+			has_flag = emf_cadet
+			has_flag = emf_disqualified_cadet
+			trait = bastard # Bastards create bastard dynasties -- not cadet dynasties
+			trigger_if = {
+				limit = { is_female = no }
+				is_married_matrilineally = yes # No matrilineally married males
+			}
+			trigger_else = {
+				# No females with regular marriages:
+				is_married = yes
+				NOT = { is_married_matrilineally = yes }
+			}
+			# Cannot be heir to any title that's not a barony in someone else's capital county (emf_gavelkind would take
+			# their barony away anyway). Note if they were actually heir to the associated county, this would fail:
+			any_heir_title = {
+				NAND = {
+					tier = BARON
+					location = {
+						is_capital = yes
+						owner = {
+							higher_real_tier_than = COUNT
+							is_nomadic = no
+							is_merchant_republic = no
+							has_landed_title = PREVPREV
+						}
+					}
+				}
+				# Exemption for appointed successors to Bishoprics under Free Investiture (they'll be disqualified if they
+				# don't form a cadet house before ascending to the priesthood):
+				NOT = { succ_law_title = { has_law = succ_catholic_bishopric } }
+			}
+		}
+		# Must have an older sibling that could technically inherit:
+		OR = {
+			father_even_if_dead = {
+				dynasty = ROOT
+				any_child = {
+					NOT = { character = ROOT }
+					dynasty = PREV
+					is_older_than = ROOT
+					OR = {
+						is_female = no
+						has_game_rule = { name = gender value = all }
+					}
+					emf_can_inherit = yes
+				}
+			}
+			mother_even_if_dead = {
+				dynasty = ROOT
+				any_child = {
+					NOT = { character = ROOT }
+					dynasty = PREV
+					is_older_than = ROOT
+					OR = {
+						is_female = no
+						has_game_rule = { name = gender value = all }
+					}
+					emf_can_inherit = yes
+				}
+			}
+		}
+		dynasty_head = {
+			NOR = {
+				character = ROOT # Cadets are not dynasty heads.
+				# Has no marriage ties to cadet and none of cadet's children are close relatives of him:
+				ROOT = {
+					OR = {
+						any_child = {
+							is_close_relative = PREVPREV
+						}
+						any_spouse = {
+							is_close_relative = PREVPREV
+						}
+					}
+				}
+			}
+			trigger_if = {
+				limit = {
+					culture = ROOT
+					emf_same_basic_religion_as_ROOT = yes
+				}
+				# Since of same culture as dynasty head, neither cadet's parents nor himself should be close relatives of
+				# THIS dynasty_head.
+				NOR = {
+					is_close_relative = ROOT
+					#ROOT = {
+					#	OR = {
+					#		father_even_if_dead = {
+					#			is_close_relative = PREVPREV
+					#		}
+					#		mother_even_if_dead = {
+					#			is_close_relative = PREVPREV
+					#		}
+					#	}
+					#}
+				}
+			}
+			trigger_else_if = {
+				limit = {
+					emf_same_basic_religion_as_ROOT = yes
+				}
+				# Since of different culture as dynasty head, we only require that the dynasty head is neither the
+				# father nor the mother of the cadet.
+				NOR = {
+					is_father = ROOT
+					is_mother = ROOT
+				}
+			}
+			trigger_else = {
+				# This code branch is just documentation and could be removed. Since of a different religion (where that's
+				# defined as including heresies) and culture than dynasty_head, the dynasty_head has zero further restrictions
+				# upon relation to us.
+				always = yes
+			}
+		}
+		# Dynasty must have at least 30 other living members, unless the cadet is a legitimized bastard. Why the
+		# exception for legit bastards? We'd simply like to encourage them over others to break off and form their own
+		# cadet dynasties. We'd encourage actual bastards, but the hard-coded bastard dynasty "feature" (dynasty randomly
+		# changes upon birth of their first child) will not allow them to form a coherent cadet dynasty.
+		OR = {
+			trait = legit_bastard
+			any_dynasty_member = { count = 30 is_alive = yes }
+		}
+	}
+
+	immediate = {
+		set_flag = emf_cadet
+		log = "DEBUG: emf_cadet.10: potential cadet: [This.EMF_GetDebugName]"
+	}
+}
+
+# emf_cadet.11 -- disqualify cadets [on_yearly_pulse]
+character_event = {
+	id = emf_cadet.11
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	min_age = 16
+	has_character_flag = emf_cadet # exclusive with emf_disqualified_cadet
+	ai = yes
+
+	trigger = {
+		emf_is_cadet_disqualified = yes
+	}
+
+	immediate = {
+		log = "DEBUG: emf_cadet.11: disqualifying potential cadet: [This.EMF_GetDebugName]"
+		clr_flag = emf_cadet
+		set_flag = emf_disqualified_cadet
+	}
+}
+
+
+# emf_cadet.12 -- check whether an emf_cadet can form a cadet dynasty [on_yearly_pulse]
+character_event = {
+	id = emf_cadet.12
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	only_playable = yes # COUNT+ (or patrician) required to advance to cadet dynasty formation
+	only_capable = yes
+	min_age = 16
+	prisoner = no
+	war = no
+	has_character_flag = emf_cadet
+
+	trigger = {
+		# Proper type of government and primary title:
+		OR = {
+			is_feudal = yes
+			is_tribal = yes
+			is_patrician = yes
+		}
+		primary_title = {
+			NOR = {
+				mercenary = yes
+				holy_order = yes
+				temporary = yes
+				rebel = yes
+				has_flag = emf_revolt
+			}
+		}
+		emf_is_cadet_disqualified = no
+		# Avoid forming cadet dynasties with player dynastic progeny (players don't want to have their dynasty up and
+		# switched on them, although mechanically it's fine):
+		NOT = {
+			any_player = {
+				dynasty = ROOT
+				OR = {
+					is_child_of = ROOT
+					is_grandchild_of = ROOT
+					father_even_if_dead = { is_grandchild_of = ROOT }
+					mother_even_if_dead = { is_grandchild_of = ROOT }
+				}
+			}
+		}
+		# Must have a valid direct heir of our own dynastic progeny:
+		player_heir = {
+			is_alive = yes
+			dynasty = ROOT
+			OR = {
+				is_child_of = ROOT
+				is_grandchild_of = ROOT
+				father_even_if_dead = { is_grandchild_of = ROOT }
+				mother_even_if_dead = { is_grandchild_of = ROOT }
+			}
+		}
+		# Dynasty must have at least 30 other living members:
+		any_dynasty_member = { count = 30 is_alive = yes }
+	}
+
+	immediate = {
+		log = "DEBUG: emf_cadet.12: ruler cadet qualified for formation of a cadet dynasty: [This.EMF_GetDebugName]"
+		# Actually found the cadet dynasty:
+		character_event = { id = emf_cadet.100 }
+	}
+}
+
+# emf_cadet.100 -- ruler founds a cadet dynasty
+character_event = {
+	id = emf_cadet.100
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		# Cannot form a cadet dynasty with the same character twice in their lifetime:
+		NOT = { has_flag = emf_founded_cadet_dynasty }
+		# Can't be lowborn for this to work:
+		is_lowborn = no
+		# Bastard dynasties are a different thing than cadet dynasties (and the hard-coded dynasty change mechanics for
+		# the bastard trait would make creating a cadet dynasty pointless anyhow):
+		NOT = { trait = bastard }
+		# At least one of our parents has to share our own dynasty:
+		OR = {
+			father_even_if_dead = { dynasty = ROOT }
+			mother_even_if_dead = { dynasty = ROOT }
+		}
+		# Must not have a temporary title of any kind:
+		emf_has_no_temporary_title = yes
+	}
+
+	immediate = {
+		log = "DEBUG: emf_cadet.100: forming new cadet dynasty: [This.EMF_GetDebugName]"
+		emf_log_cadet_info = yes
+		save_event_target_as = emf_cadet
+		# Reset cadet flag & set founder flag:
+		clr_flag = emf_cadet
+		set_flag = emf_founded_cadet_dynasty
+		# Save event target to parent of the old dynasty & instantiate a new dynasty in ROOT:
+		if = {
+			limit = {
+				father_even_if_dead = {
+					dynasty = ROOT
+				}
+			}
+			father_even_if_dead = { save_event_target_as = emf_old_dynasty }
+			dynasty = father_bastard
+		}
+		else = {
+			mother_even_if_dead = { save_event_target_as = emf_old_dynasty }
+			dynasty = mother_bastard
+		}
+		log = " --> parent dynasty: [emf_old_dynasty.GetOnlyDynastyName]"
+		event_target:emf_old_dynasty = {
+			primary_title = {
+				if = {
+					limit = { emf_has_any_succ_law = yes }
+					log = " ----> succession law: [This.EMF_GetFullSuccLaw]"
+				}
+			}
+		}
+		# Clone the old dynasty character into an immortal character to hold our PETs forever (dead characters lose their
+		# PETs after some number of game days)
+		event_target:isis = {
+			if = {
+				limit = { event_target:emf_old_dynasty = { is_female = no } }
+				create_character = {
+					random_traits = no
+					trait = emf_cadet_immortal
+					religion = event_target:emf_old_dynasty
+					culture = event_target:emf_old_dynasty
+					dynasty = random
+					health = 10
+					age = 32
+					female = no
+				}
+			}
+			else = {
+				create_character = {
+					random_traits = no
+					trait = emf_cadet_immortal
+					religion = event_target:emf_old_dynasty
+					culture = event_target:emf_old_dynasty
+					dynasty = random
+					health = 10
+					age = 32
+					female = yes
+				}
+			}
+			new_character = {
+				save_event_target_as = emf_immortal
+				set_immune_to_pruning = yes
+				diplomatic_immunity = yes
+				emf_do_not_disturb = yes
+				set_flag = no_court_invites # Instructs AI to never accept an invitation to another court
+				set_flag = ai_flag_refuse_conversion # Instructs AI to never accept Demand Religious Conversion
+				set_flag = emf_ai_never_convert_culture
+				set_flag = emf_cadet_immortal
+				clear_education_trait = yes
+				emf_remove_leader_traits = yes
+				set_graphical_culture = hip_culture # Isis hive mind, but still the correct culture in case that matters
+				set_dynasty_name = "[emf_old_dynasty.GetOnlyDynastyName]"
+				copy_name = event_target:emf_old_dynasty
+			}
+		}
+		# Set the immortal's pet_dyn_founder PET to our parent dynasty's founder so that we can resolve the actual
+		# dynasty that he represents; the immortal is forced to have a random dynasty, or they'd appear in (and break)
+		# our parent dynasty tree. We use the founder rather than the immediate dynastic parent, because it's
+		# extraordinarily more likely that the dynastic parent might split off as part of another cadet dynasty, whereas
+		# the parent dynasty's founder is either dead or simply never likely to fulfill the conditions for being a cadet
+		# (especially so once we block them outright, but that is later work):
+		event_target:emf_old_dynasty = {
+			emf_find_dynasty_founder = yes
+		}
+		event_target:emf_immortal = {
+			save_persistent_event_target = {
+				name = pet_dyn_founder
+				scope = event_target:emf_dynasty_founder
+			}
+		}
+		# Set the immortal's pet_cadet_dyn_founder PET to ourselves
+		event_target:emf_immortal = {
+			save_persistent_event_target = {
+				name = pet_cadet_dyn_founder
+				scope = ROOT
+			}
+		}
+		# Copy our own pet_parent_dyn PET to the immortal (PET exists when we are part of a cadet dynasty)
+		persistent_event_target:pet_parent_dyn = {
+			event_target:emf_immortal = {
+				save_persistent_event_target = {
+					name = pet_parent_dyn
+					scope = PREV
+				}
+			}
+		}
+		# Set the immortal's original religion and culture in case they need to revert to it/them:
+		event_target:emf_old_dynasty = {
+			culture_scope = {
+				event_target:emf_immortal = {
+					save_persistent_event_target = {
+						name = pet_culture
+						scope = PREV
+					}
+				}
+			}
+		}
+		event_target:emf_old_dynasty = {
+			religion_scope = {
+				event_target:emf_immortal = {
+					save_persistent_event_target = {
+						name = pet_religion
+						scope = PREV
+					}
+				}
+			}
+		}
+		# Award our special founder trait:
+		add_trait = emf_cadet_dynasty_founder
+		# Recursively convert all dynastic progeny (old dynasty) to ROOT's new dynasty (incl. ROOT):
+		log = " --> converting to new dynasty:"
+		character_event = { id = emf_cadet.101 }
+		# Loggin' like a lumberjack:
+		event_target:emf_old_dynasty = { emf_count_dynasty_members = yes }
+		log = " --> members of old dynasty: [isis.n_alive.GetValue] alive & [isis.n_dead.GetValue] dead ([isis.n_total.GetValue] total)"
+		emf_count_dynasty_members = yes
+		log = " --> members of new dynasty: [isis.n_alive.GetValue] alive & [isis.n_dead.GetValue] dead ([isis.n_total.GetValue] total)"
+		# Recalculate succession for rulers of the old and new dynasty:
+		event_target:emf_old_dynasty = {
+			any_dynasty_member = {
+				limit = { is_ruler = yes }
+				recalc_succession = yes
+			}
+		}
+		any_dynasty_member = {
+			limit = {
+				is_ruler = yes
+				NOT = { character = ROOT }
+			}
+			recalc_succession = yes
+		}
+		recalc_succession = yes
+		# Create three dummy characters (we'll throw them away afterward) for crazy workarounds to improve dynasty naming
+		# despite lack of any string processing capabilities in CK2script. We marshal various types of names into their
+		# actual dynasty names, and then we marshal the last word in those "dynasty names" into the dummy characters'
+		# first name so that we can use the same_regnal_name trigger to compare names of things for equality.
+		#
+		# Dummy1's usage is dependent upon the type of dynasty naming schema we're going to use and is used to prevent
+		# things like a cadet dynasty forming with the same name as its parent dynasty or creating a cadet dynasty name
+		# with a douple-hyphenation such as "de Valois-Valois."
+		#
+		# Dummy2's usage will hold the last word of a title name as we try to select an appropriate match with Dummy1. If
+		# an appropriate selection is made at this stage, then Dummy2 is overwritten with the proposed dynasty name based
+		# upon the chosen naming schema.
+		#
+		# Dummy3 will hold the dynasty name (as the first name) of every playable ruler in the world as we loop over all
+		# of them looking for a dynasty name collision with the proposed dynasty name. If we collide, the title we
+		# selected for dynasty naming will be marked as such and the process will start over, falling back to
+		# lower-priority title names, and failing all of that, eventually stop caring about the dynasty name collision
+		# and return to the highest-priority selections.
+		create_character = { random_traits = no dynasty = random }
+		new_character = { save_event_target_as = emf_dummy1 }
+		create_character = { random_traits = no dynasty = random }
+		new_character = { save_event_target_as = emf_dummy2 }
+		create_character = { random_traits = no dynasty = random }
+		new_character = { save_event_target_as = emf_dummy3 }
+		# Now, let's rename this new dynasty to something remotely intelligible. We have 4 main cases:
+		# 0. ROOT's culture uses founder-named dynasties
+		# 1. ROOT's tier is higher than DUKE, or their primary title is a special-type title
+		# 2. ROOT's parent dynasty has a paired title PET (ergo, must be cadet of cadet)
+		# 3. ROOT's parent dynasty has no paired title PET (might be standard cadet formation or a cadet of case 1)
+		if = {
+			limit = {
+				emf_uses_founder_named_dynasties = yes
+			}
+			# Do nothing (hard-code already gave us a founder-named dynasty name)
+			log = " --> cadet dynasty name will be a founder-named dynasty (case 0)"
+			change_variable = { which = global_cadet_dynasties_formed_w_naming_schema_0 value = 1 }
+		}
+		else_if = {
+			limit = {
+				higher_tier_than = DUKE
+			}
+			log = " --> cadet dynasty name will be composed from a single title name (case 1)"
+			# In this case, we're not going to try to pair a prior dynasty name component with a title, and we're going to
+			# use a non-hyphenated format. Our concern shifts to making sure that we select a title which does not amount to
+			# generating basically (or exactly) the same cadet dynasty name as its parent dynasty name.
+			#
+			# Set the first dummy's given name to the last word in the parent dynasty's name:
+			event_target:emf_dummy1 = {
+				set_dynasty_name = "[emf_old_dynasty.GetOnlyDynastyName]"
+				set_name = "[This.GetLastWordInDynastyName]"
+			}
+			set_flag = emf_cadet_tmp_name_schema_1
+			emf_select_cadet_dynasty_name = yes
+			if = {
+				limit = { event_target:emf_selected_title = { always = yes } }
+				set_dynasty_name = "[emf_dummy2.GetOnlyDynastyName]"
+				change_variable = { which = global_cadet_dynasties_formed_w_naming_schema_1 value = 1 }
+			}
+			else = {
+				change_variable = { which = global_cadet_dynasties_formed_w_naming_schema_1_fallback value = 1 }
+			}
+		}
+		else_if = {
+			limit = {
+				event_target:emf_immortal = {
+					persistent_event_target:pet_parent_dyn = {
+						persistent_event_target:pet_cadet_dyn_title = { always = yes }
+					}
+				}
+			}
+			log = " --> trying to compose cadet dynasty from the parent dynasty's paired title and a demesne title (case 2)"
+			event_target:emf_immortal = {
+				persistent_event_target:pet_parent_dyn = {
+					persistent_event_target:pet_cadet_dyn_title = {
+						save_event_target_as = emf_paired_title
+					}
+				}
+			}
+			log = " ----> parent dynasty's paired title: [emf_paired_title.EMF_GetDebugTitleNameWithDeJureLieges]"
+			# Set the first dummy's given name to the last word in the parent dynasty's paired title:
+			event_target:emf_dummy1 = {
+				set_dynasty_name = "[emf_paired_title.GetBaseName]"
+				set_name = "[This.GetLastWordInDynastyName]"
+			}
+			# Now, starting with our primary title and descending downward among demesne titles, find the first demesne
+			# title that wouldn't result in a "double-hyphenation" (e.g., de Valois-Valois should fail and then de
+			# Valois-Vermandois could be a valid fallback):
+			set_flag = emf_cadet_tmp_name_schema_2
+			emf_select_cadet_dynasty_name = yes
+			if = {
+				limit = { event_target:emf_selected_title = { always = yes } }
+				set_dynasty_name = "[emf_dummy2.GetOnlyDynastyName]"
+				event_target:emf_immortal = {
+					save_persistent_event_target = {
+						name = pet_cadet_dyn_title
+						scope = event_target:emf_selected_title
+					}
+				}
+				change_variable = { which = global_cadet_dynasties_formed_w_naming_schema_2 value = 1 }
+			}
+			else = {
+				change_variable = { which = global_cadet_dynasties_formed_w_naming_schema_2_fallback value = 1 }
+			}
+		}
+		else = {
+			log = " --> trying to compose dynasty name from the parent dynasty's name and our primary title (case 3)"
+			# Set the first dummy's given name to the last word in the parent dynasty's name:
+			event_target:emf_dummy1 = {
+				set_dynasty_name = "[emf_old_dynasty.GetOnlyDynastyName]"
+				set_name = "[This.GetLastWordInDynastyName]"
+			}
+			# Now, starting with our primary title and descending downward among demesne titles, find the first demesne
+			# title that wouldn't result in a "double-hyphenation" or similar:
+			set_flag = emf_cadet_tmp_name_schema_3
+			emf_select_cadet_dynasty_name = yes
+			if = {
+				limit = { event_target:emf_selected_title = { always = yes } }
+				set_dynasty_name = "[emf_dummy2.GetOnlyDynastyName]"
+				event_target:emf_immortal = {
+					save_persistent_event_target = {
+						name = pet_cadet_dyn_title
+						scope = event_target:emf_selected_title
+					}
+				}
+				change_variable = { which = global_cadet_dynasties_formed_w_naming_schema_3 value = 1 }
+			}
+			else = {
+				change_variable = { which = global_cadet_dynasties_formed_w_naming_schema_3_fallback value = 1 }
+			}
+		}
+		log = " --> final dynasty name: [This.GetOnlyDynastyName]"
+		change_variable = { which = global_cadet_dynasties_formed value = 1 }
+		# Cleanup dummy characters:
+		event_target:emf_dummy1 = { emf_vanish_character = yes }
+		event_target:emf_dummy2 = { emf_vanish_character = yes }
+		event_target:emf_dummy3 = { emf_vanish_character = yes }
+		# Onward!
+		# Boost cadet dynasty's fitness for survival (cure current diseases, maybe impregnate some hoez, etc.). They
+		# have, after all, made it this far, and we don't want to see a lot of cadet dynasties founded that just fall on
+		# their face within the same generation, because, e.g., the heir to the cadet dynasty founder died prematurely:
+		character_event = { id = emf_cadet.110 }
+		any_dynasty_member = {
+			limit = {
+				NOT = { character = ROOT }
+			}
+			character_event = { id = emf_cadet.110 }
+		}
+		# Notifications:
+		any_vassal = {
+			limit = {
+				NOT = { dynasty = event_target:emf_old_dynasty }
+				NOT = { dynasty = ROOT }
+			}
+			character_event = { id = emf_cadet.200 days = 1 }
+		}
+		liege = {
+			if = {
+				limit = { NOT = { character = ROOT } }
+				any_vassal = {
+					limit = {
+						NOT = { dynasty = event_target:emf_old_dynasty }
+						NOT = { dynasty = ROOT }
+					}
+					character_event = { id = emf_cadet.200 days = 1 }
+				}
+				if = {
+					limit = {
+						NOT = { dynasty = event_target:emf_old_dynasty }
+						NOT = { dynasty = ROOT }
+					}
+					character_event = { id = emf_cadet.200 days = 1 }
+				}
+			}
+		}
+		any_close_relative = {
+			limit = {
+				NOR = {
+					dynasty = event_target:emf_old_dynasty
+					dynasty = ROOT
+					vassal_of = ROOT
+					is_liege_of = ROOT
+					ROOT = {
+						liege = {
+							any_vassal = {
+								character = PREVPREVPREV
+							}
+						}
+					}
+				}
+			}
+			character_event = { id = emf_cadet.200 days = 1 }
+		}
+		event_target:emf_old_dynasty = {
+			any_dynasty_member = {
+				character_event = { id = emf_cadet.201 days = 1 }
+			}
+		}
+		# NOTE: emf_cadet.202 -- for members of the new dynasty -- is sent in emf_cadet.101
+		character_event = { id = emf_cadet.203 days = 1 }
+	}
+}
+
+# emf_cadet.101 -- recursively convert ROOT and all emf_old_dynasty dynastic progeny to the dynasty of emf_cadet &
+# save persistent event targets in them also pointing to emf_cadet
+character_event = {
+	id = emf_cadet.101
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		NOT = { trait = emf_temporary }
+	}
+
+	immediate = {
+		# We use the emf_temporary trait as a guard against infinite recursion in the rare event that some serious incest
+		# has caused cycles in the dynasty tree of the cadet's dynastic progeny:
+		add_trait = emf_temporary
+		any_child_even_if_dead = {
+			limit = { dynasty = event_target:emf_old_dynasty }
+			character_event = { id = emf_cadet.101 } # Recurse
+		}
+		remove_trait = emf_temporary
+		log = " ----> switching to new cadet dynasty: [This.EMF_GetDebugName]"
+		dynasty = event_target:emf_cadet
+		save_persistent_event_target = {
+			name = pet_parent_dyn
+			scope = event_target:emf_immortal
+		}
+		# In case we are a cadet dynasty splitting from another cadet dynasty and ROOT is a dead father to an unborn
+		# child, switch the mother's pet_parent_dyn_of_unborn PET to now point at the newly-forming grandcadet dynasty.
+		if = {
+			limit = {
+				is_alive = no
+				is_female = no
+				is_marriage_adult = yes
+			}
+			any_character = {
+				limit = {
+					is_female = yes
+					is_pregnant = yes
+					persistent_event_target:pet_father_of_unborn = { character = ROOT }
+				}
+				log = " ------> setting pet_parent_dyn_of_unborn for: [This.EMF_GetDebugName]"
+				save_persistent_event_target = {
+					name = pet_parent_dyn_of_unborn
+					scope = event_target:emf_immortal
+				}
+			}
+		}
+		if = {
+			limit = {
+				is_alive = yes
+				ai = no
+				NOT = { character = event_target:emf_cadet }
+			}
+			log = " ------> is a player!"
+			character_event = { id = emf_cadet.202 days = 1 } # Notify of dynasty change
+		}
+	}
+}
+
+# emf_cadet.110 -- boost cadet dynasty's fitness to survive [Cadet Dynasty Member]
+character_event = {
+	id = emf_cadet.110
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+	}
+}
+
+#### NOTIFICATIONS ####
+
+# emf_cadet.200 -- notify of cadet dynasty formation: vassals & liege's vassals & close relatives not of the new
+# cadet dynasty or of the old dynasty
+character_event = {
+	id = emf_cadet.200
+	desc = emf_cadet.200.desc
+	picture = GFX_evt_a_crowning_ceremony
+	border = GFX_event_normal_frame_diplomacy
+	portrait = event_target:emf_cadet
+
+	is_triggered_only = yes
+
+	option = {
+		name = I_SEE
+	}
+}
+
+# emf_cadet.201 -- notify members of the old dynasty of the cadet dynasty formation
+character_event = {
+	id = emf_cadet.201
+	desc = emf_cadet.201.desc
+	picture = GFX_evt_a_crowning_ceremony
+	border = GFX_event_normal_frame_diplomacy
+	portrait = event_target:emf_cadet
+
+	is_triggered_only = yes
+
+	option = {
+		name = emf_cadet.201.opt.wish_luck
+		trigger = {
+			wealth >= 20
+			# Rulers must have at least 25% of their yearly income in treasury additionally:
+			trigger_if = {
+				limit = { is_ruler = yes }
+				scaled_wealth = 0.25
+			}
+		}
+		ai_chance = {
+			factor = 10
+			modifier = {
+				factor = 0
+				event_target:emf_cadet = {
+					wealth > 1000
+				}
+			}
+			modifier = {
+				factor = 0.1
+				event_target:emf_cadet = {
+					wealth > 900
+					wealth <= 1000
+				}
+			}
+			modifier = {
+				factor = 0.2
+				event_target:emf_cadet = {
+					wealth > 800
+					wealth <= 900
+				}
+			}
+			modifier = {
+				factor = 0.3
+				event_target:emf_cadet = {
+					wealth > 700
+					wealth <= 800
+				}
+			}
+			modifier = {
+				factor = 0.4
+				event_target:emf_cadet = {
+					wealth > 600
+					wealth <= 700
+				}
+			}
+			modifier = {
+				factor = 0
+				NOT = { opinion = { who = event_target:emf_cadet value = -40 } }
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { opinion = { who = event_target:emf_cadet value = -20 } }
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { opinion = { who = event_target:emf_cadet value = 0 } }
+			}
+			modifier = {
+				factor = 0.5
+				NOT = { opinion = { who = event_target:emf_cadet value = 20 } }
+			}
+			modifier = {
+				factor = 2
+				opinion = { who = event_target:emf_cadet value = 40 }
+			}
+			modifier = {
+				factor = 2
+				opinion = { who = event_target:emf_cadet value = 60 }
+			}
+			modifier = {
+				factor = 2
+				opinion = { who = event_target:emf_cadet value = 80 }
+			}
+			modifier = {
+				factor = 2
+				opinion = { who = event_target:emf_cadet value = 100 }
+			}
+			modifier = {
+				factor = 2
+				is_ruler = yes
+				scaled_wealth = 1.0
+			}
+			modifier = {
+				factor = 2
+				is_ruler = yes
+				scaled_wealth = 2.0
+			}
+			modifier = {
+				factor = 2
+				is_ruler = yes
+				scaled_wealth = 4.0
+			}
+			modifier = {
+				factor = 0.5
+				is_ruler = yes
+				war = yes
+				scaled_wealth < 1.0
+			}
+			modifier = {
+				factor = 0.1
+				is_primary_war_participant = yes
+				scaled_wealth < 1.0
+			}
+			modifier = {
+				factor = 0
+				is_primary_war_participant = yes
+				scaled_wealth < 0.5
+			}
+			modifier = {
+				factor = 5
+				trait = charitable
+			}
+			modifier = {
+				factor = 2
+				trait = humble
+			}
+			modifier = {
+				factor = 2
+				trait = kind
+			}
+			modifier = {
+				factor = 0.2
+				trait = greedy
+			}
+			modifier = {
+				factor = 0.5
+				trait = proud
+			}
+			modifier = {
+				factor = 0.5
+				trait = envious
+			}
+			modifier = {
+				factor = 0.5
+				trait = cruel
+			}
+		}
+		prestige = 100
+		event_target:emf_cadet = {
+			show_scope_change = no
+			if = {
+				limit = { PREV = { wealth >= 600 } }
+				custom_tooltip = {
+					text = GIFT_150_GOLD_TO_THIS
+					PREV = { wealth = -150 }
+					wealth = 150
+				}
+			}
+			else_if = {
+				limit = { PREV = { wealth >= 500 } }
+				custom_tooltip = {
+					text = GIFT_125_GOLD_TO_THIS
+					PREV = { wealth = -125 }
+					wealth = 125
+				}
+			}
+			else_if = {
+				limit = { PREV = { wealth >= 400 } }
+				custom_tooltip = {
+					text = GIFT_100_GOLD_TO_THIS
+					PREV = { wealth = -100 }
+					wealth = 100
+				}
+			}
+			else_if = {
+				limit = { PREV = { wealth >= 300 } }
+				custom_tooltip = {
+					text = GIFT_75_GOLD_TO_THIS
+					PREV = { wealth = -75 }
+					wealth = 75
+				}
+			}
+			else_if = {
+				limit = { PREV = { wealth >= 200 } }
+				custom_tooltip = {
+					text = GIFT_50_GOLD_TO_THIS
+					PREV = { wealth = -50 }
+					wealth = 50
+				}
+			}
+			else_if = {
+				limit = { PREV = { wealth >= 160 } }
+				custom_tooltip = {
+					text = GIFT_40_GOLD_TO_THIS
+					PREV = { wealth = -40 }
+					wealth = 40
+				}
+			}
+			else_if = {
+				limit = { PREV = { wealth >= 120 } }
+				custom_tooltip = {
+					text = GIFT_30_GOLD_TO_THIS
+					PREV = { wealth = -30 }
+					wealth = 30
+				}
+			}
+			else_if = {
+				limit = { PREV = { wealth >= 100 } }
+				custom_tooltip = {
+					text = GIFT_25_GOLD_TO_THIS
+					PREV = { wealth = -25 }
+					wealth = 25
+				}
+			}
+			else_if = {
+				limit = { PREV = { wealth >= 80 } }
+				custom_tooltip = {
+					text = GIFT_20_GOLD_TO_THIS
+					PREV = { wealth = -20 }
+					wealth = 20
+				}
+			}
+			else_if = {
+				limit = { PREV = { wealth >= 60 } }
+				custom_tooltip = {
+					text = GIFT_15_GOLD_TO_THIS
+					PREV = { wealth = -15 }
+					wealth = 15
+				}
+			}
+			else_if = {
+				limit = { PREV = { wealth >= 40 } }
+				custom_tooltip = {
+					text = GIFT_10_GOLD_TO_THIS
+					PREV = { wealth = -10 }
+					wealth = 10
+				}
+			}
+			else = {
+				custom_tooltip = {
+					text = GIFT_5_GOLD_TO_THIS
+					PREV = { wealth = -5 }
+					wealth = 5
+				}
+			}
+		}
+		reverse_opinion = {
+			who = event_target:emf_cadet
+			modifier = emf_opinion_sent_gift_upon_cadet_dyn_formation
+		}
+	}
+
+	option = {
+		name = emf_cadet.201.opt.we_dont_need_them_anyway
+		ai_chance = {
+			factor = 2
+		}
+		prestige = 10
+	}
+}
+
+# emf_cadet.202 -- notify new members of the cadet dynasty of the cadet dynasty formation
+character_event = {
+	id = emf_cadet.202
+	desc = emf_cadet.202.desc
+	picture = GFX_evt_a_crowning_ceremony
+	border = GFX_event_normal_frame_diplomacy
+	portrait = event_target:emf_cadet
+
+	is_triggered_only = yes
+
+	option = {
+		name = emf_cadet.202.opt.toast_to_house
+		prestige = 100
+	}
+}
+
+# emf_cadet.203 -- notify the cadet of the cadet dynasty's formation
+character_event = {
+	id = emf_cadet.203
+	desc = emf_cadet.203.desc
+	picture = GFX_evt_a_crowning_ceremony
+	border = GFX_event_normal_frame_diplomacy
+	portrait = event_target:emf_cadet
+
+	is_triggered_only = yes
+
+	option = {
+		name = emf_cadet.203.opt.toast_to_house
+		prestige = 250
+	}
+}

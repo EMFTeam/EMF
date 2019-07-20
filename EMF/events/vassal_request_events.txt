@@ -28,21 +28,60 @@ character_event = {
 
 	trigger = {
 		independent = no
+		higher_tier_than = BARON
+		war = no
+		in_revolt = no
 		liege = {
+			war = no
 			in_revolt = no
-			pf_war_flag_trigger = no
 			NOT = { character = ROOT }
 			NOT = { holds_favor_on = ROOT }
-			war = no
 			any_vassal = {
-				NOT = { character = ROOT }
-				de_jure_liege = ROOT
+				lower_tier_than = ROOT
 				war = no
-				is_patrician = no
 				in_revolt = no
+				# AI lieges always want to keep merchant republic vassals:
+				trigger_if = {
+					limit = { PREV = { ai = no } }
+					OR = {
+						is_patrician = no
+						is_merchant_republic = yes
+					}
+				}
+				trigger_else = {
+					is_patrician = no
+				}
+				# Either the liege is a player, or the vassal hasn't been marked to not be transferred by the AI:
+				OR = {
+					PREV = { ai = no }
+					NOT = { has_flag = ai_flag_never_transfer }
+				}
+				primary_title = {
+					any_de_jure_liege_title = {
+						holder = ROOT
+						# No other vassal of our liege (or the liege themselves) holds a title with more immediate
+						# de jure pretension over the vassal's primary title:
+						NOT = {
+							any_de_jure_vassal_title = {
+								de_jure_liege_or_above = PREVPREV # primary_title <- any_vassal <- liege
+								owner = {
+									NOT = { character = ROOT }
+									ROOT = {
+										liege = {
+											NOR = {
+												character = PREVPREV # owner <- any_de_jure_vassal_title <- any_de_jure_liege_title <- primary_title <- ...
+												is_liege_of = PREVPREV
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
 			}
 		}
-		NOT = { has_character_flag = requested_vassal_transfer }
+		NOT = { has_flag = requested_vassal_transfer }
 	}
 
 	mean_time_to_happen = {
@@ -52,15 +91,27 @@ character_event = {
 			trait = greedy
 		}
 		modifier = {
-			factor = 0.5
-			trait = envious
-		}
-		modifier = {
 			factor = 0.25
 			trait = ambitious
 		}
 		modifier = {
-			factor = 10.0
+			factor = 0.5
+			trait = shrewd
+		}
+		modifier = {
+			factor = 0.5
+			trait = envious
+		}
+		modifier = {
+			factor = 0.75
+			trait = wroth
+		}
+		modifier = {
+			factor = 1.33
+			trait = patient
+		}
+		modifier = {
+			factor = 5.0
 			trait = content
 		}
 	}
@@ -96,9 +147,52 @@ character_event = {
 	is_triggered_only = yes
 
 	trigger = {
+		war = no
+		in_revolt = no
 		FROM = {
-			liege = {
-				character = ROOT #to make sure no titles have *just* been given away
+			vassal_of = ROOT
+			higher_tier_than = BARON
+			war = no
+			in_revolt = no
+		}
+		any_vassal = {
+			lower_tier_than = FROM
+			war = no
+			in_revolt = no
+			# AI lieges always want to keep merchant republic vassals:
+			trigger_if = {
+				limit = { ROOT = { ai = no } }
+				OR = {
+					is_patrician = no
+					is_merchant_republic = yes
+				}
+			}
+			trigger_else = {
+				is_patrician = no
+			}
+			# Either the liege is a player, or the vassal hasn't been marked to not be transferred by the AI:
+			OR = {
+				ROOT = { ai = no }
+				NOT = { has_flag = ai_flag_never_transfer }
+			}
+			primary_title = {
+				any_de_jure_liege_title = {
+					holder = FROM
+					# No other vassal of our liege (or the liege themselves) holds a title with more immediate
+					# de jure pretension over the vassal's primary title:
+					NOT = {
+						any_de_jure_vassal_title = {
+							de_jure_liege_or_above = PREVPREV # primary_title
+							owner = {
+								NOR = {
+									character = FROM
+									character = ROOT # liege
+									vassal_of = ROOT
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -129,18 +223,36 @@ character_event = {
 				trait = content
 			}
 			modifier = {
+				factor = 2.0
+				trait = shrewd
+			}
+			modifier = {
+				factor = 0.5
+				trait = stubborn
+			}
+			modifier = {
 				factor = 0.1
 				trait = greedy
 			}
 			modifier = {
-				factor = 0
-				NOT = {
-					opinion = { who = FROM value = 0 }
-				}
+				factor = 0.1
+				NOT = { opinion = { who = FROM value = -25 } }
 			}
 			modifier = {
 				factor = 2.0
 				opinion = { who = FROM value = 25 }
+			}
+			modifier = {
+				factor = 2.0
+				opinion = { who = FROM value = 50 }
+			}
+			modifier = {
+				factor = 2.0
+				opinion = { who = FROM value = 75 }
+			}
+			modifier = {
+				factor = 2.0
+				opinion = { who = FROM value = 100 }
 			}
 		}
 		add_favor = FROM
@@ -150,6 +262,24 @@ character_event = {
 		random_vassal = {
 			limit = {
 				lower_tier_than = FROM
+				war = no
+				in_revolt = no
+				# AI lieges always want to keep merchant republic vassals:
+				trigger_if = {
+					limit = { ROOT = { ai = no } }
+					OR = {
+						is_patrician = no
+						is_merchant_republic = yes
+					}
+				}
+				trigger_else = {
+					is_patrician = no
+				}
+				# Either the liege is a player, or the vassal hasn't been marked to not be transferred by the AI:
+				OR = {
+					ROOT = { ai = no }
+					NOT = { has_flag = ai_flag_never_transfer }
+				}
 				primary_title = {
 					any_de_jure_liege_title = {
 						holder = FROM
@@ -169,12 +299,6 @@ character_event = {
 						}
 					}
 				}
-				OR = {
-					is_patrician = no
-					is_merchant_republic = yes
-				}
-				war = no
-				in_revolt = no
 			}
 			character_event = { id = 63002 tooltip = EVTTOOLTIP63002 }
 		}
@@ -200,50 +324,59 @@ character_event = {
 				trait = content
 			}
 			modifier = {
+				factor = 2.0
+				trait = shrewd
+			}
+			modifier = {
+				factor = 0.5
+				trait = stubborn
+			}
+			modifier = {
 				factor = 0.1
 				trait = greedy
 			}
 			modifier = {
 				factor = 0.1
-				NOT = {
-					opinion = {
-						who = FROM
-						value = -25
-					}
-				}
+				NOT = { opinion = { who = FROM value = -25 } }
 			}
 			modifier = {
 				factor = 2.0
-				opinion = {
-					who = FROM
-					value = 25
-				}
+				opinion = { who = FROM value = 25 }
 			}
 			modifier = {
 				factor = 2.0
-				opinion = {
-					who = FROM
-					value = 50
-				}
+				opinion = { who = FROM value = 50 }
 			}
 			modifier = {
 				factor = 2.0
-				opinion = {
-					who = FROM
-					value = 75
-				}
+				opinion = { who = FROM value = 75 }
 			}
 			modifier = {
 				factor = 2.0
-				opinion = {
-					who = FROM
-					value = 100
-				}
+				opinion = { who = FROM value = 100 }
 			}
 		}
 		random_vassal = {
 			limit = {
 				lower_tier_than = FROM
+				war = no
+				in_revolt = no
+				# AI lieges always want to keep merchant republic vassals:
+				trigger_if = {
+					limit = { ROOT = { ai = no } }
+					OR = {
+						is_patrician = no
+						is_merchant_republic = yes
+					}
+				}
+				trigger_else = {
+					is_patrician = no
+				}
+				# Either the liege is a player, or the vassal hasn't been marked to not be transferred by the AI:
+				OR = {
+					ROOT = { ai = no }
+					NOT = { has_flag = ai_flag_never_transfer }
+				}
 				primary_title = {
 					any_de_jure_liege_title = {
 						holder = FROM
@@ -263,12 +396,6 @@ character_event = {
 						}
 					}
 				}
-				OR = {
-					is_patrician = no
-					is_merchant_republic = yes
-				}
-				war = no
-				in_revolt = no
 			}
 			character_event = { id = 63002 tooltip = EVTTOOLTIP63002 }
 		}
@@ -327,6 +454,24 @@ character_event = {
 		random_vassal = {
 			limit = {
 				lower_tier_than = FROM
+				war = no
+				in_revolt = no
+				# AI lieges always want to keep merchant republic vassals:
+				trigger_if = {
+					limit = { ROOT = { ai = no } }
+					OR = {
+						is_patrician = no
+						is_merchant_republic = yes
+					}
+				}
+				trigger_else = {
+					is_patrician = no
+				}
+				# Either the liege is a player, or the vassal hasn't been marked to not be transferred by the AI:
+				OR = {
+					ROOT = { ai = no }
+					NOT = { has_flag = ai_flag_never_transfer }
+				}
 				primary_title = {
 					any_de_jure_liege_title = {
 						holder = FROM
@@ -346,12 +491,6 @@ character_event = {
 						}
 					}
 				}
-				OR = {
-					is_patrician = no
-					is_merchant_republic = yes
-				}
-				war = no
-				in_revolt = no
 			}
 			opinion = {
 				who = ROOT

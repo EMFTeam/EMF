@@ -1823,46 +1823,109 @@ character_event = {
 	option = { name = OK }
 }
 
-# emf_culture.15 -- inherit the emf_ai_never_convert_culture flag on_death for one generation
+# emf_culture.15 -- inherit the emf_ai_never_convert_culture flag on_birth for one generation
 character_event = {
 	id = emf_culture.15
 
-	is_triggered_only = yes # on_death
+	is_triggered_only = yes # on_birth
 	hide_window = yes
 
-	only_playable = yes
-	has_character_flag = emf_ai_never_convert_culture
-	ai = yes
-
 	trigger = {
-		NOT = { has_flag = emf_ai_never_convert_culture_inherited }
-		is_lowborn = no
-		any_demesne_title = {
-			current_heir = {
-				dynasty = ROOT
-				culture = ROOT
-				same_realm = ROOT
+		OR = {
+			father = {
+				is_alive = yes
+				ai = yes
+				has_flag = emf_ai_never_convert_culture
+				NOT = { has_flag = emf_ai_never_convert_culture_2 }
+			}
+			mother = {
+				is_alive = yes
+				OR = {
+					AND = {
+						ai = yes
+						has_flag = emf_ai_never_convert_culture
+						NOT = { has_flag = emf_ai_never_convert_culture_2 }
+					}
+					has_flag = emf_ai_never_convert_culture_unborn
+				}
 			}
 		}
 	}
 
 	immediate = {
-		any_demesne_title = {
-			limit = {
-				current_heir = {
-					dynasty = ROOT
-					culture = ROOT
-					same_realm = ROOT
-				}
-			}
-			current_heir = {
-				set_flag = emf_ai_never_convert_culture
-				set_flag = emf_ai_never_convert_culture_inherited
-			}
+		set_flag = emf_ai_never_convert_culture
+		set_flag = emf_ai_never_convert_culture_2
+		if = {
+			limit = { mother = { has_flag = emf_ai_never_convert_culture_unborn } }
+			# We might have twins today, so wait to clear flag:
+			mother = { character_event = { id = emf_culture.17 days = 1 } }
 		}
 	}
 }
 
+# emf_culture.16 -- father with emf_ai_never_convert_culture flag dies while wife/consort is pregant
+character_event = {
+	id = emf_culture.16
+
+	is_triggered_only = yes # on_death
+	hide_window = yes
+
+	only_men = yes
+	ai = yes
+	has_character_flag = emf_ai_never_convert_culture
+
+	trigger = {
+		NOT = { has_flag = emf_ai_never_convert_culture_2 }
+		OR = {
+			any_spouse = {
+				is_pregnant = yes
+				NOT = { has_flag = emf_ai_never_convert_culture_unborn }
+			}
+			any_consort = {
+				is_pregnant = yes
+				NOT = { has_flag = emf_ai_never_convert_culture_unborn }
+			}
+			any_lover = {
+				is_pregnant = yes
+				NOT = { has_flag = emf_ai_never_convert_culture_unborn }
+				father_of_unborn = { character = ROOT }
+			}
+		}
+	}
+
+	immediate = {
+		any_spouse = {
+			limit = { is_pregnant = yes }
+			set_flag = emf_ai_never_convert_culture_unborn
+		}
+		any_consort = {
+			limit = { is_pregnant = yes }
+			set_flag = emf_ai_never_convert_culture_unborn
+		}
+		any_lover = {
+			limit = {
+				is_pregnant = yes
+				father_of_unborn = { character = ROOT }
+			}
+			set_flag = emf_ai_never_convert_culture_unborn
+		}
+	}
+}
+
+# emf_culture.17 -- clear emf_ai_never_convert_culture_unborn flag on mother after birth or on_postbirth_stillbirth
+character_event = {
+	id = emf_culture.17
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	only_women = yes
+	has_character_flag = emf_ai_never_convert_culture_unborn
+
+	immediate = {
+		clr_flag = emf_ai_never_convert_culture_unborn
+	}
+}
 
 ##### FROM HERE ON, THIS STUFF NEEDS TO BE ADAPTED ELSEWHERE AND IS DOOMED IN PRESENT STATE #####
 

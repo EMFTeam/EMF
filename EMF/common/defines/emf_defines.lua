@@ -18,6 +18,7 @@ NDefines.NDiplomacy.DEMAND_RELIGIOUS_CONVERSION_INTERACTION_THRESHOLD_FOR_YES = 
 NDefines.NDiplomacy.CHANGE_CRUSADE_TARGET_INTERACTION_PIETY = 400 -- EMF v10.0 (from 250 in vanilla)
 NDefines.NDiplomacy.CHANGE_CRUSADE_TARGET_INTERACTION_PRESTIGE = 400 -- EMF v10.0 (from 0 in vanilla)
 NDefines.NDiplomacy.INVITE_TO_COURT_INTERACTION_MONEY = 10
+NDefines.NDiplomacy.ASK_FOR_EXCOMMUNICATION_INTERACTION_PIETY = 150
 NDefines.NDiplomacy.BANISH_TAKE_WEALTH_PERCENTAGE_COURTIER = 0.05
 NDefines.NDiplomacy.DEFENSIVE_PACT_THREAT_LIMIT = 0.15
 NDefines.NDiplomacy.DEFENSIVE_PACT_MAX_RANGE = 300
@@ -114,6 +115,8 @@ NDefines.NEconomy.PATRICIAN_CITY_TAX_MULT = 0.5                   -- prior to EM
 NDefines.NEconomy.OVER_MAX_DEMESNE_TAX_PENALTY = 0.1              -- doubled tax penalty per holding over demesne limit (still quite flexible, however) from v8.06
 NDefines.NEconomy.TRADE_ROUTE_SIEGE_MULTIPLIER = 0.75			  -- prior to EMF v9.06: 0.8; vanilla: 0.9 [also from v8.06]
 NDefines.NEconomy.TRADE_ROUTE_OCCUPATION_MULTIPLIER = 0.5         -- prior to EMF v9.06: 0.6; vanilla: 0.75 [also from v8.06]
+NDefines.NEconomy.PATRICIAN_INHERITANCE_FROM_RELATIVE_MULT = 1
+NDefines.NEconomy.PATRICIAN_GOLD_TO_MONTHLY_PRESTIGE = 0
 
 -- Nomad
 NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 1250
@@ -127,7 +130,7 @@ NDefines.NMilitary.BATTLE_WARSCORE_DEFENDER_MULTIPLIER = 1.6
 NDefines.NMilitary.MIN_LEVIES_ABOVE_OPINION_THRESHOLD = 0         -- prior to EMF v9.06: 0.333
 NDefines.NMilitary.ATTACKER_SIEGE_DAMAGE = 0
 NDefines.NMilitary.DEFENDER_SIEGE_DAMAGE = 0
-NDefines.NMilitary.NUM_DAYS_BETWEEN_SIEGE_MORALE_LOSS = 10
+NDefines.NMilitary.NUM_DAYS_BETWEEN_SIEGE_MORALE_LOSS = 5
 NDefines.NMilitary.REINFORCE_RATE = 0.03
 NDefines.NMilitary.LEVY_RAISED_REINFORCE_RATE_MULTIPLIER = 0.2        -- vanilla / v8.06 was 0.5
 NDefines.NMilitary.SETTLEMENT_WARSCORE_MULTIPLIER = 0.32              -- prior to EMF v9.06: 0.375; in EMF v8.07, more warscore for occupying private demesne holdings of enemy (from 0.3/vanilla)
