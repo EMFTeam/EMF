@@ -302,3 +302,179 @@ character_event = {
 		}
 	}
 }
+
+##############################################################################################################
+
+letter_event = {
+	id = emf_faction.10
+	desc = emf_faction.10.desc
+
+	is_triggered_only = yes
+
+	trigger = {
+		FROM = {
+			leads_faction = faction_claimant
+			supported_claimant = { character = ROOT }
+		}
+	}
+
+	immediate = {
+		FROM = { supported_claimant_title = { save_event_target_as = emf_claim_title } }
+	}
+
+	option = {
+		name = {
+			text = emf_faction.10.opt.ok_neutral
+			trigger = {
+				NAND = {
+					same_liege = FROM
+					in_faction = faction_claimant
+					supported_claimant = { character = ROOT }
+				}
+			}
+		}
+		name = {
+			text = emf_faction.10.opt.ok_in_faction
+			trigger = {
+				same_liege = FROM
+				in_faction = faction_claimant
+				supported_claimant = { character = ROOT }
+			}
+		}
+		hidden_effect = {
+			FROM = {
+				character_event = { id = emf_faction.11 days = 1 } # Let them proceed
+			}
+		}
+	}
+	option = {
+		name = emf_faction.10.opt.join_faction
+		trigger = {
+			ai = no
+			higher_tier_than = BARON
+			is_landed = yes
+			same_liege = FROM
+			NAND = {
+				in_faction = faction_claimant
+				supported_claimant = { character = ROOT }
+			}
+			emf_faction_basic_allow_join = yes
+		}
+		join_faction = {
+			faction_leader = FROM
+			faction = faction_claimant
+			title = event_target:emf_claim_title
+			thirdparty = ROOT
+			can_join_existing = yes
+		}
+		hidden_effect = {
+			FROM = {
+				set_flag = emf_supported_claimant_joined_faction_tmp
+				character_event = { id = emf_faction.11 days = 1 } # Let them proceed
+			}
+		}
+	}
+	option = {
+		name = emf_faction.10.opt.refuse_installation
+		trigger = {
+			ai = no
+			NAND = {
+				same_liege = FROM
+				in_faction = faction_claimant
+				supported_claimant = { character = ROOT }
+				supported_claimant_title = { title = event_target:emf_claim_title }
+			}
+		}
+		custom_tooltip = {
+			text = CLAIMANT_FACTION_WILL_STAND_DOWN_TT
+			FROM = {
+				character_event = { id = emf_faction.12 days = 1 } # Put a stop to this
+			}
+		}
+	}
+}
+
+letter_event = {
+	id = emf_faction.11
+
+	desc = {
+		text = emf_faction.11.desc
+		trigger = {
+			NAND = {
+				has_flag = emf_supported_claimant_joined_faction_tmp
+				FROM = {
+					same_liege = ROOT
+					in_faction = faction_claimant
+					supported_claimant = { character = PREV }
+				}
+			}
+		}
+	}
+
+	desc = {
+		text = emf_faction.11.desc_joined_faction
+		trigger = {
+			has_flag = emf_supported_claimant_joined_faction_tmp
+			FROM = {
+				same_liege = ROOT
+				in_faction = faction_claimant
+				supported_claimant = { character = PREV }
+			}
+		}
+	}
+
+	is_triggered_only = yes
+
+	trigger = {
+		leads_faction = faction_claimant
+		supported_claimant = { character = FROM }
+	}
+
+	fail_trigger_effect = {
+		clr_flag = emf_supported_claimant_joined_faction_tmp
+	}
+
+	option = {
+		name = emf_faction.11.opt.send_ultimatum
+		liege = {
+			show_scope_change = no
+			letter_event = { id = 8036 days = 1 tooltip = "EVTTOOLTIP8005" }
+		}
+		hidden_tooltip = {
+			set_character_flag = faction_claimant_ultimatum_taken
+		}
+	}
+
+	after = {
+		clr_flag = emf_supported_claimant_joined_faction_tmp
+	}
+}
+
+letter_event = {
+	id = emf_faction.12
+	desc = emf_faction.12.desc
+
+	is_triggered_only = yes
+
+	trigger = {
+		leads_faction = faction_claimant
+		supported_claimant = { character = FROM }
+	}
+
+	option = {
+		name = emf_faction.12.opt.stand_down
+		FROM = {
+			clr_flag = emf_no_claimant_faction_@event_target:emf_claim_title
+			set_flag = emf_no_claimant_faction_@event_target:emf_claim_title
+		}
+		custom_tooltip = {
+			text = CLAIMANT_FACTION_DISBANDS_TT
+			any_faction_backer = {
+				show_scope_change = no
+				faction = faction_claimant
+				leave_faction = faction_claimant
+			}
+			leave_faction = faction_claimant
+		}
+	}
+}
