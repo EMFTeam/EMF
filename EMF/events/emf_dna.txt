@@ -25,7 +25,6 @@ character_event = {
 	hide_window = yes
 
 	immediate = {
-		set_global_flag = emf_dna_init # Mark that we did in fact do startup DNA initialization upon this campaign
 		any_character = {
 			limit = { emf_dna_is_subject_to_startup_randomization = yes }
 			character_event = { id = emf_dna.10 }
@@ -37,20 +36,19 @@ character_event = {
 			limit = { emf_dna_is_subject_to_startup_randomization = no }
 			set_flag = emf_maybe_historical
 		}
+		# Initialize player gene flags (we also call this from our hook which catches Ruler Designer characters,
+		# since they aren't dropped into the game until after the on_startup on_action):
+		any_player = {
+			character_event = { id = emf_dna.15 }
+		}
 	}
 }
 
 
 # emf_dna.1 -- MTTH event to find randomly-generated courtiers and initialize their genetic traits. [Character]
-#
-# Only runs if this savegame/campaign was started with a proper game-wide genetics initialization, because otherwise,
-# it'll start mistaking characters that aren't randomly-generated for ones that are and scrambling their traits with respect
-# to their genetics. This is achieved through the global flag emf_dna_init to signal that startup initialization was done.
 character_event = {
 	id = emf_dna.1
 	hide_window = yes
-
-	has_global_flag = emf_dna_init
 
 	trigger = {
 		NOR = {
@@ -68,7 +66,6 @@ character_event = {
 		character_event = { id = emf_dna.10 }
 	}
 }
-
 
 # emf_dna.10 -- Initialize a character's genetic traits. [Character]
 #
@@ -312,6 +309,366 @@ character_event = {
 	}
 }
 
+# emf_dna.15 -- set player genes on startup. unless a phenotype is already present, we give them average genes
+# subject only to a slight amount of chance (tilted toward slightly less likelihood of negative Mendelian
+# trait expression in offspring). this reduces un-fun surprises among other things.
+character_event = {
+	id = emf_dna.15
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		set_flag = emf_dna_check
+		emf_dna_clear_flags_for_int = yes
+		emf_dna_clear_flags_for_str = yes
+		emf_dna_clear_flags_for_hgt = yes
+		emf_dna_clear_flags_for_attr = yes
+		emf_dna_clear_flags_for_dwarf = yes
+		emf_dna_clear_flags_for_clubfooted = yes
+		emf_dna_clear_flags_for_hunchback = yes
+		emf_dna_clear_flags_for_harelip = yes
+		emf_dna_clear_flags_for_lisp = yes
+		emf_dna_clear_flags_for_stutter = yes
+		emf_dna_clear_flags_for_deaf = yes
+		emf_dna_clear_flags_for_wrymouth = yes
+		# Intelligence
+		if = {
+			limit = { trait = genius }
+			emf_dna_set_flags_for_genius = yes
+		}
+		else_if = {
+			limit = { trait = quick }
+			emf_dna_set_flags_for_quick = yes
+		}
+		else_if = {
+			limit = { trait = bright }
+			emf_dna_set_flags_for_bright = yes
+		}
+		else_if = {
+			limit = { trait = dim }
+			emf_dna_set_flags_for_dim = yes
+		}
+		else_if = {
+			limit = { trait = slow }
+			emf_dna_set_flags_for_slow = yes
+		}
+		else_if = {
+			limit = { trait = imbecile }
+			emf_dna_set_flags_for_imbecile = yes
+		}
+		else = {
+			set_flag = int_Aa
+			set_flag = int_Bb
+			set_flag = int_Cc
+		}
+		# Strength
+		if = {
+			limit = { trait = strong }
+			emf_dna_set_flags_for_strong = yes
+		}
+		else_if = {
+			limit = { trait = burly }
+			emf_dna_set_flags_for_burly = yes
+		}
+		else_if = {
+			limit = { trait = delicate }
+			emf_dna_set_flags_for_delicate = yes
+		}
+		else_if = {
+			limit = { trait = weak }
+			emf_dna_set_flags_for_weak = yes
+		}
+		else = {
+			set_flag = str_Aa
+			set_flag = str_Bb
+			set_flag = str_Cc
+		}
+		# Height
+		if = {
+			limit = { trait = giant }
+			emf_dna_set_flags_for_giant = yes
+		}
+		else_if = {
+			limit = { trait = tall }
+			emf_dna_set_flags_for_tall = yes
+		}
+		else_if = {
+			limit = { trait = short }
+			emf_dna_set_flags_for_short = yes
+		}
+		else_if = {
+			limit = { trait = tiny }
+			emf_dna_set_flags_for_tiny = yes
+		}
+		else = {
+			set_flag = hgt_Aa
+			set_flag = hgt_Bb
+			set_flag = hgt_Cc
+		}
+		# Attractiveness
+		if = {
+			limit = { trait = fair }
+			emf_dna_set_flags_for_fair = yes
+		}
+		else_if = {
+			limit = { trait = comely }
+			emf_dna_set_flags_for_comely = yes
+		}
+		else_if = {
+			limit = { trait = homely }
+			emf_dna_set_flags_for_homely = yes
+		}
+		else_if = {
+			limit = { trait = ugly }
+			emf_dna_set_flags_for_ugly = yes
+		}
+		else = {
+			set_flag = attr_Aa
+			set_flag = attr_Bb
+			set_flag = attr_Cc
+		}
+		# Perceptiveness
+		if = {
+			limit = { trait = perceptive }
+			emf_dna_set_flags_for_perceptive = yes
+		}
+		else_if = {
+			limit = { trait = absentminded }
+			emf_dna_set_flags_for_absentminded = yes
+		}
+		else = {
+			set_flag = perc_Aa
+			set_flag = perc_Bb
+			set_flag = perc_Cc
+		}
+		# Mendelian traits
+		if = {
+			limit = { trait = dwarf }
+			emf_dna_set_flags_for_dwarf = yes
+		}
+		else = {
+			random_list = {
+				3 = {
+					set_flag = dwarf_Aa
+					set_flag = dwarf_Bb
+					set_flag = dwarf_Cc
+				}
+				1 = {
+					set_flag = dwarf_AA
+					set_flag = dwarf_Bb
+					set_flag = dwarf_Cc
+				}
+				1 = {
+					set_flag = dwarf_Aa
+					set_flag = dwarf_BB
+					set_flag = dwarf_Cc
+				}
+				1 = {
+					set_flag = dwarf_Aa
+					set_flag = dwarf_Bb
+					set_flag = dwarf_CC
+				}
+			}
+		}
+		if = {
+			limit = { trait = clubfooted }
+			emf_dna_set_flags_for_clubfooted = yes
+		}
+		else = {
+			random_list = {
+				3 = {
+					set_flag = clubfooted_Aa
+					set_flag = clubfooted_Bb
+					set_flag = clubfooted_Cc
+				}
+				1 = {
+					set_flag = clubfooted_AA
+					set_flag = clubfooted_Bb
+					set_flag = clubfooted_Cc
+				}
+				1 = {
+					set_flag = clubfooted_Aa
+					set_flag = clubfooted_BB
+					set_flag = clubfooted_Cc
+				}
+				1 = {
+					set_flag = clubfooted_Aa
+					set_flag = clubfooted_Bb
+					set_flag = clubfooted_CC
+				}
+			}
+		}
+		if = {
+			limit = { trait = hunchback }
+			emf_dna_set_flags_for_hunchback = yes
+		}
+		else = {
+			random_list = {
+				3 = {
+					set_flag = hunchback_Aa
+					set_flag = hunchback_Bb
+					set_flag = hunchback_Cc
+				}
+				1 = {
+					set_flag = hunchback_AA
+					set_flag = hunchback_Bb
+					set_flag = hunchback_Cc
+				}
+				1 = {
+					set_flag = hunchback_Aa
+					set_flag = hunchback_BB
+					set_flag = hunchback_Cc
+				}
+				1 = {
+					set_flag = hunchback_Aa
+					set_flag = hunchback_Bb
+					set_flag = hunchback_CC
+				}
+			}
+		}
+		if = {
+			limit = { trait = harelip }
+			emf_dna_set_flags_for_harelip = yes
+		}
+		else = {
+			random_list = {
+				3 = {
+					set_flag = harelip_Aa
+					set_flag = harelip_Bb
+					set_flag = harelip_Cc
+				}
+				1 = {
+					set_flag = harelip_AA
+					set_flag = harelip_Bb
+					set_flag = harelip_Cc
+				}
+				1 = {
+					set_flag = harelip_Aa
+					set_flag = harelip_BB
+					set_flag = harelip_Cc
+				}
+				1 = {
+					set_flag = harelip_Aa
+					set_flag = harelip_Bb
+					set_flag = harelip_CC
+				}
+			}
+		}
+		if = {
+			limit = { trait = lisp }
+			emf_dna_set_flags_for_lisp = yes
+		}
+		else = {
+			random_list = {
+				3 = {
+					set_flag = lisp_Aa
+					set_flag = lisp_Bb
+					set_flag = lisp_Cc
+				}
+				1 = {
+					set_flag = lisp_AA
+					set_flag = lisp_Bb
+					set_flag = lisp_Cc
+				}
+				1 = {
+					set_flag = lisp_Aa
+					set_flag = lisp_BB
+					set_flag = lisp_Cc
+				}
+				1 = {
+					set_flag = lisp_Aa
+					set_flag = lisp_Bb
+					set_flag = lisp_CC
+				}
+			}
+		}
+		if = {
+			limit = { trait = stutter }
+			emf_dna_set_flags_for_stutter = yes
+		}
+		else = {
+			random_list = {
+				3 = {
+					set_flag = stutter_Aa
+					set_flag = stutter_Bb
+					set_flag = stutter_Cc
+				}
+				1 = {
+					set_flag = stutter_AA
+					set_flag = stutter_Bb
+					set_flag = stutter_Cc
+				}
+				1 = {
+					set_flag = stutter_Aa
+					set_flag = stutter_BB
+					set_flag = stutter_Cc
+				}
+				1 = {
+					set_flag = stutter_Aa
+					set_flag = stutter_Bb
+					set_flag = stutter_CC
+				}
+			}
+		}
+		if = {
+			limit = { trait = deaf }
+			emf_dna_set_flags_for_deaf = yes
+		}
+		else = {
+			random_list = {
+				3 = {
+					set_flag = deaf_Aa
+					set_flag = deaf_Bb
+					set_flag = deaf_Cc
+				}
+				1 = {
+					set_flag = deaf_AA
+					set_flag = deaf_Bb
+					set_flag = deaf_Cc
+				}
+				1 = {
+					set_flag = deaf_Aa
+					set_flag = deaf_BB
+					set_flag = deaf_Cc
+				}
+				1 = {
+					set_flag = deaf_Aa
+					set_flag = deaf_Bb
+					set_flag = deaf_CC
+				}
+			}
+		}
+		if = {
+			limit = { trait = wrymouth }
+			emf_dna_set_flags_for_wrymouth = yes
+		}
+		else = {
+			random_list = {
+				3 = {
+					set_flag = wrymouth_Aa
+					set_flag = wrymouth_Bb
+					set_flag = wrymouth_Cc
+				}
+				1 = {
+					set_flag = wrymouth_AA
+					set_flag = wrymouth_Bb
+					set_flag = wrymouth_Cc
+				}
+				1 = {
+					set_flag = wrymouth_Aa
+					set_flag = wrymouth_BB
+					set_flag = wrymouth_Cc
+				}
+				1 = {
+					set_flag = wrymouth_Aa
+					set_flag = wrymouth_Bb
+					set_flag = wrymouth_CC
+				}
+			}
+		}
+	}
+}
 
 #############################
 #### GENETIC INHERITANCE ####
@@ -349,7 +706,7 @@ character_event = {
 	immediate = {
 		# Mark this character as having received a DNA check so that they're not later mistaken for a randomly-generated courtier:
 		set_flag = emf_dna_check
-		# Save the correct father scope to event_target:dad. All other inheritance events are chained from here, so we never need
+		# Save the correct father scope to event_target:emf_dna_dad. All other inheritance events are chained from here, so we never need
 		# to do this again (the event target will remain valid until the chain fully completes). Why not use the true_father scope
 		# added in patch 2.8, allegedly? Because, despite the vanilla changelog indicating how and that it works, using it
 		# throughout this module initially caused millions of lines of script asserts to be written to the error log re: triggers
@@ -357,18 +714,18 @@ character_event = {
 		if = {
 			limit = { is_father_real_father = yes }
 			father = {
-				save_event_target_as = dad
+				save_event_target_as = emf_dna_dad
 			}
 		}
 		else = {
 			real_father = {
-				save_event_target_as = dad
+				save_event_target_as = emf_dna_dad
 			}
 		}
 		## 1. Initialization. Only executes for characters without flags
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					NOR = {
 						has_flag = int_AA
 						has_flag = int_Aa
@@ -382,7 +739,7 @@ character_event = {
 					}
 				}
 			}
-			event_target:dad = {
+			event_target:emf_dna_dad = {
 				if = {
 					limit = {
 						trait = genius
@@ -550,7 +907,7 @@ character_event = {
 		set_variable = { which = local_alleles value = 0 }
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_AA
 				}
 				mother = {
@@ -562,7 +919,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_AA
 				}
 				mother = {
@@ -582,7 +939,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_Aa
 				}
 				mother = {
@@ -602,7 +959,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_Aa
 				}
 				mother = {
@@ -625,7 +982,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_AA
 				}
 				mother = {
@@ -637,7 +994,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_aa
 				}
 				mother = {
@@ -649,7 +1006,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_Aa
 				}
 				mother = {
@@ -668,7 +1025,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_aa
 				}
 				mother = {
@@ -687,7 +1044,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_aa
 				}
 				mother = {
@@ -702,7 +1059,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_BB
 				}
 				mother = {
@@ -714,7 +1071,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_BB
 				}
 				mother = {
@@ -734,7 +1091,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_Bb
 				}
 				mother = {
@@ -754,7 +1111,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_Bb
 				}
 				mother = {
@@ -777,7 +1134,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_BB
 				}
 				mother = {
@@ -789,7 +1146,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_bb
 				}
 				mother = {
@@ -801,7 +1158,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_Bb
 				}
 				mother = {
@@ -820,7 +1177,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_bb
 				}
 				mother = {
@@ -839,7 +1196,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_bb
 				}
 				mother = {
@@ -854,7 +1211,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_CC
 				}
 				mother = {
@@ -866,7 +1223,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_CC
 				}
 				mother = {
@@ -886,7 +1243,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_Cc
 				}
 				mother = {
@@ -906,7 +1263,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_Cc
 				}
 				mother = {
@@ -929,7 +1286,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_CC
 				}
 				mother = {
@@ -941,7 +1298,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_cc
 				}
 				mother = {
@@ -953,7 +1310,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_Cc
 				}
 				mother = {
@@ -972,7 +1329,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_cc
 				}
 				mother = {
@@ -991,7 +1348,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = int_cc
 				}
 				mother = {
@@ -1180,7 +1537,7 @@ character_event = {
 		## 2. Initialization. Only executes for characters without flags
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					NOR = {
 						has_flag = attr_AA
 						has_flag = attr_Aa
@@ -1194,7 +1551,7 @@ character_event = {
 					}
 				}
 			}
-			event_target:dad = {
+			event_target:emf_dna_dad = {
 				if = {
 					limit = {
 						trait = fair
@@ -1338,7 +1695,7 @@ character_event = {
 		set_variable = { which = local_alleles value = 0 }
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_AA
 				}
 				mother = {
@@ -1350,7 +1707,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_AA
 				}
 				mother = {
@@ -1370,7 +1727,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_Aa
 				}
 				mother = {
@@ -1390,7 +1747,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_Aa
 				}
 				mother = {
@@ -1413,7 +1770,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_AA
 				}
 				mother = {
@@ -1425,7 +1782,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_aa
 				}
 				mother = {
@@ -1437,7 +1794,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_Aa
 				}
 				mother = {
@@ -1456,7 +1813,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_aa
 				}
 				mother = {
@@ -1475,7 +1832,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_aa
 				}
 				mother = {
@@ -1490,7 +1847,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_BB
 				}
 				mother = {
@@ -1502,7 +1859,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_BB
 				}
 				mother = {
@@ -1522,7 +1879,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_Bb
 				}
 				mother = {
@@ -1542,7 +1899,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_BB
 				}
 				mother = {
@@ -1554,7 +1911,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_bb
 				}
 				mother = {
@@ -1566,7 +1923,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_Bb
 				}
 				mother = {
@@ -1589,7 +1946,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_Bb
 				}
 				mother = {
@@ -1608,7 +1965,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_bb
 				}
 				mother = {
@@ -1627,7 +1984,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_bb
 				}
 				mother = {
@@ -1642,7 +1999,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_CC
 				}
 				mother = {
@@ -1654,7 +2011,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_CC
 				}
 				mother = {
@@ -1674,7 +2031,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_Cc
 				}
 				mother = {
@@ -1694,7 +2051,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_Cc
 				}
 				mother = {
@@ -1717,7 +2074,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_CC
 				}
 				mother = {
@@ -1729,7 +2086,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_cc
 				}
 				mother = {
@@ -1741,7 +2098,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_Cc
 				}
 				mother = {
@@ -1760,7 +2117,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_cc
 				}
 				mother = {
@@ -1779,7 +2136,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = attr_cc
 				}
 				mother = {
@@ -1942,7 +2299,7 @@ character_event = {
 		## 2. Initialization. Only executes for characters without flags
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					NOR = {
 						has_flag = str_AA
 						has_flag = str_Aa
@@ -1956,7 +2313,7 @@ character_event = {
 					}
 				}
 			}
-			event_target:dad = {
+			event_target:emf_dna_dad = {
 				if = {
 					limit = {
 						trait = strong
@@ -2100,7 +2457,7 @@ character_event = {
 		set_variable = { which = local_alleles value = 0 }
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_AA
 				}
 				mother = {
@@ -2112,7 +2469,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_AA
 				}
 				mother = {
@@ -2132,7 +2489,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_Aa
 				}
 				mother = {
@@ -2152,7 +2509,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_Aa
 				}
 				mother = {
@@ -2175,7 +2532,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_AA
 				}
 				mother = {
@@ -2187,7 +2544,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_aa
 				}
 				mother = {
@@ -2199,7 +2556,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_Aa
 				}
 				mother = {
@@ -2218,7 +2575,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_aa
 				}
 				mother = {
@@ -2237,7 +2594,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_aa
 				}
 				mother = {
@@ -2252,7 +2609,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_BB
 				}
 				mother = {
@@ -2264,7 +2621,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_BB
 				}
 				mother = {
@@ -2284,7 +2641,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_Bb
 				}
 				mother = {
@@ -2304,7 +2661,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_BB
 				}
 				mother = {
@@ -2316,7 +2673,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_bb
 				}
 				mother = {
@@ -2328,7 +2685,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_Bb
 				}
 				mother = {
@@ -2351,7 +2708,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_Bb
 				}
 				mother = {
@@ -2370,7 +2727,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_bb
 				}
 				mother = {
@@ -2389,7 +2746,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_bb
 				}
 				mother = {
@@ -2404,7 +2761,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_CC
 				}
 				mother = {
@@ -2416,7 +2773,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_CC
 				}
 				mother = {
@@ -2436,7 +2793,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_Cc
 				}
 				mother = {
@@ -2456,7 +2813,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_Cc
 				}
 				mother = {
@@ -2479,7 +2836,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_CC
 				}
 				mother = {
@@ -2491,7 +2848,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_cc
 				}
 				mother = {
@@ -2503,7 +2860,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_Cc
 				}
 				mother = {
@@ -2522,7 +2879,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_cc
 				}
 				mother = {
@@ -2541,7 +2898,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = str_cc
 				}
 				mother = {
@@ -2704,7 +3061,7 @@ character_event = {
 		## 2. Initialization. Only executes for characters without flags
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					NOR = {
 						has_flag = hgt_AA
 						has_flag = hgt_Aa
@@ -2718,7 +3075,7 @@ character_event = {
 					}
 				}
 			}
-			event_target:dad = {
+			event_target:emf_dna_dad = {
 				if = {
 					limit = {
 						trait = giant
@@ -2862,7 +3219,7 @@ character_event = {
 		set_variable = { which = local_alleles value = 0 }
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hgt_AA
 				}
 				mother = {
@@ -2876,11 +3233,11 @@ character_event = {
 			limit = {
 				OR = {
 					AND = {
-						event_target:dad = { has_flag = hgt_AA }
+						event_target:emf_dna_dad = { has_flag = hgt_AA }
 						mother = { has_flag = hgt_Aa }
 					}
 					AND = {
-						event_target:dad = { has_flag = hgt_Aa }
+						event_target:emf_dna_dad = { has_flag = hgt_Aa }
 						mother = { has_flag = hgt_AA }
 					}
 				}
@@ -2898,7 +3255,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hgt_Aa
 				}
 				mother = {
@@ -2923,11 +3280,11 @@ character_event = {
 			limit = {
 				OR = {
 					AND = {
-						event_target:dad = { has_flag = hgt_AA }
+						event_target:emf_dna_dad = { has_flag = hgt_AA }
 						mother = { has_flag = hgt_aa }
 					}
 					AND = {
-						event_target:dad = { has_flag = hgt_aa }
+						event_target:emf_dna_dad = { has_flag = hgt_aa }
 						mother = { has_flag = hgt_AA }
 					}
 				}
@@ -2939,11 +3296,11 @@ character_event = {
 			limit = {
 				OR = {
 					AND = {
-						event_target:dad = { has_flag = hgt_Aa }
+						event_target:emf_dna_dad = { has_flag = hgt_Aa }
 						mother = { has_flag = hgt_aa }
 					}
 					AND = {
-						event_target:dad = { has_flag = hgt_aa }
+						event_target:emf_dna_dad = { has_flag = hgt_aa }
 						mother = { has_flag = hgt_Aa }
 					}
 				}
@@ -2960,7 +3317,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hgt_aa
 				}
 				mother = {
@@ -2975,7 +3332,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hgt_BB
 				}
 				mother = {
@@ -2989,11 +3346,11 @@ character_event = {
 			limit = {
 				OR = {
 					AND = {
-						event_target:dad = { has_flag = hgt_BB }
+						event_target:emf_dna_dad = { has_flag = hgt_BB }
 						mother = { has_flag = hgt_Bb }
 					}
 					AND = {
-						event_target:dad = { has_flag = hgt_Bb }
+						event_target:emf_dna_dad = { has_flag = hgt_Bb }
 						mother = { has_flag = hgt_BB }
 					}
 				}
@@ -3011,7 +3368,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hgt_Bb
 				}
 				mother = {
@@ -3036,11 +3393,11 @@ character_event = {
 			limit = {
 				OR = {
 					AND = {
-						event_target:dad = { has_flag = hgt_BB }
+						event_target:emf_dna_dad = { has_flag = hgt_BB }
 						mother = { has_flag = hgt_bb }
 					}
 					AND = {
-						event_target:dad = { has_flag = hgt_bb }
+						event_target:emf_dna_dad = { has_flag = hgt_bb }
 						mother = { has_flag = hgt_BB }
 					}
 				}
@@ -3052,11 +3409,11 @@ character_event = {
 			limit = {
 				OR = {
 					AND = {
-						event_target:dad = { has_flag = hgt_Bb }
+						event_target:emf_dna_dad = { has_flag = hgt_Bb }
 						mother = { has_flag = hgt_bb }
 					}
 					AND = {
-						event_target:dad = { has_flag = hgt_bb }
+						event_target:emf_dna_dad = { has_flag = hgt_bb }
 						mother = { has_flag = hgt_Bb }
 					}
 				}
@@ -3073,7 +3430,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hgt_bb
 				}
 				mother = {
@@ -3087,7 +3444,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hgt_CC
 				}
 				mother = {
@@ -3101,11 +3458,11 @@ character_event = {
 			limit = {
 				OR = {
 					AND = {
-						event_target:dad = { has_flag = hgt_CC }
+						event_target:emf_dna_dad = { has_flag = hgt_CC }
 						mother = { has_flag = hgt_Cc }
 					}
 					AND = {
-						event_target:dad = { has_flag = hgt_Cc }
+						event_target:emf_dna_dad = { has_flag = hgt_Cc }
 						mother = { has_flag = hgt_CC }
 					}
 				}
@@ -3125,11 +3482,11 @@ character_event = {
 			limit = {
 				OR = {
 					AND = {
-						event_target:dad = { has_flag = hgt_CC }
+						event_target:emf_dna_dad = { has_flag = hgt_CC }
 						mother = { has_flag = hgt_cc }
 					}
 					AND = {
-						event_target:dad = { has_flag = hgt_cc }
+						event_target:emf_dna_dad = { has_flag = hgt_cc }
 						mother = { has_flag = hgt_CC }
 					}
 				}
@@ -3139,7 +3496,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hgt_Cc
 				}
 				mother = {
@@ -3164,11 +3521,11 @@ character_event = {
 			limit = {
 				OR = {
 					AND = {
-						event_target:dad = { has_flag = hgt_Cc }
+						event_target:emf_dna_dad = { has_flag = hgt_Cc }
 						mother = { has_flag = hgt_cc }
 					}
 					AND = {
-						event_target:dad = { has_flag = hgt_cc }
+						event_target:emf_dna_dad = { has_flag = hgt_cc }
 						mother = { has_flag = hgt_Cc }
 					}
 				}
@@ -3185,7 +3542,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hgt_cc
 				}
 				mother = {
@@ -3340,7 +3697,7 @@ character_event = {
 
 	immediate = {
 		#### 1. Before we check flags for parents, check if they potentially have the wrong flag
-		event_target:dad = {
+		event_target:emf_dna_dad = {
 			if = {
 				limit = {
 					trait = dwarf
@@ -3369,7 +3726,7 @@ character_event = {
 		#### 2. Initialization. Only executes for characters without flags
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					NOR = {
 						has_flag = dwarf_AA
 						has_flag = dwarf_Aa
@@ -3383,7 +3740,7 @@ character_event = {
 					}
 				}
 			}
-			event_target:dad = {
+			event_target:emf_dna_dad = {
 				if = {
 					limit = {
 						trait = dwarf
@@ -3427,7 +3784,7 @@ character_event = {
 		set_variable = { which = local_r_alleles value = 0 }
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_AA
 				}
 				mother = {
@@ -3438,7 +3795,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_AA
 				}
 				mother = {
@@ -3456,7 +3813,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_Aa
 				}
 				mother = {
@@ -3474,7 +3831,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_Aa
 				}
 				mother = {
@@ -3496,7 +3853,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_AA
 				}
 				mother = {
@@ -3507,7 +3864,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_aa
 				}
 				mother = {
@@ -3518,7 +3875,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_Aa
 				}
 				mother = {
@@ -3537,7 +3894,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_aa
 				}
 				mother = {
@@ -3556,7 +3913,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_aa
 				}
 				mother = {
@@ -3571,7 +3928,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_BB
 				}
 				mother = {
@@ -3582,7 +3939,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_BB
 				}
 				mother = {
@@ -3600,7 +3957,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_Bb
 				}
 				mother = {
@@ -3618,7 +3975,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_Bb
 				}
 				mother = {
@@ -3640,7 +3997,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_BB
 				}
 				mother = {
@@ -3651,7 +4008,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_bb
 				}
 				mother = {
@@ -3662,7 +4019,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_Bb
 				}
 				mother = {
@@ -3681,7 +4038,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_bb
 				}
 				mother = {
@@ -3700,7 +4057,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_bb
 				}
 				mother = {
@@ -3715,7 +4072,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_CC
 				}
 				mother = {
@@ -3726,7 +4083,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_CC
 				}
 				mother = {
@@ -3744,7 +4101,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_Cc
 				}
 				mother = {
@@ -3762,7 +4119,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_Cc
 				}
 				mother = {
@@ -3784,7 +4141,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_CC
 				}
 				mother = {
@@ -3795,7 +4152,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_cc
 				}
 				mother = {
@@ -3806,7 +4163,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_Cc
 				}
 				mother = {
@@ -3825,7 +4182,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_cc
 				}
 				mother = {
@@ -3844,7 +4201,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = dwarf_cc
 				}
 				mother = {
@@ -3905,7 +4262,7 @@ character_event = {
 
 	immediate = {
 		#### 1. Before we check flags for parents, check if they potentially have the wrong flag
-		event_target:dad = {
+		event_target:emf_dna_dad = {
 			if = {
 				limit = {
 					trait = clubfooted
@@ -3934,7 +4291,7 @@ character_event = {
 		#### 2. Initialization. Only executes for characters without flags
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					NOR = {
 						has_flag = clubfooted_AA
 						has_flag = clubfooted_Aa
@@ -3948,7 +4305,7 @@ character_event = {
 					}
 				}
 			}
-			event_target:dad = {
+			event_target:emf_dna_dad = {
 				if = {
 					limit = {
 						trait = clubfooted
@@ -3992,7 +4349,7 @@ character_event = {
 		set_variable = { which = local_r_alleles value = 0 }
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_AA
 				}
 				mother = {
@@ -4003,7 +4360,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_AA
 				}
 				mother = {
@@ -4021,7 +4378,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_Aa
 				}
 				mother = {
@@ -4039,7 +4396,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_Aa
 				}
 				mother = {
@@ -4061,7 +4418,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_AA
 				}
 				mother = {
@@ -4072,7 +4429,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_aa
 				}
 				mother = {
@@ -4083,7 +4440,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_Aa
 				}
 				mother = {
@@ -4102,7 +4459,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_aa
 				}
 				mother = {
@@ -4121,7 +4478,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_aa
 				}
 				mother = {
@@ -4136,7 +4493,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_BB
 				}
 				mother = {
@@ -4147,7 +4504,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_BB
 				}
 				mother = {
@@ -4165,7 +4522,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_Bb
 				}
 				mother = {
@@ -4183,7 +4540,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_Bb
 				}
 				mother = {
@@ -4205,7 +4562,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_BB
 				}
 				mother = {
@@ -4216,7 +4573,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_bb
 				}
 				mother = {
@@ -4227,7 +4584,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_Bb
 				}
 				mother = {
@@ -4246,7 +4603,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_bb
 				}
 				mother = {
@@ -4265,7 +4622,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_bb
 				}
 				mother = {
@@ -4280,7 +4637,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_CC
 				}
 				mother = {
@@ -4291,7 +4648,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_CC
 				}
 				mother = {
@@ -4309,7 +4666,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_Cc
 				}
 				mother = {
@@ -4327,7 +4684,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_Cc
 				}
 				mother = {
@@ -4349,7 +4706,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_CC
 				}
 				mother = {
@@ -4360,7 +4717,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_cc
 				}
 				mother = {
@@ -4371,7 +4728,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_Cc
 				}
 				mother = {
@@ -4390,7 +4747,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_cc
 				}
 				mother = {
@@ -4409,7 +4766,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = clubfooted_cc
 				}
 				mother = {
@@ -4476,7 +4833,7 @@ character_event = {
 
 	immediate = {
 		#### 1. Before we check flags for parents, check if they potentially have the wrong flag
-		event_target:dad = {
+		event_target:emf_dna_dad = {
 			if = {
 				limit = {
 					trait = hunchback
@@ -4505,7 +4862,7 @@ character_event = {
 		#### 2. Initialization. Only executes for characters without flags
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					NOR = {
 						has_flag = hunchback_AA
 						has_flag = hunchback_Aa
@@ -4519,7 +4876,7 @@ character_event = {
 					}
 				}
 			}
-			event_target:dad = {
+			event_target:emf_dna_dad = {
 				if = {
 					limit = {
 						trait = hunchback
@@ -4563,7 +4920,7 @@ character_event = {
 		set_variable = { which = local_r_alleles value = 0 }
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_AA
 				}
 				mother = {
@@ -4574,7 +4931,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_AA
 				}
 				mother = {
@@ -4592,7 +4949,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_Aa
 				}
 				mother = {
@@ -4610,7 +4967,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_Aa
 				}
 				mother = {
@@ -4632,7 +4989,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_AA
 				}
 				mother = {
@@ -4643,7 +5000,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_aa
 				}
 				mother = {
@@ -4654,7 +5011,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_Aa
 				}
 				mother = {
@@ -4673,7 +5030,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_aa
 				}
 				mother = {
@@ -4692,7 +5049,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_aa
 				}
 				mother = {
@@ -4707,7 +5064,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_BB
 				}
 				mother = {
@@ -4718,7 +5075,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_BB
 				}
 				mother = {
@@ -4736,7 +5093,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_Bb
 				}
 				mother = {
@@ -4754,7 +5111,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_Bb
 				}
 				mother = {
@@ -4776,7 +5133,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_BB
 				}
 				mother = {
@@ -4787,7 +5144,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_bb
 				}
 				mother = {
@@ -4798,7 +5155,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_Bb
 				}
 				mother = {
@@ -4817,7 +5174,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_bb
 				}
 				mother = {
@@ -4836,7 +5193,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_bb
 				}
 				mother = {
@@ -4851,7 +5208,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_CC
 				}
 				mother = {
@@ -4862,7 +5219,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_CC
 				}
 				mother = {
@@ -4880,7 +5237,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_Cc
 				}
 				mother = {
@@ -4898,7 +5255,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_Cc
 				}
 				mother = {
@@ -4920,7 +5277,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_CC
 				}
 				mother = {
@@ -4931,7 +5288,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_cc
 				}
 				mother = {
@@ -4942,7 +5299,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_Cc
 				}
 				mother = {
@@ -4961,7 +5318,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_cc
 				}
 				mother = {
@@ -4980,7 +5337,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = hunchback_cc
 				}
 				mother = {
@@ -5047,7 +5404,7 @@ character_event = {
 
 	immediate = {
 		#### 1. Before we check flags for parents, check if they potentially have the wrong flag
-		event_target:dad = {
+		event_target:emf_dna_dad = {
 			if = {
 				limit = {
 					trait = harelip
@@ -5076,7 +5433,7 @@ character_event = {
 		#### 2. Initialization. Only executes for characters without flags
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					NOR = {
 						has_flag = harelip_AA
 						has_flag = harelip_Aa
@@ -5090,7 +5447,7 @@ character_event = {
 					}
 				}
 			}
-			event_target:dad = {
+			event_target:emf_dna_dad = {
 				if = {
 					limit = {
 						trait = harelip
@@ -5134,7 +5491,7 @@ character_event = {
 		set_variable = { which = local_r_alleles value = 0 }
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_AA
 				}
 				mother = {
@@ -5145,7 +5502,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_AA
 				}
 				mother = {
@@ -5163,7 +5520,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_Aa
 				}
 				mother = {
@@ -5181,7 +5538,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_Aa
 				}
 				mother = {
@@ -5203,7 +5560,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_AA
 				}
 				mother = {
@@ -5214,7 +5571,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_aa
 				}
 				mother = {
@@ -5225,7 +5582,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_Aa
 				}
 				mother = {
@@ -5244,7 +5601,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_aa
 				}
 				mother = {
@@ -5263,7 +5620,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_aa
 				}
 				mother = {
@@ -5278,7 +5635,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_BB
 				}
 				mother = {
@@ -5289,7 +5646,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_BB
 				}
 				mother = {
@@ -5307,7 +5664,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_Bb
 				}
 				mother = {
@@ -5325,7 +5682,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_Bb
 				}
 				mother = {
@@ -5347,7 +5704,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_BB
 				}
 				mother = {
@@ -5358,7 +5715,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_bb
 				}
 				mother = {
@@ -5369,7 +5726,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_Bb
 				}
 				mother = {
@@ -5388,7 +5745,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_bb
 				}
 				mother = {
@@ -5407,7 +5764,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_bb
 				}
 				mother = {
@@ -5422,7 +5779,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_CC
 				}
 				mother = {
@@ -5433,7 +5790,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_CC
 				}
 				mother = {
@@ -5451,7 +5808,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_Cc
 				}
 				mother = {
@@ -5469,7 +5826,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_Cc
 				}
 				mother = {
@@ -5491,7 +5848,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_CC
 				}
 				mother = {
@@ -5502,7 +5859,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_cc
 				}
 				mother = {
@@ -5513,7 +5870,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_Cc
 				}
 				mother = {
@@ -5532,7 +5889,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_cc
 				}
 				mother = {
@@ -5551,7 +5908,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = harelip_cc
 				}
 				mother = {
@@ -5618,7 +5975,7 @@ character_event = {
 
 	immediate = {
 		#### 1. Before we check flags for parents, check if they potentially have the wrong flag
-		event_target:dad = {
+		event_target:emf_dna_dad = {
 			if = {
 				limit = {
 					trait = lisp
@@ -5647,7 +6004,7 @@ character_event = {
 		#### 2. Initialization. Only executes for characters without flags
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					NOR = {
 						has_flag = lisp_AA
 						has_flag = lisp_Aa
@@ -5661,7 +6018,7 @@ character_event = {
 					}
 				}
 			}
-			event_target:dad = {
+			event_target:emf_dna_dad = {
 				if = {
 					limit = {
 						trait = lisp
@@ -5705,7 +6062,7 @@ character_event = {
 		set_variable = { which = local_r_alleles value = 0 }
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_AA
 				}
 				mother = {
@@ -5716,7 +6073,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_AA
 				}
 				mother = {
@@ -5734,7 +6091,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_Aa
 				}
 				mother = {
@@ -5752,7 +6109,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_Aa
 				}
 				mother = {
@@ -5774,7 +6131,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_AA
 				}
 				mother = {
@@ -5785,7 +6142,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_aa
 				}
 				mother = {
@@ -5796,7 +6153,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_Aa
 				}
 				mother = {
@@ -5815,7 +6172,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_aa
 				}
 				mother = {
@@ -5834,7 +6191,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_aa
 				}
 				mother = {
@@ -5849,7 +6206,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_BB
 				}
 				mother = {
@@ -5860,7 +6217,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_BB
 				}
 				mother = {
@@ -5878,7 +6235,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_Bb
 				}
 				mother = {
@@ -5896,7 +6253,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_Bb
 				}
 				mother = {
@@ -5918,7 +6275,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_BB
 				}
 				mother = {
@@ -5929,7 +6286,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_bb
 				}
 				mother = {
@@ -5940,7 +6297,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_Bb
 				}
 				mother = {
@@ -5959,7 +6316,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_bb
 				}
 				mother = {
@@ -5978,7 +6335,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_bb
 				}
 				mother = {
@@ -5993,7 +6350,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_CC
 				}
 				mother = {
@@ -6004,7 +6361,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_CC
 				}
 				mother = {
@@ -6022,7 +6379,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_Cc
 				}
 				mother = {
@@ -6040,7 +6397,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_Cc
 				}
 				mother = {
@@ -6062,7 +6419,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_CC
 				}
 				mother = {
@@ -6073,7 +6430,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_cc
 				}
 				mother = {
@@ -6084,7 +6441,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_Cc
 				}
 				mother = {
@@ -6103,7 +6460,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_cc
 				}
 				mother = {
@@ -6122,7 +6479,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = lisp_cc
 				}
 				mother = {
@@ -6189,7 +6546,7 @@ character_event = {
 
 	immediate = {
 		#### 1. Before we check flags for parents, check if they potentially have the wrong flag
-		event_target:dad = {
+		event_target:emf_dna_dad = {
 			if = {
 				limit = {
 					trait = stutter
@@ -6218,7 +6575,7 @@ character_event = {
 		#### 2. Initialization. Only executes for characters without flags
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					NOR = {
 						has_flag = stutter_AA
 						has_flag = stutter_Aa
@@ -6232,7 +6589,7 @@ character_event = {
 					}
 				}
 			}
-			event_target:dad = {
+			event_target:emf_dna_dad = {
 				if = {
 					limit = {
 						trait = stutter
@@ -6276,7 +6633,7 @@ character_event = {
 		set_variable = { which = local_r_alleles value = 0 }
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_AA
 				}
 				mother = {
@@ -6287,7 +6644,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_AA
 				}
 				mother = {
@@ -6305,7 +6662,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_Aa
 				}
 				mother = {
@@ -6323,7 +6680,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_Aa
 				}
 				mother = {
@@ -6345,7 +6702,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_AA
 				}
 				mother = {
@@ -6356,7 +6713,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_aa
 				}
 				mother = {
@@ -6367,7 +6724,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_Aa
 				}
 				mother = {
@@ -6386,7 +6743,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_aa
 				}
 				mother = {
@@ -6405,7 +6762,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_aa
 				}
 				mother = {
@@ -6420,7 +6777,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_BB
 				}
 				mother = {
@@ -6431,7 +6788,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_BB
 				}
 				mother = {
@@ -6449,7 +6806,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_Bb
 				}
 				mother = {
@@ -6467,7 +6824,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_Bb
 				}
 				mother = {
@@ -6489,7 +6846,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_BB
 				}
 				mother = {
@@ -6500,7 +6857,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_bb
 				}
 				mother = {
@@ -6511,7 +6868,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_Bb
 				}
 				mother = {
@@ -6530,7 +6887,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_bb
 				}
 				mother = {
@@ -6549,7 +6906,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_bb
 				}
 				mother = {
@@ -6564,7 +6921,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_CC
 				}
 				mother = {
@@ -6575,7 +6932,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_CC
 				}
 				mother = {
@@ -6593,7 +6950,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_Cc
 				}
 				mother = {
@@ -6611,7 +6968,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_Cc
 				}
 				mother = {
@@ -6633,7 +6990,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_CC
 				}
 				mother = {
@@ -6644,7 +7001,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_cc
 				}
 				mother = {
@@ -6655,7 +7012,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_Cc
 				}
 				mother = {
@@ -6674,7 +7031,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_cc
 				}
 				mother = {
@@ -6693,7 +7050,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = stutter_cc
 				}
 				mother = {
@@ -6760,7 +7117,7 @@ character_event = {
 
 	immediate = {
 		#### 1. Before we check flags for parents, check if they potentially have the wrong flag
-		event_target:dad = {
+		event_target:emf_dna_dad = {
 			if = {
 				limit = {
 					trait = deaf
@@ -6789,7 +7146,7 @@ character_event = {
 		#### 2. Initialization. Only executes for characters without flags
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					NOR = {
 						has_flag = deaf_AA
 						has_flag = deaf_Aa
@@ -6803,7 +7160,7 @@ character_event = {
 					}
 				}
 			}
-			event_target:dad = {
+			event_target:emf_dna_dad = {
 				if = {
 					limit = {
 						trait = deaf
@@ -6847,7 +7204,7 @@ character_event = {
 		set_variable = { which = local_r_alleles value = 0 }
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_AA
 				}
 				mother = {
@@ -6858,7 +7215,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_AA
 				}
 				mother = {
@@ -6876,7 +7233,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_Aa
 				}
 				mother = {
@@ -6894,7 +7251,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_Aa
 				}
 				mother = {
@@ -6916,7 +7273,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_AA
 				}
 				mother = {
@@ -6927,7 +7284,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_aa
 				}
 				mother = {
@@ -6938,7 +7295,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_Aa
 				}
 				mother = {
@@ -6957,7 +7314,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_aa
 				}
 				mother = {
@@ -6976,7 +7333,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_aa
 				}
 				mother = {
@@ -6991,7 +7348,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_BB
 				}
 				mother = {
@@ -7002,7 +7359,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_BB
 				}
 				mother = {
@@ -7020,7 +7377,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_Bb
 				}
 				mother = {
@@ -7038,7 +7395,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_Bb
 				}
 				mother = {
@@ -7060,7 +7417,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_BB
 				}
 				mother = {
@@ -7071,7 +7428,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_bb
 				}
 				mother = {
@@ -7082,7 +7439,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_Bb
 				}
 				mother = {
@@ -7101,7 +7458,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_bb
 				}
 				mother = {
@@ -7120,7 +7477,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_bb
 				}
 				mother = {
@@ -7135,7 +7492,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_CC
 				}
 				mother = {
@@ -7146,7 +7503,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_CC
 				}
 				mother = {
@@ -7164,7 +7521,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_Cc
 				}
 				mother = {
@@ -7182,7 +7539,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_Cc
 				}
 				mother = {
@@ -7204,7 +7561,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_CC
 				}
 				mother = {
@@ -7215,7 +7572,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_cc
 				}
 				mother = {
@@ -7226,7 +7583,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_Cc
 				}
 				mother = {
@@ -7245,7 +7602,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_cc
 				}
 				mother = {
@@ -7264,7 +7621,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = deaf_cc
 				}
 				mother = {
@@ -7331,7 +7688,7 @@ character_event = {
 
 	immediate = {
 		#### 1. Before we check flags for parents, check if they potentially have the wrong flag
-		event_target:dad = {
+		event_target:emf_dna_dad = {
 			if = {
 				limit = {
 					trait = wrymouth
@@ -7360,7 +7717,7 @@ character_event = {
 		#### 2. Initialization. Only executes for characters without flags
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					NOR = {
 						has_flag = wrymouth_AA
 						has_flag = wrymouth_Aa
@@ -7374,7 +7731,7 @@ character_event = {
 					}
 				}
 			}
-			event_target:dad = {
+			event_target:emf_dna_dad = {
 				if = {
 					limit = {
 						trait = wrymouth
@@ -7418,7 +7775,7 @@ character_event = {
 		set_variable = { which = local_r_alleles value = 0 }
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_AA
 				}
 				mother = {
@@ -7429,7 +7786,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_AA
 				}
 				mother = {
@@ -7447,7 +7804,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_Aa
 				}
 				mother = {
@@ -7465,7 +7822,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_Aa
 				}
 				mother = {
@@ -7487,7 +7844,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_AA
 				}
 				mother = {
@@ -7498,7 +7855,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_aa
 				}
 				mother = {
@@ -7509,7 +7866,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_Aa
 				}
 				mother = {
@@ -7528,7 +7885,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_aa
 				}
 				mother = {
@@ -7547,7 +7904,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_aa
 				}
 				mother = {
@@ -7562,7 +7919,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_BB
 				}
 				mother = {
@@ -7573,7 +7930,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_BB
 				}
 				mother = {
@@ -7591,7 +7948,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_Bb
 				}
 				mother = {
@@ -7609,7 +7966,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_Bb
 				}
 				mother = {
@@ -7631,7 +7988,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_BB
 				}
 				mother = {
@@ -7642,7 +7999,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_bb
 				}
 				mother = {
@@ -7653,7 +8010,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_Bb
 				}
 				mother = {
@@ -7672,7 +8029,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_bb
 				}
 				mother = {
@@ -7691,7 +8048,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_bb
 				}
 				mother = {
@@ -7706,7 +8063,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_CC
 				}
 				mother = {
@@ -7717,7 +8074,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_CC
 				}
 				mother = {
@@ -7735,7 +8092,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_Cc
 				}
 				mother = {
@@ -7753,7 +8110,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_Cc
 				}
 				mother = {
@@ -7775,7 +8132,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_CC
 				}
 				mother = {
@@ -7786,7 +8143,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_cc
 				}
 				mother = {
@@ -7797,7 +8154,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_Cc
 				}
 				mother = {
@@ -7816,7 +8173,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_cc
 				}
 				mother = {
@@ -7835,7 +8192,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = wrymouth_cc
 				}
 				mother = {
@@ -7903,7 +8260,7 @@ character_event = {
 	immediate = {
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					NOR = {
 						has_flag = perc_AA
 						has_flag = perc_Aa
@@ -7917,7 +8274,7 @@ character_event = {
 					}
 				}
 			}
-			event_target:dad = {
+			event_target:emf_dna_dad = {
 				if = {
 					limit = {
 						trait = perceptive
@@ -8037,7 +8394,7 @@ character_event = {
 		set_variable = { which = local_alleles value = 0 }
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_AA
 				}
 				mother = {
@@ -8049,7 +8406,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_AA
 				}
 				mother = {
@@ -8069,7 +8426,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_Aa
 				}
 				mother = {
@@ -8089,7 +8446,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_Aa
 				}
 				mother = {
@@ -8112,7 +8469,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_AA
 				}
 				mother = {
@@ -8124,7 +8481,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_aa
 				}
 				mother = {
@@ -8136,7 +8493,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_Aa
 				}
 				mother = {
@@ -8155,7 +8512,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_aa
 				}
 				mother = {
@@ -8174,7 +8531,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_aa
 				}
 				mother = {
@@ -8189,7 +8546,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_BB
 				}
 				mother = {
@@ -8201,7 +8558,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_BB
 				}
 				mother = {
@@ -8221,7 +8578,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_Bb
 				}
 				mother = {
@@ -8241,7 +8598,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_BB
 				}
 				mother = {
@@ -8253,7 +8610,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_bb
 				}
 				mother = {
@@ -8265,7 +8622,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_Bb
 				}
 				mother = {
@@ -8288,7 +8645,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_Bb
 				}
 				mother = {
@@ -8307,7 +8664,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_bb
 				}
 				mother = {
@@ -8326,7 +8683,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_bb
 				}
 				mother = {
@@ -8341,7 +8698,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_CC
 				}
 				mother = {
@@ -8353,7 +8710,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_CC
 				}
 				mother = {
@@ -8373,7 +8730,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_Cc
 				}
 				mother = {
@@ -8393,7 +8750,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_Cc
 				}
 				mother = {
@@ -8416,7 +8773,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_CC
 				}
 				mother = {
@@ -8428,7 +8785,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_cc
 				}
 				mother = {
@@ -8440,7 +8797,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_Cc
 				}
 				mother = {
@@ -8459,7 +8816,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_cc
 				}
 				mother = {
@@ -8478,7 +8835,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = perc_cc
 				}
 				mother = {
@@ -8613,7 +8970,7 @@ character_event = {
 		#### 2. Initialization. Only executes for characters without flags
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					NOR = {
 						has_flag = health_AA
 						has_flag = health_Aa
@@ -8627,7 +8984,7 @@ character_event = {
 					}
 				}
 			}
-			event_target:dad = {
+			event_target:emf_dna_dad = {
 				random_list = {
 					9 = {
 						set_flag = health_AA
@@ -8719,7 +9076,7 @@ character_event = {
 		set_variable = { which = local_alleles value = 0 }
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_AA
 				}
 				mother = {
@@ -8731,7 +9088,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_AA
 				}
 				mother = {
@@ -8751,7 +9108,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_Aa
 				}
 				mother = {
@@ -8771,7 +9128,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_Aa
 				}
 				mother = {
@@ -8794,7 +9151,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_AA
 				}
 				mother = {
@@ -8806,7 +9163,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_aa
 				}
 				mother = {
@@ -8818,7 +9175,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_Aa
 				}
 				mother = {
@@ -8837,7 +9194,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_aa
 				}
 				mother = {
@@ -8856,7 +9213,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_aa
 				}
 				mother = {
@@ -8871,7 +9228,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_BB
 				}
 				mother = {
@@ -8883,7 +9240,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_BB
 				}
 				mother = {
@@ -8903,7 +9260,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_Bb
 				}
 				mother = {
@@ -8923,7 +9280,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_Bb
 				}
 				mother = {
@@ -8946,7 +9303,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_BB
 				}
 				mother = {
@@ -8958,7 +9315,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_bb
 				}
 				mother = {
@@ -8970,7 +9327,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_Bb
 				}
 				mother = {
@@ -8990,7 +9347,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_bb
 				}
 				mother = {
@@ -9009,7 +9366,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_bb
 				}
 				mother = {
@@ -9023,7 +9380,7 @@ character_event = {
 		}
 		if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_CC
 				}
 				mother = {
@@ -9035,7 +9392,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_CC
 				}
 				mother = {
@@ -9055,7 +9412,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_Cc
 				}
 				mother = {
@@ -9075,7 +9432,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_CC
 				}
 				mother = {
@@ -9087,7 +9444,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_cc
 				}
 				mother = {
@@ -9099,7 +9456,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_Cc
 				}
 				mother = {
@@ -9122,7 +9479,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_Cc
 				}
 				mother = {
@@ -9141,7 +9498,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_cc
 				}
 				mother = {
@@ -9160,7 +9517,7 @@ character_event = {
 		}
 		else_if = {
 			limit = {
-				event_target:dad = {
+				event_target:emf_dna_dad = {
 					has_flag = health_cc
 				}
 				mother = {
