@@ -14,8 +14,9 @@ class Phenotype:
 	MENDELIAN = 0
 	POLYGENIC = 1
 
-	def __init__(self, pid, name, inheritance=MENDELIAN, gene_weights_if_trait=(0,2,2), gene_weights_if_no_trait=(9,9,2)):
-		self.id = pid
+	def __init__(self, p_id, prefix, name, inheritance=MENDELIAN, gene_weights_if_trait=(0,2,2), gene_weights_if_no_trait=(9,9,2)):
+		self.id = p_id
+		self.prefix = prefix
 		self.name = name
 		self.type = inheritance
 		# Weights are 3-tuples which represent the random weighting of (dominant, heterozygous, recessive)
@@ -25,19 +26,20 @@ class Phenotype:
 
 
 phenotypes = [
-	Phenotype('int', 'Intelligence', Phenotype.POLYGENIC),
-	Phenotype('attr', 'Attractiveness', Phenotype.POLYGENIC),
-	Phenotype('str', 'Strength', Phenotype.POLYGENIC),
-	Phenotype('hgt', 'Height', Phenotype.POLYGENIC),
-	Phenotype('dwarf', 'Dwarfism', gene_weights_if_trait=(0,2,3)),
-	Phenotype('clubfooted', 'Clubfooted'),
-	Phenotype('hunchback', 'Hunchback'),
-	Phenotype('harelip', 'Harelip'),
-	Phenotype('lisp', 'Lisp'),
-	Phenotype('stutter', 'Stutter'),
-	Phenotype('deaf', 'Deafness'),
-	Phenotype('wrymouth', 'Wrymouth'),
-	Phenotype('perc', 'Perceptiveness', Phenotype.POLYGENIC),
+	Phenotype('int', 'i', 'Intelligence', Phenotype.POLYGENIC),
+	Phenotype('attr', 'a', 'Attractiveness', Phenotype.POLYGENIC),
+	Phenotype('str', 'st', 'Strength', Phenotype.POLYGENIC),
+	Phenotype('hgt', 'ht', 'Height', Phenotype.POLYGENIC),
+	Phenotype('dwarf', 'dw', 'Dwarfism', gene_weights_if_trait=(0,2,3)),
+	Phenotype('clubfooted', 'c', 'Clubfooted'),
+	Phenotype('hunchback', 'hu', 'Hunchback'),
+	Phenotype('harelip', 'ha', 'Harelip'),
+	Phenotype('lisp', 'l', 'Lisp'),
+	Phenotype('stutter', 'sr', 'Stutter'),
+	Phenotype('deaf', 'de', 'Deafness'),
+	Phenotype('wrymouth', 'w', 'Wrymouth'),
+	Phenotype('perc', 'p', 'Perceptiveness', Phenotype.POLYGENIC),
+	# NOTE that 'hl' prefix is in use for health
 ]
 
 genes = ['AA', 'Aa', 'aa', 'BB', 'Bb', 'bb', 'CC', 'Cc', 'cc']
@@ -69,6 +71,7 @@ def main():
 		print_reverse_homozygous_recessive_effect(f)
 		print_reset_flags_positively_effect(f)
 		print_remove_negative_mendelian_traits_effect(f)
+		print_savecompat_shorten_flag_names(f)
 	return 0
 
 
@@ -78,7 +81,7 @@ def print_clear_flags_for_phenotype_effects(f):
 		print('# Clear DNA for phenotype: {}'.format(p.name), file=f)
 		print('emf_dna_clear_flags_for_{} = {{'.format(p.id), file=f)
 		for g in genes:
-			print('\tclr_flag = {}_{}'.format(p.id, g), file=f)
+			print('\tclr_flag = {}_{}'.format(p.prefix, g), file=f)
 		print('}', file=f)
 
 
@@ -91,52 +94,52 @@ def print_set_flags_for_phenotype_effects(f):
 		print('''emf_dna_set_flags_for_{0} = {{
 	random_list = {{
 		{2} = {{
-			set_flag = {0}_aa
+			set_flag = {3}_aa
 		}}
 		{1} = {{
-			set_flag = {0}_Aa
+			set_flag = {3}_Aa
 		}}
 	}}
 	random_list = {{
 		{2} = {{
-			set_flag = {0}_bb
+			set_flag = {3}_bb
 		}}
 		{1} = {{
-			set_flag = {0}_Bb
+			set_flag = {3}_Bb
 		}}
 	}}
 	random_list = {{
 		{2} = {{
-			set_flag = {0}_cc
+			set_flag = {3}_cc
 		}}
 		{1} = {{
-			set_flag = {0}_Cc
+			set_flag = {3}_Cc
 		}}
 	}}
 	if = {{
 		limit = {{
 			NOR = {{
-				has_flag = {0}_aa
-				has_flag = {0}_bb
-				has_flag = {0}_cc
+				has_flag = {3}_aa
+				has_flag = {3}_bb
+				has_flag = {3}_cc
 			}}
 		}}
 		random_list = {{
 			1 = {{
-				clr_flag = {0}_Aa
-				set_flag = {0}_aa
+				clr_flag = {3}_Aa
+				set_flag = {3}_aa
 			}}
 			1 = {{
-				clr_flag = {0}_Bb
-				set_flag = {0}_bb
+				clr_flag = {3}_Bb
+				set_flag = {3}_bb
 			}}
 			1 = {{
-				clr_flag = {0}_Cc
-				set_flag = {0}_cc
+				clr_flag = {3}_Cc
+				set_flag = {3}_cc
 			}}
 		}}
 	}}
-}}'''.format(p.id, p.gene_weights_if_trait[1], p.gene_weights_if_trait[2]), file=f)
+}}'''.format(p.id, p.gene_weights_if_trait[1], p.gene_weights_if_trait[2], p.prefix), file=f)
 
 
 def print_set_flags_for_phenotype_if_no_trait_effects(f):
@@ -148,38 +151,38 @@ def print_set_flags_for_phenotype_if_no_trait_effects(f):
 		print('''emf_dna_set_flags_for_{0}_if_no_trait = {{
 	random_list = {{
 		{1} = {{
-			set_flag = {0}_AA
+			set_flag = {4}_AA
 		}}
 		{2} = {{
-			set_flag = {0}_Aa
+			set_flag = {4}_Aa
 		}}
 		{3} = {{
-			set_flag = {0}_aa
+			set_flag = {4}_aa
 		}}
 	}}
 	random_list = {{
 		{1} = {{
-			set_flag = {0}_BB
+			set_flag = {4}_BB
 		}}
 		{2} = {{
-			set_flag = {0}_Bb
+			set_flag = {4}_Bb
 		}}
 		{3} = {{
-			set_flag = {0}_bb
+			set_flag = {4}_bb
 		}}
 	}}
 	random_list = {{
 		{1} = {{
-			set_flag = {0}_CC
+			set_flag = {4}_CC
 		}}
 		{2} = {{
-			set_flag = {0}_Cc
+			set_flag = {4}_Cc
 		}}
 		{3} = {{
-			set_flag = {0}_cc
+			set_flag = {4}_cc
 		}}
 	}}
-}}'''.format(p.id, *p.gene_weights_if_no_trait), file=f)
+}}'''.format(p.id, *p.gene_weights_if_no_trait, p.prefix), file=f)
 
 
 def print_reverse_homozygous_recessive_effect(f):
@@ -189,9 +192,9 @@ def print_reverse_homozygous_recessive_effect(f):
 	for p in phenotypes:
 		for rg in sorted(homozygous_recessive_to_dominant_genes):
 			print('\tif = {', file=f)
-			print('\t\tlimit = {{ has_flag = {}_{} }}'.format(p.id, rg), file=f)
-			print('\t\tclr_flag = {}_{}'.format(p.id, rg), file=f)
-			print('\t\tset_flag = {}_{}'.format(p.id, homozygous_recessive_to_dominant_genes[rg]), file=f)
+			print('\t\tlimit = {{ has_flag = {}_{} }}'.format(p.prefix, rg), file=f)
+			print('\t\tclr_flag = {}_{}'.format(p.prefix, rg), file=f)
+			print('\t\tset_flag = {}_{}'.format(p.prefix, homozygous_recessive_to_dominant_genes[rg]), file=f)
 			print('\t}', file=f)
 	print('}', file=f)
 
@@ -205,8 +208,8 @@ def print_reset_flags_positively_effect(f):
 		print('\temf_dna_clear_flags_for_{} = yes'.format(p.id), file=f)
 		for g1, g2 in ok_genes:
 			print('\trandom_list = {', file=f)
-			print('\t\t2 = {{ set_flag = {}_{} }}'.format(p.id, g1), file=f)
-			print('\t\t2 = {{ set_flag = {}_{} }}'.format(p.id, g2), file=f)
+			print('\t\t1 = {{ set_flag = {}_{} }}'.format(p.prefix, g1), file=f)
+			print('\t\t1 = {{ set_flag = {}_{} }}'.format(p.prefix, g2), file=f)
 			print('\t}', file=f)
 	print('}', file=f)
 
@@ -220,6 +223,28 @@ def	print_remove_negative_mendelian_traits_effect(f):
 			continue
 		print('\tremove_trait = {}'.format(p.id), file=f)
 	print('}', file=f)
+
+
+def print_savecompat_shorten_flag_names(f):
+	print(file=f)
+	print('# Convert old, longer gene flag IDs to new, shorter IDs', file=f)
+	print('# TMP-SAVE-COMPAT: remove in code-generator after EMF v10.X', file=f)
+	print('emf_dna_savecompat_shorten_flag_names = {', file=f)
+	for p in phenotypes:
+		for g in genes:
+			print('\tif = {', file=f)
+			print('\t\tlimit = {{ has_flag = {}_{} }}'.format(p.id, g), file=f)
+			print('\t\tclr_flag = {}_{}'.format(p.id, g), file=f)
+			print('\t\tset_flag = {}_{}'.format(p.prefix, g), file=f)
+			print('\t}', file=f)	
+	for g in genes:
+		print('\tif = {', file=f)
+		print('\t\tlimit = {{ has_flag = {}_{} }}'.format('health', g), file=f)
+		print('\t\tclr_flag = {}_{}'.format('health', g), file=f)
+		print('\t\tset_flag = {}_{}'.format('hl', g), file=f)
+		print('\t}', file=f)
+	print('}', file=f)
+
 
 
 ###
