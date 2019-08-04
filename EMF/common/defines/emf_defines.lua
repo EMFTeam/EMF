@@ -111,6 +111,7 @@ NDefines.NReligion.ELECTOR_FAMOUS_DYNASTY_FACTOR = 0.008          -- prior to EM
 NDefines.NEconomy.BISHOP_TAX_TO_POPE_FACTOR = 0.4                 -- prior to EMF v9.06: 0.25
 NDefines.NEconomy.BISHOP_TAX_TO_ANTI_POPE_FACTOR = 0.1            -- prior to EMF v9.06: 0.025; prior to EMF v8.02: 0.05
 NDefines.NEconomy.TRADE_POST_COST_INC_DIST = 0.0045
+NDefines.NEconomy.TRADE_POST_OPINION_EFFECT = 0.5
 NDefines.NEconomy.PATRICIAN_CITY_TAX_MULT = 0.5                   -- prior to EMF v8.02: 0.25, now back to vanilla
 NDefines.NEconomy.OVER_MAX_DEMESNE_TAX_PENALTY = 0.1              -- doubled tax penalty per holding over demesne limit (still quite flexible, however) from v8.06
 NDefines.NEconomy.TRADE_ROUTE_SIEGE_MULTIPLIER = 0.75			  -- prior to EMF v9.06: 0.8; vanilla: 0.9 [also from v8.06]
