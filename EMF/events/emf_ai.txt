@@ -1,0 +1,403 @@
+# -*- ck2.events -*-
+
+namespace = emf_ai
+
+
+######################################
+####   AGNATIC-COGNATIC RETREAT   ####
+######################################
+
+# The Problem:
+
+# It is very easy for players to expand very quickly via marriage if the AI is dumb enough (and it is) to
+# switch their gender succession laws to Agnatic-Cognatic from Agnatic when they only have a female heir of
+# their progeny (but may have a male brother or uncle that would still keep the title within their family if
+# the law were Agnatic) _without any regard whatsoever to whether that particular female heir is married to a
+# player / player son / etc. To make Agnatic-Cognatic on foreign titles less easy to abuse by players and to
+# improve the performance of the AI, we should teach it when Agnatic-Cognatic is a bad idea and help it revert
+# to Agnatic (or block passing Agnatic-Cognatic) if necessary.
+
+# NOTE: We still want the AI to be able to use Agnatic-Cognatic to avoid dynastic extinction (and for a small
+# amount of titles, it is the default for historical reasons).
+
+# The Solution:
+
+# Whenever a player arranges a marriage successfully (on_marriage) with somebody of their dynastic progeny
+# (plus themselves) and a daughter of a feudal/imperial holder of a de jure title of at least DUKE tier (her
+# place in the line of succession currently doesn't matter -- players will plot-assassinate right through all
+# of that most likely), then we do one of two things:
+
+# 1. If the title is Agnatic, then we set a flag on the AI ruler blocking passing of Agnatic-Cognatic. On
+# death of such a ruler with such a flag, we evaluate whether it's necessary to inherit it (if player / player
+# progeny is still married to a daughter of the new ruler).
+
+# 2. If the title is Agnatic-Cognatic, we wait randomly anywhere from half a year to five years to set the
+# gender succession law to Agnatic & set the same law-blocking flag as in (1).
+
+# In Sum: For players and their dynastic progeny, they will need to scoop up kingdoms on a longer time horizon
+# -- more or less the "Salic Law Only" way (wait for princess to inherit a pressed claim upon death of ruler,
+# wait for princess to die so that her pressed claims will be inherited by their player-dynastic-progeny kids
+# as weak unpressed claims, and then press those claims). For player-dynastic non-progeny, they can still
+# abuse Agnatic-Cognatic (but the incentive to do so is less, of course, because it doesn't allow rapid
+# centralization of, e.g., several kingdom titles in a few generations into the player demesne). However,
+# there are still ways in which traditional Agnatic-Cognatic pseudo-abuse can occur: they just aren't all that
+# likely to happen, hence "pseudo-abuse."
+
+
+# emf_ai.0 -- player marries themselves or their dynastic male progeny to a daughter of a feudal or tribal
+# ruler of at least DUKE tier whom is not part of the player dynasty.
+#
+# on_marriage on_action is sent to the liege of both spouses:
+# ROOT is the liege of the spouse
+# FROM is the spouse under ROOT
+# new_character is the other spouse
+character_event = {
+	id = emf_ai.0
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	ai = no
+
+	trigger = {
+		# Our spouse is a male
+		FROM = { is_female = no }
+		# Our spouse is of the player dynasty
+		dynasty = FROM
+		# Our spouse is player or their progeny (down to great-grandchildren)
+		FROM = {
+			OR = {
+				character = ROOT
+				is_child_of = ROOT
+				is_grandchild_of = ROOT
+				father_even_if_dead = { is_grandchild_of = ROOT }
+				mother_even_if_dead = { is_grandchild_of = ROOT }
+			}
+		}
+		new_character = {
+			NOT = { dynasty = FROM } # Other spouse is not of the player dynasty
+			OR = { # Either parent of other spouse...
+				father = {
+					ai = yes
+					any_demesne_title = {
+						# Has a DUKE+ de jure title that...
+						higher_tier_than = COUNT
+						is_de_jure_title = yes
+						succ_law_title = {
+							OR = {
+								AND = { # Is Agnatic, but Agnatic-Cognatic is still possible
+									has_law = agnatic_succession
+									is_law_potential = cognatic_succession
+								}
+								AND = { # Is Agnatic-Cognatic, but Agnatic is still possible
+									has_law = cognatic_succession
+									is_law_potential = agnatic_succession
+								}
+							}
+						}
+					}
+				}
+				mother = {
+					ai = yes
+					any_demesne_title = {
+						higher_tier_than = COUNT
+						is_de_jure_title = yes
+						succ_law_title = {
+							OR = {
+								AND = {
+									has_law = agnatic_succession
+									is_law_potential = cognatic_succession
+								}
+								AND = {
+									has_law = cognatic_succession
+									is_law_potential = agnatic_succession
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	immediate = {
+		new_character = {
+			father = { save_event_target_as = emf_pa }
+			mother = { save_event_target_as = emf_ma }
+		}
+		event_target:emf_pa = {
+			if = {
+				limit = {
+					any_demesne_title = {
+						higher_tier_than = COUNT
+						is_de_jure_title = yes
+						succ_law_title = { has_law = cognatic_succession }
+					}
+				}
+				# Try to change gender succession to Agnatic somewhere in the next ~3yr
+				random_list = {
+					5 = { character_event = { id = emf_ai.1 days = 180 random = 180 } }
+					4 = { character_event = { id = emf_ai.1 days = 360 random = 180 } }
+					3 = { character_event = { id = emf_ai.1 days = 540 random = 180 } }
+					2 = { character_event = { id = emf_ai.1 days = 720 random = 180 } }
+					1 = { character_event = { id = emf_ai.1 days = 900 random = 180 } }
+				}
+			}
+			# Ban the AI from passing Agnatic-Cognatic
+			set_flag = emf_ai_no_cognatic
+		}
+		event_target:emf_ma = {
+			if = {
+				limit = {
+					any_demesne_title = {
+						higher_tier_than = COUNT
+						is_de_jure_title = yes
+						succ_law_title = { has_law = cognatic_succession }
+					}
+				}
+				# Try to change gender succession to Agnatic somewhere in the next ~3yr
+				random_list = {
+					5 = { character_event = { id = emf_ai.1 days = 180 random = 180 } }
+					4 = { character_event = { id = emf_ai.1 days = 360 random = 180 } }
+					3 = { character_event = { id = emf_ai.1 days = 540 random = 180 } }
+					2 = { character_event = { id = emf_ai.1 days = 720 random = 180 } }
+					1 = { character_event = { id = emf_ai.1 days = 900 random = 180 } }
+				}
+			}
+			# Ban the AI from passing Agnatic-Cognatic
+			set_flag = emf_ai_no_cognatic
+		}
+	}
+}
+
+# emf_ai.1 -- randomly delayed event fired from emf_ai.0 after an AI-vulnerable marriage has been made to the
+# player or their dynastic progeny; finally passes Agnatic Succession where necessary and possible
+character_event = {
+	id = emf_ai.1
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	ai = yes
+
+	trigger = {
+		any_player = {
+			OR = {
+				any_spouse = {
+					is_female = yes
+					is_child_of = ROOT
+					NOT = { dynasty = PREV }
+				}
+				any_child = {
+					dynasty = PREV
+					any_spouse = {
+						is_female = yes
+						is_child_of = ROOT
+						NOT = { dynasty = PREV }
+					}
+				}
+				any_child_even_if_dead = {
+					any_child = {
+						dynasty = PREVPREV
+						any_spouse = {
+							is_female = yes
+							is_child_of = ROOT
+							NOT = { dynasty = PREV }
+						}
+					}
+				}
+				any_child_even_if_dead = {
+					any_child_even_if_dead = {
+						any_child = {
+							dynasty = PREVPREVPREV
+							any_spouse = {
+								is_female = yes
+								is_child_of = ROOT
+								NOT = { dynasty = PREV }
+							}
+						}
+					}
+				}
+			}
+		}
+		any_demesne_title = {
+			higher_tier_than = COUNT
+			is_de_jure_title = yes
+			succ_law_title = { has_law = cognatic_succession }
+		}
+	}
+
+	immediate = {
+		set_flag = emf_no_law_penalties
+		any_demesne_title = {
+			limit = {
+				succ_law_title = {
+					title = PREV
+					has_law = cognatic_succession
+					is_law_potential = agnatic_succession
+				}
+			}
+			add_law = { law = agnatic_succession cooldown = no opinion_effect = no }
+		}
+		clr_flag = emf_no_law_penalties
+		recalc_succession = yes
+	}
+}
+
+# emf_ai.2 -- potentially renew the AI ban on passing Agnatic-Cognatic upon death of a ruler for which it was
+# banned [on_death]
+character_event = {
+	id = emf_ai.2
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	only_playable = yes
+	has_character_flag = emf_ai_no_cognatic
+
+	trigger = {
+		any_demesne_title = {
+			higher_tier_than = COUNT
+			is_de_jure_title = yes
+			current_heir = {
+				NOT = { has_flag = emf_ai_no_cognatic }
+				ai = yes
+				any_player = {
+					OR = {
+						any_spouse = {
+							is_female = yes
+							is_child_of = PREVPREV
+							NOT = { dynasty = PREV }
+						}
+						any_child = {
+							dynasty = PREV
+							any_spouse = {
+								is_female = yes
+								is_child_of = PREVPREVPREV
+								NOT = { dynasty = PREV }
+							}
+						}
+						any_child_even_if_dead = {
+							any_child = {
+								dynasty = PREVPREV
+								any_spouse = {
+									is_female = yes
+									is_child_of = PREVPREVPREVPREV
+									NOT = { dynasty = PREV }
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	immediate = {
+		any_demesne_title = {
+			limit = {
+				higher_tier_than = COUNT
+				is_de_jure_title = yes
+				current_heir = {
+					NOT = { has_flag = emf_ai_no_cognatic }
+					ai = yes
+					any_player = {
+						OR = {
+							any_spouse = {
+								is_female = yes
+								is_child_of = PREVPREV
+								NOT = { dynasty = PREV }
+							}
+							any_child = {
+								dynasty = PREV
+								any_spouse = {
+									is_female = yes
+									is_child_of = PREVPREVPREV
+									NOT = { dynasty = PREV }
+								}
+							}
+							any_child_even_if_dead = {
+								any_child = {
+									dynasty = PREVPREV
+									any_spouse = {
+										is_female = yes
+										is_child_of = PREVPREVPREVPREV
+										NOT = { dynasty = PREV }
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			current_heir = {
+				set_flag = emf_ai_no_cognatic
+			}
+		}
+	}
+}
+
+
+#####################################
+#### FREE INVESTITURE WORKAROUND ####
+#####################################
+
+# The Problem:
+
+# AI rulers, under [at least] elective types of succession such as Elective Monarchy and Princely Elective,
+# will go nuts nominating their eligible heir progeny to be bishops if Free Investiture is in force. They'll
+# happily go to the extreme of making all of their male progeny bishops -- and not even attempting to retain
+# one son that would be eligible to inherit their titles, resulting in the early and stupid death of their
+# dynasty's reign over their title(s) as well as the end of their bloodline. The AI will often even nominate
+# these sons to *several* bishroprics, just to ensure that their young son makes it into the priesthood ASAP
+# (since they will become a priest the moment any one of the currently presiding bishops dies or abdicates).
+
+# Restrictions:
+
+# 1. There is no on_action for being nominated a bishop.
+
+# 2. There is no way to "un-nominate" a bishop besides landing him as feudal before he can become a priest.
+
+# Scope & Requirements:
+
+# 0. Only concerned with DUKE+ rulers with Princely Elective succession on their primary title. We may need to
+# expand the scope to include other succession laws like Elective Monarchy, Elective Gavelkind, or even
+# Primogeniture, but I've not recently seen the AI do totally preposterous shit with these other succession
+# laws and Free Investiture. I've also not been experimenting with them to find out either, so...
+
+# 1. We may land multiple sons, although to keep things simple, we're only trying for one.
+
+# 2. We may land them as early in their life as we want.
+
+# 3. We might try landing a second son if it suits the situation (i.e., laws and available titles) better.
+
+# 4. If the ruler has Gavelkind / Elective Gavelkind duchies, we want to minimize our impact upon the total
+# succession by doing this landing of son(s); we don't want to actually mess up the succession in the process.
+
+# 5. If the ruler already has landed feudal sons that can inherit their primary title, we don't do shit.
+
+# NOTE: My usage of the term "sons" is generic -- I'm referring to the gender preferred by the ruler's gender
+# succession law.
+
+
+# The Solution:
+
+# For these types of rulers and laws, we aggressively try to land at least one son that could theoretically
+# inherit the ruler's primary title well before they even reach adulthood and can be nominated as a bishop.
+
+# Remember that the primary title, at least in the most high-profile cases, probably doesn't have the same
+# succession law as the ruler's dynastic holdings (e.g., a Kaiser under Princely Elective probably has a
+# couple Gavelkind duchies under his HRE title). Because of how landing your eldest / senior heir in the wrong
+# way (e.g., too many titles, too high of tier of title, or in the wrong de jure location) under split
+# inheritance laws such as Gavelkind and Elective Gavelkind can royally screw things up, we need to be extra
+# careful.
+
+# Our first priority is to try and land the player_heir if he is of the ruler's progeny or else simply the
+# eldest son. If *any* lower-tier titles are Gavelkind or Elective Gavelkind and there are no other sons
+# eligible to inherit, then we are restricted to landing the eldest/senior heir as a baron in the ruler's
+# capital county. If there is another son eligible to inherit with these Gavelkind duchies, then land him
+# basically anywhere else (though we must stay within the de jure borders of our primary title). If [Elective]
+# Gavelkind is not in play, then any son can be landed anywhere without inheritance consequences, and we'll
+# prefer to land the player_heir/eldest.
+
+# Most of the logic shall be in [ ... WIP ... ]
