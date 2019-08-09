@@ -1511,3 +1511,195 @@ character_event = {
 		character_event = { id = emf_laws.30 days = 1 }
 	}
 }
+
+# emf_laws.40 -- MTTH event to check all held DUKE+ title succession laws, compare them to the current flag
+# indicating what the law was when last checked, and if there has been a change from one law to another, set
+# the appropriate title flags for the 4-interest faction "demands_revert_succession" mechanics. this used to
+# be done immediately when passing succession laws, but since CKII 3.0/HF, succession law effect blocks are
+# virtually useless since they usually get executed 2+ times before actually setting the law, which makes
+# them no longer useful for tracking succession law changes.
+character_event = {
+	id = emf_laws.40
+	hide_window = yes
+
+	only_playable = yes
+
+	trigger = {
+		higher_real_tier_than = COUNT
+		any_demesne_title = {
+			succ_law_title = { title = PREV }
+			OR = {
+				emf_laws_has_old_succ_flag = yes
+				emf_laws_has_old_gender_succ_flag = yes
+				emf_laws_has_succ_flag = no
+				emf_laws_has_gender_succ_flag = no
+			}
+		}
+	}
+
+	mean_time_to_happen = {
+		days = 0
+	}
+
+	immediate = {
+		# Normal succession law changes:
+		any_demesne_title = {
+			limit = {
+				succ_law_title = { title = PREV }
+				emf_has_succ_law_unfit_for_feudal = no
+				emf_laws_has_old_succ_flag = yes
+			}
+			pf_clear_normal_succession_flags_effect = yes # Reset PF "former law X" flags
+			# Now set the PF flags to the correct, new value for the former law:
+			if = {
+				limit = { has_flag = emf_gavelkind }
+				set_flag = former_gavelkind
+			}
+			else_if = {
+				limit = { has_flag = emf_elective_gavelkind }
+				set_flag = former_elective_gavelkind
+			}
+			else_if = {
+				limit = { has_flag = emf_eldership }
+				set_flag = former_eldership
+			}
+			else_if = {
+				limit = { has_flag = emf_seniority }
+				set_flag = former_seniority
+			}
+			else_if = {
+				limit = { has_flag = emf_primogeniture }
+				set_flag = former_primogeniture
+			}
+			else_if = {
+				limit = { has_flag = emf_feudal_elective }
+				set_flag = former_feudal_elective
+			}
+			else_if = {
+				limit = { has_flag = emf_hre_elective }
+				set_flag = former_hre_elective
+			}
+			else_if = {
+				limit = { has_flag = emf_aztec_elective }
+				set_flag = former_aztec_elective
+			}
+			else_if = {
+				limit = { has_flag = emf_byzantine_elective }
+				set_flag = former_byzantine_elective
+			}
+			else_if = {
+				limit = { has_flag = emf_tanistry }
+				set_flag = former_tanistry
+			}
+			else_if = {
+				limit = { has_flag = emf_dynastic_elective }
+				set_flag = former_dynastic_elective
+			}
+			else_if = {
+				limit = { has_flag = emf_ultimogeniture }
+				set_flag = former_ultimogeniture
+			}
+			else_if = {
+				limit = { has_flag = emf_turkish_succession }
+				set_flag = former_turkish_succession
+			}
+			emf_laws_clr_succ_flags = yes # Clear our current law tracking flag
+			emf_laws_set_succ_flag = yes # Set our law tracking flag to correspond to the current law
+			ROOT = { pf_tradition_minus6_effect = yes } # Piss off the Tradition Faction
+		}
+		# Gender succession law changes:
+		any_demesne_title = {
+			limit = {
+				succ_law_title = { title = PREV }
+				emf_has_succ_law_unfit_for_feudal = no
+				emf_laws_has_old_gender_succ_flag = yes
+			}
+			pf_clear_gender_succession_flags_effect = yes
+			if = {
+				limit = { has_flag = emf_agnatic_succession }
+				set_flag = former_agnatic_succession
+			}
+			else_if = {
+				limit = { has_flag = emf_cognatic_succession }
+				set_flag = former_cognatic_succession
+			}
+			else_if = {
+				limit = { has_flag = emf_true_cognatic_succession }
+				set_flag = former_true_cognatic_succession
+			}
+			else_if = {
+				limit = { has_flag = emf_enatic_cognatic_succession }
+				set_flag = former_enatic_cognatic_succession
+			}
+			else_if = {
+				limit = { has_flag = emf_enatic_succession }
+				set_flag = former_enatic_succession
+			}
+			emf_laws_clr_gender_succ_flags = yes
+			emf_laws_set_gender_succ_flag = yes
+			ROOT = { pf_tradition_minus6_effect = yes }
+		}
+		# Cases where we have not yet tracked the normal succ. law on this title:
+		any_demesne_title = {
+			limit = {
+				succ_law_title = { title = PREV }
+				emf_has_succ_law_unfit_for_feudal = no
+				emf_laws_has_succ_flag = no
+			}
+			emf_laws_set_succ_flag = yes
+		}
+		# Cases where we have not yet tracked the gender succ. law on this title:
+		any_demesne_title = {
+			limit = {
+				succ_law_title = { title = PREV }
+				emf_has_succ_law_unfit_for_feudal = no
+				emf_laws_has_gender_succ_flag = no
+			}
+			emf_laws_set_gender_succ_flag = yes
+		}
+		# Cases where we should stop tracking the succ. laws and former succ. laws on this title:
+		any_demesne_title = {
+			limit = {
+				succ_law_title = { title = PREV }
+				emf_has_succ_law_unfit_for_feudal = yes
+			}
+			pf_clear_succession_flags_effect = yes
+			emf_laws_clr_succ_flags = yes
+			emf_laws_clr_gender_succ_flags = yes
+		}
+	}
+}
+
+# emf_laws.41 -- title creation (on_new_holder) handler which clears all stale succ. law and former succ. law
+# tracking flags which might be set on the title (from being held previously, then destroyed somehow, and now
+# being created again) and initializes the correct law tracking succ. flags.
+character_event = {
+	id = emf_laws.41
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		NOT = { FROMFROM = { always = yes } } # Title creation, no immediately-prior holder
+		FROM = {
+			OR = {
+				pf_has_former_succession_flag = yes
+				emf_laws_has_succ_flag = yes
+				emf_laws_has_gender_succ_flag = yes
+			}
+		}
+	}
+
+	immediate = {
+		FROM = {
+			# Clear the stale title flags:
+			pf_clear_succession_flags_effect = yes
+			emf_laws_clr_succ_flags = yes
+			emf_laws_clr_gender_succ_flags = yes
+		}
+		# Initialize our tracking flags 1 day after today's title transfers:
+		clear_delayed_event = { id = emf_laws.40 }
+		character_event = { id = emf_laws.40 days = 1 }
+	}
+}
+
