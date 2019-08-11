@@ -39,7 +39,7 @@ phenotypes = [
 	Phenotype('deaf', 'de', 'Deafness'),
 	Phenotype('wrymouth', 'w', 'Wrymouth'),
 	Phenotype('perc', 'p', 'Perceptiveness', Phenotype.POLYGENIC),
-	# NOTE that 'hl' prefix is in use for health
+	Phenotype('health', 'hl', 'Health', Phenotype.POLYGENIC),
 ]
 
 genes = ['AA', 'Aa', 'aa', 'BB', 'Bb', 'bb', 'CC', 'Cc', 'cc']
@@ -236,13 +236,7 @@ def print_savecompat_shorten_flag_names(f):
 			print('\t\tlimit = {{ has_flag = {}_{} }}'.format(p.id, g), file=f)
 			print('\t\tclr_flag = {}_{}'.format(p.id, g), file=f)
 			print('\t\tset_flag = {}_{}'.format(p.prefix, g), file=f)
-			print('\t}', file=f)	
-	for g in genes:
-		print('\tif = {', file=f)
-		print('\t\tlimit = {{ has_flag = {}_{} }}'.format('health', g), file=f)
-		print('\t\tclr_flag = {}_{}'.format('health', g), file=f)
-		print('\t\tset_flag = {}_{}'.format('hl', g), file=f)
-		print('\t}', file=f)
+			print('\t}', file=f)
 	print('}', file=f)
 
 
