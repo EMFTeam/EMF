@@ -20,8 +20,55 @@ character_event = {
 			limit = { ai = yes }
 			character_event = { id = hip.1 }
 		}
-		# Perform maintenance upon emf_cadet_immortal characters that should be living in our court
-		character_event = { id = emf_cadet.7 }
+		any_courtier = {
+			limit = { trait = emf_isis_courtier }
+			# Keep isis courtier immortals relatively cleaned up re: relations:
+			any_ward = { remove_guardian = yes }
+			any_lover = {
+				log = "DEBUG: hip.0: emf_isis_courtier had a lover"
+				remove_lover = PREV
+			}
+			any_consort = {
+				log = "DEBUG: hip.0: emf_isis_courtier had a concubine"
+				remove_consort = PREV
+			}
+			any_spouse = {
+				log = "DEBUG: hip.0: emf_isis_courtier had a spouse"
+				remove_spouse = PREV
+			}
+			any_friend = { remove_friend = PREV }
+			any_rival = { remove_rival = PREV }
+			any_claim = { remove_claim = PREV }
+			any_child_even_if_dead = {
+				any_child_even_if_dead = {
+					any_child_even_if_dead = {
+						emf_vanish_character = yes
+					}
+					emf_vanish_character = yes
+				}
+				emf_vanish_character = yes
+			}
+			# Ensure that they have their original culture & religion if the PETs are saved:
+			if = {
+				limit = {
+					persistent_event_target:pet_culture = {
+						NOT = { culture = PREV }
+					}
+				}
+				culture = persistent_event_target:pet_culture
+			}
+			if = {
+				limit = {
+					persistent_event_target:pet_religion = {
+						NOT = { religion = PREV }
+					}
+				}
+				religion = persistent_event_target:pet_religion
+			}
+			clear_focus = yes
+			cancel_ambition = yes
+			emf_do_not_disturb = yes
+		}
 	}
 }
 
@@ -58,7 +105,7 @@ character_event = {
 		}
 		any_courtier = {
 			limit = {
-				NOT = { trait = emf_cadet_immortal }
+				NOT = { trait = emf_isis_courtier }
 				OR = {
 					any_heir_title = { higher_tier_than = BARON }
 					any_pretender_title = { higher_tier_than = BARON }
@@ -274,7 +321,7 @@ character_event = {
 		# Remove hip_religion_group / hip_culture_group / isis's courtier/prisoner characters from the world
 		any_character = {
 			limit = {
-				NOT = { trait = emf_cadet_immortal }
+				NOT = { trait = emf_isis_courtier }
 				OR = {
 					religion_group = ROOT
 					culture_group = ROOT
@@ -318,6 +365,54 @@ character_event = {
 		emf_remove_all_traits = yes
 		add_trait = isis
 		emf_do_not_disturb = yes
+	}
+}
+
+# hip.2 -- handle emf_isis_courtier characters changing courts away from isis [on_employer_change, on_host_change]
+character_event	= {
+	id = hip.2
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	has_character_flag = emf_isis_courtier
+
+	trigger = {
+		is_alive = yes
+		FROMFROM = {
+			NOT = { character = event_target:isis }
+		}
+	}
+
+	immediate = {
+		log = "DEBUG: hip.2: an emf_isis_courtier escaped from the court of [isis.GetBestName]: [This.EMF_GetDebugName]"
+		liege = {
+			log = " ----> liege:    [This.EMF_GetDebugName]"
+		}
+		employer = {
+			log = " ----> employer: [This.EMF_GetDebugName]"
+		}
+		host = {
+			log = " ----> host:     [This.EMF_GetDebugName]"
+		}
+		if = {
+			limit = { prisoner = yes }
+			log = " ----> is prisoner"
+		}
+		if = {
+			limit = { emf_is_voter = yes }
+			log = " ----> is councillor / voter"
+		}
+		if = {
+			limit = { has_minor_title = yes }
+			log = " ----> has minor title"
+		}
+		prisoner = no
+		move_character = event_target:isis
+		if = {
+			limit = { NOT = { host = { character = event_target:isis } } }
+			force_host = event_target:isis
+		}
 	}
 }
 

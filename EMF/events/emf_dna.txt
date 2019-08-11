@@ -25,6 +25,9 @@ character_event = {
 	hide_window = yes
 
 	immediate = {
+		# Create dummy placeholder parents for single-parent inheritance:
+		character_event = { id = emf_dna.2 }
+		# Express phenotypes for randomly-generated characters:
 		any_character = {
 			limit = { emf_dna_is_subject_to_startup_randomization = yes }
 			character_event = { id = emf_dna.10 }
@@ -77,6 +80,104 @@ character_event = {
 	}
 }
 
+# emf_dna.2 -- initialize dummy characters for single-parent genetic inheritance
+character_event = {
+	id = emf_dna.2
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		has_landed_title = e_hip
+		NAND = {
+			event_target:emf_global_dna_dad = { is_alive = yes }
+			event_target:emf_global_dna_mom = { is_alive = yes }
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = { NOT = { event_target:emf_global_dna_dad = { is_alive = yes } } }
+			create_character = {
+				female = no
+				age = 20
+				dynasty = none
+				religion = yazidi # Ideally only Isis is hip_religion for perf. optimization purposes
+				trait = emf_isis_courtier
+				# None of the DNA module's managed congenital traits are random=yes, so it's pointless to generate any
+				# traits at all until or if such time as we handle the unmanaged traits' inheritance in the vanilla state
+				# (ala emf_PREV_inherit_traits_from_THIS):
+				random_traits = no
+			}
+			new_character = {
+				set_immune_to_pruning = yes
+				diplomatic_immunity = yes
+				emf_do_not_disturb = yes
+				set_flag = no_court_invites # Instructs AI to never accept an invitation to another court
+				set_flag = ai_flag_refuse_conversion # Instructs AI to never accept Demand Religious Conversion
+				set_flag = emf_ai_never_convert_culture
+				set_flag = emf_isis_courtier
+				set_flag = emf_dna_placeholder_parent
+				character_event = { id = emf_dna.10 } # Give them managed genetics
+				save_global_event_target_as = emf_global_dna_dad
+			}
+		}
+		if = {
+			limit = { NOT = { event_target:emf_global_dna_mom = { is_alive = yes } } }
+			create_character = {
+				female = yes
+				age = 20
+				dynasty = none
+				religion = yazidi # Ideally only Isis is hip_religion for perf. optimization purposes
+				trait = emf_isis_courtier
+				# None of the DNA module's managed congenital traits are random=yes, so it's pointless to generate any
+				# traits at all until or if such time as we handle the unmanaged traits' inheritance in the vanilla state
+				# (ala emf_PREV_inherit_traits_from_THIS):
+				random_traits = no
+			}
+			new_character = {
+				set_immune_to_pruning = yes
+				diplomatic_immunity = yes
+				emf_do_not_disturb = yes
+				set_flag = no_court_invites # Instructs AI to never accept an invitation to another court
+				set_flag = ai_flag_refuse_conversion # Instructs AI to never accept Demand Religious Conversion
+				set_flag = emf_ai_never_convert_culture
+				set_flag = emf_isis_courtier
+				set_flag = emf_dna_placeholder_parent
+				save_global_event_target_as = emf_global_dna_mom
+			}
+		}
+	}
+}
+
+# emf_dna.3 -- handle the death of a DNA placeholder parent [on_death]
+character_event = {
+	id = emf_dna.3
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	has_character_flag = emf_dna_placeholder_parent
+
+	trigger = {
+		OR = {
+			character = event_target:emf_global_dna_dad
+			character = event_target:emf_global_dna_mom
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = { character = event_target:emf_global_dna_dad }
+			clear_global_event_target = emf_global_dna_dad
+		}
+		else = {
+			clear_global_event_target = emf_global_dna_mom
+		}
+		event_target:isis = { character_event = { id = emf_dna.2 } }
+	}
+}
+
 # emf_dna.10 -- Initialize a character's genetic traits. [Character]
 #
 # Called from the emf_new_character effect as well as from emf_dna.0 on campaign initialization and emf_dna.1 when
@@ -99,7 +200,7 @@ character_event = {
 	}
 
 	immediate = {
-		# If only one parent is set, generate a dummy parent for genetics and then delete them afterwards.
+		# If only one parent is alive, use a DNA placeholder parent.
 		if = {
 			limit = {
 				mother = {
@@ -107,22 +208,42 @@ character_event = {
 					is_alive = yes
 				}
 				NOR = {
-					father_even_if_dead = { always = yes }
-					real_father_even_if_dead = { always = yes }
+					father = { is_alive = yes }
+					real_father = { is_alive = yes }
 				}
 			}
-			create_character = {
-				age = 20
-				random_traits = yes
-				female = no
-			}
-			new_character = {
+			father_even_if_dead = { save_event_target_as = emf_prior_dad }
+			real_father_even_if_dead = { save_event_target_as = emf_prior_real_dad }
+			event_target:emf_global_dna_dad = {
+				# Allow DNA to be recalculated (only have to add 1 trait in each group & then remove it to ensure the
+				# whole group of traits is cleared):
+				clr_flag = emf_dna_check
+				add_trait = genius
+				add_trait = giant
+				add_trait = strong
+				add_trait = fair
+				add_trait = perceptive
+				remove_trait = genius
+				remove_trait = giant
+				remove_trait = strong
+				remove_trait = fair
+				remove_trait = perceptive
+				emf_dna_remove_negative_mendelian_traits = yes
+				# Now actually add traits and reset flags appropriately. Note that this is a recursion, but it will stop
+				# at this DNA placeholder character, because they have no parents at all:
 				character_event = { id = emf_dna.10 }
-				set_flag = dummy_parent
-				PREV = { set_father = PREV }
+			}
+			if = {
+				limit = { event_target:emf_prior_real_dad = { always = yes } }
+				# We prefer the stand-in to be the real father here since it will be prioritized by the inheritance code
+				# as well:
+				set_real_father = event_target:emf_global_dna_dad
+			}
+			else = {
+				set_father = event_target:emf_global_dna_dad
 			}
 		}
-		if = {
+		else_if = { # Only one parent position can have a placeholder stand-in
 			limit = {
 				trigger_if = {
 					limit = { is_father_real_father = yes }
@@ -137,22 +258,32 @@ character_event = {
 						is_alive = yes
 					}
 				}
-				NOT = {
-					mother = { always = yes }
-				}
+				NOT = { mother = { is_alive = yes } }
 			}
-			create_character = {
-				age = 20
-				random_traits = yes
-				female = yes
-			}
-			new_character = {
+			mother_even_if_dead = { save_event_target_as = emf_prior_mom }
+			event_target:emf_global_dna_mom = {
+				# Allow DNA to be recalculated (only have to add 1 trait in each group & then remove it to ensure the
+				# whole group of traits is cleared):
+				clr_flag = emf_dna_check
+				add_trait = genius
+				add_trait = giant
+				add_trait = strong
+				add_trait = fair
+				add_trait = perceptive
+				remove_trait = genius
+				remove_trait = giant
+				remove_trait = strong
+				remove_trait = fair
+				remove_trait = perceptive
+				emf_dna_remove_negative_mendelian_traits = yes
+				# Now actually add traits and reset flags appropriately. Note that this is a recursion, but it will stop
+				# at this DNA placeholder character, because they have no parents at all:
 				character_event = { id = emf_dna.10 }
-				set_flag = dummy_parent
-				PREV = { set_mother = PREV }
 			}
+			set_mother = event_target:emf_global_dna_mom
 		}
-	
+		# If we can do proper genetic inheritance instead of applying a randomized trait distribution (i.e., at
+		# least one parent was alive when this event was invoked), then do that:
 		if = {
 			limit = {
 				mother = {
@@ -173,24 +304,40 @@ character_event = {
 					}
 				}
 			}
-			# Since father and mother are alive already, then skip random DNA initialization and use on_birth DNA inheritance
-			# and mutation instead:
+			# Since father and mother are alive already, then skip random DNA initialization and use on_birth DNA
+			# inheritance and mutation instead:
 			character_event = { id = emf_dna.1000 }
-			# Prune dummy parents
+			# Restore the prior real_father or father, if they were dead and we're using a DNA placeholder parent;
+			# handle restoration of an undefined father as well:
 			if = {
 				limit = {
-					father = { has_flag = dummy_parent }
+					OR = {
+						real_father = { character = event_target:emf_global_dna_dad }
+						father = { character = event_target:emf_global_dna_dad }
+					}
 				}
-				father = {
-					emf_vanish_character = yes
+				if = {
+					limit = { event_target:emf_prior_real_dad = { always = yes } }
+					set_real_father = event_target:emf_prior_real_dad
+				}
+				else_if = {
+					limit = { event_target:emf_prior_dad = { always = yes } }
+					set_father = event_target:emf_prior_dad
+				}
+				else = {
+					set_father = 0
 				}
 			}
-			if = {
+			else_if = { # Now do the same for the mother in case she was the stand-in (both cannot be):
 				limit = {
-					mother = { has_flag = dummy_parent }
+					mother = { character = event_target:emf_global_dna_mom }
 				}
-				mother = {
-					emf_vanish_character = yes
+				if = {
+					limit = { event_target:emf_prior_mom = { always = yes } }
+					set_mother = event_target:emf_prior_mom
+				}
+				else = {
+					set_mother = 0
 				}
 			}
 			break = yes
