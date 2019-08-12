@@ -40,6 +40,7 @@ phenotypes = [
 	Phenotype('wrymouth', 'w', 'Wrymouth'),
 	Phenotype('perc', 'p', 'Perceptiveness', Phenotype.POLYGENIC),
 	Phenotype('health', 'hl', 'Health', Phenotype.POLYGENIC),
+	Phenotype('handedness', 'lh', 'Handedness', Phenotype.POLYGENIC),
 ]
 
 genes = ['AA', 'Aa', 'aa', 'BB', 'Bb', 'bb', 'CC', 'Cc', 'cc']
