@@ -14,7 +14,7 @@ class Phenotype:
 	MENDELIAN = 0
 	POLYGENIC = 1
 
-	def __init__(self, p_id, prefix, name, inheritance=MENDELIAN, gene_weights_if_trait=(0,2,2), gene_weights_if_no_trait=(9,9,2)):
+	def __init__(self, p_id, prefix, name, inheritance=MENDELIAN, gene_weights_if_trait=(0,9,11), gene_weights_if_no_trait=(9,9,2)):
 		self.id = p_id
 		self.prefix = prefix
 		self.name = name
@@ -30,7 +30,7 @@ phenotypes = [
 	Phenotype('attr', 'a', 'Attractiveness', Phenotype.POLYGENIC),
 	Phenotype('str', 'st', 'Strength', Phenotype.POLYGENIC),
 	Phenotype('hgt', 'ht', 'Height', Phenotype.POLYGENIC),
-	Phenotype('dwarf', 'dw', 'Dwarfism', gene_weights_if_trait=(0,2,3), gene_weights_if_no_trait=(10,9,1)),
+	Phenotype('dwarf', 'dw', 'Dwarfism', gene_weights_if_trait=(0,5,3), gene_weights_if_no_trait=(10,9,1)),
 	Phenotype('clubfooted', 'c', 'Clubfooted'),
 	Phenotype('hunchback', 'hu', 'Hunchback'),
 	Phenotype('harelip', 'ha', 'Harelip'),
