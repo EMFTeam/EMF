@@ -30,7 +30,7 @@ phenotypes = [
 	Phenotype('attr', 'a', 'Attractiveness', Phenotype.POLYGENIC),
 	Phenotype('str', 'st', 'Strength', Phenotype.POLYGENIC),
 	Phenotype('hgt', 'ht', 'Height', Phenotype.POLYGENIC),
-	Phenotype('dwarf', 'dw', 'Dwarfism', gene_weights_if_trait=(0,2,3)),
+	Phenotype('dwarf', 'dw', 'Dwarfism', gene_weights_if_trait=(0,2,3), gene_weights_if_no_trait=(10,9,1)),
 	Phenotype('clubfooted', 'c', 'Clubfooted'),
 	Phenotype('hunchback', 'hu', 'Hunchback'),
 	Phenotype('harelip', 'ha', 'Harelip'),
@@ -149,7 +149,7 @@ def print_set_flags_for_phenotype_if_no_trait_effects(f):
 			continue
 		print(file=f)
 		print('# Set DNA for phenotype if no trait is expressed: {}'.format(p.name), file=f)
-		print('''emf_dna_set_flags_for_{0}_if_no_trait = {{
+		firstpart='''emf_dna_set_flags_for_{0}_if_no_trait = {{
 	random_list = {{
 		{1} = {{
 			set_flag = {4}_AA
@@ -182,8 +182,32 @@ def print_set_flags_for_phenotype_if_no_trait_effects(f):
 		{3} = {{
 			set_flag = {4}_cc
 		}}
-	}}
-}}'''.format(p.id, *p.gene_weights_if_no_trait, p.prefix), file=f)
+	}}'''.format(p.id, *p.gene_weights_if_no_trait, p.prefix)
+		if p.id == 'dwarf':
+			firstpart=firstpart+'''
+	if = {{
+		limit = {{
+			has_flag = {0}_aa
+			has_flag = {0}_bb
+			has_flag = {0}_cc
+		}}
+		random_list = {{
+			1 = {{
+				clr_flag = {0}_aa
+				set_flag = {0}_Aa
+			}}
+			1 = {{
+				clr_flag = {0}_bb
+				set_flag = {0}_Bb
+			}}
+			1 = {{
+				clr_flag = {0}_cc
+				set_flag = {0}_Cc
+			}}
+		}}
+	}}'''.format(p.prefix)
+		print(firstpart+'''
+}''', file=f)
 
 
 def print_reverse_homozygous_recessive_effect(f):
