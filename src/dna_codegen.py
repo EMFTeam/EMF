@@ -69,9 +69,12 @@ def main():
 		print_clear_flags_for_phenotype_effects(f)
 		print_set_flags_for_phenotype_effects(f)
 		print_set_flags_for_phenotype_if_no_trait_effects(f)
+		print_add_trait_with_genetics_effects(f)
+		print_remove_trait_with_genetics_effects(f)
 		print_reverse_homozygous_recessive_effect(f)
 		print_reset_flags_positively_effect(f)
 		print_remove_negative_mendelian_traits_effect(f)
+		print_remove_negative_mendelian_traits_with_genetics_effect(f)
 		print_savecompat_shorten_flag_names(f)
 	return 0
 
@@ -210,6 +213,31 @@ def print_set_flags_for_phenotype_if_no_trait_effects(f):
 }''', file=f)
 
 
+def print_add_trait_with_genetics_effects(f):
+	for p in phenotypes:
+		if p.type != Phenotype.MENDELIAN:
+			continue
+		print(file=f)
+		print('# Add trait and reset DNA for known phenotype: {}'.format(p.name), file=f)
+		print('''emf_dna_add_trait_{0} = {{
+	emf_dna_clear_flags_for_{0} = yes
+	add_trait = {0}
+	emf_dna_set_flags_for_{0} = yes
+}}'''.format(p.id), file=f)
+
+
+def print_remove_trait_with_genetics_effects(f):
+	for p in phenotypes:
+		if p.type != Phenotype.MENDELIAN:
+			continue
+		print(file=f)
+		print('# Remove trait and reset DNA for known phenotype: {}'.format(p.name), file=f)
+		print('''emf_dna_remove_trait_{0} = {{
+	emf_dna_clear_flags_for_{0} = yes
+	remove_trait = {0}
+	emf_dna_set_flags_for_{0}_if_no_trait = yes
+}}'''.format(p.id), file=f)
+
 def print_reverse_homozygous_recessive_effect(f):
 	print(file=f)
 	print('# Flip all homozygous recessive genes into homozygous dominant genes', file=f)
@@ -247,6 +275,17 @@ def	print_remove_negative_mendelian_traits_effect(f):
 		if p.type != Phenotype.MENDELIAN:
 			continue
 		print('\tremove_trait = {}'.format(p.id), file=f)
+	print('}', file=f)
+
+
+def print_remove_negative_mendelian_traits_with_genetics_effect(f):
+	print(file=f)
+	print('# Remove all negative genetic traits subject to Mendelian inheritance and adjust genetics accordingly', file=f)
+	print('emf_dna_remove_negative_mendelian_traits_with_genetics = {', file=f)
+	for p in phenotypes:
+		if p.type != Phenotype.MENDELIAN:
+			continue
+		print('\temf_dna_remove_trait_{} = yes'.format(p.id), file=f)
 	print('}', file=f)
 
 
