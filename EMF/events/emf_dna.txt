@@ -25,9 +25,21 @@ character_event = {
 	hide_window = yes
 
 	immediate = {
+		# Create dummy placeholder parents for single-parent inheritance:
+		character_event = { id = emf_dna.2 }
+		# Express phenotypes for randomly-generated characters:
 		any_character = {
 			limit = { emf_dna_is_subject_to_startup_randomization = yes }
 			character_event = { id = emf_dna.10 }
+			
+			# Remove 67% of Lefthanded traits (though not the genetics for it) due to education
+			if = {
+				limit = { trait = lefthanded }
+				random = {
+					chance = 67
+					remove_trait = lefthanded
+				}
+			}
 		}
 		# And flag the approximately-complement set of characters as possibly historical characters (notably, characters
 		# that we don't want to later think were a randomly-generated courtier after game start). Note that isolated
@@ -77,6 +89,104 @@ character_event = {
 	}
 }
 
+# emf_dna.2 -- initialize dummy characters for single-parent genetic inheritance
+character_event = {
+	id = emf_dna.2
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		has_landed_title = e_hip
+		NAND = {
+			event_target:emf_global_dna_dad = { is_alive = yes }
+			event_target:emf_global_dna_mom = { is_alive = yes }
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = { NOT = { event_target:emf_global_dna_dad = { is_alive = yes } } }
+			create_character = {
+				female = no
+				age = 20
+				dynasty = none
+				religion = yazidi # Ideally only Isis is hip_religion for perf. optimization purposes
+				trait = emf_isis_courtier
+				# None of the DNA module's managed congenital traits are random=yes, so it's pointless to generate any
+				# traits at all until or if such time as we handle the unmanaged traits' inheritance in the vanilla state
+				# (ala emf_PREV_inherit_traits_from_THIS):
+				random_traits = no
+			}
+			new_character = {
+				set_immune_to_pruning = yes
+				diplomatic_immunity = yes
+				emf_do_not_disturb = yes
+				set_flag = no_court_invites # Instructs AI to never accept an invitation to another court
+				set_flag = ai_flag_refuse_conversion # Instructs AI to never accept Demand Religious Conversion
+				set_flag = emf_ai_never_convert_culture
+				set_flag = emf_isis_courtier
+				set_flag = emf_dna_placeholder_parent
+				character_event = { id = emf_dna.10 } # Give them managed genetics
+				save_global_event_target_as = emf_global_dna_dad
+			}
+		}
+		if = {
+			limit = { NOT = { event_target:emf_global_dna_mom = { is_alive = yes } } }
+			create_character = {
+				female = yes
+				age = 20
+				dynasty = none
+				religion = yazidi # Ideally only Isis is hip_religion for perf. optimization purposes
+				trait = emf_isis_courtier
+				# None of the DNA module's managed congenital traits are random=yes, so it's pointless to generate any
+				# traits at all until or if such time as we handle the unmanaged traits' inheritance in the vanilla state
+				# (ala emf_PREV_inherit_traits_from_THIS):
+				random_traits = no
+			}
+			new_character = {
+				set_immune_to_pruning = yes
+				diplomatic_immunity = yes
+				emf_do_not_disturb = yes
+				set_flag = no_court_invites # Instructs AI to never accept an invitation to another court
+				set_flag = ai_flag_refuse_conversion # Instructs AI to never accept Demand Religious Conversion
+				set_flag = emf_ai_never_convert_culture
+				set_flag = emf_isis_courtier
+				set_flag = emf_dna_placeholder_parent
+				save_global_event_target_as = emf_global_dna_mom
+			}
+		}
+	}
+}
+
+# emf_dna.3 -- handle the death of a DNA placeholder parent [on_death]
+character_event = {
+	id = emf_dna.3
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	has_character_flag = emf_dna_placeholder_parent
+
+	trigger = {
+		OR = {
+			character = event_target:emf_global_dna_dad
+			character = event_target:emf_global_dna_mom
+		}
+	}
+
+	immediate = {
+		if = {
+			limit = { character = event_target:emf_global_dna_dad }
+			clear_global_event_target = emf_global_dna_dad
+		}
+		else = {
+			clear_global_event_target = emf_global_dna_mom
+		}
+		event_target:isis = { character_event = { id = emf_dna.2 } }
+	}
+}
+
 # emf_dna.10 -- Initialize a character's genetic traits. [Character]
 #
 # Called from the emf_new_character effect as well as from emf_dna.0 on campaign initialization and emf_dna.1 when
@@ -99,6 +209,58 @@ character_event = {
 	}
 
 	immediate = {
+		# If only one parent is alive, use a DNA placeholder parent.
+		if = {
+			limit = {
+				mother = {
+					character = yes
+					is_alive = yes
+				}
+				NOR = {
+					father = { is_alive = yes }
+					real_father = { is_alive = yes }
+				}
+			}
+			father_even_if_dead = { save_event_target_as = emf_prior_dad }
+			real_father_even_if_dead = { save_event_target_as = emf_prior_real_dad }
+			event_target:emf_global_dna_dad = {
+				emf_dna_randomize_male = yes
+			}
+			if = {
+				limit = { event_target:emf_prior_real_dad = { character = yes } }
+				# We prefer the stand-in to be the real father here since it will be prioritized by the inheritance code
+				# as well:
+				set_real_father = event_target:emf_global_dna_dad
+			}
+			else = {
+				set_father = event_target:emf_global_dna_dad
+			}
+		}
+		else_if = { # Only one parent position can have a placeholder stand-in
+			limit = {
+				trigger_if = {
+					limit = { is_father_real_father = yes }
+					father = {
+						character = yes
+						is_alive = yes
+					}
+				}
+				trigger_else = {
+					real_father = {
+						character = yes
+						is_alive = yes
+					}
+				}
+				NOT = { mother = { is_alive = yes } }
+			}
+			mother_even_if_dead = { save_event_target_as = emf_prior_mom }
+			event_target:emf_global_dna_mom = {
+				emf_dna_randomize_female = yes
+			}
+			set_mother = event_target:emf_global_dna_mom
+		}
+		# If we can do proper genetic inheritance instead of applying a randomized trait distribution (i.e., at
+		# least one parent was alive when this event was invoked), then do that:
 		if = {
 			limit = {
 				mother = {
@@ -119,9 +281,42 @@ character_event = {
 					}
 				}
 			}
-			# Since father and mother are alive already, then skip random DNA initialization and use on_birth DNA inheritance
-			# and mutation instead:
+			# Since father and mother are alive already, then skip random DNA initialization and use on_birth DNA
+			# inheritance and mutation instead:
 			character_event = { id = emf_dna.1000 }
+			# Restore the prior real_father or father, if they were dead and we're using a DNA placeholder parent;
+			# handle restoration of an undefined father as well:
+			if = {
+				limit = {
+					OR = {
+						real_father = { character = event_target:emf_global_dna_dad }
+						father = { character = event_target:emf_global_dna_dad }
+					}
+				}
+				if = {
+					limit = { event_target:emf_prior_real_dad = { character = yes } }
+					set_real_father = event_target:emf_prior_real_dad
+				}
+				else_if = {
+					limit = { event_target:emf_prior_dad = { character = yes } }
+					set_father = event_target:emf_prior_dad
+				}
+				else = {
+					set_father = 0
+				}
+			}
+			else_if = { # Now do the same for the mother in case she was the stand-in (both cannot be):
+				limit = {
+					mother = { character = event_target:emf_global_dna_mom }
+				}
+				if = {
+					limit = { event_target:emf_prior_mom = { character = yes } }
+					set_mother = event_target:emf_prior_mom
+				}
+				else = {
+					set_mother = 0
+				}
+			}
 			break = yes
 		}
 		set_flag = emf_dna_check
@@ -136,26 +331,27 @@ character_event = {
 					trait = dim
 				}
 			}
+			# Chances are out of 100000
 			random_list = {
-				50 = {
-					add_trait = bright
-				}
-				12 = {
-					add_trait = quick
-				}
-				3 = {
+				114 = {
 					add_trait = genius
 				}
-				3 = {
-					add_trait = imbecile
+				351 = {
+					add_trait = quick
 				}
-				10 = {
-					add_trait = slow
+				781 = {
+					add_trait = bright
 				}
-				40 = {
+				781 = {
 					add_trait = dim
 				}
-				870 = {
+				351 = {
+					add_trait = slow
+				}
+				114 = {
+					add_trait = imbecile
+				}
+				7508 = {
 					## Nothing
 				}
 			}
@@ -169,20 +365,21 @@ character_event = {
 					trait = weak
 				}
 			}
+			# Chances are out of 100000
 			random_list = {
-				15 = {
+				445 = {
 					add_trait = strong
 				}
-				50 = {
+				781 = {
 					add_trait = burly
 				}
-				12 = {
-					add_trait = weak
-				}
-				40 = {
+				781 = {
 					add_trait = delicate
 				}
-				870 = {
+				445 = {
+					add_trait = weak
+				}
+				7548 = {
 					## Nothing
 				}
 			}
@@ -196,20 +393,21 @@ character_event = {
 					trait = ugly
 				}
 			}
+			# Chances are out of 100000
 			random_list = {
-				15 = {
+				445 = {
 					add_trait = fair
 				}
-				50 = {
+				781 = {
 					add_trait = comely
 				}
-				40 = {
+				781 = {
 					add_trait = homely
 				}
-				12 = {
+				445 = {
 					add_trait = ugly
 				}
-				870 = {
+				7548 = {
 					## Nothing
 				}
 			}
@@ -221,81 +419,85 @@ character_event = {
 					trait = tall
 					trait = short
 					trait = tiny
+					trait = dwarf
 				}
 			}
+			# Chances are out of 100000
 			random_list = {
-				5 = {
+				202 = {
 					add_trait = giant
 				}
-				50 = {
+				793 = {
 					add_trait = tall
 				}
-				40 = {
+				793 = {
 					add_trait = short
 				}
-				5 = {
+				202 = {
 					add_trait = tiny
 				}
-				890 = {
+				8010 = {
 					## Nothing
 				}
 			}
 		}
+		# Chances are out of 100000
 		random_list = {
-			3 = {
+			27 = {
 				add_trait = dwarf
 			}
-			1997 = {
+			9973 = {
 			}
 		}
+		# Chances are out of 100000
 		random_list = {
-			4 = {
+			60 = {
 				add_trait = hunchback
 			}
-			1996 = {
+			9940 = {
 			}
 		}
 		random_list = {
-			5 = {
+			60 = {
 				add_trait = harelip
 			}
-			1995 = {
+			9940 = {
 			}
 		}
 		random_list = {
-			7 = {
+			60 = {
 				add_trait = stutter
 			}
-			1993 = {
+			9940 = {
 			}
 		}
 		random_list = {
-			7 = {
+			60 = {
 				add_trait = lisp
 			}
-			1993 = {
+			9940 = {
 			}
 		}
 		random_list = {
-			4 = {
+			60 = {
 				add_trait = clubfooted
 			}
-			1996 = {
+			9940 = {
 			}
 		}
 		## HIP traits: Wrymouth, Deaf, Perceptive, Absentminded
 		random_list = {
-			4 = {
+			55 = {
 				add_trait = wrymouth
 			}
-			1996 = {
+			9945 = {
 			}
 		}
 		random_list = {
-			5 = {
+			55 = {
 				add_trait = deaf
 			}
-			1995 = {
+			9945 = {
 			}
 		}
 		if = {
@@ -305,17 +507,38 @@ character_event = {
 					trait = absentminded
 				}
 			}
+			# Chances are out of 100000
 			random_list = {
-				10 = {
+				454 = {
 					add_trait = perceptive
 				}
-				10 = {
+				454 = {
 					add_trait = absentminded
 				}
-				1980 = {
+				9092 = {
 				}
 			}
 		}
+		if = {
+			limit = {
+				NOR = {
+					trait = lefthanded
+					trait = ambidextrous
+				}
+			}
+			random_list = {
+				10 = {
+					add_trait = lefthanded
+				}
+				1 = {
+					add_trait = ambidextrous
+				}
+				89 = {
+				}
+			}
+		}
+		# Immediately set genetic flags for this character
+		character_event = { id = emf_dna.15 }
 	}
 }
 
@@ -342,6 +565,7 @@ character_event = {
 		emf_dna_clear_flags_for_stutter = yes
 		emf_dna_clear_flags_for_deaf = yes
 		emf_dna_clear_flags_for_wrymouth = yes
+		emf_dna_clear_flags_for_handedness = yes
 		# Intelligence
 		if = {
 			limit = { trait = genius }
@@ -368,9 +592,7 @@ character_event = {
 			emf_dna_set_flags_for_imbecile = yes
 		}
 		else = {
-			set_flag = i_Aa
-			set_flag = i_Bb
-			set_flag = i_Cc
+			emf_dna_set_flags_for_average_intelligence = yes
 		}
 		# Strength
 		if = {
@@ -390,9 +612,7 @@ character_event = {
 			emf_dna_set_flags_for_weak = yes
 		}
 		else = {
-			set_flag = st_Aa
-			set_flag = st_Bb
-			set_flag = st_Cc
+			emf_dna_set_flags_for_average_strength = yes
 		}
 		# Height
 		if = {
@@ -412,9 +632,7 @@ character_event = {
 			emf_dna_set_flags_for_tiny = yes
 		}
 		else = {
-			set_flag = ht_Aa
-			set_flag = ht_Bb
-			set_flag = ht_Cc
+			emf_dna_set_flags_for_average_height = yes
 		}
 		# Attractiveness
 		if = {
@@ -434,9 +652,7 @@ character_event = {
 			emf_dna_set_flags_for_ugly = yes
 		}
 		else = {
-			set_flag = a_Aa
-			set_flag = a_Bb
-			set_flag = a_Cc
+			emf_dna_set_flags_for_average_attractiveness = yes
 		}
 		# Perceptiveness
 		if = {
@@ -448,9 +664,19 @@ character_event = {
 			emf_dna_set_flags_for_absentminded = yes
 		}
 		else = {
-			set_flag = p_Aa
-			set_flag = p_Bb
-			set_flag = p_Cc
+			emf_dna_set_flags_for_average_perceptiveness = yes
+		}
+		# Handedness
+		if = {
+			limit = { trait = lefthanded }
+			emf_dna_set_flags_for_lefthanded = yes
+		}
+		else_if = {
+			limit = { trait = ambidextrous }
+			emf_dna_set_flags_for_ambidextrous = yes
+		}
+		else = {
+			emf_dna_set_flags_for_handedness_if_no_trait = yes
 		}
 		# Mendelian traits
 		if = {
@@ -458,224 +684,74 @@ character_event = {
 			emf_dna_set_flags_for_dwarf = yes
 		}
 		else = {
-			random_list = {
-				3 = {
-					set_flag = dw_Aa
-					set_flag = dw_Bb
-					set_flag = dw_Cc
-				}
-				1 = {
-					set_flag = dw_AA
-					set_flag = dw_Bb
-					set_flag = dw_Cc
-				}
-				1 = {
-					set_flag = dw_Aa
-					set_flag = dw_BB
-					set_flag = dw_Cc
-				}
-				1 = {
-					set_flag = dw_Aa
-					set_flag = dw_Bb
-					set_flag = dw_CC
-				}
-			}
+			emf_dna_set_flags_for_dwarf_if_no_trait = yes
 		}
 		if = {
 			limit = { trait = clubfooted }
 			emf_dna_set_flags_for_clubfooted = yes
 		}
 		else = {
-			random_list = {
-				3 = {
-					set_flag = c_Aa
-					set_flag = c_Bb
-					set_flag = c_Cc
-				}
-				1 = {
-					set_flag = c_AA
-					set_flag = c_Bb
-					set_flag = c_Cc
-				}
-				1 = {
-					set_flag = c_Aa
-					set_flag = c_BB
-					set_flag = c_Cc
-				}
-				1 = {
-					set_flag = c_Aa
-					set_flag = c_Bb
-					set_flag = c_CC
-				}
-			}
+			emf_dna_set_flags_for_clubfooted_if_no_trait = yes
 		}
 		if = {
 			limit = { trait = hunchback }
 			emf_dna_set_flags_for_hunchback = yes
 		}
 		else = {
-			random_list = {
-				3 = {
-					set_flag = hu_Aa
-					set_flag = hu_Bb
-					set_flag = hu_Cc
-				}
-				1 = {
-					set_flag = hu_AA
-					set_flag = hu_Bb
-					set_flag = hu_Cc
-				}
-				1 = {
-					set_flag = hu_Aa
-					set_flag = hu_BB
-					set_flag = hu_Cc
-				}
-				1 = {
-					set_flag = hu_Aa
-					set_flag = hu_Bb
-					set_flag = hu_CC
-				}
-			}
+			emf_dna_set_flags_for_hunchback_if_no_trait = yes
 		}
 		if = {
 			limit = { trait = harelip }
 			emf_dna_set_flags_for_harelip = yes
 		}
 		else = {
-			random_list = {
-				3 = {
-					set_flag = ha_Aa
-					set_flag = ha_Bb
-					set_flag = ha_Cc
-				}
-				1 = {
-					set_flag = ha_AA
-					set_flag = ha_Bb
-					set_flag = ha_Cc
-				}
-				1 = {
-					set_flag = ha_Aa
-					set_flag = ha_BB
-					set_flag = ha_Cc
-				}
-				1 = {
-					set_flag = ha_Aa
-					set_flag = ha_Bb
-					set_flag = ha_CC
-				}
-			}
+			emf_dna_set_flags_for_harelip_if_no_trait = yes
 		}
 		if = {
 			limit = { trait = lisp }
 			emf_dna_set_flags_for_lisp = yes
 		}
 		else = {
-			random_list = {
-				3 = {
-					set_flag = l_Aa
-					set_flag = l_Bb
-					set_flag = l_Cc
-				}
-				1 = {
-					set_flag = l_AA
-					set_flag = l_Bb
-					set_flag = l_Cc
-				}
-				1 = {
-					set_flag = l_Aa
-					set_flag = l_BB
-					set_flag = l_Cc
-				}
-				1 = {
-					set_flag = l_Aa
-					set_flag = l_Bb
-					set_flag = l_CC
-				}
-			}
+			emf_dna_set_flags_for_lisp_if_no_trait = yes
 		}
 		if = {
 			limit = { trait = stutter }
 			emf_dna_set_flags_for_stutter = yes
 		}
 		else = {
-			random_list = {
-				3 = {
-					set_flag = sr_Aa
-					set_flag = sr_Bb
-					set_flag = sr_Cc
-				}
-				1 = {
-					set_flag = sr_AA
-					set_flag = sr_Bb
-					set_flag = sr_Cc
-				}
-				1 = {
-					set_flag = sr_Aa
-					set_flag = sr_BB
-					set_flag = sr_Cc
-				}
-				1 = {
-					set_flag = sr_Aa
-					set_flag = sr_Bb
-					set_flag = sr_CC
-				}
-			}
+			emf_dna_set_flags_for_stutter_if_no_trait = yes
 		}
 		if = {
 			limit = { trait = deaf }
 			emf_dna_set_flags_for_deaf = yes
 		}
 		else = {
-			random_list = {
-				3 = {
-					set_flag = de_Aa
-					set_flag = de_Bb
-					set_flag = de_Cc
-				}
-				1 = {
-					set_flag = de_AA
-					set_flag = de_Bb
-					set_flag = de_Cc
-				}
-				1 = {
-					set_flag = de_Aa
-					set_flag = de_BB
-					set_flag = de_Cc
-				}
-				1 = {
-					set_flag = de_Aa
-					set_flag = de_Bb
-					set_flag = de_CC
-				}
-			}
+			emf_dna_set_flags_for_deaf_if_no_trait = yes
 		}
 		if = {
 			limit = { trait = wrymouth }
 			emf_dna_set_flags_for_wrymouth = yes
 		}
 		else = {
-			random_list = {
-				3 = {
-					set_flag = w_Aa
-					set_flag = w_Bb
-					set_flag = w_Cc
-				}
-				1 = {
-					set_flag = w_AA
-					set_flag = w_Bb
-					set_flag = w_Cc
-				}
-				1 = {
-					set_flag = w_Aa
-					set_flag = w_BB
-					set_flag = w_Cc
-				}
-				1 = {
-					set_flag = w_Aa
-					set_flag = w_Bb
-					set_flag = w_CC
+			emf_dna_set_flags_for_wrymouth_if_no_trait = yes
+		}
+		## Health Effects
+		if = {
+			limit = {
+				NOR = {
+					has_flag = hl_AA
+					has_flag = hl_Aa
+					has_flag = hl_aa
+					has_flag = hl_BB
+					has_flag = hl_Bb
+					has_flag = hl_bb
+					has_flag = hl_CC
+					has_flag = hl_Cc
+					has_flag = hl_cc
 				}
 			}
+			emf_dna_set_flags_for_new_character_health = yes
+			emf_dna_apply_effects_health = yes
 		}
 	}
 }
@@ -787,39 +863,7 @@ character_event = {
 					emf_dna_set_flags_for_imbecile = yes
 				}
 				else = {
-					random_list = {
-						1 = {
-							set_flag = i_AA
-						}
-						4 = {
-							set_flag = i_Aa
-						}
-						1 = {
-							set_flag = i_aa
-						}
-					}
-					random_list = {
-						1 = {
-							set_flag = i_BB
-						}
-						4 = {
-							set_flag = i_Bb
-						}
-						1 = {
-							set_flag = i_bb
-						}
-					}
-					random_list = {
-						1 = {
-							set_flag = i_CC
-						}
-						4 = {
-							set_flag = i_Cc
-						}
-						1 = {
-							set_flag = i_cc
-						}
-					}
+					emf_dna_set_flags_for_average_intelligence = yes
 				}
 			}
 		}
@@ -877,39 +921,7 @@ character_event = {
 					emf_dna_set_flags_for_imbecile = yes
 				}
 				else = {
-					random_list = {
-						1 = {
-							set_flag = i_AA
-						}
-						4 = {
-							set_flag = i_Aa
-						}
-						1 = {
-							set_flag = i_aa
-						}
-					}
-					random_list = {
-						1 = {
-							set_flag = i_BB
-						}
-						4 = {
-							set_flag = i_Bb
-						}
-						1 = {
-							set_flag = i_bb
-						}
-					}
-					random_list = {
-						1 = {
-							set_flag = i_CC
-						}
-						4 = {
-							set_flag = i_Cc
-						}
-						1 = {
-							set_flag = i_cc
-						}
-					}
+					emf_dna_set_flags_for_average_intelligence = yes
 				}
 			}
 		}
@@ -1587,39 +1599,7 @@ character_event = {
 					emf_dna_set_flags_for_ugly = yes
 				}
 				else = {
-					random_list = {
-						1 = {
-							set_flag = a_AA
-						}
-						4 = {
-							set_flag = a_Aa
-						}
-						1 = {
-							set_flag = a_aa
-						}
-					}
-					random_list = {
-						1 = {
-							set_flag = a_BB
-						}
-						4 = {
-							set_flag = a_Bb
-						}
-						1 = {
-							set_flag = a_bb
-						}
-					}
-					random_list = {
-						1 = {
-							set_flag = a_CC
-						}
-						4 = {
-							set_flag = a_Cc
-						}
-						1 = {
-							set_flag = a_cc
-						}
-					}
+					emf_dna_set_flags_for_average_attractiveness = yes
 				}
 			}
 		}
@@ -1665,39 +1645,7 @@ character_event = {
 					emf_dna_set_flags_for_ugly = yes
 				}
 				else = {
-					random_list = {
-						1 = {
-							set_flag = a_AA
-						}
-						4 = {
-							set_flag = a_Aa
-						}
-						1 = {
-							set_flag = a_aa
-						}
-					}
-					random_list = {
-						1 = {
-							set_flag = a_BB
-						}
-						4 = {
-							set_flag = a_Bb
-						}
-						1 = {
-							set_flag = a_bb
-						}
-					}
-					random_list = {
-						1 = {
-							set_flag = a_CC
-						}
-						4 = {
-							set_flag = a_Cc
-						}
-						1 = {
-							set_flag = a_cc
-						}
-					}
+					emf_dna_set_flags_for_average_attractiveness = yes
 				}
 			}
 		}
@@ -2349,39 +2297,7 @@ character_event = {
 					emf_dna_set_flags_for_weak = yes
 				}
 				else = {
-					random_list = {
-						1 = {
-							set_flag = st_AA
-						}
-						4 = {
-							set_flag = st_Aa
-						}
-						1 = {
-							set_flag = st_aa
-						}
-					}
-					random_list = {
-						1 = {
-							set_flag = st_BB
-						}
-						4 = {
-							set_flag = st_Bb
-						}
-						1 = {
-							set_flag = st_bb
-						}
-					}
-					random_list = {
-						1 = {
-							set_flag = st_CC
-						}
-						4 = {
-							set_flag = st_Cc
-						}
-						1 = {
-							set_flag = st_cc
-						}
-					}
+					emf_dna_set_flags_for_average_strength = yes
 				}
 			}
 		}
@@ -2427,39 +2343,7 @@ character_event = {
 					emf_dna_set_flags_for_weak = yes
 				}
 				else = {
-					random_list = {
-						1 = {
-							set_flag = st_AA
-						}
-						4 = {
-							set_flag = st_Aa
-						}
-						1 = {
-							set_flag = st_aa
-						}
-					}
-					random_list = {
-						1 = {
-							set_flag = st_BB
-						}
-						4 = {
-							set_flag = st_Bb
-						}
-						1 = {
-							set_flag = st_bb
-						}
-					}
-					random_list = {
-						1 = {
-							set_flag = st_CC
-						}
-						4 = {
-							set_flag = st_Cc
-						}
-						1 = {
-							set_flag = st_cc
-						}
-					}
+					emf_dna_set_flags_for_average_strength = yes
 				}
 			}
 		}
@@ -3005,13 +2889,13 @@ character_event = {
 				}
 			}
 			random_list = {
-				4 = {
+				2 = {
 					add_trait = weak
 				}
-				16 = {
+				8 = {
 					add_trait = delicate
 				}
-				195 = {
+				90 = {
 				}
 			}
 		}
@@ -3111,39 +2995,7 @@ character_event = {
 					emf_dna_set_flags_for_tiny = yes
 				}
 				else = {
-					random_list = {
-						1 = {
-							set_flag = ht_AA
-						}
-						4 = {
-							set_flag = ht_Aa
-						}
-						1 = {
-							set_flag = ht_aa
-						}
-					}
-					random_list = {
-						1 = {
-							set_flag = ht_BB
-						}
-						4 = {
-							set_flag = ht_Bb
-						}
-						1 = {
-							set_flag = ht_bb
-						}
-					}
-					random_list = {
-						1 = {
-							set_flag = ht_CC
-						}
-						4 = {
-							set_flag = ht_Cc
-						}
-						1 = {
-							set_flag = ht_cc
-						}
-					}
+					emf_dna_set_flags_for_average_height = yes
 				}
 			}
 		}
@@ -3189,39 +3041,7 @@ character_event = {
 					emf_dna_set_flags_for_tiny = yes
 				}
 				else = {
-					random_list = {
-						1 = {
-							set_flag = ht_AA
-						}
-						4 = {
-							set_flag = ht_Aa
-						}
-						1 = {
-							set_flag = ht_aa
-						}
-					}
-					random_list = {
-						1 = {
-							set_flag = ht_BB
-						}
-						4 = {
-							set_flag = ht_Bb
-						}
-						1 = {
-							set_flag = ht_bb
-						}
-					}
-					random_list = {
-						1 = {
-							set_flag = ht_CC
-						}
-						4 = {
-							set_flag = ht_Cc
-						}
-						1 = {
-							set_flag = ht_cc
-						}
-					}
+					emf_dna_set_flags_for_average_height = yes
 				}
 			}
 		}
@@ -3574,6 +3394,7 @@ character_event = {
 					trait = short
 					trait = giant
 					trait = tiny
+					trait = dwarf
 				}
 			}
 			random_list = {
@@ -3593,10 +3414,11 @@ character_event = {
 					trait = short
 					trait = giant
 					trait = tiny
+					trait = dwarf
 				}
 			}
 			random_list = {
-				12 = {
+				10 = {
 					add_trait = giant
 				}
 				50 = {
@@ -3614,13 +3436,14 @@ character_event = {
 					trait = short
 					trait = giant
 					trait = tiny
+					trait = dwarf
 				}
 			}
 			random_list = {
 				8 = {
 					add_trait = tall
 				}
-				90 = {
+				92 = {
 				}
 			}
 		}
@@ -3632,6 +3455,7 @@ character_event = {
 					trait = short
 					trait = giant
 					trait = tiny
+					trait = dwarf
 				}
 			}
 		}
@@ -3643,13 +3467,14 @@ character_event = {
 					trait = short
 					trait = giant
 					trait = tiny
+					trait = dwarf
 				}
 			}
 			random_list = {
 				8 = {
 					add_trait = short
 				}
-				90 = {
+				92 = {
 				}
 			}
 		}
@@ -3661,6 +3486,7 @@ character_event = {
 					trait = short
 					trait = giant
 					trait = tiny
+					trait = dwarf
 				}
 			}
 			random_list = {
@@ -3682,6 +3508,7 @@ character_event = {
 					trait = short
 					trait = giant
 					trait = tiny
+					trait = dwarf
 				}
 			}
 			random_list = {
@@ -8298,39 +8125,7 @@ character_event = {
 					emf_dna_set_flags_for_absentminded = yes
 				}
 				else = {
-					random_list = {
-						1 = {
-							set_flag = p_AA
-						}
-						4 = {
-							set_flag = p_Aa
-						}
-						1 = {
-							set_flag = p_aa
-						}
-					}
-					random_list = {
-						1 = {
-							set_flag = p_BB
-						}
-						4 = {
-							set_flag = p_Bb
-						}
-						1 = {
-							set_flag = p_bb
-						}
-					}
-					random_list = {
-						1 = {
-							set_flag = p_CC
-						}
-						4 = {
-							set_flag = p_Cc
-						}
-						1 = {
-							set_flag = p_cc
-						}
-					}
+					emf_dna_set_flags_for_average_perceptiveness = yes
 				}
 			}
 		}
@@ -8364,39 +8159,7 @@ character_event = {
 					emf_dna_set_flags_for_absentminded = yes
 				}
 				else = {
-					random_list = {
-						1 = {
-							set_flag = p_AA
-						}
-						4 = {
-							set_flag = p_Aa
-						}
-						1 = {
-							set_flag = p_aa
-						}
-					}
-					random_list = {
-						1 = {
-							set_flag = p_BB
-						}
-						4 = {
-							set_flag = p_Bb
-						}
-						1 = {
-							set_flag = p_bb
-						}
-					}
-					random_list = {
-						1 = {
-							set_flag = p_CC
-						}
-						4 = {
-							set_flag = p_Cc
-						}
-						1 = {
-							set_flag = p_cc
-						}
-					}
+					emf_dna_set_flags_for_average_perceptiveness = yes
 				}
 			}
 		}
@@ -8969,7 +8732,7 @@ character_event = {
 }
 
 ## Health
-## Mendelian Inheritance
+## Polygenic Inheritance
 character_event = {
 	id = emf_dna.1240
 
@@ -8995,39 +8758,9 @@ character_event = {
 				}
 			}
 			event_target:emf_dna_dad = {
-				random_list = {
-					9 = {
-						set_flag = hl_AA
-					}
-					9 = {
-						set_flag = hl_Aa
-					}
-					2 = {
-						set_flag = hl_aa
-					}
-				}
-				random_list = {
-					9 = {
-						set_flag = hl_BB
-					}
-					9 = {
-						set_flag = hl_Bb
-					}
-					2 = {
-						set_flag = hl_bb
-					}
-				}
-				random_list = {
-					9 = {
-						set_flag = hl_CC
-					}
-					9 = {
-						set_flag = hl_Cc
-					}
-					2 = {
-						set_flag = hl_cc
-					}
-				}
+				emf_dna_set_flags_for_new_character_health = yes
+				# Since health flags are not set, this means we have not processed Health effects for this character (i.e. this event is running for the child before it has run for the parent)
+				emf_dna_apply_effects_health = yes
 			}
 		}
 		if = {
@@ -9047,43 +8780,12 @@ character_event = {
 				}
 			}
 			mother = {
-				random_list = {
-					9 = {
-						set_flag = hl_AA
-					}
-					9 = {
-						set_flag = hl_Aa
-					}
-					2 = {
-						set_flag = hl_aa
-					}
-				}
-				random_list = {
-					9 = {
-						set_flag = hl_BB
-					}
-					9 = {
-						set_flag = hl_Bb
-					}
-					2 = {
-						set_flag = hl_bb
-					}
-				}
-				random_list = {
-					9 = {
-						set_flag = hl_CC
-					}
-					9 = {
-						set_flag = hl_Cc
-					}
-					2 = {
-						set_flag = hl_cc
-					}
-				}
+				emf_dna_set_flags_for_new_character_health = yes
+				# Since health flags are not set, this means we have not processed Health effects for this character (i.e. this event is running for the child before it has run for the parent)
+				emf_dna_apply_effects_health = yes
 			}
 		}
 		#### 3. Genetic Inheritance
-		set_variable = { which = local_alleles value = 0 }
 		if = {
 			limit = {
 				event_target:emf_dna_dad = {
@@ -9094,7 +8796,6 @@ character_event = {
 				}
 			}
 			set_flag = hl_AA
-			change_variable = { which = local_alleles value = 2 }
 		}
 		else_if = {
 			limit = {
@@ -9108,11 +8809,9 @@ character_event = {
 			random_list = {
 				50 = {
 					set_flag = hl_AA
-					change_variable = { which = local_alleles value = 2 }
 				}
 				50 = {
 					set_flag = hl_Aa
-					change_variable = { which = local_alleles value = 1 }
 				}
 			}
 		}
@@ -9128,11 +8827,9 @@ character_event = {
 			random_list = {
 				50 = {
 					set_flag = hl_AA
-					change_variable = { which = local_alleles value = 2 }
 				}
 				50 = {
 					set_flag = hl_Aa
-					change_variable = { which = local_alleles value = 1 }
 				}
 			}
 		}
@@ -9148,11 +8845,9 @@ character_event = {
 			random_list = {
 				25 = {
 					set_flag = hl_AA
-					change_variable = { which = local_alleles value = 2 }
 				}
 				50 = {
 					set_flag = hl_Aa
-					change_variable = { which = local_alleles value = 1 }
 				}
 				25 = {
 					set_flag = hl_aa
@@ -9169,7 +8864,6 @@ character_event = {
 				}
 			}
 			set_flag = hl_Aa
-			change_variable = { which = local_alleles value = 1 }
 		}
 		else_if = {
 			limit = {
@@ -9181,7 +8875,6 @@ character_event = {
 				}
 			}
 			set_flag = hl_Aa
-			change_variable = { which = local_alleles value = 1 }
 		}
 		else_if = {
 			limit = {
@@ -9195,7 +8888,6 @@ character_event = {
 			random_list = {
 				50 = {
 					set_flag = hl_Aa
-					change_variable = { which = local_alleles value = 1 }
 				}
 				50 = {
 					set_flag = hl_aa
@@ -9214,7 +8906,6 @@ character_event = {
 			random_list = {
 				50 = {
 					set_flag = hl_Aa
-					change_variable = { which = local_alleles value = 1 }
 				}
 				50 = {
 					set_flag = hl_aa
@@ -9234,7 +8925,6 @@ character_event = {
 		}
 		else = {
 			set_flag = hl_Aa
-			change_variable = { which = local_alleles value = 1 }
 		}
 		if = {
 			limit = {
@@ -9246,7 +8936,6 @@ character_event = {
 				}
 			}
 			set_flag = hl_BB
-			change_variable = { which = local_alleles value = 2 }
 		}
 		else_if = {
 			limit = {
@@ -9260,11 +8949,9 @@ character_event = {
 			random_list = {
 				50 = {
 					set_flag = hl_BB
-					change_variable = { which = local_alleles value = 2 }
 				}
 				50 = {
 					set_flag = hl_Bb
-					change_variable = { which = local_alleles value = 1 }
 				}
 			}
 		}
@@ -9280,11 +8967,9 @@ character_event = {
 			random_list = {
 				50 = {
 					set_flag = hl_BB
-					change_variable = { which = local_alleles value = 2 }
 				}
 				50 = {
 					set_flag = hl_Bb
-					change_variable = { which = local_alleles value = 1 }
 				}
 			}
 		}
@@ -9300,11 +8985,9 @@ character_event = {
 			random_list = {
 				25 = {
 					set_flag = hl_BB
-					change_variable = { which = local_alleles value = 2 }
 				}
 				50 = {
 					set_flag = hl_Bb
-					change_variable = { which = local_alleles value = 1 }
 				}
 				25 = {
 					set_flag = hl_bb
@@ -9321,7 +9004,6 @@ character_event = {
 				}
 			}
 			set_flag = hl_Bb
-			change_variable = { which = local_alleles value = 1 }
 		}
 		else_if = {
 			limit = {
@@ -9333,7 +9015,6 @@ character_event = {
 				}
 			}
 			set_flag = hl_Bb
-			change_variable = { which = local_alleles value = 1 }
 		}
 		else_if = {
 			limit = {
@@ -9347,11 +9028,9 @@ character_event = {
 			random_list = {
 				50 = {
 					set_flag = hl_Bb
-					change_variable = { which = local_alleles value = 1 }
 				}
 				50 = {
 					set_flag = hl_bb
-					change_variable = { which = local_alleles value = 1 }
 				}
 			}
 		}
@@ -9367,7 +9046,6 @@ character_event = {
 			random_list = {
 				50 = {
 					set_flag = hl_Bb
-					change_variable = { which = local_alleles value = 1 }
 				}
 				50 = {
 					set_flag = hl_bb
@@ -9398,7 +9076,6 @@ character_event = {
 				}
 			}
 			set_flag = hl_CC
-			change_variable = { which = local_alleles value = 2 }
 		}
 		else_if = {
 			limit = {
@@ -9412,11 +9089,9 @@ character_event = {
 			random_list = {
 				50 = {
 					set_flag = hl_CC
-					change_variable = { which = local_alleles value = 2 }
 				}
 				50 = {
 					set_flag = hl_Cc
-					change_variable = { which = local_alleles value = 1 }
 				}
 			}
 		}
@@ -9432,11 +9107,9 @@ character_event = {
 			random_list = {
 				50 = {
 					set_flag = hl_CC
-					change_variable = { which = local_alleles value = 2 }
 				}
 				50 = {
 					set_flag = hl_Cc
-					change_variable = { which = local_alleles value = 1 }
 				}
 			}
 		}
@@ -9450,7 +9123,6 @@ character_event = {
 				}
 			}
 			set_flag = hl_Cc
-			change_variable = { which = local_alleles value = 1 }
 		}
 		else_if = {
 			limit = {
@@ -9462,7 +9134,6 @@ character_event = {
 				}
 			}
 			set_flag = hl_Cc
-			change_variable = { which = local_alleles value = 1 }
 		}
 		else_if = {
 			limit = {
@@ -9476,11 +9147,9 @@ character_event = {
 			random_list = {
 				25 = {
 					set_flag = hl_CC
-					change_variable = { which = local_alleles value = 2 }
 				}
 				50 = {
 					set_flag = hl_Cc
-					change_variable = { which = local_alleles value = 1 }
 				}
 				25 = {
 					set_flag = hl_cc
@@ -9499,7 +9168,6 @@ character_event = {
 			random_list = {
 				50 = {
 					set_flag = hl_Cc
-					change_variable = { which = local_alleles value = 1 }
 				}
 				50 = {
 					set_flag = hl_cc
@@ -9518,7 +9186,6 @@ character_event = {
 			random_list = {
 				50 = {
 					set_flag = hl_Cc
-					change_variable = { which = local_alleles value = 1 }
 				}
 				50 = {
 					set_flag = hl_cc
@@ -9538,97 +9205,648 @@ character_event = {
 		}
 		else = {
 			set_flag = hl_Cc
-			change_variable = { which = local_alleles value = 1 }
 		}
 		### 4. Trait Assignment
+		emf_dna_apply_effects_health = yes
+		
+		character_event = { id = emf_dna.1250 }
+	}
+}
+
+## For Handedness
+## Polygenic Inheritance
+character_event = {
+	id = emf_dna.1250
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					NOR = {
+						has_flag = lh_AA
+						has_flag = lh_Aa
+						has_flag = lh_aa
+						has_flag = lh_BB
+						has_flag = lh_Bb
+						has_flag = lh_bb
+						has_flag = lh_CC
+						has_flag = lh_Cc
+						has_flag = lh_cc
+					}
+				}
+			}
+			event_target:emf_dna_dad = {
+				if = {
+					limit = {
+						trait = lefthanded
+					}
+					emf_dna_set_flags_for_lefthanded = yes
+				}
+				else_if = {
+					limit = {
+						trait = ambidextrous
+					}
+					emf_dna_set_flags_for_ambidextrous = yes
+				}
+				else = {
+					emf_dna_set_flags_for_handedness_if_no_trait = yes
+				}
+			}
+		}
+		if = {
+			limit = {
+				mother = {
+					NOR = {
+						has_flag = lh_AA
+						has_flag = lh_Aa
+						has_flag = lh_aa
+						has_flag = lh_BB
+						has_flag = lh_Bb
+						has_flag = lh_bb
+						has_flag = lh_CC
+						has_flag = lh_Cc
+						has_flag = lh_cc
+					}
+				}
+			}
+			mother = {
+				if = {
+					limit = {
+						trait = lefthanded
+					}
+					emf_dna_set_flags_for_lefthanded = yes
+				}
+				else_if = {
+					limit = {
+						trait = ambidextrous
+					}
+					emf_dna_set_flags_for_ambidextrous = yes
+				}
+				else = {
+					emf_dna_set_flags_for_handedness_if_no_trait = yes
+				}
+			}
+		}
+		#### 3. Genetic Inheritance
+		set_variable = { which = local_alleles value = 0 }
+		if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_AA
+				}
+				mother = {
+					has_flag = lh_AA
+				}
+			}
+			set_flag = lh_AA
+			change_variable = { which = local_alleles value = 2 }
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_AA
+				}
+				mother = {
+					has_flag = lh_Aa
+				}
+			}
+			random_list = {
+				50 = {
+					set_flag = lh_AA
+					change_variable = { which = local_alleles value = 2 }
+				}
+				50 = {
+					set_flag = lh_Aa
+					change_variable = { which = local_alleles value = 1 }
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_Aa
+				}
+				mother = {
+					has_flag = lh_AA
+				}
+			}
+			random_list = {
+				50 = {
+					set_flag = lh_AA
+					change_variable = { which = local_alleles value = 2 }
+				}
+				50 = {
+					set_flag = lh_Aa
+					change_variable = { which = local_alleles value = 1 }
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_Aa
+				}
+				mother = {
+					has_flag = lh_Aa
+				}
+			}
+			random_list = {
+				25 = {
+					set_flag = lh_AA
+					change_variable = { which = local_alleles value = 2 }
+				}
+				50 = {
+					set_flag = lh_Aa
+					change_variable = { which = local_alleles value = 1 }
+				}
+				25 = {
+					set_flag = lh_aa
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_AA
+				}
+				mother = {
+					has_flag = lh_aa
+				}
+			}
+			set_flag = lh_Aa
+			change_variable = { which = local_alleles value = 1 }
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_aa
+				}
+				mother = {
+					has_flag = lh_AA
+				}
+			}
+			set_flag = lh_Aa
+			change_variable = { which = local_alleles value = 1 }
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_Aa
+				}
+				mother = {
+					has_flag = lh_aa
+				}
+			}
+			random_list = {
+				50 = {
+					set_flag = lh_Aa
+					change_variable = { which = local_alleles value = 1 }
+				}
+				50 = {
+					set_flag = lh_aa
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_aa
+				}
+				mother = {
+					has_flag = lh_Aa
+				}
+			}
+			random_list = {
+				50 = {
+					set_flag = lh_Aa
+					change_variable = { which = local_alleles value = 1 }
+				}
+				50 = {
+					set_flag = lh_aa
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_aa
+				}
+				mother = {
+					has_flag = lh_aa
+				}
+			}
+			set_flag = lh_aa
+		}
+		else = {
+			set_flag = lh_Aa
+			change_variable = { which = local_alleles value = 1 }
+		}
+		if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_BB
+				}
+				mother = {
+					has_flag = lh_BB
+				}
+			}
+			set_flag = lh_BB
+			change_variable = { which = local_alleles value = 2 }
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_BB
+				}
+				mother = {
+					has_flag = lh_Bb
+				}
+			}
+			random_list = {
+				50 = {
+					set_flag = lh_BB
+					change_variable = { which = local_alleles value = 2 }
+				}
+				50 = {
+					set_flag = lh_Bb
+					change_variable = { which = local_alleles value = 1 }
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_Bb
+				}
+				mother = {
+					has_flag = lh_BB
+				}
+			}
+			random_list = {
+				50 = {
+					set_flag = lh_BB
+					change_variable = { which = local_alleles value = 2 }
+				}
+				50 = {
+					set_flag = lh_Bb
+					change_variable = { which = local_alleles value = 1 }
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_BB
+				}
+				mother = {
+					has_flag = lh_bb
+				}
+			}
+			set_flag = lh_Bb
+			change_variable = { which = local_alleles value = 1 }
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_bb
+				}
+				mother = {
+					has_flag = lh_BB
+				}
+			}
+			set_flag = lh_Bb
+			change_variable = { which = local_alleles value = 1 }
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_Bb
+				}
+				mother = {
+					has_flag = lh_Bb
+				}
+			}
+			random_list = {
+				25 = {
+					set_flag = lh_BB
+					change_variable = { which = local_alleles value = 2 }
+				}
+				50 = {
+					set_flag = lh_Bb
+					change_variable = { which = local_alleles value = 1 }
+				}
+				25 = {
+					set_flag = lh_bb
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_Bb
+				}
+				mother = {
+					has_flag = lh_bb
+				}
+			}
+			random_list = {
+				50 = {
+					set_flag = lh_Bb
+					change_variable = { which = local_alleles value = 1 }
+				}
+				50 = {
+					set_flag = lh_bb
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_bb
+				}
+				mother = {
+					has_flag = lh_Bb
+				}
+			}
+			random_list = {
+				50 = {
+					set_flag = lh_Bb
+					change_variable = { which = local_alleles value = 1 }
+				}
+				50 = {
+					set_flag = lh_bb
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_bb
+				}
+				mother = {
+					has_flag = lh_bb
+				}
+			}
+			set_flag = lh_bb
+		}
+		else = {
+			set_flag = lh_Bb
+			change_variable = { which = local_alleles value = 1 }
+		}
+		if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_CC
+				}
+				mother = {
+					has_flag = lh_CC
+				}
+			}
+			set_flag = lh_CC
+			change_variable = { which = local_alleles value = 2 }
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_CC
+				}
+				mother = {
+					has_flag = lh_Cc
+				}
+			}
+			random_list = {
+				50 = {
+					set_flag = lh_CC
+					change_variable = { which = local_alleles value = 2 }
+				}
+				50 = {
+					set_flag = lh_Cc
+					change_variable = { which = local_alleles value = 1 }
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_Cc
+				}
+				mother = {
+					has_flag = lh_CC
+				}
+			}
+			random_list = {
+				50 = {
+					set_flag = lh_CC
+					change_variable = { which = local_alleles value = 2 }
+				}
+				50 = {
+					set_flag = lh_Cc
+					change_variable = { which = local_alleles value = 1 }
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_Cc
+				}
+				mother = {
+					has_flag = lh_Cc
+				}
+			}
+			random_list = {
+				25 = {
+					set_flag = lh_CC
+					change_variable = { which = local_alleles value = 2 }
+				}
+				50 = {
+					set_flag = lh_Cc
+					change_variable = { which = local_alleles value = 1 }
+				}
+				25 = {
+					set_flag = lh_cc
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_CC
+				}
+				mother = {
+					has_flag = lh_cc
+				}
+			}
+			set_flag = lh_Cc
+			change_variable = { which = local_alleles value = 1 }
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_cc
+				}
+				mother = {
+					has_flag = lh_CC
+				}
+			}
+			set_flag = lh_Cc
+			change_variable = { which = local_alleles value = 1 }
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_Cc
+				}
+				mother = {
+					has_flag = lh_cc
+				}
+			}
+			random_list = {
+				50 = {
+					set_flag = lh_Cc
+					change_variable = { which = local_alleles value = 1 }
+				}
+				50 = {
+					set_flag = lh_cc
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_cc
+				}
+				mother = {
+					has_flag = lh_Cc
+				}
+			}
+			random_list = {
+				50 = {
+					set_flag = lh_Cc
+					change_variable = { which = local_alleles value = 1 }
+				}
+				50 = {
+					set_flag = lh_cc
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				event_target:emf_dna_dad = {
+					has_flag = lh_cc
+				}
+				mother = {
+					has_flag = lh_cc
+				}
+			}
+			set_flag = lh_cc
+		}
+		else = {
+			set_flag = lh_Cc
+			change_variable = { which = local_alleles value = 1 }
+		}
+		#### 4. Trait Assignment
 		if = {
 			limit = {
 				check_variable = { which = local_alleles value = 6 }
-			}
-			random_list = {
-				2 = {
-					health = 1.2
-				}
-				2 = {
-					health = 0.8
-				}
-				2 = {
-					health = 0.4
+				NOR = {
+					trait = lefthanded
+					trait = ambidextrous
 				}
 			}
 		}
 		else_if = {
 			limit = {
 				check_variable = { which = local_alleles value = 5 }
-			}
-			random_list = {
-				2 = {
-					health = 0.8
-				}
-				2 = {
-					health = 0.4
-				}
-				2 = {
+				NOR = {
+					trait = lefthanded
+					trait = ambidextrous
 				}
 			}
 		}
 		else_if = {
 			limit = {
 				check_variable = { which = local_alleles value = 4 }
+				NOR = {
+					trait = lefthanded
+					trait = ambidextrous
+				}
 			}
 			random_list = {
-				2 = {
-					health = 0.4
+				5 = {
+					add_trait = ambidextrous
 				}
-				4 = {
+				995 = {
 				}
 			}
 		}
 		else_if = {
 			limit = {
 				check_variable = { which = local_alleles value = 3 }
+				NOR = {
+					trait = lefthanded
+					trait = ambidextrous
+				}
+			}
+			random_list = {
+				1 = {
+					add_trait = ambidextrous
+				}
+				99 = {
+				}
 			}
 		}
 		else_if = {
 			limit = {
 				check_variable = { which = local_alleles value = 2 }
+				NOR = {
+					trait = lefthanded
+					trait = ambidextrous
+				}
 			}
 			random_list = {
-				2 = {
-					health = -0.4
+				50 = {
+					add_trait = lefthanded
 				}
-				4 = {
+				5 = {
+					add_trait = ambidextrous
+				}
+				945 = {
 				}
 			}
 		}
 		else_if = {
 			limit = {
 				check_variable = { which = local_alleles value = 1 }
+				NOR = {
+					trait = lefthanded
+					trait = ambidextrous
+				}
 			}
 			random_list = {
-				2 = {
-					health = -0.8
+				65 = {
+					add_trait = lefthanded
 				}
-				2 = {
-					health = -0.4
-				}
-				2 = {
+				35 = {
 				}
 			}
 		}
 		else_if = {
 			limit = {
 				is_variable_equal = { which = local_alleles value = 0 }
+				NOR = {
+					trait = lefthanded
+					trait = ambidextrous
+				}
 			}
 			random_list = {
-				2 = {
-					health = -1.2
+				65 = {
+					add_trait = lefthanded
 				}
-				2 = {
-					health = -0.8
-				}
-				2 = {
-					health = -0.4
+				35 = {
 				}
 			}
 		}
@@ -9663,14 +9881,10 @@ character_event = {
 		set_flag = emf_dna_check
 		random_list = {
 			50 = {
-				emf_dna_clear_flags_for_perc = yes
-				add_trait = perceptive
-				emf_dna_set_flags_for_perceptive = yes
+				emf_dna_add_trait_perceptive = yes
 			}
 			50 = {
-				emf_dna_clear_flags_for_perc = yes
-				add_trait = absentminded
-				emf_dna_set_flags_for_absentminded = yes
+				emf_dna_add_trait_absentminded = yes
 			}
 			9900 = {
 			}
@@ -9690,9 +9904,7 @@ character_event = {
 	immediate = {
 		random_list = {
 			15 = {
-				emf_dna_clear_flags_for_wrymouth = yes
-				emf_dna_set_flags_for_wrymouth = yes
-				add_trait = wrymouth
+				emf_dna_add_trait_wrymouth = yes
 			}
 			9985 = {
 			}
@@ -9712,9 +9924,7 @@ character_event = {
 	immediate = {
 		random_list = {
 			15 = {
-				emf_dna_clear_flags_for_deaf = yes
-				emf_dna_set_flags_for_deaf = yes
-				add_trait = deaf
+				emf_dna_add_trait_deaf = yes
 			}
 			9985 = {
 			}
@@ -9734,9 +9944,7 @@ character_event = {
 	immediate = {
 		random_list = {
 			20 = {
-				emf_dna_clear_flags_for_stutter = yes
-				emf_dna_set_flags_for_stutter = yes
-				add_trait = stutter
+				emf_dna_add_trait_stutter = yes
 			}
 			9980 = {
 			}
@@ -9756,9 +9964,7 @@ character_event = {
 	immediate = {
 		random_list = {
 			20 = {
-				emf_dna_clear_flags_for_lisp = yes
-				emf_dna_set_flags_for_lisp = yes
-				add_trait = lisp
+				emf_dna_add_trait_lisp = yes
 			}
 			9980 = {
 			}
@@ -9778,9 +9984,7 @@ character_event = {
 	immediate = {
 		random_list = {
 			20 = {
-				emf_dna_clear_flags_for_harelip = yes
-				emf_dna_set_flags_for_harelip = yes
-				add_trait = harelip
+				emf_dna_add_trait_harelip = yes
 			}
 			9980 = {
 			}
@@ -9800,9 +10004,7 @@ character_event = {
 	immediate = {
 		random_list = {
 			20 = {
-				emf_dna_clear_flags_for_hunchback = yes
-				emf_dna_set_flags_for_hunchback = yes
-				add_trait = hunchback
+				emf_dna_add_trait_hunchback = yes
 			}
 			9980 = {
 			}
@@ -9822,9 +10024,7 @@ character_event = {
 	immediate = {
 		random_list = {
 			20 = {
-				emf_dna_clear_flags_for_clubfooted = yes
-				emf_dna_set_flags_for_clubfooted = yes
-				add_trait = clubfooted
+				emf_dna_add_trait_clubfooted = yes
 			}
 			9980 = {
 			}
@@ -9843,12 +10043,10 @@ character_event = {
 
 	immediate = {
 		random_list = {
-			10 = {
-				emf_dna_clear_flags_for_dwarf = yes
-				emf_dna_set_flags_for_dwarf = yes
-				add_trait = dwarf
+			5 = {
+				emf_dna_add_trait_dwarf = yes
 			}
-			9990 = {
+			9995 = {
 			}
 		}
 		character_event = { id = emf_dna.2090 }
@@ -9871,24 +10069,44 @@ character_event = {
 		# Tiny:  15
 		random_list = {
 			15 = {
-				emf_dna_clear_flags_for_hgt = yes
-				add_trait = giant
-				emf_dna_set_flags_for_giant = yes
+				if = {
+					limit = { trait = dwarf }
+					emf_dna_clear_flags_for_hgt = yes
+					emf_dna_set_flags_for_giant = yes
+				}
+				else = {
+					emf_dna_add_trait_giant = yes
+				}
 			}
 			80 = {
-				emf_dna_clear_flags_for_hgt = yes
-				add_trait = tall
-				emf_dna_set_flags_for_tall = yes
+				if = {
+					limit = { trait = dwarf }
+					emf_dna_clear_flags_for_hgt = yes
+					emf_dna_set_flags_for_tall = yes
+				}
+				else = {
+					emf_dna_add_trait_tall = yes
+				}
 			}
 			80 = {
-				emf_dna_clear_flags_for_hgt = yes
-				add_trait = short
-				emf_dna_set_flags_for_short = yes
+				if = {
+					limit = { trait = dwarf }
+					emf_dna_clear_flags_for_hgt = yes
+					emf_dna_set_flags_for_short = yes
+				}
+				else = {
+					emf_dna_add_trait_short = yes
+				}
 			}
 			15 = {
-				emf_dna_clear_flags_for_hgt = yes
-				add_trait = tiny
-				emf_dna_set_flags_for_tiny = yes
+				if = {
+					limit = { trait = dwarf }
+					emf_dna_clear_flags_for_hgt = yes
+					emf_dna_set_flags_for_tiny = yes
+				}
+				else = {
+					emf_dna_add_trait_tiny = yes
+				}
 			}
 			9810 = {
 			}
@@ -9913,24 +10131,16 @@ character_event = {
 		# Weak:     40
 		random_list = {
 			40 = {
-				emf_dna_clear_flags_for_str = yes
-				add_trait = strong
-				emf_dna_set_flags_for_strong = yes
+				emf_dna_add_trait_strong = yes
 			}
 			100 = {
-				emf_dna_clear_flags_for_str = yes
-				add_trait = burly
-				emf_dna_set_flags_for_burly = yes
+				emf_dna_add_trait_burly = yes
 			}
 			100 = {
-				emf_dna_clear_flags_for_str = yes
-				add_trait = delicate
-				emf_dna_set_flags_for_delicate = yes
+				emf_dna_add_trait_delicate = yes
 			}
 			40 = {
-				emf_dna_clear_flags_for_str = yes
-				add_trait = weak
-				emf_dna_set_flags_for_weak = yes
+				emf_dna_add_trait_weak = yes
 			}
 			9720 = {
 			}
@@ -9955,24 +10165,16 @@ character_event = {
 		# Ugly:   40
 		random_list = {
 			40 = {
-				emf_dna_clear_flags_for_attr = yes
-				add_trait = fair
-				emf_dna_set_flags_for_fair = yes
+				emf_dna_add_trait_fair = yes
 			}
 			100 = {
-				emf_dna_clear_flags_for_attr = yes
-				add_trait = comely
-				emf_dna_set_flags_for_comely = yes
+				emf_dna_add_trait_comely = yes
 			}
 			100 = {
-				emf_dna_clear_flags_for_attr = yes
-				add_trait = homely
-				emf_dna_set_flags_for_homely = yes
+				emf_dna_add_trait_homely = yes
 			}
 			40 = {
-				emf_dna_clear_flags_for_attr = yes
-				add_trait = ugly
-				emf_dna_set_flags_for_ugly = yes
+				emf_dna_add_trait_ugly = yes
 			}
 			9720 = {
 			}
@@ -9999,36 +10201,50 @@ character_event = {
 		# Imbecile: 20
 		random_list = {
 			20 = {
-				emf_dna_clear_flags_for_int = yes
-				add_trait = genius
-				emf_dna_set_flags_for_genius = yes
+				emf_dna_add_trait_genius = yes
 			}
 			40 = {
-				emf_dna_clear_flags_for_int = yes
-				add_trait = quick
-				emf_dna_set_flags_for_quick = yes
+				emf_dna_add_trait_quick = yes
 			}
 			100 = {
-				emf_dna_clear_flags_for_int = yes
-				add_trait = bright
-				emf_dna_set_flags_for_bright = yes
+				emf_dna_add_trait_bright = yes
 			}
 			100 = {
-				emf_dna_clear_flags_for_int = yes
-				add_trait = dim
-				emf_dna_set_flags_for_dim = yes
+				emf_dna_add_trait_dim = yes
 			}
 			40 = {
-				emf_dna_clear_flags_for_int = yes
-				add_trait = slow
-				emf_dna_set_flags_for_slow = yes
+				emf_dna_add_trait_slow = yes
 			}
 			20 = {
-				emf_dna_clear_flags_for_int = yes
-				add_trait = imbecile
-				emf_dna_set_flags_for_imbecile = yes
+				emf_dna_add_trait_imbecile = yes
 			}
 			9680 = {
+			}
+		}
+		character_event = { id = emf_dna.2130 }
+		# Done! End of event chain.
+	}
+}
+
+# emf_dna.2130 -- Handedness
+character_event = {
+	id = emf_dna.2130
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	immediate = {
+		# Birth rates (per 10000):
+		# Lefthanded:   250    Note: extraordinarily high mutation rate is intended
+		# Ambidextrous: 50
+		random_list = {
+			250 = {
+				emf_dna_add_trait_lefthanded = yes
+			}
+			50 = {
+				emf_dna_add_trait_ambidextrous = yes
+			}
+			9700 = {
 			}
 		}
 		# Done! End of event chain.

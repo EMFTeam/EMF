@@ -14,7 +14,7 @@ class Phenotype:
 	MENDELIAN = 0
 	POLYGENIC = 1
 
-	def __init__(self, p_id, prefix, name, inheritance=MENDELIAN, gene_weights_if_trait=(0,2,2), gene_weights_if_no_trait=(9,9,2)):
+	def __init__(self, p_id, prefix, name, inheritance=MENDELIAN, gene_weights_if_trait=(0,9,11), gene_weights_if_no_trait=(9,9,2)):
 		self.id = p_id
 		self.prefix = prefix
 		self.name = name
@@ -30,7 +30,7 @@ phenotypes = [
 	Phenotype('attr', 'a', 'Attractiveness', Phenotype.POLYGENIC),
 	Phenotype('str', 'st', 'Strength', Phenotype.POLYGENIC),
 	Phenotype('hgt', 'ht', 'Height', Phenotype.POLYGENIC),
-	Phenotype('dwarf', 'dw', 'Dwarfism', gene_weights_if_trait=(0,2,3)),
+	Phenotype('dwarf', 'dw', 'Dwarfism', gene_weights_if_trait=(0,5,3), gene_weights_if_no_trait=(10,9,1)),
 	Phenotype('clubfooted', 'c', 'Clubfooted'),
 	Phenotype('hunchback', 'hu', 'Hunchback'),
 	Phenotype('harelip', 'ha', 'Harelip'),
@@ -39,7 +39,8 @@ phenotypes = [
 	Phenotype('deaf', 'de', 'Deafness'),
 	Phenotype('wrymouth', 'w', 'Wrymouth'),
 	Phenotype('perc', 'p', 'Perceptiveness', Phenotype.POLYGENIC),
-	# NOTE that 'hl' prefix is in use for health
+	Phenotype('health', 'hl', 'Health', Phenotype.POLYGENIC),
+	Phenotype('handedness', 'lh', 'Handedness', Phenotype.POLYGENIC),
 ]
 
 genes = ['AA', 'Aa', 'aa', 'BB', 'Bb', 'bb', 'CC', 'Cc', 'cc']
@@ -68,9 +69,12 @@ def main():
 		print_clear_flags_for_phenotype_effects(f)
 		print_set_flags_for_phenotype_effects(f)
 		print_set_flags_for_phenotype_if_no_trait_effects(f)
+		print_add_trait_with_genetics_effects(f)
+		print_remove_trait_with_genetics_effects(f)
 		print_reverse_homozygous_recessive_effect(f)
 		print_reset_flags_positively_effect(f)
 		print_remove_negative_mendelian_traits_effect(f)
+		print_remove_negative_mendelian_traits_with_genetics_effect(f)
 		print_savecompat_shorten_flag_names(f)
 	return 0
 
@@ -148,7 +152,7 @@ def print_set_flags_for_phenotype_if_no_trait_effects(f):
 			continue
 		print(file=f)
 		print('# Set DNA for phenotype if no trait is expressed: {}'.format(p.name), file=f)
-		print('''emf_dna_set_flags_for_{0}_if_no_trait = {{
+		firstpart='''emf_dna_set_flags_for_{0}_if_no_trait = {{
 	random_list = {{
 		{1} = {{
 			set_flag = {4}_AA
@@ -181,9 +185,58 @@ def print_set_flags_for_phenotype_if_no_trait_effects(f):
 		{3} = {{
 			set_flag = {4}_cc
 		}}
-	}}
-}}'''.format(p.id, *p.gene_weights_if_no_trait, p.prefix), file=f)
+	}}'''.format(p.id, *p.gene_weights_if_no_trait, p.prefix)
+		if p.id == 'dwarf':
+			firstpart=firstpart+'''
+	if = {{
+		limit = {{
+			has_flag = {0}_aa
+			has_flag = {0}_bb
+			has_flag = {0}_cc
+		}}
+		random_list = {{
+			1 = {{
+				clr_flag = {0}_aa
+				set_flag = {0}_Aa
+			}}
+			1 = {{
+				clr_flag = {0}_bb
+				set_flag = {0}_Bb
+			}}
+			1 = {{
+				clr_flag = {0}_cc
+				set_flag = {0}_Cc
+			}}
+		}}
+	}}'''.format(p.prefix)
+		print(firstpart+'''
+}''', file=f)
 
+
+def print_add_trait_with_genetics_effects(f):
+	for p in phenotypes:
+		if p.type != Phenotype.MENDELIAN:
+			continue
+		print(file=f)
+		print('# Add trait and reset DNA for known phenotype: {}'.format(p.name), file=f)
+		print('''emf_dna_add_trait_{0} = {{
+	emf_dna_clear_flags_for_{0} = yes
+	add_trait = {0}
+	emf_dna_set_flags_for_{0} = yes
+}}'''.format(p.id), file=f)
+
+
+def print_remove_trait_with_genetics_effects(f):
+	for p in phenotypes:
+		if p.type != Phenotype.MENDELIAN:
+			continue
+		print(file=f)
+		print('# Remove trait and reset DNA for known phenotype: {}'.format(p.name), file=f)
+		print('''emf_dna_remove_trait_{0} = {{
+	emf_dna_clear_flags_for_{0} = yes
+	remove_trait = {0}
+	emf_dna_set_flags_for_{0}_if_no_trait = yes
+}}'''.format(p.id), file=f)
 
 def print_reverse_homozygous_recessive_effect(f):
 	print(file=f)
@@ -225,6 +278,17 @@ def	print_remove_negative_mendelian_traits_effect(f):
 	print('}', file=f)
 
 
+def print_remove_negative_mendelian_traits_with_genetics_effect(f):
+	print(file=f)
+	print('# Remove all negative genetic traits subject to Mendelian inheritance and adjust genetics accordingly', file=f)
+	print('emf_dna_remove_negative_mendelian_traits_with_genetics = {', file=f)
+	for p in phenotypes:
+		if p.type != Phenotype.MENDELIAN:
+			continue
+		print('\temf_dna_remove_trait_{} = yes'.format(p.id), file=f)
+	print('}', file=f)
+
+
 def print_savecompat_shorten_flag_names(f):
 	print(file=f)
 	print('# Convert old, longer gene flag IDs to new, shorter IDs', file=f)
@@ -236,13 +300,7 @@ def print_savecompat_shorten_flag_names(f):
 			print('\t\tlimit = {{ has_flag = {}_{} }}'.format(p.id, g), file=f)
 			print('\t\tclr_flag = {}_{}'.format(p.id, g), file=f)
 			print('\t\tset_flag = {}_{}'.format(p.prefix, g), file=f)
-			print('\t}', file=f)	
-	for g in genes:
-		print('\tif = {', file=f)
-		print('\t\tlimit = {{ has_flag = {}_{} }}'.format('health', g), file=f)
-		print('\t\tclr_flag = {}_{}'.format('health', g), file=f)
-		print('\t\tset_flag = {}_{}'.format('hl', g), file=f)
-		print('\t}', file=f)
+			print('\t}', file=f)
 	print('}', file=f)
 
 

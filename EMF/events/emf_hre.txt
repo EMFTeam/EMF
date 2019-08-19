@@ -230,13 +230,17 @@ character_event = {
 	}
 }
 
-###################################################################################################################
+##############################################################################################################
 
 # emf_hre.50-emf_hre.59 reserved for emf_hre_map.txt
 
-###################################################################################################################
+##############################################################################################################
 
-
+# emf_hre.60 -- dynamically assign prince-elector titles in the HRE (any variant supported); triggered
+# on_yearly_pulse & by title transfer on_actions w/ a possible repeating bounce event to defer reassignment
+# until no longer defending against a major revolt (since the realm being split would screw up our elector
+# title selection). if event_target:emf_(gained|usurped|inherited)_elector_title is defined, it is a freed
+# elector title slot (due to another elector gaining it).
 character_event = {
 	id = emf_hre.60
 
@@ -247,9 +251,7 @@ character_event = {
 
 	trigger = {
 		has_landed_title = event_target:emf_global_hre
-		event_target:emf_global_hre = { has_law = succ_hre_elective }
-		emf_hre_has_free_prince_elector_slot = yes
-		emf_cb_is_defending_against_major_revolt = no
+		emf_hre_has_spare_elector_title = yes
 	}
 
 	immediate = {
@@ -266,27 +268,35 @@ character_event = {
 				# There aren't 3+ valid prince-elector titles that are also theocratic
 				emf_hre_has_at_least_3_theocracy_electors = no
 				# And there exists a theocrat to be appointed...
-				any_realm_lord = {
+				any_character = {
 					is_theocracy = yes
 					religion = ROOT
-					OR = {
-						any_dejure_liege = { title = event_target:emf_global_hre }
-						religion_head = { character = PREV }
+					NOT = { character = ROOT }
+					top_liege = {
+						OR = {
+							character = ROOT
+							emf_cb_is_leading_major_revolt_against_ROOT = yes
+						}
 					}
+					any_dejure_liege = { title = event_target:emf_global_hre }
 					any_demesne_title = { de_jure_liege_or_above = event_target:emf_global_hre }
-					emf_is_prince_elector = no
+					emf_is_hre_elector = no
 				}
 			} # end: while->limit
-			random_realm_lord = {
+			random_character = {
 				limit = {
 					is_theocracy = yes
 					religion = ROOT
-					OR = {
-						any_dejure_liege = { title = event_target:emf_global_hre }
-						religion_head = { character = PREV }
+					NOT = { character = ROOT }
+					top_liege = {
+						OR = {
+							character = ROOT
+							emf_cb_is_leading_major_revolt_against_ROOT = yes
+						}
 					}
+					any_dejure_liege = { title = event_target:emf_global_hre }
 					any_demesne_title = { de_jure_liege_or_above = event_target:emf_global_hre }
-					emf_is_prince_elector = no
+					emf_is_hre_elector = no
 				}
 				preferred_limit = {
 					real_tier = KING
@@ -316,7 +326,7 @@ character_event = {
 				preferred_limit = {
 					real_tier = COUNT
 				}
-				log = " ----> selected theocrat-elector: [This.EMF_GetDebugName]"
+				log = " ----> selected theocratic elector: [This.EMF_GetDebugName]"
 				random_demesne_title = {
 					limit = {
 						de_jure_liege_or_above = event_target:emf_global_hre
@@ -376,7 +386,7 @@ character_event = {
 						holding_type = temple
 					}
 					log = " ------> selected title: [This.EMF_GetDebugTitleNameWithDeJureLieges]"
-					emf_replace_invalid_prince_elector_title = yes
+					emf_replace_invalid_hre_elector_title = yes
 					event_target:emf_former_elector_title = {
 						log = " ------> replaced title: [This.EMF_GetDebugTitleNameWithDeJureLieges]"
 					}
@@ -385,7 +395,10 @@ character_event = {
 				save_event_target_as = emf_new_elector
 			} # end: random_realm_lord
 			if = {
-				limit = { has_global_flag = EMF }
+				limit = {
+					has_global_flag = EMF
+					event_target:emf_global_hre = { has_law = succ_hre_elective }
+				}
 				# Adjustments to electors made at campaign init would not use a narrative event notification system if any
 				# at all, so the EMF flag must be raised.
 				#
@@ -402,53 +415,65 @@ character_event = {
 		# based around how powerful the vassal is, but we'll give some preference to historical stem duchy titles in
 		# the HRE too.
 		if = {
-			limit = { emf_hre_has_free_prince_elector_slot = yes }
-			log = " --> not enough secular elector titles -- assigning those:"
+			limit = { emf_hre_has_spare_elector_title = yes }
+			log = " --> assigning secular elector titles:"
 		}
 		while = {
 			limit = {
-				emf_hre_has_free_prince_elector_slot = yes
+				emf_hre_has_spare_elector_title = yes
 				# And there are realm lords to appoint...
-				any_realm_lord = {
-					higher_real_tier_than = BARON
+				any_character = { # any_playable_ruler does not work as a trigger before unpausing the game
+					is_playable = yes
 					OR = {
 						is_feudal = yes
 						is_tribal = yes
 					}
-					religion = ROOT
-					OR = {
-						any_dejure_liege = { title = event_target:emf_global_hre }
-						religion_head = { character = PREV }
+					NOT = { character = ROOT }
+					top_liege = {
+						OR = {
+							character = ROOT
+							emf_cb_is_leading_major_revolt_against_ROOT = yes
+						}
 					}
 					any_demesne_title = {
 						higher_tier_than = BARON
 						de_jure_liege_or_above = event_target:emf_global_hre
 					}
-					emf_is_prince_elector = no
+					emf_is_hre_elector = no
 				}
 			} # end: while->limit
-			any_realm_lord = {
+			any_playable_ruler = {
 				limit = {
-					higher_real_tier_than = BARON
 					OR = {
 						is_feudal = yes
 						is_tribal = yes
 					}
-					religion = ROOT
-					OR = {
-						any_dejure_liege = { title = event_target:emf_global_hre }
-						religion_head = { character = PREV }
+					NOT = { character = ROOT }
+					top_liege = {
+						OR = {
+							character = ROOT
+							emf_cb_is_leading_major_revolt_against_ROOT = yes
+						}
 					}
 					any_demesne_title = {
 						higher_tier_than = BARON
 						de_jure_liege_or_above = event_target:emf_global_hre
 					}
-					emf_is_prince_elector = no
+					emf_is_hre_elector = no
 				}
 				score_value = {
 					value = 1
 					additive_modifier = {
-						value = 1000
+						value = 700
+						religion = ROOT
+					}
+					additive_modifier = {
+						value = 450
+						NOT = { religion = ROOT }
+						religion_group = ROOT
+					}
+					additive_modifier = {
+						value = 300
 						any_demesne_title = {
 							tier = KING
 							de_jure_liege = event_target:emf_global_hre
@@ -531,7 +556,7 @@ character_event = {
 						among_most_powerful_vassals = 8
 					}
 				} # end: score_value
-				log = " ----> selected secular-elector: [This.EMF_GetDebugName]"
+				log = " ----> selected secular elector: [This.EMF_GetDebugName]"
 				random_demesne_title = {
 					limit = {
 						higher_tier_than = BARON
@@ -584,7 +609,7 @@ character_event = {
 						tier = DUKE
 					}
 					log = " ------> selected title: [This.EMF_GetDebugTitleNameWithDeJureLieges]"
-					emf_replace_invalid_prince_elector_title = yes
+					emf_replace_invalid_hre_elector_title = yes
 					event_target:emf_former_elector_title = {
 						log = " ------> replaced title: [This.EMF_GetDebugTitleNameWithDeJureLieges]"
 					}
@@ -593,7 +618,10 @@ character_event = {
 				save_event_target_as = emf_new_elector
 			} # end: any_realm_lord
 			if = {
-				limit = { has_global_flag = EMF }
+				limit = {
+					has_global_flag = EMF
+					event_target:emf_global_hre = { has_law = succ_hre_elective }
+				}
 				# Adjustments to electors made at campaign init would not use a narrative event notification system if any
 				# at all, so the EMF flag must be raised.
 				#
@@ -610,3 +638,69 @@ character_event = {
 	}
 }
 
+character_event = {
+	id = emf_hre.61
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		event_target:emf_global_hre = { has_holder = yes }
+		emf_has_too_many_hre_elector_titles = yes
+	}
+
+	immediate = {
+		log = "DEBUG: emf_hre.61: prince-elector gained a secondary elector title: [This.EMF_GetDebugName]"
+		log = " --> gained title: [From.EMF_GetDebugTitleNameWithDeJureLieges]"
+		FROM = { save_event_target_as = emf_gained_elector_title }
+		e_hre = {
+			if = {
+				limit = { persistent_event_target:hre_title_1_per = { title = FROM } }
+				log = " ----> found title in slot #1"
+				clear_persistent_event_target = hre_title_1_per
+			}
+			else_if = {
+				limit = { persistent_event_target:hre_title_2_per = { title = FROM } }
+				log = " ----> found title in slot #2"
+				clear_persistent_event_target = hre_title_2_per
+			}
+			else_if = {
+				limit = { persistent_event_target:hre_title_3_per = { title = FROM } }
+				log = " ----> found title in slot #3"
+				clear_persistent_event_target = hre_title_3_per
+			}
+			else_if = {
+				limit = { persistent_event_target:hre_title_4_per = { title = FROM } }
+				log = " ----> found title in slot #4"
+				clear_persistent_event_target = hre_title_4_per
+			}
+			else_if = {
+				limit = { persistent_event_target:hre_title_5_per = { title = FROM } }
+				log = " ----> found title in slot #5"
+				clear_persistent_event_target = hre_title_5_per
+			}
+			else_if = {
+				limit = { persistent_event_target:hre_title_6_per = { title = FROM } }
+				log = " ----> found title in slot #6"
+				clear_persistent_event_target = hre_title_6_per
+			}
+			else_if = {
+				limit = { persistent_event_target:hre_title_7_per = { title = FROM } }
+				log = " ----> found title in slot #7"
+				clear_persistent_event_target = hre_title_7_per
+			}
+			else = {
+				log = " ----> ERROR: COULD NOT FIND GAINED TITLE AMONG SAVED ELECTOR TITLES!"
+				# We're fucked if this happens somehow. It *should* be guaranteed to never happen unless some other code
+				# messes with elector slot assignments, but then almost none of this will work properly in that case, so
+				# meh.
+				break = yes
+			}
+		}
+		event_target:emf_global_hre = {
+			owner = {
+				character_event = { id = emf_hre.60 }
+			}
+		}
+	}
+}

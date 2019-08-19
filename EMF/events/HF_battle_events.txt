@@ -344,7 +344,7 @@ character_event = {
 			}
 			10 = {
 				trigger = {
-					NOT = { trait = incapable }
+					is_incapable = no
 					immortal = no
 					is_alive = yes
 					NOT = { is_indomitable_trigger = yes } #The "Indomitable" power blocks "very bad stuff"
@@ -655,8 +655,8 @@ character_event = {
 						prisoner = no
 						NOT = { has_character_modifier = lucky_to_be_alive }
 					}
+					is_incapable = no
 					NOT = {
-						trait = incapable
 						prisoner = no
 						has_character_modifier = favored_shieldmaiden
 						has_character_modifier = bad_shieldmaiden
@@ -675,11 +675,10 @@ character_event = {
 						is_member_of_any_warrior_lodge_trigger = yes
 					}
 					age = 16
-					NOT = { trait = incapable }
-
+					is_incapable = no
 					any_courtier_or_vassal = {
 						trait = shieldmaiden
-						NOT = { trait = incapable }
+						is_incapable = no
 						prisoner = no
 						has_minor_title = title_commander
 					}
@@ -2196,7 +2195,7 @@ character_event = {
 	
 	
 	trigger = {
-		NOT = { trait = incapable }
+		is_incapable = no
 		immortal = no
 		is_alive = yes
 	}
@@ -2459,7 +2458,14 @@ character_event = {
 		name = EVTOPTK96500 # Jungle Terrain Specialization
 		trigger = {
 			location = { terrain = jungle }
-			NOT = { trait = jungle_terrain_leader }
+			NOR = { 
+				trait = rough_terrain_leader
+				trait = flat_terrain_leader
+				trait = mountain_terrain_leader
+				trait = desert_terrain_leader
+				trait = winter_soldier
+				trait = jungle_terrain_leader
+			}
 		}
 		add_trait = jungle_terrain_leader
 	}
@@ -2474,23 +2480,43 @@ character_event = {
 	option = {
 		name = EVTOPTM96500 # WINTER Terrain Specialization
 		trigger = {
-			location = { is_winter = yes }
-			NOT = { trait = winter_soldier }
+			location = {
+				OR = {
+					AND = {
+						climate = severe_winter
+						is_winter = yes
+					}
+					terrain = arctic
+				}
+			}
+			NOR = { 
+				trait = rough_terrain_leader
+				trait = flat_terrain_leader
+				trait = mountain_terrain_leader
+				trait = desert_terrain_leader
+				trait = winter_soldier
+				trait = jungle_terrain_leader
+			}
 		}
 		add_trait = winter_soldier
 	}
 	option = {
 		name = EVTOPTA96500 # Rough Terrain Specialization
 		trigger = {
-			OR = {
-				location = { terrain = forest }
-				location = { terrain = hills }
+			location = {
+				OR = {
+					terrain = forest
+					terrain = hills
+					terrain = marsh
+				}
 			}
 			NOT = { 
 				trait = rough_terrain_leader
 				trait = flat_terrain_leader
 				trait = mountain_terrain_leader
 				trait = desert_terrain_leader
+				trait = winter_soldier
+				trait = jungle_terrain_leader
 			}
 		}
 		add_trait = rough_terrain_leader
@@ -2498,16 +2524,20 @@ character_event = {
 	option = {
 		name = EVTOPTB96500 # Flat Terrain Specialization
 		trigger = {
-			OR = {
-				location = { terrain = plains }
-				location = { terrain = farmlands }
-				location = { terrain = steppe }
+			location = {
+				OR = {
+					terrain = plains
+					terrain = farmlands
+					terrain = steppe
+				}
 			}
 			NOT = { 
 				trait = rough_terrain_leader
 				trait = flat_terrain_leader
 				trait = mountain_terrain_leader
 				trait = desert_terrain_leader
+				trait = winter_soldier
+				trait = jungle_terrain_leader
 			}
 		}
 		add_trait = flat_terrain_leader
@@ -2521,6 +2551,8 @@ character_event = {
 				trait = flat_terrain_leader
 				trait = mountain_terrain_leader
 				trait = desert_terrain_leader
+				trait = winter_soldier
+				trait = jungle_terrain_leader
 			}
 		}
 		add_trait = mountain_terrain_leader
@@ -2534,6 +2566,8 @@ character_event = {
 				trait = flat_terrain_leader
 				trait = mountain_terrain_leader
 				trait = desert_terrain_leader
+				trait = winter_soldier
+				trait = jungle_terrain_leader
 			}
 		}
 		add_trait = desert_terrain_leader
@@ -2921,11 +2955,11 @@ character_event = {
 	option = { # Defensive
 		name = {
 			text = EVTOPTB_HFP_11021
-			trigger = { NOT = { government = nomadic_government } }
+			trigger = { is_nomadic = no }
 		}
 		name = {
 			text = EVTOPTB_HFP_11021_nomad
-			trigger = { government = nomadic_government }
+			trigger = { is_nomadic = yes }
 		}
 		trigger = {
 			NOT = { trait = defensive_leader }
@@ -3118,7 +3152,7 @@ character_event = {
 	is_triggered_only = yes
 
 	trigger = {
-		NOT = { trait = incapable }
+		is_incapable = no
 		prisoner = no
 		is_inaccessible_trigger = no
 	}
@@ -3886,12 +3920,12 @@ character_event = {
 							event_target:enemy_liege = { # Should still be alive (so check against them instead of the commander)...
 								OR = {
 									AND = {
-										government = tribal_government
-										ROOT = { NOT = { government = tribal_government } }
+										is_tribal = yes
+										ROOT = { is_tribal = no }
 									}
 									AND = {
-										government = nomadic_government
-										ROOT = { NOT = { government = nomadic_government } }
+										is_nomadic = yes
+										ROOT = { is_nomadic = no }
 									}
 								}
 							}
@@ -5472,7 +5506,7 @@ character_event = {
 		tooltip_info_custom = available_due_to_warrior_lodge
 		custom_tooltip = { text = EVTOPTC50020_TT }
 		if = { 
-			limit = { NOR = { religion_group = pagan_group has_religion_feature = religion_ritual_sacrifice } }
+			limit = { NOR = { religion_group = pagan_group emf_ritual_sacrifice_religion = yes } }
 			tiered_high_piety_negative_effect = yes 
 		}
 
@@ -5515,11 +5549,7 @@ character_event = {
 			event_target:captured_commander = { character_event = { id = 50021 } } #"They took one look at me and then I was toast"-event.
 			if = {
 				limit = {
-					OR = {
-						has_religion_feature = religion_ritual_sacrifice
-						religion = aztec
-						religion = aztec_reformed
-					}
+					emf_ritual_sacrifice_religion = yes
 				}
 				if = { #A foreign religious head is also quite good.
 					limit = {

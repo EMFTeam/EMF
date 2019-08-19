@@ -27,6 +27,8 @@ NDefines.NDiplomacy.DEFENSIVE_PACT_MAX_RANGE = 300
 NDefines.NCouncil.ENFORCE_PEACE_START_DELAY = 6
 NDefines.NCouncil.LAW_VOTE_CHANGE_TIME_LIMIT = 2
 NDefines.NCouncil.REGENCY_VOTING = "laws enforce_peace declare_war_interaction prepare_invasion_interaction ask_to_join_war_interaction form_non_aggression_pact_interaction break_non_aggression_pact form_alliance_interaction dissolve_alliance_interaction release_tributary ask_for_vassalization_interaction release_vassal_interaction offer_vassalization_interaction revoke_title_interaction grant_landed_title_interaction retract_vassal_interaction transfer_vassal_interaction lollard_revoke_temple absorb_clan_interaction split_clan_interaction imprison_character_interaction exile_imprisoned_interaction execute_imprisoned_interaction ransom_character_interaction release_from_prison_interaction recruit_prisoner emf_prisoner_house_arrest emf_prisoner_oubliette emf_prisoner_dungeon emf_prisoner_castration emf_prisoner_blinding emf_prisoner_zun_judgement kharijite_public_execution" -- Added various interactions that now support council voting strategies
+NDefines.NCouncil.NO_VOTING_PIETY_OVERRIDE = 0
+NDefines.NCouncil.NO_VOTING_PRESTIGE_OVERRIDE = 0
 
 -- Infamy
 NDefines.NInfamy.REALM_SIZE_GROWTH_MODIFIER = 0.005 -- shrunk from v8.06
@@ -145,8 +147,6 @@ NDefines.NMilitary.DEFENDER_SIEGE_DAMAGE = 0
 NDefines.NMilitary.NUM_DAYS_BETWEEN_SIEGE_MORALE_LOSS = 5
 NDefines.NMilitary.REINFORCE_RATE = 0.03
 NDefines.NMilitary.LEVY_RAISED_REINFORCE_RATE_MULTIPLIER = 0.2        -- vanilla / v8.06 was 0.5
-NDefines.NMilitary.SETTLEMENT_WARSCORE_MULTIPLIER = 0.32              -- prior to EMF v9.06: 0.375; in EMF v8.07, more warscore for occupying private demesne holdings of enemy (from 0.3/vanilla)
-NDefines.NMilitary.VASSAL_SETTLEMENT_WARSCORE_MULTIPLIER = 0.28       -- prior to EMF v9.06: 0.225; in EMF v8.07, less warscore for occupying enemy's vassals' holdings (from 0.3/vanilla)
 NDefines.NMilitary.NAVAL_ATTRITION = 0.035                            -- prior to EMF v9.06: 5%; prior to EMF v8.07: 0% (vanilla)
 NDefines.NMilitary.ARMY_LOAD_MOVE_COST = 30.0                         -- changed by -10 cost from v8.06 (-25% EMF / +50% vanilla instead of +100% vanilla)
 NDefines.NMilitary.WAR_CONTRIBUTION_PROVINCE_WITHOUT_SETTLEMENT_OCCUPATION_PER_DAY = 1.5 -- as of EMF v8.07, half of vanilla
