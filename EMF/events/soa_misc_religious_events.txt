@@ -1166,13 +1166,11 @@ character_event = {
 	}
 }
 
-# Virgin birth
+# Virgin birth hidden impregnation effect (so that on_pregnancy events fire on time)
 character_event = {
-	id = SoA.5242
-	desc = EVTDESC_SoA_5242
-	picture = GFX_evt_pregnancy
-	border = GFX_event_normal_frame_religion
-
+	id = SoA.5245
+	hide_window = yes
+	
 	only_women = yes
 	capable_only = yes
 	prisoner = no
@@ -1181,51 +1179,103 @@ character_event = {
 	religion_group = christian
 	is_married = yes
 	has_dlc = "Sons of Abraham"
-
+	
 	trigger = {
+		health = 3
 		is_pregnant = no
 		spouse = {
+			OR = {
+				trait = chaste
+				trait = celibate
+				trait = eunuch
+			}
+		}
+		NOR = {
 			trait = chaste
 			trait = celibate
-		}
-		NOT = {
-			trait = chaste
-		}
-		NOT = {
-			trait = celibate
-		}
-		NOT = {
 			trait = homosexual
 		}
 	}
-
+	
 	mean_time_to_happen = {
 		months = 1000
-			modifier = {
-				factor = 0.5
-				trait = lustful
+		modifier = {
+			factor = 0.5
+			trait = lustful
 		}
-			modifier = {
-				factor = 0.8
-				trait = hedonist
+		modifier = {
+			factor = 0.8
+			trait = hedonist
 		}
+	}
+
+	immediate = {
+		impregnate_cuckoo = yes
+		set_character_flag = virgin_birth
+	}
+}
+
+# Virgin birth
+character_event = {
+	id = SoA.5242
+	desc = EVTDESC_SoA_5242
+	picture = GFX_evt_pregnancy
+	border = GFX_event_normal_frame_religion
+
+	is_married = yes
+	
+	is_triggered_only = yes
+
+	trigger = {
+		NOT = { trait = pregnant }
+		has_character_flag = virgin_birth
+	}
+	
+	immediate = {
+		add_trait = pregnant
 	}
 
 	option = {
 		name = EVTOPTA_SoA_5242
+		tooltip = { add_trait = pregnant }
 		if = {
 			limit = { NOT = { trait = zealous } }
 			add_trait = zealous
 		}
-		hidden_tooltip = { spouse = { character_event = { id = SoA.5243 } } }
+		hidden_tooltip = { 
+			if = { 
+				limit = {
+					ai = no
+					NOT = { 
+						any_courtier = { has_minor_title = title_appointed_regent } 
+						has_dynasty_flag = pregnancy_regent_warning 
+					} 
+				}
+				character_event = { id = HFP.20400 } 
+			}
+			spouse = { character_event = { id = SoA.5243 } }
+		}
 	}
 	option = {
 		name = EVTOPTB_SoA_5242
+		tooltip = { add_trait = pregnant }
 		if = {
 			limit = { NOT = { trait = deceitful } }
-				add_trait = deceitful
+			add_trait = deceitful
 		}
-		hidden_tooltip = { spouse = { character_event = { id = SoA.5243 } } }
+		hidden_tooltip = { 
+			if = { 
+				limit = {
+					ai = no
+					NOT = { 
+						any_courtier = { has_minor_title = title_appointed_regent } 
+						has_dynasty_flag = pregnancy_regent_warning 
+					} 
+				}
+				character_event = { id = HFP.20400 } 
+			}
+			spouse = { character_event = { id = SoA.5243 } }
+		}
 	}
 }
 
@@ -1240,9 +1290,24 @@ character_event = {
 
 	option = {
 		name = EVTOPTA_SoA_5243
-		spouse = {
-			unsafe_impregnate = ROOT
-			add_trait = pregnant
+		ai_chance = {
+			factor = 100
+			modifier = {
+				factor = 5
+				trait = zealous
+			}
+			modifier = {
+				factor = 3
+				trait = trusting
+			}
+			modifier = {
+				factor = 0
+				NOT = { trait = zealous }
+				OR = {
+					trait = celibate
+					trait = eunuch
+				}
+			}
 		}
 		if = {
 			limit = { NOT = { trait = zealous } }
@@ -1251,27 +1316,118 @@ character_event = {
 	}
 	option = {
 		name = EVTOPTB_SoA_5243
-		spouse = {
-			unsafe_impregnate = ROOT
-			add_trait = pregnant
+		ai_chance = {
+			factor = 10
+			modifier = {
+				factor = 0
+				trait = wroth
+			}
+			modifier = {
+				factor = 0
+				trait = cruel
+			}
+			modifier = {
+				factor = 0
+				trait = envious
+			}
+			modifier = {
+				factor = 0
+				trait = zealous
+			}
+			modifier = {
+				factor = 0.5
+				trait = just
+			}
+			modifier = {
+				factor = 3
+				trait = craven
+			}
+			modifier = {
+				factor = 2
+				trait = arbitrary
+			}
+			modifier = {
+				factor = 2
+				trait = temperate
+			}
+			modifier = {
+				factor = 5
+				trait = cynical
+			}
+		}
+		if = {
+			limit = {
+				NOT = { trait = paranoid }
+				NOT = { trait = trusting }
+			}
+			random = {
+				chance = 10
+				add_trait = paranoid
+				hidden_tooltip = {
+					character_event = { id = 38275 days = 3 } # Paranoid gained
+				}
+			}
+		}
+		if = {
+			limit = { trait = trusting }
+			random = {
+				chance = 20
+				remove_trait = trusting
+				hidden_tooltip = {
+					character_event = { id = 38306 days = 3 } # Trusting lost
+				}
+			}
 		}
 		opinion = {
-				modifier = opinion_angry
-				who = FROM
-				years = 5
+			who = FROM
+			modifier = opinion_unfaithful_private
+			months = 60
 		}
 	}
 	option = {
 		name = EVTOPTC_SoA_5243
-		spouse = {
-			unsafe_impregnate = 0
-			add_trait = pregnant
+		ai_chance = {
+			factor = 100
+			modifier = {
+				factor = 0.2
+				trait = kind
+			}
+		}
+		if = {
+			limit = {
+				NOT = { trait = paranoid }
+				NOT = { trait = trusting }
+			}
+			random = {
+				chance = 10
+				add_trait = paranoid
+				hidden_tooltip = {
+					character_event = { id = 38275 days = 3 } # Paranoid gained
+				}
+			}
+		}
+		if = {
+			limit = { trait = trusting }
+			random = {
+				chance = 20
+				remove_trait = trusting
+				hidden_tooltip = {
+					character_event = { id = 38306 days = 3 } # Trusting lost
+				}
+			}
 		}
 		opinion = {
-				modifier = opinion_angry
-				who = FROM
-				years = 5
+			who = FROM
+			modifier = opinion_unfaithful_wife
+			months = 120
 		}
+		FROM = {
+			add_character_modifier = {
+				name = adulteress
+				years = 10
+			}
+		}
+		father_of_unborn_known = yes
 	}
 }
 
