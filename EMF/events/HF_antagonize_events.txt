@@ -10,7 +10,7 @@ character_event = {
 	
 	trigger = {
 		has_dlc = "Holy Fury"
-		NOT = { trait = incapable }
+		is_incapable = no
 		NOT = { 
 			has_opinion_modifier = { 
 				who = FROM 
@@ -34,7 +34,7 @@ character_event = {
 	hide_window = yes
 	
 	trigger = {
-		NOT = { trait = incapable }
+		is_incapable = no
 		prisoner = no
 		persistent_event_target:antagonize_target = {	#If character has become incapable, out of reach or otherwise unable to be interacted with, a notification event will be sent.
 			is_alive = yes
@@ -94,7 +94,7 @@ character_event = {
 			100 = { #Incapable, clear event target.
 				modifier = { 
 					factor = 0
-					persistent_event_target:antagonize_target = { NOT = { trait = incapable } }
+					persistent_event_target:antagonize_target = { is_incapable = no }
 				}
 				persistent_event_target:antagonize_target = { character_event = { id = HF.22007 } }
 			}
@@ -317,7 +317,15 @@ character_event = {
 					intrigue = 10
 					persistent_event_target:antagonize_target = { 
 						NOR = { 
+							has_character_flag = developing_illness
+							has_character_flag = disease_not_serious
+						}
+						NAND = {
 							trait = syphilitic
+							OR = {
+								trait = has_aztec_disease
+								NOT = { has_global_flag = aztec_arrival }
+							}
 						}
 					}
 				}
@@ -1813,6 +1821,8 @@ character_event = {
 						trait = seducer
 						trait = seductress 
 						trait = lovers_pox
+						trait = syphilitic
+						trait = has_aztec_disease
 					}
 				}	
 				modifier = { #Try to pick opposite traits if any are available
@@ -4602,25 +4612,13 @@ character_event = {
 	desc = { #Male courtesan
 		text = EVTDESCHFA22071
 		trigger = { 
-			OR = { 
-				is_female = yes 
-				AND = { 
-					is_female = no 
-					trait = homosexual 
-				} 
-			} 
+			prefers_men_trigger = yes
 		}
 	}
 	desc = { #Female courtesan
 		text = EVTDESCHFB22071
 		trigger = { 
-			OR = { 
-				is_female = no 
-				AND = { 
-					is_female = yes 
-					trait = homosexual 
-				} 
-			} 
+			prefers_men_trigger = no
 		}
 	}
 	picture = GFX_evt_dancing
@@ -4659,7 +4657,25 @@ character_event = {
 				change_diplomacy = 1
 			}
 		}
-		hidden_tooltip = { character_event = { id = HF.22073 days = 4 } }
+		unprotected_sex_effect_stranger = yes
+		hidden_tooltip = {
+			random = {
+				chance = 50
+				random_list = {
+					50 = {
+						give_syphilitic_effect = yes
+					}
+					50 = {
+						modifier = {
+							factor = 0
+							NOT = { has_global_flag = aztec_arrival }
+						}
+						give_has_aztec_disease_effect = yes
+					}
+				}
+			}
+			character_event = { id = HF.22073 days = 4 }
+		}
 	} 
 }
 
@@ -4682,25 +4698,13 @@ character_event = {
 	desc = { #Male courtesan
 		text = EVTDESCHFA22073
 		trigger = { 
-			OR = { 
-				is_female = yes 
-				AND = { 
-					is_female = no 
-					trait = homosexual 
-				} 
-			} 
+			prefers_men_trigger = yes
 		}
 	}
 	desc = { #Female courtesan
 		text = EVTDESCHFB22073
 		trigger = { 
-			OR = { 
-				is_female = no 
-				AND = { 
-					is_female = yes 
-					trait = homosexual 
-				} 
-			} 
+			prefers_men_trigger = no
 		}
 	}
 	picture = GFX_evt_bad_news
@@ -4711,7 +4715,6 @@ character_event = {
 	option = { 
 		name = EVTOPTAHF22073
 		hidden_tooltip = { FROMFROM = { character_event = { id = HF.22074 } } }
-		add_trait = syphilitic
 		opinion = { 
 			who = FROMFROM
 			modifier = opinion_antagonized_3
@@ -4860,6 +4863,67 @@ character_event = {
 			blessing_removes_disease_effect = yes
 			deaths_gift_removes_disease_effect = yes
 			scrying_omen_fulfilled_by_gaining_disease_effect = yes
+			hidden_tooltip = {
+				if = {
+					limit = {
+						is_unimportant_trigger = yes
+					}
+					health = -3
+				}
+				if = { 
+					limit = { is_playable = no }
+					host = {
+						random_courtier_or_vassal = { #Markus doing
+							limit = {
+								liege = { character = PREVPREV }
+								has_minor_title = title_court_physician
+							}
+							character_event = { id = RIP.11031 days = 1 }
+						}
+					}
+				}
+				if = { 
+					limit = { is_playable = yes }
+					random_courtier_or_vassal = { #Markus doing
+						limit = {
+							has_minor_title = title_court_physician
+						}
+						character_event = { id = RIP.11031 days = 1 }
+					}
+				}
+				father = {
+					if = {
+						limit = {
+							ai = no
+							is_liege_of = ROOT
+							NOT = { has_character_modifier = in_seclusion }
+						}
+						set_character_flag = announce_food_poisoning
+						character_event = { id = RIP.5060 }
+					}
+				}
+				mother = {
+					if = {
+						limit = {
+							ai = no
+							is_liege_of = ROOT
+							NOT = { has_character_modifier = in_seclusion }
+						}
+						set_character_flag = announce_food_poisoning
+						character_event = { id = RIP.5060 }
+					}
+				}
+				spouse = {
+					if = {
+						limit = {
+							ai = no
+							NOT = { has_character_modifier = in_seclusion }
+						}
+						set_character_flag = announce_food_poisoning
+						character_event = { id = RIP.5060 }
+					}
+				}
+			}
 		}
 		if = { 
 			limit = { NOT = { has_dlc = "Reapers" } } 
