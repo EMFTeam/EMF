@@ -394,17 +394,17 @@ character_event = {
 				} # end: random_demesne_title
 				save_event_target_as = emf_new_elector
 			} # end: random_realm_lord
-			if = {
+			narrative_event = { id = emf_hre.65 }
+			any_player = {
 				limit = {
-					has_global_flag = EMF
-					event_target:emf_global_hre = { has_law = succ_hre_elective }
+					NOT = { character = ROOT }
+					OR = {
+						top_liege = { character = ROOT }
+						top_liege = { emf_cb_is_leading_major_revolt_against_ROOT = yes }
+						any_dejure_liege = { title = event_target:emf_global_hre }
+					}
 				}
-				# Adjustments to electors made at campaign init would not use a narrative event notification system if any
-				# at all, so the EMF flag must be raised.
-				#
-				# TODO: Add event notification to HRE and its realm lords declaring emf_former_elector_title out of
-				# business and emf_new_elector_title with its new, glorious elector title status for emf_new_elector.
-				# Ecclesiastic variant of event text.
+				narrative_event = { id = emf_hre.65 }
 			}
 			clear_event_target = emf_former_elector_title
 			clear_event_target = emf_new_elector_title
@@ -588,6 +588,12 @@ character_event = {
 						}
 					}
 					preferred_limit = {
+						OR = {
+							title = d_saxewittenberg
+							title = d_brandenburg
+						}
+					}
+					preferred_limit = {
 						is_primary_holder_title = yes
 						is_de_jure_title = yes
 					}
@@ -607,6 +613,10 @@ character_event = {
 					}
 					preferred_limit = {
 						tier = DUKE
+					}
+					preferred_limit = {
+						tier = COUNT
+						location = { is_capital = yes }
 					}
 					log = " ------> selected title: [This.EMF_GetDebugTitleNameWithDeJureLieges]"
 					emf_replace_invalid_hre_elector_title = yes
@@ -617,17 +627,17 @@ character_event = {
 				} # end: random_demesne_title
 				save_event_target_as = emf_new_elector
 			} # end: any_realm_lord
-			if = {
+			narrative_event = { id = emf_hre.65 }
+			any_player = {
 				limit = {
-					has_global_flag = EMF
-					event_target:emf_global_hre = { has_law = succ_hre_elective }
+					NOT = { character = ROOT }
+					OR = {
+						top_liege = { character = ROOT }
+						top_liege = { emf_cb_is_leading_major_revolt_against_ROOT = yes }
+						any_dejure_liege = { title = event_target:emf_global_hre }
+					}
 				}
-				# Adjustments to electors made at campaign init would not use a narrative event notification system if any
-				# at all, so the EMF flag must be raised.
-				#
-				# TODO: Add event notification to HRE and its realm lords declaring emf_former_elector_title out of
-				# business and emf_new_elector_title with its new, glorious elector title status for emf_new_elector.
-				# Secular variant of event text.
+				narrative_event = { id = emf_hre.65 }
 			}
 			clear_event_target = emf_former_elector_title
 			clear_event_target = emf_new_elector_title
@@ -652,7 +662,9 @@ character_event = {
 	immediate = {
 		log = "DEBUG: emf_hre.61: prince-elector gained a secondary elector title: [This.EMF_GetDebugName]"
 		log = " --> gained title: [From.EMF_GetDebugTitleNameWithDeJureLieges]"
+		save_event_target_as = emf_gaining_elector
 		FROM = { save_event_target_as = emf_gained_elector_title }
+		FROMFROM = { save_event_target_as = emf_losing_elector }
 		e_hre = {
 			if = {
 				limit = { persistent_event_target:hre_title_1_per = { title = FROM } }
@@ -700,6 +712,150 @@ character_event = {
 		event_target:emf_global_hre = {
 			owner = {
 				character_event = { id = emf_hre.60 }
+			}
+		}
+	}
+}
+
+narrative_event = {
+	id = emf_hre.65
+	title = emf_hre_65_title
+	picture = GFX_evt_a_crowning_ceremony
+	border = GFX_event_normal_frame_diplomacy
+	portrait = event_target:emf_new_elector
+
+	is_triggered_only = yes
+
+	trigger = {
+		has_global_flag = EMF # Must not be executed until after initial elector title assignment.
+		# We silently do elector title reassignment for the HRE when it has a different succession law in the event
+		# that it returns to Princely Elective, but that means Princely Elective must be active for notifications:
+		event_target:emf_global_hre = { has_law = succ_hre_elective }
+	}
+
+	immediate = {
+		if = {
+			limit = { NOT = { event_target:emf_former_elector_title = { always = yes } } }
+			event_target:emf_gained_elector_title = {
+				save_event_target_as = emf_former_elector_title
+			}
+		}
+	}
+
+	desc = {
+		text = emf_hre_65_desc_elector_title_no_longer_de_jure_theocratic
+		trigger = {
+			event_target:emf_former_elector_title = {
+				NOT = { title = event_target:emf_gained_elector_title }
+				owner = {
+					NOT = { any_dejure_liege = { title = event_target:emf_global_hre } }
+				}
+			}
+			event_target:emf_new_elector = { is_theocracy = yes }
+		}
+	}
+
+	desc = {
+		text = emf_hre_65_desc_elector_title_no_longer_de_jure_secular
+		trigger = {
+			event_target:emf_former_elector_title = {
+				NOT = { title = event_target:emf_gained_elector_title }
+				owner = {
+					NOT = { any_dejure_liege = { title = event_target:emf_global_hre } }
+				}
+			}
+			event_target:emf_new_elector = { is_theocracy = no }
+		}
+	}
+
+	desc = {
+		text = emf_hre_65_desc_secondary_elector_title_gained_theocratic
+		trigger = {
+			event_target:emf_gained_elector_title = { always = yes }
+			event_target:emf_new_elector = { is_theocracy = yes }
+		}
+	}
+
+	desc = {
+		text = emf_hre_65_desc_secondary_elector_title_gained_secular
+		trigger = {
+			event_target:emf_gained_elector_title = { always = yes }
+			event_target:emf_new_elector = { is_theocracy = no }
+		}
+	}
+
+	desc = {
+		text = emf_hre_65_desc_theocratic
+		trigger = {
+			event_target:emf_new_elector = { is_theocracy = yes }
+			NOR = {
+				event_target:emf_former_elector_title = {
+					owner = {
+						NOT = { any_dejure_liege = { title = event_target:emf_global_hre } }
+					}
+				}
+				event_target:emf_gained_elector_title = { always = yes }
+			}
+		}
+	}
+
+	desc = {
+		text = emf_hre_65_desc_secular
+		trigger = {
+			event_target:emf_new_elector = { is_theocracy = no }
+			NOR = {
+				event_target:emf_former_elector_title = {
+					owner = {
+						NOT = { any_dejure_liege = { title = event_target:emf_global_hre } }
+					}
+				}
+				event_target:emf_gained_elector_title = { always = yes }
+			}
+		}
+	}
+
+	option = {
+		name = emf_hre_65_opt_a_emperor
+		trigger = { character = FROM }
+		custom_tooltip = { text = emf_hre_65_opt_a_emperor_TT }
+	}
+
+	option = {
+		name = emf_hre_65_opt_a_realm_lord_pos
+		trigger = {
+			NOT = { character = FROM }
+			OR = {
+				AND = {
+					NOT = { is_foe = event_target:emf_new_elector }
+					opinion = { who = event_target:emf_new_elector value = -10 }
+				}
+				is_friend = event_target:emf_new_elector
+			}
+		}
+	}
+
+	option = {
+		name = emf_hre_65_opt_b_realm_lord_neg
+		trigger = {
+			NOT = { character = FROM }
+			NOT = { is_friend = event_target:emf_new_elector }
+			OR = {
+				is_foe = event_target:emf_new_elector
+				NOT = { same_realm = event_target:emf_new_elector } # Can happen if separated by civil war
+				NOT = { opinion = { who = event_target:emf_new_elector value = -10 } }
+				any_close_relative = { is_foe = event_target:emf_new_elector }
+				any_spouse = { is_foe = event_target:emf_new_elector }
+				any_dynasty_member = {
+					is_foe = event_target:emf_new_elector
+					OR = {
+						is_cousin_of = ROOT
+						is_grandchild_of = ROOT
+					}
+				}
+				any_dynasty_member = {
+					is_ruler = yes
+					is_rival = event_target:emf_new_elector
+				}
 			}
 		}
 	}
