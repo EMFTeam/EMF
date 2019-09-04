@@ -1,0 +1,137 @@
+# -*- ck2.events -*-
+
+namespace = emf_disease
+
+# emf_disease.0 - Event for unplayable characters as an alternative to the seek_treatment decision. It's a MTTH event instead of a decision for performance reasons, as events have access to the key pre-trigger "is_sick" that is not available for decisions.
+character_event = {
+	id = emf_disease.0
+
+	hide_window = yes
+	
+	is_sick = yes
+	prisoner = no
+	has_dlc = "Reapers"
+	
+	trigger = {
+		is_ruler = no
+		NOT = { trait = troubled_pregnancy } #Treatment handled by special event chain.
+		OR = {
+			trait = has_tuberculosis
+			trait = has_typhoid_fever
+			trait = has_typhus
+			trait = has_bubonic_plague
+			trait = has_measles
+			trait = has_small_pox
+			trait = has_aztec_disease
+			trait = syphilitic
+			trait = flu
+			trait = dysentery
+			trait = gout
+			trait = food_poisoning
+			trait = rabies
+			trait = cancer
+			trait = pneumonic
+			num_of_symptoms = 1
+		}
+		liege = {
+			has_assigned_minor_title = title_court_physician
+		}
+		OR = {
+			NOT = { has_character_flag = being_treated }
+			had_character_flag = { flag = being_treated days = 20 }
+		}
+		OR = {
+			AND = {	#if you have a developed disease and want further treatment
+				character_disease_trigger = yes
+				OR = {
+					NOT = { has_character_flag = recent_treatment }
+					had_character_flag = { flag = recent_treatment days = 90 }
+				}
+			}
+			AND = {	#if you have multiple symptoms and want to seek further treatment
+				num_of_symptoms = 2
+				OR = {
+					NOT = { has_character_flag = recent_treatment }
+					had_character_flag = { flag = recent_treatment days = 30 }
+				}
+			}
+			AND = { #if your treatment failed and you want to try again
+				character_disease_trigger = no
+				num_of_symptoms = 1
+				OR = {
+					had_character_flag = { flag = disease_not_serious days = 10 } #anti-spam delay since event should handle this normally
+					had_character_flag = { flag = developing_illness days = 10 }
+				}
+				OR = {
+					NOT = { has_character_flag = recent_treatment }
+					had_character_flag = { flag = recent_treatment days = 30 }
+				}
+				NOR = {
+					has_character_modifier = successful_treatment_1
+					has_character_modifier = successful_treatment_2
+					has_character_modifier = successful_treatment_3
+					has_character_modifier = failed_treatment_1
+					has_character_modifier = failed_treatment_2
+					has_character_modifier = mystic_treatment_decent
+					has_character_modifier = mystic_treatment_poor
+					has_character_modifier = mystic_treatment_terrible
+					has_character_modifier = symptom_treatment_1
+					has_character_modifier = symptom_treatment_2
+					has_character_modifier = symptom_treatment_3
+					has_character_modifier = symptom_treatment_4
+				}
+			}
+		}
+		NOR = {
+			has_character_modifier = mystic_treatment_decent
+			has_character_modifier = successful_treatment_1
+			has_character_modifier = successful_treatment_2
+			has_character_modifier = successful_treatment_3
+		}
+	}
+	
+	mean_time_to_happen = {
+		months = 14
+		modifier = {
+			factor = 0.5
+			OR = {
+				trait = craven
+				trait = paranoid
+			}
+		}
+		modifier = {
+			factor = 0.7
+			NOT = { health = 5 }
+		}
+		modifier = {
+			factor = 0.7
+			NOT = { health = 4 }
+		}
+		modifier = {
+			factor = 0.7
+			NOT = { health = 3 }
+		}
+		modifier = {
+			factor = 0.7
+			NOT = { health = 2 }
+		}
+		modifier = {
+			factor = 0.7
+			NOT = { health = 1 }
+		}
+	}
+	
+	immediate = {
+		set_character_flag = recent_treatment
+		remove_treatment_modifiers_effect = yes
+		liege = {
+			random_courtier_or_vassal = {
+				limit = {
+					is_adult = yes
+					has_minor_title = title_court_physician
+				}
+				character_event = { id = RIP.11031 }
+			}
+		}
+	}
+}
