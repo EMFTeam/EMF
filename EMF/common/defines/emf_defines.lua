@@ -250,6 +250,9 @@ NDefines.NAI.AI_ASSAULT_RATIO = 15             -- +50% from vanilla
 NDefines.NAI.TRIBAL_VASSAL_EXTRA_CALL_CHANCE = 30 -- vanilla is 40
 NDefines.NAI.RAID_MAX_REALM_SIZE = 32          -- prior to EMF v9.06: 24; vanilla is 24
 NDefines.NAI.RAID_AGGRESSION = 15              -- prior to EMF v9.06: 18; prior to EMF v9.01: 12; vanilla is 18; lower means more frequent raiding, higher means less frequent
+NDefines.NAI.RAID_SPARE_ACCEPTED_RELIGIONS = 0	-- Intra-pagan raiding enabled to make pagan consolidation more difficult
+NDefines.NAI.TRIBAL_VASSAL_EXTRA_CALL_CHANCE = 0	-- Disabled to make tribal consolidation harder (AI already honors alliances fairly often)
+	
 NDefines.NAI.NOMAD_MARRIAGE_CLAN_MODIFIER = 40 -- vanilla is 20: "How much nomad AI will prefer inter-realm clan marriages"
 NDefines.NAI.NOMAD_MARRIAGE_KHAN_MODIFIER = 15 -- vanila is 5: "How much nomad AI will prefer marriages with their khan"
 
