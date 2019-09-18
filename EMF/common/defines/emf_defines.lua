@@ -96,8 +96,9 @@ NDefines.NTitle.CUSTOM_TITLE_COLOR_OFFSET = 0.2
 -- Religion
 NDefines.NReligion.CREATE_ANTIPOPE_PRESTIGE_COST = 1500           -- prior to EMF v8.02: 500
 NDefines.NReligion.INVASION_MIN_AUTHORITY = 0.4
-NDefines.NReligion.REFORM_RELIGION_MIN_AUTHORITY = 0.6
-NDefines.NReligion.REFORM_RELIGION_MIN_HOLY_SITES = 4
+NDefines.NReligion.REFORM_RELIGION_MIN_AUTHORITY = 0.6            -- vanilla: 0.5; prior EMF v10.3: 0.3
+NDefines.NReligion.REFORM_RELIGION_MIN_HOLY_SITES = 4             -- vanilla: 3
+NDefines.NReligion.REFORM_RELIGION_PIETY_COST = 1500              -- vanilla: 750
 NDefines.NReligion.AUTHORITY_FROM_HOLY_SITE = 0.05
 NDefines.NReligion.AUTHORITY_FROM_ANTIPOPE = -0.1                 -- prior to EMF v8.02: -0.3
 NDefines.NReligion.AUTHORITY_FROM_RELHEAD_PIETY = 0.002           -- prior to EMF v9.06: 0.001; prior to EMF v8.02: 0
