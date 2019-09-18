@@ -1,10 +1,11 @@
 -- Diplomacy
-NDefines.NDiplomacy.GAVELKIND_MAX_SIZE_BONUS = 0.50          -- from 0.30, vanilla=0.30
+NDefines.NDiplomacy.GAVELKIND_MAX_SIZE_BONUS = 0.50            -- from 0.30, vanilla=0.30
 NDefines.NDiplomacy.VASSAL_LIMIT_LEVY_MULTIPLIER = 0
-NDefines.NDiplomacy.MAX_DUCHIES_LEGALLY_HELD = 3             -- from 2, vanilla=2
-NDefines.NDiplomacy.MAX_ELECTOR_TITLES_LEGALLY_HELD = 2      -- from 1, vanilla=1
+NDefines.NDiplomacy.MAX_DUCHIES_LEGALLY_HELD = 3               -- from 2, vanilla=2
+NDefines.NDiplomacy.MAX_ELECTOR_TITLES_LEGALLY_HELD = 2        -- from 1, vanilla=1
 NDefines.NDiplomacy.INTER_MUSLIM_WAR_MONTHLY_PIETY_COST = 1
 NDefines.NDiplomacy.MUSLIM_TEMPLE_HOLDING_MONTHLY_PIETY = 0.5
+NDefines.NDiplomacy.PREP_INV_REQ_PRESTIGE = 2000               -- prior to v10.3: 750; vanilla: 750
 NDefines.NDiplomacy.BASE_REVOLT_CHANCE_MOD = 175
 NDefines.NDiplomacy.TOG_REVOLT_CHANCE_MOD = 70
 NDefines.NDiplomacy.DUKE_POWERFUL_VASSAL_COUNT = 3
@@ -15,8 +16,11 @@ NDefines.NDiplomacy.EXECUTE_IMPRISONED_INTERACTION_PIETY = 10
 NDefines.NDiplomacy.DEMAND_RELIGIOUS_CONVERSION_INTERACTION_PIETY = 25
 NDefines.NDiplomacy.DEMAND_RELIGIOUS_CONVERSION_INTERACTION_PRESTIGE = 50
 NDefines.NDiplomacy.DEMAND_RELIGIOUS_CONVERSION_INTERACTION_THRESHOLD_FOR_YES = 35
-NDefines.NDiplomacy.CHANGE_CRUSADE_TARGET_INTERACTION_PIETY = 400 -- EMF v10.0 (from 250 in vanilla)
-NDefines.NDiplomacy.CHANGE_CRUSADE_TARGET_INTERACTION_PRESTIGE = 400 -- EMF v10.0 (from 0 in vanilla)
+NDefines.NDiplomacy.PREPARE_INVASION_INTERACTION_MONEY = 100                       -- prior to v10.3: 0; vanilla: 0
+NDefines.NDiplomacy.PREPARE_INVASION_INTERACTION_PIETY = 500                       -- prior to v10.3: 0; vanilla: 0
+NDefines.NDiplomacy.PREPARE_INVASION_INTERACTION_PRESTIGE = 1500                   -- prior to v10.3: 500; vanilla: 500
+NDefines.NDiplomacy.CHANGE_CRUSADE_TARGET_INTERACTION_PIETY = 400                  -- EMF v10.0 (from 250 in vanilla)
+NDefines.NDiplomacy.CHANGE_CRUSADE_TARGET_INTERACTION_PRESTIGE = 400               -- EMF v10.0 (from 0 in vanilla)
 NDefines.NDiplomacy.INVITE_TO_COURT_INTERACTION_MONEY = 10
 NDefines.NDiplomacy.ASK_FOR_EXCOMMUNICATION_INTERACTION_PIETY = 150
 NDefines.NDiplomacy.BANISH_TAKE_WEALTH_PERCENTAGE_COURTIER = 0.2
