@@ -107,7 +107,6 @@ faction_independence = {
 				emf_faction_has_special_chance_blocker = yes
 				war = yes
 				preparing_invasion = yes
-				pacifist = yes
 				is_incapable = yes
 				is_adult = no
 				is_landed = no
@@ -125,17 +124,22 @@ faction_independence = {
 			factor = 0
 			liege = {
 				independent = yes
-				religion = ROOT
+				OR = {
+					religion = { target = ROOT target_type = true }
+					AND = {
+						has_secret_religion = yes
+						ROOT = {
+							can_see_secret_religion = PREV
+							true_religion = { target = PREV target_type = secret }
+						}
+					}
+				}
 				culture = ROOT
 				OR = {
-					NOT = { distance = { who = ROOT value = 100 } }
+					NOT = { distance = { who = ROOT value = 90 } }
 					AND = {
 						NOT = { distance = { who = ROOT value = 200 } }
-						ROOT = { emf_unreformed_pagan = no }
-					}
-					AND = {
-						de_jure_vassal_or_below = ROOT
-						ROOT = { NOT = { real_tier = KING } }
+						ROOT = { emf_true_unreformed_pagan = no }
 					}
 				}
 			}
@@ -143,14 +147,55 @@ faction_independence = {
 		modifier = {
 			factor = 0
 			lower_real_tier_than = KING
-			emf_unreformed_pagan = no
+			emf_true_unreformed_pagan = no
 			liege = {
 				independent = yes
-				religion = ROOT
+				OR = {
+					religion_group = { target = ROOT target_type = true }
+					AND = {
+						has_secret_religion = yes
+						ROOT = {
+							can_see_secret_religion = PREV
+							OR = {
+								true_religion_group = { target = PREV target_type = secret }
+								emf_syncretized_true_religion_with_PREVs_true_religion = yes
+							}
+						}
+					}
+					AND = {
+						OR = {
+							has_secret_religion = no
+							NOT = { ROOT = { can_see_secret_religion = PREV } }
+						}
+						ROOT = { emf_syncretized_true_religion_with_PREV = yes }
+					}
+				}
 				culture_group = ROOT
-				NOR = {
+				OR = {
+					religion = { target = ROOT target_type = true }
+					AND = {
+						has_secret_religion = yes
+						ROOT = {
+							can_see_secret_religion = PREV
+							true_religion = { target = PREV target_type = secret }
+						}
+					}
 					culture = ROOT
-					distance = { who = ROOT value = 150 }
+				}
+				ROOT = {
+					emf_hostile_true_religion_to_PREV = no
+				}
+				trigger_if = {
+					limit = {
+						OR = {
+							is_tribal = yes
+							is_nomadic = yes
+						}
+					}
+					NOT = { distance = { who = ROOT value = 90 } }
+				}
+				trigger_else = {
+					NOT = { distance = { who = ROOT value = 150 } }
 				}
 			}
 		}
@@ -161,7 +206,16 @@ faction_independence = {
 			liege = {
 				NAND = {
 					culture = ROOT
-					religion = ROOT
+					OR = {
+						religion = { target = ROOT target_type = true }
+						AND = {
+							has_secret_religion = yes
+							ROOT = {
+								can_see_secret_religion = PREV
+								true_religion = { target = PREV target_type = secret }
+							}
+						}
+					}
 				}
 				any_demesne_title = {
 					OR = {
@@ -175,22 +229,61 @@ faction_independence = {
 					}
 					any_claimant = {
 						culture = ROOT
-						religion = ROOT
+						OR = {
+							religion = { target = ROOT target_type = true }
+							AND = {
+								has_secret_religion = yes
+								ROOT = {
+									can_see_secret_religion = PREV
+									true_religion = { target = PREV target_type = secret }
+								}
+							}
+						}
 						reverse_opinion = { who = ROOT value = 0 }
+						ROOT = {
+							opinion_diff = {
+								first = PREV
+								second = LIEGE
+								value = 10
+								as_if_liege = yes
+							}
+						}
 					}
 				}
 			}
 		}
 		modifier = {
 			factor = 0
-			OR = {
-				AND = {
-					NOT = { leads_faction = faction_independence }
-					opinion = { who = LIEGE value = 40 }
+			trigger_if = {
+				limit = {
+					liege = {
+						OR = {
+							is_tribal = yes
+							is_nomadic = yes
+						}
+					}
 				}
-				AND = {
-					leads_faction = faction_independence
-					opinion = { who = LIEGE value = 60 }
+				OR = {
+					AND = {
+						NOT = { leads_faction = faction_independence }
+						opinion = { who = LIEGE value = 60 }
+					}
+					AND = {
+						leads_faction = faction_independence
+						opinion = { who = LIEGE value = 80 }
+					}
+				}
+			}
+			trigger_else = {
+				OR = {
+					AND = {
+						NOT = { leads_faction = faction_independence }
+						opinion = { who = LIEGE value = 40 }
+					}
+					AND = {
+						leads_faction = faction_independence
+						opinion = { who = LIEGE value = 60 }
+					}
 				}
 			}
 		}
@@ -208,12 +301,18 @@ faction_independence = {
 			}
 		}
 		modifier = {
+			factor = 0.2
+			emf_pacifist_true_religion = yes
+		}
+		modifier = {
 			factor = 0.1
 			ai_ambition <= -40
 		}
 		modifier = {
 			factor = 0.1
-			emf_unreformed_pagan = no
+			emf_true_unreformed_pagan = no
+			is_tribal = no
+			is_nomadic = no
 			liege = {
 				higher_real_tier_than = DUKE
 				NOT = { distance = { who = ROOT value = 200 } }
@@ -223,12 +322,34 @@ faction_independence = {
 			factor = 0.25
 			liege = {
 				culture = ROOT
-				religion = ROOT
+				OR = {
+					religion = { target = ROOT target_type = true }
+					AND = {
+						has_secret_religion = yes
+						ROOT = {
+							can_see_secret_religion = PREV
+							true_religion = { target = PREV target_type = secret }
+						}
+					}
+				}
 			}
 		}
 		modifier = {
 			factor = 0.5
-			opinion = { who = LIEGE value = 20 }
+			trigger_if = {
+				limit = {
+					liege = {
+						OR = {
+							is_tribal = yes
+							is_nomadic = yes
+						}
+					}
+				}
+				opinion = { who = LIEGE value = 40 }
+			}
+			trigger_else = {
+				opinion = { who = LIEGE value = 20 }
+			}
 		}
 		modifier = {
 			factor = 0.5
@@ -246,13 +367,42 @@ faction_independence = {
 		}
 		modifier = {
 			factor = 1.5
+			ai_rationality <= -10
+		}
+		modifier = {
+			factor = 1.5
+			ai_rationality <= -20
+		}
+		modifier = {
+			factor = 1.5
 			liege = {
+				distance = { who = ROOT value = 300 }
+			}
+		}
+		modifier = {
+			factor = 1.35
+			liege = {
+				OR = {
+					is_tribal = yes
+					is_nomadic = yes
+				}
 				distance = { who = ROOT value = 300 }
 			}
 		}
 		modifier = {
 			factor = 2.0
 			liege = {
+				distance = { who = ROOT value = 400 }
+				NOT = { distance = { who = ROOT value = 500 } }
+			}
+		}
+		modifier = {
+			factor = 1.4
+			liege = {
+				OR = {
+					is_tribal = yes
+					is_nomadic = yes
+				}
 				distance = { who = ROOT value = 400 }
 				NOT = { distance = { who = ROOT value = 500 } }
 			}
@@ -265,8 +415,29 @@ faction_independence = {
 			}
 		}
 		modifier = {
+			factor = 1.5
+			liege = {
+				OR = {
+					is_tribal = yes
+					is_nomadic = yes
+				}
+				distance = { who = ROOT value = 500 }
+				NOT = { distance = { who = ROOT value = 650 } }
+			}
+		}
+		modifier = {
 			factor = 3.0
 			liege = {
+				distance = { who = ROOT value = 650 }
+			}
+		}
+		modifier = {
+			factor = 1.4
+			liege = {
+				OR = {
+					is_tribal = yes
+					is_nomadic = yes
+				}
 				distance = { who = ROOT value = 650 }
 			}
 		}
@@ -277,26 +448,85 @@ faction_independence = {
 			}
 		}
 		modifier = {
+			factor = 1.35
+			liege = {
+				OR = {
+					is_tribal = yes
+					is_nomadic = yes
+				}
+				distance = { who = ROOT value = 800 }
+			}
+		}
+		modifier = {
 			factor = 3.0
 			trait = lucky_ruler
 			NOT = { opinion = { who = LIEGE value = 50 } }
 		}
 		modifier = {
 			factor = 2.0
-			emf_unreformed_pagan = yes
+			emf_true_unreformed_pagan = yes
+		}
+		modifier = {
+			factor = 2.0
+			OR = {
+				is_tribal = yes
+				is_nomadic = yes
+			}
 		}
 		modifier = {
 			factor = 3.0
 			liege = {
-				religion_group = ROOT
-				emf_hostile_religion_to_ROOT = yes
+				OR = {
+					religion_group = { target = ROOT target_type = true }
+					AND = {
+						has_secret_religion = yes
+						ROOT = {
+							can_see_secret_religion = PREV
+							OR = {
+								true_religion_group = { target = PREV target_type = secret }
+								emf_syncretized_true_religion_with_PREVs_true_religion = yes
+							}
+						}
+					}
+					AND = {
+						OR = {
+							has_secret_religion = no
+							NOT = { ROOT = { can_see_secret_religion = PREV } }
+						}
+						ROOT = { emf_syncretized_true_religion_with_PREV = yes }
+					}
+				}
+				ROOT = {
+					emf_hostile_true_religion_to_PREV = yes
+				}
 			}
 		}
 		modifier = {
 			factor = 4.0
 			liege = {
-				NOT = { religion_group = ROOT }
-				emf_hostile_religion_to_ROOT = yes
+				NOR = {
+					religion_group = { target = ROOT target_type = true }
+					AND = {
+						has_secret_religion = yes
+						ROOT = {
+							can_see_secret_religion = PREV
+							OR = {
+								true_religion_group = { target = PREV target_type = secret }
+								emf_syncretized_true_religion_with_PREVs_true_religion = yes
+							}
+						}
+					}
+					AND = {
+						OR = {
+							has_secret_religion = no
+							NOT = { ROOT = { can_see_secret_religion = PREV } }
+						}
+						ROOT = { emf_syncretized_true_religion_with_PREV = yes }
+					}
+				}
+				ROOT = {
+					emf_hostile_true_religion_to_PREV = yes
+				}
 			}
 		}
 		modifier = {
@@ -449,7 +679,16 @@ faction_independence = {
 			liege = {
 				primary_title = { title = k_france }
 				NOT = { has_landed_title = k_aquitaine }
-				religion = ROOT
+				OR = {
+					religion = { target = ROOT target_type = true }
+					AND = {
+						has_secret_religion = yes
+						ROOT = {
+							can_see_secret_religion = PREV
+							true_religion = { target = PREV target_type = secret }
+						}
+					}
+				}
 				OR = {
 					culture = frankish
 					culture = norman
@@ -521,17 +760,23 @@ faction_independence = {
 		modifier = {
 			factor = 0
 			liege = {
-				religion = ROOT
+				independent = yes
+				OR = {
+					religion = { target = ROOT target_type = true }
+					AND = {
+						has_secret_religion = yes
+						ROOT = {
+							can_see_secret_religion = PREV
+							true_religion = { target = PREV target_type = secret }
+						}
+					}
+				}
 				culture = ROOT
 				OR = {
-					NOT = { distance = { who = ROOT value = 100 } }
+					NOT = { distance = { who = ROOT value = 90 } }
 					AND = {
 						NOT = { distance = { who = ROOT value = 200 } }
-						ROOT = { emf_unreformed_pagan = no }
-					}
-					AND = {
-						de_jure_vassal_or_below = ROOT
-						ROOT = { NOT = { real_tier = KING } }
+						ROOT = { emf_true_unreformed_pagan = no }
 					}
 				}
 			}
@@ -540,13 +785,55 @@ faction_independence = {
 		modifier = {
 			factor = 0
 			lower_real_tier_than = KING
-			emf_unreformed_pagan = no
+			emf_true_unreformed_pagan = no
 			liege = {
-				religion = ROOT
+				independent = yes
+				OR = {
+					religion_group = { target = ROOT target_type = true }
+					AND = {
+						has_secret_religion = yes
+						ROOT = {
+							can_see_secret_religion = PREV
+							OR = {
+								true_religion_group = { target = PREV target_type = secret }
+								emf_syncretized_true_religion_with_PREVs_true_religion = yes
+							}
+						}
+					}
+					AND = {
+						OR = {
+							has_secret_religion = no
+							NOT = { ROOT = { can_see_secret_religion = PREV } }
+						}
+						ROOT = { emf_syncretized_true_religion_with_PREV = yes }
+					}
+				}
 				culture_group = ROOT
-				NOR = {
+				OR = {
+					religion = { target = ROOT target_type = true }
+					AND = {
+						has_secret_religion = yes
+						ROOT = {
+							can_see_secret_religion = PREV
+							true_religion = { target = PREV target_type = secret }
+						}
+					}
 					culture = ROOT
-					distance = { who = ROOT value = 150 }
+				}
+				ROOT = {
+					emf_hostile_true_religion_to_PREV = no
+				}
+				trigger_if = {
+					limit = {
+						OR = {
+							is_tribal = yes
+							is_nomadic = yes
+						}
+					}
+					NOT = { distance = { who = ROOT value = 90 } }
+				}
+				trigger_else = {
+					NOT = { distance = { who = ROOT value = 150 } }
 				}
 			}
 			NOT = { has_opinion_modifier = { who = FROM modifier = opinion_coerced_into_joining_faction } }
@@ -558,7 +845,16 @@ faction_independence = {
 			liege = {
 				NAND = {
 					culture = ROOT
-					religion = ROOT
+					OR = {
+						religion = { target = ROOT target_type = true }
+						AND = {
+							has_secret_religion = yes
+							ROOT = {
+								can_see_secret_religion = PREV
+								true_religion = { target = PREV target_type = secret }
+							}
+						}
+					}
 				}
 				any_demesne_title = {
 					OR = {
@@ -572,8 +868,25 @@ faction_independence = {
 					}
 					any_claimant = {
 						culture = ROOT
-						religion = ROOT
+						OR = {
+							religion = { target = ROOT target_type = true }
+							AND = {
+								has_secret_religion = yes
+								ROOT = {
+									can_see_secret_religion = PREV
+									true_religion = { target = PREV target_type = secret }
+								}
+							}
+						}
 						reverse_opinion = { who = ROOT value = 0 }
+						ROOT = {
+							opinion_diff = {
+								first = PREV
+								second = LIEGE
+								value = 10
+								as_if_liege = yes
+							}
+						}
 					}
 				}
 			}
@@ -582,8 +895,6 @@ faction_independence = {
 		modifier = {
 			factor = 0
 			OR = {
-				pacifist = yes
-				opinion = { who = LIEGE value = 40 }
 				liege = { current_heir = { character = ROOT } }
 				liege = { player_heir = { character = ROOT } }
 			}
@@ -591,14 +902,36 @@ faction_independence = {
 		}
 		modifier = {
 			factor = 0
-			OR = {
-				AND = {
-					NOT = { in_faction = faction_independence }
-					opinion = { who = LIEGE value = 40 }
+			trigger_if = {
+				limit = {
+					liege = {
+						OR = {
+							is_tribal = yes
+							is_nomadic = yes
+						}
+					}
 				}
-				AND = {
-					in_faction = faction_independence
-					opinion = { who = LIEGE value = 60 }
+				OR = {
+					AND = {
+						NOT = { in_faction = faction_independence }
+						opinion = { who = LIEGE value = 60 }
+					}
+					AND = {
+						in_faction = faction_independence
+						opinion = { who = LIEGE value = 80 }
+					}
+				}
+			}
+			trigger_else = {
+				OR = {
+					AND = {
+						NOT = { in_faction = faction_independence }
+						opinion = { who = LIEGE value = 40 }
+					}
+					AND = {
+						in_faction = faction_independence
+						opinion = { who = LIEGE value = 60 }
+					}
 				}
 			}
 			# Cannot have subrealm entirely surrounded by faction members to drop out of faction
@@ -662,13 +995,20 @@ faction_independence = {
 			NOT = { has_opinion_modifier = { who = FROM modifier = opinion_coerced_into_joining_faction } }
 		}
 		modifier = {
+			factor = 0.2
+			emf_pacifist_true_religion = yes
+			NOT = { has_opinion_modifier = { who = FROM modifier = opinion_coerced_into_joining_faction } }
+		}
+		modifier = {
 			factor = 0.1
 			ai_ambition <= -40
 			NOT = { has_opinion_modifier = { who = FROM modifier = opinion_coerced_into_joining_faction } }
 		}
 		modifier = {
 			factor = 0.1
-			emf_unreformed_pagan = no
+			emf_true_unreformed_pagan = no
+			is_tribal = no
+			is_nomadic = no
 			liege = {
 				higher_real_tier_than = DUKE
 				NOT = { distance = { who = ROOT value = 200 } }
@@ -679,13 +1019,35 @@ faction_independence = {
 			factor = 0.25
 			liege = {
 				culture = ROOT
-				religion = ROOT
+				OR = {
+					religion = { target = ROOT target_type = true }
+					AND = {
+						has_secret_religion = yes
+						ROOT = {
+							can_see_secret_religion = PREV
+							true_religion = { target = PREV target_type = secret }
+						}
+					}
+				}
 			}
 			NOT = { has_opinion_modifier = { who = FROM modifier = opinion_coerced_into_joining_faction } }
 		}
 		modifier = {
 			factor = 0.5
-			opinion = { who = LIEGE value = 20 }
+			trigger_if = {
+				limit = {
+					liege = {
+						OR = {
+							is_tribal = yes
+							is_nomadic = yes
+						}
+					}
+				}
+				opinion = { who = LIEGE value = 40 }
+			}
+			trigger_else = {
+				opinion = { who = LIEGE value = 20 }
+			}
 			NOT = { has_opinion_modifier = { who = FROM modifier = opinion_coerced_into_joining_faction } }
 		}
 		modifier = {
@@ -705,13 +1067,42 @@ faction_independence = {
 		}
 		modifier = {
 			factor = 1.5
+			ai_rationality <= -10
+		}
+		modifier = {
+			factor = 1.5
+			ai_rationality <= -20
+		}
+		modifier = {
+			factor = 1.5
 			liege = {
+				distance = { who = ROOT value = 300 }
+			}
+		}
+		modifier = {
+			factor = 1.35
+			liege = {
+				OR = {
+					is_tribal = yes
+					is_nomadic = yes
+				}
 				distance = { who = ROOT value = 300 }
 			}
 		}
 		modifier = {
 			factor = 2.0
 			liege = {
+				distance = { who = ROOT value = 400 }
+				NOT = { distance = { who = ROOT value = 500 } }
+			}
+		}
+		modifier = {
+			factor = 1.4
+			liege = {
+				OR = {
+					is_tribal = yes
+					is_nomadic = yes
+				}
 				distance = { who = ROOT value = 400 }
 				NOT = { distance = { who = ROOT value = 500 } }
 			}
@@ -724,8 +1115,29 @@ faction_independence = {
 			}
 		}
 		modifier = {
+			factor = 1.5
+			liege = {
+				OR = {
+					is_tribal = yes
+					is_nomadic = yes
+				}
+				distance = { who = ROOT value = 500 }
+				NOT = { distance = { who = ROOT value = 650 } }
+			}
+		}
+		modifier = {
 			factor = 3.0
 			liege = {
+				distance = { who = ROOT value = 650 }
+			}
+		}
+		modifier = {
+			factor = 1.4
+			liege = {
+				OR = {
+					is_tribal = yes
+					is_nomadic = yes
+				}
 				distance = { who = ROOT value = 650 }
 			}
 		}
@@ -736,26 +1148,85 @@ faction_independence = {
 			}
 		}
 		modifier = {
+			factor = 1.35
+			liege = {
+				OR = {
+					is_tribal = yes
+					is_nomadic = yes
+				}
+				distance = { who = ROOT value = 800 }
+			}
+		}
+		modifier = {
 			factor = 3.0
 			trait = lucky_ruler
 			NOT = { opinion = { who = LIEGE value = 50 } }
 		}
 		modifier = {
 			factor = 2.0
-			emf_unreformed_pagan = yes
+			emf_true_unreformed_pagan = yes
+		}
+		modifier = {
+			factor = 2.0
+			OR = {
+				is_tribal = yes
+				is_nomadic = yes
+			}
 		}
 		modifier = {
 			factor = 3.0
 			liege = {
-				religion_group = ROOT
-				emf_hostile_religion_to_ROOT = yes
+				OR = {
+					religion_group = { target = ROOT target_type = true }
+					AND = {
+						has_secret_religion = yes
+						ROOT = {
+							can_see_secret_religion = PREV
+							OR = {
+								true_religion_group = { target = PREV target_type = secret }
+								emf_syncretized_true_religion_with_PREVs_true_religion = yes
+							}
+						}
+					}
+					AND = {
+						OR = {
+							has_secret_religion = no
+							NOT = { ROOT = { can_see_secret_religion = PREV } }
+						}
+						ROOT = { emf_syncretized_true_religion_with_PREV = yes }
+					}
+				}
+				ROOT = {
+					emf_hostile_true_religion_to_PREV = yes
+				}
 			}
 		}
 		modifier = {
 			factor = 10.0
 			liege = {
-				NOT = { religion_group = ROOT }
-				emf_hostile_religion_to_ROOT = yes
+				NOR = {
+					religion_group = { target = ROOT target_type = true }
+					AND = {
+						has_secret_religion = yes
+						ROOT = {
+							can_see_secret_religion = PREV
+							OR = {
+								true_religion_group = { target = PREV target_type = secret }
+								emf_syncretized_true_religion_with_PREVs_true_religion = yes
+							}
+						}
+					}
+					AND = {
+						OR = {
+							has_secret_religion = no
+							NOT = { ROOT = { can_see_secret_religion = PREV } }
+						}
+						ROOT = { emf_syncretized_true_religion_with_PREV = yes }
+					}
+				}
+				ROOT = {
+					emf_hostile_true_religion_to_PREV = yes
+				}
 			}
 		}
 		modifier = {
@@ -971,7 +1442,16 @@ faction_independence = {
 			liege = {
 				primary_title = { title = k_france }
 				NOT = { has_landed_title = k_aquitaine }
-				religion = ROOT
+				OR = {
+					religion = { target = ROOT target_type = true }
+					AND = {
+						has_secret_religion = yes
+						ROOT = {
+							can_see_secret_religion = PREV
+							true_religion = { target = PREV target_type = secret }
+						}
+					}
+				}
 				OR = {
 					culture = frankish
 					culture = norman
@@ -1148,15 +1628,18 @@ faction_claimant = {
 			trigger_if = {
 				limit = { is_female = yes }
 				NOR = {
-					religion_group = muslim
+					AND = {
+						true_religion_group = muslim
+						emf_feminist_true_religion = no
+					}
 					ROOT = { succ_law_title = { has_law = agnatic_succession } }
-					has_religion_feature = religion_patriarchal
+					true_religion_scope = { has_religion_feature = religion_patriarchal }
 				}
 			}
 			trigger_else = {
 				NOR = {
 					ROOT = { succ_law_title = { has_law = enatic_succession } }
-					has_religion_feature = religion_matriarchal
+					true_religion_scope = { has_religion_feature = religion_matriarchal }
 				}
 			}
 			# claimant is either not a ruler or has a non-primary-type title and is lower-tier than title
@@ -1225,7 +1708,11 @@ faction_claimant = {
 		}
 		modifier = {
 			factor = 0.2
-			FROM = { pacifist = yes }
+			FROM = { emf_pacifist_true_religion = yes }
+		}
+		modifier = {
+			factor = 2
+			FROM = { true_religion_scope = { has_religion_feature = religion_warlike } }
 		}
 		modifier = {
 			factor = 0
@@ -1281,7 +1768,16 @@ faction_claimant = {
 					trait = imbecile
 					trait = inbred
 					is_incapable = yes
-					NOT = { religion = FROM }
+					NOR = {
+						religion = { target = FROM target_type = true }
+						AND = {
+							has_secret_religion = yes
+							ROOT_FROM = {
+								can_see_secret_religion = PREV
+								true_religion = { target = PREV target_type = secret }
+							}
+						}
+					}
 					# not over 60 or celibate unless they have a legitimate son
 					AND = {
 						OR = {
@@ -1367,12 +1863,23 @@ faction_claimant = {
 				is_liege_of = FROM
 				OR = {
 					NOT = { culture_group = FROM }
-					NOT = { religion_group = FROM }
+					ROOT_FROM = {
+						emf_hostile_true_religion_to_PREV = yes
+					}
 				}
 			}
 			new_character = {
 				culture = FROM
-				religion = FROM
+				OR = {
+					religion = { target = FROM target_type = true }
+					AND = {
+						has_secret_religion = yes
+						ROOT_FROM = {
+							can_see_secret_religion = PREV
+							true_religion = { target = PREV target_type = secret }
+						}
+					}
+				}
 			}
 		}
 		# less likely to support young children
@@ -1405,7 +1912,7 @@ faction_claimant = {
 				is_female = yes
 				NOR = {
 					character = FROM
-					emf_is_formidable_woman = yes
+					emf_is_formidable_person = yes
 					any_child = {
 						is_female = no
 						emf_can_inherit = yes
@@ -1426,7 +1933,7 @@ faction_claimant = {
 				is_female = yes
 				NOR = {
 					character = FROM
-					emf_is_formidable_woman = yes
+					emf_is_formidable_person = yes
 					any_child = {
 						is_female = no
 						emf_can_inherit = yes
@@ -1471,17 +1978,96 @@ faction_claimant = {
 				emf_feminist_true_religion = no
 			}
 		}
+		# more likely to support a female claimant against a male holding an enatic title
+		modifier = {
+			factor = 3.0
+			succ_law_title = { has_law = enatic_succession }
+			holder_scope = { is_female = no }
+			new_character = { is_female = yes }
+			FROM = { true_religion_scope = { has_religion_feature = religion_matriarchal } }
+		}
+		# will not support a man for an enatic title unless he has a daughter (who can inherit) or is formidable
+		modifier = {
+			factor = 0
+			succ_law_title = { has_law = enatic_succession }
+			FROM = { true_religion_scope = { has_religion_feature = religion_matriarchal } }
+			new_character = {
+				is_female = no
+				NOR = {
+					character = FROM
+					emf_is_formidable_person = yes
+					any_child = {
+						is_female = yes
+						emf_can_inherit = yes
+						OR = {
+							dynasty = PREV
+							dynasty = FROM
+						}
+					}
+				}
+			}
+		}
+		# unlikely to support a man for an enatic-cognatic title unless he has a daughter (who can inherit) or is formidable
+		modifier = {
+			factor = 0.5
+			succ_law_title = { has_law = enatic_cognatic_succession }
+			FROM = { true_religion_scope = { has_religion_feature = religion_matriarchal } }
+			new_character = {
+				is_female = no
+				NOR = {
+					character = FROM
+					emf_is_formidable_person = yes
+					any_child = {
+						is_female = yes
+						emf_can_inherit = yes
+						OR = {
+							dynasty = PREV
+							dynasty = FROM
+						}
+					}
+				}
+			}
+		}
+		# as matriarchal, unlikely to support a man in any case unless they are a man
+		modifier = {
+			factor = 0.5
+			OR = {
+				succ_law_title = { has_law = enatic_cognatic_succession }
+				succ_law_title = { has_law = enatic_succession }
+			}
+			new_character = { is_female = no }
+			FROM = {
+				is_female = yes
+				true_religion_scope = { has_religion_feature = religion_matriarchal }
+			}
+		}
+		# as matriarchal, will not support a man at all if zealous or in tradition faction
+		modifier = {
+			factor = 0
+			OR = {
+				succ_law_title = { has_law = enatic_cognatic_succession }
+				succ_law_title = { has_law = enatic_succession }
+			}
+			new_character = { is_female = no }
+			FROM = {
+				OR = {
+					trait = zealous
+					in_faction = faction_tradition
+				}
+				true_religion_scope = { has_religion_feature = religion_matriarchal }
+			}
+		}
 		#If claimaint's sex is incompatible with religious dogma.
 		modifier = {
 			factor = 0.1
-			has_religion_feature = religion_patriarchal
+			true_religion_scope = { has_religion_feature = religion_patriarchal }
 			new_character = {
 				is_female = yes
 			}
 		}
 		modifier = {
 			factor = 0.1
-			has_religion_feature = religion_matriarchal
+			true_religion_scope = { has_religion_feature = religion_matriarchal }
 			new_character = {
 				is_female = no
 			}
@@ -1489,7 +2075,7 @@ faction_claimant = {
 		#Or if vassal is under the yoke of the wrong kind of liege.
 		modifier = {
 			factor = 3
-			has_religion_feature = religion_patriarchal
+			true_religion_scope = { has_religion_feature = religion_patriarchal }
 			FROM = {
 				is_female = yes
 			}
@@ -1499,7 +2085,7 @@ faction_claimant = {
 		}
 		modifier = {
 			factor = 3
-			has_religion_feature = religion_matriarchal
+			true_religion_scope = { has_religion_feature = religion_matriarchal }
 			FROM = {
 				is_female = no
 			}
@@ -1518,6 +2104,7 @@ faction_claimant = {
 			NOR = {
 				has_law = succ_feudal_elective
 				has_law = succ_hre_elective
+				has_law = succ_byzantine_elective
 			}
 			current_heir = {
 				OR = {
@@ -1535,7 +2122,16 @@ faction_claimant = {
 					any_vassal = {
 						leads_faction = faction_claimant
 						supported_claimant = {
-							religion = FROM
+							OR = {
+								religion = { target = FROM target_type = true }
+								AND = {
+									has_secret_religion = yes
+									ROOT_FROM = {
+										can_see_secret_religion = PREV
+										true_religion = { target = PREV target_type = secret }
+									}
+								}
+							}
 							culture = FROM
 							has_strong_claim = ROOT
 						}
@@ -1553,7 +2149,16 @@ faction_claimant = {
 						leads_faction = faction_claimant
 						supported_claimant = {
 							culture = FROM
-							religion = FROM
+							OR = {
+								religion = { target = FROM target_type = true }
+								AND = {
+									has_secret_religion = yes
+									ROOT_FROM = {
+										can_see_secret_religion = PREV
+										true_religion = { target = PREV target_type = secret }
+									}
+								}
+							}
 							reverse_opinion = { who = FROM value = 0 }
 							ROOT = {
 								new_character = {
@@ -1590,7 +2195,16 @@ faction_claimant = {
 			factor = 0
 			holder_scope = {
 				dynasty = FROM
-				religion = FROM
+				OR = {
+					religion = { target = FROM target_type = true }
+					AND = {
+						has_secret_religion = yes
+						ROOT_FROM = {
+							can_see_secret_religion = PREV
+							true_religion = { target = PREV target_type = secret }
+						}
+					}
+				}
 				culture = FROM
 			}
 			new_character = {
@@ -1662,7 +2276,16 @@ faction_claimant = {
 					in_faction = faction_claimant
 					supported_claimant = {
 						culture = FROM
-						religion = FROM
+						OR = {
+							religion = { target = FROM target_type = true }
+							AND = {
+								has_secret_religion = yes
+								ROOT_FROM = {
+									can_see_secret_religion = PREV
+									true_religion = { target = PREV target_type = secret }
+								}
+							}
+						}
 						reverse_opinion = { who = FROM value = 0 }
 						ROOT = {
 							new_character = {
@@ -1738,9 +2361,18 @@ faction_claimant = {
 		# more likely to support sayyid against a holder who isn't
 		modifier = {
 			factor = 2.0
-			FROM = { religion_group = muslim }
+			FROM = { true_religion_group = muslim }
 			new_character = {
-				religion_group = muslim
+				OR = {
+					religion_group = { target = FROM target_type = true }
+					AND = {
+						has_secret_religion = yes
+						ROOT_FROM = {
+							can_see_secret_religion = PREV
+							true_religion_group = { target = PREV target_type = secret }
+						}
+					}
+				}
 				trait = sayyid
 			}
 			holder_scope = { NOT = { trait = sayyid } }
@@ -1748,9 +2380,18 @@ faction_claimant = {
 		# more likely to support mirza against a holder who is neither sayyid nor mirza
 		modifier = {
 			factor = 1.5
-			FROM = { religion_group = muslim }
+			FROM = { true_religion_group = muslim }
 			new_character = {
-				religion_group = muslim
+				OR = {
+					religion_group = { target = FROM target_type = true }
+					AND = {
+						has_secret_religion = yes
+						ROOT_FROM = {
+							can_see_secret_religion = PREV
+							true_religion_group = { target = PREV target_type = secret }
+						}
+					}
+				}
 				trait = mirza
 			}
 			holder_scope = {
@@ -1787,7 +2428,16 @@ faction_claimant = {
 			factor = 0
 			holder_scope = {
 				culture = FROM
-				religion = FROM
+				OR = {
+					religion = { target = FROM target_type = true }
+					AND = {
+						has_secret_religion = yes
+						ROOT_FROM = {
+							can_see_secret_religion = PREV
+							true_religion = { target = PREV target_type = secret }
+						}
+					}
+				}
 				FROM = {
 					opinion = { who = PREV value = 0 }
 					NOR = {
@@ -1805,7 +2455,16 @@ faction_claimant = {
 			holder_scope = {
 				OR = {
 					NOT = { culture = FROM }
-					NOT = { religion = FROM }
+					NOR = {
+						religion = { target = FROM target_type = true }
+						AND = {
+							has_secret_religion = yes
+							ROOT_FROM = {
+								can_see_secret_religion = PREV
+								true_religion = { target = PREV target_type = secret }
+							}
+						}
+					}
 				}
 				FROM = {
 					opinion = { who = PREV value = 25 }
@@ -1823,7 +2482,16 @@ faction_claimant = {
 			factor = 0
 			holder_scope = {
 				culture = FROM
-				religion = FROM
+				OR = {
+					religion = { target = FROM target_type = true }
+					AND = {
+						has_secret_religion = yes
+						ROOT_FROM = {
+							can_see_secret_religion = PREV
+							true_religion = { target = PREV target_type = secret }
+						}
+					}
+				}
 				FROM = {
 					opinion = { who = PREV value = 25 }
 					OR = {
@@ -1841,7 +2509,16 @@ faction_claimant = {
 			holder_scope = {
 				OR = {
 					NOT = { culture = FROM }
-					NOT = { religion = FROM }
+					NOR = {
+						religion = { target = FROM target_type = true }
+						AND = {
+							has_secret_religion = yes
+							ROOT_FROM = {
+								can_see_secret_religion = PREV
+								true_religion = { target = PREV target_type = secret }
+							}
+						}
+					}
 				}
 				FROM = {
 					opinion = { who = PREV value = 50 }
@@ -2402,8 +3079,12 @@ faction_claimant = {
 		}
 		modifier = {
 			factor = 0.2
-			pacifist = yes
+			emf_pacifist_true_religion = yes
 			NOT = {	has_opinion_modifier = { who = FROM modifier = opinion_coerced_into_joining_faction } }
+		}
+		modifier = {
+			factor = 2
+			true_religion_scope = { has_religion_feature = religion_warlike }
 		}
 		modifier = {
 			factor = 0.25
@@ -2426,7 +3107,16 @@ faction_claimant = {
 						trait = imbecile
 						trait = inbred
 						is_incapable = yes
-						NOT = { religion = ROOT }
+						NOR = {
+							religion = { target = ROOT target_type = true }
+							AND = {
+								has_secret_religion = yes
+								ROOT = {
+									can_see_secret_religion = PREV
+									true_religion = { target = PREV target_type = secret }
+								}
+							}
+						}
 						# not over 65 or celibate unless they have a legitimate son
 						AND = {
 							OR = {
@@ -2586,14 +3276,25 @@ faction_claimant = {
 					is_liege_of = ROOT
 					OR = {
 						NOT = { culture_group = ROOT }
-						NOT = { religion_group = ROOT }
+						ROOT_FROM = {
+							emf_hostile_true_religion_to_PREV = yes
+						}
 					}
 				}
 			}
 			FROM = {
 				supported_claimant = {
 					culture = ROOT
-					religion = ROOT
+					OR = {
+						religion = { target = ROOT target_type = true }
+						AND = {
+							has_secret_religion = yes
+							ROOT = {
+								can_see_secret_religion = PREV
+								true_religion = { target = PREV target_type = secret }
+							}
+						}
+					}
 				}
 			}
 		}
@@ -2636,7 +3337,7 @@ faction_claimant = {
 					is_female = yes
 					NOR = {
 						character = ROOT
-						emf_is_formidable_woman = yes
+						emf_is_formidable_person = yes
 						any_child = {
 							is_female = no
 							emf_can_inherit = yes
@@ -2660,7 +3361,7 @@ faction_claimant = {
 					is_female = yes
 					NOR = {
 						character = ROOT
-						emf_is_formidable_woman = yes
+						emf_is_formidable_person = yes
 						any_child = {
 							is_female = no
 							emf_can_inherit = yes
@@ -2707,6 +3408,93 @@ faction_claimant = {
 			emf_feminist_true_religion = no
 			NOT = {	has_opinion_modifier = { who = FROM modifier = opinion_coerced_into_joining_faction } }
 		}
+		# more likely to support a female claimant against a man holding an enatic title
+		modifier = {
+			factor = 3.0
+			FROMFROM = {
+				succ_law_title = { has_law = enatic_succession }
+				holder_scope = { is_female = no }
+			}
+			FROM = { supported_claimant = { is_female = yes } }
+			true_religion_scope = { has_religion_feature = religion_matriarchal }
+		}
+		# will not support a man for an enatic title unless he has a daughter (who can inherit) or is formidable
+		modifier = {
+			factor = 0
+			FROMFROM = { succ_law_title = { has_law = enatic_succession } }
+			true_religion_scope = { has_religion_feature = religion_matriarchal }
+			FROM = {
+				supported_claimant = {
+					is_female = no
+					NOR = {
+						character = ROOT
+						emf_is_formidable_person = yes
+						any_child = {
+							is_female = yes
+							emf_can_inherit = yes
+							OR = {
+								dynasty = PREV
+								dynasty = ROOT
+							}
+						}
+					}
+				}
+			}
+			NOT = {	has_opinion_modifier = { who = FROM modifier = opinion_coerced_into_joining_faction } }
+		}
+		# unlikely to support a man for an enatic-cognatic title unless he has a daughter (who can inherit) or is formidable
+		modifier = {
+			factor = 0.5
+			FROMFROM = { succ_law_title = { has_law = enatic_cognatic_succession } }
+			true_religion_scope = { has_religion_feature = religion_matriarchal }
+			FROM = {
+				supported_claimant = {
+					is_female = no
+					NOR = {
+						character = ROOT
+						emf_is_formidable_person = yes
+						any_child = {
+							is_female = yes
+							emf_can_inherit = yes
+							OR = {
+								dynasty = PREV
+								dynasty = ROOT
+							}
+						}
+					}
+				}
+			}
+		}
+		# as matriarchal, unlikely to support a man in any case unless they are male
+		modifier = {
+			factor = 0.5
+			FROMFROM = {
+				NOR = {
+					succ_law_title = { has_law = enatic_cognatic_succession }
+					succ_law_title = { has_law = enatic_succession }
+				}
+			}
+			FROM = { supported_claimant = { is_female = no } }
+			is_female = yes
+			true_religion_scope = { has_religion_feature = religion_matriarchal }
+		}
+		# as matriarchal, will not support a man at all if zealous or in tradition faction
+		modifier = {
+			factor = 0
+			FROMFROM = {
+				OR = {
+					succ_law_title = { has_law = enatic_cognatic_succession }
+					succ_law_title = { has_law = enatic_succession }
+				}
+			}
+			FROM = { supported_claimant = { is_female = no } }
+			OR = {
+				trait = zealous
+				in_faction = faction_tradition
+			}
+			true_religion_scope = { has_religion_feature = religion_matriarchal }
+			NOT = {	has_opinion_modifier = { who = FROM modifier = opinion_coerced_into_joining_faction } }
+		}
 		# will not support claimants against their own spouse
 		modifier = {
 			factor = 0
@@ -2723,14 +3511,23 @@ faction_claimant = {
 		# less likely to support a weak claimant when a strong claimant of the same religion & culture exists in the realm
 		modifier = {
 			factor = 0.25
-			FROM = { supported_claimant = { has_weak_claim = FROMFROM } }
+			FROM = { supported_claimant = { has_weak_claim = ROOT_FROMFROM } }
 			liege = {
 				any_vassal = {
 					leads_faction = faction_claimant
 					supported_claimant = {
-						religion = ROOT
+						OR = {
+							religion = { target = ROOT target_type = true }
+							AND = {
+								has_secret_religion = yes
+								ROOT = {
+									can_see_secret_religion = PREV
+									true_religion = { target = PREV target_type = secret }
+								}
+							}
+						}
 						culture = ROOT
-						has_strong_claim = FROMFROM
+						has_strong_claim = ROOT_FROMFROM
 					}
 				}
 			}
@@ -2746,7 +3543,16 @@ faction_claimant = {
 						leads_faction = faction_claimant
 						supported_claimant = {
 							culture = ROOT
-							religion = ROOT
+							OR = {
+								religion = { target = ROOT target_type = true }
+								AND = {
+									has_secret_religion = yes
+									ROOT = {
+										can_see_secret_religion = PREV
+										true_religion = { target = PREV target_type = secret }
+									}
+								}
+							}
 							reverse_opinion = { who = FROM value = 0 }
 							FROM = {
 								supported_claimant = {
@@ -2805,12 +3611,17 @@ faction_claimant = {
 		# less likely to support a weak claimant for a title they also have a weak claim to unless it has good backing
 		modifier = {
 			factor = 0.1
-			FROMFROM = { NOR = { has_law = succ_feudal_elective has_law = succ_hre_elective } }
+			FROMFROM = {
+				NOR = {
+					has_law = succ_feudal_elective
+					has_law = succ_hre_elective
+				}
+			}
 			has_weak_claim = FROMFROM
 			FROM = {
 				supported_claimant = {
 					NOT = { character = ROOT }
-					has_weak_claim = FROMFROM
+					has_weak_claim = ROOT_FROMFROM
 				}
 				NOR = {
 					faction_power = { faction = faction_claimant power = 0.3 }
@@ -2822,12 +3633,17 @@ faction_claimant = {
 		# still reluctant to support a weak claimant for a title they also have a weak claim to even when it has good backing
 		modifier = {
 			factor = 0.5
-			FROMFROM = { NOR = { has_law = succ_feudal_elective has_law = succ_hre_elective } }
+			FROMFROM = {
+				NOR = {
+					has_law = succ_feudal_elective
+					has_law = succ_hre_elective
+				}
+			}
 			has_weak_claim = FROMFROM
 			FROM = {
 				supported_claimant = {
 					NOT = { character = ROOT }
-					has_weak_claim = FROMFROM
+					has_weak_claim = ROOT_FROMFROM
 				}
 				OR = {
 					faction_power = { faction = faction_claimant power = 0.3 }
@@ -2835,22 +3651,75 @@ faction_claimant = {
 				}
 			}
 		}
-		# will not support a claimant for a title they also have a strong claim to
+		# will not support a claimant for a title they also have a strong claim to unless that claimant also has a strong claim
 		modifier = {
 			factor = 0
-			FROM = { supported_claimant = { NOT = { character = ROOT } } }
 			has_strong_claim = FROMFROM
+			FROM = {
+				supported_claimant = {
+					NOT = { character = ROOT }
+					NOT = { has_strong_claim = ROOT_FROMFROM }
+				}
+			}
 			NOT = {	has_opinion_modifier = { who = FROM modifier = opinion_coerced_into_joining_faction } }
+		}
+		# less likely to support a strong claimant for a title they also have a strong claim to unless it has good backing
+		modifier = {
+			factor = 0.1
+			FROMFROM = {
+				NOR = {
+					has_law = succ_feudal_elective
+					has_law = succ_hre_elective
+				}
+			}
+			has_strong_claim = FROMFROM
+			FROM = {
+				supported_claimant = {
+					NOT = { character = ROOT }
+					has_strong_claim = ROOT_FROMFROM
+				}
+				NOR = {
+					faction_power = { faction = faction_claimant power = 0.3 }
+					any_faction_backer = { in_faction = faction_claimant count = 2 }
+				}
+			}
+			NOT = {	has_opinion_modifier = { who = FROM modifier = opinion_coerced_into_joining_faction } }
+		}
+		# still reluctant to support a strong claimant for a title they also have a strong claim to even when it has good backing
+		modifier = {
+			factor = 0.5
+			FROMFROM = {
+				NOR = {
+					has_law = succ_feudal_elective
+					has_law = succ_hre_elective
+				}
+			}
+			has_strong_claim = FROMFROM
+			FROM = {
+				supported_claimant = {
+					NOT = { character = ROOT }
+					has_strong_claim = ROOT_FROMFROM
+				}
+				OR = {
+					faction_power = { faction = faction_claimant power = 0.3 }
+					any_faction_backer = { in_faction = faction_claimant count = 2 }
+				}
+			}
 		}
 		# less likely to support a strong claimant for a title they have a weak claim to unless it has good backing
 		modifier = {
 			factor = 0.25
-			FROMFROM = { NOR = { has_law = succ_feudal_elective has_law = succ_hre_elective } }
+			FROMFROM = {
+				NOR = {
+					has_law = succ_feudal_elective
+					has_law = succ_hre_elective
+				}
+			}
 			has_weak_claim = FROMFROM
 			FROM = {
 				supported_claimant = {
 					NOT = { character = ROOT }
-					has_strong_claim = FROMFROM
+					has_strong_claim = ROOT_FROMFROM
 				}
 				NOR = {
 					faction_power = { faction = faction_claimant power = 0.3 }
@@ -2862,12 +3731,17 @@ faction_claimant = {
 		# still less likely to support a strong claimant for a title they have a weak claim even when it has good backing
 		modifier = {
 			factor = 0.75
-			FROMFROM = { NOR = { has_law = succ_feudal_elective has_law = succ_hre_elective } }
+			FROMFROM = {
+				NOR = {
+					has_law = succ_feudal_elective
+					has_law = succ_hre_elective
+				}
+			}
 			has_weak_claim = FROMFROM
 			FROM = {
 				supported_claimant = {
 					NOT = { character = ROOT }
-					has_strong_claim = FROMFROM
+					has_strong_claim = ROOT_FROMFROM
 				}
 				OR = {
 					faction_power = { faction = faction_claimant power = 0.3 }
@@ -2881,7 +3755,16 @@ faction_claimant = {
 			FROMFROM = {
 				holder_scope = {
 					dynasty = ROOT
-					religion = ROOT
+					OR = {
+						religion = { target = ROOT target_type = true }
+						AND = {
+							has_secret_religion = yes
+							ROOT = {
+								can_see_secret_religion = PREV
+								true_religion = { target = PREV target_type = secret }
+							}
+						}
+					}
 					culture = ROOT
 				}
 			}
@@ -2895,13 +3778,18 @@ faction_claimant = {
 		# will not put themselves forward for an elective title unless ambitious or a justified/strong claimant
 		modifier = {
 			factor = 0
-			FROMFROM = { OR = { has_law = succ_feudal_elective has_law = succ_hre_elective } }
+			FROMFROM = {
+				OR = {
+					has_law = succ_feudal_elective
+					has_law = succ_hre_elective
+				}
+			}
 			FROM = {
 				supported_claimant = {
 					character = ROOT
 					NOR = {
 						ai_ambition = 40
-						has_strong_claim = FROMFROM
+						has_strong_claim = ROOT_FROMFROM
 						has_character_flag = emf_justified_claimant_@FROMFROM
 					}
 				}
@@ -2912,17 +3800,38 @@ faction_claimant = {
 		modifier = {
 			factor = 0
 			FROMFROM = {
-				NOR = { has_law = succ_feudal_elective has_law = succ_hre_elective }
+				NOR = {
+					has_law = succ_feudal_elective
+					has_law = succ_hre_elective
+				}
 				holder_scope = {
 					culture_group = ROOT
-					religion = ROOT
+					OR = {
+						religion = { target = ROOT target_type = true }
+						AND = {
+							has_secret_religion = yes
+							ROOT = {
+								can_see_secret_religion = PREV
+								true_religion = { target = PREV target_type = secret }
+							}
+						}
+					}
 					any_war = {
 						war_title = PREVPREV
 						defender = { character = FROMFROM }
 						attacker = {
 							OR = {
 								NOT = { culture_group = ROOT }
-								NOT = { religion = ROOT }
+								NOR = {
+									religion = { target = ROOT target_type = true }
+									AND = {
+										has_secret_religion = yes
+										ROOT = {
+											can_see_secret_religion = PREV
+											true_religion = { target = PREV target_type = secret }
+										}
+									}
+								}
 							}
 						}
 					}
@@ -3027,11 +3936,20 @@ faction_claimant = {
 		# more likely to support sayyid against a holder who isn't
 		modifier = {
 			factor = 2.0
-			religion_group = muslim
+			true_religion_group = muslim
 			FROMFROM = { holder_scope = { NOT = { trait = sayyid } } }
 			FROM = {
 				supported_claimant = {
-					religion_group = muslim
+					OR = {
+						religion_group = { target = ROOT target_type = true }
+						AND = {
+							has_secret_religion = yes
+							ROOT = {
+								can_see_secret_religion = PREV
+								true_religion_group = { target = PREV target_type = secret }
+							}
+						}
+					}
 					trait = sayyid
 				}
 			}
@@ -3039,7 +3957,7 @@ faction_claimant = {
 		# more likely to support mirza against a holder who is neither sayyid nor mirza
 		modifier = {
 			factor = 1.5
-			religion_group = muslim
+			true_religion_group = muslim
 			FROMFROM = {
 				holder_scope = {
 					NOR = {
@@ -3050,7 +3968,16 @@ faction_claimant = {
 			}
 			FROM = {
 				supported_claimant = {
-					religion_group = muslim
+					OR = {
+						religion_group = { target = ROOT target_type = true }
+						AND = {
+							has_secret_religion = yes
+							ROOT = {
+								can_see_secret_religion = PREV
+								true_religion_group = { target = PREV target_type = secret }
+							}
+						}
+					}
 					trait = mirza
 				}
 			}
@@ -3141,7 +4068,16 @@ faction_claimant = {
 			FROMFROM = {
 				holder_scope = {
 					culture = ROOT
-					religion = ROOT
+					OR = {
+						religion = { target = ROOT target_type = true }
+						AND = {
+							has_secret_religion = yes
+							ROOT = {
+								can_see_secret_religion = PREV
+								true_religion = { target = PREV target_type = secret }
+							}
+						}
+					}
 					ROOT = {
 						opinion = { who = PREV value = 0 }
 						NOR = {
@@ -3162,7 +4098,16 @@ faction_claimant = {
 				holder_scope = {
 					OR = {
 						NOT = { culture = ROOT }
-						NOT = { religion = ROOT }
+						NOR = {
+							religion = { target = ROOT target_type = true }
+							AND = {
+								has_secret_religion = yes
+								ROOT = {
+									can_see_secret_religion = PREV
+									true_religion = { target = PREV target_type = secret }
+								}
+							}
+						}
 					}
 					ROOT = {
 						opinion = { who = PREV value = 25 }
@@ -3183,7 +4128,16 @@ faction_claimant = {
 			FROMFROM = {
 				holder_scope = {
 					culture = ROOT
-					religion = ROOT
+					OR = {
+						religion = { target = ROOT target_type = true }
+						AND = {
+							has_secret_religion = yes
+							ROOT = {
+								can_see_secret_religion = PREV
+								true_religion = { target = PREV target_type = secret }
+							}
+						}
+					}
 					ROOT = {
 						opinion = { who = PREV value = 25 }
 						OR = {
@@ -3885,7 +4839,12 @@ faction_antiking = {
 
 		modifier = {
 			factor = 0.2
-			FROM = { pacifist = yes }
+			FROM = { emf_pacifist_true_religion = yes }
+		}
+		
+		modifier = {
+			factor = 2
+			FROM = { true_religion_scope = { has_religion_feature = religion_warlike } }
 		}
 
 		modifier = {
@@ -4130,13 +5089,18 @@ faction_antiking = {
 
 		modifier = {
 			factor = 0.2
-			pacifist = yes
+			emf_pacifist_true_religion = yes
 			NOT = {
 				has_opinion_modifier = {
 					who = FROM
 					modifier = opinion_coerced_into_joining_faction
 				}
 			}
+		}
+		
+		modifier = {
+			factor = 2
+			true_religion_scope = { has_religion_feature = religion_warlike }
 		}
 
 		modifier = {
@@ -4355,7 +5319,11 @@ faction_overthrow = {
 		}
 		modifier = {
 			factor = 0.2
-			FROM = { pacifist = yes }
+			FROM = { emf_pacifist_true_religion = yes }
+		}
+		modifier = {
+			factor = 2
+			FROM = { true_religion_scope = { has_religion_feature = religion_warlike } }
 		}
 		modifier = {
 			factor = 0
@@ -4725,13 +5693,17 @@ faction_overthrow = {
 		}
 		modifier = {
 			factor = 0.2
-			pacifist = yes
+			emf_pacifist_true_religion = yes
 			NOT = {
 				has_opinion_modifier = {
 					who = FROM
 					modifier = opinion_coerced_into_joining_faction
 				}
 			}
+		}
+		modifier = {
+			factor = 2
+			true_religion_scope = { has_religion_feature = religion_warlike }
 		}
 		modifier = {
 			factor = 0
@@ -5257,7 +6229,12 @@ faction_increase_council_power = {
 
 		modifier = {
 			factor = 0.2
-			FROM = { pacifist = yes }
+			FROM = { emf_pacifist_true_religion = yes }
+		}
+		
+		modifier = {
+			factor = 2
+			FROM = { true_religion_scope = { has_religion_feature = religion_warlike } }
 		}
 
 		modifier = {
@@ -5290,7 +6267,16 @@ faction_increase_council_power = {
 			holder_scope = {
 				OR = {
 					NOT = { culture = FROM }
-					NOT = { religion = FROM }
+					NOR = {
+						religion = { target = FROM target_type = true }
+						AND = {
+							has_secret_religion = yes
+							ROOT_FROM = {
+								can_see_secret_religion = PREV
+								true_religion = { target = PREV target_type = secret }
+							}
+						}
+					}
 				}
 				any_demesne_title = {
 					OR = {
@@ -5304,7 +6290,16 @@ faction_increase_council_power = {
 					}
 					any_claimant = {
 						culture = FROM
-						religion = FROM
+						OR = {
+							religion = { target = FROM target_type = true }
+							AND = {
+								has_secret_religion = yes
+								ROOT_FROM = {
+									can_see_secret_religion = PREV
+									true_religion = { target = PREV target_type = secret }
+								}
+							}
+						}
 					}
 				}
 			}
@@ -5540,7 +6535,16 @@ faction_increase_council_power = {
 				NOT = { year = 1350 }
 				has_horde_culture = yes
 				culture = ROOT
-				religion = ROOT
+				OR = {
+					religion = { target = ROOT target_type = true }
+					AND = {
+						has_secret_religion = yes
+						ROOT = {
+							can_see_secret_religion = PREV
+							true_religion = { target = PREV target_type = secret }
+						}
+					}
+				}
 			}
 			NOT = {
 				has_opinion_modifier = {
@@ -5576,13 +6580,18 @@ faction_increase_council_power = {
 
 		modifier = {
 			factor = 0.2
-			pacifist = yes
+			emf_pacifist_true_religion = yes
 			NOT = {
 				has_opinion_modifier = {
 					who = FROM
 					modifier = opinion_coerced_into_joining_faction
 				}
 			}
+		}
+		
+		modifier = {
+			factor = 2
+			true_religion_scope = { has_religion_feature = religion_warlike }
 		}
 
 		modifier = {
@@ -5835,8 +6844,7 @@ faction_true_belivers = {
 		# EMF faction triggers here, because they impose far more protections & requirements than are coded here, and I don't
 		# know how this is used; it appears to be a script-invoked faction.
 		has_character_flag = ai_flag_refuse_conversion
-		religion_group = pagan_group
-		is_reformed_religion = no
+		emf_unreformed_pagan = yes
 		liege = { 
 			NOT = { religion = PREV	}			
 		}
@@ -5859,8 +6867,7 @@ faction_true_belivers = {
 		#	is_adult = yes
 		#	NOT = { trait = incapable }
 		#	prisoner = no
-			religion_group = pagan_group
-			is_reformed_religion = no
+			emf_unreformed_pagan = yes
 		}
 	}
 	

@@ -1,10 +1,11 @@
 -- Diplomacy
-NDefines.NDiplomacy.GAVELKIND_MAX_SIZE_BONUS = 0.50          -- from 0.30, vanilla=0.30
+NDefines.NDiplomacy.GAVELKIND_MAX_SIZE_BONUS = 0.50            -- from 0.30, vanilla=0.30
 NDefines.NDiplomacy.VASSAL_LIMIT_LEVY_MULTIPLIER = 0
-NDefines.NDiplomacy.MAX_DUCHIES_LEGALLY_HELD = 3             -- from 2, vanilla=2
-NDefines.NDiplomacy.MAX_ELECTOR_TITLES_LEGALLY_HELD = 2      -- from 1, vanilla=1
+NDefines.NDiplomacy.MAX_DUCHIES_LEGALLY_HELD = 3               -- from 2, vanilla=2
+NDefines.NDiplomacy.MAX_ELECTOR_TITLES_LEGALLY_HELD = 2        -- from 1, vanilla=1
 NDefines.NDiplomacy.INTER_MUSLIM_WAR_MONTHLY_PIETY_COST = 1
 NDefines.NDiplomacy.MUSLIM_TEMPLE_HOLDING_MONTHLY_PIETY = 0.5
+NDefines.NDiplomacy.PREP_INV_REQ_PRESTIGE = 2000               -- prior to v10.3: 750; vanilla: 750
 NDefines.NDiplomacy.BASE_REVOLT_CHANCE_MOD = 175
 NDefines.NDiplomacy.TOG_REVOLT_CHANCE_MOD = 70
 NDefines.NDiplomacy.DUKE_POWERFUL_VASSAL_COUNT = 3
@@ -15,8 +16,11 @@ NDefines.NDiplomacy.EXECUTE_IMPRISONED_INTERACTION_PIETY = 10
 NDefines.NDiplomacy.DEMAND_RELIGIOUS_CONVERSION_INTERACTION_PIETY = 25
 NDefines.NDiplomacy.DEMAND_RELIGIOUS_CONVERSION_INTERACTION_PRESTIGE = 50
 NDefines.NDiplomacy.DEMAND_RELIGIOUS_CONVERSION_INTERACTION_THRESHOLD_FOR_YES = 35
-NDefines.NDiplomacy.CHANGE_CRUSADE_TARGET_INTERACTION_PIETY = 400 -- EMF v10.0 (from 250 in vanilla)
-NDefines.NDiplomacy.CHANGE_CRUSADE_TARGET_INTERACTION_PRESTIGE = 400 -- EMF v10.0 (from 0 in vanilla)
+NDefines.NDiplomacy.PREPARE_INVASION_INTERACTION_MONEY = 100                       -- prior to v10.3: 0; vanilla: 0
+NDefines.NDiplomacy.PREPARE_INVASION_INTERACTION_PIETY = 500                       -- prior to v10.3: 0; vanilla: 0
+NDefines.NDiplomacy.PREPARE_INVASION_INTERACTION_PRESTIGE = 1500                   -- prior to v10.3: 500; vanilla: 500
+NDefines.NDiplomacy.CHANGE_CRUSADE_TARGET_INTERACTION_PIETY = 400                  -- EMF v10.0 (from 250 in vanilla)
+NDefines.NDiplomacy.CHANGE_CRUSADE_TARGET_INTERACTION_PRESTIGE = 400               -- EMF v10.0 (from 0 in vanilla)
 NDefines.NDiplomacy.INVITE_TO_COURT_INTERACTION_MONEY = 10
 NDefines.NDiplomacy.ASK_FOR_EXCOMMUNICATION_INTERACTION_PIETY = 150
 NDefines.NDiplomacy.BANISH_TAKE_WEALTH_PERCENTAGE_COURTIER = 0.2
@@ -96,8 +100,9 @@ NDefines.NTitle.CUSTOM_TITLE_COLOR_OFFSET = 0.2
 -- Religion
 NDefines.NReligion.CREATE_ANTIPOPE_PRESTIGE_COST = 1500           -- prior to EMF v8.02: 500
 NDefines.NReligion.INVASION_MIN_AUTHORITY = 0.4
-NDefines.NReligion.REFORM_RELIGION_MIN_AUTHORITY = 0.3
-NDefines.NReligion.REFORM_RELIGION_MIN_HOLY_SITES = 4
+NDefines.NReligion.REFORM_RELIGION_MIN_AUTHORITY = 0.6            -- vanilla: 0.5; prior EMF v10.3: 0.3
+NDefines.NReligion.REFORM_RELIGION_MIN_HOLY_SITES = 4             -- vanilla: 3
+NDefines.NReligion.REFORM_RELIGION_PIETY_COST = 1500              -- vanilla: 750
 NDefines.NReligion.AUTHORITY_FROM_HOLY_SITE = 0.05
 NDefines.NReligion.AUTHORITY_FROM_ANTIPOPE = -0.1                 -- prior to EMF v8.02: -0.3
 NDefines.NReligion.AUTHORITY_FROM_RELHEAD_PIETY = 0.002           -- prior to EMF v9.06: 0.001; prior to EMF v8.02: 0
@@ -249,6 +254,9 @@ NDefines.NAI.AI_ASSAULT_RATIO = 15             -- +50% from vanilla
 NDefines.NAI.TRIBAL_VASSAL_EXTRA_CALL_CHANCE = 30 -- vanilla is 40
 NDefines.NAI.RAID_MAX_REALM_SIZE = 32          -- prior to EMF v9.06: 24; vanilla is 24
 NDefines.NAI.RAID_AGGRESSION = 15              -- prior to EMF v9.06: 18; prior to EMF v9.01: 12; vanilla is 18; lower means more frequent raiding, higher means less frequent
+NDefines.NAI.RAID_SPARE_ACCEPTED_RELIGIONS = 0	-- Intra-pagan raiding enabled to make pagan consolidation more difficult
+NDefines.NAI.TRIBAL_VASSAL_EXTRA_CALL_CHANCE = 0	-- Disabled to make tribal consolidation harder (AI already honors alliances fairly often)
+	
 NDefines.NAI.NOMAD_MARRIAGE_CLAN_MODIFIER = 40 -- vanilla is 20: "How much nomad AI will prefer inter-realm clan marriages"
 NDefines.NAI.NOMAD_MARRIAGE_KHAN_MODIFIER = 15 -- vanila is 5: "How much nomad AI will prefer marriages with their khan"
 
