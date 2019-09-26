@@ -75,6 +75,8 @@ def main():
 			for n2, v2 in v:
 				if n2.val == 'controls_religion':
 					religion = v2.val
+					if religion == 'qarmatian':
+						continue # Hacky fix, d_qarmatian has been explicitly deleted from the landed_titles of E+V and SWMH, but is still present in the vanilla files and so will be detected.
 					if religion not in g_religions and religion != 'hip_religion':
 						print("religion " + religion + " not recognized", file=sys.stderr)
 					if religion in g_relhead_title_map:
