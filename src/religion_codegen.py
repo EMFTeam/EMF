@@ -91,12 +91,12 @@ def main():
 	new_loc = {}
 
 	# create SR community event modifiers
-	with sr_modifier_path.open('w', encoding='cp1252', newline='\n') as f:
+	with sr_modifier_path.open('w', encoding='cp1252', newline='\r\n') as f:
 		print_file_header(f, 'ck2.event_modifiers')
 		print_modifiers_secret_community(f, loc, new_loc)
 
 	# generate SR scripted triggers
-	with sr_trigger_path.open('w', encoding='cp1252', newline='\n') as f:
+	with sr_trigger_path.open('w', encoding='cp1252', newline='\r\n') as f:
 		print_file_header(f, 'ck2.scripted_triggers')
 		print_trigger_has_any_religion_char_flag(f)
 		print_trigger_is_in_PREVs_interesting_society(f)
@@ -109,7 +109,7 @@ def main():
 		print_trigger_old_religion_is_liege_sr(f)
 
 	# generate SR scripted effects
-	with sr_effect_path.open('w', encoding='cp1252', newline='\n') as f:
+	with sr_effect_path.open('w', encoding='cp1252', newline='\r\n') as f:
 		print_file_header(f, 'ck2.scripted_effects')
 		print_effect_set_sr_and_clr_religion_char_flag(f)
 		print_effect_add_religion_char_flag(f)
@@ -127,33 +127,33 @@ def main():
 		print_effect_ai_try_to_join_society(f)
 
 	# generate religion scripted effects
-	with rel_effect_path.open('w', encoding='cp1252', newline='\n') as f:
+	with rel_effect_path.open('w', encoding='cp1252', newline='\r\n') as f:
 		print_file_header(f, 'ck2.scripted_effects')
 		print_effect_calc_realm_province_religion_breakdown_of_THIS_for_ROOT(f, loc)
 
 	# generate bloodline scripted triggers
-	with bl_trigger_path.open('w', encoding='cp1252', newline='\n') as f:
+	with bl_trigger_path.open('w', encoding='cp1252', newline='\r\n') as f:
 		print_file_header(f, 'ck2.scripted_triggers')
 		print_trigger_religion_same_as_bloodline_founder(f)
 
 	# generate bloodline scripted effects
-	with bl_effect_path.open('w', encoding='cp1252', newline='\n') as f:
+	with bl_effect_path.open('w', encoding='cp1252', newline='\r\n') as f:
 		print_file_header(f, 'ck2.scripted_effects')
 		print_effect_set_bloodline_founder_religion_flag(f)
 
 	# generate alt. start scripted effects
-	with as_effect_path.open('w', encoding='cp1252', newline='\n') as f:
+	with as_effect_path.open('w', encoding='cp1252', newline='\r\n') as f:
 		print_file_header(f, 'ck2.scripted_effects')
 		print_effect_randomize_relhead_title_names(f)
 		print_effect_activate_randomized_relhead_titles(f, loc)
 
 	# generate "secretly convert to this holy site's religion" decisions
-	with sr_holy_site_decisions_path.open('w', encoding='cp1252', newline='\n') as f:
+	with sr_holy_site_decisions_path.open('w', encoding='cp1252', newline='\r\n') as f:
 		print_file_header(f, 'ck2.decisions')
 		print_decisions_secretly_convert_to_holy_site(f, loc, new_loc)
 
 
-	with sr_custom_loc_path.open('w', encoding='cp1252', newline='\n') as f:
+	with sr_custom_loc_path.open('w', encoding='cp1252', newline='\r\n') as f:
 		print_file_header(f, 'ck2.custom_loc')
 		print_custom_loc_GetTrueReligionAdjective(f, loc, new_loc)
 		print_custom_loc_GetTrueReligionAdherent(f, loc, new_loc)
@@ -162,7 +162,7 @@ def main():
 	# write default SR localisation
 	generate_default_sr_localisation(loc, new_loc)
 
-	with sr_localisation_path.open('w', encoding='cp1252', newline='\n') as f:
+	with sr_localisation_path.open('w', encoding='cp1252', newline='\r\n') as f:
 		print('#CODE;ENGLISH;FRENCH;GERMAN;;SPANISH;;;;;;;;;x', file=f)
 		for k in sorted(new_loc):
 			print('{};{};;;;;;;;;;;;;x'.format(k, new_loc[k]), file=f)
@@ -514,6 +514,10 @@ emf_sr_flip_secret_community_provinces = {
 				any_demesne_province = {{
 					limit = {{ has_province_modifier = secret_{0}_community }}
 					religion = {0}
+					religion_authority = {{
+						modifier = province_converted_to
+						years = 5
+					}}
 					remove_province_modifier = secret_{0}_community
 				}}
 			}}
@@ -536,6 +540,10 @@ emf_sr_flip_secret_community_provinces_of_PREV = {
 				any_demesne_province = {{
 					limit = {{ has_province_modifier = secret_{0}_community }}
 					religion = {0}
+					religion_authority = {{
+						modifier = province_converted_to
+						years = 5
+					}}
 					remove_province_modifier = secret_{0}_community
 				}}
 			}}
@@ -558,6 +566,10 @@ emf_sr_flip_secret_community_provinces_to_my_religion = {
 			any_demesne_province = {{
 				limit = {{ has_province_modifier = secret_{0}_community }}
 				religion = {0}
+				religion_authority = {{
+					modifier = province_converted_to
+					years = 5
+				}}
 				# remove_province_modifier = secret_{0}_community
 			}}
 		}}'''.format(rel), file=f)
@@ -584,13 +596,28 @@ emf_sr_set_adopt_faith_flag_of_my_cult_on_ROOT = {
 def print_effect_adopt_faith_from_flag(f):
 	print('''
 emf_sr_adopt_faith_from_flag = {
+	if = {
+		limit = { higher_tier_than = BARON }
+		religion_authority = {
+			modifier = ruler_converted_from
+		}
+	}
 	trigger_switch = {
 		on_trigger = has_flag''', file=f)
 
 	for rel in g_religions:
 		print(TAB*2 + 'adopt_faith_{0} = {{ religion = {0} }}'.format(rel), file=f)
 
-	print(TAB + '}\n}', file=f)
+	print('''	}
+	if = {
+		limit = { higher_tier_than = BARON }
+		hidden_tooltip = {
+			religion_authority = {
+				modifier = ruler_converted_to
+			}
+		}
+	}
+}''', file=f)
 
 
 def print_effect_clr_adopt_faith_flag(f):
@@ -632,6 +659,10 @@ emf_sr_flip_secret_community_provinces_by_prov_flip_char_flag = {
 			any_demesne_province = {{
 				limit = {{ has_province_modifier = secret_{0}_community }}
 				religion = {0}
+				religion_authority = {{
+					modifier = province_converted_to
+					years = 5
+				}}
 				remove_province_modifier = secret_{0}_community
 			}}
 			clr_flag = sr_{0}_prov_flip
@@ -956,6 +987,7 @@ emf_sr_ai_try_to_join_society = {
 			modifier = {
 				factor = 0
 				is_landed = no
+				is_patrician = no
 			}
 			join_society = hermetics
 			emf_sr_add_random_society_influence_if_small = yes
@@ -968,10 +1000,14 @@ emf_sr_ai_try_to_join_society = {
 			modifier = {
 				factor = 0.5
 				is_landed = no
+				is_patrician = no
 			}
 			modifier = {
 				factor = 2
-				is_landed = yes
+				OR = {
+					is_landed = yes
+					is_patrician = yes
+				}
 			}
 			modifier = {
 				factor = 5
