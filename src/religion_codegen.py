@@ -75,6 +75,8 @@ def main():
 			for n2, v2 in v:
 				if n2.val == 'controls_religion':
 					religion = v2.val
+					if religion == 'qarmatian':
+						continue # Hacky fix, d_qarmatian has been explicitly deleted from the landed_titles of E+V and SWMH, but is still present in the vanilla files and so will be detected.
 					if religion not in g_religions and religion != 'hip_religion':
 						print("religion " + religion + " not recognized", file=sys.stderr)
 					if religion in g_relhead_title_map:
@@ -514,6 +516,10 @@ emf_sr_flip_secret_community_provinces = {
 				any_demesne_province = {{
 					limit = {{ has_province_modifier = secret_{0}_community }}
 					religion = {0}
+					religion_authority = {{
+						modifier = province_converted_to
+						years = 5
+					}}
 					remove_province_modifier = secret_{0}_community
 				}}
 			}}
@@ -536,6 +542,10 @@ emf_sr_flip_secret_community_provinces_of_PREV = {
 				any_demesne_province = {{
 					limit = {{ has_province_modifier = secret_{0}_community }}
 					religion = {0}
+					religion_authority = {{
+						modifier = province_converted_to
+						years = 5
+					}}
 					remove_province_modifier = secret_{0}_community
 				}}
 			}}
@@ -558,6 +568,10 @@ emf_sr_flip_secret_community_provinces_to_my_religion = {
 			any_demesne_province = {{
 				limit = {{ has_province_modifier = secret_{0}_community }}
 				religion = {0}
+				religion_authority = {{
+					modifier = province_converted_to
+					years = 5
+				}}
 				# remove_province_modifier = secret_{0}_community
 			}}
 		}}'''.format(rel), file=f)
@@ -584,13 +598,28 @@ emf_sr_set_adopt_faith_flag_of_my_cult_on_ROOT = {
 def print_effect_adopt_faith_from_flag(f):
 	print('''
 emf_sr_adopt_faith_from_flag = {
+	if = {
+		limit = { higher_tier_than = BARON }
+		religion_authority = {
+			modifier = ruler_converted_from
+		}
+	}
 	trigger_switch = {
 		on_trigger = has_flag''', file=f)
 
 	for rel in g_religions:
 		print(TAB*2 + 'adopt_faith_{0} = {{ religion = {0} }}'.format(rel), file=f)
 
-	print(TAB + '}\n}', file=f)
+	print('''	}
+	if = {
+		limit = { higher_tier_than = BARON }
+		hidden_tooltip = {
+			religion_authority = {
+				modifier = ruler_converted_to
+			}
+		}
+	}
+}''', file=f)
 
 
 def print_effect_clr_adopt_faith_flag(f):
@@ -632,6 +661,10 @@ emf_sr_flip_secret_community_provinces_by_prov_flip_char_flag = {
 			any_demesne_province = {{
 				limit = {{ has_province_modifier = secret_{0}_community }}
 				religion = {0}
+				religion_authority = {{
+					modifier = province_converted_to
+					years = 5
+				}}
 				remove_province_modifier = secret_{0}_community
 			}}
 			clr_flag = sr_{0}_prov_flip
@@ -956,6 +989,7 @@ emf_sr_ai_try_to_join_society = {
 			modifier = {
 				factor = 0
 				is_landed = no
+				is_patrician = no
 			}
 			join_society = hermetics
 			emf_sr_add_random_society_influence_if_small = yes
@@ -968,10 +1002,14 @@ emf_sr_ai_try_to_join_society = {
 			modifier = {
 				factor = 0.5
 				is_landed = no
+				is_patrician = no
 			}
 			modifier = {
 				factor = 2
-				is_landed = yes
+				OR = {
+					is_landed = yes
+					is_patrician = yes
+				}
 			}
 			modifier = {
 				factor = 5
