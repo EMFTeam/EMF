@@ -1735,9 +1735,15 @@ def print_decisions_secretly_convert_to_holy_site(f, loc, new_loc):
 					is_heretic = no
 				}}
 				any_independent_ruler = {{
-					any_realm_lord = {{
-						religion = {0}
-						is_heretic = no
+					OR = {{
+						AND = {{
+							religion = {0}
+							is_heretic = no
+						}}
+						any_realm_lord = {{
+							religion = {0}
+							is_heretic = no
+						}}
 					}}
 				}}
 			}}
