@@ -10,6 +10,8 @@ sr_modifier_path = emf_path / 'common/event_modifiers/emf_sr_codegen_modifiers.t
 sr_effect_path = emf_path / 'common/scripted_effects/emf_sr_codegen_effects.txt'
 sr_trigger_path = emf_path / 'common/scripted_triggers/emf_sr_codegen_triggers.txt'
 rel_effect_path = emf_path / 'common/scripted_effects/emf_religion_codegen_effects.txt'
+rel_trigger_path = emf_path / 'common/scripted_triggers/emf_religion_codegen_triggers.txt'
+rel_event_path = emf_path / 'events/emf_religion_codegen.txt'
 bl_effect_path = emf_path / 'common/scripted_effects/emf_bloodline_codegen_effects.txt'
 bl_trigger_path = emf_path / 'common/scripted_triggers/emf_bloodline_codegen_triggers.txt'
 as_effect_path = emf_path / 'common/scripted_effects/emf_altstart_codegen_effects.txt'
@@ -127,11 +129,25 @@ def main():
 		print_effect_flip_secret_community_provinces_by_prov_flip_char_flag(f)
 		print_effect_add_secret_community_to_target_province(f)
 		print_effect_ai_try_to_join_society(f)
+	
+	# generate religion scripted triggers
+	with rel_trigger_path.open('w', encoding='cp1252', newline='\n') as f:
+		print_file_header(f, 'ck2.scripted_triggers')
+		print_trigger_true_religion_is_heretic(f)
+		print_triggers_true_religion_is_heresy_of(f)
+		print_triggers_true_religion_is_parent_religion(f)
+		print_triggers_true_religion_is_heresy_of_true_religion(f)
+		print_triggers_true_religion_is_parent_religion_true_religion(f)
 
 	# generate religion scripted effects
 	with rel_effect_path.open('w', encoding='cp1252', newline='\n') as f:
 		print_file_header(f, 'ck2.scripted_effects')
 		print_effect_calc_realm_province_religion_breakdown_of_THIS_for_ROOT(f, loc)
+	
+	# generate religion events
+	with rel_event_path.open('w', encoding='cp1252', newline='\n') as f:
+		print_file_header(f, 'ck2.events')
+		print_event_generate_religion_dummy_characters(f)
 
 	# generate bloodline scripted triggers
 	with bl_trigger_path.open('w', encoding='cp1252', newline='\n') as f:
@@ -1248,6 +1264,237 @@ emf_sr_ai_try_to_join_society = {
 	print(TAB + '}\n}', file=f)
 
 
+def print_trigger_true_religion_is_heretic(f):
+	print('''
+true_religion_is_heretic = {{
+	trigger_if = {{
+		limit = {{ true_religion = {0} }}
+		event_target:emf_global_{0}_dummy = {{ is_heretic = yes }}
+	}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''	trigger_else_if = {{
+		limit = {{ true_religion = {0} }}
+		event_target:emf_global_{0}_dummy = {{ is_heretic = yes }}
+	}}'''.format(r), file=f)
+	print('}', file=f)
+
+
+def print_triggers_true_religion_is_heresy_of(f):
+	print('''
+true_religion_is_heresy_of_FROM = {{
+	trigger_if = {{
+		limit = {{ true_religion = {0} }}
+		event_target:emf_global_{0}_dummy = {{ is_heresy_of = FROM }}
+	}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''	trigger_else_if = {{
+		limit = {{ true_religion = {0} }}
+		event_target:emf_global_{0}_dummy = {{ is_heresy_of = FROM }}
+	}}'''.format(r), file=f)
+	print('}', file=f)
+	
+	print('''
+true_religion_is_heresy_of_ROOT = {{
+	trigger_if = {{
+		limit = {{ true_religion = {0} }}
+		event_target:emf_global_{0}_dummy = {{ is_heresy_of = ROOT }}
+	}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''	trigger_else_if = {{
+		limit = {{ true_religion = {0} }}
+		event_target:emf_global_{0}_dummy = {{ is_heresy_of = ROOT }}
+	}}'''.format(r), file=f)
+	print('}', file=f)
+	
+	print('''
+true_religion_is_heresy_of_PREV = {{
+	trigger_if = {{
+		limit = {{ true_religion = {0} }}
+		event_target:emf_global_{0}_dummy = {{ is_heresy_of = PREVPREV }}
+	}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''	trigger_else_if = {{
+		limit = {{ true_religion = {0} }}
+		event_target:emf_global_{0}_dummy = {{ is_heresy_of = PREVPREV }}
+	}}'''.format(r), file=f)
+	print('}', file=f)
+	
+	print('''
+true_religion_is_heresy_of_target_ruler = {{
+	trigger_if = {{
+		limit = {{ true_religion = {0} }}
+		event_target:emf_global_{0}_dummy = {{ is_heresy_of = event_target:target_ruler }}
+	}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''	trigger_else_if = {{
+		limit = {{ true_religion = {0} }}
+		event_target:emf_global_{0}_dummy = {{ is_heresy_of = event_target:target_ruler }}
+	}}'''.format(r), file=f)
+	print('}', file=f)
+
+
+def print_triggers_true_religion_is_parent_religion(f):
+	print('''
+true_religion_is_parent_religion_FROM = {{
+	trigger_if = {{
+		limit = {{ true_religion = {0} }}
+		event_target:emf_global_{0}_dummy = {{ is_parent_religion = FROM }}
+	}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''	trigger_else_if = {{
+		limit = {{ true_religion = {0} }}
+		event_target:emf_global_{0}_dummy = {{ is_parent_religion = FROM }}
+	}}'''.format(r), file=f)
+	print('}', file=f)
+	
+	print('''
+true_religion_is_parent_religion_ROOT = {{
+	trigger_if = {{
+		limit = {{ true_religion = {0} }}
+		event_target:emf_global_{0}_dummy = {{ is_parent_religion = ROOT }}
+	}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''	trigger_else_if = {{
+		limit = {{ true_religion = {0} }}
+		event_target:emf_global_{0}_dummy = {{ is_parent_religion = ROOT }}
+	}}'''.format(r), file=f)
+	print('}', file=f)
+	
+	print('''
+true_religion_is_parent_religion_PREV = {{
+	trigger_if = {{
+		limit = {{ true_religion = {0} }}
+		event_target:emf_global_{0}_dummy = {{ is_parent_religion = PREVPREV }}
+	}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''	trigger_else_if = {{
+		limit = {{ true_religion = {0} }}
+		event_target:emf_global_{0}_dummy = {{ is_parent_religion = PREVPREV }}
+	}}'''.format(r), file=f)
+	print('}', file=f)
+	
+	print('''
+true_religion_is_parent_religion_target_ruler = {{
+	trigger_if = {{
+		limit = {{ true_religion = {0} }}
+		event_target:emf_global_{0}_dummy = {{ is_parent_religion = event_target:target_ruler }}
+	}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''	trigger_else_if = {{
+		limit = {{ true_religion = {0} }}
+		event_target:emf_global_{0}_dummy = {{ is_parent_religion = event_target:target_ruler }}
+	}}'''.format(r), file=f)
+	print('}', file=f)
+
+
+def print_triggers_true_religion_is_heresy_of_true_religion(f):
+	print('''
+true_religion_is_heresy_of_FROM_true_religion = {{
+	trigger_if = {{
+		limit = {{ FROM = {{ true_religion = {0} }} }}
+		event_target:emf_global_{0}_dummy = {{ PREV = {{ true_religion_is_heresy_of_PREV = yes }} }}
+	}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''	trigger_else_if = {{
+		limit = {{ FROM = {{ true_religion = {0} }} }}
+		event_target:emf_global_{0}_dummy = {{ PREV = {{ true_religion_is_heresy_of_PREV = yes }} }}
+	}}'''.format(r), file=f)
+	print('}', file=f)
+	
+	print('''
+true_religion_is_heresy_of_ROOT_true_religion = {{
+	trigger_if = {{
+		limit = {{ ROOT = {{ true_religion = {0} }} }}
+		event_target:emf_global_{0}_dummy = {{ PREV = {{ true_religion_is_heresy_of_PREV = yes }} }}
+	}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''	trigger_else_if = {{
+		limit = {{ ROOT = {{ true_religion = {0} }} }}
+		event_target:emf_global_{0}_dummy = {{ PREV = {{ true_religion_is_heresy_of_PREV = yes }} }}
+	}}'''.format(r), file=f)
+	print('}', file=f)
+	
+	print('''
+true_religion_is_heresy_of_PREV_true_religion = {{
+	trigger_if = {{
+		limit = {{ PREV = {{ true_religion = {0} }} }}
+		event_target:emf_global_{0}_dummy = {{ PREV = {{ true_religion_is_heresy_of_PREV = yes }} }}
+	}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''	trigger_else_if = {{
+		limit = {{ PREV = {{ true_religion = {0} }} }}
+		event_target:emf_global_{0}_dummy = {{ PREV = {{ true_religion_is_heresy_of_PREV = yes }} }}
+	}}'''.format(r), file=f)
+	print('}', file=f)
+	
+	print('''
+true_religion_is_heresy_of_target_ruler_true_religion = {{
+	trigger_if = {{
+		limit = {{ event_target:target_ruler = {{ true_religion = {0} }} }}
+		event_target:emf_global_{0}_dummy = {{ PREV = {{ true_religion_is_heresy_of_PREV = yes }} }}
+	}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''	trigger_else_if = {{
+		limit = {{ event_target:target_ruler = {{ true_religion = {0} }} }}
+		event_target:emf_global_{0}_dummy = {{ PREV = {{ true_religion_is_heresy_of_PREV = yes }} }}
+	}}'''.format(r), file=f)
+	print('}', file=f)
+
+
+def print_triggers_true_religion_is_parent_religion_true_religion(f):
+	print('''
+true_religion_is_parent_religion_FROM_true_religion = {{
+	trigger_if = {{
+		limit = {{ FROM = {{ true_religion = {0} }} }}
+		event_target:emf_global_{0}_dummy = {{ PREV = {{ true_religion_is_parent_religion_PREV = yes }} }}
+	}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''	trigger_else_if = {{
+		limit = {{ FROM = {{ true_religion = {0} }} }}
+		event_target:emf_global_{0}_dummy = {{ PREV = {{ true_religion_is_parent_religion_PREV = yes }} }}
+	}}'''.format(r), file=f)
+	print('}', file=f)
+	
+	print('''
+true_religion_is_parent_religion_ROOT_true_religion = {{
+	trigger_if = {{
+		limit = {{ ROOT = {{ true_religion = {0} }} }}
+		event_target:emf_global_{0}_dummy = {{ PREV = {{ true_religion_is_parent_religion_PREV = yes }} }}
+	}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''	trigger_else_if = {{
+		limit = {{ ROOT = {{ true_religion = {0} }} }}
+		event_target:emf_global_{0}_dummy = {{ PREV = {{ true_religion_is_parent_religion_PREV = yes }} }}
+	}}'''.format(r), file=f)
+	print('}', file=f)
+	
+	print('''
+true_religion_is_parent_religion_PREV_true_religion = {{
+	trigger_if = {{
+		limit = {{ PREV = {{ true_religion = {0} }} }}
+		event_target:emf_global_{0}_dummy = {{ PREV = {{ true_religion_is_parent_religion_PREV = yes }} }}
+	}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''	trigger_else_if = {{
+		limit = {{ PREV = {{ true_religion = {0} }} }}
+		event_target:emf_global_{0}_dummy = {{ PREV = {{ true_religion_is_parent_religion_PREV = yes }} }}
+	}}'''.format(r), file=f)
+	print('}', file=f)
+	
+	print('''
+true_religion_is_parent_religion_target_ruler_true_religion = {{
+	trigger_if = {{
+		limit = {{ event_target:target_ruler = {{ true_religion = {0} }} }}
+		event_target:emf_global_{0}_dummy = {{ PREV = {{ true_religion_is_parent_religion_PREV = yes }} }}
+	}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''	trigger_else_if = {{
+		limit = {{ event_target:target_ruler = {{ true_religion = {0} }} }}
+		event_target:emf_global_{0}_dummy = {{ PREV = {{ true_religion_is_parent_religion_PREV = yes }} }}
+	}}'''.format(r), file=f)
+	print('}', file=f)
+
+
 def print_effect_calc_realm_province_religion_breakdown_of_THIS_for_ROOT(f, loc):
 	print('''
 emf_calc_realm_province_religion_breakdown_of_THIS_for_ROOT = {
@@ -1288,6 +1535,98 @@ emf_calc_realm_province_religion_breakdown_of_THIS_for_ROOT = {
 	print('\t\t}', file=f)
 	print('\t}', file=f)
 	print('}', file=f)
+
+
+def print_event_generate_religion_dummy_characters(f):
+	print('''
+########################################
+##	  RELIGION EVENTS (CODEGEN)	  ##
+########################################
+
+# These events are meant to create and maintain dummy characters, each of whose sole utility
+# is to have a specific religion as their public religion.
+# They are used because some religion-based triggers (e.g. is_heretic, is_heresy_of,
+# is_parent_religion) do not work in religion scopes and only check for characters' public
+# religion, not their true religion. This means that in order to check whether a character's
+# true religion complies with one of these triggers, the game needs to run the trigger on the
+# dummy character whose public religion matches the given character's true religion.
+
+namespace = emf_religion_codegen
+
+# emf_religion_codegen.0 -- initialize dummy religion characters
+character_event = {
+	id = emf_religion_codegen.0
+
+	is_triggered_only = yes
+	hide_window = yes
+	
+	religion = hip_religion
+
+	trigger = {
+		has_landed_title = e_hip
+		NAND = {''', file=f)
+	for r in g_religions:
+		print('\t\t\tevent_target:emf_global_{0}_dummy = {{ is_alive = yes }}'.format(r), file=f)
+	print('''		}
+	}
+
+	immediate = {''', file=f)
+	for r in g_religions:
+		print('''\
+		if = {{
+			limit = {{ NOT = {{ event_target:emf_global_{0}_dummy = {{ is_alive = yes }} }} }}
+			create_character = {{
+				dynasty = none
+				religion = {0}
+				trait = emf_isis_courtier
+				random_traits = no
+			}}
+			new_character = {{
+				set_immune_to_pruning = yes
+				diplomatic_immunity = yes
+				emf_do_not_disturb = yes
+				set_flag = no_court_invites # Instructs AI to never accept an invitation to another court
+				set_flag = ai_flag_refuse_conversion # Instructs AI to never accept Demand Religious Conversion
+				set_flag = emf_ai_never_convert_culture
+				set_flag = emf_isis_courtier
+				set_flag = emf_religion_dummy_character
+				save_global_event_target_as = emf_global_{0}_dummy
+			}}
+		}}'''.format(r), file=f)
+	print('''	}
+}
+
+# emf_religion_codegen.1 -- handle the death of a religion dummy character [on_death]
+character_event = {
+	id = emf_religion_codegen.1
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	has_character_flag = emf_religion_dummy_character
+
+	trigger = {
+		OR = {''', file=f)
+	for r in g_religions:
+		print('\t\t\tcharacter = event_target:emf_global_{0}_dummy'.format(r), file=f)
+	print('''		}}
+	}}
+
+	immediate = {{
+		if = {{
+			limit = {{ character = event_target:emf_global_{0}_dummy }}
+			clear_global_event_target = emf_global_{0}_dummy
+		}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''		else_if = {{
+			limit = {{ character = event_target:emf_global_{0}_dummy }}
+			clear_global_event_target = emf_global_{0}_dummy
+		}}'''.format(r), file=f)
+	print('''
+		event_target:isis = { character_event = { id = emf_religion_codegen.0 } }
+	}
+}
+''', file=f)
 
 
 def print_effect_set_bloodline_founder_religion_flag(f):
@@ -1396,9 +1735,15 @@ def print_decisions_secretly_convert_to_holy_site(f, loc, new_loc):
 					is_heretic = no
 				}}
 				any_independent_ruler = {{
-					any_realm_lord = {{
-						religion = {0}
-						is_heretic = no
+					OR = {{
+						AND = {{
+							religion = {0}
+							is_heretic = no
+						}}
+						any_realm_lord = {{
+							religion = {0}
+							is_heretic = no
+						}}
 					}}
 				}}
 			}}
