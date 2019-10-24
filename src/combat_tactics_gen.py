@@ -1,159 +1,103 @@
+#!/usr/bin/python3
+
 import sys
-import os
+from localpaths import rootpath
+
+###
+
+emf_path = rootpath / 'EMF/EMF'
+tactics_path = emf_path / 'common/combat_tactics/emf_combat_tactics_codegen.txt'
+call_to_glory_tactics_path = emf_path / 'common/combat_tactics/emf_call_to_glory_combat_tactics_codegen.txt'
+localization_path = emf_path / 'localisation/1_emf_combat_tactics_codegen.csv'
+
+###
+
+class CombatTacticLevel:
+	def __init__(self,prefix,name_prefix,sprite_offset,mtth_score_prefix,global_offensive_modifier,global_defensive_modifier,requires_flank_leader=True,has_tech_mtth_score_modifier=False):
+		self.prefix = prefix
+		self.name_prefix = name_prefix
+		self.sprite_offset = sprite_offset
+		self.mtth_score_prefix = mtth_score_prefix
+		self.global_offensive_modifier = global_offensive_modifier
+		self.global_defensive_modifier = global_defensive_modifier
+		self.requires_flank_leader = requires_flank_leader
+		self.has_tech_mtth_score_modifier = has_tech_mtth_score_modifier
+
+combat_tactics_levels = [
+	CombatTacticLevel("good","Devastating",-10,"good",0.25,0.25),
+	CombatTacticLevel("","",0,"ok",0,0),
+	CombatTacticLevel("bad","Failed",10,"bad",-0.25,-0.25,False,True)
+]
+
+glorious_combat_tactic_level = CombatTacticLevel("glorious","Glorious",-10,"good",0.5,0.5)
+
+###
+
+charge_tactic_values = {
+	"days": 5,
+	"sprite": 15,
+	"group": "charge",
+	"phase": "skirmish",
+	"name": "Closing Charge",
+	"light_infantry_offensive": 0.25,
+	"heavy_infantry_offensive": 0.5,
+	"pikemen_offensive": 0.75,
+	"light_cavalry_offensive": 0.25,
+	"camel_cavalry_offensive": 1.25,
+	"knights_offensive": 1.25,
+	"archers_offensive": 0,
+	"horse_archers_offensive": 0,
+	"war_elephants_offensive": 0.75,
+	"light_infantry_defensive": 0,
+	"heavy_infantry_defensive": 0,
+	"pikemen_defensive": 0,
+	"light_cavalry_defensive": 0,
+	"camel_cavalry_defensive": 0,
+	"knights_defensive": 0,
+	"archers_defensive": 0,
+	"horse_archers_defensive": 0,
+	"war_elephants_defensive": 0
+}
 
 f = open('./combat_tactics.csv')
-array = [line.strip().split(',') for line in f]
+generic_tactics_data_array = [line.strip().split(',') for line in f]
 f.close()
 
 f = open('./cultural_tactics.csv')
-array2 = [line.strip().split(',') for line in f]
+cultural_tactics_data_array = [line.strip().split(',') for line in f]
+f.close()
+
+f = open('./call_to_glory_combat_tactics.csv')
+special_call_to_glory_tactics_data_array = [line.strip().split(',') for line in f]
 f.close()
 
 normal_weight = 3
-cultural_weight = 6
+cultural_weight = 3
+charge_weight = 6
 
-cultural_tactics = {
-            "finnish":          ("raid_tactic", "quick_attack_tactic"),
-            "lappish":          ("raid_tactic", "quick_attack_tactic"),
-            "komi":             ("raid_tactic", "quick_attack_tactic"),
-            "mordvin":          ("raid_tactic", "quick_attack_tactic"),
-            "samoyed":          ("raid_tactic", "quick_attack_tactic"),
-			"mari":             ("raid_tactic", "quick_attack_tactic"),
-			"karelian":         ("raid_tactic", "quick_attack_tactic"),
-			"vepsian":          ("raid_tactic", "quick_attack_tactic"),
-			"khanty":           ("raid_tactic", "quick_attack_tactic"),
-            "english":          ("volley_tactic", "longbow_volley_tactic"),
-			"cumbric":          ("volley_tactic", "longbow_volley_tactic"),
-            "welsh":            ("volley_tactic", "longbow_volley_tactic"),
-			"g_aramaic":        ("volley_tactic", "longbow_volley_tactic"),
-            "ligurian":         ("volley_tactic", "ambush_volley_tactic"),
-			"g_chinese_group":  ("volley_tactic", "ambush_volley_tactic"),
-			"g_east_african":   ("harass_tactic", "ambush_volley_tactic"),
-			"turkish":			("swarm_tactic", "retreat_and_ambush_tactic"),
-			"turkmen":			("swarm_tactic", "retreat_and_ambush_tactic"),
-			"oghuz":			("swarm_tactic", "retreat_and_ambush_tactic"),
-			"khalaj":			("swarm_tactic", "retreat_and_ambush_tactic"),
-			"mongol":			("swarm_tactic", "retreat_and_ambush_tactic"),
-			"cuman":			("swarm_tactic", "retreat_and_ambush_tactic"),
-			"pecheneg":			("swarm_tactic", "retreat_and_ambush_tactic"),
-			"khazar":			("swarm_tactic", "retreat_and_ambush_tactic"),
-			"bolghar":			("swarm_tactic", "retreat_and_ambush_tactic"),
-			"avar":				("swarm_tactic", "retreat_and_ambush_tactic"),
-			"karluk":			("swarm_tactic", "retreat_and_ambush_tactic"),
-			"kasogi":			("swarm_tactic", "retreat_and_ambush_tactic"),
-			"kirghiz":			("swarm_tactic", "retreat_and_ambush_tactic"),
-			"uyghur":			("swarm_tactic", "retreat_and_ambush_tactic"),
-			"bashkir":			("swarm_tactic", "retreat_and_ambush_tactic"),
-			"khitan":			("swarm_tactic", "retreat_and_ambush_tactic"),
-            "g_iranian":        ("swarm_tactic", "retreat_and_ambush_tactic"),
-            "g_magyar":         ("swarm_tactic", "retreat_and_ambush_tactic"),
-            "g_west_african":   ("harass_tactic", "guerilla_harass_tactic"),
-			"canarian":			("harass_tactic", "guerilla_harass_tactic"),
-            "italian":          ("melee_charge_tactic", "awesome_charge_tactic"),
-            "lombard":          ("melee_charge_tactic", "awesome_charge_tactic"),
-            "sicilian":         ("melee_charge_tactic", "awesome_charge_tactic"),
-            "bohemian":         ("melee_charge_tactic", "heavy_charge_tactic"),
-            "polish":           ("melee_charge_tactic", "combined_charge_tactic"),
-            "serbian":          ("melee_charge_tactic", "heavy_charge_tactic"),
-            "bulgarian":        ("melee_charge_tactic", "heavy_charge_tactic"),
-            "g_east_slavic":    ("melee_charge_tactic", "embolon_charge_tactic"),
-            "frankish":         ("melee_charge_tactic", "shock_charge_tactic"),
-			"crusader_culture": ("melee_charge_tactic", "shock_charge_tactic"),
-			"occitan":          ("melee_charge_tactic", "shock_charge_tactic"),
-            "norman":           ("melee_charge_tactic", "heavy_charge_tactic"),
-            "breton":           ("melee_charge_tactic", "heavy_charge_tactic"),
-            "german":           ("melee_charge_tactic", "heavy_charge_tactic"),
-			"low_german":       ("melee_charge_tactic", "heavy_charge_tactic"),
-			"low_saxon":        ("melee_charge_tactic", "heavy_charge_tactic"),
-			"thuringian":       ("melee_charge_tactic", "heavy_charge_tactic"),
-			"franconian":       ("melee_charge_tactic", "heavy_charge_tactic"),
-			"swabian":          ("melee_charge_tactic", "heavy_charge_tactic"),
-			"bavarian":         ("melee_charge_tactic", "heavy_charge_tactic"),
-            "alan":             ("melee_charge_tactic", "embolon_charge_tactic"),
-            "armenian":         ("melee_charge_tactic", "embolon_charge_tactic"),
-            "greek":            ("melee_charge_tactic", "embolon_charge_tactic"),
-			"east_gothic":      ("melee_charge_tactic", "embolon_charge_tactic"),
-			"udi":              ("melee_charge_tactic", "embolon_charge_tactic"),
-			"caucasian_avar":   ("melee_charge_tactic", "embolon_charge_tactic"),
-            "georgian":         ("melee_charge_tactic", "heavy_charge_tactic"),
-            "sardinian":        ("melee_charge_tactic", "awesome_charge_tactic"),
-            "dalmatian":        ("melee_charge_tactic", "awesome_charge_tactic"),
-            "umbrian":          ("melee_charge_tactic", "awesome_charge_tactic"),
-            "laziale":          ("melee_charge_tactic", "awesome_charge_tactic"),
-            "neapolitan":       ("melee_charge_tactic", "awesome_charge_tactic"),
-            "tuscan":           ("melee_charge_tactic", "awesome_charge_tactic"),
-            "karantanci":       ("melee_charge_tactic", "combined_charge_tactic"),
-            "moravian":         ("melee_charge_tactic", "heavy_charge_tactic"),
-            "bosnian":          ("melee_charge_tactic", "combined_charge_tactic"),
-			"arberian":         ("melee_charge_tactic", "combined_charge_tactic"),
-            "cornish":          ("melee_charge_tactic", "heavy_charge_tactic"),
-            "arpitan":          ("melee_charge_tactic", "shock_charge_tactic"),
-            "romanian":         ("raid_tactic", "horseback_raid_tactic"),
-            "portuguese":       ("raid_tactic", "horseback_raid_tactic"),
-            "castillan":        ("raid_tactic", "combined_charge_tactic"),
-            "visigothic":       ("raid_tactic", "horseback_raid_tactic"),
-            "catalan":          ("raid_tactic", "quick_attack_tactic"),
-			"suebi":            ("raid_tactic", "quick_attack_tactic"),
-			"g_tibetan_group":  ("raid_tactic", "quick_attack_tactic"),
-            "andalusian_arabic":("raid_tactic", "horseback_raid_tactic"),
-            "g_arabic":         ("raid_tactic", "mameluke_raid_tactic"),
-            "aragonese":        ("raid_tactic", "combined_charge_tactic"),
-            "galician":         ("raid_tactic", "horseback_raid_tactic"),
-            "leonese":          ("raid_tactic", "combined_charge_tactic"),
-            "albanian":         ("raid_tactic", "horseback_raid_tactic"),
-            "g_north_african":  ("raid_tactic", "horseback_raid_tactic"),
-			"jurchen":          ("raid_tactic", "horseback_raid_tactic"),
-            "roman":            ("advance_tactic", "roman_triple_line_tactic"),
-            "pommeranian":      ("advance_tactic", "infantry_rush_tactic"),
-            "croatian":         ("advance_tactic", "infantry_rush_tactic"),
-            "irish":            ("advance_tactic", "shield_rush_tactic"),
-			"pictish":          ("advance_tactic", "shield_rush_tactic"),
-            "basque":           ("advance_tactic", "intimidating_advance_tactic"),
-            "norse":            ("advance_tactic", "infantry_rush_tactic"),
-            "norwegian":        ("advance_tactic", "infantry_rush_tactic"),
-			"swedish":          ("advance_tactic", "infantry_rush_tactic"),
-			"danish":           ("advance_tactic", "infantry_rush_tactic"),
-			"icelandic":        ("advance_tactic", "infantry_rush_tactic"),
-			"old_saxon":        ("advance_tactic", "infantry_rush_tactic"),
-            "saxon":            ("advance_tactic", "shield_rush_tactic"),
-            "g_baltic":         ("advance_tactic", "infantry_rush_tactic"),
-			"livonian":         ("advance_tactic", "infantry_rush_tactic"),
-            "g_mesoamerican":   ("advance_tactic", "aztec_combined_tactic"),
-            "jewish":           ("advance_tactic", "shield_rush_tactic"),
-            "venetian":         ("advance_tactic", "infantry_rush_tactic"),
-            "langobardisch":    ("advance_tactic", "awesome_charge_tactic"),
-            "ugricbaltic":      ("advance_tactic", "intimidating_advance_tactic"),
-            "norsegaelic":      ("advance_tactic", "infantry_rush_tactic"),
-            "gothic":           ("advance_tactic", "infantry_rush_tactic"),
-            "anglonorse":       ("advance_tactic", "infantry_rush_tactic"),
-            "scottish":         ("stand_fast_tactic", "schiltron_tactic"),
-            "dutch":            ("stand_fast_tactic", "pike_assault_tactic"),
-            "frisian":          ("stand_fast_tactic", "pike_assault_tactic"),
-			"low_frankish":     ("stand_fast_tactic", "pike_assault_tactic"),
-            "g_indo_aryan_group":("stand_fast_tactic", "gray_wall_tactic"),
-            "g_dravidian_group":("stand_fast_tactic", "gray_wall_tactic")
-            }
+replacement_tactics_list = {}
+replacement_glorious_tactics_list = {}
+for i in range(1,len(generic_tactics_data_array[0])):
+	replacement_tactics_list[generic_tactics_data_array[0][i]] = []
+	replacement_glorious_tactics_list[generic_tactics_data_array[0][i]] = []
+for i in range(1,len(cultural_tactics_data_array[0])):
+	replacement_tactics_list[cultural_tactics_data_array[1][i]].append(cultural_tactics_data_array[0][i])
+for i in range(1,len(special_call_to_glory_tactics_data_array[0])):
+	replacement_glorious_tactics_list[special_call_to_glory_tactics_data_array[1][i]].append(special_call_to_glory_tactics_data_array[0][i])
 
-exempt_cultures = {
-            "stand_fast_tactic": [],
-            "harass_tactic": [],
-            "swarm_tactic": [],
-            "advance_tactic": [],
-            "volley_tactic": [],
-            "shieldwall_tactic": [],
-            "raid_tactic": [],
-            "melee_charge_tactic": []
-            }
-cultural_tactics_list = {}
-matching_tactics_list = {}
-for i in cultural_tactics.keys():
-    exempt_cultures[cultural_tactics[i][0]] += [i]
-    if cultural_tactics[i][1] not in cultural_tactics_list:
-        cultural_tactics_list[cultural_tactics[i][1]] = []
-        matching_tactics_list[cultural_tactics[i][1]] = cultural_tactics[i][0]
-    cultural_tactics_list[cultural_tactics[i][1]] += [i]
+###
 
-base_tactics = """# -*- ck2.combat_tactics -*-
+def print_header(f, spec=None, call_to_glory=False):
+	if spec:
+		print('# -*- {} -*-'.format(spec), file=f)
+		print('''
+################################################################################
+# WARNING: Do NOT modify this file manually!
+#
+# This file is code-generated and any manual changes will be overwritten.
+#
+# Generated by src/combat_tactics_gen.py
+################################################################################
 
 ### At the moment we have a pretty basic icon system for combat tactics showing
 ### the uniticon which has the biggest bonus value in the tactic.
@@ -161,472 +105,212 @@ base_tactics = """# -*- ck2.combat_tactics -*-
 ### Good 	 1=LI	 2=HI	 3=PIKE	 4=LC	 5=KNIGHTS	 6=ARCHERS	 7=HORSE ARCH.	 8=GALLEY	 9=ELEPHANT	10=CAMEL
 ### Neutral 11=LI	12=HI	13=PIKE	14=LC	15=KNIGHTS	16=ARCHERS	17=HORSE ARCH.	18=GALLEY	19=ELEPHANT	20=CAMEL
 ### Bad 	21=LI	22=HI	23=PIKE	24=LC	25=KNIGHTS	26=ARCHERS	27=HORSE ARCH.	28=GALLEY	29=ELEPHANT	30=CAMEL
+''', file=f)
+		if call_to_glory:
+			print('''# Tactics based off the following Lodge retinues info:
+# Norse Lodge: light_infantry + heavy_infantry 				150 + 100
+# Tengri Lodge: light_cavalry + horse_archers 				100 + 150
+# Slavic Lodge: light_infantry + light_cavalry 				200 + 50
+# Baltic Lodge: light_infantry + heavy_infantry + archers 	100 + 100 + 50
+# Finnish Lodge: light_infantry + archers 					100 + 150
+# West-African Lodge: light_infantry + pikemen 				150 + 100
+# Zunist Lodge: pikemen + archers 							150 + 100
+# Bon Lodge: light_infantry + light_cavalry + archers 		100 + 50 + 100
+# Hellenic Lodge: pikemen + heavy infantry 					200 + 50
+# Aztec Lodge: light_infantry + heavy_infantry 				100 + 150
+#
+# Glorious tactic system:
+# Vanilla:
+# - call_to_glory modifier on commander unlocks glorious_countercharge_tactic that boosts all troop types' offense.
+# - call_to_glory modifier on commander unlocks a different, unique tactic based on which warrior lodge of which the commander is a member. The special tactic in question tends to boost the troop types they get as event troops from the Call to Glory interaction.
+#   - Winter's Maw Tactic - Norse (heavy infantry)
+#   - Wolf's Howling Tactic - Tengri (horse archers)
+#   - Slavic Last Stand Tactic - Slavic (light infantry)
+#   - Baltic Last Stand Tactic - Baltic (heavy infantry)
+#   - Elk's Lament Tactic - Finnish (archers)
+#   - Bull Horns Tactic - West-africans (pikemen)
+#   - Lightburst Tactic - Zunists (archers)
+#   - Balanced Charge Tactic - Bon (light infantry/cavalry)
+#   - Quincunx Tactic - Hellenic (pikemen)
+#
+# EMF:
+# - call_to_glory modifier on commander unlocks "glorious" versions of the 8 default tactics. Glorious versions of the default tactics are similar to "good" versions of those tactics, but give a +50% baseline instead of a +25% and aren't locked by culture; they are locked away from certain lodges because...
+# - Depending on which warrior lodge the character belongs to, one of the 8 default "glorious" tactics is replaced by one specific to the lodge. The lodge-specific tactic gives an additional +50% in total to stats based on the troop types gotten through the Call to Glory interaction (the same way cultural combat tactics upgrade default, non-glorious combat tactics).
+#   - Winter's Maw Tactic - Norse (upgraded Advance)
+#   - Wolf's Howling Tactic - Tengri (upgraded Swarm)
+#   - Lightning Raid Tactic - Slavic (upgraded Raid)
+#   - Last Stand Tactic - Baltic (upgraded Shieldwall)
+#   - Elk's Lament Tactic - Finnish (upgraded Shieldwall)
+#   - Bull Horns Tactic - West-Africans (upgraded Harass)
+#   - Missile Swarm Tactic - East-Africans (upgraded Harass)
+#   - Lightburst Tactic - Zunists (upgraded Volley)
+#   - Lightning Raid Tactic - Bon (upgraded Raid)
+#   - Quincunx Tactic - Hellenic (upgraded Stand Fast)
+#	- Water Fire Tactice - Aztec (upgraded Advance)''', file=f)
 
-# Must be first in file. This tactic will be set if anything goes wrong
-no_tactic = {
-	days = 3 # tactic lasts one day
-	sprite = 21 # index of icon
-
-	trigger = {
-		always = no # never use unless set explicitly by code
-	}
+def main():
+	with tactics_path.open('w', encoding='cp1252', newline='\n') as f:
+		print_header(f, 'ck2.combat_tactics')
+		print_charge_tactics(f)
+		print_generic_combat_tactics(f)
+		print_cultural_combat_tactics(f)
 	
-	light_infantry_offensive = -0.25
-	heavy_infantry_offensive = -0.25
-	pikemen_offensive = -0.25
-	light_cavalry_offensive = -0.25
-	camel_cavalry_offensive = -0.25
-	knights_offensive = -0.25
-	archers_offensive = -0.25
-	horse_archers_offensive = -0.25
+	with call_to_glory_tactics_path.open('w', encoding='cp1252', newline='\n') as f:
+		print_header(f, 'ck2.combat_tactics')
+		print_call_to_glory_combat_tactics(f)
 	
-	light_infantry_defensive = -0.25
-	heavy_infantry_defensive = -0.25
-	pikemen_defensive = -0.25
-	light_cavalry_defensive = -0.25
-	camel_cavalry_defensive = -0.25
-	knights_defensive = -0.25
-	archers_defensive = -0.25
-	horse_archers_defensive = -0.25
-}
+	with localization_path.open('w', encoding='cp1252', newline='\n') as f:
+		print_localizations(f)
+	return 0
 
-generic_skirmish_tactic = {
-	days = 5 # tactic lasts one day
-	sprite = 11 # index of icon
-	group = skirmish
+def print_charge_tactics(f):
+	print('''
+##########################################################################
+# Closing Charge Tactics
+##########################################################################''', file=f)
+	for tactic_level in combat_tactics_levels:
+		print_tactic(f, tactic_level, "charge_tactic", charge_tactic_values, False, True)
+	print_tactic(f, glorious_combat_tactic_level, "charge_on_undefended_tactic", charge_tactic_values, False, True, True)
 
-	trigger = {
-		phase = skirmish
-		flank_has_leader = no
-	}
+def print_generic_combat_tactics(f):
+	print('''
+##########################################################################
+# Generic Tactics
+##########################################################################''', file=f)
+	for i in range(1,len(generic_tactics_data_array[0])):
+		tactic_name = generic_tactics_data_array[0][i]
+		tactic_values = {}
+		for j in range(1,len(generic_tactics_data_array)):
+			tactic_values[generic_tactics_data_array[j][0]] = generic_tactics_data_array[j][i]
+		for tactic_level in combat_tactics_levels:
+			print_tactic(f, tactic_level, tactic_name, tactic_values)
 
-	mean_time_to_happen = {
-		days = 0
-	}
-}
+def print_cultural_combat_tactics(f):
+	print('''
+##########################################################################
+# Cultural Tactics
+##########################################################################''', file=f)
+	for i in range(1,len(cultural_tactics_data_array[0])):
+		tactic_name = cultural_tactics_data_array[0][i]
+		tactic_values = {}
+		for j in range(1,len(cultural_tactics_data_array)):
+			tactic_values[cultural_tactics_data_array[j][0]] = cultural_tactics_data_array[j][i]
+		for tactic_level in combat_tactics_levels:
+			print_tactic(f, tactic_level, tactic_name, tactic_values, True)
 
-#### Charge Tactics ####
-good_charge_tactic = {
-	days = 5
-	sprite = 5 # index of icon
-	group = charge
+def print_call_to_glory_combat_tactics(f):
+	print('''
+##########################################################################
+# Call to Glory Tactics
+##########################################################################''', file=f)
+	print_tactic(f, glorious_combat_tactic_level, "charge_tactic", charge_tactic_values, False, True)
+	for i in range(1,len(generic_tactics_data_array[0])):
+		tactic_name = generic_tactics_data_array[0][i]
+		tactic_values = {}
+		for j in range(1,len(generic_tactics_data_array)):
+			tactic_values[generic_tactics_data_array[j][0]] = generic_tactics_data_array[j][i]
+		print_tactic(f, glorious_combat_tactic_level, tactic_name, tactic_values)
+	print('''
+##########################################################################
+# Lodge-Specific Glorious Tactic definitions
+##########################################################################''', file=f)
+	for i in range(1,len(special_call_to_glory_tactics_data_array[0])):
+		tactic_name = special_call_to_glory_tactics_data_array[0][i]
+		tactic_values = {}
+		for j in range(1,len(special_call_to_glory_tactics_data_array)):
+			tactic_values[special_call_to_glory_tactics_data_array[j][0]] = special_call_to_glory_tactics_data_array[j][i]
+		print_tactic(f, glorious_combat_tactic_level, tactic_name, tactic_values, True)
+
+def print_localizations(f):
+	print('''#CODE;ENGLISH;FRENCH;GERMAN;;SPANISH;;;;;;;;;x
+########################################################################
+# NOTE: This file is code-generated and should NOT be edited manually. #
+########################################################################''', file=f)
+	print_tactic_localization(f, glorious_combat_tactic_level, "charge_tactic", charge_tactic_values)
+	for tactic_level in combat_tactics_levels:
+		print_tactic_localization(f, tactic_level, "charge_tactic", charge_tactic_values)
+	for i in range(1,len(generic_tactics_data_array[0])):
+		tactic_name = generic_tactics_data_array[0][i]
+		tactic_values = {}
+		for j in range(1,len(generic_tactics_data_array)):
+			tactic_values[generic_tactics_data_array[j][0]] = generic_tactics_data_array[j][i]
+		print_tactic_localization(f, glorious_combat_tactic_level, tactic_name, tactic_values)
+		for tactic_level in combat_tactics_levels:
+			print_tactic_localization(f, tactic_level, tactic_name, tactic_values)
+	for i in range(1,len(cultural_tactics_data_array[0])):
+		tactic_name = cultural_tactics_data_array[0][i]
+		tactic_values = {}
+		for j in range(1,len(cultural_tactics_data_array)):
+			tactic_values[cultural_tactics_data_array[j][0]] = cultural_tactics_data_array[j][i]
+		for tactic_level in combat_tactics_levels:
+			print_tactic_localization(f, tactic_level, tactic_name, tactic_values, True)
+	for i in range(1,len(special_call_to_glory_tactics_data_array[0])):
+		tactic_name = special_call_to_glory_tactics_data_array[0][i]
+		tactic_values = {}
+		for j in range(1,len(special_call_to_glory_tactics_data_array)):
+			tactic_values[special_call_to_glory_tactics_data_array[j][0]] = special_call_to_glory_tactics_data_array[j][i]
+		print_tactic_localization(f, glorious_combat_tactic_level, tactic_name + "_tactic", tactic_values, True)
 	
-	trigger = {
-		phase = skirmish
-		is_flanking = no
-		flank_has_leader = yes
-		days = 11 # duration of combat >= 10 days
-	}
+def print_tactic_localization(f, tactic_level, tactic_name, tactic_values, is_cultural=False):
+	localization_text = (tactic_level.prefix + "_" if tactic_level.prefix else "")+tactic_name+";"
+	if tactic_level.name_prefix and (tactic_level.prefix != "glorious" or not is_cultural):
+		localization_text += tactic_level.name_prefix + " "
+	localization_text += tactic_values["name"]+" Tactic;;;;;;;;;;;;;x"
+	print(localization_text, file=f)
 
-	mean_time_to_happen = {
-		days = 6 # this has nothing to do with days, it just represents relative chance of selecting this tactic, higher is better
-		modifier = {
-			factor = 0.6
-			leader = {
-				NOT = { martial = 0 }
-			}
-		}
-		modifier = {
-			factor = 0.7
-			leader = {
-				NOT = { martial = 2 }
-			}
-		}
-		modifier = {
-			factor = 0.7
-			leader = {
-				NOT = { martial = 4 }
-			}
-		}
-		modifier = {
-			factor = 0.65
-			leader = {
-				NOT = { martial = 6 }
-			}
-		}
-		modifier = {
-			factor = 0.75
-			leader = {
-				NOT = { martial = 8 }
-			}
-		}
-		modifier = {
-			factor = 0.75
-			leader = {
-				NOT = { martial = 10 }
-			}
-		}
-		modifier = {
-			factor = 1.1
-			leader = {
-				martial = 12
-			}
-		}
-		modifier = {
-			factor = 1.2
-			leader = {
-				martial = 14
-			}
-		}
-		modifier = {
-			factor = 1.3
-			leader = {
-				martial = 16
-			}
-		}
-		modifier = {
-			factor = 1.35
-			leader = {
-				martial = 18
-			}
-		}
-		modifier = {
-			factor = 1.35
-			leader = {
-				martial = 20
-			}
-		}
-		modifier = {
-			factor = 1.35
-			leader = {
-				martial = 22
-			}
-		}
-		modifier = {
-			factor = 1.35
-			leader = {
-				martial = 24
-			}
-		}
-		modifier = {
-			factor = 1.35
-			leader = {
-				martial = 26
-			}
-		}
-		modifier = {
-			factor = 3
-			troops = {
-				who = knights
-				value = 0.3
-			}
-		}
-		modifier = {
-			factor = 3
-			troops = {
-				who = heavy_infantry
-				value = 0.3
-			}
-		}
-	}
-
-	change_phase_to = melee
+def print_tactic(f, tactic_level, tactic_name, tactic_values, is_cultural=False, is_charge_tactic=False, is_charge_on_undefended=False):
+	print("""
+# {6} Tactic
+{0}{1} = {{
+	days = {2}
+	sprite = {3}
+	group = {4}
+	trigger = {{
+		phase = {5}
+		emf_{5}_{4}_tactic_troop_requirements = yes""".format(tactic_level.prefix + "_" if tactic_level.prefix and not is_charge_on_undefended else "",tactic_name + "_tactic" if tactic_level.prefix == "glorious" and is_cultural else tactic_name,tactic_values["days"],str(int(tactic_values["sprite"])+tactic_level.sprite_offset),tactic_values["group"],tactic_values["phase"],tactic_values["name"] if tactic_level.prefix == "glorious" and is_cultural else (tactic_level.name_prefix + " " if tactic_level.name_prefix else "") + tactic_values["name"]), file=f)
+	if is_charge_tactic:
+		print("""		is_flanking = no
+		days = {0} # duration of combat >= {0} days""".format(3 if is_charge_on_undefended else 10), file=f)
+	if (tactic_level.requires_flank_leader and not is_charge_on_undefended) or is_cultural:
+		print("""		flank_has_leader = yes""", file=f)
+	if tactic_level.prefix == "glorious" and not is_charge_on_undefended:
+		print("""		leader = {
+			has_character_modifier = call_to_glory""", file=f)
+		if is_cultural:
+			print("""			society_member_of = warrior_lodge_{0}""".format(tactic_name), file=f)
+		elif tactic_name in replacement_glorious_tactics_list and len(replacement_glorious_tactics_list[tactic_name]) > 0:
+			if len(replacement_glorious_tactics_list[tactic_name]) == 1:
+				print("""			NOT = {{ society_member_of = warrior_lodge_{0} }}""".format(replacement_glorious_tactics_list[tactic_name][0]), file=f)
+			else:
+				print("""			NOR = {""", file=f)
+				for replaced_tactic_name in replacement_glorious_tactics_list[tactic_name]:
+					print("""				society_member_of = warrior_lodge_{0}""".format(replaced_tactic_name), file=f)
+				print("""			}""", file=f)
+		print("""		}""", file=f)
+	elif is_cultural:
+		print("""		leader = {{
+			emf_{0}_culture = yes
+		}}""".format(tactic_name), file=f)
+	elif tactic_name in replacement_tactics_list and len(replacement_tactics_list[tactic_name]) > 0:
+		print("""		NOT = {
+			leader = {""", file=f)
+		if len(replacement_tactics_list[tactic_name]) == 1:
+			print("""				emf_{0}_culture = yes""".format(replacement_tactics_list[tactic_name][0]), file=f)
+		else:
+			print("""				OR = {""", file=f)
+			for replaced_tactic_name in replacement_tactics_list[tactic_name]:
+				print("""					emf_{0}_culture = yes""".format(replaced_tactic_name), file=f)
+			print("""				}""", file=f)
+		print("""			}
+		}""", file=f)
+	print("""	}}
 	
-	light_infantry_offensive = 0.5
-	heavy_infantry_offensive = 0.75
-	pikemen_offensive = 1.0
-	light_cavalry_offensive = 0.5
-	camel_cavalry_offensive = 1.5
-	knights_offensive = 1.50
-	archers_offensive = 0.25
-	horse_archers_offensive = 0.25
-	
-	light_infantry_defensive = 0
-	heavy_infantry_defensive = 0
-	pikemen_defensive = 0
-	light_cavalry_defensive = 0
-	camel_cavalry_defensive = 0
-	knights_defensive = 0
-	archers_defensive = 0
-	horse_archers_defensive = 0
-}
-
-charge_tactic = {
-	days = 5
-	sprite = 5 # index of icon
-	group = charge
-	
-	trigger = {
-		phase = skirmish
-		is_flanking = no
-		flank_has_leader = yes
-		days = 11 # duration of combat >= 10 days
-	}
-
-	mean_time_to_happen = {
-		days = 6 # this has nothing to do with days, it just represents relative chance of selecting this tactic, higher is better
-		modifier = {
-			factor = 0.8
-			leader = {
-				NOT = { martial = 0 }
-			}
-		}
-		modifier = {
-			factor = 0.8
-			leader = {
-				NOT = { martial = 2 }
-			}
-		}
-		modifier = {
-			factor = 0.9
-			leader = {
-				NOT = { martial = 4 }
-			}
-		}
-		modifier = {
-			factor = 0.9
-			leader = {
-				NOT = { martial = 6 }
-			}
-		}
-		modifier = {
-			factor = 0.95
-			leader = {
-				NOT = { martial = 8 }
-			}
-		}
-		modifier = {
-			factor = 0.95
-			leader = {
-				NOT = { martial = 10 }
-			}
-		}
-		modifier = {
-			factor = 1.1
-			leader = {
-				martial = 12
-			}
-		}
-		modifier = {
-			factor = 1.1
-			leader = {
-				martial = 14
-			}
-		}
-		modifier = {
-			factor = 1.05
-			leader = {
-				martial = 16
-			}
-		}
-		modifier = {
-			factor = 1.05
-			leader = {
-				martial = 18
-			}
-		}
-		modifier = {
-			factor = 1.05
-			leader = {
-				martial = 20
-			}
-		}
-		modifier = {
-			factor = 1.05
-			leader = {
-				martial = 22
-			}
-		}
-		modifier = {
-			factor = 1.05
-			leader = {
-				martial = 24
-			}
-		}
-		modifier = {
-			factor = 1.05
-			leader = {
-				martial = 26
-			}
-		}
-		modifier = {
-			factor = 3
-			troops = {
-				who = knights
-				value = 0.3
-			}
-		}
-		modifier = {
-			factor = 3
-			troops = {
-				who = heavy_infantry
-				value = 0.3
-			}
-		}
-	}
-
-	change_phase_to = melee
-	
-	light_infantry_offensive = 0.25
-	heavy_infantry_offensive = 0.5
-	pikemen_offensive = 0.75
-	light_cavalry_offensive = 0.25
-	camel_cavalry_offensive = 1.25
-	knights_offensive = 1.25
-	archers_offensive = 0
-	horse_archers_offensive = 0
-	
-	light_infantry_defensive = 0
-	heavy_infantry_defensive = 0
-	pikemen_defensive = 0
-	light_cavalry_defensive = 0
-	camel_cavalry_defensive = 0
-	knights_defensive = 0
-	archers_defensive = 0
-	horse_archers_defensive = 0
-}
-
-bad_charge_tactic = {
-	days = 5
-	sprite = 5 # index of icon
-	group = charge
-	
-	trigger = {
-		phase = skirmish
-		is_flanking = no
-		flank_has_leader = yes
-		days = 11 # duration of combat >= 10 days
-	}
-
-	mean_time_to_happen = {
-		days = 6 # this has nothing to do with days, it just represents relative chance of selecting this tactic, higher is better
-		modifier = {
-			factor = 1.2
-			leader = {
-				NOT = { martial = 0 }
-			}
-		}
-		modifier = {
-			factor = 1.2
-			leader = {
-				NOT = { martial = 2 }
-			}
-		}
-		modifier = {
-			factor = 1.2
-			leader = {
-				NOT = { martial = 4 }
-			}
-		}
-		modifier = {
-			factor = 1.2
-			leader = {
-				NOT = { martial = 6 }
-			}
-		}
-		modifier = {
-			factor = 1.2
-			leader = {
-				NOT = { martial = 8 }
-			}
-		}
-		modifier = {
-			factor = 1.2
-			leader = {
-				NOT = { martial = 10 }
-			}
-		}
-		modifier = {
-			factor = 0.95
-			leader = {
-				martial = 12
-			}
-		}
-		modifier = {
-			factor = 0.95
-			leader = {
-				martial = 14
-			}
-		}
-		modifier = {
-			factor = 0.95
-			leader = {
-				martial = 16
-			}
-		}
-		modifier = {
-			factor = 0.95
-			leader = {
-				martial = 18
-			}
-		}
-		modifier = {
-			factor = 0.8
-			leader = {
-				martial = 20
-			}
-		}
-		modifier = {
-			factor = 0.8
-			leader = {
-				martial = 22
-			}
-		}
-		modifier = {
-			factor = 0.8
-			leader = {
-				martial = 24
-			}
-		}
-		modifier = {
-			factor = 0.8
-			leader = {
-				martial = 26
-			}
-		}
-		modifier = {
-			factor = 3
-			troops = {
-				who = knights
-				value = 0.3
-			}
-		}
-		modifier = {
-			factor = 3
-			troops = {
-				who = heavy_infantry
-				value = 0.3
-			}
-		}
-	}
-
-	change_phase_to = melee
-	
-	light_infantry_offensive = 0.25
-	heavy_infantry_offensive = 0
-	pikemen_offensive = 0.25
-	light_cavalry_offensive = 0.25
-	camel_cavalry_offensive = 0.75
-	knights_offensive = 0.75
-	archers_offensive = 0
-	horse_archers_offensive = 0
-	
-	light_infantry_defensive = -0.25
-	heavy_infantry_defensive = -0.25
-	pikemen_defensive = -0.25
-	light_cavalry_defensive = -0.25
-	camel_cavalry_defensive = -0.25
-	knights_defensive = -0.25
-	archers_defensive = -0.25
-	horse_archers_defensive = -0.25
-}
-
-charge_on_undefended_tactic = {
-	days = 5
-	sprite = 5
-	group = charge
-	
-	trigger = {
-		phase = skirmish
-		is_flanking = no
-		days = 3 # duration of combat >= 3 days
-	}
-	
-	mean_time_to_happen = {
-		days = 100
-		modifier = {
+	mean_time_to_happen = {{
+		days = {0}""".format(100 if is_charge_on_undefended else (charge_weight if is_charge_tactic else (cultural_weight if is_cultural else normal_weight))), file=f)
+	if is_charge_on_undefended:
+		print("""		modifier = {
 			factor = 0
-			NOT = { 
+			NOT = {
 				enemy = {
 					troops = {
 					who = archers
@@ -634,867 +318,78 @@ charge_on_undefended_tactic = {
 					}
 				}
 			}
+		}""", file=f)
+	else:
+		print("""		emf_{0}_tactic_leader_score = yes""".format(tactic_level.mtth_score_prefix), file=f)
+		if tactic_level.has_tech_mtth_score_modifier:
+			print("""		emf_{0}_tactic_tech_{1}_score = yes""".format(tactic_level.mtth_score_prefix,tactic_values["phase"]), file=f)
+		if is_charge_tactic:
+			print("""		modifier = {
+			factor = 3
+			troops = {
+				who = knights
+				value = 0.3
+			}
 		}
-	}
-
-	light_infantry_offensive = 0.5
-	heavy_infantry_offensive = 0.75
-	pikemen_offensive = 1.0
-	light_cavalry_offensive = 0.5
-	camel_cavalry_offensive = 1.5
-	knights_offensive = 1.50
-	archers_offensive = 0.25
-	horse_archers_offensive = 0.25
-
-	light_infantry_defensive = 0
-	heavy_infantry_defensive = 0
-	pikemen_defensive = 0
-	light_cavalry_defensive = 0
-	camel_cavalry_defensive = 0
-	knights_defensive = 0
-	archers_defensive = 0
-	horse_archers_defensive = 0
+		modifier = {
+			factor = 3
+			troops = {
+				who = heavy_infantry
+				value = 0.3
+			}
+		}""", file=f)
+	print("""	}}
 	
-	change_phase_to = melee
-}
+	light_infantry_offensive = {0}
+	heavy_infantry_offensive = {1}
+	pikemen_offensive = {2}
+	light_cavalry_offensive = {3}
+	camel_cavalry_offensive = {4}
+	knights_offensive = {5}
+	archers_offensive = {6}
+	horse_archers_offensive = {7}
+	war_elephants_offensive = {8}
 
-##########################################################################
-# Siege offensive tactics
-##########################################################################
-# Must be first "siege = attacker"
-no_siege_offense_tactic = {
-	days = 3 # tactic lasts one day
-	sprite = 1 # index of icon
+	light_infantry_defensive = {9}
+	heavy_infantry_defensive = {10}
+	pikemen_defensive = {11}
+	light_cavalry_defensive = {12}
+	camel_cavalry_defensive = {13}
+	knights_defensive = {14}
+	archers_defensive = {15}
+	horse_archers_defensive = {16}
+	war_elephants_defensive = {17}""".format(
+	str(float(tactic_values["light_infantry_offensive"])+tactic_level.global_offensive_modifier),
+	str(float(tactic_values["heavy_infantry_offensive"])+tactic_level.global_offensive_modifier),
+	str(float(tactic_values["pikemen_offensive"])+tactic_level.global_offensive_modifier),
+	str(float(tactic_values["light_cavalry_offensive"])+tactic_level.global_offensive_modifier),
+	str(float(tactic_values["camel_cavalry_offensive"])+tactic_level.global_offensive_modifier),
+	str(float(tactic_values["knights_offensive"])+tactic_level.global_offensive_modifier),
+	str(float(tactic_values["archers_offensive"])+tactic_level.global_offensive_modifier),
+	str(float(tactic_values["horse_archers_offensive"])+tactic_level.global_offensive_modifier),
+	str(float(tactic_values["war_elephants_offensive"])+tactic_level.global_offensive_modifier),
+	str(float(tactic_values["light_infantry_defensive"])+tactic_level.global_defensive_modifier),
+	str(float(tactic_values["heavy_infantry_defensive"])+tactic_level.global_defensive_modifier),
+	str(float(tactic_values["pikemen_defensive"])+tactic_level.global_defensive_modifier),
+	str(float(tactic_values["light_cavalry_defensive"])+tactic_level.global_defensive_modifier),
+	str(float(tactic_values["camel_cavalry_defensive"])+tactic_level.global_defensive_modifier),
+	str(float(tactic_values["knights_defensive"])+tactic_level.global_defensive_modifier),
+	str(float(tactic_values["archers_defensive"])+tactic_level.global_defensive_modifier),
+	str(float(tactic_values["horse_archers_defensive"])+tactic_level.global_defensive_modifier),
+	str(float(tactic_values["war_elephants_defensive"])+tactic_level.global_defensive_modifier)), file=f)
 	
-	siege = attacker
-	
-	trigger = {
-		always = no # never use unless set explicitly by code
-	}
-}
+	if is_charge_tactic:
+		print("""
+	change_phase_to = melee""", file=f)
+	else:
+		print("""
+	enemy = {{
+		group = {0}
+		factor = 1
+	}}""".format(tactic_values["enemy"]), file=f)
+	print("}", file=f)
 
-default_siege_offense_tactic = {
-	days = 5
-	sprite = 1
+###
 
-	siege = attacker
-
-	trigger = {
-		always = yes
-	}
-
-	mean_time_to_happen = {
-		days = 3
-	}
-}
-
-##########################################################################
-# Siege defensive tactics
-##########################################################################
-
-# Must be first "siege = defender"
-no_siege_defense_tactic = {
-	days = 3 # tactic lasts one day
-	sprite = 1 # index of icon
-	siege = defender
-	trigger = {
-		always = no # never use unless set explicitly by code
-	}
-}
-
-default_siege_defense_tactic = {
-	days = 5
-	sprite = 1
-
-	siege = defender
-	
-	trigger = {
-		always = yes
-	}
-
-	mean_time_to_happen = {
-		days = 3
-	}
-}
-
-pursue_tactic = {
-	days = 15
-	sprite = 4
-	group = charge
-	
-	trigger = {
-		phase = pursue
-	}
-
-	mean_time_to_happen = {
-		days = 10
-	}
-}
-
-
-##########################################################################
-# Combat MTTH definitions(do not remove)
-##########################################################################
-
-flank_retreat_odds =
-{
-	# MTTH range is 0-100, if flank morale is below MTTH, flank will retreat
-	mean_time_to_happen = {
-		days = 25
-	}
-}
-
-flank_pursue_odds =
-{
-	# MTTH range is 0-100, chance (in %) of pursuing a fleeing flank
-	mean_time_to_happen = {
-		days = 25
-	}
-}\n"""
-
-big_ol_block_of_conditionals = {
-            "melee_charge_tactic": """		OR = {
-			knights = 0.01
-			OR = {
-				light_cavalry = 0.01
-				camel_cavalry = 0.01
-			}
-			horse_archers = 0.01
-		}
-		NOT = { AND = {
-			OR = {
-				light_infantry = 0.60
-				heavy_infantry = 0.30
-				pikemen = 0.30
-				war_elephants = 0.03
-				archers = 0.30
-			}
-			NOT = {
-				OR = {
-					knights = 0.16
-					AND = { 
-						horse_archers = 0.30
-						OR = {
-							knights = 0.10
-							NOT = { light_cavalry = 0.10 }
-							NOT = { camel_cavalry = 0.10 }
-						}
-					}
-					AND = {
-						light_cavalry = 0.30
-						OR = {
-							knights = 0.10
-							NOT = { camel_cavalry = 0.10 }
-							NOT = { horse_archers = 0.10 }
-						}
-					}
-					camel_cavalry = 0.30
-				}
-			}
-		} }""",
-            "raid_tactic": """		OR = {
-			light_infantry = 0.01
-			OR = {
-				light_cavalry = 0.01
-				camel_cavalry = 0.01
-			}
-			horse_archers = 0.01
-		}
-		NOT = { AND = {
-			OR = {
-				knights = 0.16
-				heavy_infantry = 0.30
-				pikemen = 0.30
-				war_elephants = 0.03
-				archers = 0.30
-			}
-			NOT = {
-				OR = {
-					AND = {
-						light_infantry = 0.60
-						OR = {
-							NOT = { heavy_infantry = 0.10 }
-							horse_archers = 0.10
-							light_cavalry = 0.10
-							camel_cavalry = 0.10
-						}
-					}
-					AND = { 
-						horse_archers = 0.30
-						OR = {
-							NOT = { knights = 0.10 }
-							light_cavalry = 0.10
-							camel_cavalry = 0.10
-						}
-					}
-					AND = {
-						light_cavalry = 0.30
-						OR = {
-							NOT = { knights = 0.10 }
-							NOT = { camel_cavalry = 0.10 }
-							horse_archers = 0.10
-						}
-					}
-				}
-			}
-		} }""",
-            "advance_tactic": """		OR = {
-			light_infantry = 0.01
-			heavy_infantry = 0.01
-			pikemen = 0.01
-			war_elephants = 0.01
-		}
-		NOT = { AND = {
-			OR = {
-				knights = 0.16
-				light_cavalry = 0.30
-				camel_cavalry = 0.30
-				horse_archers = 0.30
-				archers = 0.30
-			}
-			NOT = {
-				OR = {
-					heavy_infantry = 0.30
-					AND = { 
-						light_infantry = 0.60
-						OR = {
-							heavy_infantry = 0.10
-							NOT = {
-								horse_archers = 0.10
-								light_cavalry = 0.10
-								camel_cavalry = 0.10
-							}
-						}
-					}
-					AND = {
-						OR = {
-                                                    pikemen = 0.30
-                                                    war_elephants = 0.03
-                                                }
-						OR = {
-							NOT = { archers = 0.10 }
-							heavy_infantry = 0.10
-						}
-					}
-				}
-			}
-		} }""",
-            "stand_fast_tactic": """		OR = {
-			archers = 0.01
-			heavy_infantry = 0.01
-			war_elephants = 0.01
-			pikemen = 0.01
-		}
-		NOT = { AND = {
-			OR = {
-				knights = 0.16
-				light_cavalry = 0.30
-				camel_cavalry = 0.30
-				horse_archers = 0.30
-				light_infantry = 0.60
-			}
-			NOT = {
-				OR = {
-					pikemen = 0.30
-					archers = 0.30
-					war_elephants = 0.03
-					AND = {
-						heavy_infantry = 0.30
-						OR = {
-							pikemen = 0.10
-							archers = 0.10
-						}
-					}
-				}
-			}
-		} }""",
-            "harass_tactic": """		OR = {
-			light_cavalry = 0.01
-			camel_cavalry = 0.01
-			light_infantry = 0.01
-		}""",
-            "volley_tactic": """		archers = 0.01""",
-            "swarm_tactic": """		horse_archers = 0.01""",
-            "shieldwall_tactic": """""",
-            "good": """\t\tmodifier = {
-			factor = 0.6
-			leader = {
-				NOT = { martial = 0 }
-			}
-		}
-		modifier = {
-			factor = 0.7
-			leader = {
-				NOT = { martial = 2 }
-			}
-		}
-		modifier = {
-			factor = 0.7
-			leader = {
-				NOT = { martial = 4 }
-			}
-		}
-		modifier = {
-			factor = 0.65
-			leader = {
-				NOT = { martial = 6 }
-			}
-		}
-		modifier = {
-			factor = 0.75
-			leader = {
-				NOT = { martial = 8 }
-			}
-		}
-		modifier = {
-			factor = 0.75
-			leader = {
-				NOT = { martial = 10 }
-			}
-		}
-		modifier = {
-			factor = 1.1
-			leader = {
-				martial = 12
-			}
-		}
-		modifier = {
-			factor = 1.2
-			leader = {
-				martial = 14
-			}
-		}
-		modifier = {
-			factor = 1.3
-			leader = {
-				martial = 16
-			}
-		}
-		modifier = {
-			factor = 1.35
-			leader = {
-				martial = 18
-			}
-		}
-		modifier = {
-			factor = 1.35
-			leader = {
-				martial = 20
-			}
-		}
-		modifier = {
-			factor = 1.35
-			leader = {
-				martial = 22
-			}
-		}
-		modifier = {
-			factor = 1.35
-			leader = {
-				martial = 24
-			}
-		}
-		modifier = {
-			factor = 1.35
-			leader = {
-				martial = 26
-			}
-		}""",
-            "normal": """\t\tmodifier = {
-			factor = 0.8
-			leader = {
-				NOT = { martial = 0 }
-			}
-		}
-		modifier = {
-			factor = 0.8
-			leader = {
-				NOT = { martial = 2 }
-			}
-		}
-		modifier = {
-			factor = 0.9
-			leader = {
-				NOT = { martial = 4 }
-			}
-		}
-		modifier = {
-			factor = 0.9
-			leader = {
-				NOT = { martial = 6 }
-			}
-		}
-		modifier = {
-			factor = 0.95
-			leader = {
-				NOT = { martial = 8 }
-			}
-		}
-		modifier = {
-			factor = 0.95
-			leader = {
-				NOT = { martial = 10 }
-			}
-		}
-		modifier = {
-			factor = 1.1
-			leader = {
-				martial = 12
-			}
-		}
-		modifier = {
-			factor = 1.1
-			leader = {
-				martial = 14
-			}
-		}
-		modifier = {
-			factor = 1.05
-			leader = {
-				martial = 16
-			}
-		}
-		modifier = {
-			factor = 1.05
-			leader = {
-				martial = 18
-			}
-		}
-		modifier = {
-			factor = 1.05
-			leader = {
-				martial = 20
-			}
-		}
-		modifier = {
-			factor = 1.05
-			leader = {
-				martial = 22
-			}
-		}
-		modifier = {
-			factor = 1.05
-			leader = {
-				martial = 24
-			}
-		}
-		modifier = {
-			factor = 1.05
-			leader = {
-				martial = 26
-			}
-		}""",
-            "bad": """\t\tmodifier = {
-			factor = 1.2
-			leader = {
-				NOT = { martial = 0 }
-			}
-		}
-		modifier = {
-			factor = 1.2
-			leader = {
-				NOT = { martial = 2 }
-			}
-		}
-		modifier = {
-			factor = 1.2
-			leader = {
-				NOT = { martial = 4 }
-			}
-		}
-		modifier = {
-			factor = 1.2
-			leader = {
-				NOT = { martial = 6 }
-			}
-		}
-		modifier = {
-			factor = 1.2
-			leader = {
-				NOT = { martial = 8 }
-			}
-		}
-		modifier = {
-			factor = 1.2
-			leader = {
-				NOT = { martial = 10 }
-			}
-		}
-		modifier = {
-			factor = 0.95
-			leader = {
-				martial = 12
-			}
-		}
-		modifier = {
-			factor = 0.95
-			leader = {
-				martial = 14
-			}
-		}
-		modifier = {
-			factor = 0.95
-			leader = {
-				martial = 16
-			}
-		}
-		modifier = {
-			factor = 0.95
-			leader = {
-				martial = 18
-			}
-		}
-		modifier = {
-			factor = 0.8
-			leader = {
-				martial = 20
-			}
-		}
-		modifier = {
-			factor = 0.8
-			leader = {
-				martial = 22
-			}
-		}
-		modifier = {
-			factor = 0.8
-			leader = {
-				martial = 24
-			}
-		}
-		modifier = {
-			factor = 0.8
-			leader = {
-				martial = 26
-			}
-		}"""
-            }
-
-combat_tactics = ""
-localization = "#CODE;ENGLISH;FRENCH;GERMAN;;SPANISH;;;;;;;;;x\n"
-localization += "good_charge_tactic;Devestating Charge Tactic;;;;;;;;;;;;;x\n"
-localization += "bad_charge_tactic;Failed Charge Tactic;;;;;;;;;;;;;x\n"
-
-for i in xrange(1,len(array[0])):
-    tactic_name = array[0][i]
-    tactic_values = {}
-    for j in xrange(1,len(array)):
-        tactic_values[array[j][0]] = array[j][i]
-    combat_tactics += "good_"+tactic_name+" = {\n";
-    localization += "good_"+tactic_name+";Devastating "+tactic_values["name"]+" Tactic;;;;;;;;;;;;;x\n"
-    combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
-    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-10)+"\n"
-    combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
-    combat_tactics += "\ttrigger = {\n"
-    combat_tactics += "\t\tphase = "+tactic_values["phase"]+"\n"
-    combat_tactics += big_ol_block_of_conditionals[tactic_name] + "\n"
-    combat_tactics += "\t\tflank_has_leader = yes\n"
-    if exempt_cultures[tactic_name] != []:
-        combat_tactics += "\t\tNOT = {\n"
-        combat_tactics += "\t\t\tleader = {\n"
-        combat_tactics += "\t\t\t\tOR = {\n"
-        for k in exempt_cultures[tactic_name]:
-            if k[0:2] == "g_":
-				combat_tactics += "\t\t\t\t\tculture_group = "+k[2:]+"\n"
-            else:
-                combat_tactics += "\t\t\t\t\tculture = "+k+"\n"
-        combat_tactics += "\t\t\t\t}\n"
-        combat_tactics += "\t\t\t}\n"
-        combat_tactics += "\t\t}\n" # now the not is closed
-    combat_tactics += "\t}\n"
-    combat_tactics += "\n"
-    combat_tactics += "\tmean_time_to_happen = {\n"
-    combat_tactics += "\t\tdays = "+str(normal_weight)+"\n"
-    combat_tactics += big_ol_block_of_conditionals['good']+"\n"
-    combat_tactics += "\t}\n"
-    combat_tactics += "\tlight_infantry_offensive = "+str(float(tactic_values["light_infantry_offensive"])+0.25)+"\n"
-    combat_tactics += "\theavy_infantry_offensive = "+str(float(tactic_values["heavy_infantry_offensive"])+0.25)+"\n"
-    combat_tactics += "\tpikemen_offensive = "+str(float(tactic_values["pikemen_offensive"])+0.25)+"\n"
-    combat_tactics += "\tlight_cavalry_offensive = "+str(float(tactic_values["light_cavalry_offensive"])+0.25)+"\n"
-    combat_tactics += "\tcamel_cavalry_offensive = "+str(float(tactic_values["camel_cavalry_offensive"])+0.25)+"\n"
-    combat_tactics += "\tknights_offensive = "+str(float(tactic_values["knights_offensive"])+0.25)+"\n"
-    combat_tactics += "\tarchers_offensive = "+str(float(tactic_values["archers_offensive"])+0.25)+"\n"
-    combat_tactics += "\thorse_archers_offensive = "+str(float(tactic_values["horse_archers_offensive"])+0.25)+"\n"
-    combat_tactics += "\twar_elephants_offensive = "+str(float(tactic_values["war_elephants_offensive"])+0.25)+"\n"
-    combat_tactics += "\n"
-    combat_tactics += "\tlight_infantry_defensive = "+str(float(tactic_values["light_infantry_defensive"])+0.25)+"\n"
-    combat_tactics += "\theavy_infantry_defensive = "+str(float(tactic_values["heavy_infantry_defensive"])+0.25)+"\n"
-    combat_tactics += "\tpikemen_defensive = "+str(float(tactic_values["pikemen_defensive"])+0.25)+"\n"
-    combat_tactics += "\tlight_cavalry_defensive = "+str(float(tactic_values["light_cavalry_defensive"])+0.25)+"\n"
-    combat_tactics += "\tcamel_cavalry_defensive = "+str(float(tactic_values["camel_cavalry_defensive"])+0.25)+"\n"
-    combat_tactics += "\tknights_defensive = "+str(float(tactic_values["knights_defensive"])+0.25)+"\n"
-    combat_tactics += "\tarchers_defensive = "+str(float(tactic_values["archers_defensive"])+0.25)+"\n"
-    combat_tactics += "\thorse_archers_defensive = "+str(float(tactic_values["horse_archers_defensive"])+0.25)+"\n"
-    combat_tactics += "\twar_elephants_defensive = "+str(float(tactic_values["war_elephants_defensive"])+0.25)+"\n"
-    combat_tactics += "\tenemy = {\n"
-    combat_tactics += "\t\tgroup = "+tactic_values["enemy"]+"\n"
-    combat_tactics += "\t\tfactor = 1\n"
-    combat_tactics += "\t}\n"
-    combat_tactics += "}\n"
-
-    combat_tactics += tactic_name+" = {\n";
-    localization += tactic_name+";"+tactic_values["name"]+" Tactic;;;;;;;;;;;;;x\n"
-    combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
-    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"]))+"\n"
-    combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
-    combat_tactics += "\ttrigger = {\n"
-    combat_tactics += "\t\tphase = "+tactic_values["phase"]+"\n"
-    combat_tactics += big_ol_block_of_conditionals[tactic_name] + "\n"
-    combat_tactics += "\t\tflank_has_leader = yes\n"
-    if exempt_cultures[tactic_name] != []:
-        combat_tactics += "\t\tNOT = {\n"
-        combat_tactics += "\t\t\tleader = {\n"
-        combat_tactics += "\t\t\t\tOR = {\n"
-        for k in exempt_cultures[tactic_name]:
-            if k[0:2] == "g_":
-                combat_tactics += "\t\t\t\t\tculture_group = "+k[2:]+"\n"
-            else:
-                combat_tactics += "\t\t\t\t\tculture = "+k+"\n"
-        combat_tactics += "\t\t\t\t}\n"
-        combat_tactics += "\t\t\t}\n"
-        combat_tactics += "\t\t}\n" # now the not is closed
-    combat_tactics += "\t}\n"
-    combat_tactics += "\n"
-    combat_tactics += "\tmean_time_to_happen = {\n"
-    combat_tactics += "\t\tdays = "+str(normal_weight)+"\n"
-    combat_tactics += big_ol_block_of_conditionals['normal']+"\n"
-    combat_tactics += "\t}\n"
-    combat_tactics += "\tlight_infantry_offensive = "+str(float(tactic_values["light_infantry_offensive"])+0)+"\n"
-    combat_tactics += "\theavy_infantry_offensive = "+str(float(tactic_values["heavy_infantry_offensive"])+0)+"\n"
-    combat_tactics += "\tpikemen_offensive = "+str(float(tactic_values["pikemen_offensive"])+0)+"\n"
-    combat_tactics += "\tlight_cavalry_offensive = "+str(float(tactic_values["light_cavalry_offensive"])+0)+"\n"
-    combat_tactics += "\tcamel_cavalry_offensive = "+str(float(tactic_values["camel_cavalry_offensive"])+0)+"\n"
-    combat_tactics += "\tknights_offensive = "+str(float(tactic_values["knights_offensive"])+0)+"\n"
-    combat_tactics += "\tarchers_offensive = "+str(float(tactic_values["archers_offensive"])+0)+"\n"
-    combat_tactics += "\thorse_archers_offensive = "+str(float(tactic_values["horse_archers_offensive"])+0)+"\n"
-    combat_tactics += "\twar_elephants_offensive = "+str(float(tactic_values["war_elephants_offensive"])+0)+"\n"
-    combat_tactics += "\n"
-    combat_tactics += "\tlight_infantry_defensive = "+str(float(tactic_values["light_infantry_defensive"])+0)+"\n"
-    combat_tactics += "\theavy_infantry_defensive = "+str(float(tactic_values["heavy_infantry_defensive"])+0)+"\n"
-    combat_tactics += "\tpikemen_defensive = "+str(float(tactic_values["pikemen_defensive"])+0)+"\n"
-    combat_tactics += "\tlight_cavalry_defensive = "+str(float(tactic_values["light_cavalry_defensive"])+0)+"\n"
-    combat_tactics += "\tcamel_cavalry_defensive = "+str(float(tactic_values["camel_cavalry_defensive"])+0)+"\n"
-    combat_tactics += "\tknights_defensive = "+str(float(tactic_values["knights_defensive"])+0)+"\n"
-    combat_tactics += "\tarchers_defensive = "+str(float(tactic_values["archers_defensive"])+0)+"\n"
-    combat_tactics += "\thorse_archers_defensive = "+str(float(tactic_values["horse_archers_defensive"])+0)+"\n"
-    combat_tactics += "\twar_elephants_defensive = "+str(float(tactic_values["war_elephants_defensive"])+0)+"\n"
-    combat_tactics += "\tenemy = {\n"
-    combat_tactics += "\t\tgroup = "+tactic_values["enemy"]+"\n"
-    combat_tactics += "\t\tfactor = 1\n"
-    combat_tactics += "\t}\n"
-    combat_tactics += "}\n"
-
-    combat_tactics += "bad_"+tactic_name+" = {\n";
-    localization += "bad_"+tactic_name+";Failed "+tactic_values["name"]+" Tactic;;;;;;;;;;;;;x\n"
-    combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
-    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])+10)+"\n"
-    combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
-    combat_tactics += "\ttrigger = {\n"
-    combat_tactics += "\t\tphase = "+tactic_values["phase"]+"\n"
-    combat_tactics += big_ol_block_of_conditionals[tactic_name] + "\n"
-    combat_tactics += "\t\tflank_has_leader = yes\n"
-    if exempt_cultures[tactic_name] != []:
-        combat_tactics += "\t\tNOT = {\n"
-        combat_tactics += "\t\t\tleader = {\n"
-        combat_tactics += "\t\t\t\tOR = {\n"
-        for k in exempt_cultures[tactic_name]:
-            if k[0:2] == "g_":
-                combat_tactics += "\t\t\t\t\tculture_group = "+k[2:]+"\n"
-            else:
-                combat_tactics += "\t\t\t\t\tculture = "+k+"\n"
-        combat_tactics += "\t\t\t\t}\n"
-        combat_tactics += "\t\t\t}\n"
-        combat_tactics += "\t\t}\n" # now the not is closed
-    combat_tactics += "\t}\n"
-    combat_tactics += "\n"
-    combat_tactics += "\tmean_time_to_happen = {\n"
-    combat_tactics += "\t\tdays = "+str(normal_weight)+"\n"
-    combat_tactics += big_ol_block_of_conditionals['bad']+"\n"
-    combat_tactics += "\t}\n"
-    combat_tactics += "\tlight_infantry_offensive = "+str(float(tactic_values["light_infantry_offensive"])-0.25)+"\n"
-    combat_tactics += "\theavy_infantry_offensive = "+str(float(tactic_values["heavy_infantry_offensive"])-0.25)+"\n"
-    combat_tactics += "\tpikemen_offensive = "+str(float(tactic_values["pikemen_offensive"])-0.25)+"\n"
-    combat_tactics += "\tlight_cavalry_offensive = "+str(float(tactic_values["light_cavalry_offensive"])-0.25)+"\n"
-    combat_tactics += "\tcamel_cavalry_offensive = "+str(float(tactic_values["camel_cavalry_offensive"])-0.25)+"\n"
-    combat_tactics += "\tknights_offensive = "+str(float(tactic_values["knights_offensive"])-0.25)+"\n"
-    combat_tactics += "\tarchers_offensive = "+str(float(tactic_values["archers_offensive"])-0.25)+"\n"
-    combat_tactics += "\thorse_archers_offensive = "+str(float(tactic_values["horse_archers_offensive"])-0.25)+"\n"
-    combat_tactics += "\twar_elephants_offensive = "+str(float(tactic_values["war_elephants_offensive"])-0.25)+"\n"
-    combat_tactics += "\n"
-    combat_tactics += "\tlight_infantry_defensive = "+str(float(tactic_values["light_infantry_defensive"])-0.25)+"\n"
-    combat_tactics += "\theavy_infantry_defensive = "+str(float(tactic_values["heavy_infantry_defensive"])-0.25)+"\n"
-    combat_tactics += "\tpikemen_defensive = "+str(float(tactic_values["pikemen_defensive"])-0.25)+"\n"
-    combat_tactics += "\tlight_cavalry_defensive = "+str(float(tactic_values["light_cavalry_defensive"])-0.25)+"\n"
-    combat_tactics += "\tcamel_cavalry_defensive = "+str(float(tactic_values["camel_cavalry_defensive"])-0.25)+"\n"
-    combat_tactics += "\tknights_defensive = "+str(float(tactic_values["knights_defensive"])-0.25)+"\n"
-    combat_tactics += "\tarchers_defensive = "+str(float(tactic_values["archers_defensive"])-0.25)+"\n"
-    combat_tactics += "\thorse_archers_defensive = "+str(float(tactic_values["horse_archers_defensive"])-0.25)+"\n"
-    combat_tactics += "\twar_elephants_defensive = "+str(float(tactic_values["war_elephants_defensive"])-0.25)+"\n"
-    combat_tactics += "\tenemy = {\n"
-    combat_tactics += "\t\tgroup = "+tactic_values["enemy"]+"\n"
-    combat_tactics += "\t\tfactor = 1\n"
-    combat_tactics += "\t}\n"
-    combat_tactics += "}\n"
-
-for i in xrange(1,len(array2[0])):
-    tactic_name = array2[0][i]
-    tactic_values = {}
-    for j in xrange(1,len(array2)):
-        tactic_values[array2[j][0]] = array2[j][i]
-    combat_tactics += "good_"+tactic_name+" = {\n";
-    localization += "good_"+tactic_name+";Devastating "+tactic_values["name"]+" Tactic;;;;;;;;;;;;;x\n"
-    combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
-    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])-10)+"\n"
-    combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
-    combat_tactics += "\ttrigger = {\n"
-    combat_tactics += "\t\tphase = "+tactic_values["phase"]+"\n"
-    combat_tactics += big_ol_block_of_conditionals[matching_tactics_list[tactic_name]] + "\n"
-    combat_tactics += "\t\tflank_has_leader = yes\n"
-    if cultural_tactics_list[tactic_name] != []:
-        combat_tactics += "\t\tleader = {\n"
-        combat_tactics += "\t\t\tOR = {\n"
-        for k in cultural_tactics_list[tactic_name]:
-            if k[0:2] == "g_":
-                combat_tactics += "\t\t\t\tculture_group = "+k[2:]+"\n"
-            else:
-                combat_tactics += "\t\t\t\tculture = "+k+"\n"
-        combat_tactics += "\t\t\t}\n"
-        combat_tactics += "\t\t}\n"
-    combat_tactics += "\t}\n"
-    combat_tactics += "\n"
-    combat_tactics += "\tmean_time_to_happen = {\n"
-    combat_tactics += "\t\tdays = "+str(normal_weight)+"\n"
-    combat_tactics += big_ol_block_of_conditionals['good']+"\n"
-    combat_tactics += "\t}\n"
-    combat_tactics += "\tlight_infantry_offensive = "+str(float(tactic_values["light_infantry_offensive"])+0.25)+"\n"
-    combat_tactics += "\theavy_infantry_offensive = "+str(float(tactic_values["heavy_infantry_offensive"])+0.25)+"\n"
-    combat_tactics += "\tpikemen_offensive = "+str(float(tactic_values["pikemen_offensive"])+0.25)+"\n"
-    combat_tactics += "\tlight_cavalry_offensive = "+str(float(tactic_values["light_cavalry_offensive"])+0.25)+"\n"
-    combat_tactics += "\tcamel_cavalry_offensive = "+str(float(tactic_values["camel_cavalry_offensive"])+0.25)+"\n"
-    combat_tactics += "\tknights_offensive = "+str(float(tactic_values["knights_offensive"])+0.25)+"\n"
-    combat_tactics += "\tarchers_offensive = "+str(float(tactic_values["archers_offensive"])+0.25)+"\n"
-    combat_tactics += "\thorse_archers_offensive = "+str(float(tactic_values["horse_archers_offensive"])+0.25)+"\n"
-    combat_tactics += "\twar_elephants_offensive = "+str(float(tactic_values["war_elephants_offensive"])+0.25)+"\n"
-    combat_tactics += "\n"
-    combat_tactics += "\tlight_infantry_defensive = "+str(float(tactic_values["light_infantry_defensive"])+0.25)+"\n"
-    combat_tactics += "\theavy_infantry_defensive = "+str(float(tactic_values["heavy_infantry_defensive"])+0.25)+"\n"
-    combat_tactics += "\tpikemen_defensive = "+str(float(tactic_values["pikemen_defensive"])+0.25)+"\n"
-    combat_tactics += "\tlight_cavalry_defensive = "+str(float(tactic_values["light_cavalry_defensive"])+0.25)+"\n"
-    combat_tactics += "\tcamel_cavalry_defensive = "+str(float(tactic_values["camel_cavalry_defensive"])+0.25)+"\n"
-    combat_tactics += "\tknights_defensive = "+str(float(tactic_values["knights_defensive"])+0.25)+"\n"
-    combat_tactics += "\tarchers_defensive = "+str(float(tactic_values["archers_defensive"])+0.25)+"\n"
-    combat_tactics += "\thorse_archers_defensive = "+str(float(tactic_values["horse_archers_defensive"])+0.25)+"\n"
-    combat_tactics += "\twar_elephants_defensive = "+str(float(tactic_values["war_elephants_defensive"])+0.25)+"\n"
-    combat_tactics += "\tenemy = {\n"
-    combat_tactics += "\t\tgroup = "+tactic_values["enemy"]+"\n"
-    combat_tactics += "\t\tfactor = 1\n"
-    combat_tactics += "\t}\n"
-    combat_tactics += "}\n"
-
-    combat_tactics += tactic_name+" = {\n";
-    localization += tactic_name+";"+tactic_values["name"]+" Tactic;;;;;;;;;;;;;x\n"
-    combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
-    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"]))+"\n"
-    combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
-    combat_tactics += "\ttrigger = {\n"
-    combat_tactics += "\t\tphase = "+tactic_values["phase"]+"\n"
-    combat_tactics += big_ol_block_of_conditionals[matching_tactics_list[tactic_name]] + "\n"
-    combat_tactics += "\t\tflank_has_leader = yes\n"
-    if cultural_tactics_list[tactic_name] != []:
-        combat_tactics += "\t\tleader = {\n"
-        combat_tactics += "\t\t\tOR = {\n"
-        for k in cultural_tactics_list[tactic_name]:
-            if k[0:2] == "g_":
-                combat_tactics += "\t\t\t\tculture_group = "+k[2:]+"\n"
-            else:
-                combat_tactics += "\t\t\t\tculture = "+k+"\n"
-        combat_tactics += "\t\t\t}\n"
-        combat_tactics += "\t\t}\n"
-    combat_tactics += "\t}\n"
-    combat_tactics += "\n"
-    combat_tactics += "\tmean_time_to_happen = {\n"
-    combat_tactics += "\t\tdays = "+str(normal_weight)+"\n"
-    combat_tactics += big_ol_block_of_conditionals['normal']+"\n"
-    combat_tactics += "\t}\n"
-    combat_tactics += "\tlight_infantry_offensive = "+str(float(tactic_values["light_infantry_offensive"])+0)+"\n"
-    combat_tactics += "\theavy_infantry_offensive = "+str(float(tactic_values["heavy_infantry_offensive"])+0)+"\n"
-    combat_tactics += "\tpikemen_offensive = "+str(float(tactic_values["pikemen_offensive"])+0)+"\n"
-    combat_tactics += "\tlight_cavalry_offensive = "+str(float(tactic_values["light_cavalry_offensive"])+0)+"\n"
-    combat_tactics += "\tcamel_cavalry_offensive = "+str(float(tactic_values["camel_cavalry_offensive"])+0)+"\n"
-    combat_tactics += "\tknights_offensive = "+str(float(tactic_values["knights_offensive"])+0)+"\n"
-    combat_tactics += "\tarchers_offensive = "+str(float(tactic_values["archers_offensive"])+0)+"\n"
-    combat_tactics += "\thorse_archers_offensive = "+str(float(tactic_values["horse_archers_offensive"])+0)+"\n"
-    combat_tactics += "\twar_elephants_offensive = "+str(float(tactic_values["war_elephants_offensive"])+0)+"\n"
-    combat_tactics += "\n"
-    combat_tactics += "\tlight_infantry_defensive = "+str(float(tactic_values["light_infantry_defensive"])+0)+"\n"
-    combat_tactics += "\theavy_infantry_defensive = "+str(float(tactic_values["heavy_infantry_defensive"])+0)+"\n"
-    combat_tactics += "\tpikemen_defensive = "+str(float(tactic_values["pikemen_defensive"])+0)+"\n"
-    combat_tactics += "\tlight_cavalry_defensive = "+str(float(tactic_values["light_cavalry_defensive"])+0)+"\n"
-    combat_tactics += "\tcamel_cavalry_defensive = "+str(float(tactic_values["camel_cavalry_defensive"])+0)+"\n"
-    combat_tactics += "\tknights_defensive = "+str(float(tactic_values["knights_defensive"])+0)+"\n"
-    combat_tactics += "\tarchers_defensive = "+str(float(tactic_values["archers_defensive"])+0)+"\n"
-    combat_tactics += "\thorse_archers_defensive = "+str(float(tactic_values["horse_archers_defensive"])+0)+"\n"
-    combat_tactics += "\twar_elephants_defensive = "+str(float(tactic_values["war_elephants_defensive"])+0)+"\n"
-    combat_tactics += "\tenemy = {\n"
-    combat_tactics += "\t\tgroup = "+tactic_values["enemy"]+"\n"
-    combat_tactics += "\t\tfactor = 1\n"
-    combat_tactics += "\t}\n"
-    combat_tactics += "}\n"
-
-    combat_tactics += "bad_"+tactic_name+" = {\n";
-    localization += "bad_"+tactic_name+";Failed "+tactic_values["name"]+" Tactic;;;;;;;;;;;;;x\n"
-    combat_tactics += "\tdays = "+tactic_values["days"]+"\n"
-    combat_tactics += "\tsprite = "+str(int(tactic_values["sprite"])+10)+"\n"
-    combat_tactics += "\tgroup = "+tactic_values["group"]+"\n"
-    combat_tactics += "\ttrigger = {\n"
-    combat_tactics += "\t\tphase = "+tactic_values["phase"]+"\n"
-    combat_tactics += big_ol_block_of_conditionals[matching_tactics_list[tactic_name]] + "\n"
-    combat_tactics += "\t\tflank_has_leader = yes\n"
-    if cultural_tactics_list[tactic_name] != []:
-        combat_tactics += "\t\tleader = {\n"
-        combat_tactics += "\t\t\tOR = {\n"
-        for k in cultural_tactics_list[tactic_name]:
-            if k[0:2] == "g_":
-                combat_tactics += "\t\t\t\tculture_group = "+k[2:]+"\n"
-            else:
-                combat_tactics += "\t\t\t\tculture = "+k+"\n"
-        combat_tactics += "\t\t\t}\n"
-        combat_tactics += "\t\t}\n"
-    combat_tactics += "\t}\n"
-    combat_tactics += "\n"
-    combat_tactics += "\tmean_time_to_happen = {\n"
-    combat_tactics += "\t\tdays = "+str(normal_weight)+"\n"
-    combat_tactics += big_ol_block_of_conditionals['bad']+"\n"
-    combat_tactics += "\t}\n"
-    combat_tactics += "\tlight_infantry_offensive = "+str(float(tactic_values["light_infantry_offensive"])-0.25)+"\n"
-    combat_tactics += "\theavy_infantry_offensive = "+str(float(tactic_values["heavy_infantry_offensive"])-0.25)+"\n"
-    combat_tactics += "\tpikemen_offensive = "+str(float(tactic_values["pikemen_offensive"])-0.25)+"\n"
-    combat_tactics += "\tlight_cavalry_offensive = "+str(float(tactic_values["light_cavalry_offensive"])-0.25)+"\n"
-    combat_tactics += "\tcamel_cavalry_offensive = "+str(float(tactic_values["camel_cavalry_offensive"])-0.25)+"\n"
-    combat_tactics += "\tknights_offensive = "+str(float(tactic_values["knights_offensive"])-0.25)+"\n"
-    combat_tactics += "\tarchers_offensive = "+str(float(tactic_values["archers_offensive"])-0.25)+"\n"
-    combat_tactics += "\thorse_archers_offensive = "+str(float(tactic_values["horse_archers_offensive"])-0.25)+"\n"
-    combat_tactics += "\twar_elephants_offensive = "+str(float(tactic_values["war_elephants_offensive"])-0.25)+"\n"
-    combat_tactics += "\n"
-    combat_tactics += "\tlight_infantry_defensive = "+str(float(tactic_values["light_infantry_defensive"])-0.25)+"\n"
-    combat_tactics += "\theavy_infantry_defensive = "+str(float(tactic_values["heavy_infantry_defensive"])-0.25)+"\n"
-    combat_tactics += "\tpikemen_defensive = "+str(float(tactic_values["pikemen_defensive"])-0.25)+"\n"
-    combat_tactics += "\tlight_cavalry_defensive = "+str(float(tactic_values["light_cavalry_defensive"])-0.25)+"\n"
-    combat_tactics += "\tcamel_cavalry_defensive = "+str(float(tactic_values["camel_cavalry_defensive"])-0.25)+"\n"
-    combat_tactics += "\tknights_defensive = "+str(float(tactic_values["knights_defensive"])-0.25)+"\n"
-    combat_tactics += "\tarchers_defensive = "+str(float(tactic_values["archers_defensive"])-0.25)+"\n"
-    combat_tactics += "\thorse_archers_defensive = "+str(float(tactic_values["horse_archers_defensive"])-0.25)+"\n"
-    combat_tactics += "\twar_elephants_defensive = "+str(float(tactic_values["war_elephants_defensive"])-0.25)+"\n"
-    combat_tactics += "\tenemy = {\n"
-    combat_tactics += "\t\tgroup = "+tactic_values["enemy"]+"\n"
-    combat_tactics += "\t\tfactor = 1\n"
-    combat_tactics += "\t}\n"
-    combat_tactics += "}\n"
-                
-combat_tactics = base_tactics + combat_tactics
-f = open(".."+os.sep+"EMF"+os.sep+"common"+os.sep+"combat_tactics"+os.sep+"00_combat_tactics.txt", "w")
-f.write(combat_tactics)
-f.close()
-f = open(".."+os.sep+"EMF"+os.sep+"localisation"+os.sep+"1_emf_sts.csv", "w")
-f.write(localization)
-f.close()
+if __name__ == '__main__':
+	sys.exit(main())
