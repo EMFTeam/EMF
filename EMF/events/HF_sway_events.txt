@@ -146,6 +146,62 @@ character_event = {
 				break = yes
 			}
 		}
+		# Vassals with a small pool of candidates will have an extra chance of not antagonizing anyone (and/or not changing their sway target if they already have one)
+		if = {
+			limit = {
+				independent = no
+			}
+			random = {
+				chance = 10
+				modifier = {
+					factor = 0
+					any_realm_lord = {
+						count = 9
+						OR = {
+							is_liege_or_above_of = ROOT
+							same_liege = ROOT
+						}
+					}
+				}
+				modifier = {
+					factor = 2
+					NOT = {
+						any_realm_lord = {
+							count = 8
+							OR = {
+								is_liege_or_above_of = ROOT
+								same_liege = ROOT
+							}
+						}
+					}
+				}
+				modifier = {
+					factor = 2
+					NOT = {
+						any_realm_lord = {
+							count = 4
+							OR = {
+								is_liege_or_above_of = ROOT
+								same_liege = ROOT
+							}
+						}
+					}
+				}
+				modifier = {
+					factor = 2
+					NOT = {
+						any_realm_lord = {
+							count = 2
+							OR = {
+								is_liege_or_above_of = ROOT
+								same_liege = ROOT
+							}
+						}
+					}
+				}
+				break = yes
+			}
+		}
 		random_playable_ruler = {
 			limit = {
 				OR = {
@@ -479,26 +535,23 @@ character_event = {
 			limit = {
 				persistent_event_target:sway_target = {
 					OR = {
-						is_ruler = yes
-						is_heir = ROOT
 						AND = {
-							emf_is_voter = yes
-							vassal_of = ROOT
-						}
-					}
-					OR = {
-						vassal_of = ROOT
-						is_liege_or_above_of = ROOT
-						same_liege = ROOT
-						AND = {
-							independent = yes
-							ROOT = { independent = yes }
-							any_neighbor_independent_ruler = { character = ROOT }
-						}
-						AND = {
-							reverse_opinion = { who = ROOT value = 0 }
-							persistent_event_target:antagonize_target = {
-								character = ROOT
+							is_ruler = yes
+							OR = {
+								vassal_of = ROOT
+								is_liege_or_above_of = ROOT
+								same_liege = ROOT
+								AND = {
+									independent = yes
+									ROOT = { independent = yes }
+									any_neighbor_independent_ruler = { character = ROOT }
+								}
+								AND = {
+									reverse_opinion = { who = ROOT value = 0 }
+									persistent_event_target:antagonize_target = {
+										character = ROOT
+									}
+								}
 							}
 						}
 						AND = {
@@ -670,6 +723,7 @@ character_event = {
 		player_heir = {
 			if = {
 				limit = {
+					lower_educational_trait_trigger = yes
 					is_inaccessible_trigger = no
 					is_adult = yes
 					is_incapable = no
@@ -697,45 +751,14 @@ character_event = {
 						}
 						rightful_religious_head = ROOT
 					}
-					lower_educational_trait_trigger = yes
-					OR = {
-						AND = {
-							has_education_diplomacy_trigger = yes
-							ROOT = { attribute_diff = { character = PREV attribute = diplomacy value = 5 } }
-						}
-						AND = {
-							has_education_martial_trigger = yes
-							ROOT = { attribute_diff = { character = PREV attribute = martial value = 5 } }
-						}
-						AND = {
-							has_education_stewardship_trigger = yes
-							ROOT = { attribute_diff = { character = PREV attribute = stewardship value = 5 } }
-						}
-						AND = {
-							has_education_intrigue_trigger = yes
-							ROOT = { attribute_diff = { character = PREV attribute = intrigue value = 5 } }
-						}
-						AND = {
-							has_education_learning_trigger = yes
-							ROOT = { attribute_diff = { character = PREV attribute = learning value = 5 } }
-						}
-					}
 				}
 				save_event_target_as = potential_swayed
 			}
 		}
 		if = {
 			limit = { NOT = { event_target:potential_swayed = { always = yes } } }
-			random_character = {
+			random_playable_ruler = {
 				limit = {
-					OR = {
-						is_ruler = yes
-						is_heir = ROOT
-						AND = {
-							emf_is_voter = yes
-							vassal_of = ROOT
-						}
-					}
 					OR = {
 						vassal_of = ROOT
 						is_liege_or_above_of = ROOT
@@ -751,27 +774,11 @@ character_event = {
 								character = ROOT
 							}
 						}
-						AND = {
-							is_heir = ROOT
-							OR = {
-								is_close_relative = ROOT
-								dynasty = ROOT
-							}
-							lower_educational_trait_trigger = yes
-						}
 					}
 					reverse_opinion = { who = ROOT value = 0 }
 					# Only sway human players if the requirements for becoming friends or lovers through the event chain would be immediately met. 
 					OR = {
 						ai = yes
-						AND = {
-							is_heir = ROOT
-							OR = {
-								is_close_relative = ROOT
-								dynasty = ROOT
-							}
-							lower_educational_trait_trigger = yes
-						}
 						AND = {
 							opinion = { who = ROOT value = 60 }
 							reverse_opinion = { who = ROOT value = 60 }
@@ -802,21 +809,11 @@ character_event = {
 					is_inaccessible_trigger = no
 					is_adult = yes
 					is_incapable = no
-					NOT = { character = ROOT }
-					OR = {
-						NOR = {
-							is_lover = ROOT
-							is_friend = ROOT
-							is_rival = ROOT
-						}
-						AND = {
-							is_heir = ROOT
-							OR = {
-								is_close_relative = ROOT
-								dynasty = ROOT
-							}
-							lower_educational_trait_trigger = yes
-						}
+					NOR = {
+						character = ROOT
+						is_lover = ROOT
+						is_friend = ROOT
+						is_rival = ROOT
 					}
 					NOR = {
 						has_opinion_modifier = { who = FROM modifier = opinion_rebuked_appeaser_cooldown }
@@ -841,157 +838,37 @@ character_event = {
 					persistent_event_target:antagonize_target = {
 						character = ROOT
 					}
-					OR = {
-						reverse_opinion = { who = ROOT value = 100 }
-						AND = {
-							reverse_opinion = { who = ROOT value = 0 }
-							OR = {
-								AND = {
-									emf_is_voter = yes
-									vassal_of = ROOT
-								}
-								AND = {
-									is_heir = ROOT
-									OR = {
-										is_close_relative = ROOT
-										dynasty = ROOT
-									}
-									lower_educational_trait_trigger = yes
-								}
-							}
-						}
-					}
+					reverse_opinion = { who = ROOT value = 100 }
 				}
 				preferred_limit = {
 					NOT = { opinion = { who = ROOT value = 0 } }
-					OR = {
-						reverse_opinion = { who = ROOT value = 100 }
-						AND = {
-							emf_is_voter = yes
-							vassal_of = ROOT
-						}
-						AND = {
-							is_heir = ROOT
-							OR = {
-								is_close_relative = ROOT
-								dynasty = ROOT
-							}
-							lower_educational_trait_trigger = yes
-						}
-					}
+					reverse_opinion = { who = ROOT value = 100 }
 				}
 				preferred_limit = {
 					persistent_event_target:antagonize_target = {
 						character = ROOT
 					}
-					OR = {
-						reverse_opinion = { who = ROOT value = 75 }
-						AND = {
-							emf_is_voter = yes
-							vassal_of = ROOT
-						}
-						AND = {
-							is_heir = ROOT
-							OR = {
-								is_close_relative = ROOT
-								dynasty = ROOT
-							}
-							lower_educational_trait_trigger = yes
-						}
-					}
+					reverse_opinion = { who = ROOT value = 75 }
 				}
 				preferred_limit = {
 					NOT = { opinion = { who = ROOT value = 0 } }
-					OR = {
-						reverse_opinion = { who = ROOT value = 75 }
-						AND = {
-							emf_is_voter = yes
-							vassal_of = ROOT
-						}
-						AND = {
-							is_heir = ROOT
-							OR = {
-								is_close_relative = ROOT
-								dynasty = ROOT
-							}
-							lower_educational_trait_trigger = yes
-						}
-					}
+					reverse_opinion = { who = ROOT value = 75 }
 				}
 				preferred_limit = {
 					persistent_event_target:antagonize_target = {
 						character = ROOT
 					}
-					OR = {
-						reverse_opinion = { who = ROOT value = 50 }
-						AND = {
-							emf_is_voter = yes
-							vassal_of = ROOT
-						}
-						AND = {
-							is_heir = ROOT
-							OR = {
-								is_close_relative = ROOT
-								dynasty = ROOT
-							}
-							lower_educational_trait_trigger = yes
-						}
-					}
+					reverse_opinion = { who = ROOT value = 50 }
 				}
 				preferred_limit = {
 					NOT = { opinion = { who = ROOT value = 0 } }
-					OR = {
-						reverse_opinion = { who = ROOT value = 50 }
-						AND = {
-							emf_is_voter = yes
-							vassal_of = ROOT
-						}
-						AND = {
-							is_heir = ROOT
-							OR = {
-								is_close_relative = ROOT
-								dynasty = ROOT
-							}
-							lower_educational_trait_trigger = yes
-						}
-					}
+					reverse_opinion = { who = ROOT value = 50 }
 				}
 				preferred_limit = {
 					persistent_event_target:antagonize_target = {
 						character = ROOT
 					}
-					OR = {
-						reverse_opinion = { who = ROOT value = 25 }
-						AND = {
-							emf_is_voter = yes
-							vassal_of = ROOT
-						}
-						AND = {
-							is_heir = ROOT
-							OR = {
-								is_close_relative = ROOT
-								dynasty = ROOT
-							}
-							lower_educational_trait_trigger = yes
-						}
-					}
-				}
-				preferred_limit = {
-					OR = {
-						reverse_opinion = { who = ROOT value = 25 }
-						AND = {
-							emf_is_voter = yes
-							vassal_of = ROOT
-						}
-						AND = {
-							is_heir = ROOT
-							OR = {
-								is_close_relative = ROOT
-								dynasty = ROOT
-							}
-							lower_educational_trait_trigger = yes
-						}
-					}
+					reverse_opinion = { who = ROOT value = 25 }
 				}
 				preferred_limit = {
 					persistent_event_target:antagonize_target = {
@@ -1004,6 +881,62 @@ character_event = {
 		if = {
 			limit = { persistent_event_target:sway_target = { character = event_target:potential_swayed } }
 			break = yes
+		}
+		# Vassals with a small pool of candidates will have an extra chance of not swaying anyone (and/or not changing their sway target if they already have one)
+		if = {
+			limit = {
+				independent = no
+			}
+			random = {
+				chance = 10
+				modifier = {
+					factor = 0
+					any_realm_lord = {
+						count = 9
+						OR = {
+							is_liege_or_above_of = ROOT
+							same_liege = ROOT
+						}
+					}
+				}
+				modifier = {
+					factor = 2
+					NOT = {
+						any_realm_lord = {
+							count = 8
+							OR = {
+								is_liege_or_above_of = ROOT
+								same_liege = ROOT
+							}
+						}
+					}
+				}
+				modifier = {
+					factor = 2
+					NOT = {
+						any_realm_lord = {
+							count = 4
+							OR = {
+								is_liege_or_above_of = ROOT
+								same_liege = ROOT
+							}
+						}
+					}
+				}
+				modifier = {
+					factor = 2
+					NOT = {
+						any_realm_lord = {
+							count = 2
+							OR = {
+								is_liege_or_above_of = ROOT
+								same_liege = ROOT
+							}
+						}
+					}
+				}
+				break = yes
+			}
 		}
 		if = {
 			limit = { event_target:potential_swayed = { is_alive = yes } } #Prevent script asserts in case of no character being scoped to.
