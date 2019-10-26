@@ -755,6 +755,113 @@ character_event = {
 				save_event_target_as = potential_swayed
 			}
 		}
+		# Make sure we definitely stop swaying a player if the conditions to become friends/lovers with them are not met.
+		if = {
+			limit = {
+				persistent_event_target:sway_target = {
+					ai = no
+					NAND = {
+						opinion = { who = ROOT value = 60 }
+						reverse_opinion = { who = ROOT value = 60 }
+						NOR = {
+							is_friend = ROOT
+							is_lover = ROOT
+						}
+						OR = {
+							NOR = { # Possibility to become friends
+								num_of_friends = 3
+								ROOT = { num_of_friends = 3 }
+							}
+							AND = { # Possibility to become lovers
+								root_mutual_attraction_trigger = yes
+								NOR = {
+									num_of_lovers = 3
+									trait = celibate
+									trait = eunuch
+								}
+								ROOT = {
+									NOR = {
+										num_of_lovers = 3
+										trait = celibate
+										trait = eunuch
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			remove_special_interest = persistent_event_target:sway_target
+			clear_persistent_event_target = sway_target
+		}
+		# Vassals with a small pool of candidates will have an extra chance of not swaying anyone (and/or not changing their sway target if they already have one)
+		if = {
+			limit = {
+				independent = no
+			}
+			random = {
+				chance = 10
+				modifier = {
+					factor = 0
+					any_realm_lord = {
+						count = 9
+						OR = {
+							is_liege_or_above_of = ROOT
+							same_liege = ROOT
+						}
+					}
+				}
+				modifier = {
+					factor = 2
+					NOT = {
+						any_realm_lord = {
+							count = 8
+							OR = {
+								is_liege_or_above_of = ROOT
+								same_liege = ROOT
+							}
+						}
+					}
+				}
+				modifier = {
+					factor = 2
+					NOT = {
+						any_realm_lord = {
+							count = 4
+							OR = {
+								is_liege_or_above_of = ROOT
+								same_liege = ROOT
+							}
+						}
+					}
+				}
+				modifier = {
+					factor = 2
+					NOT = {
+						any_realm_lord = {
+							count = 2
+							OR = {
+								is_liege_or_above_of = ROOT
+								same_liege = ROOT
+							}
+						}
+					}
+				}
+				if = {
+					limit = { event_target:potential_swayed = { always = yes } }
+					if = {
+						limit = { persistent_event_target:sway_target = { always = yes } } 
+						remove_special_interest = persistent_event_target:sway_target 
+					}
+					save_persistent_event_target = {
+						name = sway_target
+						scope = event_target:potential_swayed
+					}
+					add_special_interest = { who = persistent_event_target:sway_target key = swaying_target_key }
+				}
+				break = yes
+			}
+		}
 		if = {
 			limit = { NOT = { event_target:potential_swayed = { always = yes } } }
 			random_playable_ruler = {
@@ -882,69 +989,13 @@ character_event = {
 			limit = { persistent_event_target:sway_target = { character = event_target:potential_swayed } }
 			break = yes
 		}
-		# Vassals with a small pool of candidates will have an extra chance of not swaying anyone (and/or not changing their sway target if they already have one)
-		if = {
-			limit = {
-				independent = no
-			}
-			random = {
-				chance = 10
-				modifier = {
-					factor = 0
-					any_realm_lord = {
-						count = 9
-						OR = {
-							is_liege_or_above_of = ROOT
-							same_liege = ROOT
-						}
-					}
-				}
-				modifier = {
-					factor = 2
-					NOT = {
-						any_realm_lord = {
-							count = 8
-							OR = {
-								is_liege_or_above_of = ROOT
-								same_liege = ROOT
-							}
-						}
-					}
-				}
-				modifier = {
-					factor = 2
-					NOT = {
-						any_realm_lord = {
-							count = 4
-							OR = {
-								is_liege_or_above_of = ROOT
-								same_liege = ROOT
-							}
-						}
-					}
-				}
-				modifier = {
-					factor = 2
-					NOT = {
-						any_realm_lord = {
-							count = 2
-							OR = {
-								is_liege_or_above_of = ROOT
-								same_liege = ROOT
-							}
-						}
-					}
-				}
-				break = yes
-			}
-		}
 		if = {
 			limit = { event_target:potential_swayed = { is_alive = yes } } #Prevent script asserts in case of no character being scoped to.
 			random = {
 				chance = 40
 				# Can improve heir education
 				modifier = {
-					factor = 2
+					factor = 100
 					event_target:potential_swayed = {
 						is_heir = ROOT
 						OR = {
