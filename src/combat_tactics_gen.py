@@ -170,7 +170,6 @@ def print_charge_tactics(f):
 ##########################################################################''', file=f)
 	for tactic_level in combat_tactics_levels:
 		print_tactic(f, tactic_level, "charge_tactic", charge_tactic_values, False, True)
-	print_tactic(f, glorious_combat_tactic_level, "charge_on_undefended_tactic", charge_tactic_values, False, True, True)
 
 def print_generic_combat_tactics(f):
 	print('''
@@ -258,7 +257,7 @@ def print_tactic_localization(f, tactic_level, tactic_name, tactic_values, is_cu
 	localization_text += tactic_values["name"]+" Tactic;;;;;;;;;;;;;x"
 	print(localization_text, file=f)
 
-def print_tactic(f, tactic_level, tactic_name, tactic_values, is_cultural=False, is_charge_tactic=False, is_charge_on_undefended=False):
+def print_tactic(f, tactic_level, tactic_name, tactic_values, is_cultural=False, is_charge_tactic=False):
 	print("""
 # {6} Tactic
 {0}{1} = {{
@@ -267,13 +266,13 @@ def print_tactic(f, tactic_level, tactic_name, tactic_values, is_cultural=False,
 	group = {4}
 	trigger = {{
 		phase = {5}
-		emf_{5}_{4}_tactic_troop_requirements = yes""".format(tactic_level.prefix + "_" if tactic_level.prefix and not is_charge_on_undefended else "",tactic_name + "_tactic" if tactic_level.prefix == "glorious" and is_cultural else tactic_name,tactic_values["days"],str(int(tactic_values["sprite"])+tactic_level.sprite_offset),tactic_values["group"],tactic_values["phase"],tactic_values["name"] if tactic_level.prefix == "glorious" and is_cultural else (tactic_level.name_prefix + " " if tactic_level.name_prefix else "") + tactic_values["name"]), file=f)
+		emf_{5}_{4}_tactic_troop_requirements = yes""".format(tactic_level.prefix + "_" if tactic_level.prefix else "",tactic_name + "_tactic" if tactic_level.prefix == "glorious" and is_cultural else tactic_name,tactic_values["days"],str(int(tactic_values["sprite"])+tactic_level.sprite_offset),tactic_values["group"],tactic_values["phase"],tactic_values["name"] if tactic_level.prefix == "glorious" and is_cultural else (tactic_level.name_prefix + " " if tactic_level.name_prefix else "") + tactic_values["name"]), file=f)
 	if is_charge_tactic:
 		print("""		is_flanking = no
-		days = {0} # duration of combat >= {0} days""".format(3 if is_charge_on_undefended else 10), file=f)
-	if (tactic_level.requires_flank_leader and not is_charge_on_undefended) or is_cultural:
+		days = {0} # duration of combat >= {0} days""".format(10), file=f)
+	if tactic_level.requires_flank_leader or is_cultural:
 		print("""		flank_has_leader = yes""", file=f)
-	if tactic_level.prefix == "glorious" and not is_charge_on_undefended:
+	if tactic_level.prefix == "glorious":
 		print("""		leader = {
 			has_character_modifier = call_to_glory""", file=f)
 		if is_cultural:
@@ -306,25 +305,12 @@ def print_tactic(f, tactic_level, tactic_name, tactic_values, is_cultural=False,
 	print("""	}}
 	
 	mean_time_to_happen = {{
-		days = {0}""".format(100 if is_charge_on_undefended else (charge_weight if is_charge_tactic else (cultural_weight if is_cultural else normal_weight))), file=f)
-	if is_charge_on_undefended:
+		days = {0}""".format(charge_weight if is_charge_tactic else (cultural_weight if is_cultural else normal_weight)), file=f)
+	print("""		emf_{0}_tactic_leader_score = yes""".format(tactic_level.mtth_score_prefix), file=f)
+	if tactic_level.has_tech_mtth_score_modifier:
+		print("""		emf_{0}_tactic_tech_{1}_score = yes""".format(tactic_level.mtth_score_prefix,tactic_values["phase"]), file=f)
+	if is_charge_tactic:
 		print("""		modifier = {
-			factor = 0
-			NOT = {
-				enemy = {
-					troops = {
-					who = archers
-						value = 0.6
-					}
-				}
-			}
-		}""", file=f)
-	else:
-		print("""		emf_{0}_tactic_leader_score = yes""".format(tactic_level.mtth_score_prefix), file=f)
-		if tactic_level.has_tech_mtth_score_modifier:
-			print("""		emf_{0}_tactic_tech_{1}_score = yes""".format(tactic_level.mtth_score_prefix,tactic_values["phase"]), file=f)
-		if is_charge_tactic:
-			print("""		modifier = {
 			factor = 3
 			troops = {
 				who = knights
