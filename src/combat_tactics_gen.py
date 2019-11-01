@@ -13,23 +13,24 @@ localization_path = emf_path / 'localisation/1_emf_combat_tactics_codegen.csv'
 ###
 
 class CombatTacticLevel:
-	def __init__(self,prefix,name_prefix,sprite_offset,mtth_score_prefix,global_offensive_modifier,global_defensive_modifier,requires_flank_leader=True,has_tech_mtth_score_modifier=False):
+	def __init__(self,prefix,name_prefix,sprite_offset,mtth_score_prefix,mtth_weight_modifier,global_offensive_modifier,global_defensive_modifier,requires_flank_leader=True,has_tech_mtth_score_modifier=False):
 		self.prefix = prefix
 		self.name_prefix = name_prefix
 		self.sprite_offset = sprite_offset
 		self.mtth_score_prefix = mtth_score_prefix
+		self.mtth_weight_modifier = mtth_weight_modifier
 		self.global_offensive_modifier = global_offensive_modifier
 		self.global_defensive_modifier = global_defensive_modifier
 		self.requires_flank_leader = requires_flank_leader
 		self.has_tech_mtth_score_modifier = has_tech_mtth_score_modifier
 
 combat_tactics_levels = [
-	CombatTacticLevel("good","Devastating",-10,"good",0.25,0.25),
-	CombatTacticLevel("","",0,"ok",0,0),
-	CombatTacticLevel("bad","Failed",10,"bad",-0.25,-0.25,False,True)
+	CombatTacticLevel("good","Devastating",-10,"good",1,0.25,0.25),
+	CombatTacticLevel("","",0,"ok",1,0,0),
+	CombatTacticLevel("bad","Failed",10,"bad",1,-0.25,-0.25,False,True)
 ]
 
-glorious_combat_tactic_level = CombatTacticLevel("glorious","Glorious",-10,"good",0.5,0.5)
+glorious_combat_tactic_level = CombatTacticLevel("glorious","Glorious",-10,"good",1,0.5,0.5)
 
 ###
 
@@ -245,11 +246,22 @@ def print_tactic(f, tactic_level, tactic_name, tactic_values, is_cultural=False)
 				print("""			}""", file=f)
 		print("""		}""", file=f)
 	elif is_cultural:
-		print("""		leader = {{
+		if tactic_level == combat_tactics_levels[0]:
+			print("""		leader = {{
+			NOT = {{ has_character_modifier = call_to_glory }}
+			emf_{0}_culture = yes
+		}}""".format(tactic_name), file=f)
+		else:
+			print("""		leader = {{
 			emf_{0}_culture = yes
 		}}""".format(tactic_name), file=f)
 	elif tactic_name in replacement_tactics_list and len(replacement_tactics_list[tactic_name]) > 0:
-		print("""		NOT = {
+		if tactic_level == combat_tactics_levels[0]:
+			print("""		NOR = {
+			leader = { has_character_modifier = call_to_glory }
+			leader = {""", file=f)
+		else:
+			print("""		NOT = {
 			leader = {""", file=f)
 		if len(replacement_tactics_list[tactic_name]) == 1:
 			print("""				emf_{0}_culture = yes""".format(replacement_tactics_list[tactic_name][0]), file=f)
@@ -263,7 +275,7 @@ def print_tactic(f, tactic_level, tactic_name, tactic_values, is_cultural=False)
 	print("""	}}
 	
 	mean_time_to_happen = {{
-		days = {0}""".format(tactic_values["weight"]), file=f)
+		days = {0}""".format(str(int(tactic_values["weight"])*tactic_level.mtth_weight_modifier)), file=f)
 	print("""		emf_{0}_tactic_leader_score = yes""".format(tactic_level.mtth_score_prefix), file=f)
 	if tactic_level.has_tech_mtth_score_modifier:
 		print("""		emf_{0}_tactic_tech_{1}_score = yes""".format(tactic_level.mtth_score_prefix,tactic_values["phase"]), file=f)
