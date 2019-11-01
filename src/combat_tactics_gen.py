@@ -47,7 +47,7 @@ charge_tactic_values = {
 	"knights_offensive": 1.0,
 	"archers_offensive": 0,
 	"horse_archers_offensive": 0.5,
-	"war_elephants_offensive": 0,
+	"war_elephants_offensive": 1.0,
 	"light_infantry_defensive": 0,
 	"heavy_infantry_defensive": 0,
 	"pikemen_defensive": 0,
