@@ -139,8 +139,8 @@ def print_header(f, spec=None, call_to_glory=False):
 #   - Winter's Maw Tactic - Norse (upgraded Advance)
 #   - Wolf's Howling Tactic - Tengri (upgraded Swarm)
 #   - Lightning Raid Tactic - Slavic (upgraded Raid)
-#   - Last Stand Tactic - Baltic (upgraded Shieldwall)
-#   - Elk's Lament Tactic - Finnish (upgraded Shieldwall)
+#   - Last Stand Tactic - Baltic (upgraded Advance)
+#   - Elk's Lament Tactic - Finnish (upgraded Volley)
 #   - Bull Horns Tactic - West-Africans (upgraded Harass)
 #   - Missile Swarm Tactic - East-Africans (upgraded Harass)
 #   - Lightburst Tactic - Zunists (upgraded Volley)
@@ -156,7 +156,7 @@ def main():
 		print_cultural_combat_tactics(f)
 	
 	with call_to_glory_tactics_path.open('w', encoding='cp1252', newline='\n') as f:
-		print_header(f, 'ck2.combat_tactics')
+		print_header(f, 'ck2.combat_tactics', True)
 		print_call_to_glory_combat_tactics(f)
 	
 	with localization_path.open('w', encoding='cp1252', newline='\n') as f:
