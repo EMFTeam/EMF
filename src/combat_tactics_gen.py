@@ -224,7 +224,7 @@ def print_tactic(f, tactic_level, tactic_name, tactic_values, is_cultural=False)
 	group = {4}
 	trigger = {{
 		phase = {5}
-		emf_{5}_{4}_tactic_troop_requirements = yes""".format(tactic_level.prefix + "_" if tactic_level.prefix else "",tactic_name + "_tactic" if tactic_level.prefix == "glorious" and is_cultural else tactic_name,tactic_values["days"],str(int(tactic_values["sprite"])+tactic_level.sprite_offset),tactic_values["group"],tactic_values["phase"],tactic_values["name"] if tactic_level.prefix == "glorious" and is_cultural else (tactic_level.name_prefix + " " if tactic_level.name_prefix else "") + tactic_values["name"]), file=f)
+		emf_{7}_troop_requirements = yes""".format(tactic_level.prefix + "_" if tactic_level.prefix else "",tactic_name + "_tactic" if tactic_level.prefix == "glorious" and is_cultural else tactic_name,tactic_values["days"],str(int(tactic_values["sprite"])+tactic_level.sprite_offset),tactic_values["group"],tactic_values["phase"],tactic_values["name"] if tactic_level.prefix == "glorious" and is_cultural else (tactic_level.name_prefix + " " if tactic_level.name_prefix else "") + tactic_values["name"], tactic_values["replaces"] if is_cultural else tactic_name), file=f)
 	if is_charge_tactic:
 		print("""		is_flanking = no
 		days = {0} # duration of combat >= {0} days""".format(10), file=f)
@@ -330,8 +330,20 @@ def print_tactic(f, tactic_level, tactic_name, tactic_values, is_cultural=False)
 		print("""
 	enemy = {{
 		group = {0}
-		factor = 1
-	}}""".format(tactic_values["enemy"]), file=f)
+		factor = {1}
+	}}""".format(tactic_values["enemy"], tactic_values["enemy_factor"]), file=f)
+	if tactic_values["enemy_2"]:
+		print("""
+	enemy = {{
+		group = {0}
+		factor = {1}
+	}}""".format(tactic_values["enemy_2"], tactic_values["enemy_2_factor"]), file=f)
+	if tactic_values["enemy_3"]:
+		print("""
+	enemy = {{
+		group = {0}
+		factor = {1}
+	}}""".format(tactic_values["enemy_3"], tactic_values["enemy_3_factor"]), file=f)
 	print("}", file=f)
 
 ###
