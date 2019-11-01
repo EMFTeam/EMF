@@ -33,32 +33,6 @@ glorious_combat_tactic_level = CombatTacticLevel("glorious","Glorious",-10,"good
 
 ###
 
-charge_tactic_values = {
-	"days": 5,
-	"sprite": 15,
-	"group": "charge",
-	"phase": "skirmish",
-	"name": "Closing Charge",
-	"light_infantry_offensive": 0,
-	"heavy_infantry_offensive": 0,
-	"pikemen_offensive": 0,
-	"light_cavalry_offensive": 0.5,
-	"camel_cavalry_offensive": 1.0,
-	"knights_offensive": 1.0,
-	"archers_offensive": 0,
-	"horse_archers_offensive": 0.5,
-	"war_elephants_offensive": 1.0,
-	"light_infantry_defensive": 0,
-	"heavy_infantry_defensive": 0,
-	"pikemen_defensive": 0,
-	"light_cavalry_defensive": 0,
-	"camel_cavalry_defensive": 0,
-	"knights_defensive": 0,
-	"archers_defensive": 0,
-	"horse_archers_defensive": 0,
-	"war_elephants_defensive": 0
-}
-
 f = open('./combat_tactics.csv')
 generic_tactics_data_array = [line.strip().split(',') for line in f]
 f.close()
@@ -70,10 +44,6 @@ f.close()
 f = open('./call_to_glory_combat_tactics.csv')
 special_call_to_glory_tactics_data_array = [line.strip().split(',') for line in f]
 f.close()
-
-normal_weight = 3
-cultural_weight = 3
-charge_weight = 6
 
 replacement_tactics_list = {}
 replacement_glorious_tactics_list = {}
@@ -151,7 +121,6 @@ def print_header(f, spec=None, call_to_glory=False):
 def main():
 	with tactics_path.open('w', encoding='cp1252', newline='\n') as f:
 		print_header(f, 'ck2.combat_tactics')
-		print_charge_tactics(f)
 		print_generic_combat_tactics(f)
 		print_cultural_combat_tactics(f)
 	
@@ -162,14 +131,6 @@ def main():
 	with localization_path.open('w', encoding='cp1252', newline='\n') as f:
 		print_localizations(f)
 	return 0
-
-def print_charge_tactics(f):
-	print('''
-##########################################################################
-# Closing Charge Tactics
-##########################################################################''', file=f)
-	for tactic_level in combat_tactics_levels:
-		print_tactic(f, tactic_level, "charge_tactic", charge_tactic_values, False, True)
 
 def print_generic_combat_tactics(f):
 	print('''
@@ -202,7 +163,6 @@ def print_call_to_glory_combat_tactics(f):
 ##########################################################################
 # Call to Glory Tactics
 ##########################################################################''', file=f)
-	print_tactic(f, glorious_combat_tactic_level, "charge_tactic", charge_tactic_values, False, True)
 	for i in range(1,len(generic_tactics_data_array[0])):
 		tactic_name = generic_tactics_data_array[0][i]
 		tactic_values = {}
@@ -225,9 +185,6 @@ def print_localizations(f):
 ########################################################################
 # NOTE: This file is code-generated and should NOT be edited manually. #
 ########################################################################''', file=f)
-	print_tactic_localization(f, glorious_combat_tactic_level, "charge_tactic", charge_tactic_values)
-	for tactic_level in combat_tactics_levels:
-		print_tactic_localization(f, tactic_level, "charge_tactic", charge_tactic_values)
 	for i in range(1,len(generic_tactics_data_array[0])):
 		tactic_name = generic_tactics_data_array[0][i]
 		tactic_values = {}
@@ -257,7 +214,8 @@ def print_tactic_localization(f, tactic_level, tactic_name, tactic_values, is_cu
 	localization_text += tactic_values["name"]+" Tactic;;;;;;;;;;;;;x"
 	print(localization_text, file=f)
 
-def print_tactic(f, tactic_level, tactic_name, tactic_values, is_cultural=False, is_charge_tactic=False):
+def print_tactic(f, tactic_level, tactic_name, tactic_values, is_cultural=False):
+	is_charge_tactic = tactic_values["ischarge"] and tactic_values["ischarge"] == "TRUE"
 	print("""
 # {6} Tactic
 {0}{1} = {{
@@ -305,7 +263,7 @@ def print_tactic(f, tactic_level, tactic_name, tactic_values, is_cultural=False,
 	print("""	}}
 	
 	mean_time_to_happen = {{
-		days = {0}""".format(charge_weight if is_charge_tactic else (cultural_weight if is_cultural else normal_weight)), file=f)
+		days = {0}""".format(tactic_values["weight"]), file=f)
 	print("""		emf_{0}_tactic_leader_score = yes""".format(tactic_level.mtth_score_prefix), file=f)
 	if tactic_level.has_tech_mtth_score_modifier:
 		print("""		emf_{0}_tactic_tech_{1}_score = yes""".format(tactic_level.mtth_score_prefix,tactic_values["phase"]), file=f)
@@ -367,7 +325,8 @@ def print_tactic(f, tactic_level, tactic_name, tactic_values, is_cultural=False,
 	if is_charge_tactic:
 		print("""
 	change_phase_to = melee""", file=f)
-	else:
+	
+	if tactic_values["enemy"]:
 		print("""
 	enemy = {{
 		group = {0}
