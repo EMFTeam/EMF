@@ -13,7 +13,7 @@ localization_path = emf_path / 'localisation/1_emf_combat_tactics_codegen.csv'
 ###
 
 class CombatTacticLevel:
-	def __init__(self,prefix,name_prefix,sprite_offset,mtth_score_prefix,mtth_weight_modifier,global_offensive_modifier,global_defensive_modifier,requires_flank_leader=True,has_tech_mtth_score_modifier=False):
+	def __init__(self,prefix,name_prefix,sprite_offset,mtth_score_prefix,mtth_weight_modifier,global_offensive_modifier,global_defensive_modifier,requires_flank_leader=True):
 		self.prefix = prefix
 		self.name_prefix = name_prefix
 		self.sprite_offset = sprite_offset
@@ -22,12 +22,12 @@ class CombatTacticLevel:
 		self.global_offensive_modifier = global_offensive_modifier
 		self.global_defensive_modifier = global_defensive_modifier
 		self.requires_flank_leader = requires_flank_leader
-		self.has_tech_mtth_score_modifier = has_tech_mtth_score_modifier
 
 combat_tactics_levels = [
+	# Weights start at 2-3-1, Tech MTTH Modifiers gradually shift this into 1-3-2 over the course of the game.
 	CombatTacticLevel("good","Devastating",-10,"good",1,0.25,0.25),
-	CombatTacticLevel("","",0,"ok",1,0,0),
-	CombatTacticLevel("bad","Failed",10,"bad",1,-0.25,-0.25,False,True)
+	CombatTacticLevel("","",0,"ok",3,0,0),
+	CombatTacticLevel("bad","Failed",10,"bad",2,-0.25,-0.25,False)
 ]
 
 glorious_combat_tactic_level = CombatTacticLevel("glorious","Glorious",-10,"good",1,0.5,0.5)
@@ -276,9 +276,10 @@ def print_tactic(f, tactic_level, tactic_name, tactic_values, is_cultural=False)
 	
 	mean_time_to_happen = {{
 		days = {0}""".format(str(int(tactic_values["weight"])*tactic_level.mtth_weight_modifier)), file=f)
-	print("""		emf_{0}_tactic_leader_score = yes""".format(tactic_level.mtth_score_prefix), file=f)
-	if tactic_level.has_tech_mtth_score_modifier:
-		print("""		emf_{0}_tactic_tech_{1}_score = yes""".format(tactic_level.mtth_score_prefix,tactic_values["phase"]), file=f)
+	print("""		emf_{0}_tactic_leader_score = yes
+		emf_{0}_tactic_tech_{1}_score = yes""".format(tactic_level.mtth_score_prefix,tactic_values["phase"]), file=f)
+	if is_cultural:
+		print("""		emf_cultural_tactic_tech_{0}_score = yes""".format(tactic_values["phase"]), file=f)
 	if is_charge_tactic:
 		print("""		modifier = {
 			factor = 3
