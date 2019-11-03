@@ -34,6 +34,10 @@ glorious_combat_tactic_level = CombatTacticLevel("glorious","Glorious",-10,"good
 
 ###
 
+skirmish_to_melee_delay_days = 9
+
+###
+
 f = open('./combat_tactics.csv')
 generic_tactics_data_array = [line.strip().split(',') for line in f]
 f.close()
@@ -216,7 +220,7 @@ def print_tactic_localization(f, tactic_level, tactic_name, tactic_values, is_cu
 	print(localization_text, file=f)
 
 def print_tactic(f, tactic_level, tactic_name, tactic_values, is_cultural=False):
-	is_charge_tactic = tactic_values["ischarge"] and tactic_values["ischarge"] == "TRUE"
+	is_closing_tactic = tactic_values["changestomelee"] and tactic_values["changestomelee"] == "TRUE"
 	print("""
 # {6} Tactic
 {0}{1} = {{
@@ -226,9 +230,9 @@ def print_tactic(f, tactic_level, tactic_name, tactic_values, is_cultural=False)
 	trigger = {{
 		phase = {5}
 		emf_{7}_troop_requirements = yes""".format(tactic_level.prefix + "_" if tactic_level.prefix else "",tactic_name + "_tactic" if tactic_level.prefix == "glorious" and is_cultural else tactic_name,tactic_values["days"],str(int(tactic_values["sprite"])+tactic_level.sprite_offset),tactic_values["group"],tactic_values["phase"],tactic_values["name"] if tactic_level.prefix == "glorious" and is_cultural else (tactic_level.name_prefix + " " if tactic_level.name_prefix else "") + tactic_values["name"], tactic_values["replaces"] if is_cultural else tactic_name), file=f)
-	if is_charge_tactic:
+	if is_closing_tactic:
 		print("""		is_flanking = no
-		days = {0} # duration of combat >= {0} days""".format(10), file=f)
+		days = {0} # duration of combat >= {0} days""".format(skirmish_to_melee_delay_days), file=f)
 	if tactic_level.requires_flank_leader or is_cultural:
 		print("""		flank_has_leader = yes""", file=f)
 	if tactic_level.prefix == "glorious":
@@ -280,21 +284,8 @@ def print_tactic(f, tactic_level, tactic_name, tactic_values, is_cultural=False)
 		emf_{0}_tactic_tech_{1}_score = yes""".format(tactic_level.mtth_score_prefix,tactic_values["phase"]), file=f)
 	if is_cultural:
 		print("""		emf_cultural_tactic_tech_{0}_score = yes""".format(tactic_values["phase"]), file=f)
-	if is_charge_tactic:
-		print("""		modifier = {
-			factor = 3
-			troops = {
-				who = knights
-				value = 0.3
-			}
-		}
-		modifier = {
-			factor = 3
-			troops = {
-				who = heavy_infantry
-				value = 0.3
-			}
-		}""", file=f)
+	if is_closing_tactic:
+		print("""		emf_skirmish_to_melee_tactic_score = yes""", file=f)
 	print("""	}}
 	
 	light_infantry_offensive = {0}
@@ -335,7 +326,7 @@ def print_tactic(f, tactic_level, tactic_name, tactic_values, is_cultural=False)
 	str(float(tactic_values["horse_archers_defensive"])+tactic_level.global_defensive_modifier),
 	str(float(tactic_values["war_elephants_defensive"])+tactic_level.global_defensive_modifier)), file=f)
 	
-	if is_charge_tactic:
+	if is_closing_tactic:
 		print("""
 	change_phase_to = melee""", file=f)
 	
