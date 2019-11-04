@@ -133,11 +133,9 @@ def main():
 	# generate religion scripted triggers
 	with rel_trigger_path.open('w', encoding='cp1252', newline='\n') as f:
 		print_file_header(f, 'ck2.scripted_triggers')
-		print_trigger_true_religion_is_heretic(f)
-		print_triggers_true_religion_is_heresy_of(f)
-		print_triggers_true_religion_is_parent_religion(f)
 		print_triggers_true_religion_is_heresy_of_true_religion(f)
 		print_triggers_true_religion_is_parent_religion_true_religion(f)
+		print_triggers_true_religion_is_reformed_religion_true_religion(f)
 
 	# generate religion scripted effects
 	with rel_effect_path.open('w', encoding='cp1252', newline='\n') as f:
@@ -1264,174 +1262,195 @@ emf_sr_ai_try_to_join_society = {
 	print(TAB + '}\n}', file=f)
 
 
-def print_trigger_true_religion_is_heretic(f):
-	print('''
-true_religion_is_heretic = {
-	true_religion_scope = {
-		persistent_event_target:emf_religion_dummy_character = { is_heretic = yes }
-	}
-}''', file=f)
-
-
-def print_triggers_true_religion_is_heresy_of(f):
-	print('''
-true_religion_is_heresy_of_FROM = {
-	true_religion_scope = {
-		persistent_event_target:emf_religion_dummy_character = { is_heresy_of = FROM }
-	}
-}
-
-true_religion_is_heresy_of_ROOT = {
-	true_religion_scope = {
-		persistent_event_target:emf_religion_dummy_character = { is_heresy_of = ROOT }
-	}
-}
-
-true_religion_is_heresy_of_PREV = {
-	true_religion_scope = {
-		persistent_event_target:emf_religion_dummy_character = { is_heresy_of = PREVPREVPREV }
-	}
-}
-
-true_religion_is_heresy_of_target_ruler = {
-	true_religion_scope = {
-		persistent_event_target:emf_religion_dummy_character = { is_heresy_of = event_target:target_ruler }
-	}
-}''', file=f)
-
-
-def print_triggers_true_religion_is_parent_religion(f):
-	print('''
-true_religion_is_parent_religion_FROM = {
-	true_religion_scope = {
-		persistent_event_target:emf_religion_dummy_character = { is_parent_religion = FROM }
-	}
-}
-
-true_religion_is_parent_religion_ROOT = {
-	true_religion_scope = {
-		persistent_event_target:emf_religion_dummy_character = { is_parent_religion = ROOT }
-	}
-}
-
-true_religion_is_parent_religion_PREV = {
-	true_religion_scope = {
-		persistent_event_target:emf_religion_dummy_character = { is_parent_religion = PREVPREVPREV }
-	}
-}
-
-true_religion_is_parent_religion_target_ruler = {
-	true_religion_scope = {
-		persistent_event_target:emf_religion_dummy_character = { is_parent_religion = event_target:target_ruler }
-	}
-}''', file=f)
-
-
 def print_triggers_true_religion_is_heresy_of_true_religion(f):	
 	print('''
-true_religion_is_heresy_of_FROM_true_religion = {
-	FROM = {
-		trigger_switch = {
-			on_trigger = true_religion''', file=f)
-	for r in g_religions:
-		print('''			{0} = {{
-				PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
-			}}'''.format(r), file=f)
-	print('''		}
-	}
+# These massive triggers are unavoidable because PREVPREVPREV does not work as a left-side scope
+
+true_religion_is_heresy_of_FROM_true_religion = {{
+	FROM = {{
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
+		}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
 }''', file=f)
 	
 	print('''
-true_religion_is_heresy_of_ROOT_true_religion = {
-	ROOT = {
-		trigger_switch = {
-			on_trigger = true_religion''', file=f)
-	for r in g_religions:
-		print('''			{0} = {{
-				PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
-			}}'''.format(r), file=f)
-	print('''		}
-	}
+true_religion_is_heresy_of_ROOT_true_religion = {{
+	ROOT = {{
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
+		}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
 }''', file=f)
 	
 	print('''
-true_religion_is_heresy_of_PREV_true_religion = {
-	PREV = {
-		trigger_switch = {
-			on_trigger = true_religion''', file=f)
-	for r in g_religions:
-		print('''			{0} = {{
-				PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
-			}}'''.format(r), file=f)
-	print('''		}
-	}
+true_religion_is_heresy_of_PREV_true_religion = {{
+	PREV = {{
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
+		}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
 }''', file=f)
 	
 	print('''
-true_religion_is_heresy_of_target_ruler_true_religion = {
-	event_target:target_ruler = {
-		trigger_switch = {
-			on_trigger = true_religion''', file=f)
-	for r in g_religions:
-		print('''			{0} = {{
-				PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
-			}}'''.format(r), file=f)
-	print('''		}
-	}
+true_religion_is_heresy_of_target_ruler_true_religion = {{
+	event_target:target_ruler = {{
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
+		}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
 }''', file=f)
 
 
 def print_triggers_true_religion_is_parent_religion_true_religion(f):
 	print('''
-true_religion_is_parent_religion_FROM_true_religion = {
-	FROM = {
-		trigger_switch = {
-			on_trigger = true_religion''', file=f)
-	for r in g_religions:
-		print('''			{0} = {{
-				PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
-			}}'''.format(r), file=f)
-	print('''		}
-	}
+# These massive triggers are unavoidable because PREVPREVPREV does not work as a left-side scope
+
+true_religion_is_parent_religion_FROM_true_religion = {{
+	FROM = {{
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
+		}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
 }''', file=f)
 	
 	print('''
-true_religion_is_parent_religion_ROOT_true_religion = {
-	ROOT = {
-		trigger_switch = {
-			on_trigger = true_religion''', file=f)
-	for r in g_religions:
-		print('''			{0} = {{
-				PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
-			}}'''.format(r), file=f)
-	print('''		}
-	}
+true_religion_is_parent_religion_ROOT_true_religion = {{
+	ROOT = {{
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
+		}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
 }''', file=f)
 	
 	print('''
-true_religion_is_parent_religion_PREV_true_religion = {
-	PREV = {
-		trigger_switch = {
-			on_trigger = true_religion''', file=f)
-	for r in g_religions:
-		print('''			{0} = {{
-				PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
-			}}'''.format(r), file=f)
-	print('''		}
-	}
+true_religion_is_parent_religion_PREV_true_religion = {{
+	PREV = {{
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
+		}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
 }''', file=f)
 	
 	print('''
-true_religion_is_parent_religion_target_ruler_true_religion = {
-	event_target:target_ruler = {
-		trigger_switch = {
-			on_trigger = true_religion''', file=f)
-	for r in g_religions:
-		print('''			{0} = {{
-				PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
-			}}'''.format(r), file=f)
-	print('''		}
-	}
+true_religion_is_parent_religion_target_ruler_true_religion = {{
+	event_target:target_ruler = {{
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
+		}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
+}''', file=f)
+
+
+def print_triggers_true_religion_is_reformed_religion_true_religion(f):
+	print('''
+# These massive triggers are unavoidable because PREVPREVPREV does not work as a left-side scope
+
+true_religion_is_reformed_religion_FROM_true_religion = {{
+	FROM = {{
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+		}}'''.format(g_rg_religions_map['pagan_group'][0]), file=f)
+	for r in g_rg_religions_map['pagan_group'][1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
+}''', file=f)
+	
+	print('''
+true_religion_is_reformed_religion_ROOT_true_religion = {{
+	ROOT = {{
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+		}}'''.format(g_rg_religions_map['pagan_group'][0]), file=f)
+	for r in g_rg_religions_map['pagan_group'][1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
+}''', file=f)
+	
+	print('''
+true_religion_is_reformed_religion_PREV_true_religion = {{
+	PREV = {{
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+		}}'''.format(g_rg_religions_map['pagan_group'][0]), file=f)
+	for r in g_rg_religions_map['pagan_group'][1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
+}''', file=f)
+	
+	print('''
+true_religion_is_reformed_religion_target_ruler_true_religion = {{
+	event_target:target_ruler = {{
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+		}}'''.format(g_rg_religions_map['pagan_group'][0]), file=f)
+	for r in g_rg_religions_map['pagan_group'][1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
 }''', file=f)
 
 
