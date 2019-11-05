@@ -250,17 +250,20 @@ emf_sr_has_any_religion_char_flag = {
 
 def print_trigger_is_in_PREVs_interesting_society(f):
 	print('''
-emf_sr_is_in_PREVs_interesting_society = {
-	OR = {''', file=f)
+emf_sr_is_in_PREVs_interesting_society = {{
+	trigger_if = {{
+		limit = {{ society_member_of = secret_religious_society_{0} }}
+		PREV = {{ interested_in_society = secret_religious_society_{0} }}
+	}}'''.format(g_religions[0]), file=f)
 
-	for r in g_religions:
+	for r in g_religions[1:]:
 		print('''\
-		AND = {{
-			society_member_of = secret_religious_society_{0}
-			PREV = {{ interested_in_society = secret_religious_society_{0} }}
-		}}'''.format(r), file=f)
+	trigger_else_if = {{
+		limit = {{ society_member_of = secret_religious_society_{0} }}
+		PREV = {{ interested_in_society = secret_religious_society_{0} }}
+	}}'''.format(r), file=f)
 
-	print(TAB + '}\n}', file=f)
+	print('}', file=f)
 
 
 def print_trigger_has_any_char_old_religion(f):
@@ -272,7 +275,7 @@ emf_sr_has_any_char_old_religion = {
 		print('''\
 		AND = {{
 			has_flag = character_was_{0}
-			any_character = {{ religion = {0} }}
+			any_character = {{ religion = {0} emf_isolated_character = no }}
 		}}'''.format(r), file=f)
 
 	print(TAB + '}\n}', file=f)
@@ -281,57 +284,74 @@ emf_sr_has_any_char_old_religion = {
 def print_trigger_has_secret_community_of_ROOT(f):
 	print('''
 # THIS = province, ROOT is in a society which correspond to a secret religious community in THIS
-emf_sr_has_secret_community_of_ROOT = {
-	OR = {''', file=f)
+emf_sr_has_secret_community_of_ROOT = {{
+	trigger_if = {{
+		limit = {{ ROOT = {{ society_member_of = secret_religious_society_{0} }} }}
+		has_province_modifier = secret_{0}_community
+	}}'''.format(g_religions[0]), file=f)
 
-	for r in g_religions:
+	for r in g_religions[1:]:
 		print('''\
-		AND = {{
-			has_province_modifier = secret_{0}_community
-			ROOT = {{ society_member_of = secret_religious_society_{0} }}
-		}}'''.format(r), file=f)
+	trigger_else_if = {{
+		limit = {{ ROOT = {{ society_member_of = secret_religious_society_{0} }} }}
+		has_province_modifier = secret_{0}_community
+	}}'''.format(r), file=f)
 
-	print(TAB + '}\n}', file=f)
+	print('}', file=f)
 
 
 def print_trigger_can_have_new_secret_community_of_FROM(f):
 	print('''
 # THIS = county title, FROM's secret religious society is used
-emf_sr_can_have_new_secret_community_of_FROM = {
-	OR = {''', file=f)
-
-	for r in g_religions:
-		print('''\
-		AND = {{
-			FROM = {{ society_member_of = secret_religious_society_{0} }}
-			location = {{
-				NOR = {{
-					religion = {0}
-					has_province_modifier = secret_{0}_community
-				}}
+emf_sr_can_have_new_secret_community_of_FROM = {{
+	trigger_if = {{
+		limit = {{ FROM = {{ society_member_of = secret_religious_society_{0} }} }}
+		location = {{
+			NOR = {{
+				religion = {0}
+				has_province_modifier = secret_{0}_community
 			}}
-		}}'''.format(r), file=f)
+		}}
+	}}'''.format(g_religions[0]), file=f)
 
-	print(TAB + '}\n}', file=f)
+	for r in g_religions[1:]:
+		print('''\
+	trigger_else_if = {{
+		limit = {{ FROM = {{ society_member_of = secret_religious_society_{0} }} }}
+		location = {{
+			NOR = {{
+				religion = {0}
+				has_province_modifier = secret_{0}_community
+			}}
+		}}
+	}}'''.format(r), file=f)
+
+	print('}', file=f)
 
 
 def print_trigger_has_not_religion_or_community_of_ROOT_sr(f):
 	print('''
 # THIS = province, ROOT's secret_religion is considered
-emf_sr_has_not_religion_or_community_of_ROOT_sr = {
-	OR = {''', file=f)
+emf_sr_has_not_religion_or_community_of_ROOT_sr = {{
+	trigger_if = {{
+		limit = {{ ROOT = {{ secret_religion = {0} }} }}
+		NOR = {{
+			religion = {0}
+			has_province_modifier = secret_{0}_community
+		}}
+	}}'''.format(g_religions[0]), file=f)
 
-	for r in g_religions:
+	for r in g_religions[1:]:
 		print('''\
-		AND = {{
-			ROOT = {{ secret_religion = {0} }}
-			NOR = {{
-				religion = {0}
-				has_province_modifier = secret_{0}_community
-			}}
-		}}'''.format(r), file=f)
+	trigger_else_if = {{
+		limit = {{ ROOT = {{ secret_religion = {0} }} }}
+		NOR = {{
+			religion = {0}
+			has_province_modifier = secret_{0}_community
+		}}
+	}}'''.format(r), file=f)
 
-	print(TAB + '}\n}', file=f)
+	print('}', file=f)
 
 
 # NOTE: this function does not use the auto-populated religion list, so if it changes,
