@@ -393,15 +393,38 @@ def print_triggers_does_cult_need_DLC(f):
 		'SoA': ['jewish_group'],
 		'TOG': ['zoroastrian_group', 'pagan_group'],
 		'RoI': ['indian_group'],
+		'HF': ['pagan_group'],
 	}
 	dlc_religion_map = {
-		'JD': ['taoist', 'bon', 'khurmazta'],
+		'JD': ['taoist', 'bon', 'bon_reformed'],
 	}
+	
+	print('''
+# THIS = character
+emf_sr_cult_requires_dlc_unlock = {
+	OR = {''', file=f)
+	
+	for rg in g_rg_religions_map.keys():
+		religion_group_requires_dlc = False
+		for dlc, rgroups in sorted(dlc_rgroups_map.items()):
+			if rg in rgroups:
+				religion_group_requires_dlc = True
+				break
+		for r in g_rg_religions_map[rg]:
+			if religion_group_requires_dlc:
+				print(TAB*2 + 'society_member_of = secret_religious_society_' + r, file=f)
+			else:
+				for dlc, rlist in sorted(dlc_religion_map.items()):
+					if r in rlist:
+						print(TAB*2 + 'society_member_of = secret_religious_society_' + r, file=f)
+						break
+	
+	print(TAB + '}\n}', file=f)
 
 	for dlc, rgroups in sorted(dlc_rgroups_map.items()):
 		print('''
 # THIS = character
-emf_sr_does_cult_need_{} = {{
+emf_sr_does_{}_unlock_cult = {{
 	OR = {{'''.format(dlc), file=f)
 
 		for rg in rgroups:
@@ -412,7 +435,7 @@ emf_sr_does_cult_need_{} = {{
 	for dlc, rlist in sorted(dlc_religion_map.items()):
 		print('''
 # THIS = character
-emf_sr_does_cult_need_{} = {{
+emf_sr_does_{}_unlock_cult = {{
 	OR = {{'''.format(dlc), file=f)
 
 		for r in rlist:
