@@ -1268,6 +1268,7 @@ def print_triggers_true_religion_is_heresy_of_true_religion(f):
 
 true_religion_is_heresy_of_FROM_true_religion = {{
 	FROM = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
 		trigger_if = {{
 			limit = {{ true_religion = {0} }}
 			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
@@ -1283,6 +1284,7 @@ true_religion_is_heresy_of_FROM_true_religion = {{
 	print('''
 true_religion_is_heresy_of_ROOT_true_religion = {{
 	ROOT = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
 		trigger_if = {{
 			limit = {{ true_religion = {0} }}
 			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
@@ -1298,6 +1300,7 @@ true_religion_is_heresy_of_ROOT_true_religion = {{
 	print('''
 true_religion_is_heresy_of_PREV_true_religion = {{
 	PREV = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
 		trigger_if = {{
 			limit = {{ true_religion = {0} }}
 			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
@@ -1313,6 +1316,7 @@ true_religion_is_heresy_of_PREV_true_religion = {{
 	print('''
 true_religion_is_heresy_of_target_ruler_true_religion = {{
 	event_target:target_ruler = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
 		trigger_if = {{
 			limit = {{ true_religion = {0} }}
 			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
@@ -1332,6 +1336,7 @@ def print_triggers_true_religion_is_parent_religion_true_religion(f):
 
 true_religion_is_parent_religion_FROM_true_religion = {{
 	FROM = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
 		trigger_if = {{
 			limit = {{ true_religion = {0} }}
 			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
@@ -1347,6 +1352,7 @@ true_religion_is_parent_religion_FROM_true_religion = {{
 	print('''
 true_religion_is_parent_religion_ROOT_true_religion = {{
 	ROOT = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
 		trigger_if = {{
 			limit = {{ true_religion = {0} }}
 			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
@@ -1362,6 +1368,7 @@ true_religion_is_parent_religion_ROOT_true_religion = {{
 	print('''
 true_religion_is_parent_religion_PREV_true_religion = {{
 	PREV = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
 		trigger_if = {{
 			limit = {{ true_religion = {0} }}
 			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
@@ -1377,6 +1384,7 @@ true_religion_is_parent_religion_PREV_true_religion = {{
 	print('''
 true_religion_is_parent_religion_target_ruler_true_religion = {{
 	event_target:target_ruler = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
 		trigger_if = {{
 			limit = {{ true_religion = {0} }}
 			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
@@ -1396,6 +1404,9 @@ def print_triggers_true_religion_is_reformed_religion_true_religion(f):
 
 true_religion_is_reformed_religion_FROM_true_religion = {{
 	FROM = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
+		true_religion_group = pagan_group # Only pagan_group has reformed religions
+		PREV = {{ true_religion_group = pagan_group }} # Only pagan_group has reformed religions
 		trigger_if = {{
 			limit = {{ true_religion = {0} }}
 			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
@@ -1411,6 +1422,9 @@ true_religion_is_reformed_religion_FROM_true_religion = {{
 	print('''
 true_religion_is_reformed_religion_ROOT_true_religion = {{
 	ROOT = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
+		true_religion_group = pagan_group # Only pagan_group has reformed religions
+		PREV = {{ true_religion_group = pagan_group }} # Only pagan_group has reformed religions
 		trigger_if = {{
 			limit = {{ true_religion = {0} }}
 			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
@@ -1426,6 +1440,9 @@ true_religion_is_reformed_religion_ROOT_true_religion = {{
 	print('''
 true_religion_is_reformed_religion_PREV_true_religion = {{
 	PREV = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
+		true_religion_group = pagan_group # Only pagan_group has reformed religions
+		PREV = {{ true_religion_group = pagan_group }} # Only pagan_group has reformed religions
 		trigger_if = {{
 			limit = {{ true_religion = {0} }}
 			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
@@ -1441,6 +1458,9 @@ true_religion_is_reformed_religion_PREV_true_religion = {{
 	print('''
 true_religion_is_reformed_religion_target_ruler_true_religion = {{
 	event_target:target_ruler = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
+		true_religion_group = pagan_group # Only pagan_group has reformed religions
+		PREV = {{ true_religion_group = pagan_group }} # Only pagan_group has reformed religions
 		trigger_if = {{
 			limit = {{ true_religion = {0} }}
 			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
