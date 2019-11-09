@@ -50,6 +50,20 @@ f = open('./call_to_glory_combat_tactics.csv')
 special_call_to_glory_tactics_data_array = [line.strip().split(',') for line in f]
 f.close()
 
+tactic_values_array = {}
+for i in range(1,len(generic_tactics_data_array[0])):
+	tactic_values_array[generic_tactics_data_array[0][i]] = dict()
+	for j in range(1,len(generic_tactics_data_array)):
+		tactic_values_array[generic_tactics_data_array[0][i]][generic_tactics_data_array[j][0]] = generic_tactics_data_array[j][i]
+for i in range(1,len(cultural_tactics_data_array[0])):
+	tactic_values_array[cultural_tactics_data_array[0][i]] = dict()
+	for j in range(1,len(cultural_tactics_data_array)):
+		tactic_values_array[cultural_tactics_data_array[0][i]][cultural_tactics_data_array[j][0]] = cultural_tactics_data_array[j][i]
+for i in range(1,len(special_call_to_glory_tactics_data_array[0])):
+	tactic_values_array[special_call_to_glory_tactics_data_array[0][i]] = dict()
+	for j in range(1,len(special_call_to_glory_tactics_data_array)):
+		tactic_values_array[special_call_to_glory_tactics_data_array[0][i]][special_call_to_glory_tactics_data_array[j][0]] = special_call_to_glory_tactics_data_array[j][i]
+
 replacement_tactics_list = {}
 replacement_glorious_tactics_list = {}
 for i in range(1,len(generic_tactics_data_array[0])):
@@ -144,11 +158,8 @@ def print_generic_combat_tactics(f):
 ##########################################################################''', file=f)
 	for i in range(1,len(generic_tactics_data_array[0])):
 		tactic_name = generic_tactics_data_array[0][i]
-		tactic_values = {}
-		for j in range(1,len(generic_tactics_data_array)):
-			tactic_values[generic_tactics_data_array[j][0]] = generic_tactics_data_array[j][i]
 		for tactic_level in combat_tactics_levels:
-			print_tactic(f, tactic_level, tactic_name, tactic_values)
+			print_tactic(f, tactic_level, tactic_name)
 
 def print_cultural_combat_tactics(f):
 	print('''
@@ -157,11 +168,8 @@ def print_cultural_combat_tactics(f):
 ##########################################################################''', file=f)
 	for i in range(1,len(cultural_tactics_data_array[0])):
 		tactic_name = cultural_tactics_data_array[0][i]
-		tactic_values = {}
-		for j in range(1,len(cultural_tactics_data_array)):
-			tactic_values[cultural_tactics_data_array[j][0]] = cultural_tactics_data_array[j][i]
 		for tactic_level in combat_tactics_levels:
-			print_tactic(f, tactic_level, tactic_name, tactic_values, True)
+			print_tactic(f, tactic_level, tactic_name, True)
 
 def print_call_to_glory_combat_tactics(f):
 	print('''
@@ -170,20 +178,14 @@ def print_call_to_glory_combat_tactics(f):
 ##########################################################################''', file=f)
 	for i in range(1,len(generic_tactics_data_array[0])):
 		tactic_name = generic_tactics_data_array[0][i]
-		tactic_values = {}
-		for j in range(1,len(generic_tactics_data_array)):
-			tactic_values[generic_tactics_data_array[j][0]] = generic_tactics_data_array[j][i]
-		print_tactic(f, glorious_combat_tactic_level, tactic_name, tactic_values)
+		print_tactic(f, glorious_combat_tactic_level, tactic_name)
 	print('''
 ##########################################################################
 # Lodge-Specific Glorious Tactic definitions
 ##########################################################################''', file=f)
 	for i in range(1,len(special_call_to_glory_tactics_data_array[0])):
 		tactic_name = special_call_to_glory_tactics_data_array[0][i]
-		tactic_values = {}
-		for j in range(1,len(special_call_to_glory_tactics_data_array)):
-			tactic_values[special_call_to_glory_tactics_data_array[j][0]] = special_call_to_glory_tactics_data_array[j][i]
-		print_tactic(f, glorious_combat_tactic_level, tactic_name, tactic_values, True)
+		print_tactic(f, glorious_combat_tactic_level, tactic_name, True)
 
 def print_localizations(f):
 	print('''#CODE;ENGLISH;FRENCH;GERMAN;;SPANISH;;;;;;;;;x
@@ -192,25 +194,16 @@ def print_localizations(f):
 ########################################################################''', file=f)
 	for i in range(1,len(generic_tactics_data_array[0])):
 		tactic_name = generic_tactics_data_array[0][i]
-		tactic_values = {}
-		for j in range(1,len(generic_tactics_data_array)):
-			tactic_values[generic_tactics_data_array[j][0]] = generic_tactics_data_array[j][i]
-		print_tactic_localization(f, glorious_combat_tactic_level, tactic_name, tactic_values)
+		print_tactic_localization(f, glorious_combat_tactic_level, tactic_name, tactic_values_array[tactic_name])
 		for tactic_level in combat_tactics_levels:
-			print_tactic_localization(f, tactic_level, tactic_name, tactic_values)
+			print_tactic_localization(f, tactic_level, tactic_name, tactic_values_array[tactic_name])
 	for i in range(1,len(cultural_tactics_data_array[0])):
 		tactic_name = cultural_tactics_data_array[0][i]
-		tactic_values = {}
-		for j in range(1,len(cultural_tactics_data_array)):
-			tactic_values[cultural_tactics_data_array[j][0]] = cultural_tactics_data_array[j][i]
 		for tactic_level in combat_tactics_levels:
-			print_tactic_localization(f, tactic_level, tactic_name, tactic_values, True)
+			print_tactic_localization(f, tactic_level, tactic_name, tactic_values_array[tactic_name], True)
 	for i in range(1,len(special_call_to_glory_tactics_data_array[0])):
 		tactic_name = special_call_to_glory_tactics_data_array[0][i]
-		tactic_values = {}
-		for j in range(1,len(special_call_to_glory_tactics_data_array)):
-			tactic_values[special_call_to_glory_tactics_data_array[j][0]] = special_call_to_glory_tactics_data_array[j][i]
-		print_tactic_localization(f, glorious_combat_tactic_level, tactic_name + "_tactic", tactic_values, True)
+		print_tactic_localization(f, glorious_combat_tactic_level, tactic_name + "_tactic", tactic_values_array[tactic_name], True)
 	
 def print_tactic_localization(f, tactic_level, tactic_name, tactic_values, is_cultural=False):
 	localization_text = (tactic_level.prefix + "_" if tactic_level.prefix else "")+tactic_name+";"
@@ -219,7 +212,8 @@ def print_tactic_localization(f, tactic_level, tactic_name, tactic_values, is_cu
 	localization_text += tactic_values["name"]+" Tactic;;;;;;;;;;;;;x"
 	print(localization_text, file=f)
 
-def print_tactic(f, tactic_level, tactic_name, tactic_values, is_cultural=False):
+def print_tactic(f, tactic_level, tactic_name, is_cultural=False):
+	tactic_values = tactic_values_array[tactic_name]
 	is_closing_tactic = tactic_values["changestomelee"] and tactic_values["changestomelee"] == "TRUE"
 	print("""
 # {6} Tactic
@@ -229,7 +223,7 @@ def print_tactic(f, tactic_level, tactic_name, tactic_values, is_cultural=False)
 	group = {4}
 	trigger = {{
 		phase = {5}
-		emf_{7}_troop_requirements = yes""".format(tactic_level.prefix + "_" if tactic_level.prefix else "",tactic_name + "_tactic" if tactic_level.prefix == "glorious" and is_cultural else tactic_name,tactic_values["days"],str(int(tactic_values["sprite"])+tactic_level.sprite_offset),tactic_values["group"],tactic_values["phase"],tactic_values["name"] if tactic_level.prefix == "glorious" and is_cultural else (tactic_level.name_prefix + " " if tactic_level.name_prefix else "") + tactic_values["name"], tactic_values["replaces"] if is_cultural else tactic_name), file=f)
+		emf_{7}_troop_requirements = yes""".format(tactic_level.prefix + "_" if tactic_level.prefix else "",tactic_name + "_tactic" if tactic_level.prefix == "glorious" and is_cultural else tactic_name,tactic_values["days"],str(int(tactic_values["sprite"])+tactic_level.sprite_offset),tactic_values["group"],tactic_values["phase"],tactic_values["name"] if tactic_level.prefix == "glorious" and is_cultural else (tactic_level.name_prefix + " " if tactic_level.name_prefix else "") + tactic_values["name"], tactic_values["replaces"] if "replaces" in tactic_values else tactic_name), file=f)
 	if is_closing_tactic:
 		print("""		is_flanking = no
 		days = {0} # duration of combat >= {0} days""".format(skirmish_to_melee_delay_days), file=f)
@@ -286,9 +280,49 @@ def print_tactic(f, tactic_level, tactic_name, tactic_values, is_cultural=False)
 		print("""		emf_cultural_tactic_tech_{0}_score = yes""".format(tactic_values["phase"]), file=f)
 	if is_closing_tactic:
 		print("""		emf_skirmish_to_melee_tactic_score = yes""", file=f)
-	print("""	}}
-	
-	light_infantry_offensive = {0}
+	print("""	}
+	""", file=f)
+	if "replaces" in tactic_values:
+		original_tactic_values = tactic_values_array[tactic_values["replaces"]]
+		print("""	light_infantry_offensive = {0}
+	heavy_infantry_offensive = {1}
+	pikemen_offensive = {2}
+	light_cavalry_offensive = {3}
+	camel_cavalry_offensive = {4}
+	knights_offensive = {5}
+	archers_offensive = {6}
+	horse_archers_offensive = {7}
+	war_elephants_offensive = {8}
+
+	light_infantry_defensive = {9}
+	heavy_infantry_defensive = {10}
+	pikemen_defensive = {11}
+	light_cavalry_defensive = {12}
+	camel_cavalry_defensive = {13}
+	knights_defensive = {14}
+	archers_defensive = {15}
+	horse_archers_defensive = {16}
+	war_elephants_defensive = {17}""".format(
+	str(float(tactic_values["light_infantry_offensive"])+float(original_tactic_values["light_infantry_offensive"])+tactic_level.global_offensive_modifier),
+	str(float(tactic_values["heavy_infantry_offensive"])+float(original_tactic_values["heavy_infantry_offensive"])+tactic_level.global_offensive_modifier),
+	str(float(tactic_values["pikemen_offensive"])+float(original_tactic_values["pikemen_offensive"])+tactic_level.global_offensive_modifier),
+	str(float(tactic_values["light_cavalry_offensive"])+float(original_tactic_values["light_cavalry_offensive"])+tactic_level.global_offensive_modifier),
+	str(float(tactic_values["camel_cavalry_offensive"])+float(original_tactic_values["camel_cavalry_offensive"])+tactic_level.global_offensive_modifier),
+	str(float(tactic_values["knights_offensive"])+float(original_tactic_values["knights_offensive"])+tactic_level.global_offensive_modifier),
+	str(float(tactic_values["archers_offensive"])+float(original_tactic_values["archers_offensive"])+tactic_level.global_offensive_modifier),
+	str(float(tactic_values["horse_archers_offensive"])+float(original_tactic_values["horse_archers_offensive"])+tactic_level.global_offensive_modifier),
+	str(float(tactic_values["war_elephants_offensive"])+float(original_tactic_values["war_elephants_offensive"])+tactic_level.global_offensive_modifier),
+	str(float(tactic_values["light_infantry_defensive"])+float(original_tactic_values["light_infantry_defensive"])+tactic_level.global_defensive_modifier),
+	str(float(tactic_values["heavy_infantry_defensive"])+float(original_tactic_values["heavy_infantry_defensive"])+tactic_level.global_defensive_modifier),
+	str(float(tactic_values["pikemen_defensive"])+float(original_tactic_values["pikemen_defensive"])+tactic_level.global_defensive_modifier),
+	str(float(tactic_values["light_cavalry_defensive"])+float(original_tactic_values["light_cavalry_defensive"])+tactic_level.global_defensive_modifier),
+	str(float(tactic_values["camel_cavalry_defensive"])+float(original_tactic_values["camel_cavalry_defensive"])+tactic_level.global_defensive_modifier),
+	str(float(tactic_values["knights_defensive"])+float(original_tactic_values["knights_defensive"])+tactic_level.global_defensive_modifier),
+	str(float(tactic_values["archers_defensive"])+float(original_tactic_values["archers_defensive"])+tactic_level.global_defensive_modifier),
+	str(float(tactic_values["horse_archers_defensive"])+float(original_tactic_values["horse_archers_defensive"])+tactic_level.global_defensive_modifier),
+	str(float(tactic_values["war_elephants_defensive"])+float(original_tactic_values["war_elephants_defensive"])+tactic_level.global_defensive_modifier)), file=f)
+	else:
+		print("""	light_infantry_offensive = {0}
 	heavy_infantry_offensive = {1}
 	pikemen_offensive = {2}
 	light_cavalry_offensive = {3}
