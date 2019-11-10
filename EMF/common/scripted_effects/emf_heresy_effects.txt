@@ -10,9 +10,26 @@ emf_character_become_heretic = {
 	}
 	# Prefer heresy of a fellow dynasty member
 	if = {
-		limit = { any_dynasty_member = { is_heresy_of = PREV } }
+		limit = {
+			any_dynasty_member = {
+				is_heresy_of = PREV
+				NOT = { is_rival = PREV }
+			}
+		}
 		random_dynasty_member = {
-			limit = { is_heresy_of = PREV }
+			limit = {
+				is_heresy_of = PREV
+				NOT = { is_rival = PREV }
+			}
+			preferred_limit = {
+				is_lover = PREV
+			}
+			preferred_limit = {
+				is_friend = PREV
+			}
+			preferred_limit = {
+				same_realm = PREV
+			}
 			reverse_religion = PREV
 		}
 	}
@@ -31,7 +48,6 @@ emf_character_become_heretic = {
 			limit = { NOT = { event_target:heretic_province = { always = yes } } }
 			location = { save_event_target_as = heretic_province }
 		}
-		save_event_target_as = converter
 		emf_become_heretic = yes
 	}
 	if = {
@@ -57,7 +73,6 @@ emf_province_become_heretic = {
 	}
 	else = {
 		save_event_target_as = heretic_province
-		save_event_target_as = converter
 		emf_become_heretic = yes
 	}
 	religion_authority = {
@@ -67,42 +82,39 @@ emf_province_become_heretic = {
 }
 
 emf_become_heretic = {
+	save_event_target_as = future_heretic
 	religion_scope = { save_event_target_as = old_religion }
 	# Prefer heresy of their current location
 	if = {
 		limit = {
-			event_target:heretic_province = {
-				event_target:converter = { is_parent_religion = PREV }
-			}
+			is_parent_religion = event_target:heretic_province
 		}
-		event_target:heretic_province = {
-			event_target:converter = { religion = PREV }
-		}
+		religion = event_target:heretic_province
 	}
 	# Prefer a neighboring heresy
 	else_if = {
 		limit = {
 			event_target:heretic_province = {
 				any_neighbor_province = {
-					event_target:converter = { is_parent_religion = PREV }
+					event_target:future_heretic = { is_parent_religion = PREV }
 				}
 			}
 		}
 		event_target:heretic_province = {
 			random_neighbor_province = {
 				limit = {
-					event_target:converter = { is_parent_religion = PREV }
+					event_target:future_heretic = { is_parent_religion = PREV }
 				}
-				event_target:converter = { religion = PREV }
+				event_target:future_heretic = { religion = PREV }
 			}
 		}
 	}
 	# Prefer same-religion group of their current location
 	else_if = {
 		limit = {
+			NOT = { religion = event_target:heretic_province }
 			event_target:heretic_province = {
-				event_target:converter = {
-					NOT = { religion = PREV }
+				PREV = {
 					OR = {
 						religion_group = PREV
 						emf_syncretized_religion_with_PREV = yes
@@ -111,29 +123,25 @@ emf_become_heretic = {
 				}
 			}
 		}
-		event_target:heretic_province = {
-			event_target:converter = { religion = PREV }
-		}
+		religion = event_target:heretic_province
 	}
 	# Prefer a same-religion group of a same-culture group neighboring province if Pagan or Muslim
 	else_if = {
 		limit = {
-			event_target:converter = {
-				OR = {
-					religion_group = pagan_group
-					religion_group = muslim
-				}
+			OR = {
+				religion_group = pagan_group
+				religion_group = muslim
 			}
 			event_target:heretic_province = {
 				any_neighbor_province = {
-					event_target:converter = {
+					event_target:future_heretic = {
 						culture_group = PREV
+						NOT = { religion = PREV }
 						OR = {
 							religion_group = PREV
 							emf_syncretized_religion_with_PREV = yes
 							emf_PREV_is_syncretized_with_religion = yes
 						}
-						NOT = { religion = PREV }
 					}
 				}
 			}
@@ -141,17 +149,17 @@ emf_become_heretic = {
 		event_target:heretic_province = {
 			random_neighbor_province = {
 				limit = {
-					event_target:converter = {
+					event_target:future_heretic = {
 						culture_group = PREV
+						NOT = { religion = PREV }
 						OR = {
 							religion_group = PREV
 							emf_syncretized_religion_with_PREV = yes
 							emf_PREV_is_syncretized_with_religion = yes
 						}
-						NOT = { religion = PREV }
 					}
 				}
-				event_target:converter = { religion = PREV }
+				event_target:future_heretic = { religion = PREV }
 			}
 		}
 	}
@@ -162,7 +170,7 @@ emf_become_heretic = {
 				owner = {
 					top_liege = {
 						any_realm_province = {
-							event_target:converter = { is_parent_religion = PREV }
+							event_target:future_heretic = { is_parent_religion = PREV }
 							NOT = { distance = { where = PREVPREVPREV value = 200 } }
 						}
 					}
@@ -174,10 +182,10 @@ emf_become_heretic = {
 				top_liege = {
 					random_realm_province = {
 						limit = {
-							event_target:converter = { is_parent_religion = PREV }
+							event_target:future_heretic = { is_parent_religion = PREV }
 							NOT = { distance = { where = PREVPREVPREV value = 200 } }
 						}
-						event_target:converter = { religion = PREV }
+						event_target:future_heretic = { religion = PREV }
 					}
 				}
 			}
@@ -427,7 +435,8 @@ emf_catholic_conversion = {
 			modifier = {
 				factor = 0.25
 				NOR = {
-					culture = egyptian_arabic # TODO: use coptic culture instead
+					culture = egyptian_arabic
+					culture = coptic
 					culture_group = east_african
 					event_target:heretic_province = { region = world_africa_east }
 				}
@@ -479,12 +488,16 @@ emf_catholic_conversion = {
 					event_target:heretic_province = { region = world_persia }
 					event_target:heretic_province = { region = world_steppe_east }
 					event_target:heretic_province = { region = world_steppe_tarim }
-					# Audax Validator "." Ignore_1007
-					trait = sympathy_zoroastrianism
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_zoroastrianism
+					}
 				}
 			}
 			modifier = {
 				factor = 2
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_zoroastrianism
 			}
@@ -505,12 +518,16 @@ emf_catholic_conversion = {
 					event_target:heretic_province = { region = world_persia }
 					event_target:heretic_province = { region = world_steppe_east }
 					event_target:heretic_province = { region = world_steppe_tarim }
-					# Audax Validator "." Ignore_1007
-					trait = sympathy_zoroastrianism
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_zoroastrianism
+					}
 				}
 			}
 			modifier = {
 				factor = 2
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_zoroastrianism
 			}
@@ -530,35 +547,43 @@ emf_catholic_conversion = {
 				NOR = {
 					event_target:heretic_province = { region = world_middle_east_jerusalem }
 					culture_group = israelite
-					# Audax Validator "." Ignore_1007
-					trait = sympathy_judaism
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_judaism
+					}
 				}
 			}
 			modifier = {
 				factor = 2
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_judaism
 			}
 			religion = jewish
 		}
 		10 = {
-			religion = sunni
 			modifier = {
 				factor = 0
 				NOR = {
-					# Audax Validator "." Ignore_1007
-					trait = sympathy_islam
 					event_target:heretic_province = { region = world_middle_east }
 					event_target:heretic_province = { region = world_steppe }
 					event_target:heretic_province = { region = world_africa }
 					event_target:heretic_province = { region = world_persia }
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_islam
+					}
 				}
 			}
 			modifier = {
 				factor = 2
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_islam
 			}
+			religion = sunni
 		}
 	}
 }
@@ -717,6 +742,7 @@ emf_eastern_conversion = {
 				factor = 0.25
 				NOR = {
 					culture = egyptian_arabic
+					culture = coptic
 					culture_group = east_african
 					event_target:heretic_province = { region = world_africa_east }
 				}
@@ -896,7 +922,6 @@ emf_eastern_conversion = {
 			religion = messalian
 		}
 		25 = {
-			religion = catholic
 			modifier = {
 				factor = 0
 				NOR = {
@@ -914,6 +939,7 @@ emf_eastern_conversion = {
 					religion = syriac
 				}
 			}
+			religion = catholic
 		}
 		10 = {
 			modifier = {
@@ -922,17 +948,23 @@ emf_eastern_conversion = {
 					event_target:heretic_province = { region = world_persia }
 					event_target:heretic_province = { region = world_steppe_east }
 					event_target:heretic_province = { region = world_steppe_tarim }
-					# Audax Validator "." Ignore_1007
-					trait = sympathy_zoroastrianism
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_zoroastrianism
+					}
 				}
 			}
 			modifier = {
 				factor = 2
 				OR = {
-					# Audax Validator "." Ignore_1007
-					trait = sympathy_zoroastrianism
 					religion = nestorian
 					religion = messalian
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_zoroastrianism
+					}
 				}
 			}
 			modifier = {
@@ -952,12 +984,16 @@ emf_eastern_conversion = {
 					event_target:heretic_province = { region = world_persia }
 					event_target:heretic_province = { region = world_steppe_east }
 					event_target:heretic_province = { region = world_steppe_tarim }
-					# Audax Validator "." Ignore_1007
-					trait = sympathy_zoroastrianism
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_zoroastrianism
+					}
 				}
 			}
 			modifier = {
 				factor = 2
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_zoroastrianism
 			}
@@ -977,12 +1013,16 @@ emf_eastern_conversion = {
 				NOR = {
 					event_target:heretic_province = { region = world_middle_east_jerusalem }
 					culture_group = israelite
-					# Audax Validator "." Ignore_1007
-					trait = sympathy_judaism
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_judaism
+					}
 				}
 			}
 			modifier = {
 				factor = 2.5
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_judaism
 			}
@@ -992,16 +1032,20 @@ emf_eastern_conversion = {
 			modifier = {
 				factor = 0
 				NOR = {
-					# Audax Validator "." Ignore_1007
-					trait = sympathy_islam
 					event_target:heretic_province = { region = world_middle_east }
 					event_target:heretic_province = { region = world_steppe }
 					event_target:heretic_province = { region = world_africa }
 					event_target:heretic_province = { region = world_persia }
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_islam
+					}
 				}
 			}
 			modifier = {
 				factor = 2.5
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_islam
 			}
@@ -1120,8 +1164,11 @@ emf_muslim_conversion = {
 				NOR = {
 					culture = kurdish
 					event_target:heretic_province = { region = world_asia_minor }
-					# Audax Validator "." Ignore_1007
-					trait = sympathy_zoroastrianism
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_zoroastrianism
+					}
 				}
 			}
 			modifier = {
@@ -1130,6 +1177,7 @@ emf_muslim_conversion = {
 			}
 			modifier = {
 				factor = 2
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_zoroastrianism
 			}
@@ -1188,8 +1236,11 @@ emf_muslim_conversion = {
 			}
 			modifier = {
 				factor = 0.5
-				# Audax Validator "." Ignore_1007
-				trait = sayyid
+				AND = {
+					character = yes
+					# Audax Validator "." Ignore_1007
+					trait = sayyid
+				}
 				religion = sunni
 			}
 			religion = kharijite
@@ -1236,8 +1287,11 @@ emf_muslim_conversion = {
 			}
 			modifier = {
 				factor = 0.5
-				# Audax Validator "." Ignore_1007
-				trait = sayyid
+				AND = {
+					character = yes
+					# Audax Validator "." Ignore_1007
+					trait = sayyid
+				}
 				religion = sunni
 			}
 			religion = shiite
@@ -1341,7 +1395,10 @@ emf_muslim_conversion = {
 			modifier = {
 				factor = 0.5
 				# Audax Validator "." Ignore_1007
-				trait = sayyid
+				AND = {
+					character = yes
+					trait = sayyid
+				}
 				religion = sunni
 			}
 			religion = ismaili
@@ -1402,10 +1459,16 @@ emf_muslim_conversion = {
 					event_target:heretic_province = { region = world_europe_west }
 					event_target:heretic_province = { region = world_europe_south_italy }
 					event_target:heretic_province = { region = world_europe_east }
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_christendom
+					}
 				}
 			}
 			modifier = {
 				factor = 2.5
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_christendom
 			}
@@ -1419,6 +1482,11 @@ emf_muslim_conversion = {
 					event_target:heretic_province = { region = world_europe_east }
 					event_target:heretic_province = { region = world_asia_minor }
 					event_target:heretic_province = { region = world_middle_east_jerusalem }
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_christendom
+					}
 				}
 			}
 			modifier = {
@@ -1432,6 +1500,7 @@ emf_muslim_conversion = {
 			}
 			modifier = {
 				factor = 2.5
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_christendom
 			}
@@ -1453,6 +1522,7 @@ emf_muslim_conversion = {
 			}
 			modifier = {
 				factor = 2.5
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_christendom
 			}
@@ -1471,12 +1541,14 @@ emf_muslim_conversion = {
 				factor = 0.25
 				NOR = {
 					culture = egyptian_arabic
+					culture = coptic
 					culture_group = east_african
 					event_target:heretic_province = { region = world_africa_east }
 				}
 			}
 			modifier = {
 				factor = 2.5
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_christendom
 			}
@@ -1495,6 +1567,7 @@ emf_muslim_conversion = {
 			}
 			modifier = {
 				factor = 2.5
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_christendom
 			}
@@ -1525,6 +1598,7 @@ emf_muslim_conversion = {
 			}
 			modifier = {
 				factor = 2.5
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_christendom
 			}
@@ -1537,12 +1611,16 @@ emf_muslim_conversion = {
 					event_target:heretic_province = { region = world_persia }
 					event_target:heretic_province = { region = world_steppe_east }
 					event_target:heretic_province = { region = world_steppe_tarim }
-					# Audax Validator "." Ignore_1007
-					trait = sympathy_zoroastrianism
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_zoroastrianism
+					}
 				}
 			}
 			modifier = {
 				factor = 2.5
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_zoroastrianism
 			}
@@ -1567,12 +1645,16 @@ emf_muslim_conversion = {
 					event_target:heretic_province = { region = world_persia }
 					event_target:heretic_province = { region = world_steppe_east }
 					event_target:heretic_province = { region = world_steppe_tarim }
-					# Audax Validator "." Ignore_1007
-					trait = sympathy_zoroastrianism
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_zoroastrianism
+					}
 				}
 			}
 			modifier = {
 				factor = 2.5
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_zoroastrianism
 			}
@@ -1592,12 +1674,16 @@ emf_muslim_conversion = {
 				NOR = {
 					event_target:heretic_province = { region = world_middle_east_jerusalem }
 					culture_group = israelite
-					# Audax Validator "." Ignore_1007
-					trait = sympathy_judaism
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_judaism
+					}
 				}
 			}
 			modifier = {
 				factor = 2.5
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_judaism
 			}
@@ -1728,10 +1814,16 @@ emf_zoroastrian_conversion = {
 					event_target:heretic_province = { region = world_europe_west }
 					event_target:heretic_province = { region = world_europe_south_italy }
 					event_target:heretic_province = { region = world_europe_east }
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_christendom
+					}
 				}
 			}
 			modifier = {
 				factor = 2
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_christendom
 			}
@@ -1745,6 +1837,11 @@ emf_zoroastrian_conversion = {
 					event_target:heretic_province = { region = world_europe_east }
 					event_target:heretic_province = { region = world_asia_minor }
 					event_target:heretic_province = { region = world_middle_east_jerusalem }
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_christendom
+					}
 				}
 			}
 			modifier = {
@@ -1758,6 +1855,7 @@ emf_zoroastrian_conversion = {
 			}
 			modifier = {
 				factor = 2
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_christendom
 			}
@@ -1779,6 +1877,7 @@ emf_zoroastrian_conversion = {
 			}
 			modifier = {
 				factor = 2
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_christendom
 			}
@@ -1797,12 +1896,14 @@ emf_zoroastrian_conversion = {
 				factor = 0.25
 				NOR = {
 					culture = egyptian_arabic
+					culture = coptic
 					culture_group = east_african
 					event_target:heretic_province = { region = world_africa_east }
 				}
 			}
 			modifier = {
 				factor = 2
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_christendom
 			}
@@ -1851,6 +1952,7 @@ emf_zoroastrian_conversion = {
 			}
 			modifier = {
 				factor = 2
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_christendom
 			}
@@ -1862,12 +1964,16 @@ emf_zoroastrian_conversion = {
 				NOR = {
 					event_target:heretic_province = { region = world_middle_east_jerusalem }
 					culture_group = israelite
-					# Audax Validator "." Ignore_1007
-					trait = sympathy_judaism
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_judaism
+					}
 				}
 			}
 			modifier = {
 				factor = 2
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_judaism
 			}
@@ -1877,16 +1983,20 @@ emf_zoroastrian_conversion = {
 			modifier = {
 				factor = 0
 				NOR = {
-					# Audax Validator "." Ignore_1007
-					trait = sympathy_islam
 					event_target:heretic_province = { region = world_middle_east }
 					event_target:heretic_province = { region = world_steppe }
 					event_target:heretic_province = { region = world_africa }
 					event_target:heretic_province = { region = world_persia }
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_islam
+					}
 				}
 			}
 			modifier = {
 				factor = 2
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_islam
 			}
@@ -1933,10 +2043,16 @@ emf_jewish_conversion = {
 					event_target:heretic_province = { region = world_europe_west }
 					event_target:heretic_province = { region = world_europe_south_italy }
 					event_target:heretic_province = { region = world_europe_east }
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_christendom
+					}
 				}
 			}
 			modifier = {
 				factor = 2
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_christendom
 			}
@@ -1950,6 +2066,11 @@ emf_jewish_conversion = {
 					event_target:heretic_province = { region = world_europe_east }
 					event_target:heretic_province = { region = world_asia_minor }
 					event_target:heretic_province = { region = world_middle_east_jerusalem }
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_christendom
+					}
 				}
 			}
 			modifier = {
@@ -1963,6 +2084,7 @@ emf_jewish_conversion = {
 			}
 			modifier = {
 				factor = 2
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_christendom
 			}
@@ -2002,12 +2124,14 @@ emf_jewish_conversion = {
 				factor = 0.25
 				NOR = {
 					culture = egyptian_arabic
+					culture = coptic
 					culture_group = east_african
 					event_target:heretic_province = { region = world_africa_east }
 				}
 			}
 			modifier = {
 				factor = 2
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_christendom
 			}
@@ -2026,6 +2150,7 @@ emf_jewish_conversion = {
 			}
 			modifier = {
 				factor = 2
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_christendom
 			}
@@ -2056,6 +2181,7 @@ emf_jewish_conversion = {
 			}
 			modifier = {
 				factor = 2
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_christendom
 			}
@@ -2068,12 +2194,16 @@ emf_jewish_conversion = {
 					event_target:heretic_province = { region = world_persia }
 					event_target:heretic_province = { region = world_steppe_east }
 					event_target:heretic_province = { region = world_steppe_tarim }
-					# Audax Validator "." Ignore_1007
-					trait = sympathy_zoroastrianism
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_zoroastrianism
+					}
 				}
 			}
 			modifier = {
 				factor = 2
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_zoroastrianism
 			}
@@ -2094,12 +2224,16 @@ emf_jewish_conversion = {
 					event_target:heretic_province = { region = world_persia }
 					event_target:heretic_province = { region = world_steppe_east }
 					event_target:heretic_province = { region = world_steppe_tarim }
-					# Audax Validator "." Ignore_1007
-					trait = sympathy_zoroastrianism
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_zoroastrianism
+					}
 				}
 			}
 			modifier = {
 				factor = 2
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_zoroastrianism
 			}
@@ -2117,16 +2251,20 @@ emf_jewish_conversion = {
 			modifier = {
 				factor = 0
 				NOR = {
-					# Audax Validator "." Ignore_1007
-					trait = sympathy_islam
 					event_target:heretic_province = { region = world_middle_east }
 					event_target:heretic_province = { region = world_steppe }
 					event_target:heretic_province = { region = world_africa }
 					event_target:heretic_province = { region = world_persia }
+					AND = {
+						character = yes
+						# Audax Validator "." Ignore_1007
+						trait = sympathy_islam
+					}
 				}
 			}
 			modifier = {
 				factor = 2
+				character = yes
 				# Audax Validator "." Ignore_1007
 				trait = sympathy_islam
 			}
