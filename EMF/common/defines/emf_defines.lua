@@ -62,7 +62,8 @@ NDefines.NCharacter.AGE_VERY_OLD = 60
 NDefines.NCharacter.NATURAL_DEATH_CHANCE_AGE_60 = 600
 NDefines.NCharacter.NATURAL_DEATH_CHANCE_AGE_70 = 2100
 NDefines.NCharacter.SECONDARY_SPOUSE_FERTILITY_MULT = 0.33
-NDefines.NCharacter.INFANT_DEATH_CHANCE = 0.07
+-- OUT-COMMENT: Nonzero INFANT_DEATH_CHANCE causes nondeterministic crashes on patch 3.3.0 (64-bit):
+-- NDefines.NCharacter.INFANT_DEATH_CHANCE = 0.07
 
 -- Title
 NDefines.NTitle.COUNT_TITLE_PRESTIGE = 0.05
@@ -228,7 +229,7 @@ NDefines.NMilitary.CAPITAL_EMPIRE_LIEGE_LEVY_MULT = 0.25 -- reduced to be same a
 NDefines.NMilitary.OUTSIDE_LIEGE_LEVY_MULT = 0.25 -- same as vanilla, just here for completeness
 NDefines.NMilitary.FORAGING_PILLAGE_MODIFIER = 0.25 -- changed from 0.15 in vanilla for EMF v8.07 (troops will take more of a province's loot when out of supply)
 NDefines.NMilitary.MONTHS_OF_UNDECIDED_WAR = 0
-NDefines.NMilitary.SHATTERED_RETREAT_MORALE_MULTIPLIER = 1.15   -- prior to EMF v9.06: 1.0 
+NDefines.NMilitary.SHATTERED_RETREAT_MORALE_MULTIPLIER = 1.15   -- prior to EMF v9.06: 1.0
 NDefines.NMilitary.SHATTERED_RETREAT_PREFERRED_PROVINCES = 4
 NDefines.NMilitary.SHATTERED_RETREAT_MAX_PROVINCES = 5 -- reduced by 1 for EMF+V from v8.06 (EMF+SWMH allows 1 more, tho also reduced by 1 for v8.07)
 NDefines.NMilitary.MAX_WARSCORE_FROM_BATTLE_DEFENDERS = 200   -- from 100 in vanilla
@@ -256,7 +257,7 @@ NDefines.NAI.RAID_MAX_REALM_SIZE = 32          -- prior to EMF v9.06: 24; vanill
 NDefines.NAI.RAID_AGGRESSION = 15              -- prior to EMF v9.06: 18; prior to EMF v9.01: 12; vanilla is 18; lower means more frequent raiding, higher means less frequent
 NDefines.NAI.RAID_SPARE_ACCEPTED_RELIGIONS = 0	-- Intra-pagan raiding enabled to make pagan consolidation more difficult
 NDefines.NAI.TRIBAL_VASSAL_EXTRA_CALL_CHANCE = 0	-- Disabled to make tribal consolidation harder (AI already honors alliances fairly often)
-	
+
 NDefines.NAI.NOMAD_MARRIAGE_CLAN_MODIFIER = 40 -- vanilla is 20: "How much nomad AI will prefer inter-realm clan marriages"
 NDefines.NAI.NOMAD_MARRIAGE_KHAN_MODIFIER = 15 -- vanila is 5: "How much nomad AI will prefer marriages with their khan"
 
