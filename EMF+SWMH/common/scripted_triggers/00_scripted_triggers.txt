@@ -6497,40 +6497,85 @@ is_liked_and_disliked_by_China = {
 
 #Used in the invasion script...
 valid_offmap_china_target = {
-	NOT = { character = ROOT }
-	NOT = { has_character_modifier = peace_deal_with_china }
-	NOT = { has_character_flag = defeated_china }
-	NOT = { is_tributary = { suzerain = ROOT } }
-	in_revolt = no
-	is_within_diplo_range = ROOT
-	OR = {
-		is_landed = yes
-		is_patrician = yes
+	NOR = {
+		is_offmap_governor = offmap_china
+		has_character_modifier = peace_deal_with_china
+		has_character_flag = defeated_china
+		AND = {
+			is_tributary = yes
+			suzerain = { is_offmap_governor = offmap_china }
+		}
+		primary_title = { has_title_flag = rebel_general_title } #uses special cb to target
+		offmap_china = { offmap_ruler = { dynasty = PREVPREV } }
 	}
+	offmap_china = { governor = { is_within_diplo_range = PREVPREV } }
+	in_revolt = no
+	is_landed = yes
 	higher_tier_than = BARON
-	NOT = { primary_title = { has_title_flag = rebel_general_title } } #uses special cb to target
-	NOT = { offmap_china = { offmap_ruler = { dynasty = PREVPREV } } }
 }
 
 valid_offmap_china_target_location = {
 	OR = {
 		any_realm_province = { region = custom_chinese_invasion_target_region }
 		any_neighbor_independent_ruler = {
-			has_landed_title = e_china_west_governor
+			is_offmap_governor = offmap_china
 		}
 	}
 }
 
 valid_offmap_china_target_location_tributary_chain = {
-	OR = {
-		#any_realm_province = { region = custom_chinese_invasion_target_region }
-		any_neighbor_independent_ruler = {
-			has_landed_title = e_china_west_governor
+	trigger_if = {
+		limit = {
+			offmap_china = {
+				governor = {
+					is_landed = yes
+					any_neighbor_independent_ruler = {
+						valid_offmap_china_target = yes
+					}
+				}
+			}
 		}
+		any_neighbor_independent_ruler = {
+			is_offmap_governor = offmap_china
+		}
+	}
+	trigger_else_if = {
+		limit = {
+			offmap_china = {
+				governor = {
+					# Quickly exit out if there aren't enough tributaries for this check
+					any_tributary = {
+						count = 2
+					}
+					# There are more likely to be fewer WP tributaries than independent rulers, so this method of scoping should be faster than just any_independent_ruler + any_neighbor_independent_ruler w/ WP suzerain @ count = 2
+					any_tributary = {
+						any_neighbor_independent_ruler = {
+							valid_offmap_china_target = yes
+							any_neighbor_independent_ruler = {
+								NOT = { character = PREVPREV }
+								is_tributary = yes
+								suzerain = {
+									is_offmap_governor = offmap_china
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		any_neighbor_independent_ruler = {
+			count = 2
+			is_tributary = yes
+			suzerain = {
+				is_offmap_governor = offmap_china
+			}
+		}
+	}
+	trigger_else = {
 		any_neighbor_independent_ruler = {
 			is_tributary = yes
 			suzerain = {
-				has_landed_title = e_china_west_governor
+				is_offmap_governor = offmap_china
 			}
 		}
 	}
