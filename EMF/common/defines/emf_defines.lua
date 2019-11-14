@@ -64,6 +64,7 @@ NDefines.NCharacter.NATURAL_DEATH_CHANCE_AGE_70 = 2100
 NDefines.NCharacter.SECONDARY_SPOUSE_FERTILITY_MULT = 0.33
 -- OUT-COMMENT: Nonzero INFANT_DEATH_CHANCE causes nondeterministic crashes on patch 3.3.0 (64-bit):
 -- NDefines.NCharacter.INFANT_DEATH_CHANCE = 0.07
+NDefines.NCharacter.TRIBAL_EMPTY_HOLDING_LEVY_MULTIPLIER = 0.35       -- vanilla: 0.5, EMF v10.5: 0.5
 
 -- Title
 NDefines.NTitle.COUNT_TITLE_PRESTIGE = 0.05
