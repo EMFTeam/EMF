@@ -24,6 +24,11 @@ mapcut_path = rootpath / 'ck2utils/mapcut'
 cut_titles = ['e_rajastan', 'e_mali', 'k_sahara', 'k_fezzan', 'k_kanem', 'k_hausaland', 'k_canarias']
 emf_holding_slot_path = emf_src_path / 'holding_slot_trigger.py'
 emf_swmh_history_path = emf_src_path / 'emf_swmh_history.py'
+cadet_codegen_path = emf_src_path / 'cadet_codegen.py'
+religion_codegen_path = emf_src_path / 'religion_codegen.py'
+revolt_codegen_path = emf_src_path / 'revolt_codegen.py'
+traits_codegen_path = emf_src_path / 'traits_codegen.py'
+trait_notify_path = emf_src_path / 'trait-notify.pl'
 
 
 def build_mapcut():
@@ -41,7 +46,7 @@ def build_mapcut():
 def main():
     rc = 0
 
-    if sys.platform.startswith('linux') and mapcut_bin_path_default.exists():
+    if mapcut_bin_path_default.exists():
         mapcut_bin_path = mapcut_bin_path_default
     else:
         mapcut_bin = 'mapcut' if sys.platform.startswith('linux') or sys.platform.startswith('darwin') else 'mapcut.exe'
@@ -82,6 +87,46 @@ def main():
     except subprocess.CalledProcessError as e:
         sys.stderr.write('> build failed!\n> command: {}\n> exit code: {}\n\n{}'.format(e.cmd, e.returncode, e.output))
         rc = 5
+
+    print(">> executing cadet codegen...")
+    try:
+        output = subprocess.check_output(['/usr/bin/python3', str(cadet_codegen_path)],
+                                         universal_newlines=True, stderr=subprocess.STDOUT)
+        if sys.stdout:
+            sys.stdout.write(output)
+    except subprocess.CalledProcessError as e:
+        sys.stderr.write('> build failed!\n> command: {}\n> exit code: {}\n\n{}'.format(e.cmd, e.returncode, e.output))
+        rc = 6
+
+    print(">> executing religion codegen...")
+    try:
+        output = subprocess.check_output(['/usr/bin/python3', str(religion_codegen_path)],
+                                         universal_newlines=True, stderr=subprocess.STDOUT)
+        if sys.stdout:
+            sys.stdout.write(output)
+    except subprocess.CalledProcessError as e:
+        sys.stderr.write('> build failed!\n> command: {}\n> exit code: {}\n\n{}'.format(e.cmd, e.returncode, e.output))
+        rc = 7
+
+    print(">> executing revolt codegen...")
+    try:
+        output = subprocess.check_output(['/usr/bin/python3', str(revolt_codegen_path)],
+                                         universal_newlines=True, stderr=subprocess.STDOUT)
+        if sys.stdout:
+            sys.stdout.write(output)
+    except subprocess.CalledProcessError as e:
+        sys.stderr.write('> build failed!\n> command: {}\n> exit code: {}\n\n{}'.format(e.cmd, e.returncode, e.output))
+        rc = 8
+
+    print(">> executing traits codegen...")
+    try:
+        output = subprocess.check_output(['/usr/bin/python3', str(traits_codegen_path)],
+                                         universal_newlines=True, stderr=subprocess.STDOUT)
+        if sys.stdout:
+            sys.stdout.write(output)
+    except subprocess.CalledProcessError as e:
+        sys.stderr.write('> build failed!\n> command: {}\n> exit code: {}\n\n{}'.format(e.cmd, e.returncode, e.output))
+        rc = 9
 
     with version_path.open('w') as f:
         print('{} - {}'.format(version, datetime.date.today()), file=f)
