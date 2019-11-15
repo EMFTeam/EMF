@@ -534,7 +534,7 @@ def main():
             tree.contents[24].pre_comments = []
         elif path.stem == 'k_magyar':
             changed = True
-            tree[764, 1, 1].contents[:0] = parser.parse('''
+            tree[769, 1, 1].contents[:0] = parser.parse('''
                 law = succ_gavelkind
                 ''').contents
         elif path.stem == 'e_china_west_governor':
