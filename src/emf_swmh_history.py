@@ -542,7 +542,7 @@ def main():
                 ''').contents
         elif path.stem == 'e_china_west_governor':
             changed = True
-            assert len(tree.contents) == 38
+            assert len(tree.contents) == 43
             tree[1264, 8, 21].contents.extend(parser.parse('''
                 effect = { set_coa = e_china_yuan }
                 ''').contents)
@@ -555,9 +555,11 @@ def main():
             tree[1005, 1, 1].contents.extend(parser.parse('''
                 effect = { set_coa = e_china_liao }
                 ''').contents)
-            tree[960, 2, 1].contents.extend(parser.parse('''
-                effect = { set_coa = e_china_song }
-                ''').contents)
+            tree.contents[11:11] = parser.parse('''
+                960.2.1 = {
+                    effect = { set_coa = e_china_song }
+                }
+                ''').contents
             tree.contents[6:6] = parser.parse('''
                 907.5.12 = {
                     effect = { reset_coa = THIS }
