@@ -534,9 +534,6 @@ def main():
             tree.contents[24].pre_comments = []
         elif path.stem == 'k_magyar':
             changed = True
-            item = tree[20, 1, 1].contents.pop()
-            comments = [Comment(x) for x in item.str(parser).splitlines()]
-            tree[20, 1, 1].ker.pre_comments[:0] = comments
             tree[764, 1, 1].contents[:0] = parser.parse('''
                 law = succ_gavelkind
                 ''').contents
