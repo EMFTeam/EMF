@@ -251,7 +251,7 @@ NDefines.NGraphics.CITY_SPRAWL_AMOUNT = 0.5
 NDefines.NEngine.EVENT_PROCESS_OFFSET = 30
 
 -- AI
-NDefines.NAI.MARRIAGE_AI_PRESTIGE_VALUE = 0.1  -- vanilla is 0.33: worst-case, they marry a lowborn, which EMF will raise to the nobility. prestige effects of marriage tend to greatly get in the way of the AI making good matches that further its dynasty. (vanilla value is 0.33)
+NDefines.NAI.MARRIAGE_AI_PRESTIGE_VALUE = 0.25 -- EMF v10.5: 0.1; vanilla: 0.33 [worst-case, they marry a lowborn, which EMF will raise to the nobility. prestige effects of marriage tend to greatly get in the way of the AI making good matches that further its dynasty.]
 NDefines.NAI.AI_EMPEROR_CREATES_KINGDOMS = 1   -- only a good idea after we creating the De Jure Vassal Kingdom Creation laws, else AI spams kingdom titles inappropriately
 NDefines.NAI.DESIRED_CONSORTS = 1              -- as of EMF v8.07, AI will actually try to get a concubine if they lack sons
 NDefines.NAI.AI_ASSAULT_RATIO = 15             -- +50% from vanilla
