@@ -2582,89 +2582,58 @@ character_event = {
 
 	is_triggered_only = yes
 
-	immediate = { 
+	immediate = {
+		if = {
+			limit = {
+				NAND = {
+					war = yes
+					has_character_modifier = call_to_glory
+					is_member_of_any_warrior_lodge_trigger = yes
+					society_rank = 4
+				}
+			}
+			#If basic requirements for the power are no longer met, clean everything and stop the chain.
+			remove_character_modifier = call_to_glory
+			disband_event_forces = call_to_glory_disciplined
+			disband_event_forces = call_to_glory_rowdy
+			set_variable = { which = "call_to_glory_variable" value = 0 }
+			break = yes
+		}
+		if = {
+			limit = {
+				NAND = {
+					in_command = yes
+					is_at_sea = no
+				}
+			}
+			#If not in command, loop the event, just in case the player gets back into action.
+			repeat_event = { id = HF.25031 days = 35 random = 5 }
+			break = yes
+		}
 		random_list = { 
 			30 = { 
 				trigger = {
-					in_command = yes
-					is_at_sea = no
-					war = yes
-					has_character_modifier = call_to_glory
-					is_member_of_any_warrior_lodge_trigger = yes
-					society_rank = 4
-					NOT = { check_variable = { which = "call_to_glory_variable" value = 20 } } #Stop after a while.
+					check_variable = { which = "call_to_glory_variable" value < 20 } #Stop after a while.
 				}
 				character_event = { id = HF.25032 } # Main reinforcement notification event.
 			}
-			50 = { 
-				trigger = {
-					OR = { 
-						in_command = no
-						is_at_sea = yes
-					}
-					war = yes
-					has_character_modifier = call_to_glory
-					is_member_of_any_warrior_lodge_trigger = yes
-					society_rank = 4
-					NOT = { check_variable = { which = "call_to_glory_variable" value = 20 } }
-				}
-				#If not in command, loop the event, just in case the player gets back into action.
-				repeat_event = { id = HF.25031 days = 35 random = 5 }
-			}
 			100 = { 
 				trigger = {
-					OR = { 
-						is_member_of_any_warrior_lodge_trigger = no
-						war = no 
-						AND = {
-							is_member_of_any_warrior_lodge_trigger = yes
-							NOT = { society_rank = 4 }
-						}
-						NOT = { has_character_modifier = call_to_glory }
-					}
-				}
-				#If basic requirements for the power are no longer met, clean everything and stop the chain.
-				remove_character_modifier = call_to_glory
-				disband_event_forces = call_to_glory_disciplined
-				disband_event_forces = call_to_glory_rowdy
-				set_variable = { which = "call_to_glory_variable" value = 0 }
-			}
-			100 = { 
-				trigger = {
-					in_command = yes
-					is_at_sea = no
-					war = yes
-					has_character_modifier = call_to_glory
-					is_member_of_any_warrior_lodge_trigger = yes
-					society_rank = 4
-					check_variable = { which = "call_to_glory_variable" value = 20 }
+					check_variable = { which = "call_to_glory_variable" value >= 20 }
 				}
 				character_event = { id = HF.25033 } #Once troops have spawned 20 times, they will stop spawning unless ruler succeeds in a persuasion check to lower the variable.
 			}
 			5 = { 
 				trigger = {
-					in_command = yes
-					is_at_sea = no
-					war = yes
-					has_character_modifier = call_to_glory
-					is_member_of_any_warrior_lodge_trigger = yes
-					society_rank = 4
 					has_earmarked_regiments = call_to_glory_rowdy #should have at least some rowdy troops.
-					check_variable = { which = "call_to_glory_variable" value = 5 } #Shouldn't happen immediately after firing the power.
-
-					NOT = { check_variable = { which = "call_to_glory_variable" value = 20 } } #Stop after a while.
+					check_variable = { which = "call_to_glory_variable" value >= 5 } #Shouldn't happen immediately after firing the power.
+					check_variable = { which = "call_to_glory_variable" value < 20 } #Stop after a while.
 				}
 				character_event = { id = HF.25034 } # Rowdy troops are threatening to leave if they are not given more spoils.
 			}
 			5 = { 
 				trigger = {
-					in_command = yes
-					is_at_sea = no
-					war = yes
-					has_character_modifier = call_to_glory
-					is_member_of_any_warrior_lodge_trigger = yes
-					society_rank = 4
-					check_variable = { which = "call_to_glory_variable" value = 5 } #Shouldn't happen immediately after firing the power.
+					check_variable = { which = "call_to_glory_variable" value >= 5 } #Shouldn't happen immediately after firing the power.
 				}
 				character_event = { id = HF.25037 } # Chance for either levy reinforcement bonus in capital, prestige, cheap troops, or raider ships.
 			}
@@ -2690,7 +2659,7 @@ character_event = {
 		war = yes
 		is_member_of_any_warrior_lodge_trigger = yes
 		society_rank = 4
-		NOT = { check_variable = { which = "call_to_glory_variable" value = 20 } }
+		check_variable = { which = "call_to_glory_variable" value < 20 }
 	}
 
 	fail_trigger_effect = { 
@@ -2711,6 +2680,9 @@ character_event = {
 			disband_event_forces = call_to_glory_disciplined
 			disband_event_forces = call_to_glory_rowdy
 			set_variable = { which = "call_to_glory_variable" value = 0 }
+			any_demesne_province = { 
+				remove_province_modifiers = { modifier = capital_call_to_glory amount = 100 }
+			}
 			break = yes
 		}
 		if = { 
@@ -2723,7 +2695,7 @@ character_event = {
 				has_character_modifier = call_to_glory
 			} 
 			#If not in command, loop the event, just in case the player gets back into action.
-			repeat_event = { id = HF.25031 days = 25 random = 5 }
+			repeat_event = { id = HF.25031 days = 35 random = 5 }
 		}
 	}
 
@@ -2742,7 +2714,10 @@ character_event = {
 
 			#Numbers balanced based on realm size (30 or less, between 30 and 70, more than 70)
             if = { #Low spawn
-            	limit = { society_member_of = warrior_lodge_norse NOT = { realm_size = 30 } }
+            	limit = {
+            		society_member_of = warrior_lodge_norse
+            		realm_size < 30
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -2757,10 +2732,12 @@ character_event = {
 			                    		heavy_infantry = { 10 10 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -2772,18 +2749,22 @@ character_event = {
 			                    		heavy_infantry = { 25 25 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_tengri NOT = { realm_size = 30 } }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_tengri
+            		realm_size < 30
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -2798,10 +2779,11 @@ character_event = {
 			                    		horse_archers = { 10 10 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -2813,18 +2795,22 @@ character_event = {
 			                    		horse_archers = { 25 25 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_slavic NOT = { realm_size = 30 } }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_slavic
+            		realm_size < 30
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -2839,10 +2825,11 @@ character_event = {
 			                    		light_cavalry = { 10 10 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -2854,18 +2841,22 @@ character_event = {
 			                    		light_cavalry = { 25 25 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_baltic NOT = { realm_size = 30 } }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_baltic
+            		realm_size < 30
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -2881,10 +2872,11 @@ character_event = {
 			                    		archers = { 10 10 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -2897,18 +2889,22 @@ character_event = {
 			                    		archers = { 10 10 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_finnish NOT = { realm_size = 30 } }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_finnish
+            		realm_size < 30
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -2923,10 +2919,11 @@ character_event = {
 			                    		archers = { 30 30 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -2938,18 +2935,22 @@ character_event = {
 			                    		archers = { 50 50 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_west_african NOT = { realm_size = 30 } }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_west_african
+            		realm_size < 30
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -2964,10 +2965,11 @@ character_event = {
 			                    		pikemen = { 25 25 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -2979,18 +2981,22 @@ character_event = {
 			                    		pikemen = { 30 30 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_zun NOT = { realm_size = 30 } }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_zun
+            		realm_size < 30
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3005,10 +3011,11 @@ character_event = {
 			                    		archers = { 25 25 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3020,18 +3027,22 @@ character_event = {
 			                    		archers = { 30 30 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_bon NOT = { realm_size = 30 } }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_bon
+            		realm_size < 30
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3047,10 +3058,11 @@ character_event = {
 			                    		archers = { 25 25 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3063,18 +3075,22 @@ character_event = {
 			                    		archers = { 30 30 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_hellenic NOT = { realm_size = 30 } }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_hellenic
+            		realm_size < 30
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3089,10 +3105,11 @@ character_event = {
 			                    		heavy_infantry = { 10 10 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3104,18 +3121,22 @@ character_event = {
 			                    		heavy_infantry = { 10 10 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-			if = {
-            	limit = { society_member_of = warrior_lodge_aztec NOT = { realm_size = 30 } }
+			else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_aztec
+            		realm_size < 30
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3130,10 +3151,11 @@ character_event = {
 			                    		heavy_infantry = { 20 20 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3145,18 +3167,23 @@ character_event = {
 			                    		heavy_infantry = { 35 35 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = { #Mid spawn
-            	limit = { society_member_of = warrior_lodge_norse realm_size = 30 NOT = { realm_size = 70 } }
+            else_if = { #Mid spawn
+            	limit = {
+            		society_member_of = warrior_lodge_norse
+            		realm_size >= 30
+            		realm_size < 70
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3171,10 +3198,11 @@ character_event = {
 			                    		heavy_infantry = { 25 25 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3186,18 +3214,23 @@ character_event = {
 			                    		heavy_infantry = { 50 50 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_tengri realm_size = 30 NOT = { realm_size = 70 } }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_tengri
+            		realm_size >= 30
+            		realm_size < 70
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3212,10 +3245,11 @@ character_event = {
 			                    		horse_archers = { 25 25 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3227,18 +3261,23 @@ character_event = {
 			                    		horse_archers = { 50 50 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_slavic realm_size = 30 NOT = { realm_size = 70 } }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_slavic
+            		realm_size >= 30
+            		realm_size < 70
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3253,10 +3292,11 @@ character_event = {
 			                    		light_cavalry = { 25 25 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3268,18 +3308,23 @@ character_event = {
 			                    		light_cavalry = { 50 50 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_baltic realm_size = 30 NOT = { realm_size = 70 } }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_baltic
+            		realm_size >= 30
+            		realm_size < 70
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3295,10 +3340,11 @@ character_event = {
 			                    		archers = { 25 25 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3311,18 +3357,23 @@ character_event = {
 			                    		archers = { 25 25 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_finnish realm_size = 30 NOT = { realm_size = 70 } }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_finnish
+            		realm_size >= 30
+            		realm_size < 70
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3337,10 +3388,11 @@ character_event = {
 			                    		archers = { 75 75 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3352,18 +3404,23 @@ character_event = {
 			                    		archers = { 100 100 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_west_african realm_size = 30 NOT = { realm_size = 70 } }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_west_african
+            		realm_size >= 30
+            		realm_size < 70
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3378,10 +3435,11 @@ character_event = {
 			                    		pikemen = { 50 50 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3393,18 +3451,23 @@ character_event = {
 			                    		pikemen = { 75 75 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_zun realm_size = 30 NOT = { realm_size = 70 } }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_zun
+            		realm_size >= 30
+            		realm_size < 70
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3419,10 +3482,11 @@ character_event = {
 			                    		archers = { 50 50 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3434,18 +3498,23 @@ character_event = {
 			                    		archers = { 75 75 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_bon realm_size = 30 NOT = { realm_size = 70 } }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_bon
+            		realm_size >= 30
+            		realm_size < 70
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3461,10 +3530,11 @@ character_event = {
 			                    		archers = { 50 50 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3477,18 +3547,23 @@ character_event = {
 			                    		archers = { 75 75 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_hellenic realm_size = 30 NOT = { realm_size = 70 } }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_hellenic
+            		realm_size >= 30
+            		realm_size < 70
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3503,10 +3578,11 @@ character_event = {
 			                    		heavy_infantry = { 25 25 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3518,18 +3594,23 @@ character_event = {
 			                    		heavy_infantry = { 25 25 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-			if = {
-            	limit = { society_member_of = warrior_lodge_aztec realm_size = 30 NOT = { realm_size = 70 } }
+			else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_aztec
+            		realm_size >= 30
+            		realm_size < 70
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3544,10 +3625,11 @@ character_event = {
 			                    		heavy_infantry = { 50 50 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3559,18 +3641,22 @@ character_event = {
 			                    		heavy_infantry = { 75 75 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = { #Top spawn
-            	limit = { society_member_of = warrior_lodge_norse realm_size = 70 }
+            else_if = { #Top spawn
+            	limit = {
+            		society_member_of = warrior_lodge_norse
+            		realm_size >= 70
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3585,10 +3671,11 @@ character_event = {
 			                    		heavy_infantry = { 50 50 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3600,18 +3687,22 @@ character_event = {
 			                    		heavy_infantry = { 100 100 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_tengri realm_size = 70 }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_tengri
+            		realm_size >= 70
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3626,10 +3717,11 @@ character_event = {
 			                    		horse_archers = { 50 50 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3641,18 +3733,22 @@ character_event = {
 			                    		horse_archers = { 100 100 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_slavic realm_size = 70 }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_slavic
+            		realm_size >= 70
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3667,10 +3763,11 @@ character_event = {
 			                    		light_cavalry = { 50 50 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3682,18 +3779,22 @@ character_event = {
 			                    		light_cavalry = { 100 100 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_baltic realm_size = 70 }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_baltic
+            		realm_size >= 70
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3709,10 +3810,11 @@ character_event = {
 			                    		archers = { 50 50 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3725,18 +3827,22 @@ character_event = {
 			                    		archers = { 50 50 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_finnish realm_size = 70 }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_finnish
+            		realm_size >= 70
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3751,10 +3857,11 @@ character_event = {
 			                    		archers = { 150 150 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3766,18 +3873,22 @@ character_event = {
 			                    		archers = { 200 200 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_west_african realm_size = 70 }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_west_african
+            		realm_size >= 70
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3792,10 +3903,11 @@ character_event = {
 			                    		pikemen = { 100 100 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3807,18 +3919,22 @@ character_event = {
 			                    		pikemen = { 150 150 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_zun realm_size = 70 }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_zun
+            		realm_size >= 70
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3833,10 +3949,11 @@ character_event = {
 			                    		archers = { 100 100 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3848,18 +3965,22 @@ character_event = {
 			                    		archers = { 150 150 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_bon realm_size = 70 }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_bon
+            		realm_size >= 70
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3875,10 +3996,11 @@ character_event = {
 			                    		archers = { 100 100 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3891,18 +4013,22 @@ character_event = {
 			                    		archers = { 150 150 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-            if = {
-            	limit = { society_member_of = warrior_lodge_hellenic realm_size = 70 }
+            else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_hellenic
+            		realm_size >= 70
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3917,10 +4043,11 @@ character_event = {
 			                    		heavy_infantry = { 50 50 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3932,18 +4059,22 @@ character_event = {
 			                    		heavy_infantry = { 50 50 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
 	                }
 	            }
             }
-			if = {
-            	limit = { society_member_of = warrior_lodge_aztec realm_size = 70 }
+			else_if = {
+            	limit = {
+            		society_member_of = warrior_lodge_aztec
+            		realm_size >= 70
+            	}
 	            location = {
 	                show_scope_change = no
 	                ROOT = {
@@ -3958,10 +4089,11 @@ character_event = {
 			                    		heavy_infantry = { 100 100 }
 			                        }
 			                        earmark = call_to_glory_disciplined
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 		                    50 = { 
@@ -3973,10 +4105,11 @@ character_event = {
 			                    		heavy_infantry = { 150 150 }
 			                        }
 			                        earmark = call_to_glory_rowdy #Might leave early on occasion.
-			                        attrition = 0
+			                        attrition = 1.0
 			                        merge = yes
-			                        maintenance_multiplier = 0
+			                        maintenance_multiplier = 0.25
 				                    disband_on_peace = yes
+				                    cannot_inherit = yes
 			                  	}
 		                  	}
 	                  	}
@@ -4005,7 +4138,7 @@ character_event = {
 		war = yes
 		is_member_of_any_warrior_lodge_trigger = yes
 		society_rank = 4
-		NOT = { check_variable = { which = "call_to_glory_variable" value = 20 } }
+		check_variable = { which = "call_to_glory_variable" value < 20 }
 	}
 
 	fail_trigger_effect = { 
@@ -4026,35 +4159,38 @@ character_event = {
 			disband_event_forces = call_to_glory_disciplined
 			disband_event_forces = call_to_glory_rowdy
 			set_variable = { which = "call_to_glory_variable" value = 0 }
+			any_demesne_province = { 
+				remove_province_modifiers = { modifier = capital_call_to_glory amount = 100 }
+			}
 			break = yes
 		}
 	}
 
 	option = { #Inspire with combat rating.
 		name = EVTOPTAHF25033
-		trigger = { combat_rating = 50 ai = no }
+		trigger = { combat_rating = 70 ai = no }
 		tooltip_info = combat_rating
 		custom_tooltip = { text = tooltip_call_to_glory_resume_reinforcements }
-		hidden_tooltip = { change_variable = { which = "call_to_glory_variable" value = -10 } }
+		hidden_tooltip = { change_variable = { which = "call_to_glory_variable" value = -5 } }
 		hidden_tooltip = { 
 			character_event = { id = HF.25031 days = 45 random = 5 } #Hidden random list.
 		}
-
 	}
+
 	option = { #Bribe them.
 		name = EVTOPTBHF25033
 		trigger = { ai = no }
 		if = { 
 			limit = { ai = no }
-			scaled_wealth = { value = -1.0 min = -150 max = -250 } 
+			scaled_wealth = { value = -2.0 min = -300 max = -500 } 
 		}
 		custom_tooltip = { text = tooltip_call_to_glory_resume_reinforcements }
-		hidden_tooltip = { change_variable = { which = "call_to_glory_variable" value = -10 } }
+		hidden_tooltip = { change_variable = { which = "call_to_glory_variable" value = -7 } }
 		hidden_tooltip = { 
 			character_event = { id = HF.25031 days = 45 random = 5 } #Hidden random list.
 		}
-
 	}
+
 	option = { #Do nothing - No more reinforcements.
 		name = EVTOPTCHF25033
 		custom_tooltip = { text = tooltip_call_to_glory_end_reinforcements }
@@ -4077,7 +4213,7 @@ character_event = {
 		war = yes
 		is_member_of_any_warrior_lodge_trigger = yes
 		society_rank = 4
-		NOT = { check_variable = { which = "call_to_glory_variable" value = 20 } }
+		check_variable = { which = "call_to_glory_variable" value < 20 }
 	}
 
 	fail_trigger_effect = { 
@@ -4098,6 +4234,9 @@ character_event = {
 			disband_event_forces = call_to_glory_disciplined
 			disband_event_forces = call_to_glory_rowdy
 			set_variable = { which = "call_to_glory_variable" value = 0 }
+			any_demesne_province = { 
+				remove_province_modifiers = { modifier = capital_call_to_glory amount = 100 }
+			}
 			break = yes
 		}
 	}
@@ -4106,23 +4245,40 @@ character_event = {
 		name = EVTOPTAHF25034
 		trigger = { diplomacy = 20 }
 		tooltip_info = diplomacy
-		
 	}
 	option = { #Bribe them.
 		name = EVTOPTBHF25034
 		trigger = {
-			OR = {
-				ai = no
-				scaled_wealth = { value = 0.8 min = 50 max = 150 }
+			ai = no
+			scaled_wealth = { value = 1.25 min = 75 max = 300 }
+		}
+		scaled_wealth = { value = -1.25 min = -75 max = -300 }
+	}
+	option = { #Bribe them. [AI]
+		name = EVTOPTBHF25034
+		trigger = {
+			ai = yes
+			scaled_wealth = { value = 0.35 min = 20 max = 80 }
+			any_war = {
+				OR = {
+					AND = {
+						any_defender = { character = ROOT }
+						any_attacker = { ai = no }
+					}
+					AND = {
+						any_attacker = { character = ROOT }
+						any_defender = { ai = no }
+					}
+				}
 			}
 		}
-		scaled_wealth = { value = -0.8 min = -50 max = -150 }
+		scaled_wealth = { value = -0.35 min = -20 max = -80 }
 	}
 	option = { #Let all rowdy troops go.
 		name = EVTOPTCHF25034
 		custom_tooltip = { text = tooltip_rowdy_troops_leave }
 		hidden_tooltip = { disband_event_forces = call_to_glory_rowdy }
-		hidden_tooltip = { change_variable = { which = "call_to_glory_variable" value = -3 } }
+		#hidden_tooltip = { change_variable = { which = "call_to_glory_variable" value = -3 } }
 	}
 	after = { 
 		hidden_tooltip = { 
@@ -4145,7 +4301,7 @@ character_event = {
 		war = yes
 		is_member_of_any_warrior_lodge_trigger = yes
 		society_rank = 4
-		NOT = { check_variable = { which = "call_to_glory_variable" value = 20 } }
+		check_variable = { which = "call_to_glory_variable" value < 20 }
 	}
 
 	fail_trigger_effect = { 
@@ -4166,6 +4322,9 @@ character_event = {
 			disband_event_forces = call_to_glory_disciplined
 			disband_event_forces = call_to_glory_rowdy
 			set_variable = { which = "call_to_glory_variable" value = 0 }
+			any_demesne_province = { 
+				remove_province_modifiers = { modifier = capital_call_to_glory amount = 100 }
+			}
 			break = yes
 		}
 	}
@@ -4186,7 +4345,7 @@ character_event = {
 
 	option = { #Bonus Prestige.
 		name = EVTOPTBHF25037
-		prestige = 150
+		prestige = 100
 	}
 	option = { #Bonus infantry.
 		name = EVTOPTCHF25037
@@ -4202,10 +4361,11 @@ character_event = {
                   		light_infantry = { 400 400 }
                     }
                     earmark = call_to_glory_rowdy
-                    attrition = 0
+                    attrition = 1
 			        merge = yes
-                    maintenance_multiplier = 0
-	               disband_on_peace = yes
+                    maintenance_multiplier = 0.25
+	                disband_on_peace = yes
+	                cannot_inherit = yes
 	           	}
 	       	}
        	}
@@ -4216,6 +4376,7 @@ character_event = {
 			province = closest # closest sea zone
 			owner = ROOT
 			disband_on_peace = yes
+			cannot_inherit = yes
 			troops = {
 				galleys = { 50 50 }
 			}
@@ -4274,8 +4435,10 @@ character_event = {
 				remove_character_modifier = call_to_glory
 				disband_event_forces = call_to_glory_disciplined
 				disband_event_forces = call_to_glory_rowdy
-				set_variable = { which = "call_to_glory_variable" value = 0 } 
-				any_demesne_province = { remove_province_modifier = capital_call_to_glory } 
+				set_variable = { which = "call_to_glory_variable" value = 0 }
+				any_demesne_province = { 
+					remove_province_modifiers = { modifier = capital_call_to_glory amount = 100 }
+				}
 			}
 		}
 	}
