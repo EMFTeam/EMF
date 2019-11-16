@@ -6,6 +6,7 @@ import ck2parser
 
 g_emf_path = ck2parser.rootpath / 'EMF/EMF'
 g_core_effect_path = g_emf_path / 'common/scripted_effects/emf_core_character_codegen_effects.txt'
+g_core_trigger_path = g_emf_path / 'common/scripted_triggers/emf_core_character_codegen_triggers.txt'
 
 ###
 
@@ -157,6 +158,10 @@ def main():
     print_effect_remove_epidemic_traits(f)
     print_effect_remove_incapacitating_traits(f)
 
+  with g_core_trigger_path.open('w', encoding='cp1252', newline='\n') as f:
+    print_file_header(f, 'ck2.scripted_triggers')
+    print_trigger_has_marriage_blocker_trait(f)
+
   return 0
 
 
@@ -232,6 +237,17 @@ def print_effect_remove_incapacitating_traits(f):
       print('\tremove_trait = {} # ID: {} [{}]'.format(t.tag, t.id, t.name), file=f)
   print('}', file=f)
 
+
+def print_trigger_has_marriage_blocker_trait(f):
+  print(file=f)
+  print('# Does THIS have a cannot_marry=yes trait?', file=f)
+  print('emf_has_marriage_blocker_trait = {', file=f)
+  print('\tOR = {', file=f)
+  for t in g_traits:
+    if t.cannot_marry:
+      print('\t\ttrait = {} # {}'.format(t.tag, t.name), file=f)
+  print('\t}', file=f)
+  print('}', file=f)
 
 ###
 

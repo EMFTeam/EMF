@@ -1098,8 +1098,7 @@ targeted_decisions = {
 		ai_target_filter = self
 		ai_check_interval = 12
 		
-		potential = {
-			character = FROM
+		from_potential = {
 			has_dlc = "Holy Fury"
 			is_playable = yes
 			is_adult = yes
@@ -1108,25 +1107,37 @@ targeted_decisions = {
 			NOT = { has_character_modifier = call_to_glory }
 			OR = {
 				ai = no
-				any_war = {
-					OR = {
-						any_defender = {
-							character = ROOT
-							is_primary_war_defender = yes
-						}
-						any_attacker = {
-							character = ROOT
-							is_primary_war_attacker = yes
-						}
-					}
-				}
+				is_primary_war_participant = yes
 			}
 		}
-		
+		potential = {
+			character = FROM
+		}
 		allow = {
 			war = yes
 			has_society_currency_major_trigger = yes
 			in_command = yes
+			custom_tooltip = {
+				text = HAS_NOT_USED_CALL_TO_GLORY_FOR_10_YEARS
+				OR = {
+					NOT = { has_character_modifier = emf_call_to_glory_cooldown }
+					AND = {
+						ai = yes
+						any_war = {
+							OR = {
+								AND = {
+									any_attacker = { ai = no }
+									any_defender = { character = ROOT }
+								}
+								AND = {
+									any_defender = { ai = no }
+									any_attacker = { character = ROOT }
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 		
 		effect = {
@@ -1134,6 +1145,7 @@ targeted_decisions = {
 			custom_tooltip = { 
 				text = tooltip_lodge_call_to_glory
 				hidden_tooltip = {
+					add_character_modifier = { name = emf_call_to_glory_cooldown duration = 3650 }
 					set_variable = { which = "call_to_glory_variable" value = 0 } #Cleanup the variable.
 					character_event = { id = HF.25030 } #First recurring event.
 					add_character_modifier = { 
@@ -2159,9 +2171,10 @@ decisions = {
 settlement_decisions = {
 	#Power, rank 3: Inspire Warriors
 	warrior_lodge_inspire_warriors = {
-		ai_check_interval = 80 #check only once every 80 months.
+		only_playable = yes
 		filter = owned
 		ai_target_filter = owned
+		ai_check_interval = 80 #check only once every 80 months.
 		
 		from_potential = {
 			is_playable = yes
@@ -2171,17 +2184,20 @@ settlement_decisions = {
 			society_rank >= 3
 			NOT = { has_character_flag = inspiring_warriors }
 		}
-		
 		potential = {
+			tier = BARON
 			holding_type = tribal
-			holder_scope = {
-				character = FROM
-			}
+			holder = FROM
+			is_capital = yes # province capital
 		}
 		allow = {
 			#show_only_failed_conditions = yes
 			FROM = {
 				show_scope_change = no
+				custom_tooltip = {
+					text = HAS_NOT_INSPIRED_WARRIORS_FOR_3_YEARS
+					NOT = { has_character_modifier = emf_inspire_warriors_cooldown }
+				}
 				has_society_currency_medium_trigger = yes
 			}
 			NOT = { holding_total_levy_percent = 1 } #Holding does not have a full garrison or levy
@@ -2192,42 +2208,48 @@ settlement_decisions = {
 				show_scope_change = no
 				set_character_flag = inspiring_warriors
 				detract_society_currency_medium_effect = yes
+				hidden_effect = {
+					add_character_modifier = { name = emf_inspire_warriors_cooldown duration = 1095 }
+				}
 				character_event = { id = HF.10059 }	#handle actual effect		
 			}
 		}
-		
 		ai_will_do = {
 			factor = 1
+			modifier = {
+				factor = 0
+				ROOT_FROM = { war = no }
+			}
 	        modifier = { #I am losing the war, help!
 				factor = 1.5
-				OR = {
-					any_war = {
-						defender = { character = ROOT }
-						war_score = 50
-					}
-					any_war = {
-						attacker = { character = ROOT }
-						NOT = { war_score = -49 }
+				ROOT_FROM = {
+					OR = {
+						any_war = {
+							defender = { character = ROOT_FROM }
+							war_score = 50
+						}
+						any_war = {
+							attacker = { character = ROOT_FROM }
+							NOT = { war_score = -49 }
+						}
 					}
 				}
 			}
 			modifier = { #I am winning the war, no need!
 				factor = 0
-				NOR = {
-					any_war = {
-						defender = { character = ROOT }
-						war_score = -49
-					}
-					any_war = {
-						attacker = { character = ROOT }
-						NOT = { war_score = 49 }
+				ROOT_FROM = {
+					NOR = {
+						any_war = {
+							defender = { character = ROOT_FROM }
+							war_score = 50
+						}
+						any_war = {
+							attacker = { character = ROOT_FROM }
+							NOT = { war_score = -49 }
+						}
 					}
 				}
 			}
-			modifier = { #I am not at war, who cares!
-	            factor = 0
-	            FROM = { war = no }
-	        }
 		}
 	}
 
