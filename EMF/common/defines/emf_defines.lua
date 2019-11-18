@@ -144,7 +144,7 @@ NDefines.NEconomy.PATRICIAN_AGE_RESPECT_FACTOR = 0
 NDefines.NEconomy.DOGE_SUCC_RANDOM_FACTOR = 0
 
 -- Nomad
-NDefines.NNomad.MANPOWER_INCREASE_MULTIPLIER = 0.05               -- < v10.6: 0.1 (vanilla); [The rate current manpower grows or declines to max manpower]
+NDefines.NNomad.MANPOWER_INCREASE_MULTIPLIER = 0.03         -- < v10.6: 0.1 (vanilla); [The rate current manpower grows or declines to max manpower]
 NDefines.NNomad.STARTING_HORDE_MAX_FRACTION = 1
 
 -- Military
