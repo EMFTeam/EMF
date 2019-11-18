@@ -145,7 +145,9 @@ NDefines.NEconomy.DOGE_SUCC_RANDOM_FACTOR = 0
 
 -- Nomad
 NDefines.NNomad.MANPOWER_INCREASE_MULTIPLIER = 0.03         -- < v10.6: 0.1 (vanilla); [The rate current manpower grows or declines to max manpower]
+NDefines.NNomad.POPULATION_TAX_MULTIPLIER = 0.0003          -- < v10.6: 0.0005 (vanilla); [Monthly tax income determined by the current population]
 NDefines.NNomad.STARTING_HORDE_MAX_FRACTION = 1
+NDefines.NNomad.GARRISON_MAX_UNUSED_MANPOWER_MODIFIER = 200 -- < v10.6: 500 (vanilla); [The max value for how much unused manpower can modifiy the garrison]
 
 -- Military
 NDefines.NMilitary.NUMBER_OF_TROOPS_PER_GALLEY = 100              -- prior to EMF v9.06: 200 (has been since the days of Project Balance); vanilla is 100
