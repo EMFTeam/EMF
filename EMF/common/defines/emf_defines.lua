@@ -49,8 +49,8 @@ NDefines.NInfamy.MIN_INFAMY_PER_WAR_PROVINCE = 0
 -- Character
 NDefines.NCharacter.CHANGE_AMBITION_YEARS = 1
 NDefines.NCharacter.CHANGE_FOCUS_YEARS = 3
-NDefines.NCharacter.PRESTIGE_FROM_DYNASTY_ON_BIRTH_DIV = 15
-NDefines.NCharacter.PRESTIGE_FROM_DYNASTY_ON_MARRIAGE_DIV = 15
+NDefines.NCharacter.PRESTIGE_FROM_DYNASTY_ON_BIRTH_DIV = 20        -- < v10.6: 15; vanilla: 5; [Newly born characters get the dynasty prestige of their mother and father divided by this as their starting prestige]
+NDefines.NCharacter.PRESTIGE_FROM_DYNASTY_ON_MARRIAGE_DIV = 20     -- < v10.6: 15; vanilla: 10; [Characters get the dynasty prestige of the spouse divided by this on marriage]
 NDefines.NCharacter.ASSIGN_ACTION_DAYS = 56
 NDefines.NCharacter.RAISED_TROOPS_VASSAL_OPINION_DAYS = 28
 NDefines.NCharacter.MUSLIM_NUM_WIVES_MONTHLY_PRESTIGE_PENALTY = 0  -- < v10.6: 1.0 (vanilla); [The prestige effect from each lacking expected wife]
@@ -152,27 +152,21 @@ NDefines.NNomad.STARTING_HORDE_MAX_FRACTION = 1
 NDefines.NNomad.GARRISON_MAX_UNUSED_MANPOWER_MODIFIER = 200 -- < v10.6: 500 (vanilla); [The max value for how much unused manpower can modifiy the garrison]
 
 -- Military
-NDefines.NMilitary.NUMBER_OF_TROOPS_PER_GALLEY = 100              -- prior to EMF v9.06: 200 (has been since the days of Project Balance); vanilla is 100
-NDefines.NMilitary.LEVY_MAINTENANCE_FACTOR = 2.3                  -- prior to EMF v10.0: 2.7; prior to EMF v9.06: 2.4; prior to EMF v9.01: 2.7
+NDefines.NMilitary.LEVY_MAINTENANCE_FACTOR = 2.3               -- prior to EMF v10.0: 2.7; prior to EMF v9.06: 2.4; prior to EMF v9.01: 2.7
 NDefines.NMilitary.BATTLE_WARSCORE_DEFENDER_MULTIPLIER = 1.6
---NDefines.NMilitary.MIN_LEVY_RAISE_OPINION_THRESHOLD = -50
-NDefines.NMilitary.MIN_LEVIES_ABOVE_OPINION_THRESHOLD = 0         -- prior to EMF v9.06: 0.333
-NDefines.NMilitary.ATTACKER_SIEGE_DAMAGE = 0
-NDefines.NMilitary.DEFENDER_SIEGE_DAMAGE = 0
-NDefines.NMilitary.NUM_DAYS_BETWEEN_SIEGE_MORALE_LOSS = 5
-NDefines.NMilitary.REINFORCE_RATE = 0.03
-NDefines.NMilitary.LEVY_RAISED_REINFORCE_RATE_MULTIPLIER = 0.2        -- vanilla / v8.06 was 0.5
-NDefines.NMilitary.NAVAL_ATTRITION = 0.035                            -- prior to EMF v9.06: 5%; prior to EMF v8.07: 0% (vanilla)
-NDefines.NMilitary.ARMY_LOAD_MOVE_COST = 30.0                         -- changed by -10 cost from v8.06 (-25% EMF / +50% vanilla instead of +100% vanilla)
-NDefines.NMilitary.WAR_CONTRIBUTION_PROVINCE_WITHOUT_SETTLEMENT_OCCUPATION_PER_DAY = 1.5 -- as of EMF v8.07, half of vanilla
-NDefines.NMilitary.NOMAD_PROVINCE_WAR_CONTRIBUTION_MULTIPLIER = 6                        -- as of EMF v8.07, twice vanilla
-NDefines.NMilitary.CAPTURED_HEIR_WAR_SCORE = 20.0            -- changed by -10 WS from v8.06 (vanilla = 50 WS)
+NDefines.NMilitary.MIN_LEVY_RAISE_OPINION_THRESHOLD = -25      -- prior to EMF v10.6: 0 (vanilla); [Below this opinion value you'll get the least amount of troops possible]
+NDefines.NMilitary.MAX_LEVY_RAISE_OPINION_THRESHOLD = 75       -- prior to EMF v10.6: 100 (vanilla); [Above this opinion value you'll get the max amount of troops possible]
+NDefines.NMilitary.REINFORCE_RATE = 0.03                       -- vanilla: 0.05
+NDefines.NMilitary.LEVY_RAISED_REINFORCE_RATE_MULTIPLIER = 0.2 -- vanilla / v8.06 was 0.5
+NDefines.NMilitary.NAVAL_ATTRITION = 0.035                     -- prior to EMF v9.06: 5%; prior to EMF v8.07: 0% (vanilla)
+NDefines.NMilitary.ARMY_LOAD_MOVE_COST = 30.0                  -- changed by -10 cost from v8.06 (-25% EMF / +50% vanilla instead of +100% vanilla)
+NDefines.NMilitary.CAPTURED_HEIR_WAR_SCORE = 20.0              -- changed by -10 WS from v8.06 (vanilla = 50 WS)
 NDefines.NMilitary.RETINUE_FROM_REALMSIZE = 1.5
 NDefines.NMilitary.RETINUE_INCREASE_PER_TECH = 0.5
 NDefines.NMilitary.RETINUE_HIRE_COST_MULTIPLIER = 0.25       -- prior to EMF v9.06: 0.2
 NDefines.NMilitary.MAX_COMMANDERS_BARON = 2                  -- EMF v8.07: barons should not be deprived of commanders (rest of commander limits reverted to vanilla, a decrease by 1 for each tier)
 NDefines.NMilitary.LIEGE_LEVY_REINF_RATE = 0.01              -- changed by -0.02 from EMF v8.06 (-67%), which is now a fifth of vanilla's rate
-NDefines.NMilitary.LIEGE_LEVY_COST_MULTIPLIER = 0.25         -- as of EMF v10.0, vassals pay 25% of the upkeep on their liege levy contribution
+NDefines.NMilitary.LIEGE_LEVY_COST_MULTIPLIER = 0.25           -- as of EMF v10.0, vassals pay 25% of the upkeep on their liege levy contribution
 NDefines.NMilitary.LIGHT_INFANTRY_MORALE = 3
 NDefines.NMilitary.LIGHT_INFANTRY_MAINTENANCE = 1
 NDefines.NMilitary.LIGHT_INFANTRY_PHASE_SKIRMISH_ATTACK = 1
