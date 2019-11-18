@@ -232,9 +232,9 @@ NDefines.NMilitary.CAPITAL_EMPIRE_LIEGE_LEVY_MULT = 0.25 -- reduced to be same a
 NDefines.NMilitary.OUTSIDE_LIEGE_LEVY_MULT = 0.25 -- same as vanilla, just here for completeness
 NDefines.NMilitary.FORAGING_PILLAGE_MODIFIER = 0.25 -- changed from 0.15 in vanilla for EMF v8.07 (troops will take more of a province's loot when out of supply)
 NDefines.NMilitary.MONTHS_OF_UNDECIDED_WAR = 0
-NDefines.NMilitary.SHATTERED_RETREAT_MORALE_MULTIPLIER = 1.15   -- prior to EMF v9.06: 1.0
-NDefines.NMilitary.SHATTERED_RETREAT_PREFERRED_PROVINCES = 4
-NDefines.NMilitary.SHATTERED_RETREAT_MAX_PROVINCES = 5 -- reduced by 1 for EMF+V from v8.06 (EMF+SWMH allows 1 more, tho also reduced by 1 for v8.07)
+NDefines.NMilitary.SHATTERED_RETREAT_MORALE_MULTIPLIER = 1.2   -- prior to EMF v10.6: 1.15; prior to EMF v9.06: 1.0
+NDefines.NMilitary.SHATTERED_RETREAT_PREFERRED_PROVINCES = 3
+NDefines.NMilitary.SHATTERED_RETREAT_MAX_PROVINCES = 4
 NDefines.NMilitary.MAX_WARSCORE_FROM_BATTLE_DEFENDERS = 200   -- from 100 in vanilla
 
 -- Technology

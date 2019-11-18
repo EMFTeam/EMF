@@ -10,8 +10,6 @@ NDefines.NDiplomacy.MAX_PREP_INV_ATTACKER_HOLDINGS = 60 -- up from 40
 -- Nomad
 NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 1375
 
--- Military
-NDefines.NMilitary.SHATTERED_RETREAT_MAX_PROVINCES = 6 -- reduced max by 1 from EMF+SWMH v8.06
 
 -- Engine
 NDefines.NEngine.MISSING_SCRIPTED_SUCCESSOR_ERROR_CUTOFF_YEAR = 1018
