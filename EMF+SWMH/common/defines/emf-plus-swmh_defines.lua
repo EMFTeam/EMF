@@ -8,8 +8,7 @@ NDefines.NDiplomacy.MAX_PREP_INV_TARGET_HOLDINGS = 60   -- up from 40
 NDefines.NDiplomacy.MAX_PREP_INV_ATTACKER_HOLDINGS = 60 -- up from 40
 
 -- Nomad
-NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 1375
-
+NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 1150 -- < v10.6: 1375; vanilla: 1000; [Monthly tax income determined by the current population]
 
 -- Engine
 NDefines.NEngine.MISSING_SCRIPTED_SUCCESSOR_ERROR_CUTOFF_YEAR = 1018
