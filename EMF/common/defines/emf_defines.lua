@@ -22,7 +22,9 @@ NDefines.NDiplomacy.PREPARE_INVASION_INTERACTION_PRESTIGE = 1500                
 NDefines.NDiplomacy.CHANGE_CRUSADE_TARGET_INTERACTION_PIETY = 400                  -- EMF v10.0 (from 250 in vanilla)
 NDefines.NDiplomacy.CHANGE_CRUSADE_TARGET_INTERACTION_PRESTIGE = 400               -- EMF v10.0 (from 0 in vanilla)
 NDefines.NDiplomacy.INVITE_TO_COURT_INTERACTION_MONEY = 10
+NDefines.NDiplomacy.INVITE_TO_COURT_INTERACTION_PRESTIGE = 30
 NDefines.NDiplomacy.ASK_FOR_EXCOMMUNICATION_INTERACTION_PIETY = 150
+NDefines.NDiplomacy.ASK_FOR_CLAIM_INTERACTION_PRESTIGE = 150
 NDefines.NDiplomacy.BANISH_TAKE_WEALTH_PERCENTAGE_COURTIER = 0.2
 NDefines.NDiplomacy.DEFENSIVE_PACT_THREAT_LIMIT = 0.15
 NDefines.NDiplomacy.DEFENSIVE_PACT_MAX_RANGE = 300
@@ -104,9 +106,9 @@ NDefines.NTitle.CUSTOM_TITLE_COLOR_OFFSET = 0.2
 -- Religion
 NDefines.NReligion.CREATE_ANTIPOPE_PRESTIGE_COST = 1500           -- prior to EMF v8.02: 500
 NDefines.NReligion.INVASION_MIN_AUTHORITY = 0.4
-NDefines.NReligion.REFORM_RELIGION_MIN_AUTHORITY = 0.45           -- vanilla: 0.5; prior EMF v10.3: 0.3
+NDefines.NReligion.REFORM_RELIGION_MIN_AUTHORITY = 0.4            -- < v10.6: 0.45; < EMF v10.3: 0.3; vanilla: 0.5
 NDefines.NReligion.REFORM_RELIGION_MIN_HOLY_SITES = 4             -- vanilla: 3
-NDefines.NReligion.REFORM_RELIGION_PIETY_COST = 1500              -- vanilla: 750
+NDefines.NReligion.REFORM_RELIGION_PIETY_COST = 2500              -- < v10.6: 1500; vanilla: 750
 NDefines.NReligion.AUTHORITY_FROM_HOLY_SITE = 0.05
 NDefines.NReligion.AUTHORITY_FROM_ANTIPOPE = -0.1                 -- prior to EMF v8.02: -0.3
 NDefines.NReligion.AUTHORITY_FROM_RELHEAD_PIETY = 0.002           -- prior to EMF v9.06: 0.001; prior to EMF v8.02: 0
@@ -116,7 +118,7 @@ NDefines.NReligion.DIVINE_BLOOD_FERTILITY_MULT = 1.0
 NDefines.NReligion.ELECTOR_TITLE_CULTURE_GROUP_FACTOR = 50        -- doubled to vanilla from EMF v8.06
 NDefines.NReligion.ELECTOR_TITLE_CULTURE_FACTOR = 50              -- prior to EMF v8.02: 200
 NDefines.NReligion.ELECTOR_FAMOUS_DYNASTY_FACTOR = 0.008          -- prior to EMF v9.06: 0.005
-
+NDefines.NReligion.AUTHORITY_FROM_PIETY_CAP = 0.1                 -- < EMF v10.6: 0.25 (vanilla)
 
 -- Economy
 NDefines.NEconomy.BISHOP_TAX_TO_POPE_FACTOR = 0.4                 -- prior to EMF v9.06: 0.25
@@ -142,8 +144,10 @@ NDefines.NEconomy.PATRICIAN_AGE_RESPECT_FACTOR = 0
 NDefines.NEconomy.DOGE_SUCC_RANDOM_FACTOR = 0
 
 -- Nomad
-NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 1250
+NDefines.NNomad.MANPOWER_INCREASE_MULTIPLIER = 0.03         -- < v10.6: 0.1 (vanilla); [The rate current manpower grows or declines to max manpower]
+NDefines.NNomad.POPULATION_TAX_MULTIPLIER = 0.0003          -- < v10.6: 0.0005 (vanilla); [Monthly tax income determined by the current population]
 NDefines.NNomad.STARTING_HORDE_MAX_FRACTION = 1
+NDefines.NNomad.GARRISON_MAX_UNUSED_MANPOWER_MODIFIER = 200 -- < v10.6: 500 (vanilla); [The max value for how much unused manpower can modifiy the garrison]
 
 -- Military
 NDefines.NMilitary.NUMBER_OF_TROOPS_PER_GALLEY = 100              -- prior to EMF v9.06: 200 (has been since the days of Project Balance); vanilla is 100
@@ -225,16 +229,16 @@ NDefines.NMilitary.SPECIAL_TROOPS_PHASE_MELEE_DEFENSE = 4
 NDefines.NMilitary.SPECIAL_TROOPS_PHASE_PURSUE_DEFENSE = 7
 NDefines.NMilitary.SPECIAL_TROOPS_GRAPHICAL_FACTOR = 1.5
 NDefines.NMilitary.GALLEYS_MAINTENANCE = 200 -- prior to EMF v10.0: 300 (vanilla)
-NDefines.NMilitary.COMMAND_MODIFIER_MARTIAL_MULTIPLIER = 0.03 -- changed from vanilla by -0.02 (-40%) in EMF v8.07
+NDefines.NMilitary.COMMAND_MODIFIER_MARTIAL_MULTIPLIER = 0.02 -- prior to EMF v10.6: 0.03; changed from vanilla by -0.02 (-40%) in EMF v8.07
 NDefines.NMilitary.CAPITAL_DUCHY_LIEGE_LEVY_MULT = 0.75 -- same as vanilla, just here for completeness
 NDefines.NMilitary.CAPITAL_KINGDOM_LIEGE_LEVY_MULT = 0.5 -- same as vanilla, just here for completeness
 NDefines.NMilitary.CAPITAL_EMPIRE_LIEGE_LEVY_MULT = 0.25 -- reduced to be same as "outside capital empire," since most places are "outside" a de jure empire in the default EMF setup (or, rather, it's e_null, which complicates things if they're not the same)
 NDefines.NMilitary.OUTSIDE_LIEGE_LEVY_MULT = 0.25 -- same as vanilla, just here for completeness
 NDefines.NMilitary.FORAGING_PILLAGE_MODIFIER = 0.25 -- changed from 0.15 in vanilla for EMF v8.07 (troops will take more of a province's loot when out of supply)
 NDefines.NMilitary.MONTHS_OF_UNDECIDED_WAR = 0
-NDefines.NMilitary.SHATTERED_RETREAT_MORALE_MULTIPLIER = 1.15   -- prior to EMF v9.06: 1.0
-NDefines.NMilitary.SHATTERED_RETREAT_PREFERRED_PROVINCES = 4
-NDefines.NMilitary.SHATTERED_RETREAT_MAX_PROVINCES = 5 -- reduced by 1 for EMF+V from v8.06 (EMF+SWMH allows 1 more, tho also reduced by 1 for v8.07)
+NDefines.NMilitary.SHATTERED_RETREAT_MORALE_MULTIPLIER = 1.2   -- prior to EMF v10.6: 1.15; prior to EMF v9.06: 1.0
+NDefines.NMilitary.SHATTERED_RETREAT_PREFERRED_PROVINCES = 3
+NDefines.NMilitary.SHATTERED_RETREAT_MAX_PROVINCES = 4
 NDefines.NMilitary.MAX_WARSCORE_FROM_BATTLE_DEFENDERS = 200   -- from 100 in vanilla
 
 -- Technology
