@@ -118,7 +118,7 @@ NDefines.NReligion.DIVINE_BLOOD_FERTILITY_MULT = 1.0
 NDefines.NReligion.ELECTOR_TITLE_CULTURE_GROUP_FACTOR = 50        -- doubled to vanilla from EMF v8.06
 NDefines.NReligion.ELECTOR_TITLE_CULTURE_FACTOR = 50              -- prior to EMF v8.02: 200
 NDefines.NReligion.ELECTOR_FAMOUS_DYNASTY_FACTOR = 0.008          -- prior to EMF v9.06: 0.005
-
+NDefines.NReligion.AUTHORITY_FROM_PIETY_CAP = 0.1                 -- < EMF v10.6: 0.25 (vanilla)
 
 -- Economy
 NDefines.NEconomy.BISHOP_TAX_TO_POPE_FACTOR = 0.4                 -- prior to EMF v9.06: 0.25
