@@ -146,10 +146,9 @@ NDefines.NEconomy.PATRICIAN_AGE_RESPECT_FACTOR = 0
 NDefines.NEconomy.DOGE_SUCC_RANDOM_FACTOR = 0
 
 -- Nomad
-NDefines.NNomad.MANPOWER_INCREASE_MULTIPLIER = 0.03         -- < v10.6: 0.1 (vanilla); [The rate current manpower grows or declines to max manpower]
+NDefines.NNomad.MANPOWER_INCREASE_MULTIPLIER = 0.075        -- < v10.6: 0.1 (vanilla); [The rate current manpower grows or declines to max manpower]
 NDefines.NNomad.POPULATION_TAX_MULTIPLIER = 0.0003          -- < v10.6: 0.0005 (vanilla); [Monthly tax income determined by the current population]
 NDefines.NNomad.STARTING_HORDE_MAX_FRACTION = 1
-NDefines.NNomad.GARRISON_MAX_UNUSED_MANPOWER_MODIFIER = 200 -- < v10.6: 500 (vanilla); [The max value for how much unused manpower can modifiy the garrison]
 
 -- Military
 NDefines.NMilitary.LEVY_MAINTENANCE_FACTOR = 2.3               -- prior to EMF v10.0: 2.7; prior to EMF v9.06: 2.4; prior to EMF v9.01: 2.7
@@ -165,7 +164,7 @@ NDefines.NMilitary.RETINUE_FROM_REALMSIZE = 1.5
 NDefines.NMilitary.RETINUE_INCREASE_PER_TECH = 0.5
 NDefines.NMilitary.RETINUE_HIRE_COST_MULTIPLIER = 0.35         -- prior to EMF v10.6: 0.25; prior to EMF v9.06: 0.2
 NDefines.NMilitary.MAX_COMMANDERS_BARON = 2                    -- EMF v8.07: barons should not be deprived of commanders (rest of commander limits reverted to vanilla, a decrease by 1 for each tier)
-NDefines.NMilitary.LIEGE_LEVY_REINF_RATE = 0.02                -- changed by -0.02 from EMF v8.06 (-67%), which is now a fifth of vanilla's rate; changed again in EMF v10.6 by +0.01 to 0.02 (2/5 vanilla)
+NDefines.NMilitary.LIEGE_LEVY_REINF_RATE = 0.03                -- changed by -0.02 from EMF v8.06 (-67%), which is now a fifth of vanilla's rate; changed again in EMF v10.6 by +0.03 to 0.04 (3/5 vanilla and same as demesne levy reinforcement)
 NDefines.NMilitary.LIEGE_LEVY_COST_MULTIPLIER = 0.25           -- as of EMF v10.0, vassals pay 25% of the upkeep on their liege levy contribution
 NDefines.NMilitary.LIGHT_INFANTRY_MORALE = 3
 NDefines.NMilitary.LIGHT_INFANTRY_MAINTENANCE = 1
