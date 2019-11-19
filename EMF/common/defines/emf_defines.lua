@@ -146,10 +146,9 @@ NDefines.NEconomy.PATRICIAN_AGE_RESPECT_FACTOR = 0
 NDefines.NEconomy.DOGE_SUCC_RANDOM_FACTOR = 0
 
 -- Nomad
-NDefines.NNomad.MANPOWER_INCREASE_MULTIPLIER = 0.03         -- < v10.6: 0.1 (vanilla); [The rate current manpower grows or declines to max manpower]
+NDefines.NNomad.MANPOWER_INCREASE_MULTIPLIER = 0.075        -- < v10.6: 0.1 (vanilla); [The rate current manpower grows or declines to max manpower]
 NDefines.NNomad.POPULATION_TAX_MULTIPLIER = 0.0003          -- < v10.6: 0.0005 (vanilla); [Monthly tax income determined by the current population]
 NDefines.NNomad.STARTING_HORDE_MAX_FRACTION = 1
-NDefines.NNomad.GARRISON_MAX_UNUSED_MANPOWER_MODIFIER = 200 -- < v10.6: 500 (vanilla); [The max value for how much unused manpower can modifiy the garrison]
 
 -- Military
 NDefines.NMilitary.LEVY_MAINTENANCE_FACTOR = 2.3               -- prior to EMF v10.0: 2.7; prior to EMF v9.06: 2.4; prior to EMF v9.01: 2.7
