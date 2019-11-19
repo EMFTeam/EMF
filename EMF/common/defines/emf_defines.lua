@@ -153,8 +153,8 @@ NDefines.NNomad.STARTING_HORDE_MAX_FRACTION = 1
 -- Military
 NDefines.NMilitary.LEVY_MAINTENANCE_FACTOR = 2.3               -- prior to EMF v10.0: 2.7; prior to EMF v9.06: 2.4; prior to EMF v9.01: 2.7
 NDefines.NMilitary.BATTLE_WARSCORE_DEFENDER_MULTIPLIER = 1.6
-NDefines.NMilitary.MIN_LEVY_RAISE_OPINION_THRESHOLD = -25      -- prior to EMF v10.6: 0 (vanilla); [Below this opinion value you'll get the least amount of troops possible]
-NDefines.NMilitary.MAX_LEVY_RAISE_OPINION_THRESHOLD = 75       -- prior to EMF v10.6: 100 (vanilla); [Above this opinion value you'll get the max amount of troops possible]
+NDefines.NMilitary.MIN_LEVY_RAISE_OPINION_THRESHOLD = -100     -- prior to EMF v10.6: 0 (vanilla); [Below this opinion value you'll get the least amount of troops possible]
+NDefines.NMilitary.MAX_LEVY_RAISE_OPINION_THRESHOLD = 50       -- prior to EMF v10.6: 100 (vanilla); [Above this opinion value you'll get the max amount of troops possible]
 NDefines.NMilitary.REINFORCE_RATE = 0.03                       -- vanilla: 0.05
 NDefines.NMilitary.LEVY_RAISED_REINFORCE_RATE_MULTIPLIER = 0.2 -- vanilla / v8.06 was 0.5
 NDefines.NMilitary.NAVAL_ATTRITION = 0.035                     -- prior to EMF v9.06: 5%; prior to EMF v8.07: 0% (vanilla)
