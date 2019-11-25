@@ -135,7 +135,7 @@ character_event = {
 			emf_seljuk_cleanup_potential_invader = yes
 			# Create his sons
 			create_character = {
-				name="Arslan Esra'íl"
+				name="Arslan Esra'?"
 				random_traits = yes
 				dynasty = THIS
 				religion = THIS
@@ -163,7 +163,7 @@ character_event = {
 				emf_new_character_noble = yes
 			}
 			create_character = {
-				name="Miká'íl"
+				name="Mik??"
 				random_traits = yes
 				dynasty = THIS
 				religion = THIS
@@ -602,53 +602,98 @@ character_event = {
 
 	trigger = {
 		has_landed_title = e_hip
-		year < 1066
-		NOT = {
-			any_player = {
-				emf_seljuk_dynasty = yes
-			}
+		NOT = { has_game_rule = { name = turkic_invasions value = off } }
+		NOR = {
+			year >= 1081
+			has_global_flag = emf_seljuk_invasion_done
 		}
+		NOT = { any_player = { emf_seljuk_dynasty = yes } }
+		# Don't assist too much:
 		trigger_if = {
 			limit = {
-				c_3030 = { # historical Seljuk
-					emf_seljuk_dynasty = yes
+				c_3030 = { emf_seljuk_dynasty = yes }
+			}
+			c_3030 = { # historical Seljuk
+				OR = {
+					AND = {
+						has_game_rule = { name = railroading value = default }
+						NOT = {
+							any_dynasty_member = {
+								count = 10
+								is_alive = yes
+								is_female = no
+								is_adult = no
+							}
+						}
+					}
+					AND = {
+						has_game_rule = { name = railroading value = passive }
+						NOT = {
+							any_dynasty_member = {
+								count = 4
+								is_alive = yes
+								is_female = no
+								is_adult = no
+							}
+						}
+					}
 				}
 			}
-			c_3030 = {
-				NOT = { # Don't assist too much
-					any_dynasty_member = {
-						count = 20
-						is_alive = yes
-						is_female = no
+		}
+		trigger_else_if = {
+			limit = {
+				emf_seljuk_invader = { emf_seljuk_dynasty = yes }
+			}
+			emf_seljuk_invader = {
+				emf_seljuk_dynasty = yes
+				OR = {
+					AND = {
+						has_game_rule = { name = railroading value = default }
+						NOT = {
+							any_dynasty_member = {
+								count = 10
+								is_alive = yes
+								is_female = no
+								is_adult = no
+							}
+						}
+					}
+					AND = {
+						has_game_rule = { name = railroading value = passive }
+						NOT = {
+							any_dynasty_member = {
+								count = 4
+								is_alive = yes
+								is_female = no
+								is_adult = no
+							}
+						}
 					}
 				}
 			}
 		}
 		trigger_else = {
-			emf_seljuk_invader = {
-				is_alive = yes
-				NOT = { # Don't assist too much
-					any_dynasty_member = {
-						count = 20
-						is_alive = yes
-						is_female = no
-					}
-				}
-			}
+			always = no
 		}
 	}
 
 	immediate = {
 		if = {
-			limit = {
-				c_3030 = { # historical Seljuk
-					emf_seljuk_dynasty = yes
-				}
-			}
+			limit = { c_3030 = { emf_seljuk_dynasty = yes } }
 			c_3030 = { save_event_target_as = emf_seljuk_dynasty_member }
 		}
 		else = {
-			emf_seljuk_invader = { save_event_target_as = emf_seljuk_dynasty_member }
+			# NOTE: Cached traits are an any_* scope in trigger context but random_* in effect context, hence the need
+			# for a `limit` here, which is valid syntax. When I discovered the scopes acted completely differently in
+			# trigger vs. effect contexts, I was pretty damn disappointed, esp. when there was no convincing the devs
+			# to just create an any/random_cached_trait scope with an, e.g., `trait = emf_seljuk_dynasty` parameter (or
+			# even encode the trait name in the scope as, e.g., `any/random_cached_trait_holder_on_hajj`). ALAS. [For
+			# that matter, where the F*CK is that event pre-trigger `only_if_cached_trait = <trait>` that I requested
+			# years ago? Pfft, I say!]
+			emf_seljuk_invader = {
+				limit = { emf_seljuk_dynasty = yes }
+				save_event_target_as = emf_seljuk_dynasty_member
+			}
 		}
 		event_target:emf_seljuk_dynasty_member = {
 			if = {
@@ -678,6 +723,17 @@ character_event = {
 						holy_order = yes
 						any_liege = { holy_order = yes }
 					}
+					# I know that in trigger context, any_dynasty_member now includes its enclosing scope character since
+					# patch 2.8[1], but IDK in effect context and haven't tested, so I'm just coding defensively here (by
+					# duplicating the effect in code but also ensuring it's not repeated again by the any_dynasty_member
+					# scope).
+					#
+					# [1] When JD/2.8 was released, this behavior silently changed (it used to exclude the enclosing scope
+					# character), and this caused all manner of bugs, especially in the 3-way mongol empire split code which
+					# is constantly looking for eldest dynasty members that match certain conditions with `is_older_than`.
+					# Weeks of desperately trying to understand what was happening later, I realized that if somehow the
+					# behavior of the scope had changed, then the logic would always fail to select any character at all,
+					# since the enclosing scope was always exactly equal in age to himself.
 					NOT = { character = PREV }
 				}
 				emf_seljuk_male_marital_duties = yes
