@@ -148,7 +148,7 @@ NDefines.NEconomy.DOGE_SUCC_RANDOM_FACTOR = 0
 -- Nomad
 NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 500 -- < v10.6: 1250; vanilla: 1000; now compensated for with terrain-based province modifiers; [Base population per empty holding for grazing]
 NDefines.NNomad.MANPOWER_INCREASE_MULTIPLIER = 0.075        -- < v10.6: 0.1 (vanilla); [The rate current manpower grows or declines to max manpower]
-NDefines.NNomad.POPULATION_TAX_MULTIPLIER = 0.0003          -- < v10.6: 0.0005 (vanilla); [Monthly tax income determined by the current population]
+NDefines.NNomad.POPULATION_TAX_MULTIPLIER = 0.0005          -- < v10.6: 0.0005 (vanilla); [Monthly tax income determined by the current population]
 NDefines.NNomad.STARTING_HORDE_MAX_FRACTION = 1
 
 -- Military
