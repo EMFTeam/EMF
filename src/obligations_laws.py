@@ -25,13 +25,13 @@ DEF_MOD_PATH = Path('../EMF')  # If you were in the /EMF/src folder, this would 
 DEF_MIN_TOTAL_MAX_LEVY = -0.2
 DEF_MAX_TOTAL_MAX_LEVY = 0.3
 
-# Mapping of vassal types to default max_levy modifier to tax modifier conversion rate
+# Mapping of vassal types to default vassal_max_levy modifier to vassal_tax_modifier conversion ratio
 DEF_TAX_PER_LEVY = {
-  'feudal': 0.6,
-  'iqta':   0.7,
-  'temple': 0.8,
-  'city':   1.0,
-  'tribal': 0.5,
+  'feudal': 1.0,
+  'iqta':   1.2,
+  'temple': 1.6,
+  'city':   2.0,
+  'tribal': 0.8,
 }
 
 # Mapping of vassal types to default laws (zero-indexed) for Obligations and Focus, respectively
@@ -46,11 +46,11 @@ DEF_LAWS = {
 # Mapping of vassal types to vassal opinion linear modifier function of law tier in tuple form of (slope, y-intercept)
 # or (m, b), for y = mx + b (y is opinion & x is zero-indexed law tier)
 DEF_OPINION = {
-  'feudal': (-6,6),
-  'iqta':   (-6,6),
-  'temple': (-6,6),
-  'city':   (-6,6),
-  'tribal': (-6,6),
+  'feudal': (-5,0),
+  'iqta':   (-5,0),
+  'temple': (-5,0),
+  'city':   (-5,0),
+  'tribal': (-6,0),
 }
 
 N_LAWS = 5
@@ -86,8 +86,8 @@ class LawFunction:
     self.max_levy_tradeoff = self.max_levy_range / N_LAWS
 
   def focus(self, law):
-    max_levy_delta = law * 2 * self.max_levy_range / N_LAWS / (N_LAWS - 1)
-    max_levy = self.max_levy_range / N_LAWS - max_levy_delta
+    max_levy_delta = law * 2 * self.max_levy_tradeoff / (N_LAWS - 1)
+    max_levy = self.max_levy_tradeoff - max_levy_delta
     return {
       'max_levy': max_levy,
       'tax_modifier': max_levy_delta * self.vtype.tax_per_levy,
@@ -139,15 +139,15 @@ def main():
     return 1
 
   vassal_types = [
-    VassalType('feudal', tax_per_levy=args.feudal_tax_per_levy),
-    VassalType('iqta',   tax_per_levy=args.iqta_tax_per_levy),
-    VassalType('temple', tax_per_levy=args.temple_tax_per_levy),
-    VassalType('city',   tax_per_levy=args.city_tax_per_levy),
-    VassalType('tribal', tax_per_levy=args.tribal_tax_per_levy),
+    VassalType('feudal', tax_per_levy=float(args.feudal_tax_per_levy)),
+    VassalType('iqta',   tax_per_levy=float(args.iqta_tax_per_levy)),
+    VassalType('temple', tax_per_levy=float(args.temple_tax_per_levy)),
+    VassalType('city',   tax_per_levy=float(args.city_tax_per_levy)),
+    VassalType('tribal', tax_per_levy=float(args.tribal_tax_per_levy)),
   ]
 
   for vt in vassal_types:
-    vt.law_function = LawFunction(vt, args.min_max_levy, args.max_max_levy)
+    vt.law_function = LawFunction(vt, float(args.min_max_levy), float(args.max_max_levy))
 
   # Always print a law summary to stdout (if not a dry run, also print it to the actual laws file)
   print_summary(vassal_types, args, sys.stdout)
@@ -159,13 +159,14 @@ def main():
 
 
 def print_summary(vassal_types, args, file):
-  print('PARAMETER SUMMARY:', file=file)
-  print(file=file)
-  print('Smallest possible max_levy modifier: {}'.format(args.min_max_levy), file=file)
-  print('Greatest possible max_levy modifier: {}'.format(args.max_max_levy), file=file)
-  print('Levy to tax conversion efficiency per vassal class:', file=file)
+  cmt = '# ' if file != sys.stdout and file != sys.stderr else ''
+  print(cmt + 'PARAMETER SUMMARY:', file=file)
+  print(cmt, file=file)
+  print(cmt + 'Smallest possible max_levy modifier: {}'.format(args.min_max_levy), file=file)
+  print(cmt + 'Greatest possible max_levy modifier: {}'.format(args.max_max_levy), file=file)
+  print(cmt + 'Levy to tax conversion efficiency per vassal class:', file=file)
   for vt in vassal_types:
-    print('  {:8s} {}'.format(vt.name.capitalize() + ':', vt.tax_per_levy), file=file)
+    print(cmt + '  {:8s} {}'.format(vt.name.capitalize() + ':', vt.tax_per_levy), file=file)
 
   tbl_hdr = ["Modifier", "Law I", "Law II", "Law III", "Law IV", "Law V"]
 
@@ -184,17 +185,16 @@ def print_summary(vassal_types, args, file):
         for law in range(N_LAWS):
           modifiers = vt.law_function.focus(law) if is_focus else vt.law_function.obligations(law)
           if is_focus or mt != 'tax_modifier':
-            val = modifiers.get(mt, 0)
+            val = modifiers.get(mt, 0.0)
           else:
-            val = modifiers.get(mt, 0) - min_tax_offset
+            val = modifiers.get(mt, 0.0) - min_tax_offset
           row.append(val)
         rows.append(row)
 
       print('''
-+------------------------>
-| {} {}'''.format(vt.name.upper(), ('focus' if is_focus else 'obligations').upper()), file=file)
-
-      print(tabulate(rows, tbl_hdr, tablefmt="psql"), file=file)
+{}+------------------------>
+{}| {} {}'''.format(cmt, cmt, vt.name.upper(), ('focus' if is_focus else 'obligations').upper()), file=file)
+      print(cmt + tabulate(rows, tbl_hdr, tablefmt="psql").replace('\n', '\n' + cmt).rstrip('# '), file=file)
 
 
 ########################################################################################################################
