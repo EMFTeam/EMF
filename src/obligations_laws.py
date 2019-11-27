@@ -22,16 +22,16 @@ from tabulate import tabulate # `pip3 install tabulate`
 DEF_MOD_PATH = Path('../EMF')  # If you were in the /EMF/src folder, this would be base EMF...
 
 # Maximum possible range of combined max_levy modifiers for any given vassal type
-DEF_MIN_TOTAL_MAX_LEVY = -0.2
+DEF_MIN_TOTAL_MAX_LEVY = -0.075
 DEF_MAX_TOTAL_MAX_LEVY = 0.3
 
-# Mapping of vassal types to default vassal_max_levy modifier to vassal_tax_modifier conversion ratio
+# Mapping of vassal types to default vassal_max_levy to vassal_tax_modifier conversion ratio
 DEF_TAX_PER_LEVY = {
-  'feudal': 1.0,
-  'iqta':   1.2,
-  'temple': 1.6,
-  'city':   2.0,
-  'tribal': 0.8,
+  'feudal': 0.8,
+  'iqta':   1.0,
+  'temple': 1.2,
+  'city':   1.6,
+  'tribal': 0.6,
 }
 
 # Mapping of vassal types to default laws (zero-indexed) for Obligations and Focus, respectively
@@ -50,7 +50,7 @@ DEF_OPINION = {
   'iqta':   (-5,0),
   'temple': (-5,0),
   'city':   (-5,0),
-  'tribal': (-6,0),
+  'tribal': (-5,0),
 }
 
 N_LAWS = 5
