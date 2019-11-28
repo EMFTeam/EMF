@@ -8,15 +8,14 @@
 # expressly forbidden without the consent of the author.   #
 ############################################################
 
-VERSION = '2.0.0-dev'
+VERSION = '2.0.0'
 
 import sys
 import argparse
-import pytz
 from datetime import datetime
 from pathlib import Path
-from tabulate import tabulate # `pip3 install tabulate`
-
+from tabulate import tabulate  # `pip3 install tabulate`
+import pytz  # `pip3 install pytz`
 
 ########################################################################################################################
 
@@ -144,21 +143,21 @@ class LawFunction:
   def focus(self, law):
     max_levy_delta = law * 2 * self.max_levy_tradeoff / (N_LAWS - 1)
     max_levy = self.max_levy_tradeoff - max_levy_delta
-    return {
+    return normalize_modifiers({
       'max_levy': max_levy,
       'min_levy': self.vtype.foc_min_levy_base + self.vtype.foc_min_levy_slope * law,
-      'tax_modifier': max_levy_delta * self.vtype.tax_per_levy,
-    }
+      'tax_modifier': -max_levy * self.vtype.tax_per_levy,
+    })
 
   def obligations(self, law):
     max_levy_per_law = (self.max_levy_range - 2 * self.max_levy_tradeoff) / (N_LAWS - 1)
     max_levy = self.min_max_levy + self.max_levy_tradeoff + max_levy_per_law * law
-    return {
+    return normalize_modifiers({
       'max_levy': max_levy,
       'min_levy': self.vtype.ob_min_levy_base + self.vtype.ob_min_levy_slope * law,
       'tax_modifier': max_levy * self.vtype.tax_per_levy,
       'opinion': self.vtype.opinion_base + self.vtype.opinion_slope * law,
-    }
+    })
 
 
 ########################################################################################################################
@@ -224,15 +223,19 @@ def print_summary(vassal_types, args, file):
   print(cmt + 'Smallest possible max_levy modifier: {}'.format(args.min_max_levy), file=file)
   print(cmt + 'Greatest possible max_levy modifier: {}'.format(args.max_max_levy), file=file)
   print(cmt, file=file)
-  print(cmt + 'max_levy modifier to tax modifier conversion rate per vassal class:', file=file)
+  print(cmt + 'Per vassal type, max_levy modifier to tax modifier conversion ratio:', file=file)
   for vt in vassal_types:
     print(cmt + '  {:8s} {}'.format(vt.name.capitalize() + ':', vt.tax_per_levy), file=file)
   print(cmt, file=file)
-  print(cmt + 'min_levy modifier as function of zero-indexed Obligations law (L) per vassal class:', file=file)
+  print(cmt + 'Requisite vassal tax modifier base_values in order to avoid negative taxation:', file=file)
+  for vt in vassal_types:
+    print(cmt + '  ' + fmt_modifier(vt, 'tax_modifier', -vt.law_function.focus(0)['tax_modifier']), file=file)
+  print(cmt, file=file)
+  print(cmt + 'Per vassal type, min_levy modifier as function of zero-indexed Obligations law (L):', file=file)
   for vt in vassal_types:
     print(cmt + '  {:8s} min_levy = {} + {}*L'.format(vt.name.capitalize() + ':', vt.ob_min_levy_base, vt.ob_min_levy_slope), file=file)
   print(cmt, file=file)
-  print(cmt + 'min_levy modifier as function of zero-indexed Focus law (L) per vassal class:', file=file)
+  print(cmt + 'Per vassal type, min_levy modifier as function of zero-indexed Focus law (L):', file=file)
   for vt in vassal_types:
     print(cmt + '  {:8s} min_levy = {} + {}*L'.format(vt.name.capitalize() + ':', vt.foc_min_levy_base, vt.foc_min_levy_slope), file=file)
 
@@ -267,7 +270,6 @@ def print_summary(vassal_types, args, file):
 
 
 def print_law_groups(vtypes, f):
-
   print('law_groups = {', file=f)
   for vt in vtypes:
     print(tabs('''\
@@ -496,6 +498,18 @@ def fmt_modifier(vtype, name, value):
     return '{}_vassal_{} = {:0.4f}'.format(vtype.base_type, name, value)
   else:
     return '{} = {}'.format(vtype.opinion_type, value)
+
+
+def normalized_zero(num):
+  return 0 if num > -1e-4 and num < 1e-4 else num
+
+
+def normalize_modifiers(modifiers):
+  for m in modifiers:
+    modifiers[m] = normalized_zero(modifiers[m])
+    if m == 'opinion':
+      modifiers[m] = int(round(modifiers[m]))
+  return modifiers
 
 
 ########################################################################################################################
