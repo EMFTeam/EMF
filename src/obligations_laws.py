@@ -227,7 +227,7 @@ def print_summary(vassal_types, args, file):
   for vt in vassal_types:
     print(cmt + '  {:8s} {}'.format(vt.name.capitalize() + ':', vt.tax_per_levy), file=file)
   print(cmt, file=file)
-  print(cmt + 'Requisite vassal tax modifier base_values in order to avoid negative taxation:', file=file)
+  print(cmt + 'Requisite vassal tax modifier base_values in order to avoid negative taxation (use highest value for a given modifier if ambiguous):', file=file)
   for vt in vassal_types:
     print(cmt + '  ' + fmt_modifier(vt, 'tax_modifier', -vt.law_function.focus(0)['tax_modifier']), file=file)
   print(cmt, file=file)
@@ -432,7 +432,7 @@ def print_laws(vtypes, f):
       modifier = {{ # Slow down AI reduction of {} Obligations
         factor = {}
         has_law = {}
-      }}''').format(vt.name.capitalize(), '{:.2f}'.format(0.05 * law + 0.1), next_law_name)
+      }}''').format(vt.name.capitalize(), '{:.2f}'.format(0.08 * law + 0.04), next_law_name)
 
         if at_start:
           at_start = False
