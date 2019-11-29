@@ -495,7 +495,7 @@ def fmt_law_name(vtype, index, focus):
 
 def fmt_modifier(vtype, name, value):
   if name != 'opinion':
-    return '{}_vassal_{} = {:0.4f}'.format(vtype.base_type, name, value)
+    return '{}_vassal_{} = {:0.3f}'.format(vtype.base_type, name, value)
   else:
     return '{} = {}'.format(vtype.opinion_type, value)
 
