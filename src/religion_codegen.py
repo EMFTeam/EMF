@@ -1769,23 +1769,17 @@ def print_decisions_secretly_convert_to_holy_site(f, loc, new_loc):
 			NOT = {{ secret_religion = {0} }}
 			NOT = {{ religion = {0} }}
 			NOT = {{ controls_religion = yes }}
-			OR = {{
-				any_province = {{
-					religion = {0}
+			{0} = {{
+				persistent_event_target:emf_religion_dummy_character = {{
 					is_heretic = no
-				}}
-				any_independent_ruler = {{
-					OR = {{
-						AND = {{
-							religion = {0}
-							is_heretic = no
-						}}
-						any_realm_lord = {{
-							religion = {0}
-							is_heretic = no
-						}}
-					}}
-				}}
+				}}'''.format(rel, decision), file=f)
+		if (rel == "aztec" or rel == "aztec_reformed"):
+			print('''\
+				OR = {
+					has_global_flag = aztec_arrival
+					religions_are_standard_trigger = no
+				}''', file=f)
+		print('''\
 			}}
 		}}
 		potential = {{

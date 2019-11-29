@@ -116,7 +116,7 @@ NDefines.NReligion.AUTHORITY_FROM_ANTIPOPE = -0.1                 -- prior to EM
 NDefines.NReligion.AUTHORITY_FROM_RELHEAD_PIETY = 0.002           -- prior to EMF v9.06: 0.001; prior to EMF v8.02: 0
 NDefines.NReligion.AUTHORITY_FROM_RELHEAD_DIPLOMACY = 0.03        -- prior to EMF v9.06: 0.02
 NDefines.NReligion.AUTHORITY_FROM_ORG_RELIGION = 0.3
-NDefines.NReligion.DIVINE_BLOOD_FERTILITY_MULT = 1.0
+NDefines.NReligion.DIVINE_BLOOD_FERTILITY_MULT = 0.667            -- < v10.6: 1.0; vanilla: 0.25 [Fertility multiplier in a religious close kin marriage]
 NDefines.NReligion.ELECTOR_TITLE_CULTURE_GROUP_FACTOR = 50        -- doubled to vanilla from EMF v8.06
 NDefines.NReligion.ELECTOR_TITLE_CULTURE_FACTOR = 50              -- prior to EMF v8.02: 200
 NDefines.NReligion.ELECTOR_FAMOUS_DYNASTY_FACTOR = 0.008          -- prior to EMF v9.06: 0.005
@@ -257,7 +257,6 @@ NDefines.NAI.DESIRED_CONSORTS = 1                   -- as of EMF v8.07, AI will 
 NDefines.NAI.AI_ASSAULT_RATIO = 15                  -- +50% from vanilla
 NDefines.NAI.RAID_MAX_REALM_SIZE = 32               -- prior to EMF v9.06: 24; vanilla is 24
 NDefines.NAI.RAID_AGGRESSION = 15                   -- prior to EMF v9.06: 18; prior to EMF v9.01: 12; vanilla is 18; lower means more frequent raiding, higher means less frequent
-NDefines.NAI.RAID_SPARE_ACCEPTED_RELIGIONS = 0	    -- Intra-pagan raiding enabled to make pagan consolidation more difficult
 NDefines.NAI.TRIBAL_VASSAL_EXTRA_CALL_CHANCE = 0	-- Disabled to make tribal consolidation harder (AI already honors alliances fairly often)
 
 NDefines.NAI.NOMAD_MARRIAGE_CLAN_MODIFIER = 40 -- vanilla is 20: "How much nomad AI will prefer inter-realm clan marriages"
