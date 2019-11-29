@@ -57,8 +57,8 @@ DEF_OPINION = {
 
 # Same form of (m, b) for y=mx+b where y is the min_levy modifier and x is the zero-indexed law tier (we don't currently
 # make any distinctions between the vassal classes when it comes to min_levy):
-DEF_OBLIGATIONS_MIN_LEVY = (  0.05, -0.05)
-DEF_FOCUS_MIN_LEVY       = (-0.025,  0.05)
+DEF_OBLIGATIONS_MIN_LEVY = (0.05, 0)
+DEF_FOCUS_MIN_LEVY       = (-0.025, 0.05)
 
 # We know this (implicitly in most of the script), but it's nice to name it where we can:
 N_LAWS = 5
