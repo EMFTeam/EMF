@@ -16,8 +16,8 @@ def maxlevy_opinion_scale(o):
   return o / 151 + 0.5 # certainly could be more general... (adjust if scale changes)
 
 def decay_min_levy(i):
-  if i < 20: return 0
-  return -0.5 * ((i-20) / 100)
+  if i < 10: return 0
+  return -0.5 * ((i-10) / 100)
 
 def decay_max_levy(i):
   if i < 20: return 0
@@ -44,8 +44,8 @@ decay = 0
 
 maxLObLaws    = [0.000, 0.075, 0.150, 0.225, 0.300]
 minLObLaws    = [0.000, 0.050, 0.100, 0.150, 0.200]
-minLCALaws    = [0.000, 0.050, 0.100, 0.200, 0.300]
-minLAdminLaws = [0.000, 0.100, 0.125]
+minLCALaws    = [0.000, 0.050, 0.100, 0.200, 0.350]
+minLAdminLaws = [0.000, 0.100, 0.150]
 
 ################################################################################
 
