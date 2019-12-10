@@ -17,18 +17,18 @@ def maxlevy_opinion_scale(o):
 
 def decay_min_levy(i):
   if i < 20: return 0
-  return -0.05 * ((i-20) / 100)
+  return -0.5 * ((i-20) / 100)
 
 def decay_max_levy(i):
   if i < 20: return 0
-  return -0.025 * ((i-20) / 100)
+  return -0.25 * ((i-20) / 100)
 
 # Base values
 minLBase = 0
 maxLBase = 0.6
 
 # DynLevy modifiers
-minLDynLevy = -0.25
+minLDynLevy = -0.3
 maxLDynLevy = -0.5
 
 # Arbitrary modifiers
@@ -36,16 +36,16 @@ minLGeneric = 0
 maxLGeneric = 0
 
 # Focus law modifiers
-minLFocus = 0
+minLFocus = 0.05 # Due to default law for feudal vassals
 maxLFocus = 0.1 # Due to default law for feudal vassals
 
 # Imperial Decay (integer percentage)
 decay = 0
 
-minLObLaws    = [0.000, 0.050, 0.100, 0.150, 0.200]
 maxLObLaws    = [0.000, 0.075, 0.150, 0.225, 0.300]
-minLCALaws    = [0.000, 0.050, 0.100, 0.150, 0.200]
-minLAdminLaws = [0.000, 0.050, 0.100]
+minLObLaws    = [0.000, 0.050, 0.100, 0.150, 0.200]
+minLCALaws    = [0.000, 0.050, 0.100, 0.200, 0.300]
+minLAdminLaws = [0.000, 0.100, 0.125]
 
 ################################################################################
 
@@ -64,6 +64,8 @@ ap.add_argument('--dynlevy-min-levy', default=minLDynLevy,
           help='DynLevy malus to min. levy [default: %(default)s]')
 ap.add_argument('--dynlevy-max-levy', default=maxLDynLevy,
           help='DynLevy malus to max. levy [default: %(default)s]')
+ap.add_argument('--no-dynlevy', action='store_true',
+          help='Exclude DynLevy malus to both min. and max. levies')
 ap.add_argument('--min-levy-offset', default=minLGeneric,
           help='Arbitrary offset to min. levy [default: %(default)s]')
 ap.add_argument('--max-levy-offset', default=maxLGeneric,
@@ -91,10 +93,17 @@ minLOb = minLObLaws[int(args.ob_law)]
 maxLOb = maxLObLaws[int(args.ob_law)]
 minLCA = minLCALaws[int(args.ca_law)]
 minLAdmin = minLAdminLaws[int(args.admin_law)]
+
 minLDecay = decay_min_levy(decay)
 maxLDecay = decay_max_levy(decay)
-minLDynLevy = float(args.dynlevy_min_levy)
-maxLDynLevy = float(args.dynlevy_max_levy)
+
+if args.no_dynlevy:
+  minLDynLevy = 0
+  maxLDynLevy = 0
+else:
+  minLDynLevy = float(args.dynlevy_min_levy)
+  maxLDynLevy = float(args.dynlevy_max_levy)
+
 minLGeneric = float(args.min_levy_offset)
 maxLGeneric = float(args.max_levy_offset)
 minLBase = float(args.base_min_levy)
@@ -118,7 +127,7 @@ for o in xVals:
   else:
     maxLScaled = maxL * maxlevy_opinion_scale(o)
     if minL >= maxLScaled:
-      minLevyBelowOpinion = o + 1
+      minLevyBelowOpinion = o
       yVals.append(minL * 100.0)
     else:
       yVals.append(maxLScaled * 100.0)
@@ -127,7 +136,7 @@ print('Min. Levy: {:.2f}%'.format(minL * 100.0))
 print('Max. Levy: {:.2f}%'.format(maxL * 100.0))
 
 if minLevyBelowOpinion:
-  print('Min. Levy Below Opinion: {}'.format(minLevyBelowOpinion))
+  print('Min. Levy Opinion Threshold: {}'.format(minLevyBelowOpinion))
 
 plt.plot(xVals, yVals)
 plt.xlabel('Vassal Opinion')
