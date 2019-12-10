@@ -12,11 +12,12 @@ modifiers_path = emf_path / 'common/event_modifiers/emf_decay_codegen_modifiers.
 i18n_path = emf_path / 'localisation/1_emf_decay_codegen.csv'
 
 def vassal_min_levy(i):
-	if i < 60: return 0
-	return -0.6 * ((i-60) / 60)
+	if i < 10: return 0
+	return -0.5 * ((i-10) / 100)
 
 def vassal_max_levy(i):
-	return -0.6 * (i / 100)
+	if i < 20: return 0
+	return -0.25 * ((i-20) / 100)
 
 def global_levy_size(i):
 	if i < 20: return 0
@@ -37,8 +38,8 @@ def global_tax_modifier(i):
 	return -0.5 * (i / 100)
 
 def vassal_opinion(i):
-	if i < 50: return 0
-	return -20*(i-50) // 50
+    if i < 20: return 0
+    return -20*(i-20) // 80
 
 def defensive_plot_power_modifier(i):
 	return -1.0 * (i / 100)
