@@ -24,8 +24,8 @@ DEF_MOD_PATH = Path('./EMF')  # If your working directory is the EMF repository 
 DEF_LAWS_FILE = Path('emf_obligations_laws.txt')
 
 # Maximum possible range of combined max_levy modifiers for any given vassal type
-DEF_MIN_TOTAL_MAX_LEVY = -0.075
-DEF_MAX_TOTAL_MAX_LEVY = 0.3
+DEF_MIN_TOTAL_MAX_LEVY = -0.1
+DEF_MAX_TOTAL_MAX_LEVY = 0.4
 
 # Mapping of vassal types to default vassal_max_levy to vassal_tax_modifier conversion ratio
 DEF_TAX_PER_LEVY = {
