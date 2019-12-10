@@ -29,11 +29,11 @@ DEF_MAX_TOTAL_MAX_LEVY = 0.4
 
 # Mapping of vassal types to default vassal_max_levy to vassal_tax_modifier conversion ratio
 DEF_TAX_PER_LEVY = {
-  'feudal': 0.8,
-  'iqta':   1.0,
-  'temple': 1.2,
-  'city':   1.4,
-  'tribal': 0.6,
+  'feudal': 0.6,
+  'iqta':   0.8,
+  'temple': 0.8,
+  'city':   1.0,
+  'tribal': 0.4,
 }
 
 # Mapping of vassal types to default laws (zero-indexed) for Obligations and Focus, respectively
@@ -203,7 +203,6 @@ def main():
     print_summary(vassal_types, args, of)
     print_law_groups(vassal_types, of)
     print_laws(vassal_types, of)
-
   return 0
 
 
@@ -239,7 +238,7 @@ def print_summary(vassal_types, args, file):
   for vt in vassal_types:
     print(cmt + '  {:8s} min_levy = {} + {}*L'.format(vt.name.capitalize() + ':', vt.foc_min_levy_base, vt.foc_min_levy_slope), file=file)
 
-  tbl_hdr = ["Modifier", "Law I", "Law II", "Law III", "Law IV", "Law V"]
+  tbl_hdr = ["Modifier", "Tier I", "Tier II", "Tier III", "Tier IV", "Tier V"]
 
   for vt in vassal_types:
     for is_focus in (True, False):
