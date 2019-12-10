@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright (C) 2014-2015 Matthew D. Hall <zijistark@gmail.com>
+# Copyright (C) 2014-2019 Matthew D. Hall <zijistark@gmail.com>
 #
 # Free for personal modification. Any redistribution, even
 # without modification, of this program or its output is
@@ -64,33 +64,33 @@ exit 0;
 
 ####
 
-sub usage {	
+sub usage {
 	print <<EOF;
 Usage:
 	$0 [OPTIONAL PARAMETERS] -t|--target <TARGET>
-	
+
 	OPTIONAL PARAMETERS:
-	
+
 		-N <num_laws>
 			Number of distinct classes of dynamic levy laws [$DEFAULT_N]
 			Currently is assumed to be a power of 2.
-			
+
 		--stride <holdings/law>
 			Number of holdings covered by a single class on the curve [$DEFAULT_STRIDE]
-			
+
 		--offset <max. holdings for exemption>
 			The realm_size-scaled curve starts here. [$DEFAULT_OFFSET]
-			
+
 		--help, --usage  Show this help/usage information.
-		
+
 		NOTE: The law modifier scaling function is hard-coded near the top of the
 		      script and does assume the default of N=$DEFAULT_N.
-	
+
 	REQUIRED PARAMETER:
-	
+
 		-t, --target <TARGET>
 			Specify target code to output by ID.
-	
+
 	Valid TARGET identifiers (case-insensitive):
 EOF
 
@@ -112,7 +112,7 @@ sub print_params {
 	print "#   stride=$opt_stride (holdings per law increment)\n";
 	print "#   offset=$opt_offset (scaling curve starts at holdings > offset)\n";
 	print "#   range=[".sprintf("%0.03f",scale_function($opt_n-1)).", ".sprintf("%0.03f",scale_function(0))."]\n";
-	print "#   curve: m = 1 / (1 + ln(1 + i/36.75)) - 1 for levy law modifier m and dynlevy law index i\n";
+	print "#   curve: m = 1 / (1 + ln(1 + i/36.75)) - 1 for max_levy law modifier m and dynlevy law index i (min_levy modifiers are 3/5 of max_levy)\n";
 	print "\n";
 }
 
@@ -131,13 +131,13 @@ sub print_effects {
 # Dynamic levy law scaling with realm_size (event-driven demesne laws): internal support effects
 # Also, see emf_cb_effects.txt for some CB helpers related to major revolts.
 
-emf_dynlevy_update_effect = {
+emf_dynlevy_update = {
 	hidden_tooltip = { character_event = { id = emf_dynlevy.20 } }
 }
 
 # Used in [primary] title scope
-emf_dynlevy_remove_effect = {
-	hidden_tooltip = {
+emf_dynlevy_remove = {
+	hidden_effect = {
 EOS
 
 	for my $i (0..$opt_n-1) {
@@ -152,7 +152,7 @@ EOS
 
 
 ####
-	
+
 sub print_laws {
 	print <<EOS;
 # -*- ck2.laws -*-
@@ -168,28 +168,30 @@ EOS
 	print_params();
 
 	print "law_groups = {\n";
-	
+
 	for my $i (0..$opt_n-1) {
 		print "\tdynlevy$i = { law_type = realm }\n";
 	}
-		
+
 	print "}\n\n";
 
 	print "laws = {\n";
 
 	for my $i (0..$opt_n-1) {
 		my $mod = scale_function($i);
+		my $minmod = 0.6 * $mod; # 3/5
 		my $mod_str = sprintf("%0.03f", $mod);
+		my $minmod_str = sprintf("%0.03f", $minmod);
 
 		my $law_group = "dynlevy$i";
 		my $law = $law_group."_0";
-		
+
 		my $is_default = '';
-		
+
 		if ($i == 0) {
 			$is_default = "\n\t\tdefault = yes";
 		}
-		
+
 		print <<EOS;
 	$law = {
 		group = $law_group$is_default
@@ -199,23 +201,26 @@ EOS
 
 		if ($i == 0) {
 			print <<EOS;
-			NOT = { tier = BARON }
-			temporary = no
 			OR = {
-				tier = COUNT # Counts always use the default law
-				has_law = $law
-				holder_scope = { has_law = $law } # Even if title doesn't have the law, allow it to be copied
+				higher_tier_than = BARON
+				owner = { is_patrician = yes }
 			}
+			OR = {
+				lower_tier_than = DUKE # Counts always use the default law
+				has_law = $law
+				owner = { has_law = $law } # Even if title doesn't have the law, allow it to be copied
+			}
+			temporary = no
 EOS
 		}
 		else {
 			print <<EOS;
 			higher_tier_than = COUNT
-			temporary = no
 			OR = {
 				has_law = $law
-				holder_scope = { has_law = $law } # Even if title doesn't have the law, allow it to be copied
+				owner = { has_law = $law } # Even if title doesn't have the law, allow it to be copied
 			}
+			temporary = no
 EOS
 		}
 
@@ -223,27 +228,21 @@ EOS
 		}
 		allow = {
 		}
-		revoke_allowed = {
-			always = no
-		}
 		ai_will_do = {
 			factor = 0
 		}
-		ai_will_revoke = {
-			factor = 0
-		}
 		effect = {
-			emf_dynlevy_remove_effect = yes
+			emf_dynlevy_remove = yes
 		}
 
 		castle_vassal_max_levy = $mod_str
-		castle_vassal_min_levy = $mod_str
+		castle_vassal_min_levy = $minmod_str
 		city_vassal_max_levy = $mod_str
-		city_vassal_min_levy = $mod_str
+		city_vassal_min_levy = $minmod_str
 		temple_vassal_max_levy = $mod_str
-		temple_vassal_min_levy = $mod_str
+		temple_vassal_min_levy = $minmod_str
 		tribal_vassal_max_levy = $mod_str
-		tribal_vassal_min_levy = $mod_str
+		tribal_vassal_min_levy = $minmod_str
 EOS
 
 		print "\t}\n";
@@ -290,12 +289,12 @@ namespace = emf_dynlevy
 # variable's value to find the right law to apply for a given realm_size.
 character_event = {
 	id = emf_dynlevy.20
-	
+
 	is_triggered_only = yes
 	hide_window = yes
-	
+
 	only_rulers = yes
-	
+
 	immediate = {
 		primary_title = {
 			if = {
@@ -305,7 +304,7 @@ character_event = {
 						temporary = yes # E.g., rebel leader
 					}
 				}
-				emf_dynlevy_remove_effect = yes
+				emf_dynlevy_remove = yes
 				break = yes
 			}
 			if = {
@@ -334,17 +333,17 @@ EOS
 # Maintenance version of emf_dynlevy.20, called on annual pulse
 character_event = {
 	id = emf_dynlevy.23
-	
+
 	is_triggered_only = yes
 	hide_window = yes
-	
+
 	only_playable = yes
-	
+
 	trigger = {
 		higher_tier_than = COUNT # For maintenance, we only care about tier >= DUKE.
 		primary_title = { temporary = no }
 	}
-	
+
 	immediate = {
 EOS
 
@@ -366,17 +365,17 @@ sub print_search_tree {
 	my $min = shift;
 	my $max = shift;
 	my $tab = shift;
-	
+
 	# Search [$min,$max)
-	
+
 	my $range = $max-$min;
-	
+
 	if ($range == 1) {
 		# base case
-		
+
 		my $lg = "dynlevy$min";
 		my $law = $lg."_0";
-		
+
 		if ($mode == 0) {
 
 			print "\t" x $tab, "primary_title = {\n";
@@ -390,7 +389,7 @@ sub print_search_tree {
 			print "\t" x $tab, "}\n"; # /if
 			--$tab;
 			print "\t" x $tab, "}\n"; # /primary_title
-		
+
 			# Set all titles greater than or equal to primary-tier to correct law
 			# print "\t" x $tab, "primary_title = {\n";
 			# ++$tab;
@@ -412,7 +411,7 @@ sub print_search_tree {
 			# print "\t" x $tab, "}\n"; # /ROOT
 			# --$tab;
 			# print "\t" x $tab, "}\n"; # /primary_title
-			
+
 			my $rsz_idx = $min+1;
 
 			if ($min > 0) {
@@ -420,15 +419,15 @@ sub print_search_tree {
 				# print "\t" x $tab, "set_variable = { which = rsz_idx value = $rsz_idx }\n";
 			}
 			else { # Minimum realm size case
-			
+
 				# If no longer even ruling a landed realm...
 				# print "\t" x $tab, "if = {\n";
 				# ++$tab;
 				# print "\t" x $tab, "limit = { not = { realm_size = 1 } }\n";
-				
+
 				# # Reset variable indicating law tier (variable goes poof)
 				# print "\t" x $tab, "set_variable = { which = rsz_idx value = 0 } # Poof!\n";
-				
+
 				# --$tab;
 				# print "\t" x $tab, "}\n"; # /if
 
@@ -436,10 +435,10 @@ sub print_search_tree {
 				# print "\t" x $tab, "if = {\n";
 				# ++$tab;
 				# print "\t" x $tab, "limit = { realm_size = 1 }\n";
-				
+
 				# # Set variable as normal
 				# print "\t" x $tab, "set_variable = { which = rsz_idx value = $rsz_idx }\n";
-				
+
 				# --$tab;
 				# print "\t" x $tab, "}\n"; # /if
 			}
@@ -447,13 +446,13 @@ sub print_search_tree {
 		elsif ($mode == 1) {
 			print "\t" x $tab, "FROM = { add_law = $law }\n";
 		}
-		
+
 		return;
 	}
-	
+
 	my $mid = $min+($range/2);
 	my $rs = $opt_offset + $opt_stride*$mid;
-	
+
 	print "\t" x $tab, "if = {\n";
 	++$tab;
 	print "\t" x $tab, "limit = { NOT = { realm_size = $rs } }\n";
@@ -474,7 +473,7 @@ sub print_search_tree {
 sub print_i18n {
 	print "#CODE;ENGLISH;FRENCH;GERMAN;;SPANISH;;;;;;;;;x\n";
 	my $eol = ";;;;;;;;;;;;;x\n";
-	
+
 	for my $i (0..$opt_n-1) {
 		my $mod = scale_function($i) + 1;
 		my $mod_str = sprintf("%0.01f", $mod*100);
@@ -483,14 +482,14 @@ sub print_i18n {
 		$mod_str .= '%';
 		my $law_group = "dynlevy$i";
 		my $law = $law_group."_0";
-		
+
 		my $min_rs = ($i == 0) ? 1 : ($opt_offset + $opt_stride*$i);
 		my $max_rs = ($i == $opt_n-1) ? "INF" : ($opt_offset + $opt_stride*($i+1)-1);
-		
+
 		print "${law_group};Levy Efficiency$eol";
 		print "${law_group}_desc;As your realm grows, your liege levy will grow with it. But by how much?$eol";
 		print "${law};$mod_str Realm Levy-Raising Efficiency$eol";
 		print "${law}_option;$mod_str$eol";
-		print "${law}_desc;In a decentralized feudal system, rulers of large realms are less efficient at raising liege levies than rulers of smaller realms. Demesne levies are unaffected.\\n\\nSmaller realms pack a harder punch per capita, all else being equal. For larger realms to compete per capita, they inevitably must centralize. See the EMF manual for details on levy efficiency.$eol";
+		print "${law}_desc;In a decentralized feudal system, rulers of large realms are less efficient at raising liege levies than rulers of smaller realms. Demesne levies are unaffected.\\n\\nSmaller realms pack a harder punch per capita, all else being equal. For larger realms to compete per capita, they inevitably must centralize.$eol";
 	}
 }
