@@ -476,7 +476,12 @@ letter_event = {
 			modifier = {
 				factor = 0.65
 				emf_unreformed_pagan = yes
-				is_hard_to_convert = no # Unless they're hard-to-convert pagans
+				OR = {
+					is_hard_to_convert = no # Unless they're hard-to-convert pagans
+					event_target:emf_cb_winner = {
+						emf_PREV_is_syncretized_with_religion = yes
+					}
+				}
 				event_target:emf_cb_winner = { # But not for unreformed pagan holy warriors
 					emf_unreformed_pagan = no
 				}
@@ -496,7 +501,12 @@ letter_event = {
 			modifier = {
 				factor = 0.85
 				religion_group = zoroastrian_group
-				is_hard_to_convert = no
+				OR = {
+					is_hard_to_convert = no
+					event_target:emf_cb_winner = {
+						emf_PREV_is_syncretized_with_religion = yes
+					}
+				}
 				event_target:emf_cb_winner = { # But not for unreformed pagan holy warriors
 					emf_unreformed_pagan = no
 				}
@@ -1511,6 +1521,7 @@ character_event = {
 			limit = {
 				any_demesne_title = {
 					current_heir = {
+						NOT = { trait = emf_cannot_inherit }
 						NOT = { same_realm = ROOT }
 						OR = {
 							is_ruler = yes
@@ -1550,6 +1561,7 @@ character_event = {
 			any_demesne_title = {
 				limit = {
 					current_heir = {
+						NOT = { trait = emf_cannot_inherit }
 						NOT = { same_realm = ROOT }
 						OR = {
 							is_ruler = yes
@@ -1585,18 +1597,32 @@ character_event = {
 						}
 					}
 				}
+				log = " ------> protecting title: [This.GetFullName] ([This.GetID])"
+				log = " --------> succession law: [This.EMF_GetFullSuccLaw]"
 				current_heir = {
-					log = " ------> [This.EMF_GetDebugName]"
-					log = " --------> religion: [This.Religion.GetName]"
+					log = " --------> current heir: [This.EMF_GetDebugName]"
+					log = " ----------> religion: [This.Religion.GetName]"
 					add_trait = emf_cannot_inherit
 					reverse_opinion = {
 						who = ROOT
 						modifier = emf_relsub_opinion_disinherited
 					}
+					log = " ------> recalculating succession..."
+					ROOT = {
+						recalc_succession = yes
+						if = {
+							limit = {
+								any_demesne_title = {
+									current_heir = {
+										character = PREVPREVPREV
+									}
+								}
+							}
+							log = " --------> DISINHERITANCE (POSSIBLY) FAILED! ONOEZ!"
+						}
+					}
 				}
 			}
-			log = " ----> a round of disinheritance is complete. recalculating title succession..."
-			recalc_succession = yes
 		}
 		# Phew. Now send an event to each temporarily disinherited ruler tomorrow to clear emf_cannot_inherit, and allow
 		# succession to happen now.

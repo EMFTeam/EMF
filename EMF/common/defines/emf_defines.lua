@@ -68,9 +68,9 @@ NDefines.NCharacter.NATURAL_DEATH_CHANCE_AGE_70 = 2100
 NDefines.NCharacter.SECONDARY_SPOUSE_FERTILITY_MULT = 0.33
 -- OUT-COMMENT: Nonzero INFANT_DEATH_CHANCE causes nondeterministic crashes on patch 3.3.0 (64-bit):
 -- NDefines.NCharacter.INFANT_DEATH_CHANCE = 0.07
-NDefines.NCharacter.TRIBAL_EMPTY_HOLDING_LEVY_MULTIPLIER = 0.1        -- vanilla: 0.5, EMF v10.5: 0.5
-NDefines.NCharacter.TRIBAL_EMPTY_HOLDING_GARRISON_MULTIPLIER = 0.1    -- vanilla: 0.5, EMF v10.5: 0.5
-NDefines.NCharacter.ADULT_DIPLOMACY_OPINION_MUL_FACTOR = 1.0          -- vanilla: 1.5, EMF v10.5: 1.5
+NDefines.NCharacter.TRIBAL_EMPTY_HOLDING_LEVY_MULTIPLIER = 0.25       -- vanilla: 0.5, < v10.6: 0.5
+NDefines.NCharacter.TRIBAL_EMPTY_HOLDING_GARRISON_MULTIPLIER = 0.15   -- vanilla: 0.5, < v10.6: 0.5
+NDefines.NCharacter.ADULT_DIPLOMACY_OPINION_MUL_FACTOR = 0.75         -- vanilla: 1.5, < v10.6: 1.5
 
 -- Title
 NDefines.NTitle.COUNT_TITLE_PRESTIGE = 0.05
@@ -116,7 +116,7 @@ NDefines.NReligion.AUTHORITY_FROM_ANTIPOPE = -0.1                 -- prior to EM
 NDefines.NReligion.AUTHORITY_FROM_RELHEAD_PIETY = 0.002           -- prior to EMF v9.06: 0.001; prior to EMF v8.02: 0
 NDefines.NReligion.AUTHORITY_FROM_RELHEAD_DIPLOMACY = 0.03        -- prior to EMF v9.06: 0.02
 NDefines.NReligion.AUTHORITY_FROM_ORG_RELIGION = 0.3
-NDefines.NReligion.DIVINE_BLOOD_FERTILITY_MULT = 1.0
+NDefines.NReligion.DIVINE_BLOOD_FERTILITY_MULT = 0.667            -- < v10.6: 1.0; vanilla: 0.25 [Fertility multiplier in a religious close kin marriage]
 NDefines.NReligion.ELECTOR_TITLE_CULTURE_GROUP_FACTOR = 50        -- doubled to vanilla from EMF v8.06
 NDefines.NReligion.ELECTOR_TITLE_CULTURE_FACTOR = 50              -- prior to EMF v8.02: 200
 NDefines.NReligion.ELECTOR_FAMOUS_DYNASTY_FACTOR = 0.008          -- prior to EMF v9.06: 0.005
@@ -146,15 +146,16 @@ NDefines.NEconomy.PATRICIAN_AGE_RESPECT_FACTOR = 0
 NDefines.NEconomy.DOGE_SUCC_RANDOM_FACTOR = 0
 
 -- Nomad
+NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 500 -- < v10.6: 1250; vanilla: 1000; now compensated for with terrain-based province modifiers; [Base population per empty holding for grazing]
 NDefines.NNomad.MANPOWER_INCREASE_MULTIPLIER = 0.075        -- < v10.6: 0.1 (vanilla); [The rate current manpower grows or declines to max manpower]
-NDefines.NNomad.POPULATION_TAX_MULTIPLIER = 0.0003          -- < v10.6: 0.0005 (vanilla); [Monthly tax income determined by the current population]
+NDefines.NNomad.POPULATION_TAX_MULTIPLIER = 0.0005          -- < v10.6: 0.0005 (vanilla); [Monthly tax income determined by the current population]
 NDefines.NNomad.STARTING_HORDE_MAX_FRACTION = 1
 
 -- Military
 NDefines.NMilitary.LEVY_MAINTENANCE_FACTOR = 2.3               -- prior to EMF v10.0: 2.7; prior to EMF v9.06: 2.4; prior to EMF v9.01: 2.7
 NDefines.NMilitary.BATTLE_WARSCORE_DEFENDER_MULTIPLIER = 1.6
-NDefines.NMilitary.MIN_LEVY_RAISE_OPINION_THRESHOLD = -100     -- prior to EMF v10.6: 0 (vanilla); [Below this opinion value you'll get the least amount of troops possible]
-NDefines.NMilitary.MAX_LEVY_RAISE_OPINION_THRESHOLD = 50       -- prior to EMF v10.6: 100 (vanilla); [Above this opinion value you'll get the max amount of troops possible]
+NDefines.NMilitary.MIN_LEVY_RAISE_OPINION_THRESHOLD = -75      -- prior to EMF v10.6: 0 (vanilla); [Below this opinion value you'll get the least amount of troops possible]
+NDefines.NMilitary.MAX_LEVY_RAISE_OPINION_THRESHOLD = 75       -- prior to EMF v10.6: 100 (vanilla); [Above this opinion value you'll get the max amount of troops possible]
 NDefines.NMilitary.REINFORCE_RATE = 0.03                       -- vanilla: 0.05
 NDefines.NMilitary.LEVY_RAISED_REINFORCE_RATE_MULTIPLIER = 0.2 -- vanilla / v8.06 was 0.5
 NDefines.NMilitary.NAVAL_ATTRITION = 0.035                     -- prior to EMF v9.06: 5%; prior to EMF v8.07: 0% (vanilla)
@@ -165,6 +166,7 @@ NDefines.NMilitary.RETINUE_INCREASE_PER_TECH = 0.5
 NDefines.NMilitary.RETINUE_HIRE_COST_MULTIPLIER = 0.35         -- prior to EMF v10.6: 0.25; prior to EMF v9.06: 0.2
 NDefines.NMilitary.MAX_COMMANDERS_BARON = 2                    -- EMF v8.07: barons should not be deprived of commanders (rest of commander limits reverted to vanilla, a decrease by 1 for each tier)
 NDefines.NMilitary.LIEGE_LEVY_REINF_RATE = 0.03                -- changed by -0.02 from EMF v8.06 (-67%), which is now a fifth of vanilla's rate; changed again in EMF v10.6 by +0.03 to 0.04 (3/5 vanilla and same as demesne levy reinforcement)
+NDefines.NMilitary.LIEGE_LEVY_SIZE_MULTIPLIER = 0.8            -- < v10.6: 0.5; vanilla: 0.5 [The Size of the liege levy will be the total troops in the vassal subrealm * this]
 NDefines.NMilitary.LIEGE_LEVY_COST_MULTIPLIER = 0.25           -- as of EMF v10.0, vassals pay 25% of the upkeep on their liege levy contribution
 NDefines.NMilitary.LIGHT_INFANTRY_MORALE = 3
 NDefines.NMilitary.LIGHT_INFANTRY_MAINTENANCE = 1
@@ -256,7 +258,6 @@ NDefines.NAI.DESIRED_CONSORTS = 1                   -- as of EMF v8.07, AI will 
 NDefines.NAI.AI_ASSAULT_RATIO = 15                  -- +50% from vanilla
 NDefines.NAI.RAID_MAX_REALM_SIZE = 32               -- prior to EMF v9.06: 24; vanilla is 24
 NDefines.NAI.RAID_AGGRESSION = 15                   -- prior to EMF v9.06: 18; prior to EMF v9.01: 12; vanilla is 18; lower means more frequent raiding, higher means less frequent
-NDefines.NAI.RAID_SPARE_ACCEPTED_RELIGIONS = 0	    -- Intra-pagan raiding enabled to make pagan consolidation more difficult
 NDefines.NAI.TRIBAL_VASSAL_EXTRA_CALL_CHANCE = 0	-- Disabled to make tribal consolidation harder (AI already honors alliances fairly often)
 
 NDefines.NAI.NOMAD_MARRIAGE_CLAN_MODIFIER = 40 -- vanilla is 20: "How much nomad AI will prefer inter-realm clan marriages"
