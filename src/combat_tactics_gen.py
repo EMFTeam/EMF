@@ -13,7 +13,11 @@ localization_path = emf_path / 'localisation/1_emf_combat_tactics_codegen.csv'
 ###
 
 class CombatTacticLevel:
-	def __init__(self,prefix,name_prefix,sprite_offset,mtth_score_prefix,mtth_weight_modifier,global_offensive_modifier,global_defensive_modifier,requires_flank_leader=True):
+	NO_TRICKSTER_CHANGE = 0
+	TRICKSTER_DISABLES = 1
+	TRICKSTER_ENABLES = 2
+	
+	def __init__(self, prefix, name_prefix, sprite_offset, mtth_score_prefix, mtth_weight_modifier, global_offensive_modifier, global_defensive_modifier, trickster_state=NO_TRICKSTER_CHANGE, requires_flank_leader=True, has_custom_mtth_modifier=False):
 		self.prefix = prefix
 		self.name_prefix = name_prefix
 		self.sprite_offset = sprite_offset
@@ -21,13 +25,17 @@ class CombatTacticLevel:
 		self.mtth_weight_modifier = mtth_weight_modifier
 		self.global_offensive_modifier = global_offensive_modifier
 		self.global_defensive_modifier = global_defensive_modifier
+		self.trickster_state = trickster_state
 		self.requires_flank_leader = requires_flank_leader
+		self.has_custom_mtth_modifier = has_custom_mtth_modifier
 
 combat_tactics_levels = [
-	# Weights start at 2-3-1, Tech MTTH Modifiers gradually shift this into 1-3-2 over the course of the game.
-	CombatTacticLevel("good","Devastating",-10,"good",1,0.25,0.25),
-	CombatTacticLevel("","",0,"ok",3,0,0),
-	CombatTacticLevel("bad","Failed",10,"bad",2,-0.25,-0.25,False)
+	# Weights start at 4-6-2, Tech MTTH Modifiers gradually shift this into 2-6-4 over the course of the game.
+	CombatTacticLevel("good", "Devastating", -10, "good", 2, 0.25, 0.25),
+	CombatTacticLevel("", "", 0, "ok", 6, 0, 0, CombatTacticLevel.TRICKSTER_DISABLES),
+	CombatTacticLevel("bad", "Failed", 10, "bad", 4, -0.25, -0.25, CombatTacticLevel.NO_TRICKSTER_CHANGE, False),
+	CombatTacticLevel("deceitful", "Deceitful", 0, "ok", 3, 0.25, 0, CombatTacticLevel.TRICKSTER_ENABLES, True, True),
+	CombatTacticLevel("flexible", "Flexible", 0, "ok", 3, 0, 0.25, CombatTacticLevel.TRICKSTER_ENABLES, True, True)
 ]
 
 glorious_combat_tactic_level = CombatTacticLevel("glorious","Glorious",-10,"good",1,0.5,0.5)
@@ -227,11 +235,15 @@ def print_tactic(f, tactic_level, tactic_name, is_cultural=False):
 	if is_closing_tactic:
 		print("""		is_flanking = no
 		days = {0} # duration of combat >= {0} days""".format(skirmish_to_melee_delay_days), file=f)
-	if tactic_level.requires_flank_leader or is_cultural:
+	if tactic_level.requires_flank_leader or is_cultural or tactic_level.trickster_state == CombatTacticLevel.TRICKSTER_ENABLES:
 		print("""		flank_has_leader = yes""", file=f)
 	if tactic_level.prefix == "glorious":
 		print("""		leader = {
 			has_character_modifier = call_to_glory""", file=f)
+		if tactic_level.trickster_state == CombatTacticLevel.TRICKSTER_DISABLES:
+			print("""			NOT = { trait = trickster }""", file=f)
+		elif tactic_level.trickster_state == CombatTacticLevel.TRICKSTER_ENABLES:
+			print("""			trait = trickster""", file=f)
 		if is_cultural:
 			print("""			society_member_of = warrior_lodge_{0}""".format(tactic_name), file=f)
 		elif tactic_name in replacement_glorious_tactics_list and len(replacement_glorious_tactics_list[tactic_name]) > 0:
@@ -244,14 +256,14 @@ def print_tactic(f, tactic_level, tactic_name, is_cultural=False):
 				print("""			}""", file=f)
 		print("""		}""", file=f)
 	elif is_cultural:
+		print("""		leader = {""", file=f)
 		if tactic_level == combat_tactics_levels[0]:
-			print("""		leader = {{
-			NOT = {{ has_character_modifier = call_to_glory }}
-			emf_{0}_culture = yes
-		}}""".format(tactic_name), file=f)
-		else:
-			print("""		leader = {{
-			emf_{0}_culture = yes
+			print("""			NOT = { has_character_modifier = call_to_glory }""", file=f)
+		if tactic_level.trickster_state == CombatTacticLevel.TRICKSTER_DISABLES:
+			print("""			NOT = { trait = trickster }""", file=f)
+		elif tactic_level.trickster_state == CombatTacticLevel.TRICKSTER_ENABLES:
+			print("""			trait = trickster""", file=f)
+		print("""			emf_{0}_culture = yes
 		}}""".format(tactic_name), file=f)
 	elif tactic_name in replacement_tactics_list and len(replacement_tactics_list[tactic_name]) > 0:
 		if tactic_level == combat_tactics_levels[0]:
@@ -270,6 +282,10 @@ def print_tactic(f, tactic_level, tactic_name, is_cultural=False):
 			print("""				}""", file=f)
 		print("""			}
 		}""", file=f)
+		if tactic_level.trickster_state == CombatTacticLevel.TRICKSTER_DISABLES:
+			print("""		NOT = { leader = { trait = trickster } }""", file=f)
+		elif tactic_level.trickster_state == CombatTacticLevel.TRICKSTER_ENABLES:
+			print("""		leader = { trait = trickster }""", file=f)
 	print("""	}}
 	
 	mean_time_to_happen = {{
@@ -280,6 +296,8 @@ def print_tactic(f, tactic_level, tactic_name, is_cultural=False):
 		print("""		emf_cultural_tactic_tech_{0}_score = yes""".format(tactic_values["phase"]), file=f)
 	if is_closing_tactic:
 		print("""		emf_skirmish_to_melee_tactic_score = yes""", file=f)
+	if tactic_level.has_custom_mtth_modifier:
+		print("""		emf_{0}_tactic_custom_score = yes""".format(tactic_level.prefix), file=f)
 	print("""	}
 	""", file=f)
 	if "replaces" in tactic_values:
