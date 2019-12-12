@@ -228,3 +228,723 @@ emf_set_government_to_match_PREV = {
 		}
 	}
 }
+
+emf_willfully_abdicate = {
+	custom_tooltip = {
+		text = THIS_ABDICATES_TT
+		save_event_target_as = emf_abdicator_tmp
+		character_event = {
+			id = emf_core.110
+		}
+		if = {
+			limit = {
+				event_target:emf_abdicate_real_heir = { always = yes }
+			}
+			event_target:emf_abdicate_real_heir = {
+				save_event_target_as = emf_heir_tmp
+			}
+		}
+		else = {
+			current_heir = {
+				save_event_target_as = emf_heir_tmp
+			}
+		}
+		if = {
+			limit = {
+				ai = no
+				has_game_rule = {
+					name = non_dynastic_succession
+					value = on
+				}
+				is_merchant_republic = no
+				is_nomadic = no
+				event_target:emf_heir_tmp = {
+					ai = yes
+					NOT = { dynasty = PREV }
+				}
+				NOT = { has_global_flag = emf_nondynastic_succession_disabled }
+			}
+			set_flag = emf_non_dynastic_succession_tmp
+			event_target:emf_heir_tmp = {
+				if = {
+					limit = {
+						is_lowborn = yes
+					}
+					dynasty = father_bastard
+				}
+				event_target:emf_abdicator_tmp = {
+					create_character = {
+						religion = PREV
+						culture = PREV
+						dynasty = PREV
+					}
+					new_character = {
+						save_event_target_as = emf_sleeve
+					}
+				}
+				dynasty = event_target:emf_abdicator_tmp
+			}
+		}
+	}
+	hidden_effect = {
+		if = {
+			limit = {
+				OR = {
+					is_feudal = yes
+					is_tribal = yes
+					is_nomadic = yes
+				}
+				higher_real_tier_than = event_target:emf_heir_tmp
+				event_target:emf_heir_tmp = {
+					is_ruler = yes
+					OR = {
+						is_theocracy = yes
+						is_republic = yes
+					}
+				}
+			}
+			event_target:emf_heir_tmp = {
+				abdicate = yes
+				move_character = PREV
+				emf_set_government_to_match_PREV = yes
+			}
+		}
+	}
+	hidden_effect = {
+		emf_transfer_crown_on_abdication = yes
+	}
+	if = {
+		limit = {
+			event_target:emf_abdicate_real_heir = { always = yes }
+		}
+		abdicate_to = event_target:emf_heir_tmp
+		hidden_effect = {
+			if = {
+				limit = {
+					has_flag = emf_abdicate_no_move
+					liege = {
+						NOT = { character = event_target:emf_heir_tmp }
+					}
+				}
+				move_character = event_target:emf_heir_tmp
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			has_flag = emf_abdicate_no_move
+		}
+		abdicate = {
+			move = no
+		}
+	}
+	else = {
+		abdicate = yes
+	}
+	emf_liege_change = yes
+	event_target:emf_heir_tmp = {
+		emf_liege_change = yes
+	}
+	hidden_effect = {
+		if = {
+			limit = {
+				has_flag = emf_non_dynastic_succession_tmp
+			}
+			event_target:emf_heir_tmp = {
+				character_event = {
+					id = emf_core.11
+				}
+			}
+		}
+	}
+	clr_flag = emf_non_dynastic_succession_tmp
+	clr_flag = emf_abdicate_no_move
+	clear_event_target = emf_heir_tmp
+	clear_event_target = emf_abdicator_tmp
+	clear_event_target = emf_abdicate_real_heir
+}
+emf_abdicate = {
+	custom_tooltip = {
+		text = THIS_IS_FORCED_TO_ABDICATE_TT
+		if = {
+			limit = {
+				NOT = { current_heir = { always = yes } }
+			}
+			log = "DEBUG: emf_abdicate: [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (#[This.GetID]/[This.PrimaryTitle.GetID]) has no expected successor."
+		}
+		else = {
+			save_event_target_as = emf_abdicator_tmp
+			while = {
+				limit = {
+					current_heir = {
+						any_opinion_modifier_target = {
+							reverse_has_opinion_modifier = {
+								who = PREV
+								modifier = overthrew_me
+							}
+							is_ruler = yes
+							OR = {
+								vassal_of = event_target:emf_abdicator_tmp
+								liege = {
+									emf_revolting_against_abdicator_internal = yes
+								}
+								emf_revolting_against_abdicator_internal = yes
+							}
+						}
+					}
+				}
+				change_variable = {
+					which = n_overlooked_heirs
+					value = 1
+				}
+				current_heir = {
+					save_event_target_as = emf_dude
+					reverse_opinion = {
+						who = event_target:emf_abdicator_tmp
+						modifier = opinion_overlooked_heir
+					}
+					any_landed_title = {
+						limit = {
+							OR = {
+								current_heir = {
+									character = event_target:emf_dude
+								}
+								event_target:emf_dude = {
+									any_pretender_title = {
+										title = PREVPREV
+									}
+								}
+							}
+						}
+						owner = {
+							reverse_opinion = {
+								who = event_target:emf_dude
+								modifier = opinion_cannot_inherit_tmp
+							}
+						}
+					}
+					add_trait = emf_cannot_inherit
+					clear_event_target = emf_dude
+				}
+				recalc_succession = yes
+			}
+			clear_event_target = emf_abdicator_tmp
+			if = {
+				limit = {
+					check_variable = {
+						which = n_overlooked_heirs
+						value > 0
+					}
+					NOT = { current_heir = { always = yes } }
+				}
+				log = "WARNING: emf_abdicate: [This.GetTitledFirstName] of the [This.PrimaryTitle.GetFullBaseName] (#[This.GetID]/[This.PrimaryTitle.GetID]) has no heir at all after disqualifying [This.n_overlooked_heirs.GetValue] potential heirs!"
+			}
+			set_variable = {
+				which = n_overlooked_heirs
+				value = 0
+			}
+			emf_willfully_abdicate = yes
+			any_opinion_modifier_target = {
+				limit = {
+					reverse_has_opinion_modifier = {
+						who = PREV
+						modifier = opinion_overlooked_heir
+					}
+					trait = emf_cannot_inherit
+				}
+				reverse_remove_opinion = {
+					who = PREV
+					modifier = opinion_overlooked_heir
+				}
+				remove_trait = emf_cannot_inherit
+				any_opinion_modifier_target = {
+					limit = {
+						reverse_has_opinion_modifier = {
+							who = PREV
+							modifier = opinion_cannot_inherit_tmp
+						}
+					}
+					reverse_remove_opinion = {
+						who = PREV
+						modifier = opinion_cannot_inherit_tmp
+					}
+					recalc_succession = yes
+				}
+			}
+		}
+	}
+}
+emf_transfer_crown_on_abdication = {
+	if = {
+		limit = {
+			NOT = { event_target:emf_heir_tmp = { always = yes } }
+		}
+		current_heir = {
+			save_event_target_as = emf_heir_tmp
+		}
+	}
+	if = {
+		limit = {
+			has_landed_title = e_hre
+		}
+		clear_event_target = emf_crown_heir_tmp
+		e_hre = {
+			current_heir = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		if = {
+			limit = {
+				NOT = { event_target:emf_crown_heir_tmp = { always = yes } }
+			}
+			event_target:emf_heir_tmp = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		any_artifact = {
+			limit = {
+				artifact_type = crown_hre
+			}
+			transfer_artifact = {
+				from = PREV
+				to = event_target:emf_crown_heir_tmp
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			has_landed_title = e_hre_french
+		}
+		clear_event_target = emf_crown_heir_tmp
+		e_hre_french = {
+			current_heir = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		if = {
+			limit = {
+				NOT = { event_target:emf_crown_heir_tmp = { always = yes } }
+			}
+			event_target:emf_heir_tmp = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		any_artifact = {
+			limit = {
+				artifact_type = crown_hre
+			}
+			transfer_artifact = {
+				from = PREV
+				to = event_target:emf_crown_heir_tmp
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			has_landed_title = e_byzantium
+		}
+		clear_event_target = emf_crown_heir_tmp
+		e_byzantium = {
+			current_heir = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		if = {
+			limit = {
+				NOT = { event_target:emf_crown_heir_tmp = { always = yes } }
+			}
+			event_target:emf_heir_tmp = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		any_artifact = {
+			limit = {
+				artifact_type = crown_byzantine
+			}
+			transfer_artifact = {
+				from = PREV
+				to = event_target:emf_crown_heir_tmp
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			has_landed_title = e_roman_empire
+		}
+		clear_event_target = emf_crown_heir_tmp
+		e_roman_empire = {
+			current_heir = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		if = {
+			limit = {
+				NOT = { event_target:emf_crown_heir_tmp = { always = yes } }
+			}
+			event_target:emf_heir_tmp = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		any_artifact = {
+			limit = {
+				artifact_type = crown_byzantine
+			}
+			transfer_artifact = {
+				from = PREV
+				to = event_target:emf_crown_heir_tmp
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			has_landed_title = e_persia
+		}
+		clear_event_target = emf_crown_heir_tmp
+		e_persia = {
+			current_heir = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		if = {
+			limit = {
+				NOT = { event_target:emf_crown_heir_tmp = { always = yes } }
+			}
+			event_target:emf_heir_tmp = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		any_artifact = {
+			limit = {
+				artifact_type = crown_pahlavi
+			}
+			transfer_artifact = {
+				from = PREV
+				to = event_target:emf_crown_heir_tmp
+			}
+		}
+	}
+	if = {
+		limit = {
+			has_landed_title = d_norse_pagan_reformed
+		}
+		clear_event_target = emf_crown_heir_tmp
+		d_norse_pagan_reformed = {
+			current_heir = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		if = {
+			limit = {
+				NOT = { event_target:emf_crown_heir_tmp = { always = yes } }
+			}
+			event_target:emf_heir_tmp = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		any_artifact = {
+			limit = {
+				artifact_type = crown_fylkir
+			}
+			transfer_artifact = {
+				from = PREV
+				to = event_target:emf_crown_heir_tmp
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			has_landed_title = d_tengri_pagan_reformed
+		}
+		clear_event_target = emf_crown_heir_tmp
+		d_tengri_pagan_reformed = {
+			current_heir = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		if = {
+			limit = {
+				NOT = { event_target:emf_crown_heir_tmp = { always = yes } }
+			}
+			event_target:emf_heir_tmp = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		any_artifact = {
+			limit = {
+				artifact_type = crown_tengri_fylkir
+			}
+			transfer_artifact = {
+				from = PREV
+				to = event_target:emf_crown_heir_tmp
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			has_landed_title = d_slavic_pagan_reformed
+		}
+		clear_event_target = emf_crown_heir_tmp
+		d_slavic_pagan_reformed = {
+			current_heir = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		if = {
+			limit = {
+				NOT = { event_target:emf_crown_heir_tmp = { always = yes } }
+			}
+			event_target:emf_heir_tmp = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		any_artifact = {
+			limit = {
+				artifact_type = crown_slavic_fylkir
+			}
+			transfer_artifact = {
+				from = PREV
+				to = event_target:emf_crown_heir_tmp
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			has_landed_title = d_baltic_pagan_reformed
+		}
+		clear_event_target = emf_crown_heir_tmp
+		d_baltic_pagan_reformed = {
+			current_heir = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		if = {
+			limit = {
+				NOT = { event_target:emf_crown_heir_tmp = { always = yes } }
+			}
+			event_target:emf_heir_tmp = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		any_artifact = {
+			limit = {
+				artifact_type = crown_romuva_fylkir
+			}
+			transfer_artifact = {
+				from = PREV
+				to = event_target:emf_crown_heir_tmp
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			has_landed_title = d_finnish_pagan_reformed
+		}
+		clear_event_target = emf_crown_heir_tmp
+		d_finnish_pagan_reformed = {
+			current_heir = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		if = {
+			limit = {
+				NOT = { event_target:emf_crown_heir_tmp = { always = yes } }
+			}
+			event_target:emf_heir_tmp = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		any_artifact = {
+			limit = {
+				artifact_type = crown_finnish_fylkir
+			}
+			transfer_artifact = {
+				from = PREV
+				to = event_target:emf_crown_heir_tmp
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			has_landed_title = d_west_african_pagan_reformed
+		}
+		clear_event_target = emf_crown_heir_tmp
+		d_west_african_pagan_reformed = {
+			current_heir = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		if = {
+			limit = {
+				NOT = { event_target:emf_crown_heir_tmp = { always = yes } }
+			}
+			event_target:emf_heir_tmp = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		any_artifact = {
+			limit = {
+				artifact_type = crown_west_african_fylkir
+			}
+			transfer_artifact = {
+				from = PREV
+				to = event_target:emf_crown_heir_tmp
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			has_landed_title = d_zun_pagan_reformed
+		}
+		clear_event_target = emf_crown_heir_tmp
+		d_zun_pagan_reformed = {
+			current_heir = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		if = {
+			limit = {
+				NOT = { event_target:emf_crown_heir_tmp = { always = yes } }
+			}
+			event_target:emf_heir_tmp = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		any_artifact = {
+			limit = {
+				artifact_type = crown_zun_fylkir
+			}
+			transfer_artifact = {
+				from = PREV
+				to = event_target:emf_crown_heir_tmp
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			has_landed_title = d_bon_reformed
+		}
+		clear_event_target = emf_crown_heir_tmp
+		d_bon_reformed = {
+			current_heir = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		if = {
+			limit = {
+				NOT = { event_target:emf_crown_heir_tmp = { always = yes } }
+			}
+			event_target:emf_heir_tmp = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		any_artifact = {
+			limit = {
+				artifact_type = scepter_bon_fylkir
+			}
+			transfer_artifact = {
+				from = PREV
+				to = event_target:emf_crown_heir_tmp
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			has_landed_title = d_aztec_reformed
+		}
+		clear_event_target = emf_crown_heir_tmp
+		d_aztec_reformed = {
+			current_heir = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		if = {
+			limit = {
+				NOT = { event_target:emf_crown_heir_tmp = { always = yes } }
+			}
+			event_target:emf_heir_tmp = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		any_artifact = {
+			limit = {
+				artifact_type = crown_aztec_fylkir
+			}
+			transfer_artifact = {
+				from = PREV
+				to = event_target:emf_crown_heir_tmp
+			}
+		}
+	}
+	else_if = {
+		limit = {
+			has_landed_title = k_hellenic_pagan
+		}
+		clear_event_target = emf_crown_heir_tmp
+		k_hellenic_pagan = {
+			current_heir = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		if = {
+			limit = {
+				NOT = { event_target:emf_crown_heir_tmp = { always = yes } }
+			}
+			event_target:emf_heir_tmp = {
+				save_event_target_as = emf_crown_heir_tmp
+			}
+		}
+		any_artifact = {
+			limit = {
+				artifact_type = scepter_hellenic_fylkir
+			}
+			transfer_artifact = {
+				from = PREV
+				to = event_target:emf_crown_heir_tmp
+			}
+		}
+	}
+	if = {
+		limit = {
+			player_heir = {
+				is_alive = yes
+			}
+		}
+		player_heir = {
+			save_event_target_as = emf_player_heir_tmp
+		}
+	}
+	else = {
+		capital_scope = {
+			county = {
+				current_heir = {
+					save_event_target_as = emf_player_heir_tmp
+				}
+			}
+		}
+	}
+	any_artifact = {
+		limit = {
+			NOR = {
+				artifact_type = crown_hre
+				artifact_type = crown_byzantine
+				artifact_type = crown_pahlavi
+				artifact_type = crown_fylkir
+				artifact_type = crown_tengri_fylkir
+				artifact_type = crown_slavic_fylkir
+				artifact_type = crown_romuva_fylkir
+				artifact_type = crown_finnish_fylkir
+				artifact_type = crown_west_african_fylkir
+				artifact_type = crown_zun_fylkir
+				artifact_type = scepter_bon_fylkir
+				artifact_type = crown_aztec_fylkir
+				artifact_type = scepter_hellenic_fylkir
+			}
+		}
+		transfer_artifact = {
+			from = PREV
+			to = event_target:emf_player_heir_tmp
+		}
+	}
+	clear_event_target = emf_crown_heir_tmp
+	clear_event_target = emf_player_heir_tmp
+}
