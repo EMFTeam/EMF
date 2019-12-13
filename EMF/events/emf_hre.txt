@@ -74,7 +74,7 @@ character_event = {
 		add_trait = karling_usurper
 		add_character_modifier = { name = karling_usurper_modifier duration = -1 } # We'll expire it ourselves
 		reverse_opinion = { who = event_target:isis modifier = karling_usurper_tom }
-		set_variable = { which = "karling_usurper_years_left"	which = event_target:duat }
+		set_variable = { which = "karling_usurper_years_left" which = event_target:duat }
 		set_variable = { which = "karling_usurper_years_elapsed" value = 0 }
 
 		# On the next day, give a temp. opinion bonus from vassals that aren't Karlings. We wait a day, because this
@@ -128,8 +128,10 @@ character_event = {
 }
 
 
-# emf_hre.12 -- inherit the karling-usurper state if unexpired on_death and our heir is of our dynasty. if we have multiple
-#			   heirs to different held karling kingdoms, they also inherit the status and any remaining bonuses.
+# emf_hre.12
+#
+# inherit the karling-usurper state if unexpired on_death and our heir is of our dynasty. if we have multiple
+# heirs to different held karling kingdoms, they also inherit the status and any remaining bonuses.
 character_event = {
 	id = emf_hre.12
 
@@ -191,10 +193,12 @@ character_event = {
 }
 
 
-# emf_hre.13 -- isis on_yearly_pulse scopes to all karling-usurpers, invalidates them if necessary, and then decrements the
+# emf_hre.13
+#
+# isis on_yearly_pulse scopes to all karling-usurpers, invalidates them if necessary, and then decrements the
 # bonus countdown timer variable `karling_usurper_years_left` for all of those that are still valid. Note that
-# invalidation also occurs automatically when the countdown variable has reached zero, which is why there is no explicit
-# expiry step.
+# invalidation also occurs automatically when the countdown variable has reached zero, which is why there is
+# no explicit expiry step.
 character_event = {
 	id = emf_hre.13
 
@@ -236,11 +240,13 @@ character_event = {
 
 ##############################################################################################################
 
-# emf_hre.60 -- dynamically assign prince-elector titles in the HRE (any variant supported); triggered
-# on_yearly_pulse & by title transfer on_actions w/ a possible repeating bounce event to defer reassignment
-# until no longer defending against a major revolt (since the realm being split would screw up our elector
-# title selection). if event_target:emf_(gained|usurped|inherited)_elector_title is defined, it is a freed
-# elector title slot (due to another elector gaining it).
+# emf_hre.60
+#
+# dynamically assign prince-elector titles in the HRE (any variant supported); triggered on_yearly_pulse & by
+# title transfer on_actions w/ a possible repeating bounce event to defer reassignment until no longer
+# defending against a major revolt (since the realm being split would screw up our elector title selection).
+# if event_target:emf_(gained|usurped|inherited)_elector_title is defined, it is a freed elector title slot
+# (due to another elector gaining it).
 character_event = {
 	id = emf_hre.60
 
@@ -894,5 +900,109 @@ narrative_event = {
 			}
 		}
 		custom_tooltip = { text = emf_hre_65_opt_TT }
+	}
+}
+
+##############################################################################################################
+
+# emf_hre.70
+#
+# If an AI HREmperor gains a forbidden title (as of now, k_italy or k_burgundy), then automatically destroy
+# the title. We still destroy the title even if it's currently contested in some form of war. [HREmperor]
+character_event = {
+	id = emf_hre.70
+
+	is_triggered_only = yes # all on_new_holder on_actions
+	hide_window = yes
+
+	only_independent = yes
+	ai = yes
+
+	trigger = {
+		FROM = { has_flag = emf_hre_forbidden_title }
+		emf_has_hre = yes
+	}
+
+	immediate = {
+		log = "INFO: emf_hre.70: AI HRE gained forbidden title [From.GetID]: [This.EMF_GetDebugName]"
+		FROM = {
+			if = {
+				limit = { is_contested = yes }
+				log = " --> title is contested"
+			}
+			log = " --> destroying title..."
+			destroy_landed_title = THIS
+		}
+	}
+}
+
+# emf_hre.71
+#
+# When a holder of an AI HRE forbidden title(s) ascends to HRE, destroy the forbidden titles. [HREmperor]
+character_event = {
+	id = emf_hre.71
+
+	is_triggered_only = yes # all on_new_holder on_actions
+	hide_window = yes
+
+	only_independent = yes
+	ai = yes
+
+	trigger = {
+		FROM = { emf_is_hre = yes }
+		FROMFROM = { always = yes } # Title creation case is handled by formation decisions
+		any_demesne_title = {
+			has_flag = emf_hre_forbidden_title
+		}
+	}
+
+	immediate = {
+		log = "INFO: emf_hre.71: AI with HRE forbidden titles gained the HRE: [This.EMF_GetDebugName]"
+		any_demesne_title = {
+			limit = {
+				has_flag = emf_hre_forbidden_title
+			}
+			log = " --> forbidden title: [This.GetID]"
+			if = {
+				limit = { is_contested = yes }
+				log = " ----> title is contested"
+			}
+			log = " ----> destroying title..."
+			destroy_landed_title = THIS
+		}
+	}
+}
+
+# emf_hre.72
+#
+# Campaign startup event to destroy any HRE forbidden title(s) immediately. Note that in this case we still
+# destroy the titles even if they are held by a player. [HREmperor]
+character_event = {
+	id = emf_hre.72
+
+	is_triggered_only = yes # from main emf_startup event
+	hide_window = yes
+
+	trigger = {
+		emf_has_hre = yes
+		any_demesne_title = {
+			has_flag = emf_hre_forbidden_title
+		}
+	}
+
+	immediate = {
+		log = "INFO: emf_hre.72: Destroying forbidden titles held by the HRE at campaign start: [This.EMF_GetDebugName]"
+		any_demesne_title = {
+			limit = {
+				has_flag = emf_hre_forbidden_title
+			}
+			log = " --> forbidden title: [This.GetID]"
+			if = {
+				limit = { is_contested = yes }
+				log = " ----> title is contested"
+			}
+			log = " ----> destroying title..."
+			destroy_landed_title = THIS
+		}
 	}
 }
