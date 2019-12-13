@@ -1603,19 +1603,22 @@ character_event = {
 	trigger = {
 		higher_tier_than = COUNT
 		any_demesne_title = {
-			emf_can_autodestroy_title = yes
 			is_de_jure_title = no
+			emf_can_autodestroy_title = yes
 			# Don't just suddenly switch primary title on a player; they can take care of it themselves if wanted
 			OR = {
 				ROOT = { ai = yes }
 				is_primary_holder_title = no
 			}
+			ROOT = {
+				NOT = { has_flag = emf_autodestroy_exemption_for_@PREV }
+			}
 			OR = {
 				lower_tier_than = ROOT # Lower-tier titular titles are always forfeit
 				ROOT = { # If there's a primary-tier de jure title, then primary-tier titular titles are also forfeit
+					lower_tier_than = EMPEROR # Different mechanic handles extra empire titles
 					any_demesne_title = {
 						tier = ROOT
-						lower_tier_than = EMPEROR # Different mechanic handles extra empire titles
 						is_de_jure_title = yes
 						OR = { # Either the de jure title is primary, or we'll switch to it, so...
 							is_primary_holder_title = yes
@@ -1626,16 +1629,18 @@ character_event = {
 				}
 			}
 		}
-		has_random_dejure = no
 	}
 
-	mean_time_to_happen = { days = 0 }
+	mean_time_to_happen = {
+		days = 0
+	}
 
 	immediate = {
+		log = "INFO: emf_core.100: Auto-destroying titular title(s): [This.EMF_GetDebugName]"
 		any_demesne_title = {
 			limit = {
-				emf_can_autodestroy_title = yes
 				is_de_jure_title = no
+				emf_can_autodestroy_title = yes
 				# Don't just suddenly switch primary title on a player; they can take care of it themselves if wanted
 				OR = {
 					ROOT = { ai = yes }
@@ -1647,9 +1652,9 @@ character_event = {
 				OR = {
 					lower_tier_than = ROOT # Lower-tier titular titles are always forfeit
 					ROOT = { # If there's a primary-tier de jure title, then primary-tier titular titles are also forfeit
+						lower_tier_than = EMPEROR # Different mechanic handles extra empire titles
 						any_demesne_title = {
 							tier = ROOT
-							lower_tier_than = EMPEROR # Different mechanic handles extra empire titles
 							is_de_jure_title = yes
 							OR = { # Either the de jure title is primary, or we'll switch to it, so...
 								is_primary_holder_title = yes
@@ -1660,56 +1665,66 @@ character_event = {
 					}
 				}
 			}
-			log = "INFO: emf_core.100: auto-destroying titular title of the [This.GetFullBaseName] ([This.GetID]), held by [Root.GetTitledFirstName] [Root.GetOnlyDynastyName] (#[Root.GetID]/[Root.PrimaryTitle.GetID])"
+			log = " --> [This.EMF_GetDebugTitleNameWithDeJureLieges]"
 			if = {
 				limit = { is_primary_holder_title = yes }
+				log = " ----> title is primary, finding new primary title..."
 				ROOT = {
-					random_demesne_title = {
+					any_demesne_title = {
+						count = 1
 						limit = {
-							NOT = { event_target:emf_new_primary = { always = yes } }
-							tier = ROOT
-							is_de_jure_title = yes
-							culture = ROOT
-						}
-						save_event_target_as = emf_new_primary
-					}
-					random_demesne_title = {
-						limit = {
-							NOT = { event_target:emf_new_primary = { always = yes } }
-							tier = ROOT
-							is_de_jure_title = yes
-							culture_group = ROOT
-						}
-						save_event_target_as = emf_new_primary
-					}
-					# Fallback case
-					random_demesne_title = {
-						limit = {
-							NOT = { event_target:emf_new_primary = { always = yes } }
-							tier = ROOT
+							is_primary_holder_title_tier = yes
 							is_de_jure_title = yes
 						}
-						save_event_target_as = emf_new_primary
+						score_value = {
+							value = 1
+							additive_modifier = {
+								value = 20
+								culture = ROOT
+							}
+							additive_modifier = {
+								value = 20
+								culture_group = ROOT
+							}
+							additive_modifier = {
+								value = 10
+								ROOT = {
+									capital_scope = {
+										de_jure_liege_or_above = PREVPREV
+									}
+								}
+							}
+						}
+						log = " ----> new primary title: [This.EMF_GetDebugTitleNameWithDeJureLieges]"
+						emf_make_primary_title = yes
 					}
 				}
-				event_target:emf_new_primary = {
-					log = "--> switching primary title to the [This.GetFullBaseName] ([This.GetID]) first"
-					emf_make_primary_title = yes
-				}
-				clear_event_target = emf_new_primary
 			}
+			# DESTROY! RUIN! DEFUNCT!
 			if = {
-				limit = { is_primary_holder_title = no }
-				if = {
-					limit = { emf_can_safely_autodestroy_title = yes }
-					emf_destroy_title = yes
+				limit = { emf_can_safely_autodestroy_title = yes }
+				emf_destroy_title = yes
+			}
+			else = {
+				emf_unsafe_destroy_title = yes
+			}
+			set_flag = emf_autodestroy_defunct
+			set_flag = emf_defunct
+			# If the title destroyed was an HRE elector title, then try to select a new valid elector title from ROOT's
+			# demesne, and replace its PET slot in e_hre *if and only if* we fulfill the potential for being an HRE
+			# elector again.
+			if = { # Did the destruction cause us to no longer be an HRE elector, yet we're fit to be one?
+				limit = {
+					emf_is_hre_elector_title = yes # But it's no longer valid due to being unheld
+					ROOT = { emf_hre_elector_potential = yes }
 				}
-				if = {
-					limit = { emf_can_safely_autodestroy_title = no }
-					emf_unsafe_destroy_title = yes
+				# Then select a new elector title and replace an invalid slot in the elector title PET array:
+				ROOT = { emf_select_hre_elector_demesne_title = yes }
+				event_target:emf_new_elector_title = {
+					emf_replace_invalid_hre_elector_title = yes
 				}
-				set_flag = emf_autodestroy_defunct
-				set_flag = emf_defunct
+				clear_event_target = emf_former_elector_title # Probable product of replacement effect
+				clear_event_target = emf_new_elector_title
 			}
 		}
 	}
