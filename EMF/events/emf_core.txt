@@ -1606,12 +1606,14 @@ character_event = {
 			is_de_jure_title = no
 			emf_can_autodestroy_title = yes
 			# Don't just suddenly switch primary title on a player; they can take care of it themselves if wanted
-			OR = {
-				ROOT = { ai = yes }
-				is_primary_holder_title = no
+			NAND = {
+				ROOT = { ai = no }
+				is_primary_holder_title = yes
 			}
-			ROOT = {
-				NOT = { has_flag = emf_autodestroy_exemption_for_@PREV }
+			# Don't autodestroy titles that the player or his forebears created (while being players)
+			NAND = {
+				ROOT = { ai = no }
+				has_flag = emf_autodestroy_exemption_for_@ROOT
 			}
 			OR = {
 				lower_tier_than = ROOT # Lower-tier titular titles are always forfeit
@@ -1642,12 +1644,14 @@ character_event = {
 				is_de_jure_title = no
 				emf_can_autodestroy_title = yes
 				# Don't just suddenly switch primary title on a player; they can take care of it themselves if wanted
-				OR = {
-					ROOT = { ai = yes }
-					is_primary_holder_title = no
+				NAND = {
+					ROOT = { ai = no }
+					is_primary_holder_title = yes
 				}
-				ROOT = {
-					NOT = { has_flag = emf_autodestroy_exemption_for_@PREV }
+				# Don't autodestroy titles that the player or his forebears created (while being players)
+				NAND = {
+					ROOT = { ai = no }
+					has_flag = emf_autodestroy_exemption_for_@ROOT
 				}
 				OR = {
 					lower_tier_than = ROOT # Lower-tier titular titles are always forfeit
@@ -1730,7 +1734,7 @@ character_event = {
 	}
 }
 
-# emf_core.101 -- flag player-created titular titles [on_new_holder]
+# emf_core.101 -- flag player-created titles & mark titular ones exempt from auto-destruction [on_new_holder]
 character_event = {
 	id = emf_core.101
 
@@ -1740,18 +1744,51 @@ character_event = {
 	ai = no
 
 	trigger = {
+		NOT = { FROMFROM = { always = yes } } # Creation only
 		FROM = {
+			higher_tier_than = BARON # Not concerned about baronies built by a player
+			# Is even a candidate for autodestruction:
+			is_de_jure_title = no
 			emf_can_safely_autodestroy_title = yes
-			is_titular_title = yes
 		}
-		NOT = { FROMFROM = { always = yes } }
 	}
 
 	immediate = {
-		set_flag = emf_autodestroy_exemption_for_@FROM
+		FROM = { set_flag = emf_autodestroy_exemption_for_@ROOT }
 	}
 }
 
+# emf_core.102 -- inherit player-created title autodestroy exemption flags [on_death]
+character_event = {
+	id = emf_core.102
+
+	is_triggered_only = yes # on_death
+	hide_window = yes
+
+	ai = no
+
+	trigger = {
+		any_demesne_title = {
+			has_flag = emf_autodestroy_exemption_for_@ROOT
+		}
+		player_heir = { is_alive = yes }
+	}
+
+	immediate = {
+		player_heir = {
+			ROOT = {
+				any_demesne_title = {
+					limit = {
+						has_flag = emf_autodestroy_exemption_for_@ROOT
+						is_de_jure_title = no
+						emf_can_safely_autodestroy_title = yes
+					}
+					set_flag = emf_autodestroy_exemption_for_@PREVPREV # player_heir
+				}
+			}
+		}
+	}
+}
 
 # emf_core.110 -- general pre-abdication handler, invoked manually everywhere that an abdication can occur in our code by the
 #				 scripted effect emf_willfully_abdicate = yes
