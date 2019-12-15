@@ -387,6 +387,11 @@ changeset = {
             law = justice_voting_power_0
             law = centralization_3
             ''')
+    ],
+    'k_magyar': [
+        ((769, 1, 1), 0, '''
+            law = succ_gavelkind
+            ''')
     ]
 }
 
@@ -502,6 +507,8 @@ def main():
             parser.write(tree, emfswmhhistory / 'titles/b_trazak.txt')
         elif path.stem == 'k_hungary':
             changed = True
+            assert len(tree.contents) == 56
+            # comment out the last (and only) item in the 580 block (set_coa)
             assert len(tree[580, 1, 1].contents) == 1
             item = tree[580, 1, 1].contents.pop()
             comments = item.pre_comments
@@ -509,6 +516,7 @@ def main():
             comments.extend(
                 [Comment(x) for x in item.inline_str(parser)[0].splitlines()])
             tree[580, 1, 1].ker.pre_comments[:0] = comments
+            # comment out the last pair in the 797 obj (reset_coa)
             assert len(tree[797, 1, 1].contents) == 2
             item = tree[797, 1, 1].contents.pop()
             comments = item.pre_comments
@@ -516,12 +524,7 @@ def main():
             comments.extend(
                 [Comment(x) for x in item.inline_str(parser)[0].splitlines()])
             tree[797, 1, 1].ker.pre_comments[:0] = comments
-            tree[907, 1, 1].contents[:0] = parser.parse('''
-                set_global_flag = emf_conquest_hungary_completed
-                ''').contents
-            tree[1000, 12, 25].contents[:0] = parser.parse('''
-                effect = { set_title_flag = ai_converted_catholic }
-                ''').contents
+            # insert two pairs between the 22nd (835) and the 23rd (907)...
             tree.contents[22:22] = parser.parse('''
                 895.1.1 = {
                     effect = { set_title_flag = hungary_name_change }
@@ -531,12 +534,16 @@ def main():
                     set_global_flag = emf_magyar_migration_completed
                 }
                 ''').contents
+            # ...and move the commented-out 895 to a reasonable place
             tree.contents[22].pre_comments = tree.contents[24].pre_comments
             tree.contents[24].pre_comments = []
-        elif path.stem == 'k_magyar':
-            changed = True
-            tree[769, 1, 1].contents[:0] = parser.parse('''
-                law = succ_gavelkind
+            # prepend a pair to the 907 obj
+            tree[907, 1, 1].contents[:0] = parser.parse('''
+                set_global_flag = emf_conquest_hungary_completed
+                ''').contents
+            # prepend a pair to the 1000 obj
+            tree[1000, 12, 25].contents[:0] = parser.parse('''
+                effect = { set_title_flag = ai_converted_catholic }
                 ''').contents
         elif path.stem == 'e_china_west_governor':
             changed = True
