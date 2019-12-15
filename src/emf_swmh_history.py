@@ -502,7 +502,6 @@ def main():
             parser.write(tree, emfswmhhistory / 'titles/b_trazak.txt')
         elif path.stem == 'k_hungary':
             changed = True
-            assert len(tree.contents) == 50
             assert len(tree[580, 1, 1].contents) == 1
             item = tree[580, 1, 1].contents.pop()
             comments = item.pre_comments
@@ -517,16 +516,18 @@ def main():
             comments.extend(
                 [Comment(x) for x in item.inline_str(parser)[0].splitlines()])
             tree[797, 1, 1].ker.pre_comments[:0] = comments
-            tree[1000, 12, 25].contents[:0] = parser.parse('''
+            tree[907, 1, 1].contents[:0] = parser.parse('''
                 set_global_flag = emf_conquest_hungary_completed
+                ''').contents
+            tree[1000, 12, 25].contents[:0] = parser.parse('''
                 effect = { set_title_flag = ai_converted_catholic }
                 ''').contents
             tree.contents[22:22] = parser.parse('''
                 895.1.1 = {
                     effect = { set_title_flag = hungary_name_change }
+                    set_global_flag = emf_magyar_migration_started
                 }
                 902.1.1 = {
-                    set_global_flag = emf_magyar_migration_started
                     set_global_flag = emf_magyar_migration_completed
                 }
                 ''').contents
