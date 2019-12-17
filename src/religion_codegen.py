@@ -1638,35 +1638,7 @@ character_event = {
 			}
 		}
 	}
-}
-
-# emf_religion_codegen.2 -- compatibility sweep with older saves that have dummy religion characters set as global event targets
-character_event = {
-	id = emf_religion_codegen.2
-
-	is_triggered_only = yes
-	hide_window = yes
-	
-	religion = hip_religion
-
-	trigger = {
-		has_landed_title = e_hip
-		OR = {''', file=f)
-	for r in g_religions:
-		print('\t\t\tevent_target:emf_global_{0}_dummy = {{ is_alive = yes }}'.format(r), file=f)
-	print('''		}
-	}
-
-	immediate = {''', file=f)
-	for r in g_religions:
-		print('''		if = {{
-			limit = {{ event_target:emf_global_{0}_dummy = {{ is_alive = yes }} }}
-			{0} = {{ save_persistent_event_target = {{ name = emf_religion_dummy_character scope = event_target:emf_global_{0}_dummy }} }}
-			clear_global_event_target = emf_global_{0}_dummy
-		}}'''.format(r), file=f)
-	print('''	}
-}
-''', file=f)
+}''', file=f)
 
 
 def print_effect_set_bloodline_founder_religion_flag(f):

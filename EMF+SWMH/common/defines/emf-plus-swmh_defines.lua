@@ -10,7 +10,7 @@ NDefines.NDiplomacy.MAX_PREP_INV_TARGET_HOLDINGS = 60   -- up from 40
 NDefines.NNomad.MAX_POPULATION_EMPTY_HOLDING_MULTIPLIER = 775 -- < v10.6: 1375; SWMH: 1550; vanilla: 1000; now compensated for with terrain-based province modifiers; [Base population per empty holding for grazing]
 
 -- Engine
-NDefines.NEngine.MISSING_SCRIPTED_SUCCESSOR_ERROR_CUTOFF_YEAR = 1018
+NDefines.NEngine.MISSING_SCRIPTED_SUCCESSOR_ERROR_CUTOFF_YEAR = 993
 NDefines.NEngine.MISSING_SCRIPTED_SUCCESSOR_ERROR_CUTOFF_MONTH = 1
 NDefines.NEngine.MISSING_SCRIPTED_SUCCESSOR_ERROR_CUTOFF_DAY = 1
 
