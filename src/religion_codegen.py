@@ -45,25 +45,240 @@ class RelHeadTitle:
 		self.reformed = reformed
 
 
+# Block of properties of a religious group (which have no condition check built into CK2Script because they're religious groups, not religions)
+class RelGroupPropertiesBlock:
+	def __init__(self, playable=True, ai_peaceful=False, ai_convert_other_groups=2, ai_convert_same_group=2, hostile_within_group=False, ai_fabricate_claims=True):
+		self.playable = playable
+		self.ai_peaceful = ai_peaceful
+		self.ai_convert_other_groups = ai_convert_other_groups
+		self.ai_convert_same_group = ai_convert_same_group
+		self.hostile_within_group = hostile_within_group
+		self.ai_fabricate_claims = ai_fabricate_claims
+	
+	@classmethod
+	def NewFromDict(self, dictProperties):
+		objReturn = RelGroupPropertiesBlock()
+		if 'playable' in dictProperties:
+			objReturn.playable = dictProperties['playable'].val == 'yes'
+		if 'ai_peaceful' in dictProperties:
+			objReturn.ai_peaceful = dictProperties['ai_peaceful'].val == 'yes'
+		if 'ai_convert_other_groups' in dictProperties:
+			objReturn.ai_convert_other_groups = dictProperties['ai_convert_other_groups'].val
+		if 'ai_convert_same_group' in dictProperties:
+			objReturn.ai_convert_same_group = dictProperties['ai_convert_same_group'].val
+		if 'hostile_within_group' in dictProperties:
+			objReturn.hostile_within_group = dictProperties['hostile_within_group'].val == 'yes'
+		if 'ai_fabricate_claims' in dictProperties:
+			objReturn.ai_fabricate_claims = dictProperties['ai_fabricate_claims'].val == 'yes'
+		return objReturn
+
+
+# Block of properties of a religion that have no condition check built into CK2Script
+# Excluded: can_call_crusade, use_new_crusade (condition is "uses_new_crusade"), hard_to_convert, pacifist, female_temple_holders, male_temple_holders, dislike_tribal_organization
+class RelPropertiesBlock:
+	def __init__(self, peace_piety_gain=0.0, ai_convert_other_groups=2, ai_convert_same_group=2, peace_prestige_loss=False, aggression=1.0, raised_vassal_opinion_loss=True, attacking_same_religion_piety_loss=False, max_wives=1, max_consorts=0, feminist=False, has_heir_designation=False, short_reign_opinion_year_mult=None, uses_jizya_tax=False, can_retire_to_monastery=False, can_excommunicate=False, can_grant_divorce=False, can_grant_invasion_cb=False, can_grant_claim=False, pc_marriage=False, bs_marriage=False, psc_marriage=True, cousin_marriage=True, seafarer=False, allow_looting=False, allow_rivermovement=False, allow_viking_invasion=False, autocephaly=False, pentarchy=False, divine_blood=False, uses_decadence=False, can_have_antipopes=False, priests_can_marry=False, priests_can_inherit=True, ignores_defensive_attrition=False, defensive_attrition=False, intermarry=None, matrilineal_marriages=True, men_can_take_consorts=True, women_can_take_consorts=False,
+	# These properties have no "set_" effect, so they cannot be changed in-game
+	investiture=False, rel_head_defense=False, landed_kin_prestige_bonus=False, join_crusade_if_bordering_hostile=False, independence_war_score_bonus=None, can_demand_religious_conversion=True, castes=False, caste_opinions=False, allow_in_ruler_designer=True, expel_modifier=None, reformed=None, dynamic_cult=True, secret_religion=True, rgPropertiesBlock=None):
+		self.peace_piety_gain = peace_piety_gain
+		self.ai_convert_other_groups = ai_convert_other_groups
+		self.ai_convert_same_group = ai_convert_same_group
+		self.peace_prestige_loss = peace_prestige_loss
+		self.aggression = aggression
+		self.raised_vassal_opinion_loss = raised_vassal_opinion_loss
+		self.attacking_same_religion_piety_loss = attacking_same_religion_piety_loss
+		self.max_wives = max_wives
+		self.max_consorts = max_consorts
+		self.feminist = feminist
+		self.has_heir_designation = has_heir_designation
+		self.short_reign_opinion_year_mult = short_reign_opinion_year_mult
+		self.uses_jizya_tax = uses_jizya_tax # Can check if Jizya tax is being applied in a specific case (by presence of a modifier), but not if a religion has Jizya tax in general
+		self.can_retire_to_monastery = can_retire_to_monastery
+		self.can_excommunicate = can_excommunicate
+		self.can_grant_divorce = can_grant_divorce
+		self.can_grant_invasion_cb = can_grant_invasion_cb # Uses boolean because that's how set_can_grant_invasion_cb is used in vanilla
+		self.can_grant_claim = can_grant_claim
+		self.pc_marriage = pc_marriage
+		self.bs_marriage = bs_marriage
+		self.psc_marriage = psc_marriage
+		self.cousin_marriage = cousin_marriage
+		self.seafarer = seafarer # Can check in CK2Script if a specific character is a seafarer, but not if it's because of their religion or because of their culture (or both). Dummy religion characters aren't necessarily good for this check, either, because their culture could potentially be a seafaring one.
+		self.allow_looting = allow_looting # Can check in CK2Script if a specific character is allowed to loot, but not if it's because of their religion, because of their culture, because of their government (or potentially two or three of these conditions). Dummy religion characters aren't necessarily good for this check, either, because their culture and/or government could potentially be one that is allowed to loot.
+		self.allow_rivermovement = allow_rivermovement
+		self.allow_viking_invasion = allow_viking_invasion
+		self.autocephaly = autocephaly
+		self.pentarchy = pentarchy
+		self.divine_blood = divine_blood
+		self.uses_decadence = uses_decadence
+		self.can_have_antipopes = can_have_antipopes
+		self.priests_can_marry = priests_can_marry
+		self.priests_can_inherit = priests_can_inherit
+		self.ignores_defensive_attrition = ignores_defensive_attrition
+		self.defensive_attrition = defensive_attrition
+		self.matrilineal_marriages = matrilineal_marriages
+		self.men_can_take_consorts = men_can_take_consorts
+		self.women_can_take_consorts = women_can_take_consorts
+		self.investiture = investiture
+		self.rel_head_defense = rel_head_defense
+		self.landed_kin_prestige_bonus = landed_kin_prestige_bonus
+		self.join_crusade_if_bordering_hostile = join_crusade_if_bordering_hostile
+		self.independence_war_score_bonus = independence_war_score_bonus
+		self.can_demand_religious_conversion = can_demand_religious_conversion
+		self.castes = castes
+		self.caste_opinions = caste_opinions
+		self.allow_in_ruler_designer = allow_in_ruler_designer
+		self.expel_modifier = expel_modifier
+		self.reformed = reformed # Can check if a religion is reformed or not, but not what the reformed religion of the currently scoped one is
+		self.dynamic_cult = dynamic_cult
+		self.secret_religion = secret_religion
+		if intermarry is None:
+			self.intermarry = set()
+		else:
+			self.intermarry = set(intermarry)
+		if rgPropertiesBlock is None:
+			self.rgPropertiesBlock = RelGroupPropertiesBlock()
+		else:
+			self.rgPropertiesBlock = rgPropertiesBlock
+	
+	@classmethod
+	def NewFromDict(self, dictProperties, inputRGPropertiesBlock=None):
+		objReturn = RelPropertiesBlock(rgPropertiesBlock=inputRGPropertiesBlock)
+		if 'peace_piety_gain' in dictProperties:
+			objReturn.peace_piety_gain = dictProperties['peace_piety_gain'].val
+		if 'ai_convert_other_groups' in dictProperties:
+			objReturn.ai_convert_other_groups = dictProperties['ai_convert_other_groups'].val
+		else:
+			objReturn.ai_convert_other_groups = inputRGPropertiesBlock.ai_convert_other_groups
+		if 'ai_convert_same_group' in dictProperties:
+			objReturn.ai_convert_same_group = dictProperties['ai_convert_same_group'].val
+		else:
+			objReturn.ai_convert_same_group = inputRGPropertiesBlock.ai_convert_same_group
+		if 'peace_prestige_loss' in dictProperties:
+			objReturn.peace_prestige_loss = dictProperties['peace_prestige_loss'].val == 'yes'
+		if 'aggression' in dictProperties:
+			objReturn.aggression = dictProperties['aggression'].val
+		if 'raised_vassal_opinion_loss' in dictProperties:
+			objReturn.raised_vassal_opinion_loss = dictProperties['raised_vassal_opinion_loss'].val == 'yes'
+		if 'attacking_same_religion_piety_loss' in dictProperties:
+			objReturn.attacking_same_religion_piety_loss = dictProperties['attacking_same_religion_piety_loss'].val == 'yes'
+		if 'max_wives' in dictProperties:
+			objReturn.max_wives = dictProperties['max_wives'].val
+		if 'max_consorts' in dictProperties:
+			objReturn.max_consorts = dictProperties['max_consorts'].val
+		if 'feminist' in dictProperties:
+			objReturn.feminist = dictProperties['feminist'].val == 'yes'
+		if 'has_heir_designation' in dictProperties:
+			objReturn.has_heir_designation = dictProperties['has_heir_designation'].val == 'yes'
+		if 'short_reign_opinion_year_mult' in dictProperties:
+			objReturn.short_reign_opinion_year_mult = dictProperties['short_reign_opinion_year_mult'].val
+		if 'uses_jizya_tax' in dictProperties:
+			objReturn.uses_jizya_tax = dictProperties['uses_jizya_tax'].val == 'yes'
+		if 'can_retire_to_monastery' in dictProperties:
+			objReturn.can_retire_to_monastery = dictProperties['can_retire_to_monastery'].val == 'yes'
+		if 'can_excommunicate' in dictProperties:
+			objReturn.can_excommunicate = dictProperties['can_excommunicate'].val == 'yes'
+		if 'can_grant_divorce' in dictProperties:
+			objReturn.can_grant_divorce = dictProperties['can_grant_divorce'].val == 'yes'
+		if 'can_grant_invasion_cb' in dictProperties:
+			objReturn.can_grant_invasion_cb = dictProperties['can_grant_invasion_cb'].val == 'yes'
+		if 'can_grant_claim' in dictProperties:
+			objReturn.can_grant_claim = dictProperties['can_grant_claim'].val == 'yes'
+		if 'pc_marriage' in dictProperties:
+			objReturn.pc_marriage = dictProperties['pc_marriage'].val == 'yes'
+		if 'bs_marriage' in dictProperties:
+			objReturn.bs_marriage = dictProperties['bs_marriage'].val == 'yes'
+		if 'psc_marriage' in dictProperties:
+			objReturn.psc_marriage = dictProperties['psc_marriage'].val == 'yes'
+		if 'cousin_marriage' in dictProperties:
+			objReturn.cousin_marriage = dictProperties['cousin_marriage'].val == 'yes'
+		if 'seafarer' in dictProperties:
+			objReturn.seafarer = dictProperties['seafarer'].val == 'yes'
+		if 'allow_looting' in dictProperties:
+			objReturn.allow_looting = dictProperties['allow_looting'].val == 'yes'
+		if 'allow_rivermovement' in dictProperties:
+			objReturn.allow_rivermovement = dictProperties['allow_rivermovement'].val == 'yes'
+		if 'allow_viking_invasion' in dictProperties:
+			objReturn.allow_viking_invasion = dictProperties['allow_viking_invasion'].val == 'yes'
+		if 'autocephaly' in dictProperties:
+			objReturn.autocephaly = dictProperties['autocephaly'].val == 'yes'
+		if 'pentarchy' in dictProperties:
+			objReturn.pentarchy = dictProperties['pentarchy'].val == 'yes'
+		if 'divine_blood' in dictProperties:
+			objReturn.divine_blood = dictProperties['divine_blood'].val == 'yes'
+		if 'uses_decadence' in dictProperties:
+			objReturn.uses_decadence = dictProperties['uses_decadence'].val == 'yes'
+		if 'can_have_antipopes' in dictProperties:
+			objReturn.can_have_antipopes = dictProperties['can_have_antipopes'].val == 'yes'
+		if 'priests_can_marry' in dictProperties:
+			objReturn.priests_can_marry = dictProperties['priests_can_marry'].val == 'yes'
+		if 'priests_can_inherit' in dictProperties:
+			objReturn.priests_can_inherit = dictProperties['priests_can_inherit'].val == 'yes'
+		if 'ignores_defensive_attrition' in dictProperties:
+			objReturn.ignores_defensive_attrition = dictProperties['ignores_defensive_attrition'].val == 'yes'
+		if 'defensive_attrition' in dictProperties:
+			objReturn.defensive_attrition = dictProperties['defensive_attrition'].val == 'yes'
+		if 'matrilineal_marriages' in dictProperties:
+			objReturn.matrilineal_marriages = dictProperties['matrilineal_marriages'].val == 'yes'
+		if 'men_can_take_consorts' in dictProperties:
+			objReturn.men_can_take_consorts = dictProperties['men_can_take_consorts'].val == 'yes'
+		if 'women_can_take_consorts' in dictProperties:
+			objReturn.women_can_take_consorts = dictProperties['women_can_take_consorts'].val == 'yes'
+		if 'investiture' in dictProperties:
+			objReturn.investiture = dictProperties['investiture'].val == 'yes'
+		if 'rel_head_defense' in dictProperties:
+			objReturn.rel_head_defense = dictProperties['rel_head_defense'].val == 'yes'
+		if 'landed_kin_prestige_bonus' in dictProperties:
+			objReturn.landed_kin_prestige_bonus = dictProperties['landed_kin_prestige_bonus'].val == 'yes'
+		if 'join_crusade_if_bordering_hostile' in dictProperties:
+			objReturn.join_crusade_if_bordering_hostile = dictProperties['join_crusade_if_bordering_hostile'].val == 'yes'
+		if 'independence_war_score_bonus' in dictProperties:
+			objReturn.independence_war_score_bonus = dictProperties['independence_war_score_bonus'].val
+		if 'can_demand_religious_conversion' in dictProperties:
+			objReturn.can_demand_religious_conversion = dictProperties['can_demand_religious_conversion'].val == 'yes'
+		if 'castes' in dictProperties:
+			objReturn.castes = dictProperties['castes'].val == 'yes'
+		if 'caste_opinions' in dictProperties:
+			objReturn.caste_opinions = dictProperties['caste_opinions'].val == 'yes'
+		if 'allow_in_ruler_designer' in dictProperties:
+			objReturn.allow_in_ruler_designer = dictProperties['allow_in_ruler_designer'].val == 'yes'
+		if 'expel_modifier' in dictProperties:
+			objReturn.expel_modifier = dictProperties['expel_modifier'].val
+		if 'reformed' in dictProperties:
+			objReturn.reformed = dictProperties['reformed'].val
+		if 'dynamic_cult' in dictProperties:
+			objReturn.dynamic_cult = dictProperties['dynamic_cult'].val == 'yes'
+		if 'secret_religion' in dictProperties:
+			objReturn.secret_religion = dictProperties['secret_religion'].val == 'yes'
+		return objReturn
+
+
 def main():
-	global g_religions, g_rg_religions_map, g_relhead_title_map
+	global g_religions, g_rg_religions_map, g_relhead_title_map, g_rg_properties_map, g_religions_properties_map
 
 	# grab a list of religions & a map of religion_groups to their religions from the religions folder
 	g_religions = []
 	g_rg_religions_map = defaultdict(list)
 	g_relhead_title_map = {}
+	g_rg_properties_map = {}
+	g_religions_properties_map = {}
 	parser = ck2parser.SimpleParser(emf_path)
 
 	for _, tree in parser.parse_files('common/religions/*.txt'):
 		for n, v in tree:
 			if n.val.endswith('_trigger'):
 				continue
+			rg_properties = RelGroupPropertiesBlock.NewFromDict(v.dictionary)
+			g_rg_properties_map[n.val] = rg_properties
 			for n2, v2 in v:
 				if isinstance(v2, ck2parser.Obj) and n2.val not in ['color', 'male_names', 'female_names', 'interface_skin', 'alternate_start']:
 					if v2.has_pair('secret_religion', 'no'):
 						continue
 					g_religions.append(n2.val)
 					g_rg_religions_map[n.val].append(n2.val)
+					religion_properties = RelPropertiesBlock.NewFromDict(v2.dictionary, rg_properties)
+					religion_properties.intermarry.add(n2.val)
+					for n3, v3 in ((n3, v3) for n3, v3 in v2 if n3.val == 'intermarry'):
+						religion_properties.intermarry.add(str(v3))
+					g_religions_properties_map[n2.val] = religion_properties
 
 
 	for _, tree in parser.parse_files('common/landed_titles/*.txt'):
@@ -141,6 +356,8 @@ def main():
 	with rel_effect_path.open('w', encoding='cp1252', newline='\n') as f:
 		print_file_header(f, 'ck2.scripted_effects')
 		print_effect_calc_realm_province_religion_breakdown_of_THIS_for_ROOT(f, loc)
+		print_effect_reset_settable_religion_flags(f)
+		print_effect_set_default_religion_flags(f)
 	
 	# generate religion events
 	with rel_event_path.open('w', encoding='cp1252', newline='\n') as f:
@@ -228,9 +445,9 @@ def print_modifiers_secret_community(f, loc, new_loc):
 		if not loc.get(desc):
 			new_loc[desc] = 'In secret, the [{}.GetName] faithful have organized around a small community in this province. From there it converts others, grows, and protects its own.'.format(r)
 		print('''\
-{} = {{
+{0} = {{
 	icon = 18
-	is_visible = {{ society_member_of = secret_religious_society_{} }}
+	is_visible = {{ society_member_of = secret_religious_society_{1} }}
 }}'''.format(modifier, r), file=f)
 
 
@@ -476,9 +693,9 @@ emf_religion_same_as_bloodline_founder = {''', file=f)
 		print('''\
 	trigger_if = {{
 		limit = {{
-			FROM = {{ has_bloodline_flag = requires_{}_religion }}
+			FROM = {{ has_bloodline_flag = requires_{0}_religion }}
 		}}
-		ROOT = {{ show_scope_change = no religion_openly_{}_or_reformed_trigger = yes }}
+		ROOT = {{ show_scope_change = no religion_openly_{1}_or_reformed_trigger = yes }}
 	}}'''.format(full_rel, base_rel), file=f)
 
 	for rg in g_rg_religions_map.keys():
@@ -494,6 +711,219 @@ emf_religion_same_as_bloodline_founder = {''', file=f)
 	}}'''.format(r), file=f)
 
 	print('}', file=f)
+
+
+def print_triggers_true_religion_is_heresy_of_true_religion(f):	
+	print('''
+# These massive triggers are unavoidable because PREVPREVPREV does not work as a left-side scope
+
+true_religion_is_heresy_of_FROM_true_religion = {{
+	FROM = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
+		}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
+}''', file=f)
+	
+	print('''
+true_religion_is_heresy_of_ROOT_true_religion = {{
+	ROOT = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
+		}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
+}''', file=f)
+	
+	print('''
+true_religion_is_heresy_of_PREV_true_religion = {{
+	PREV = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
+		}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
+}''', file=f)
+	
+	print('''
+true_religion_is_heresy_of_target_ruler_true_religion = {{
+	event_target:target_ruler = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
+		}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
+}''', file=f)
+
+
+def print_triggers_true_religion_is_parent_religion_true_religion(f):
+	print('''
+# These massive triggers are unavoidable because PREVPREVPREV does not work as a left-side scope
+
+true_religion_is_parent_religion_FROM_true_religion = {{
+	FROM = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
+		}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
+}''', file=f)
+	
+	print('''
+true_religion_is_parent_religion_ROOT_true_religion = {{
+	ROOT = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
+		}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
+}''', file=f)
+	
+	print('''
+true_religion_is_parent_religion_PREV_true_religion = {{
+	PREV = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
+		}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
+}''', file=f)
+	
+	print('''
+true_religion_is_parent_religion_target_ruler_true_religion = {{
+	event_target:target_ruler = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
+		}}'''.format(g_religions[0]), file=f)
+	for r in g_religions[1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
+}''', file=f)
+
+
+def print_triggers_true_religion_is_reformed_religion_true_religion(f):
+	print('''
+# These massive triggers are unavoidable because PREVPREVPREV does not work as a left-side scope
+
+true_religion_is_reformed_religion_FROM_true_religion = {{
+	FROM = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
+		true_religion_group = pagan_group # Only pagan_group has reformed religions
+		PREV = {{ true_religion_group = pagan_group }} # Only pagan_group has reformed religions
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+		}}'''.format(g_rg_religions_map['pagan_group'][0]), file=f)
+	for r in g_rg_religions_map['pagan_group'][1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
+}''', file=f)
+	
+	print('''
+true_religion_is_reformed_religion_ROOT_true_religion = {{
+	ROOT = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
+		true_religion_group = pagan_group # Only pagan_group has reformed religions
+		PREV = {{ true_religion_group = pagan_group }} # Only pagan_group has reformed religions
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+		}}'''.format(g_rg_religions_map['pagan_group'][0]), file=f)
+	for r in g_rg_religions_map['pagan_group'][1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
+}''', file=f)
+	
+	print('''
+true_religion_is_reformed_religion_PREV_true_religion = {{
+	PREV = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
+		true_religion_group = pagan_group # Only pagan_group has reformed religions
+		PREV = {{ true_religion_group = pagan_group }} # Only pagan_group has reformed religions
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+		}}'''.format(g_rg_religions_map['pagan_group'][0]), file=f)
+	for r in g_rg_religions_map['pagan_group'][1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
+}''', file=f)
+	
+	print('''
+true_religion_is_reformed_religion_target_ruler_true_religion = {{
+	event_target:target_ruler = {{
+		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
+		true_religion_group = pagan_group # Only pagan_group has reformed religions
+		PREV = {{ true_religion_group = pagan_group }} # Only pagan_group has reformed religions
+		trigger_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+		}}'''.format(g_rg_religions_map['pagan_group'][0]), file=f)
+	for r in g_rg_religions_map['pagan_group'][1:]:
+		print('''		trigger_else_if = {{
+			limit = {{ true_religion = {0} }}
+			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+		}}'''.format(r), file=f)
+	print('''	}
+}''', file=f)
+
 
 #### EFFECTS ####
 
@@ -1305,218 +1735,6 @@ emf_sr_ai_try_to_join_society = {
 	print(TAB + '}\n}', file=f)
 
 
-def print_triggers_true_religion_is_heresy_of_true_religion(f):	
-	print('''
-# These massive triggers are unavoidable because PREVPREVPREV does not work as a left-side scope
-
-true_religion_is_heresy_of_FROM_true_religion = {{
-	FROM = {{
-		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
-		trigger_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
-		}}'''.format(g_religions[0]), file=f)
-	for r in g_religions[1:]:
-		print('''		trigger_else_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
-		}}'''.format(r), file=f)
-	print('''	}
-}''', file=f)
-	
-	print('''
-true_religion_is_heresy_of_ROOT_true_religion = {{
-	ROOT = {{
-		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
-		trigger_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
-		}}'''.format(g_religions[0]), file=f)
-	for r in g_religions[1:]:
-		print('''		trigger_else_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
-		}}'''.format(r), file=f)
-	print('''	}
-}''', file=f)
-	
-	print('''
-true_religion_is_heresy_of_PREV_true_religion = {{
-	PREV = {{
-		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
-		trigger_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
-		}}'''.format(g_religions[0]), file=f)
-	for r in g_religions[1:]:
-		print('''		trigger_else_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
-		}}'''.format(r), file=f)
-	print('''	}
-}''', file=f)
-	
-	print('''
-true_religion_is_heresy_of_target_ruler_true_religion = {{
-	event_target:target_ruler = {{
-		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
-		trigger_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
-		}}'''.format(g_religions[0]), file=f)
-	for r in g_religions[1:]:
-		print('''		trigger_else_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_heresy_of = {0} }} }} }}
-		}}'''.format(r), file=f)
-	print('''	}
-}''', file=f)
-
-
-def print_triggers_true_religion_is_parent_religion_true_religion(f):
-	print('''
-# These massive triggers are unavoidable because PREVPREVPREV does not work as a left-side scope
-
-true_religion_is_parent_religion_FROM_true_religion = {{
-	FROM = {{
-		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
-		trigger_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
-		}}'''.format(g_religions[0]), file=f)
-	for r in g_religions[1:]:
-		print('''		trigger_else_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
-		}}'''.format(r), file=f)
-	print('''	}
-}''', file=f)
-	
-	print('''
-true_religion_is_parent_religion_ROOT_true_religion = {{
-	ROOT = {{
-		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
-		trigger_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
-		}}'''.format(g_religions[0]), file=f)
-	for r in g_religions[1:]:
-		print('''		trigger_else_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
-		}}'''.format(r), file=f)
-	print('''	}
-}''', file=f)
-	
-	print('''
-true_religion_is_parent_religion_PREV_true_religion = {{
-	PREV = {{
-		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
-		trigger_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
-		}}'''.format(g_religions[0]), file=f)
-	for r in g_religions[1:]:
-		print('''		trigger_else_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
-		}}'''.format(r), file=f)
-	print('''	}
-}''', file=f)
-	
-	print('''
-true_religion_is_parent_religion_target_ruler_true_religion = {{
-	event_target:target_ruler = {{
-		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
-		trigger_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
-		}}'''.format(g_religions[0]), file=f)
-	for r in g_religions[1:]:
-		print('''		trigger_else_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_parent_religion = {0} }} }} }}
-		}}'''.format(r), file=f)
-	print('''	}
-}''', file=f)
-
-
-def print_triggers_true_religion_is_reformed_religion_true_religion(f):
-	print('''
-# These massive triggers are unavoidable because PREVPREVPREV does not work as a left-side scope
-
-true_religion_is_reformed_religion_FROM_true_religion = {{
-	FROM = {{
-		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
-		true_religion_group = pagan_group # Only pagan_group has reformed religions
-		PREV = {{ true_religion_group = pagan_group }} # Only pagan_group has reformed religions
-		trigger_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
-		}}'''.format(g_rg_religions_map['pagan_group'][0]), file=f)
-	for r in g_rg_religions_map['pagan_group'][1:]:
-		print('''		trigger_else_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
-		}}'''.format(r), file=f)
-	print('''	}
-}''', file=f)
-	
-	print('''
-true_religion_is_reformed_religion_ROOT_true_religion = {{
-	ROOT = {{
-		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
-		true_religion_group = pagan_group # Only pagan_group has reformed religions
-		PREV = {{ true_religion_group = pagan_group }} # Only pagan_group has reformed religions
-		trigger_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
-		}}'''.format(g_rg_religions_map['pagan_group'][0]), file=f)
-	for r in g_rg_religions_map['pagan_group'][1:]:
-		print('''		trigger_else_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
-		}}'''.format(r), file=f)
-	print('''	}
-}''', file=f)
-	
-	print('''
-true_religion_is_reformed_religion_PREV_true_religion = {{
-	PREV = {{
-		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
-		true_religion_group = pagan_group # Only pagan_group has reformed religions
-		PREV = {{ true_religion_group = pagan_group }} # Only pagan_group has reformed religions
-		trigger_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
-		}}'''.format(g_rg_religions_map['pagan_group'][0]), file=f)
-	for r in g_rg_religions_map['pagan_group'][1:]:
-		print('''		trigger_else_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
-		}}'''.format(r), file=f)
-	print('''	}
-}''', file=f)
-	
-	print('''
-true_religion_is_reformed_religion_target_ruler_true_religion = {{
-	event_target:target_ruler = {{
-		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
-		true_religion_group = pagan_group # Only pagan_group has reformed religions
-		PREV = {{ true_religion_group = pagan_group }} # Only pagan_group has reformed religions
-		trigger_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
-		}}'''.format(g_rg_religions_map['pagan_group'][0]), file=f)
-	for r in g_rg_religions_map['pagan_group'][1:]:
-		print('''		trigger_else_if = {{
-			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
-		}}'''.format(r), file=f)
-	print('''	}
-}''', file=f)
-
-
 def print_effect_calc_realm_province_religion_breakdown_of_THIS_for_ROOT(f, loc):
 	print('''
 emf_calc_realm_province_religion_breakdown_of_THIS_for_ROOT = {
@@ -1524,8 +1742,8 @@ emf_calc_realm_province_religion_breakdown_of_THIS_for_ROOT = {
 		set_variable = { which = r_prov value = 0 }''', file=f)
 
 	for r in g_religions:
-		print('\t\tset_variable = {{ which = r_prov_rel_{} value = 0 }}'.format(r), file=f)
-		print('\t\tset_variable = {{ which = r_prov_rel_{}_pct value = 0 }}'.format(r), file=f)
+		print(TAB + TAB + 'set_variable = {{ which = r_prov_rel_{} value = 0 }}'.format(r), file=f)
+		print(TAB + TAB + 'set_variable = {{ which = r_prov_rel_{}_pct value = 0 }}'.format(r), file=f)
 
 	print('''\
 	}
@@ -1543,7 +1761,7 @@ emf_calc_realm_province_religion_breakdown_of_THIS_for_ROOT = {
 			ROOT = {{ change_variable = {{ which = r_prov_rel_{0} value = 1 }} }}
 		}}'''.format(r), file=f)
 
-	print('\t\tROOT = {', file=f)
+	print(TAB + TAB + 'ROOT = {', file=f)
 
 	for r in g_religions:
 		print('''\
@@ -1554,91 +1772,229 @@ emf_calc_realm_province_religion_breakdown_of_THIS_for_ROOT = {
 				divide_variable = {{ which = r_prov_rel_{0}_pct which = r_prov }}
 			}}'''.format(r), file=f)
 
-	print('\t\t}', file=f)
-	print('\t}', file=f)
+	print(TAB + TAB + '}', file=f)
+	print(TAB + '}', file=f)
 	print('}', file=f)
 
 
-def print_event_generate_religion_dummy_characters(f):
+def print_effect_reset_settable_religion_flags(f):
 	print('''
-########################################
-##	  RELIGION EVENTS (CODEGEN)	  ##
-########################################
+emf_reset_settable_religion_flags = {''', file=f)
+	print_effect_set_religion_flags(RelPropertiesBlock(), f, 1, True)
+	print('}', file=f)
 
-# These events are meant to create and maintain dummy characters, each of whose sole utility
-# is to have a specific religion as their public religion.
-# They are used because some religion-based triggers (e.g. is_heretic, is_heresy_of,
-# is_parent_religion) do not work in religion scopes and only check for characters' public
-# religion, not their true religion. This means that in order to check whether a character's
-# true religion complies with one of these triggers, the game needs to run the trigger on the
-# dummy character whose public religion matches the given character's true religion.
 
-namespace = emf_religion_codegen
-
-# emf_religion_codegen.0 -- initialize dummy religion characters
-character_event = {
-	id = emf_religion_codegen.0
-
-	is_triggered_only = yes
-	hide_window = yes
-	
-	religion = hip_religion
-
-	trigger = {
-		has_landed_title = e_hip
-		NAND = {''', file=f)
-	for r in g_religions:
-		print('\t\t\t{0} = {{ persistent_event_target:emf_religion_dummy_character = {{ is_alive = yes }} }}'.format(r), file=f)
-	print('''		}
-	}
-
-	immediate = {''', file=f)
+def print_effect_set_default_religion_flags(f):
 	for r in g_religions:
 		print('''
-		if = {{
-			limit = {{ NOT = {{ {0} = {{ persistent_event_target:emf_religion_dummy_character = {{ is_alive = yes }} }} }} }}
-			create_character = {{
-				dynasty = none
-				religion = {0}
-				trait = emf_isis_courtier
-				random_traits = no
-			}}
-			new_character = {{
-				set_immune_to_pruning = yes
-				diplomatic_immunity = yes
-				emf_do_not_disturb = yes
-				set_flag = no_court_invites # Instructs AI to never accept an invitation to another court
-				set_flag = ai_flag_refuse_conversion # Instructs AI to never accept Demand Religious Conversion
-				set_flag = emf_ai_never_convert_culture
-				set_flag = emf_isis_courtier
-				set_flag = emf_religion_dummy_character
-				religion_scope = {{
-					save_persistent_event_target = {{ name = emf_religion_dummy_character scope = PREV }}
-				}}
-			}}
-		}}'''.format(r), file=f)
-	print('''	}
-}
+emf_set_default_flags_for_{} = {{'''.format(r), file=f)
+		print_effect_set_religion_flags(g_religions_properties_map[r], f, 1)
+		print('}', file=f)
 
-# emf_religion_codegen.1 -- handle the death of a religion dummy character [on_death]
-character_event = {
-	id = emf_religion_codegen.1
 
-	is_triggered_only = yes
-	hide_window = yes
-
-	has_character_flag = emf_religion_dummy_character
-
-	immediate = {
-		religion_scope = {
-			if = {
-				limit = { persistent_event_target:emf_religion_dummy_character = { character = PREVPREV } }
-				clear_persistent_event_target = emf_religion_dummy_character
-				event_target:isis = { character_event = { id = emf_religion_codegen.0 } }
-			}
-		}
-	}
-}''', file=f)
+def print_effect_set_religion_flags(religionPropertiesBlock, f, tabCount=0, onlySettable=False):
+	tabs = ''
+	for i in range(tabCount):
+		tabs += TAB
+	# First religious group flags
+	if (not onlySettable):
+		if (religionPropertiesBlock.rgPropertiesBlock.playable):
+			print(tabs, 'set_flag = emf_playable', sep='', file=f)
+		else:
+			print(tabs, 'clr_flag = emf_playable', sep='', file=f)
+		if (religionPropertiesBlock.rgPropertiesBlock.ai_peaceful):
+			print(tabs, 'set_flag = emf_ai_peaceful', sep='', file=f)
+		else:
+			print(tabs, 'clr_flag = emf_ai_peaceful', sep='', file=f)
+		# ai_convert_other_groups and ai_convert_same_group can get overwritten by religion-specific values
+		if (religionPropertiesBlock.rgPropertiesBlock.hostile_within_group):
+			print(tabs, 'set_flag = emf_hostile_within_group', sep='', file=f)
+		else:
+			print(tabs, 'clr_flag = emf_hostile_within_group', sep='', file=f)
+		if (religionPropertiesBlock.rgPropertiesBlock.ai_fabricate_claims):
+			print(tabs, 'set_flag = emf_ai_fabricate_claims', sep='', file=f)
+		else:
+			print(tabs, 'clr_flag = emf_ai_fabricate_claims', sep='', file=f)
+	# Then religion-specific flags
+	print(tabs, 'set_variable = {{ which = emf_peace_piety_gain value = {} }}'.format(round(religionPropertiesBlock.peace_piety_gain, 3) if isinstance(religionPropertiesBlock.peace_piety_gain, float) else religionPropertiesBlock.peace_piety_gain), sep='', file=f)
+	print(tabs, 'set_variable = {{ which = emf_ai_convert_other_groups value = {} }}'.format(religionPropertiesBlock.ai_convert_other_groups), sep='', file=f)
+	print(tabs, 'set_variable = {{ which = emf_ai_convert_same_group value = {} }}'.format(religionPropertiesBlock.ai_convert_same_group), sep='', file=f)
+	if (religionPropertiesBlock.peace_prestige_loss):
+		print(tabs, 'set_flag = emf_peace_prestige_loss', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_peace_prestige_loss', sep='', file=f)
+	print(tabs, 'set_variable = {{ which = emf_aggression value = {} }}'.format(round(religionPropertiesBlock.aggression, 3) if isinstance(religionPropertiesBlock.aggression, float) else religionPropertiesBlock.aggression), sep='', file=f)
+	if (religionPropertiesBlock.raised_vassal_opinion_loss):
+		print(tabs, 'set_flag = emf_raised_vassal_opinion_loss', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_raised_vassal_opinion_loss', sep='', file=f)
+	if (religionPropertiesBlock.attacking_same_religion_piety_loss):
+		print(tabs, 'set_flag = emf_attacking_same_religion_piety_loss', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_attacking_same_religion_piety_loss', sep='', file=f)
+	print(tabs, 'set_variable = {{ which = emf_max_wives value = {} }}'.format(religionPropertiesBlock.max_wives), sep='', file=f)
+	print(tabs, 'set_variable = {{ which = emf_max_consorts value = {} }}'.format(religionPropertiesBlock.max_consorts), sep='', file=f)
+	if (religionPropertiesBlock.feminist):
+		print(tabs, 'set_flag = emf_feminist', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_feminist', sep='', file=f)
+	if (religionPropertiesBlock.has_heir_designation):
+		print(tabs, 'set_flag = emf_has_heir_designation', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_has_heir_designation', sep='', file=f)
+	if (religionPropertiesBlock.short_reign_opinion_year_mult is not None):
+		print(tabs, 'set_variable = {{ which = emf_short_reign_opinion_year_mult value = {} }}'.format(round(religionPropertiesBlock.short_reign_opinion_year_mult, 3) if isinstance(religionPropertiesBlock.short_reign_opinion_year_mult, float) else religionPropertiesBlock.short_reign_opinion_year_mult), sep='', file=f)
+	else:
+		print(tabs, 'set_variable = { which = emf_short_reign_opinion_year_mult value = -1000 }', sep='', file=f)
+	if (religionPropertiesBlock.uses_jizya_tax):
+		print(tabs, 'set_flag = emf_uses_jizya_tax', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_uses_jizya_tax', sep='', file=f)
+	if (religionPropertiesBlock.can_retire_to_monastery):
+		print(tabs, 'set_flag = emf_can_retire_to_monastery', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_can_retire_to_monastery', sep='', file=f)
+	if (religionPropertiesBlock.can_excommunicate):
+		print(tabs, 'set_flag = emf_can_excommunicate', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_can_excommunicate', sep='', file=f)
+	if (religionPropertiesBlock.can_grant_divorce):
+		print(tabs, 'set_flag = emf_can_grant_divorce', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_can_grant_divorce', sep='', file=f)
+	if (religionPropertiesBlock.can_grant_invasion_cb):
+		print(tabs, 'set_flag = emf_can_grant_invasion_cb', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_can_grant_invasion_cb', sep='', file=f)
+	if (religionPropertiesBlock.can_grant_claim):
+		print(tabs, 'set_flag = emf_can_grant_claim', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_can_grant_claim', sep='', file=f)
+	if (religionPropertiesBlock.pc_marriage):
+		print(tabs, 'set_flag = emf_pc_marriage', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_pc_marriage', sep='', file=f)
+	if (religionPropertiesBlock.bs_marriage):
+		print(tabs, 'set_flag = emf_bs_marriage', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_bs_marriage', sep='', file=f)
+	if (religionPropertiesBlock.psc_marriage):
+		print(tabs, 'set_flag = emf_psc_marriage', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_psc_marriage', sep='', file=f)
+	if (religionPropertiesBlock.cousin_marriage):
+		print(tabs, 'set_flag = emf_cousin_marriage', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_cousin_marriage', sep='', file=f)
+	if (religionPropertiesBlock.seafarer):
+		print(tabs, 'set_flag = emf_seafarer', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_seafarer', sep='', file=f)
+	if (religionPropertiesBlock.allow_looting):
+		print(tabs, 'set_flag = emf_allow_looting', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_allow_looting', sep='', file=f)
+	if (religionPropertiesBlock.allow_rivermovement):
+		print(tabs, 'set_flag = emf_allow_rivermovement', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_allow_rivermovement', sep='', file=f)
+	if (religionPropertiesBlock.allow_viking_invasion):
+		print(tabs, 'set_flag = emf_allow_viking_invasion', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_allow_viking_invasion', sep='', file=f)
+	if (religionPropertiesBlock.autocephaly):
+		print(tabs, 'set_flag = emf_autocephaly', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_autocephaly', sep='', file=f)
+	if (religionPropertiesBlock.pentarchy):
+		print(tabs, 'set_flag = emf_pentarchy', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_pentarchy', sep='', file=f)
+	if (religionPropertiesBlock.divine_blood):
+		print(tabs, 'set_flag = emf_divine_blood', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_divine_blood', sep='', file=f)
+	if (religionPropertiesBlock.uses_decadence):
+		print(tabs, 'set_flag = emf_uses_decadence', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_uses_decadence', sep='', file=f)
+	if (religionPropertiesBlock.can_have_antipopes):
+		print(tabs, 'set_flag = emf_can_have_antipopes', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_can_have_antipopes', sep='', file=f)
+	if (religionPropertiesBlock.priests_can_marry):
+		print(tabs, 'set_flag = emf_priests_can_marry', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_priests_can_marry', sep='', file=f)
+	if (religionPropertiesBlock.priests_can_inherit):
+		print(tabs, 'set_flag = emf_priests_can_inherit', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_priests_can_inherit', sep='', file=f)
+	if (religionPropertiesBlock.ignores_defensive_attrition):
+		print(tabs, 'set_flag = emf_ignores_defensive_attrition', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_ignores_defensive_attrition', sep='', file=f)
+	if (religionPropertiesBlock.defensive_attrition):
+		print(tabs, 'set_flag = emf_defensive_attrition', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_defensive_attrition', sep='', file=f)
+	if (religionPropertiesBlock.matrilineal_marriages):
+		print(tabs, 'set_flag = emf_matrilineal_marriages', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_matrilineal_marriages', sep='', file=f)
+	if (religionPropertiesBlock.men_can_take_consorts):
+		print(tabs, 'set_flag = emf_men_can_take_consorts', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_men_can_take_consorts', sep='', file=f)
+	if (religionPropertiesBlock.women_can_take_consorts):
+		print(tabs, 'set_flag = emf_women_can_take_consorts', sep='', file=f)
+	else:
+		print(tabs, 'clr_flag = emf_women_can_take_consorts', sep='', file=f)
+	if (not onlySettable):
+		if (religionPropertiesBlock.investiture):
+			print(tabs, 'set_flag = emf_investiture', sep='', file=f)
+		else:
+			print(tabs, 'clr_flag = emf_investiture', sep='', file=f)
+		if (religionPropertiesBlock.rel_head_defense):
+			print(tabs, 'set_flag = emf_rel_head_defense', sep='', file=f)
+		else:
+			print(tabs, 'clr_flag = emf_rel_head_defense', sep='', file=f)
+		if (religionPropertiesBlock.landed_kin_prestige_bonus):
+			print(tabs, 'set_flag = emf_landed_kin_prestige_bonus', sep='', file=f)
+		else:
+			print(tabs, 'clr_flag = emf_landed_kin_prestige_bonus', sep='', file=f)
+		if (religionPropertiesBlock.join_crusade_if_bordering_hostile):
+			print(tabs, 'set_flag = emf_join_crusade_if_bordering_hostile', sep='', file=f)
+		else:
+			print(tabs, 'clr_flag = emf_join_crusade_if_bordering_hostile', sep='', file=f)
+		if (religionPropertiesBlock.independence_war_score_bonus is not None):
+			print(tabs, 'set_variable = {{ which = emf_independence_war_score_bonus value = {} }}'.format(round(religionPropertiesBlock.independence_war_score_bonus, 3) if isinstance(religionPropertiesBlock.independence_war_score_bonus, float) else religionPropertiesBlock.independence_war_score_bonus), sep='', file=f)
+		else:
+			print(tabs, 'set_variable = { which = emf_independence_war_score_bonus value = -1000 }', sep='', file=f)
+		if (religionPropertiesBlock.can_demand_religious_conversion):
+			print(tabs, 'set_flag = emf_can_demand_religious_conversion', sep='', file=f)
+		else:
+			print(tabs, 'clr_flag = emf_can_demand_religious_conversion', sep='', file=f)
+		if (religionPropertiesBlock.castes):
+			print(tabs, 'set_flag = emf_castes', sep='', file=f)
+		else:
+			print(tabs, 'clr_flag = emf_castes', sep='', file=f)
+		if (religionPropertiesBlock.caste_opinions):
+			print(tabs, 'set_flag = emf_caste_opinions', sep='', file=f)
+		else:
+			print(tabs, 'clr_flag = emf_caste_opinions', sep='', file=f)
+		if (religionPropertiesBlock.allow_in_ruler_designer):
+			print(tabs, 'set_flag = emf_allow_in_ruler_designer', sep='', file=f)
+		else:
+			print(tabs, 'clr_flag = emf_allow_in_ruler_designer', sep='', file=f)
+		if (religionPropertiesBlock.dynamic_cult):
+			print(tabs, 'set_flag = emf_dynamic_cult', sep='', file=f)
+		else:
+			print(tabs, 'clr_flag = emf_dynamic_cult', sep='', file=f)
+		if (religionPropertiesBlock.secret_religion):
+			print(tabs, 'set_flag = emf_secret_religion', sep='', file=f)
+		else:
+			print(tabs, 'clr_flag = emf_secret_religion', sep='', file=f)
 
 
 def print_effect_set_bloodline_founder_religion_flag(f):
@@ -1658,9 +2014,9 @@ emf_set_bloodline_founder_religion_flag = {''', file=f)
 		base_rel = m.group(1)
 		full_rel = base_rel + '_pagan'
 		print('''\
-	{} = {{
-		limit = {{ religion_openly_{}_or_reformed_trigger = yes }}
-		new_bloodline = {{ set_bloodline_flag = requires_{}_religion }}
+	{0} = {{
+		limit = {{ religion_openly_{1}_or_reformed_trigger = yes }}
+		new_bloodline = {{ set_bloodline_flag = requires_{2}_religion }}
 	}}'''.format(cond_stmt, base_rel, full_rel), file=f)
 		cond_stmt = 'else_if'
 
@@ -1707,9 +2063,9 @@ emf_activate_randomized_relhead_titles = {''', file=f)
 			continue
 		loc_val = loc.get(rt.religion, rt.religion + ' (unlocalised)')
 		print('''\
-	# {}
-	{} = {{ save_event_target_as = emf_rel }}
-	{} = {{ save_event_target_as = emf_rel_title }}
+	# {0}
+	{1} = {{ save_event_target_as = emf_rel }}
+	{2} = {{ save_event_target_as = emf_rel_title }}
 	emf_activate_randomized_relhead_title = yes'''.format(loc_val, rt.religion, rt.tag), file=f)
 
 	print('}', file=f)
@@ -1796,6 +2152,112 @@ def print_decisions_secretly_convert_to_holy_site(f, loc, new_loc):
 	print('}', file=f)
 
 
+#### EVENTS ####
+
+
+def print_event_generate_religion_dummy_characters(f):
+	print('''
+namespace = emf_religion_codegen
+
+# Events emf_religion_codegen.0 and emf_religion_codegen.1 are meant to create and maintain dummy characters,
+# each of whose sole utility is to have a specific religion as their public religion.
+# They are used because some religion-based triggers (e.g. is_heretic, is_heresy_of,
+# is_parent_religion) do not work in religion scopes and only check for characters' public
+# religion, not their true religion. This means that in order to check whether a character's
+# true religion complies with one of these triggers, the game needs to run the trigger on the
+# dummy character whose public religion matches the given character's true religion.
+
+# emf_religion_codegen.0 -- initialize dummy religion characters
+character_event = {
+	id = emf_religion_codegen.0
+
+	is_triggered_only = yes
+	hide_window = yes
+	
+	religion = hip_religion
+
+	trigger = {
+		has_landed_title = e_hip
+		NAND = {''', file=f)
+	for r in g_religions:
+		print(TAB + TAB + TAB + '{0} = {{ persistent_event_target:emf_religion_dummy_character = {{ is_alive = yes }} }}'.format(r), file=f)
+	print('''		}
+	}
+
+	immediate = {''', file=f)
+	for r in g_religions:
+		print('''
+		if = {{
+			limit = {{ NOT = {{ {0} = {{ persistent_event_target:emf_religion_dummy_character = {{ is_alive = yes }} }} }} }}
+			create_character = {{
+				dynasty = none
+				religion = {0}
+				trait = emf_isis_courtier
+				random_traits = no
+			}}
+			new_character = {{
+				set_immune_to_pruning = yes
+				diplomatic_immunity = yes
+				emf_do_not_disturb = yes
+				set_flag = no_court_invites # Instructs AI to never accept an invitation to another court
+				set_flag = ai_flag_refuse_conversion # Instructs AI to never accept Demand Religious Conversion
+				set_flag = emf_ai_never_convert_culture
+				set_flag = emf_isis_courtier
+				set_flag = emf_religion_dummy_character
+				religion_scope = {{
+					save_persistent_event_target = {{ name = emf_religion_dummy_character scope = PREV }}
+				}}
+			}}
+		}}'''.format(r), file=f)
+	print('''	}
+}
+
+# emf_religion_codegen.1 -- handle the death of a religion dummy character [on_death]
+character_event = {
+	id = emf_religion_codegen.1
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	has_character_flag = emf_religion_dummy_character
+
+	immediate = {
+		religion_scope = {
+			if = {
+				limit = { persistent_event_target:emf_religion_dummy_character = { character = PREVPREV } }
+				clear_persistent_event_target = emf_religion_dummy_character
+				event_target:isis = { character_event = { id = emf_religion_codegen.0 } }
+			}
+		}
+	}
+}
+
+# emf_religion_codegen.2 is used to initialize flags and variables saved in religion scopes that let scripts
+# check for religion settings that normally could not be checked (e.g. whether priests can inherit, whether 
+# a religion has divine blood mechanics, whether a religion enables Prepared Invasions, etc.).
+
+# emf_religion_codegen.2
+character_event = {
+	id = emf_religion_codegen.2
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	religion = hip_religion
+
+	trigger = {
+		has_landed_title = e_hip
+		is_save_game = no
+		NOT = { has_alternate_start_parameter = { key = religion_names value = random } }
+	}
+	
+	immediate = {''', file=f)
+	for r in g_religions:
+		print(TAB + TAB + '{0} = {{ emf_set_default_flags_for_{0} = yes }}'.format(r), file=f)
+	print('''	}
+}''', file=f)
+
+
 #### CUSTOM LOCALISATION ####
 
 
@@ -1808,12 +2270,12 @@ defined_text = {
 	for r in g_religions:
 		print('''\
 	text = {{
-		localisation_key = {}
+		localisation_key = {0}
 		trigger = {{
-			true_religion = {}
+			true_religion = {0}
 			NOT = {{ has_alternate_start_parameter = {{ key = religion_names value = random }} }}
 		}}
-	}}'''.format(r, r), file=f)
+	}}'''.format(r), file=f)
 
 	print('''fallback_text = {
 		localisation_key = String_adherent_random
@@ -1859,12 +2321,12 @@ defined_text = {
 	for r in g_religions:
 		print('''\
 	text = {{
-		localisation_key = {}
+		localisation_key = {0}
 		trigger = {{
-			true_religion = {}
+			true_religion = {0}
 			NOT = {{ has_alternate_start_parameter = {{ key = religion_names value = random }} }}
 		}}
-	}}'''.format(r, r), file=f)
+	}}'''.format(r), file=f)
 
 	print('''fallback_text = {
 		localisation_key = String_adherent_random
@@ -1881,12 +2343,12 @@ defined_text = {
 	for r in g_religions:
 		print('''\
 	text = {{
-		localisation_key = {}
+		localisation_key = {0}
 		trigger = {{
-			religion = {}
+			religion = {0}
 			NOT = {{ has_alternate_start_parameter = {{ key = religion_names value = random }} }}
 		}}
-	}}'''.format(r, r), file=f)
+	}}'''.format(r), file=f)
 
 	print('''fallback_text = {
 		localisation_key = String_adherent_random
