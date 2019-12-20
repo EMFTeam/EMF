@@ -206,9 +206,6 @@ changeset = {
                 change_variable = { which = "imperial_dynasty_count" value = 1 }
                 set_variable = { which = "imperial_decay" value = 50 }
             }
-            law = law_voting_power_1
-            law = war_voting_power_1
-            law = titles_voting_power_1
             '''),
         ((869, 1, 1), 1, '''
             effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
@@ -395,6 +392,34 @@ changeset = {
     ]
 }
 
+# Dictionary of non-EMF laws, each paired with the EMF law with which it should be replaced
+# If a single law is to be replaced with multiple laws, use a tuple containing the laws as the value
+replace_law_dict = {
+    "feudal_administration": "administration_0",
+    "imperial_administration": "administration_2",
+    "revoke_title_voting_power_0": "titles_voting_power_0",
+    "revoke_title_voting_power_1": "titles_voting_power_1",
+    "imprison_voting_power_0": "justice_voting_power_0",
+    "imprison_voting_power_1": "justice_voting_power_1",
+    "grant_title_voting_power_0": "titles_voting_power_0",
+    "grant_title_voting_power_1": "titles_voting_power_1",
+    "banish_voting_power_0": "justice_voting_power_0",
+    "banish_voting_power_1": "justice_voting_power_1",
+    "execution_voting_power_0": "justice_voting_power_0",
+    "execution_voting_power_1": "justice_voting_power_1",
+    "vassal_wars_law_0": "king_peace_0",
+    "vassal_wars_law_1": "king_peace_1",
+    "vassal_wars_law_2": "king_peace_2",
+    "out_of_realm_inheritance_law_0": "inheritance_0",
+    "out_of_realm_inheritance_law_1": "inheritance_1",
+    "revoke_title_law_0": "ze_revokation_0",
+    "revoke_title_law_1": "ze_revokation_1",
+    "revoke_title_law_2": "ze_revokation_2",
+    "ze_administration_laws_0": "administration_0",
+    "ze_administration_laws_1": "administration_1",
+    "ze_administration_laws_2": "administration_2"
+}
+
 @print_time
 def main():
     swmhpath = rootpath / 'SWMH-BETA/SWMH'
@@ -418,6 +443,8 @@ def main():
         for n, v in tree:
             if n.val != 'laws_groups':
                 valid_laws.update(n2.val for n2, v2 in v)
+
+    assert valid_laws.isdisjoint(replace_law_dict), "A valid law is also in the list of laws that are to be replaced!"
 
     shutil.rmtree(str(emfswmhhistory / 'characters'), ignore_errors=True)
 
@@ -481,10 +508,6 @@ def main():
                 except:
                     print(path)
                     raise
-            if path.stem == 'e_byzantium':
-                for n, v in tree[3, 1, 27]:
-                    if n.val == 'law' and v.val == 'imperial_administration':
-                        v.val = 'administration_2'
         elif path.stem == 'd_apostolic':
             for p in reversed(tree):
                 for p2 in reversed(p.value):
@@ -588,9 +611,23 @@ def main():
             bad = {p2 for p2 in v.contents
                 if p2.key.val == 'vice_royalty' or
                     p2.key.val == 'law' and p2.value.val not in valid_laws}
+            # working this way (create set + insert set) avoids duplicate law entries
+            # (compared to just replacing values in v.contents)
+            replaced_law_entries = set()
+            for p2 in v.contents:
+                if p2.key.val == 'law' and p2.value.val in replace_law_dict:
+                    if isinstance(replace_law_dict[p2.value.val], tuple):
+                        replaced_law_entries.update([new_law for new_law in replace_law_dict[p2.value.val]])
+                    else:
+                        replaced_law_entries.add(replace_law_dict[p2.value.val])
             if len(bad) > 0:
                 changed = True
                 v.contents = [p2 for p2 in v.contents if p2 not in bad]
+            if len(replaced_law_entries) > 0:
+                changed = True
+                v.contents += parser.parse(
+                    '\n'.join('law = ' + new_law for new_law in replaced_law_entries)
+                    ).contents
         if changed:
             tree.contents = [p for p in tree.contents
                              if p.value.contents or p.has_comments]
