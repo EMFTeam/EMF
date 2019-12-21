@@ -21,146 +21,146 @@ changeset = {
         ((869, 1, 1), 0, '''
             effect = {
                 set_title_flag = al_Muhtadi
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 1 }
             }
             '''),
         ((870, 6, 1), 0, '''
             effect = {
                 set_title_flag = al_Mutamid
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 2 }
             }
             clr_global_flag = anarchy_at_samarra
             '''),
         ((892, 10, 1), 0, '''
             effect = {
                 set_title_flag = al_Mutadid
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 3 }
             }
             '''),
         ((902, 1, 1), 0, '''
             effect = {
                 set_title_flag = al_Muktafi
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 4 }
             }
             '''),
         ((908, 1, 1), 0, '''
             effect = {
                 set_title_flag = al_Muqtadir
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 5 }
             }
             '''),
         ((932, 1, 1), 0, '''
             effect = {
                 set_title_flag = al_Qahir
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 6 }
             }
             '''),
         ((934, 1, 1), 0, '''
             effect = {
                 set_title_flag = al_Radi
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 7 }
             }
             '''),
         ((940, 1, 1), 0, '''
             effect = {
                 set_title_flag = al_Muttaqi
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 8 }
             }
             '''),
         ((944, 1, 1), 0, '''
             effect = {
                 set_title_flag = al_Mustakfi
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 9 }
             }
             '''),
         ((946, 1, 1), 0, '''
             effect = {
                 set_title_flag = al_Muti
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 10 }
             }
             '''),
         ((974, 1, 1), 0, '''
             effect = {
                 set_title_flag = al_Tai
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 11 }
             }
             '''),
         ((991, 1, 1), 0, '''
             effect = {
                 set_title_flag = al_Qadir
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 12 }
             }
             '''),
         ((1031, 1, 1), 0, '''
             effect = {
                 set_title_flag = al_Qaim
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 13 }
             }
             '''),
         ((1075, 1, 1), 0, '''
             effect = {
                 set_title_flag = al-Muqtadi
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 14 }
             }
             '''),
         ((1094, 1, 1), 0, '''
             effect = {
                 set_title_flag = al_Mustazhir
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 15 }
             }
             '''),
         ((1118, 1, 1), 0, '''
             effect = {
                 set_title_flag = al_Mustarshid
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 16 }
             }
             '''),
         ((1135, 1, 1), 0, '''
             effect = {
                 set_title_flag = al_Rashid
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 17 }
             }
             '''),
         ((1136, 1, 1), 0, '''
             effect = {
                 set_title_flag = al_Muqtafi
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 18 }
             }
             '''),
         ((1160, 1, 1), 0, '''
             effect = {
                 set_title_flag = al_Mustanjid
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 19 }
             }
             '''),
         ((1170, 1, 1), 0, '''
             effect = {
                 set_title_flag = al_Mustadi
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 20 }
             }
             '''),
         ((1180, 1, 1), 0, '''
             effect = {
                 set_title_flag = al_Nasir
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 21 }
             }
             '''),
         ((1225, 1, 1), 0, '''
             effect = {
                 set_title_flag = al_Zahir
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 22 }
             }
             '''),
         ((1226, 1, 1), 0, '''
             effect = {
                 set_title_flag = al_Mustansir
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 23 }
             }
             '''),
         ((1242, 1, 1), 0, '''
             effect = {
                 set_title_flag = al_Mustasim
-                change_variable = { which = "caliphnumber" value = 1 }
+                set_variable = { which = "caliphnumber" value = 24 }
             }
             ''')
     ],
@@ -172,71 +172,71 @@ changeset = {
             }
             '''),
         ((775, 1, 1), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 2 } }
             '''),
         ((785, 1, 1), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 3 } }
             '''),
         ((786, 1, 1), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 4 } }
             '''),
         ((809, 1, 1), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 5 } }
             '''),
         ((813, 1, 1), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 6 } }
             '''),
         ((833, 8, 9), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 7 } }
             '''),
         ((842, 1, 5), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 8 } }
             '''),
         ((847, 1, 1), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 9 } }
             '''),
         ((861, 12, 1), 1, '''
             law = infighting_0
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 10 } }
             '''),
         ((862, 6, 7), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 11 } }
             '''),
         ((866, 1, 1), 1, '''
             effect = {
-                change_variable = { which = "imperial_dynasty_count" value = 1 }
+                set_variable = { which = "imperial_dynasty_count" value = 12 }
                 set_variable = { which = "imperial_decay" value = 50 }
             }
             '''),
         ((869, 1, 1), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 13 } }
             '''),
         ((870, 6, 1), 1, '''
             effect = {
                 revoke_law = infighting_0
-                change_variable = { which = "imperial_dynasty_count" value = 1 }
+                set_variable = { which = "imperial_dynasty_count" value = 14 }
             }
             '''),
         ((892, 10, 1), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 15 } }
             '''),
         ((902, 1, 1), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 16 } }
             '''),
         ((908, 1, 1), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 17 } }
             '''),
         ((932, 1, 1), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 18 } }
             '''),
         ((934, 1, 1), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 19 } }
             '''),
         ((940, 1, 1), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 20 } }
             '''),
         ((944, 1, 1), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 21 } }
             '''),
         ((945, 1, 1), 1, '''
             effect = { set_variable = { which = "imperial_dynasty_count" value = 0 } }
@@ -272,30 +272,30 @@ changeset = {
             }
             '''),
         ((1118, 8, 15), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 1 } }
             '''),
         ((1143, 4, 8), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 2 } }
             '''),
         ((1180, 9, 24), 1, '''
             clr_global_flag = byz_empire_cracking
             set_global_flag = byz_empire_falling
             effect = {
-                change_variable = { which = "imperial_dynasty_count" value = 1 }
+                set_variable = { which = "imperial_dynasty_count" value = 3 }
                 set_variable = { which = "imperial_decay" value = 50 }
             }
             '''),
         ((1183, 9, 24), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 4 } }
             '''),
         ((1185, 9, 12), 1, '''
             effect = { set_variable = { which = "imperial_dynasty_count" value = 0 } }
             '''),
         ((1195, 6, 1), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 1 } }
             '''),
         ((1203, 7, 18), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 2 } }
             '''),
         ((1204, 1, 28), 1, '''
             effect = { set_variable = { which = "imperial_dynasty_count" value = 0 } }
@@ -304,12 +304,12 @@ changeset = {
             clr_global_flag = byz_empire_falling
             set_global_flag = byz_empire_shattered
             effect = {
-                change_variable = { which = "imperial_dynasty_count" value = 1 }
+                set_variable = { which = "imperial_dynasty_count" value = 1 }
                 set_variable = { which = "imperial_decay" value = 70 }
             }
             '''),
         ((1328, 5, 24), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 2 } }
             ''')
     ],
     'e_hre': [
@@ -317,59 +317,59 @@ changeset = {
             effect = { set_variable = { which = "imperial_dynasty_count" value = 0 } }
             '''),
         ((973, 5, 7), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 1 } }
             '''),
         ((983, 12, 7), 1, '''
             effect = {
-                change_variable = { which = "imperial_dynasty_count" value = 1 }
+                set_variable = { which = "imperial_dynasty_count" value = 2 }
                 set_variable = { which = "imperial_decay" value = 5 }
             }
             '''),
         ((1002, 1, 24), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 3 } }
             '''),
         ((1024, 7, 3), 1, '''
             effect = { set_variable = { which = "imperial_dynasty_count" value = 0 } }
             '''),
         ((1039, 6, 4), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 1 } }
             '''),
         ((1056, 10, 5), 1, '''
             effect = {
-                change_variable = { which = "imperial_decay" value = 5 }
-                change_variable = { which = "imperial_dynasty_count" value = 1 }
+                set_variable = { which = "imperial_decay" value = 10 }
+                set_variable = { which = "imperial_dynasty_count" value = 2 }
             }
             '''),
         ((1106, 8, 7), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 3 } }
             '''),
         ((1125, 5, 23), 1, '''
             effect = { set_variable = { which = "imperial_dynasty_count" value = 0 } }
             '''),
         ((1152, 2, 15), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 1 } }
             '''),
         ((1190, 6, 10), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 2 } }
             '''),
         ((1197, 9, 28), 1, '''
             effect = {
-                change_variable = { which = "imperial_dynasty_count" value = 1 }
-                change_variable = { which = "imperial_decay" value = 10 }
+                set_variable = { which = "imperial_dynasty_count" value = 3 }
+                set_variable = { which = "imperial_decay" value = 20 }
             }
             '''),
         ((1208, 6, 21), 1, '''
             effect = { set_variable = { which = "imperial_dynasty_count" value = 0 } }
             '''),
         ((1250, 12, 13), 1, '''
-            effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = { set_variable = { which = "imperial_dynasty_count" value = 1 } }
             '''),
         ((1254, 5, 21), 1, '''
             effect = { set_variable = { which = "imperial_dynasty_count" value = 0 } }
             '''),
         ((1272, 4, 2), 1, '''
             effect = {
-                change_variable = { which = "imperial_decay" value = 10 }
+                set_variable = { which = "imperial_decay" value = 30 }
             }
             ''')
     ],
