@@ -348,6 +348,7 @@ def main():
 	# generate religion scripted triggers
 	with rel_trigger_path.open('w', encoding='cp1252', newline='\n') as f:
 		print_file_header(f, 'ck2.scripted_triggers')
+		print_triggers_religion_has_castes(f)
 		print_triggers_true_religion_is_heresy_of_true_religion(f)
 		print_triggers_true_religion_is_parent_religion_true_religion(f)
 		print_triggers_true_religion_is_reformed_religion_true_religion(f)
@@ -711,6 +712,22 @@ emf_religion_same_as_bloodline_founder = {''', file=f)
 	}}'''.format(r), file=f)
 
 	print('}', file=f)
+
+
+def print_triggers_religion_has_castes(f):
+	print('''
+# Needs to be code-generated because it's used by traits at startup, before flags can be set
+emf_religion_has_castes = {
+	custom_tooltip = {
+		text = RELIGION_HAS_CASTES
+		OR = {''', file=f)
+	for r in g_religions:
+		if g_religions_properties_map[r].castes:
+			print(TAB + TAB + TAB + 'religion = {}'.format(r), file=f)
+	print('''		}
+	}
+}''', file=f)
+	
 
 
 def print_triggers_true_religion_is_heresy_of_true_religion(f):	
