@@ -4,6 +4,7 @@ import shutil
 import sys
 from ck2parser import rootpath, Comment, FullParser
 from print_time import print_time
+from collections import OrderedDict
 
 changeset = {
     'd_sunni': [
@@ -613,20 +614,21 @@ def main():
                     p2.key.val == 'law' and p2.value.val not in valid_laws}
             # working this way (create set + insert set) avoids duplicate law entries
             # (compared to just replacing values in v.contents)
-            replaced_law_entries = set()
+            replaced_law_entries = OrderedDict() # OrderedDict with bogus values as a hacky ordered set (makes sure new laws are inserted in a deterministic order)
             for p2 in v.contents:
                 if p2.key.val == 'law' and p2.value.val in replace_law_dict:
                     if isinstance(replace_law_dict[p2.value.val], tuple):
-                        replaced_law_entries.update([new_law for new_law in replace_law_dict[p2.value.val]])
+                        for new_law in replace_law_dict[p2.value.val]:
+                            replaced_law_entries[new_law] = None
                     else:
-                        replaced_law_entries.add(replace_law_dict[p2.value.val])
+                        replaced_law_entries[replace_law_dict[p2.value.val]] = None
             if len(bad) > 0:
                 changed = True
                 v.contents = [p2 for p2 in v.contents if p2 not in bad]
             if len(replaced_law_entries) > 0:
                 changed = True
                 v.contents += parser.parse(
-                    '\n'.join('law = ' + new_law for new_law in replaced_law_entries)
+                    '\n'.join('law = ' + new_law for new_law in replaced_law_entries.keys())
                     ).contents
         if changed:
             tree.contents = [p for p in tree.contents
