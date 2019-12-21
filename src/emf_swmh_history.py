@@ -4,6 +4,7 @@ import shutil
 import sys
 from ck2parser import rootpath, Comment, FullParser
 from print_time import print_time
+from collections import OrderedDict
 
 changeset = {
     'd_sunni': [
@@ -206,9 +207,6 @@ changeset = {
                 change_variable = { which = "imperial_dynasty_count" value = 1 }
                 set_variable = { which = "imperial_decay" value = 50 }
             }
-            law = law_voting_power_1
-            law = war_voting_power_1
-            law = titles_voting_power_1
             '''),
         ((869, 1, 1), 1, '''
             effect = { change_variable = { which = "imperial_dynasty_count" value = 1 } }
@@ -387,7 +385,40 @@ changeset = {
             law = justice_voting_power_0
             law = centralization_3
             ''')
+    ],
+    'k_magyar': [
+        ((769, 1, 1), 0, '''
+            law = succ_gavelkind
+            ''')
     ]
+}
+
+# Dictionary of non-EMF laws, each paired with the EMF law with which it should be replaced
+# If a single law is to be replaced with multiple laws, use a tuple containing the laws as the value
+replace_law_dict = {
+    "feudal_administration": "administration_0",
+    "imperial_administration": "administration_2",
+    "revoke_title_voting_power_0": "titles_voting_power_0",
+    "revoke_title_voting_power_1": "titles_voting_power_1",
+    "imprison_voting_power_0": "justice_voting_power_0",
+    "imprison_voting_power_1": "justice_voting_power_1",
+    "grant_title_voting_power_0": "titles_voting_power_0",
+    "grant_title_voting_power_1": "titles_voting_power_1",
+    "banish_voting_power_0": "justice_voting_power_0",
+    "banish_voting_power_1": "justice_voting_power_1",
+    "execution_voting_power_0": "justice_voting_power_0",
+    "execution_voting_power_1": "justice_voting_power_1",
+    "vassal_wars_law_0": "king_peace_0",
+    "vassal_wars_law_1": "king_peace_1",
+    "vassal_wars_law_2": "king_peace_2",
+    "out_of_realm_inheritance_law_0": "inheritance_0",
+    "out_of_realm_inheritance_law_1": "inheritance_1",
+    "revoke_title_law_0": "ze_revokation_0",
+    "revoke_title_law_1": "ze_revokation_1",
+    "revoke_title_law_2": "ze_revokation_2",
+    "ze_administration_laws_0": "administration_0",
+    "ze_administration_laws_1": "administration_1",
+    "ze_administration_laws_2": "administration_2"
 }
 
 @print_time
@@ -413,6 +444,8 @@ def main():
         for n, v in tree:
             if n.val != 'laws_groups':
                 valid_laws.update(n2.val for n2, v2 in v)
+
+    assert valid_laws.isdisjoint(replace_law_dict), "A valid law is also in the list of laws that are to be replaced!"
 
     shutil.rmtree(str(emfswmhhistory / 'characters'), ignore_errors=True)
 
@@ -476,10 +509,6 @@ def main():
                 except:
                     print(path)
                     raise
-            if path.stem == 'e_byzantium':
-                for n, v in tree[3, 1, 27]:
-                    if n.val == 'law' and v.val == 'imperial_administration':
-                        v.val = 'administration_2'
         elif path.stem == 'd_apostolic':
             for p in reversed(tree):
                 for p2 in reversed(p.value):
@@ -502,7 +531,8 @@ def main():
             parser.write(tree, emfswmhhistory / 'titles/b_trazak.txt')
         elif path.stem == 'k_hungary':
             changed = True
-            assert len(tree.contents) == 50
+            assert len(tree.contents) == 56
+            # comment out the last (and only) item in the 580 block (set_coa)
             assert len(tree[580, 1, 1].contents) == 1
             item = tree[580, 1, 1].contents.pop()
             comments = item.pre_comments
@@ -510,6 +540,7 @@ def main():
             comments.extend(
                 [Comment(x) for x in item.inline_str(parser)[0].splitlines()])
             tree[580, 1, 1].ker.pre_comments[:0] = comments
+            # comment out the last pair in the 797 obj (reset_coa)
             assert len(tree[797, 1, 1].contents) == 2
             item = tree[797, 1, 1].contents.pop()
             comments = item.pre_comments
@@ -517,32 +548,30 @@ def main():
             comments.extend(
                 [Comment(x) for x in item.inline_str(parser)[0].splitlines()])
             tree[797, 1, 1].ker.pre_comments[:0] = comments
-            tree[1000, 12, 25].contents[:0] = parser.parse('''
-                set_global_flag = emf_conquest_hungary_completed
-                effect = { set_title_flag = ai_converted_catholic }
-                ''').contents
+            # insert two pairs between the 22nd (835) and the 23rd (907)...
             tree.contents[22:22] = parser.parse('''
                 895.1.1 = {
                     effect = { set_title_flag = hungary_name_change }
+                    set_global_flag = emf_magyar_migration_started
                 }
                 902.1.1 = {
-                    set_global_flag = emf_magyar_migration_started
                     set_global_flag = emf_magyar_migration_completed
                 }
                 ''').contents
+            # ...and move the commented-out 895 to a reasonable place
             tree.contents[22].pre_comments = tree.contents[24].pre_comments
             tree.contents[24].pre_comments = []
-        elif path.stem == 'k_magyar':
-            changed = True
-            item = tree[20, 1, 1].contents.pop()
-            comments = [Comment(x) for x in item.str(parser).splitlines()]
-            tree[20, 1, 1].ker.pre_comments[:0] = comments
-            tree[764, 1, 1].contents[:0] = parser.parse('''
-                law = succ_gavelkind
+            # prepend a pair to the 907 obj
+            tree[907, 1, 1].contents[:0] = parser.parse('''
+                set_global_flag = emf_conquest_hungary_completed
+                ''').contents
+            # prepend a pair to the 1000 obj
+            tree[1000, 12, 25].contents[:0] = parser.parse('''
+                effect = { set_title_flag = ai_converted_catholic }
                 ''').contents
         elif path.stem == 'e_china_west_governor':
             changed = True
-            assert len(tree.contents) == 38
+            assert len(tree.contents) == 43
             tree[1264, 8, 21].contents.extend(parser.parse('''
                 effect = { set_coa = e_china_yuan }
                 ''').contents)
@@ -555,9 +584,11 @@ def main():
             tree[1005, 1, 1].contents.extend(parser.parse('''
                 effect = { set_coa = e_china_liao }
                 ''').contents)
-            tree[960, 2, 1].contents.extend(parser.parse('''
-                effect = { set_coa = e_china_song }
-                ''').contents)
+            tree.contents[11:11] = parser.parse('''
+                960.2.1 = {
+                    effect = { set_coa = e_china_song }
+                }
+                ''').contents
             tree.contents[6:6] = parser.parse('''
                 907.5.12 = {
                     effect = { reset_coa = THIS }
@@ -581,9 +612,24 @@ def main():
             bad = {p2 for p2 in v.contents
                 if p2.key.val == 'vice_royalty' or
                     p2.key.val == 'law' and p2.value.val not in valid_laws}
+            # working this way (create set + insert set) avoids duplicate law entries
+            # (compared to just replacing values in v.contents)
+            replaced_law_entries = OrderedDict() # OrderedDict with bogus values as a hacky ordered set (makes sure new laws are inserted in a deterministic order)
+            for p2 in v.contents:
+                if p2.key.val == 'law' and p2.value.val in replace_law_dict:
+                    if isinstance(replace_law_dict[p2.value.val], tuple):
+                        for new_law in replace_law_dict[p2.value.val]:
+                            replaced_law_entries[new_law] = None
+                    else:
+                        replaced_law_entries[replace_law_dict[p2.value.val]] = None
             if len(bad) > 0:
                 changed = True
                 v.contents = [p2 for p2 in v.contents if p2 not in bad]
+            if len(replaced_law_entries) > 0:
+                changed = True
+                v.contents += parser.parse(
+                    '\n'.join('law = ' + new_law for new_law in replaced_law_entries.keys())
+                    ).contents
         if changed:
             tree.contents = [p for p in tree.contents
                              if p.value.contents or p.has_comments]

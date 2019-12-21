@@ -14,14 +14,14 @@ from localpaths import rootpath
 # rather than do its full set of operations. additionally, EMF+SWMH history is auto-generated from here, and so are some
 # misc. bits of code (e.g., holding slot trigger for SWMH for the prosperity land reclamation event).
 
-version = 'v10.6-BETA'
+version = 'v11.1-BETA'
 version_path = rootpath / 'EMF/EMF/version.txt'
 emf_src_path = rootpath / 'EMF/src'
 
 scons_bin_path = Path('/usr/bin/scons')
 mapcut_bin_path_default = Path('/usr/local/bin/mapcut')
 mapcut_path = rootpath / 'ck2utils/mapcut'
-cut_titles = ['e_rajastan', 'e_mali', 'k_sahara', 'k_fezzan', 'k_kanem', 'k_hausaland', 'k_canarias']
+cut_titles = ['e_rajastan', 'e_deccan', 'e_mali', 'k_sahara', 'k_fezzan', 'k_kanem', 'k_hausaland', 'k_canarias']
 emf_holding_slot_path = emf_src_path / 'holding_slot_trigger.py'
 emf_swmh_history_path = emf_src_path / 'emf_swmh_history.py'
 cadet_codegen_path = emf_src_path / 'cadet_codegen.py'

@@ -75,7 +75,6 @@ def main():
 		print_reset_flags_positively_effect(f)
 		print_remove_negative_mendelian_traits_effect(f)
 		print_remove_negative_mendelian_traits_with_genetics_effect(f)
-		print_savecompat_shorten_flag_names(f)
 	return 0
 
 
@@ -286,21 +285,6 @@ def print_remove_negative_mendelian_traits_with_genetics_effect(f):
 		if p.type != Phenotype.MENDELIAN:
 			continue
 		print('\temf_dna_remove_trait_{} = yes'.format(p.id), file=f)
-	print('}', file=f)
-
-
-def print_savecompat_shorten_flag_names(f):
-	print(file=f)
-	print('# Convert old, longer gene flag IDs to new, shorter IDs', file=f)
-	print('# TMP-SAVE-COMPAT: remove in code-generator after EMF v10.X', file=f)
-	print('emf_dna_savecompat_shorten_flag_names = {', file=f)
-	for p in phenotypes:
-		for g in genes:
-			print('\tif = {', file=f)
-			print('\t\tlimit = {{ has_flag = {}_{} }}'.format(p.id, g), file=f)
-			print('\t\tclr_flag = {}_{}'.format(p.id, g), file=f)
-			print('\t\tset_flag = {}_{}'.format(p.prefix, g), file=f)
-			print('\t}', file=f)
 	print('}', file=f)
 
 
