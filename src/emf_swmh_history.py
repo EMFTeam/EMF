@@ -492,20 +492,6 @@ def main():
     targetpath = emfswmhhistory / path.relative_to(swmhhistory)
     parser.write(tree, targetpath)
 
-    # Add Jannabid bloodline:
-    path = swmhhistory / 'characters/bedouin_arabic.txt'
-    tree = parser.parse_file(path)
-    entry = tree[74040][880, 1, 1]
-    entry.contents[1:] = parser.parse('create_bloodline = { type = jannabid }').contents
-    parser.write(tree, emfswmhhistory / path.relative_to(swmhhistory))
-
-    # Add pseudo-Aethelstan bloodline (to his father, Edward the Elder):
-    path = swmhhistory / 'characters/saxon.txt'
-    tree = parser.parse_file(path)
-    entry = tree[100][920, 1, 1]
-    entry.contents[1:] = parser.parse('create_bloodline = { type = athelstan }').contents
-    parser.write(tree, emfswmhhistory / path.relative_to(swmhhistory))
-
     shutil.rmtree(str(emfswmhhistory / 'titles'), ignore_errors=True)
 
     parser.newlines_to_depth = -1
