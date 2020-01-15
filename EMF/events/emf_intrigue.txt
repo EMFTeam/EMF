@@ -8788,9 +8788,55 @@ character_event = {
 			random_lover = {
 				limit = {
 					NOR = {
-						any_spouse = { character = event_target:target_spy_on }
-						any_consort = { character = event_target:target_spy_on }
 						character = ROOT
+						is_married = PREV
+						is_consort = PREV
+					}
+				}
+				preferred_limit = { # Prefer more scandalous lovers
+					OR = {
+						is_married = yes
+						AND = {
+							same_sex = PREV
+							trigger_if = {
+								limit = { is_female = yes }
+								OR = {
+									emf_female_homosexual_indifferent_religion = no
+									PREV = { emf_female_homosexual_indifferent_religion = no }
+								}
+								ROOT = {
+									true_religion_scope = {
+										NOT = { emf_female_homosexual_indifferent_religion = yes }
+									}
+								}
+							}
+							trigger_else = {
+								OR = {
+									emf_male_homosexual_indifferent_religion = no
+									PREV = { emf_male_homosexual_indifferent_religion = no }
+								}
+								ROOT = {
+									true_religion_scope = {
+										NOT = { emf_male_homosexual_indifferent_religion = yes }
+									}
+								}
+							}
+						}
+						AND = {
+							is_close_relative = PREV
+							OR = {
+								emf_divine_blood_religion = no
+								PREV = { emf_divine_blood_religion = no }
+							}
+							ROOT = { emf_divine_blood_true_religion = no }
+						}
+						AND = {
+							is_ruler = yes
+							is_theocracy = yes
+							religion_scope = { NOT = { has_flag = emf_priests_can_marry } }
+						}
+						is_ascetic_trigger = yes
+						age_diff = { who = PREV years = 25 }
 					}
 				}
 				save_event_target_as = target_revealed_lover
@@ -8804,8 +8850,8 @@ character_event = {
 		if = {
 			limit = {
 				OR = {
-					any_spouse = { character = event_target:target_spy_on }
-					any_consort = { character = event_target:target_spy_on }
+					is_married = event_target:target_spy_on
+					is_consort = event_target:target_spy_on
 				}
 			}
 			if = {
@@ -8822,8 +8868,7 @@ character_event = {
 					}
 				}
 			}
-			if = {
-				limit = { is_female = yes }
+			else = {
 				opinion = {
 					who = event_target:target_spy_on
 					modifier = opinion_unfaithful_husband
@@ -8841,8 +8886,8 @@ character_event = {
 		if = {
 			limit = {
 				OR = {
-					any_spouse = { character = event_target:target_revealed_lover }
-					any_consort = { character = event_target:target_revealed_lover }
+					is_married = event_target:target_revealed_lover
+					is_consort = event_target:target_revealed_lover
 				}
 			}
 			if = {
@@ -8881,57 +8926,70 @@ character_event = {
 		name = EVTOPTA_emf_intrigue_1515 # Blackmail him
 		trigger = {
 			event_target:target_spy_on = { wealth = 50 }
-			NOT = { is_father = event_target:target_spy_on }
-			NOT = { is_mother = event_target:target_spy_on }
-			NOT = { is_consort = event_target:target_spy_on }
-			NOT = { is_consort = event_target:target_revealed_lover }
-			NOT = {
-				any_spouse = {
-					OR = {
-						character = event_target:target_spy_on
-						character = event_target:target_revealed_lover
-					}
-				}
-			}
 		}
 		ai_chance = {
 			factor = 100
 			modifier = {
 				factor = 0
-				OR = {
-					trait = kind
-					trait = honest
-					trait = just
-				}
+				ai_honor = 0
+				NOT = { ai_greed = 0 }
 			}
 			modifier = {
 				factor = 2
-				OR = {
-					trait = greedy
-					trait = deceitful
-					trait = cruel
+				NOT = { ai_honor = 0 }
+				ai_greed = 0
+			}
+			modifier = {
+				factor = 0
+				event_target:target_spy_on = {
+					OR = {
+						NOT = { wealth = 100 }
+						reverse_opinion = { who = ROOT value = 25 }
+						AND = {
+							is_liege_of = ROOT
+							NAND = {
+								is_ruler = yes
+								is_theocracy = yes
+								religion_scope = { NOT = { has_flag = emf_priests_can_marry } }
+							}
+						}
+					}
 				}
 			}
 			modifier = {
 				factor = 0
-				event_target:target_revealed_lover = { wealth = 50 }
-				event_target:target_spy_on = { wealth = 50 }
+				event_target:target_revealed_lover = {
+					NOR = {
+						NOT = { wealth = 100 }
+						reverse_opinion = { who = ROOT value = 25 }
+						AND = {
+							is_liege_of = ROOT
+							NAND = {
+								is_ruler = yes
+								is_theocracy = yes
+								religion_scope = { NOT = { has_flag = emf_priests_can_marry } }
+							}
+						}
+					}
+				}
+				event_target:target_spy_on = {
+					NOR = {
+						NOT = { wealth = 100 }
+						reverse_opinion = { who = ROOT value = 25 }
+						AND = {
+							is_liege_of = ROOT
+							NAND = {
+								is_ruler = yes
+								is_theocracy = yes
+								religion_scope = { NOT = { has_flag = emf_priests_can_marry } }
+							}
+						}
+					}
+				}
 				likes_better_than = {
 					who = event_target:target_spy_on
 					than = event_target:target_revealed_lover
 				}
-			}
-			modifier = {
-				factor = 0
-				event_target:target_revealed_lover = { reverse_opinion = { who = ROOT value = 25 } }
-			}
-			modifier = {
-				factor = 0
-				event_target:target_revealed_lover = { is_liege_of = ROOT }
-			}
-			modifier = {
-				factor = 0
-				event_target:target_spy_on = { NOT = { wealth = 100 } }
 			}
 		}
 		if = {
@@ -8950,57 +9008,70 @@ character_event = {
 		name = EVTOPTB_emf_intrigue_1515 # Blackmail the lover
 		trigger = {
 			event_target:target_revealed_lover = { wealth = 50 }
-			NOT = { is_father = event_target:target_spy_on }
-			NOT = { is_mother = event_target:target_spy_on }
-			NOT = { is_consort = event_target:target_spy_on }
-			NOT = { is_consort = event_target:target_revealed_lover }
-			NOT = {
-				any_spouse = {
-					OR = {
-						character = event_target:target_spy_on
-						character = event_target:target_revealed_lover
-					}
-				}
-			}
 		}
 		ai_chance = {
 			factor = 100
 			modifier = {
 				factor = 0
-				OR = {
-					trait = kind
-					trait = honest
-					trait = just
-				}
+				ai_honor = 0
+				NOT = { ai_greed = 0 }
 			}
 			modifier = {
 				factor = 2
-				OR = {
-					trait = greedy
-					trait = deceitful
-					trait = cruel
+				NOT = { ai_honor = 0 }
+				ai_greed = 0
+			}
+			modifier = {
+				factor = 0
+				event_target:target_revealed_lover = {
+					OR = {
+						NOT = { wealth = 100 }
+						reverse_opinion = { who = ROOT value = 25 }
+						AND = {
+							is_liege_of = ROOT
+							NAND = {
+								is_ruler = yes
+								is_theocracy = yes
+								religion_scope = { NOT = { has_flag = emf_priests_can_marry } }
+							}
+						}
+					}
 				}
 			}
 			modifier = {
 				factor = 0
-				event_target:target_revealed_lover = { wealth = 50 }
-				event_target:target_spy_on = { wealth = 50 }
+				event_target:target_revealed_lover = {
+					NOR = {
+						NOT = { wealth = 100 }
+						reverse_opinion = { who = ROOT value = 25 }
+						AND = {
+							is_liege_of = ROOT
+							NAND = {
+								is_ruler = yes
+								is_theocracy = yes
+								religion_scope = { NOT = { has_flag = emf_priests_can_marry } }
+							}
+						}
+					}
+				}
+				event_target:target_spy_on = {
+					NOR = {
+						NOT = { wealth = 100 }
+						reverse_opinion = { who = ROOT value = 25 }
+						AND = {
+							is_liege_of = ROOT
+							NAND = {
+								is_ruler = yes
+								is_theocracy = yes
+								religion_scope = { NOT = { has_flag = emf_priests_can_marry } }
+							}
+						}
+					}
+				}
 				likes_better_than = {
 					who = event_target:target_revealed_lover
 					than = event_target:target_spy_on
 				}
-			}
-			modifier = {
-				factor = 0
-				event_target:target_revealed_lover = { reverse_opinion = { who = ROOT value = 25 } }
-			}
-			modifier = {
-				factor = 0
-				event_target:target_revealed_lover = { is_liege_of = ROOT }
-			}
-			modifier = {
-				factor = 0
-				event_target:target_revealed_lover = { NOT = { wealth = 100 } }
 			}
 		}
 		if = {
@@ -9023,23 +9094,27 @@ character_event = {
 				factor = 2
 				OR = {
 					trait = zealous
-					trait = honest
-					trait = just
+					ai_zeal = 100
+					ai_honor = 25
 				}
 			}
 			modifier = {
 				factor = 0.5
 				OR = {
-					trait = greedy
-					trait = deceitful
-					trait = cruel
+					AND = {
+						NOT = { ai_honor = 0 }
+						ai_greed = 0
+					}
 					trait = kind
 					trait = arbitrary
 				}
 			}
 			modifier = {
 				factor = 0
-				event_target:target_revealed_lover = { reverse_opinion = { who = ROOT value = 50 } }
+				OR = {
+					event_target:target_spy_on = { reverse_opinion = { who = ROOT value = 50 } }
+					event_target:target_revealed_lover = { reverse_opinion = { who = ROOT value = 50 } }
+				}
 			}
 		}
 		if = {
@@ -9116,12 +9191,14 @@ letter_event = {
 			factor = 100
 			modifier = {
 				factor = 5
-				religion_group = christian
 				NOT = { has_character_modifier = adulterous_priest }
 				OR = {
-					trait = monk
-					trait = nun
-					AND = { is_ruler = yes is_theocracy = yes }
+					is_ascetic_trigger = yes
+					AND = {
+						is_ruler = yes
+						is_theocracy = yes
+						religion_scope = { NOT = { has_flag = emf_priests_can_marry } }
+					}
 				}
 			}
 			modifier = {
@@ -9130,10 +9207,16 @@ letter_event = {
 					same_sex = ROOT
 					NOT = { character = ROOT }
 				}
-				religion_openly_hellenic_or_reformed_trigger = no
-				NOR = {
-					has_character_modifier = known_sodomite
-					has_character_modifier = known_sodomite_pagan
+				trigger_if = {
+					limit = { is_female = yes }
+					emf_female_homosexual_indifferent_religion = no
+				}
+				trigger_else = {
+					emf_male_homosexual_indifferent_religion = no
+					NOR = {
+						has_character_modifier = known_sodomite
+						has_character_modifier = known_sodomite_pagan
+					}
 				}
 			}
 			modifier = {
@@ -9142,10 +9225,16 @@ letter_event = {
 					same_sex = ROOT
 					NOT = { character = ROOT }
 				}
-				religion_openly_hellenic_or_reformed_trigger = no
-				NOR = {
-					has_character_modifier = known_sodomite
-					has_character_modifier = known_sodomite_pagan
+				trigger_if = {
+					limit = { is_female = yes }
+					emf_female_homosexual_indifferent_religion = no
+				}
+				trigger_else = {
+					emf_male_homosexual_indifferent_religion = no
+					NOR = {
+						has_character_modifier = known_sodomite
+						has_character_modifier = known_sodomite_pagan
+					}
 				}
 			}
 			modifier = {
@@ -9184,12 +9273,14 @@ letter_event = {
 			}
 			modifier = {
 				factor = 0.1
-				religion_group = christian
 				has_character_modifier = adulterous_priest
 				OR = {
-					trait = monk
-					trait = nun
-					AND = { is_ruler = yes is_theocracy = yes }
+					is_ascetic_trigger = yes
+					AND = {
+						is_ruler = yes
+						is_theocracy = yes
+						religion_scope = { NOT = { has_flag = emf_priests_can_marry } }
+					}
 				}
 			}
 			modifier = {
@@ -9198,10 +9289,16 @@ letter_event = {
 					same_sex = ROOT
 					NOT = { character = ROOT }
 				}
-				OR = {
-					has_character_modifier = known_sodomite
-					has_character_modifier = known_sodomite_pagan
-					religion_openly_hellenic_or_reformed_trigger = yes
+				trigger_if = {
+					limit = { is_female = yes }
+					emf_female_homosexual_indifferent_religion = yes
+				}
+				trigger_else = {
+					OR = {
+						has_character_modifier = known_sodomite
+						has_character_modifier = known_sodomite_pagan
+						emf_male_homosexual_indifferent_religion = yes
+					}
 				}
 			}
 			modifier = {
@@ -9210,10 +9307,16 @@ letter_event = {
 					same_sex = ROOT
 					NOT = { character = ROOT }
 				}
-				OR = {
-					has_character_modifier = known_sodomite
-					has_character_modifier = known_sodomite_pagan
-					religion_openly_hellenic_or_reformed_trigger = yes
+				trigger_if = {
+					limit = { is_female = yes }
+					emf_female_homosexual_indifferent_religion = yes
+				}
+				trigger_else = {
+					OR = {
+						has_character_modifier = known_sodomite
+						has_character_modifier = known_sodomite_pagan
+						emf_male_homosexual_indifferent_religion = yes
+					}
 				}
 			}
 			modifier = {

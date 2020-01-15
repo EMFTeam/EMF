@@ -28,10 +28,6 @@ character_event = {
 	
 	trigger = {
 		has_dlc = "Way of Life"
-		OR = {
-			has_polygamy = no
-			is_female = no
-		}
 		NOT = { trait = infirm }
 		NOT = { is_inaccessible_trigger = yes }
 		NOT = { trait = on_hajj }
@@ -48,12 +44,18 @@ character_event = {
 			is_incapable = no
 			NOT = { trait = on_pilgrimage }
 			any_lover = {
-				NOT = { character = ROOT }
+				NOR = {
+					character = ROOT
+					is_married = PREV
+					is_consort = PREV
+				}
+				NAND = {
+					is_lover = ROOT
+					PREV = { is_lover = ROOT }
+				}
 				NOT = { has_character_modifier = wol_court_tomcat }
 				NOT = { has_character_modifier = wol_court_vixen }
 				prisoner = no
-				NOT = { is_consort = PREV }
-				NOT = { any_spouse = { character = PREVPREV } }
 			}
 			NOT = { has_character_modifier = wol_court_tomcat }
 			NOT = { has_character_modifier = wol_court_vixen }
@@ -129,31 +131,37 @@ character_event = {
 				NOT = { trait = on_pilgrimage }
 				NOT = { has_character_modifier = wol_court_tomcat }
 				NOT = { has_character_modifier = wol_court_vixen }
-				NOT = {
+				NOR = {
 					reverse_has_opinion_modifier = {
 						who = ROOT
 						modifier = opinion_cuckolded
 					}
-				}
-				NOT = {
 					reverse_has_opinion_modifier = {
 						who = ROOT
 						modifier = opinion_cuckolded_private
 					}
-				}
-				NOT = {
 					reverse_has_opinion_modifier = {
 						who = ROOT
 						modifier = slut_seductress
 					}
+					reverse_has_opinion_modifier = {
+						who = ROOT
+						modifier = opinion_seductress_private
+					}
 				}
 				any_lover = {
-					NOT = { character = ROOT }
+					NOR = {
+						character = ROOT
+						is_married = PREV
+						is_consort = PREV
+					}
+					NAND = {
+						is_lover = ROOT
+						PREV = { is_lover = ROOT }
+					}
 					NOT = { has_character_modifier = wol_court_tomcat }
 					NOT = { has_character_modifier = wol_court_vixen }
 					prisoner = no
-					NOT = { is_consort = PREV }
-					NOT = { any_spouse = { character = PREVPREV } }
 				}
 			}
 			character_event = { id = WoL.1001 }
@@ -171,12 +179,18 @@ character_event = {
 	immediate = {
 		random_lover = {
 			limit = {
-				NOT = { character = FROM }
+				NOR = {
+					character = FROM
+					is_married = ROOT
+					is_consort = ROOT
+				}
+				NAND = {
+					is_lover = FROM
+					ROOT = { is_lover = FROM }
+				}
 				NOT = { has_character_modifier = wol_court_tomcat }
 				NOT = { has_character_modifier = wol_court_vixen }
 				prisoner = no
-				NOT = { is_consort = FROM }
-				NOT = { any_spouse = { character = FROM } }
 			}
 			character_event = { id = WoL.1002 }
 		}
@@ -261,7 +275,25 @@ character_event = {
 			factor = 100
 			modifier = {
 				factor = 2.0
-				trait = honest
+				ai_honor = 0
+			}
+			modifier = {
+				factor = 2.0
+				personal_opinion = {
+					who = FROM
+					value = 50
+				}
+				NOT = {
+					personal_opinion = {
+						who = FROMFROM
+						value = 0
+					}
+				}
+			}
+			modifier = {
+				factor = 3.0
+				is_lover = FROM
+				NOT = { is_lover = FROMFROM }
 			}
 		}
 		
@@ -285,7 +317,7 @@ character_event = {
 			factor = 100
 			modifier = {
 				factor = 2.0
-				trait = deceitful
+				NOT = { ai_honor = 0 }
 			}
 			modifier = {
 				factor = 2.0
@@ -293,10 +325,17 @@ character_event = {
 					who = FROMFROM
 					value = 50
 				}
+				NOT = {
+					personal_opinion = {
+						who = FROM
+						value = 0
+					}
+				}
 			}
 			modifier = {
 				factor = 3.0
 				is_lover = FROMFROM
+				NOT = { is_lover = FROM }
 			}
 		}
 		hidden_tooltip = {
@@ -311,9 +350,36 @@ character_event = {
 		trigger = {
 			FROM = { is_female = yes }
 			FROMFROM = { is_female = yes }
+			NAND = {
+				OR = {
+					trait = zealous
+					ai_zeal = 25
+				}
+				true_religion_scope = { emf_female_homosexual_indifferent_religion = no }
+			}
 		}
 		ai_chance = {
-			factor = 100
+			factor = 500
+		}
+		clr_character_flag = tipped_off_about_spouse_affair
+		clr_character_flag = spy_spouse_affair
+	}
+	
+	option = {
+		name = EVTOPTC_WOL_1003_HOMO_M # Two men? Who cares...
+		trigger = {
+			FROM = { is_female = no }
+			FROMFROM = { is_female = no }
+			NAND = {
+				OR = {
+					trait = zealous
+					ai_zeal = 25
+				}
+				true_religion_scope = { emf_male_homosexual_indifferent_religion = no }
+			}
+		}
+		ai_chance = {
+			factor = 500
 		}
 		clr_character_flag = tipped_off_about_spouse_affair
 		clr_character_flag = spy_spouse_affair
@@ -323,8 +389,20 @@ character_event = {
 		name = EVTOPTC_WOL_1003 # Focus on more important matters
 		trigger = {
 			OR = {
-				FROM = { is_female = no }
-				FROMFROM = { is_female = no }
+				NOT = { FROM = { same_sex = ROOT_FROMFROM } }
+				AND = {
+					OR = {
+						trait = zealous
+						ai_zeal = 25
+					}
+					trigger_if = {
+						limit = { FROM = { is_female = yes } }
+						emf_female_homosexual_indifferent_religion = no
+					}
+					trigger_else = {
+						emf_male_homosexual_indifferent_religion = no
+					}
+				}
 			}
 		}
 		
@@ -532,31 +610,41 @@ character_event = {
 				is_lover = FROM
 			}
 		}
+		
 		opinion = {
 			who = FROM
 			modifier = opinion_unfaithful_private
-			months = 24
+			years = 10
 		}
 		if = {
 			limit = {
-				is_female = yes
-				FROMFROMFROM = { is_female = yes }
+				OR = {
+					is_married = FROMFROMFROM
+					AND = {
+						is_consort = FROMFROMFROM
+						is_senior_consort_party = yes
+					}
+				}
 			}
 			opinion = {
 				who = FROMFROMFROM
-				modifier = slut_seductress
-				months = 120
+				modifier = opinion_unfaithful_private
+				years = 10
 			}
 		}
-		if = {
-			limit = {
-				is_female = no
-				FROMFROMFROM = { is_female = no }
+		else_if = {
+			limit = { FROMFROMFROM = { is_female = yes } }
+			opinion = {
+				who = FROMFROMFROM
+				modifier = opinion_seductress_private
+				years = 10
 			}
+		}
+		else = {
 			opinion = {
 				who = FROMFROMFROM
 				modifier = opinion_cuckolded_private
-				months = 240
+				years = 10
 			}
 		}
 	}
@@ -597,59 +685,97 @@ character_event = {
 				trait = cruel
 			}
 		}
-			
+		
 		if = {
 			limit = { FROM = { is_female = yes } }
+			if = {
+				limit = { religion_scope = { has_religion_feature = religion_matriarchal } }
+				opinion = {
+					who = FROM
+					modifier = opinion_unfaithful_wife_nocrime
+					years = 10
+				}
+			}
+			else = {
+				opinion = {
+					who = FROM
+					modifier = opinion_unfaithful_wife
+					years = 10
+				}
+			}
+		}
+		else_if = {
+			limit = { gender_equality_trigger = yes }
 			opinion = {
 				who = FROM
-				modifier = opinion_unfaithful_wife
-				months = 120
+				modifier = opinion_unfaithful_husband_crime
+				years = 10
+			}
+		}
+		else = {
+			opinion = {
+				who = FROM
+				modifier = opinion_unfaithful_husband
+				years = 10
 			}
 		}
 		if = {
-			limit = { FROM = { is_female = no } }
-
-			if = {
-				limit = { gender_equality_trigger = no }
-				opinion = {
-					who = FROM
-					modifier = opinion_unfaithful_husband
-					months = 120
+			limit = {
+				OR = {
+					is_married = FROMFROMFROM
+					AND = {
+						is_consort = FROMFROMFROM
+						is_senior_consort_party = yes
+					}
 				}
 			}
 			if = {
+				limit = { FROMFROMFROM = { is_female = yes } }
+				if = {
+					limit = { religion_scope = { has_religion_feature = religion_matriarchal } }
+					opinion = {
+						who = FROMFROMFROM
+						modifier = opinion_unfaithful_wife_nocrime
+						years = 10
+					}
+				}
+				else = {
+					opinion = {
+						who = FROMFROMFROM
+						modifier = opinion_unfaithful_wife
+						years = 10
+					}
+				}
+			}
+			else_if = {
 				limit = { gender_equality_trigger = yes }
 				opinion = {
-					who = FROM
+					who = FROMFROMFROM
 					modifier = opinion_unfaithful_husband_crime
-					months = 120
+					years = 10
+				}
+			}
+			else = {
+				opinion = {
+					who = FROMFROMFROM
+					modifier = opinion_unfaithful_husband
+					years = 10
 				}
 			}
 		}
-		
-
-
-		if = {
-			limit = {
-				is_female = no
-				FROMFROMFROM = { is_female = no }
-			}
-			opinion = {
-				who = FROMFROMFROM
-				modifier = opinion_cuckolded
-				months = 120
-			}
-		}
-		
-		if = {
-			limit = {
-				is_female = yes
-				FROMFROMFROM = { is_female = yes }
-			}
+		else_if = {
+			limit = { FROMFROMFROM = { is_female = yes } }
 			opinion = {
 				who = FROMFROMFROM
 				modifier = slut_seductress
-				months = 120
+				years = 10
+			}
+		}
+		else = {
+			opinion = {
+				who = FROMFROMFROM
+				modifier = opinion_cuckolded
+				years = 10
 			}
 		}
 		
@@ -814,31 +940,40 @@ character_event = {
 		opinion = {
 			who = FROM
 			modifier = opinion_unfaithful_private
-			months = 24
-		}
-		
-		add_rival = FROMFROMFROM
-		
-		if = {
-			limit = {
-				is_female = yes
-				FROMFROMFROM = { is_female = yes }
-			}
-			opinion = {
-				who = FROMFROMFROM
-				modifier = slut_seductress
-				months = 120
-			}
+			years = 10
 		}
 		if = {
 			limit = {
-				is_female = no
-				FROMFROMFROM = { is_female = no }
+				OR = {
+					is_married = FROMFROMFROM
+					AND = {
+						is_consort = FROMFROMFROM
+						is_senior_consort_party = yes
+					}
+				}
 			}
 			opinion = {
 				who = FROMFROMFROM
-				modifier = opinion_cuckolded_private
-				months = 240
+				modifier = opinion_unfaithful_private
+				years = 10
+			}
+		}
+		else = {
+			add_rival = FROMFROMFROM
+			if = {
+				limit = { FROMFROMFROM = { is_female = yes } }
+				opinion = {
+					who = FROMFROMFROM
+					modifier = opinion_seductress_private
+					years = 10
+				}
+			}
+			else = {
+				opinion = {
+					who = FROMFROMFROM
+					modifier = opinion_cuckolded_private
+					years = 10
+				}
 			}
 		}
 	}
@@ -879,44 +1014,97 @@ character_event = {
 				trait = cruel
 			}
 		}
-			
-		if = {
-			limit = { FROM = { is_female = yes } }
-			opinion = {
-				who = FROM
-				modifier = opinion_unfaithful_wife
-				months = 120
-			}
-		}
-		if = {
-			limit = { FROM = { is_female = no } }
-			if = {
-				limit = { gender_equality_trigger = no }
-				opinion = {
-					who = FROM
-					modifier = opinion_unfaithful_husband
-					months = 120
-				}
-			}
-			if = {
-				limit = { gender_equality_trigger = yes }
-				opinion = {
-					who = FROM
-					modifier = opinion_unfaithful_husband_crime
-					months = 120
-				}
-			}
-		}
 		
 		if = {
-			limit = {
-				is_female = no
-				FROMFROMFROM = { is_female = no }
+			limit = { FROM = { is_female = yes } }
+			if = {
+				limit = { religion_scope = { has_religion_feature = religion_matriarchal } }
+				opinion = {
+					who = FROM
+					modifier = opinion_unfaithful_wife_nocrime
+					years = 10
+				}
 			}
+			else = {
+				opinion = {
+					who = FROM
+					modifier = opinion_unfaithful_wife
+					years = 10
+				}
+			}
+		}
+		else_if = {
+			limit = { gender_equality_trigger = yes }
+			opinion = {
+				who = FROM
+				modifier = opinion_unfaithful_husband_crime
+				years = 10
+			}
+		}
+		else = {
+			opinion = {
+				who = FROM
+				modifier = opinion_unfaithful_husband
+				years = 10
+			}
+		}
+		if = {
+			limit = {
+				OR = {
+					is_married = FROMFROMFROM
+					AND = {
+						is_consort = FROMFROMFROM
+						is_senior_consort_party = yes
+					}
+				}
+			}
+			if = {
+				limit = { FROMFROMFROM = { is_female = yes } }
+				if = {
+					limit = { religion_scope = { has_religion_feature = religion_matriarchal } }
+					opinion = {
+						who = FROMFROMFROM
+						modifier = opinion_unfaithful_wife_nocrime
+						years = 10
+					}
+				}
+				else = {
+					opinion = {
+						who = FROMFROMFROM
+						modifier = opinion_unfaithful_wife
+						years = 10
+					}
+				}
+			}
+			else_if = {
+				limit = { gender_equality_trigger = yes }
+				opinion = {
+					who = FROMFROMFROM
+					modifier = opinion_unfaithful_husband_crime
+					years = 10
+				}
+			}
+			else = {
+				opinion = {
+					who = FROMFROMFROM
+					modifier = opinion_unfaithful_husband
+					years = 10
+				}
+			}
+		}
+		else_if = {
+			limit = { FROMFROMFROM = { is_female = yes } }
+			opinion = {
+				who = FROMFROMFROM
+				modifier = slut_seductress
+				years = 10
+			}
+		}
+		else = {
 			opinion = {
 				who = FROMFROMFROM
 				modifier = opinion_cuckolded
-				months = 120
+				years = 10
 			}
 		}
 		
@@ -1381,34 +1569,44 @@ character_event = {
 				is_lover = FROMFROMFROM
 			}
 		}
+		
 		opinion = {
 			who = FROMFROMFROM
 			modifier = opinion_unfaithful_private
-			months = 24
-		}
-		
-		add_rival = FROM
-		
-		if = {
-			limit = {
-				is_female = yes
-				FROM = { is_female = yes }
-			}
-			opinion = {
-				who = FROM
-				modifier = slut_seductress
-				months = 120
-			}
+			years = 10
 		}
 		if = {
 			limit = {
-				is_female = no
-				FROM = { is_female = no }
+				OR = {
+					is_married = FROM
+					AND = {
+						is_consort = FROM
+						is_senior_consort_party = yes
+					}
+				}
 			}
 			opinion = {
 				who = FROM
-				modifier = opinion_cuckolded_private
-				months = 240
+				modifier = opinion_unfaithful_private
+				years = 10
+			}
+		}
+		else = {
+			add_rival = FROM
+			if = {
+				limit = { FROM = { is_female = yes } }
+				opinion = {
+					who = FROM
+					modifier = opinion_seductress_private
+					years = 10
+				}
+			}
+			else = {
+				opinion = {
+					who = FROM
+					modifier = opinion_cuckolded_private
+					years = 10
+				}
 			}
 		}
 	}
@@ -1449,56 +1647,97 @@ character_event = {
 				trait = cruel
 			}
 		}
-			
+		
 		if = {
 			limit = { FROMFROMFROM = { is_female = yes } }
+			if = {
+				limit = { religion_scope = { has_religion_feature = religion_matriarchal } }
+				opinion = {
+					who = FROMFROMFROM
+					modifier = opinion_unfaithful_wife_nocrime
+					years = 10
+				}
+			}
+			else = {
+				opinion = {
+					who = FROMFROMFROM
+					modifier = opinion_unfaithful_wife
+					years = 10
+				}
+			}
+		}
+		else_if = {
+			limit = { gender_equality_trigger = yes }
 			opinion = {
 				who = FROMFROMFROM
-				modifier = opinion_unfaithful_wife
-				months = 120
+				modifier = opinion_unfaithful_husband_crime
+				years = 10
+			}
+		}
+		else = {
+			opinion = {
+				who = FROMFROMFROM
+				modifier = opinion_unfaithful_husband
+				years = 10
 			}
 		}
 		if = {
-			limit = { FROMFROMFROM = { is_female = no } }
-			if = {
-				limit = { gender_equality_trigger = no }
-				opinion = {
-					who = FROMFROMFROM
-					modifier = opinion_unfaithful_husband
-					months = 120
+			limit = {
+				OR = {
+					is_married = FROM
+					AND = {
+						is_consort = FROM
+						is_senior_consort_party = yes
+					}
 				}
 			}
 			if = {
+				limit = { FROM = { is_female = yes } }
+				if = {
+					limit = { religion_scope = { has_religion_feature = religion_matriarchal } }
+					opinion = {
+						who = FROM
+						modifier = opinion_unfaithful_wife_nocrime
+						years = 10
+					}
+				}
+				else = {
+					opinion = {
+						who = FROM
+						modifier = opinion_unfaithful_wife
+						years = 10
+					}
+				}
+			}
+			else_if = {
 				limit = { gender_equality_trigger = yes }
 				opinion = {
-					who = FROMFROMFROM
+					who = FROM
 					modifier = opinion_unfaithful_husband_crime
-					months = 120
+					years = 10
+				}
+			}
+			else = {
+				opinion = {
+					who = FROM
+					modifier = opinion_unfaithful_husband
+					years = 10
 				}
 			}
 		}
-		
-		if = {
-			limit = {
-				is_female = no
-				FROM = { is_female = no }
-			}
-			opinion = {
-				who = FROM
-				modifier = opinion_cuckolded
-				months = 120
-			}
-		}
-		
-		if = {
-			limit = {
-				is_female = yes
-				FROM = { is_female = yes }
-			}
+		else_if = {
+			limit = { FROM = { is_female = yes } }
 			opinion = {
 				who = FROM
 				modifier = slut_seductress
-				months = 120
+				years = 10
+			}
+		}
+		else = {
+			opinion = {
+				who = FROM
+				modifier = opinion_cuckolded
+				years = 10
 			}
 		}
 		
@@ -2201,7 +2440,7 @@ character_event = {
 	}
 	desc = {
 		text = EVTDESC_WOL_1019_DUEL
-		trigger = { NOT = { has_character_flag = wol_lover_admitted_at_sword_point } }
+		trigger = { has_character_flag = wol_lover_admitted_at_sword_point }
 	}
 	
 	show_from_from = yes
@@ -2262,31 +2501,41 @@ character_event = {
 				is_lover = FROM
 			}
 		}
+		
 		opinion = {
 			who = FROM
 			modifier = opinion_unfaithful_private
-			months = 24
+			years = 10
 		}
 		if = {
 			limit = {
-				is_female = yes
-				FROMFROM = { is_female = yes }
+				OR = {
+					is_married = FROMFROM
+					AND = {
+						is_consort = FROMFROM
+						is_senior_consort_party = yes
+					}
+				}
 			}
 			opinion = {
 				who = FROMFROM
-				modifier = slut_seductress
-				months = 120
+				modifier = opinion_unfaithful_private
+				years = 10
 			}
 		}
-		if = {
-			limit = {
-				is_female = no
-				FROMFROM = { is_female = no }
+		else_if = {
+			limit = { FROMFROM = { is_female = yes } }
+			opinion = {
+				who = FROMFROM
+				modifier = opinion_seductress_private
+				years = 10
 			}
+		}
+		else = {
 			opinion = {
 				who = FROMFROM
 				modifier = opinion_cuckolded_private
-				months = 240
+				years = 10
 			}
 		}
 	}
@@ -2327,56 +2576,97 @@ character_event = {
 				trait = cruel
 			}
 		}
-			
+		
 		if = {
 			limit = { FROM = { is_female = yes } }
+			if = {
+				limit = { religion_scope = { has_religion_feature = religion_matriarchal } }
+				opinion = {
+					who = FROM
+					modifier = opinion_unfaithful_wife_nocrime
+					years = 10
+				}
+			}
+			else = {
+				opinion = {
+					who = FROM
+					modifier = opinion_unfaithful_wife
+					years = 10
+				}
+			}
+		}
+		else_if = {
+			limit = { gender_equality_trigger = yes }
 			opinion = {
 				who = FROM
-				modifier = opinion_unfaithful_wife
-				months = 120
+				modifier = opinion_unfaithful_husband_crime
+				years = 10
+			}
+		}
+		else = {
+			opinion = {
+				who = FROM
+				modifier = opinion_unfaithful_husband
+				years = 10
 			}
 		}
 		if = {
-			limit = { FROM = { is_female = no } }
-			if = {
-				limit = { gender_equality_trigger = no }
-				opinion = {
-					who = FROM
-					modifier = opinion_unfaithful_husband
-					months = 120
+			limit = {
+				OR = {
+					is_married = FROMFROM
+					AND = {
+						is_consort = FROMFROM
+						is_senior_consort_party = yes
+					}
 				}
 			}
 			if = {
+				limit = { FROMFROM = { is_female = yes } }
+				if = {
+					limit = { religion_scope = { has_religion_feature = religion_matriarchal } }
+					opinion = {
+						who = FROMFROM
+						modifier = opinion_unfaithful_wife_nocrime
+						years = 10
+					}
+				}
+				else = {
+					opinion = {
+						who = FROMFROM
+						modifier = opinion_unfaithful_wife
+						years = 10
+					}
+				}
+			}
+			else_if = {
 				limit = { gender_equality_trigger = yes }
 				opinion = {
-					who = FROM
+					who = FROMFROM
 					modifier = opinion_unfaithful_husband_crime
-					months = 120
+					years = 10
+				}
+			}
+			else = {
+				opinion = {
+					who = FROMFROM
+					modifier = opinion_unfaithful_husband
+					years = 10
 				}
 			}
 		}
-		
-		if = {
-			limit = {
-				is_female = no
-				FROMFROM = { is_female = no }
-			}
-			opinion = {
-				who = FROMFROM
-				modifier = opinion_cuckolded
-				months = 120
-			}
-		}
-		
-		if = {
-			limit = {
-				is_female = yes
-				FROMFROM = { is_female = yes }
-			}
+		else_if = {
+			limit = { FROMFROM = { is_female = yes } }
 			opinion = {
 				who = FROMFROM
 				modifier = slut_seductress
-				months = 120
+				years = 10
+			}
+		}
+		else = {
+			opinion = {
+				who = FROMFROM
+				modifier = opinion_cuckolded
+				years = 10
 			}
 		}
 		

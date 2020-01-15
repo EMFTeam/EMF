@@ -291,284 +291,587 @@ character_event = {
 	is_triggered_only = yes
 	
 	immediate = {
-		set_character_flag = adultery_discovered
 		if = {
 			limit = {
-				any_spouse = { character = event_target:target_adulterer }
+				OR = {
+					is_married = event_target:target_adulterer
+					is_consort = event_target:target_adulterer
+					character = event_target:target_adulterer
+				}
 			}
 			break = yes
 		}
 		
+		set_character_flag = adultery_discovered
+		
 		if = {
-			limit = {
-				has_nickname = no
-				random = 95 # 5% chance
+			limit = { has_nickname = no }
+			if = {
+				limit = {
+					is_opposite_sex = event_target:target_adulterer
+					OR = {
+						AND = {
+							is_married = yes
+							trigger_if = {
+								limit = { is_female = no }
+								is_married_matrilineally = yes
+							}
+							trigger_else = {
+								is_married_matrilineally = no
+							}
+						}
+						AND = {
+							is_consort = yes
+							is_senior_consort_party = no
+						}
+					}
+				}
+				random = {
+					chance = 50
+					give_nickname = nick_the_unfaithful
+				}
 			}
-			give_nickname = nick_the_unchaste
+			else = {
+				random = {
+					chance = 5
+					give_nickname = nick_the_unchaste
+				}
+			}
 		}
 		
 		if = {
 			limit = {
-				religion_group = christian
 				OR = {
+					is_ascetic_trigger = yes
 					AND = {
 						is_ruler = yes
 						is_theocracy = yes
+						religion_scope = { NOT = { has_flag = emf_priests_can_marry } }
 					}
-					is_ascetic_trigger = yes
 				}
 			}
 			add_character_modifier = {
 				name = adulterous_priest
 				years = 20
 			}
-			piety = -100
+			tiered_high_piety_negative_effect = yes
+			tiered_high_piety_negative_effect = yes
 		}
 		
-		event_target:target_adulterer = {
-			ROOT = {
+		if = {
+			limit = {
+				age_diff = {
+					who = event_target:target_adulterer
+					years = 25
+				}
+				is_older_than = event_target:target_adulterer
+				NOT = { has_character_modifier = cradle_robber }
+			}
+			add_character_modifier = {
+				name = cradle_robber
+				years = 5
+			}
+		}
+		
+		if = {
+			limit = {
+				is_pregnant = yes
+				father_of_unborn_known = no
+				father_of_unborn = {
+					character = event_target:target_adulterer
+				}
+			}
+			father_of_unborn_known = yes
+		}
+		
+		if = {
+			limit = {
+				is_close_relative = event_target:target_adulterer
+				emf_divine_blood_religion = no
+			}
+			if = {
+				limit = { is_female = yes }
+				add_character_modifier = {
+					name = incestuous_adulteress
+					years = 20
+				}
+			}
+			else = {
+				add_character_modifier = {
+					name = incestuous_adulterer
+					years = 20
+				}
+			}
+			tiered_high_piety_negative_effect = yes
+			tiered_high_piety_negative_effect = yes
+			tiered_prestige_negative_effect = yes
+		}
+		else_if = {
+			limit = { # Extramarital, same-sex relationships are generally not considered adultery at this point in time
+				OR = {
+					is_opposite_sex = event_target:target_adulterer
+					is_married = yes
+					AND = {
+						is_consort = yes
+						is_senior_consort_party = no
+					}
+				}
+			}
+			if = {
+				limit = { is_female = yes }
+				add_character_modifier = {
+					name = adulteress
+					years = 10
+				}
+			}
+			else = {
+				add_character_modifier = {
+					name = adulterer
+					years = 10
+				}
+			}
+			tiered_high_piety_negative_effect = yes
+			if = {
+				limit = {
+					OR = {
+						is_married = yes
+						AND = {
+							is_consort = yes
+							is_senior_consort_party = no
+						}
+					}
+				}
+				tiered_high_piety_negative_effect = yes
+			}
+		}
+		
+		if = {
+			limit = {
+				same_sex = event_target:target_adulterer
+				trigger_if = {
+					limit = { is_female = yes }
+					emf_female_homosexual_indifferent_religion = no
+				}
+				trigger_else = {
+					emf_male_homosexual_indifferent_religion = no
+				}
+			}
+			tiered_high_piety_negative_effect = yes
+			tiered_prestige_negative_effect = yes
+			if = {
+				limit = { is_female = no }
+				tiered_high_piety_negative_effect = yes
+				tiered_prestige_negative_effect = yes
 				if = {
-					limit = {
-						is_female = yes
-						PREV = { is_female = no } # No one cares if two women fool around
+					limit = { religion_group = pagan_group }
+					add_character_modifier = {
+						name = known_sodomite_pagan
+						years = 20
 					}
-					
-					if = {
-						limit = {
-							is_married = yes
-							has_nickname = no
-							random = 50
-						}
-						give_nickname = nick_the_unfaithful
+				}
+				else = {
+					add_character_modifier = {
+						name = known_sodomite
+						years = 20
 					}
-					
-					if = {
-						limit = {
-							is_pregnant = yes
-							father_of_unborn_known = no
-							father_of_unborn = {
-								character = PREV
+				}
+			}
+		}
+		
+		# Prestige reward based on sexual conquest
+		if = {
+			limit = {
+				trigger_if = {
+					limit = { is_female = yes }
+					# Female "conquering" high-tier male in a non-male-dominant society
+					gender_equality_trigger = yes
+				}
+				trigger_else = {
+					# Male "conquering" high-tier female in a non-female-dominant society
+					religion_scope = { NOT = { has_religion_feature = religion_matriarchal } }
+				}
+				OR = {
+					is_opposite_sex = event_target:target_adulterer
+					trigger_if = {
+						limit = { is_female = yes }
+						emf_female_homosexual_indifferent_religion = yes
+					}
+					trigger_else = {
+						emf_male_homosexual_indifferent_religion = yes
+					}
+				}
+				NAND = {
+					is_close_relative = event_target:target_adulterer
+					emf_divine_blood_religion = no
+				}
+				NOR = {
+					is_ascetic_trigger = yes
+					AND = {
+						is_ruler = yes
+						is_theocracy = yes
+						religion_scope = { NOT = { has_flag = emf_priests_can_marry } }
+					}
+				}
+				event_target:target_adulterer = {
+					# Make sure target_adulterer is seen as a lower real tier than ROOT (otherwise it's not really a conquest)
+					OR = {
+						AND = {
+							NOT = { lower_real_tier_than = ROOT }
+							ROOT = {
+								NAND = {
+									any_spouse = { NOT = { lower_real_tier_than = PREVPREV } }
+									any_consort = {
+										is_senior_consort_party = yes
+										NOT = { lower_real_tier_than = PREVPREV }
+									}
+									father_even_if_dead = { NOT = { lower_real_tier_than = PREVPREV } }
+									mother_even_if_dead = { NOT = { lower_real_tier_than = PREVPREV } }
+								}
 							}
 						}
-						father_of_unborn_known = yes
-					}
-					
-					if = {
-						limit = {
-							age_diff = {
-								who = PREV
-								years = 25
+						any_spouse = {
+							NOT = { lower_real_tier_than = ROOT }
+							ROOT = {
+								NAND = {
+									any_spouse = { NOT = { lower_real_tier_than = PREVPREV } }
+									any_consort = {
+										is_senior_consort_party = yes
+										NOT = { lower_real_tier_than = PREVPREV }
+									}
+									father_even_if_dead = { NOT = { lower_real_tier_than = PREVPREV } }
+									mother_even_if_dead = { NOT = { lower_real_tier_than = PREVPREV } }
+								}
 							}
-							is_older_than = FROMFROM
-							NOT = { has_character_modifier = cradle_robber }
 						}
-						add_character_modifier = {
-							name = cradle_robber
-							years = 5
-						}
-					}
-
-					
-					any_consort = { #Extra check for concubines
-						limit = { character = FROM }
-						opinion = {
-							who = PREV
-							modifier = opinion_unfaithful_wife
-							months = 120
-						}
-						opinion = {
-							who = PREVPREV
-							modifier = opinion_cuckolded
-							months = 120
-						}
-						if = {
-							limit = {
-								NOT = { is_rival = PREVPREV }
-								NOT = { is_lover = PREVPREV }
-								NOT = { is_friend = PREVPREV }
-								NOT = { trait = kind }
-								NOT = { trait = content }
+						any_consort = {
+							is_senior_consort_party = yes
+							NOT = { lower_real_tier_than = ROOT }
+							ROOT = {
+								NAND = {
+									any_spouse = { NOT = { lower_real_tier_than = PREVPREV } }
+									any_consort = {
+										is_senior_consort_party = yes
+										NOT = { lower_real_tier_than = PREVPREV }
+									}
+									father_even_if_dead = { NOT = { lower_real_tier_than = PREVPREV } }
+									mother_even_if_dead = { NOT = { lower_real_tier_than = PREVPREV } }
+								}
 							}
-							add_rival = PREVPREV
 						}
-						if = {
-							limit = { is_lover = PREV }
-							remove_lover = PREV
-						}
-						if = {
-							limit = { is_lover = PREVPREV }
-							remove_lover = PREVPREV
-						}
-						if = {
-							limit = { is_friend = PREVPREV }
-							remove_friend = PREVPREV
-						}
-					}
-
-					
-					any_spouse = {
-						limit = { PREVPREV = { is_female = no } }
-						opinion = {
-							who = PREV
-							modifier = opinion_unfaithful_wife
-							months = 120
-						}
-						opinion = {
-							who = PREVPREV
-							modifier = opinion_cuckolded
-							months = 120
-						}
-						if = {
-							limit = {
-								NOT = { is_rival = PREVPREV }
-								NOT = { is_lover = PREVPREV }
-								NOT = { is_friend = PREVPREV }
-								NOT = { trait = kind }
-								NOT = { trait = content }
+						father_even_if_dead = {
+							NOT = { lower_real_tier_than = ROOT }
+							ROOT = {
+								NAND = {
+									any_spouse = { NOT = { lower_real_tier_than = PREVPREV } }
+									any_consort = {
+										is_senior_consort_party = yes
+										NOT = { lower_real_tier_than = PREVPREV }
+									}
+									father_even_if_dead = { NOT = { lower_real_tier_than = PREVPREV } }
+									mother_even_if_dead = { NOT = { lower_real_tier_than = PREVPREV } }
+								}
 							}
-							add_rival = PREVPREV
 						}
-						if = {
-							limit = { is_lover = PREV }
-							remove_lover = PREV
-						}
-						if = {
-							limit = { is_lover = PREVPREV }
-							remove_lover = PREVPREV
-						}
-						if = {
-							limit = { is_friend = PREVPREV }
-							remove_friend = PREVPREV
-						}
-					}
-					
-					if = {
-						limit = {
-							is_close_relative = PREV
-							emf_divine_blood_religion = no
-						}
-						add_character_modifier = {
-							name = incestuous_adulteress
-							years = 20
+						mother_even_if_dead = {
+							NOT = { lower_real_tier_than = ROOT }
+							ROOT = {
+								NAND = {
+									any_spouse = { NOT = { lower_real_tier_than = PREVPREV } }
+									any_consort = {
+										is_senior_consort_party = yes
+										NOT = { lower_real_tier_than = PREVPREV }
+									}
+									father_even_if_dead = { NOT = { lower_real_tier_than = PREVPREV } }
+									mother_even_if_dead = { NOT = { lower_real_tier_than = PREVPREV } }
+								}
+							}
 						}
 					}
-					if = {
-						limit = {
+				}
+			}
+			# Scale Prestige reward based off target_adulterer's (real) tier
+			event_target:target_adulterer = { save_event_target_as = target_tier_character }
+			tiered_prestige_reward_effect = yes
+			tiered_prestige_reward_effect = yes
+			clear_event_target = target_tier_character
+		}
+		
+		# Spouse is more forgiving if it's a same-sex relationship unless they're religiously against it
+		if = {
+			limit = {
+				OR = {
+					is_opposite_sex = event_target:target_adulterer
+					AND = {
+						is_senior_consort_party = no
+						any_consort = {
 							OR = {
-								NOT = { is_close_relative = PREV }
-								emf_divine_blood_religion = yes
+								trait = zealous
+								ai_zeal = 25
+							}
+							trigger_if = {
+								limit = { ROOT = { is_female = yes } }
+								emf_female_homosexual_indifferent_religion = no
+							}
+							trigger_else = {
+								emf_male_homosexual_indifferent_religion = no
 							}
 						}
-						add_character_modifier = {
-							name = adulteress
+					}
+					any_spouse = {
+						OR = {
+							trait = zealous
+							ai_zeal = 25
+						}
+						trigger_if = {
+							limit = { ROOT = { is_female = yes } }
+							emf_female_homosexual_indifferent_religion = no
+						}
+						trigger_else = {
+							emf_male_homosexual_indifferent_religion = no
+						}
+					}
+				}
+			}
+			if = {
+				limit = { is_senior_consort_party = no }
+				any_consort = {
+					limit = {
+						NAND = {
+							is_lover = ROOT
+							is_lover = event_target:target_adulterer
+						}
+						OR = {
+							ROOT = { is_opposite_sex = event_target:target_adulterer }
+							AND = {
+								OR = {
+									trait = zealous
+									ai_zeal = 25
+								}
+								trigger_if = {
+									limit = { ROOT = { is_female = yes } }
+									emf_female_homosexual_indifferent_religion = no
+								}
+								trigger_else = {
+									emf_male_homosexual_indifferent_religion = no
+								}
+							}
+						}
+					}
+					if = {
+						limit = { ROOT = { is_female = yes } }
+						if = {
+							limit = { religion_scope = { has_religion_feature = religion_matriarchal } }
+							opinion = {
+								who = ROOT
+								modifier = opinion_unfaithful_wife_nocrime
+								years = 10
+							}
+						}
+						else = {
+							opinion = {
+								who = ROOT
+								modifier = opinion_unfaithful_wife
+								years = 10
+							}
+						}
+					}
+					else_if = {
+						limit = { gender_equality_trigger = yes }
+						opinion = {
+							who = ROOT
+							modifier = opinion_unfaithful_husband_crime
+							years = 10
+						}
+					}
+					else = {
+						opinion = {
+							who = ROOT
+							modifier = opinion_unfaithful_husband
+							years = 10
+						}
+					}
+					if = {
+						limit = { # Will get Unfaithful Spouse modifiers instead when this event fires for them
+							NOR = {
+								is_married = event_target:target_adulterer
+								AND = {
+									is_consort = event_target:target_adulterer
+									is_senior_consort_party = yes
+								}
+							}
+						}
+						if = {
+							limit = { event_target:target_adulterer = { is_female = yes } }
+							opinion = {
+								who = event_target:target_adulterer
+								modifier = slut_seductress
+								years = 10
+							}
+						}
+						else = {
+							opinion = {
+								who = event_target:target_adulterer
+								modifier = opinion_cuckolded
+								years = 10
+							}
+						}
+					}
+					
+					if = {
+						limit = {
+							NOR = {
+								is_rival = event_target:target_adulterer
+								is_lover = event_target:target_adulterer
+								is_friend = event_target:target_adulterer
+								is_married = event_target:target_adulterer
+								AND = {
+									is_consort = event_target:target_adulterer
+									is_senior_consort_party = yes
+								}
+								trait = kind
+								trait = content
+							}
+						}
+						add_rival = event_target:target_adulterer
+					}
+					if = {
+						limit = { is_lover = ROOT }
+						remove_lover = ROOT
+					}
+					if = {
+						limit = { is_friend = ROOT }
+						remove_friend = ROOT
+					}
+					if = {
+						limit = { is_lover = event_target:target_adulterer }
+						remove_lover = event_target:target_adulterer
+					}
+					if = {
+						limit = { is_friend = event_target:target_adulterer }
+						remove_friend = event_target:target_adulterer
+					}
+				}
+			}
+			any_spouse = {
+				limit = {
+					NAND = {
+						is_lover = ROOT
+						is_lover = event_target:target_adulterer
+					}
+					OR = {
+						ROOT = { is_opposite_sex = event_target:target_adulterer }
+						AND = {
+							OR = {
+								trait = zealous
+								ai_zeal = 25
+							}
+							trigger_if = {
+								limit = { ROOT = { is_female = yes } }
+								emf_female_homosexual_indifferent_religion = no
+							}
+							trigger_else = {
+								emf_male_homosexual_indifferent_religion = no
+							}
+						}
+					}
+				}
+				if = {
+					limit = { ROOT = { is_female = yes } }
+					if = {
+						limit = { religion_scope = { has_religion_feature = religion_matriarchal } }
+						opinion = {
+							who = ROOT
+							modifier = opinion_unfaithful_wife_nocrime
+							years = 10
+						}
+					}
+					else = {
+						opinion = {
+							who = ROOT
+							modifier = opinion_unfaithful_wife
+							years = 10
+						}
+					}
+				}
+				else_if = {
+					limit = { gender_equality_trigger = yes }
+					opinion = {
+						who = ROOT
+						modifier = opinion_unfaithful_husband_crime
+						years = 10
+					}
+				}
+				else = {
+					opinion = {
+						who = ROOT
+						modifier = opinion_unfaithful_husband
+						years = 10
+					}
+				}
+				if = {
+					limit = { # Will get Unfaithful Spouse modifiers instead when this event fires for them
+						NOR = {
+							is_married = event_target:target_adulterer
+							AND = {
+								is_consort = event_target:target_adulterer
+								is_senior_consort_party = yes
+							}
+						}
+					}
+					if = {
+						limit = { event_target:target_adulterer = { is_female = yes } }
+						opinion = {
+							who = event_target:target_adulterer
+							modifier = slut_seductress
+							years = 10
+						}
+					}
+					else = {
+						opinion = {
+							who = event_target:target_adulterer
+							modifier = opinion_cuckolded
 							years = 10
 						}
 					}
 				}
 				
 				if = {
-					limit = { is_female = no }
-					
-					any_spouse = {
-						if = {
-							limit = { gender_equality_trigger = no }
-							opinion = {
-								who = PREV
-								modifier = opinion_unfaithful_husband
-								years = 10
+					limit = {
+						NOR = {
+							is_rival = event_target:target_adulterer
+							is_lover = event_target:target_adulterer
+							is_friend = event_target:target_adulterer
+							is_married = event_target:target_adulterer
+							AND = {
+								is_consort = event_target:target_adulterer
+								is_senior_consort_party = yes
 							}
-						}
-						if = {
-							limit = { gender_equality_trigger = yes }
-							opinion = {
-								who = PREV
-								modifier = opinion_unfaithful_husband_crime
-								years = 10
-							}
-						}
-						opinion = {
-							who = PREVPREV
-							modifier = slut_seductress
-							months = 120
-						}
-						if = {
-							limit = {
-								NOT = { is_rival = PREVPREV }
-								NOT = { is_lover = PREVPREV }
-								NOT = { is_friend = PREVPREV }
-								NOT = { trait = kind }
-								NOT = { trait = content }
-							}
-							add_rival = PREVPREV
-						}
-						
-						if = {
-							limit = { is_lover = PREV }
-							remove_lover = PREV
-						}
-						if = {
-							limit = { is_lover = PREVPREV }
-							remove_lover = PREVPREV
-						}
-						if = {
-							limit = { is_friend = PREVPREV }
-							remove_friend = PREVPREV
+							trait = kind
+							trait = content
 						}
 					}
-					
-					if = {
-						limit = { religion_openly_hellenic_or_reformed_trigger = no }
-						if = {
-							limit = { same_sex = PREV }
-							if = {
-								limit = {
-									religion_group = pagan_group
-								}
-								add_character_modifier = {
-									name = known_sodomite_pagan
-									years = 20
-								}
-							}
-							else = {
-								add_character_modifier = {
-									name = known_sodomite
-									years = 20
-								}
-							}
-						}
-					}
-					
-					if = {
-						limit = {
-							is_close_relative = PREV
-							emf_divine_blood_religion = no
-						}
-						add_character_modifier = {
-							name = incestuous_adulterer
-							years = 20
-						}
-					}
-					if = {
-						limit = {
-							is_married = yes
-							OR = {
-								NOT = { is_close_relative = PREV }
-								emf_divine_blood_religion = yes
-							}
-						}
-						if = {
-							limit = {
-								NOT = { religion_group = pagan_group }
-							}
-							add_character_modifier = {
-								name = adulterer
-								years = 10
-							}
-						}
-					}
+					add_rival = event_target:target_adulterer
+				}
+				if = {
+					limit = { is_lover = ROOT }
+					remove_lover = ROOT
+				}
+				if = {
+					limit = { is_friend = ROOT }
+					remove_friend = ROOT
+				}
+				if = {
+					limit = { is_lover = event_target:target_adulterer }
+					remove_lover = event_target:target_adulterer
+				}
+				if = {
+					limit = { is_friend = event_target:target_adulterer }
+					remove_friend = event_target:target_adulterer
 				}
 			}
-			
+		}
+		
+		event_target:target_adulterer = {			
 			# Fire this event for the adulterer too
 			if = {
 				limit = {
@@ -4438,11 +4741,9 @@ narrative_event = {
 	option = {
 		name = "EVTOPTA621"
 		trigger = {
-			FROM = {
-				OR = {
-					religion_group = PREV
-					emf_PREV_is_syncretized_with_religion = yes
-				}
+			OR = {
+				FROM = { religion_group = PREV }
+				emf_syncretized_religion_with_FROM = yes
 			}
 			is_heretic = no
 		}
@@ -4450,11 +4751,9 @@ narrative_event = {
 	option = {
 		name = "EVTOPTC621"
 		trigger = {
-			FROM = {
-				OR = {
-					religion_group = PREV
-					emf_PREV_is_syncretized_with_religion = yes
-				}
+			OR = {
+				FROM = { religion_group = PREV }
+				emf_syncretized_religion_with_FROM = yes
 			}
 			is_heretic = yes
 		}
@@ -4463,13 +4762,9 @@ narrative_event = {
 	option = {
 		name = "EVTOPTB621"
 		trigger = {
-			NOT = {
-				FROM = {
-					OR = {
-						religion_group = PREV
-						emf_PREV_is_syncretized_with_religion = yes
-					}
-				}
+			NOR = {
+				FROM = { religion_group = PREV }
+				emf_syncretized_religion_with_FROM = yes
 			}
 		}
 	}
