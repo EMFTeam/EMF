@@ -1020,7 +1020,7 @@ character_event = {
 			is_married = no
 			is_incapable = no
 			NOT = { trait = bastard }
-			liege = { character = ROOT }
+			vassal_of = ROOT
 			is_close_relative = ROOT
 			NOT = { has_minor_title = title_regent }
 			NOT = { has_character_flag = flag_denied_marriage }
@@ -1046,7 +1046,7 @@ character_event = {
 				is_married = no
 				is_incapable = no
 				NOT = { trait = bastard }
-				liege = { character = ROOT }
+				vassal_of = ROOT
 				is_close_relative = ROOT
 				NOT = { has_minor_title = title_regent }
 				NOT = { has_character_flag = flag_denied_marriage }
@@ -1205,49 +1205,37 @@ character_event = {
 	option = {
 		name = EVTOPTA37055 # Alright, alright!
 		trigger = {
-			FROM = {
-				is_married = no
-			}
-			OR = {
-				AND = {
-					is_female = no
-					any_courtier = {
-						FROM = { is_female = no }
-						NOT = { practical_age = 40 }
-						can_marry = FROM
-					}
-				}
-				AND = {
-					FROM = { is_female = yes }
-					any_courtier = {
-						is_female = no
-						NOT = { practical_age = 40 }
-						can_marry = FROM
-					}
-				}
+			FROM = { is_married = no }
+			any_courtier = {
+				is_opposite_sex = FROM
+				NOT = { practical_age = 40 }
+				can_marry = FROM
+				ai = yes
 			}
 		}
 		remove_character_modifier = promised_a_marriage
 		clr_character_flag = flag_promised_marriage
-		if = { 
-			limit = { FROM = { is_female = no } }
-			random_courtier = {
-				limit = {
-					is_female = yes
-					NOT = { practical_age = 40 }
-					can_marry = FROM
-				}
-				add_spouse = FROM
+		random_courtier = {
+			limit = {
+				is_opposite_sex = FROM
+				NOT = { practical_age = 40 }
+				can_marry = FROM
+				ai = yes
 			}
-		}
-		if = { 
-			limit = { FROM = { is_female = yes } }
-			random_courtier = {
+			preferred_limit = {
+				possibly_romantically_interested_in_each_other_FROM_trigger = yes
+			}
+			preferred_limit = {
+				possibly_romantically_interested_in_FROM_trigger = yes
+			}
+			if = {
 				limit = {
-					is_female = no
-					NOT = { practical_age = 40 }
-					can_marry = FROM
+					ROOT = { gender_equality_trigger = yes }
+					FROM = { is_female = yes }
 				}
+				add_spouse_matrilineal = FROM
+			}
+			else = {
 				add_spouse = FROM
 			}
 		}
@@ -1256,18 +1244,20 @@ character_event = {
 	option = {
 		name = EVTOPTB37055 # You're off to the monastery!
 		trigger = {
-			religion_group = christian
-			FROM = { religion_group = christian }
+			religion_scope = { NOT = { has_flag = emf_priests_can_marry } }
 			FROM = {
+				religion_scope = { NOT = { has_flag = emf_priests_can_marry } }
 				is_married = no
 			}
 			any_realm_lord = {
 				is_theocracy = yes
+				religion = ROOT
 			}
 		}
 		random_realm_lord = {
 			limit = {
 				is_theocracy = yes
+				religion = ROOT
 			}
 			reverse_banish = FROM
 		}
@@ -1286,9 +1276,7 @@ character_event = {
 	option = {
 		name = EVTOPTC37055 # I haven't found anyone for you...
 		trigger = {
-			FROM = {
-				is_married = no
-			}
+			FROM = { is_married = no }
 		}
 		FROM = {
 			set_character_flag = flag_denied_marriage
@@ -1299,12 +1287,7 @@ character_event = {
 	option = {
 		name = EVTOPTD37055
 		trigger = {
-			FROM = {
-				is_married = yes
-				spouse = {
-					is_alive = yes
-				}
-			}
+			FROM = { is_married = yes }
 		}
 	}
 }
@@ -1332,26 +1315,22 @@ character_event = {
 	has_character_flag = flag_denied_marriage
 
 	trigger = {
+		has_ambition = obj_get_married
 		is_ruler = no
 		is_betrothed = no
-		has_ambition = obj_get_married
-		OR = {
-			AND = {
-				is_female = no
-				any_courtier = {
-					is_female = yes
-					NOT = { practical_age = 40 }
-					can_marry = ROOT
-				}
-			}
-			AND = {
-				is_female = yes
-				any_courtier = {
-					is_female = no
-					NOT = { practical_age = 40 }
-					can_marry = ROOT
-				}
-			}
+		is_married = no
+		is_consort = no
+		block_general_event_trigger = no
+		any_courtier = {
+			is_opposite_sex = ROOT
+			NOT = { practical_age = 40 }
+			is_betrothed = no
+			is_married = no
+			is_consort = no
+			can_marry = ROOT
+			ROOT = { can_marry = PREV }
+			block_general_event_trigger = no
+			NOT = { is_rival = ROOT }
 		}
 	}
 
@@ -1375,30 +1354,53 @@ character_event = {
 			trait = content
 		}
 	}
+	
+	immediate = {
+		random_courtier = {
+			is_opposite_sex = ROOT
+			NOT = { practical_age = 40 }
+			is_betrothed = no
+			is_married = no
+			is_consort = no
+			can_marry = ROOT
+			ROOT = { can_marry = PREV }
+			block_general_event_trigger = no
+			NOT = { is_rival = ROOT }
+			preferred_limit = {
+				is_lover = ROOT
+			}
+			preferred_limit = {
+				possibly_romantically_interested_in_each_other_trigger = yes
+			}
+			preferred_limit = {
+				OR = {
+					possibly_romantically_interested_in_ROOT_trigger = yes
+					ROOT_possibly_romantically_interested_trigger = yes
+				}
+			}
+			save_event_target_as = target_courtier
+		}
+	}
 
 	option = {
 		name = EVTOPTA37056 # I'm getting married right now
-		if = { 
-			limit = { is_female = no }
-			random_courtier = {
-				limit = {
-					is_female = yes
-					NOT = { practical_age = 40 }
-					can_marry = ROOT
+		if = {
+			limit = {
+				OR = {
+					AND = {
+						religion_scope = { has_religion_feature = religion_matriarchal }
+						event_target:target_courtier = { emf_antifeminist_religion = no }
+					}
+					AND = {
+						event_target:target_courtier = { religion_scope = { has_religion_feature = religion_matriarchal } }
+						emf_antifeminist_religion = no
+					}
 				}
-				add_spouse = ROOT
 			}
+			event_target:target_courtier = { add_spouse_matrilineal = ROOT }
 		}
-		if = { 
-			limit = { is_female = yes }
-			random_courtier = {
-				limit = {
-					is_female = no
-					NOT = { practical_age = 40 }
-					can_marry = ROOT
-				}
-				add_spouse = ROOT
-			}
+		else = {
+			event_target:target_courtier = { add_spouse = ROOT }
 		}
 		liege = { character_event = { id = 37057 tooltip = EVTTOOLTIP37057 } }
 	}
@@ -1453,7 +1455,7 @@ character_event = {
 			}
 		}
 		FROM = { imprison = ROOT }
-		FROM = { spouse = { imprison = ROOT } }
+		event_target:target_courtier = { imprison = ROOT }
 	}
 }
 

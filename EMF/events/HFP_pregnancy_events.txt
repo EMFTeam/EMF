@@ -412,11 +412,15 @@ character_event = {
 					NOT = { society_member_of = the_satanists }
 					OR = { 
 						is_ruler = yes
-						spouse = { is_ruler = yes }
-					}
-					NOR = { 
-						has_character_modifier = adulteress
-						has_character_modifier = incestuous_adulteress 
+						ROOT = {
+							father = {
+								is_ruler = yes
+								OR = {
+									is_married = PREVPREV
+									is_consort = PREVPREV
+								}
+							}
+						}
 					}
 				}
 			}
@@ -1287,7 +1291,27 @@ character_event = {
 		trait = pregnant
 	}
 
-	immediate = { add_trait = hard_pregnancy }
+	immediate = {
+		add_trait = hard_pregnancy
+		if = {
+			limit = { father_of_unborn_known = yes }
+			father_of_unborn = { save_event_target_as = scoped_father }
+		}
+		else_if = {
+			limit = { is_married = yes }
+			spouse = { save_event_target_as = scoped_father }
+		}
+		else_if = {
+			limit = {
+				is_consort = yes
+				is_senior_consort_party = no
+			}
+			random_consort = {
+				limit = { is_senior_consort_party = yes }
+				save_event_target_as = scoped_father
+			}
+		}
+	}
 	
 	is_triggered_only = yes
 
@@ -1313,8 +1337,8 @@ character_event = {
 		remove_trait = hard_pregnancy
 		remove_trait = pregnant
 		add_character_modifier = { modifier = aborted_child years = 4 }
-		hidden_tooltip = { 
-			ROOT = { cancel_pregnancy = yes }
+		hidden_tooltip = {
+			cancel_pregnancy = yes
 			random_list = { 
 				25 = { character_event = { id = HFP.20064 days = 35 } } #Mother becomes depressed/insane.
 				25 = { character_event = { id = HFP.20065 days = 35 } } #Mother accidentally reveals the deed.
@@ -1325,18 +1349,17 @@ character_event = {
 				limit = { 
 					is_married = yes 
 					NOT = { has_religion_feature = religion_matriarchal } 
-					spouse = {
-						is_incapable = no
+					event_target:scoped_father = {
 						NOR = {
 							trait = slow
 							trait = imbecile
 							trait = trusting
 							trait = inbred
 						} 
-						is_inaccessible_trigger = no
+						block_general_event_trigger = no
 					}
 				}
-				spouse = { character_event = { id = HFP.20061 days = 15 } } 
+				event_target:scoped_father = { character_event = { id = HFP.20061 days = 15 } } 
 			}
 		}
 		ai_chance = { 
@@ -1369,24 +1392,30 @@ character_event = {
 		tooltip = { add_trait = hard_pregnancy }
 		hidden_tooltip = { 
 			if = { 
-				limit = { is_married = yes } 
-				spouse = { 
+				limit = {
+					event_target:scoped_father = {
+						OR = {
+							is_married = ROOT
+							is_consort = ROOT
+						}
+					}
+				}
+				event_target:scoped_father = { 
 					character_event = { id = HFP.20405 } 
 				}
-				break = yes
 			}
-			if = { 
-				limit = { 
-					is_married = no 
+			else_if = { 
+				limit = {
 					any_courtier_or_vassal = { has_minor_title = title_court_physician }
 				} 
 				random_courtier_or_vassal = { 
 					limit = { has_minor_title = title_court_physician }
 					character_event = { id = HFP.20405 } 
 				}
-				break = yes
 			}
-			character_event = { id = HFP.20407 days = 6 } # If lonely, decide if to temporarily retire from rule.
+			else = {
+				character_event = { id = HFP.20407 days = 6 } # If lonely, decide if to temporarily retire from rule.
+			}
 		}
 		ai_chance = { factor = 99 }
 	}
@@ -2641,9 +2670,70 @@ character_event = {
 	is_triggered_only = yes
 
 	immediate = { 
-		if = { limit = { any_courtier_or_vassal = { has_minor_title = title_court_physician } } 
-			random_courtier_or_vassal = { limit = { has_minor_title = title_court_physician } 
+		if = {
+			limit = { any_courtier_or_vassal = { has_minor_title = title_court_physician } }
+			random_courtier_or_vassal = {
+				limit = { has_minor_title = title_court_physician } 
 				save_event_target_as = localize_physician
+			}
+		}
+		if = {
+			limit = { is_married = yes }
+			if = {
+				limit = {
+					father_of_unborn_known = yes
+					father_of_unborn = {
+						is_married = ROOT
+						block_general_event_trigger = no
+					}
+				}
+				father_of_unborn = { save_event_target_as = scoped_spouse }
+			}
+			else_if = {
+				limit = {
+					any_spouse = { block_general_event_trigger = no }
+				}
+				random_spouse = {
+					limit = { block_general_event_trigger = no }
+					preferred_limit = {
+						is_main_spouse = yes
+					}
+					save_event_target_as = scoped_spouse
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				is_consort = yes
+				is_senior_consort_party = no
+			}
+			if = { # Senior consort, unlike spouse, will only help if they think child is theirs
+				limit = { father_of_unborn_known = yes }
+				if = {
+					limit = {
+						father_of_unborn = {
+							is_consort = ROOT
+							is_senior_consort_party = yes
+							block_general_event_trigger = no
+						}
+					}
+					father_of_unborn = { save_event_target_as = scoped_spouse }
+				}
+			}
+			else_if = {
+				limit = {
+					any_consort = {
+						is_senior_consort_party = yes
+						block_general_event_trigger = no
+					}
+				}
+				random_consort = {
+					limit = {
+						is_senior_consort_party = yes
+						block_general_event_trigger = no
+					}
+					save_event_target_as = scoped_spouse
+				}
 			}
 		}
 	}
@@ -2679,7 +2769,7 @@ character_event = {
 		name = EVTOPTCHFP20418
 		trigger = { 
 			is_ruler = no
-			spouse = { 
+			event_target:scoped_spouse = { 
 				is_ruler = yes
 				any_courtier_or_vassal = { has_minor_title = title_court_physician } 
 			}
@@ -2697,7 +2787,7 @@ character_event = {
 				trait = physician
 				learning = 15
 				any_courtier_or_vassal = { has_minor_title = title_court_physician }
-				spouse = { 
+				event_target:scoped_spouse = { 
 					is_ruler = yes
 					any_courtier_or_vassal = { has_minor_title = title_court_physician } 
 				}
@@ -2762,6 +2852,68 @@ character_event = { #if drunk pregnant
 	trigger = { trait = drunkard }
 	
 	is_triggered_only = yes
+	
+	immediate = {
+		if = {
+			limit = { is_married = yes }
+			if = {
+				limit = {
+					father_of_unborn_known = yes
+					father_of_unborn = {
+						is_married = ROOT
+						block_general_event_trigger = no
+					}
+				}
+				father_of_unborn = { save_event_target_as = scoped_spouse }
+			}
+			else_if = {
+				limit = {
+					any_spouse = { block_general_event_trigger = no }
+				}
+				random_spouse = {
+					limit = { block_general_event_trigger = no }
+					preferred_limit = {
+						is_main_spouse = yes
+					}
+					save_event_target_as = scoped_spouse
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				is_consort = yes
+				is_senior_consort_party = no
+			}
+			if = { # Senior consort, unlike spouse, will only help if they think child is theirs
+				limit = { father_of_unborn_known = yes }
+				if = {
+					limit = {
+						father_of_unborn = {
+							is_consort = ROOT
+							is_senior_consort_party = yes
+							block_general_event_trigger = no
+						}
+					}
+					father_of_unborn = { save_event_target_as = scoped_spouse }
+				}
+			}
+			else_if = {
+				limit = {
+					any_consort = {
+						is_senior_consort_party = yes
+						block_general_event_trigger = no
+					}
+				}
+				random_consort = {
+					limit = {
+						is_senior_consort_party = yes
+						block_general_event_trigger = no
+					}
+					save_event_target_as = scoped_spouse
+				}
+			}
+		}
+	}
 
 	option = { 
 		name = EVTOPTAHFP20420
@@ -2785,7 +2937,7 @@ character_event = { #if drunk pregnant
 				}
 				50 = { 
 					hidden_tooltip = { 
-						spouse = { 
+						event_target:scoped_spouse = { 
 							character_event = { id = HFP.20426 days = 100 random = 100 } 
 						} 
 					} 
@@ -2797,7 +2949,7 @@ character_event = { #if drunk pregnant
 	option = { 
 		name = EVTOPTBHFP20420
 		clr_character_flag = drunk_pregnant 
-		hidden_tooltip = { spouse = { character_event = { id = HFP.20426 days = 100 random = 100 } } } 
+		hidden_tooltip = { event_target:scoped_spouse = { character_event = { id = HFP.20426 days = 100 random = 100 } } } 
 	}
 }
 
@@ -2833,7 +2985,15 @@ character_event = { #if gluttonous pregnant
 					remove_trait = gluttonous
 				}
 				50 = { 
-					hidden_tooltip = { spouse = { character_event = { id = HFP.20424 days = 100 random = 100 } }  } 
+					hidden_tooltip = {
+						random_spouse = {
+							limit = { block_general_event_trigger = no }
+							preferred_limit = {
+								is_main_spouse = yes
+							}
+							character_event = { id = HFP.20424 days = 100 random = 100 }
+						}
+					} 
 				}
 			}
 		}
@@ -2844,7 +3004,15 @@ character_event = { #if gluttonous pregnant
 		name = EVTOPTBHFP20421
 		gain_weight_small_effect = yes
 		weight_trait_check_effect = yes
-		hidden_tooltip = { spouse = { character_event = { id = HFP.20424 days = 100 random = 100 } } } 
+		hidden_tooltip = {
+			random_spouse = {
+				limit = { block_general_event_trigger = no }
+				preferred_limit = {
+					is_main_spouse = yes
+				}
+				character_event = { id = HFP.20424 days = 100 random = 100 }
+			}
+		}
 		clr_character_flag = gluttonous_pregnant 
 		ai_chance = { factor = 60 }
 	}
@@ -2858,6 +3026,68 @@ character_event = { #if wroth pregnant
 	trigger = { trait = wroth }
 	
 	is_triggered_only = yes
+	
+	immediate = {
+		if = {
+			limit = { is_married = yes }
+			if = {
+				limit = {
+					father_of_unborn_known = yes
+					father_of_unborn = {
+						is_married = ROOT
+						block_general_event_trigger = no
+					}
+				}
+				father_of_unborn = { save_event_target_as = scoped_spouse }
+			}
+			else_if = {
+				limit = {
+					any_spouse = { block_general_event_trigger = no }
+				}
+				random_spouse = {
+					limit = { block_general_event_trigger = no }
+					preferred_limit = {
+						is_main_spouse = yes
+					}
+					save_event_target_as = scoped_spouse
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				is_consort = yes
+				is_senior_consort_party = no
+			}
+			if = { # Senior consort, unlike spouse, will only help if they think child is theirs
+				limit = { father_of_unborn_known = yes }
+				if = {
+					limit = {
+						father_of_unborn = {
+							is_consort = ROOT
+							is_senior_consort_party = yes
+							block_general_event_trigger = no
+						}
+					}
+					father_of_unborn = { save_event_target_as = scoped_spouse }
+				}
+			}
+			else_if = {
+				limit = {
+					any_consort = {
+						is_senior_consort_party = yes
+						block_general_event_trigger = no
+					}
+				}
+				random_consort = {
+					limit = {
+						is_senior_consort_party = yes
+						block_general_event_trigger = no
+					}
+					save_event_target_as = scoped_spouse
+				}
+			}
+		}
+	}
 
 	option = { 
 		name = EVTOPTAHFP20422
@@ -2880,7 +3110,7 @@ character_event = { #if wroth pregnant
 					remove_trait = wroth
 				}
 				50 = { 
-					hidden_tooltip = { spouse = { character_event = { id = HFP.20428 days = 100 random = 100 } }  } 
+					hidden_tooltip = { event_target:scoped_spouse = { character_event = { id = HFP.20428 days = 100 random = 100 } }  } 
 				}
 			}
 		}
@@ -2891,7 +3121,7 @@ character_event = { #if wroth pregnant
 	option = { 
 		name = EVTOPTBHFP20422
 		hidden_tooltip = { 
-			spouse = { 
+			event_target:scoped_spouse = { 
 				character_event = { id = HFP.20428 days = 100 random = 100 } 
 			}
 		} 
@@ -2933,7 +3163,15 @@ character_event = { #if depressed pregnant
 					hidden_tooltip = { character_event = { id = 38314 } }
 				}
 				50 = { 
-					hidden_tooltip = { spouse = { character_event = { id = HFP.20430 days = 100 random = 100 } }  } 
+					hidden_tooltip = {
+						random_spouse = {
+							limit = { block_general_event_trigger = no }
+							preferred_limit = {
+								is_main_spouse = yes
+							}
+							character_event = { id = HFP.20430 days = 100 random = 100 }
+						}
+					}
 				}
 			}
 		}
@@ -2945,7 +3183,15 @@ character_event = { #if depressed pregnant
 		lose_weight_small_effect = yes
 		weight_trait_check_effect = yes
 		clr_character_flag = depressed_pregnant 
-		hidden_tooltip = { spouse = { character_event = { id = HFP.20430 days = 100 random = 100 } } } 
+		hidden_tooltip = {
+			random_spouse = {
+				limit = { block_general_event_trigger = no }
+				preferred_limit = {
+					is_main_spouse = yes
+				}
+				character_event = { id = HFP.20430 days = 100 random = 100 }
+			}
+		}
 		ai_chance = { factor = 20 }
 	}
 }
@@ -2984,6 +3230,7 @@ character_event = {
 	is_triggered_only = yes
 	
 	trigger = {
+		block_general_event_trigger = no
 		FROM = { 
 			trait = gluttonous
 			is_alive = yes
@@ -3697,6 +3944,7 @@ character_event = {
 	is_triggered_only = yes
 	
 	trigger = {
+		block_general_event_trigger = no
 		FROM = { 
 			trait = depressed
 			is_alive = yes
@@ -4143,6 +4391,65 @@ character_event = {
 	immediate = { 
 		remove_trait = hard_pregnancy 
 		add_trait = troubled_pregnancy
+		if = {
+			limit = { is_married = yes }
+			if = {
+				limit = {
+					father_of_unborn_known = yes
+					father_of_unborn = {
+						is_married = ROOT
+						block_general_event_trigger = no
+					}
+				}
+				father_of_unborn = { save_event_target_as = scoped_spouse }
+			}
+			else_if = {
+				limit = {
+					any_spouse = { block_general_event_trigger = no }
+				}
+				random_spouse = {
+					limit = { block_general_event_trigger = no }
+					preferred_limit = {
+						is_main_spouse = yes
+					}
+					save_event_target_as = scoped_spouse
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				is_consort = yes
+				is_senior_consort_party = no
+			}
+			if = { # Senior consort, unlike spouse, will only help if they think child is theirs
+				limit = { father_of_unborn_known = yes }
+				if = {
+					limit = {
+						father_of_unborn = {
+							is_consort = ROOT
+							is_senior_consort_party = yes
+							block_general_event_trigger = no
+						}
+					}
+					father_of_unborn = { save_event_target_as = scoped_spouse }
+				}
+			}
+			else_if = {
+				limit = {
+					any_consort = {
+						is_senior_consort_party = yes
+						block_general_event_trigger = no
+					}
+				}
+				random_consort = {
+					limit = {
+						is_senior_consort_party = yes
+						block_general_event_trigger = no
+					}
+					save_event_target_as = scoped_spouse
+				}
+			}
+		}
 	}
 
 	option = {
@@ -4152,8 +4459,8 @@ character_event = {
 			set_variable =  { which = troubled_pregnancy_variable value = 2 } #Used to determine if the mother dies or not, and if there are complications after the pregnancy.
 			
 			if = {  #If married, spouse may offer assistance.
-				limit = { is_married = yes } 
-				spouse = { character_event = { id = HFP.20501 days = 4 } } 
+				limit = { event_target:scoped_spouse = { is_alive = yes } } 
+				event_target:scoped_spouse = { character_event = { id = HFP.20501 days = 4 } } 
 			} 
 
 			if = {  #If regent likes you, he'll try to help you, as if he were your spouse.
@@ -4163,7 +4470,7 @@ character_event = {
 							has_minor_title = title_regent 
 							has_minor_title = title_appointed_regent
 						}
-						NOT = { is_married = FROM } #Don't fire twice if the spouse is also the regent.
+						NOT = { character = event_target:scoped_spouse } #Don't fire twice if the spouse is also the regent.
 						opinion = { 
 							who = ROOT 
 							value = -50 
@@ -4289,7 +4596,12 @@ character_event = {
 			any_courtier_or_vassal = { has_minor_title = title_court_physician }
 		}
 		if = { 
-			limit = { is_married = FROM } 
+			limit = {
+				OR = {
+					is_married = FROM
+					is_consort = FROM
+				}
+			}
 			random_courtier_or_vassal = { 
 				limit = { has_minor_title = title_court_physician } 
 				save_event_target_as = pregnancy_spouse_physician
@@ -4298,7 +4610,10 @@ character_event = {
 		if = { 
 			limit = { 
 				has_minor_title = title_regent
-				NOT = { is_married = FROM } #Don't fire twice if the spouse is also the regent.
+				NOR = {
+					is_married = FROM
+					is_consort = FROM
+				} #Don't fire twice if the spouse is also the regent.
 			} 
 			random_courtier_or_vassal = { 
 				limit = { has_minor_title = title_court_physician } 
@@ -4398,7 +4713,12 @@ character_event = {
 			}
 		}
 		if = { 
-			limit = { is_married = FROM } 
+			limit = {
+				OR = {
+					is_married = FROM
+					is_consort = FROM
+				}
+			}
 			save_event_target_as = pregnancy_spouse_physician
 		}
 		if = { 
@@ -4481,7 +4801,12 @@ character_event = {
 		name = EVTOPTEHFP20501
 		custom_tooltip = { text = EVTOOLTIPEHFP20501 }
 		hidden_tooltip = { FROM = { character_event = { id = HFP.20519 } } } #Notify woman
-		trigger = { is_married = FROM }
+		trigger = {
+			OR = {
+				is_married = FROM
+				is_consort = FROM
+			}
+		}
 		FROM = { set_character_flag = pregnancy_spouse_comfort }
 		if = { 
 			limit = { 
@@ -5360,7 +5685,7 @@ character_event = {
 			imprison = ROOT 
 			hidden_tooltip = { character_event = { id = HFP.20517 } }
 		}
-	ai_chance = { factor = 50 }
+		ai_chance = { factor = 50 }
 	}
 }
 
@@ -6645,11 +6970,11 @@ character_event = {
 			#And to the spouse, if he already isn't one of them.
 			if = { 
 				limit = { 
-					persistent_event_target:pregnancy_mother_physician_per = { NOT = { is_married = ROOT } }
-					persistent_event_target:pregnancy_spouse_physician_per = { NOT = { is_married = ROOT } }
-					persistent_event_target:pregnancy_regent_physician_per = { NOT = { is_married = ROOT } } 
+					persistent_event_target:pregnancy_mother_physician_per = { NOT = { character = event_target:scoped_spouse } }
+					persistent_event_target:pregnancy_spouse_physician_per = { NOT = { character = event_target:scoped_spouse } }
+					persistent_event_target:pregnancy_regent_physician_per = { NOT = { character = event_target:scoped_spouse } } 
 				} 
-			spouse = { character_event = { id = HFP.20554 } }
+				event_target:scoped_spouse = { character_event = { id = HFP.20554 } }
 			} 
 		}
 		hidden_tooltip = { change_variable =  { which = troubled_pregnancy_variable value = -4 } } #Not set to 0, still small chance of post-birth complications.
@@ -6724,8 +7049,22 @@ character_event = {
 			remove_trait = infection
 		}
 		if = {
-			limit = { any_spouse = { always = yes } }
+			limit = { father_of_unborn_known = yes }
+			father_of_unborn = { save_event_target_as = scoped_father }
+		}
+		else_if = {
+			limit = { is_married = yes }
 			spouse = { save_event_target_as = scoped_father }
+		}
+		else_if = {
+			limit = {
+				is_consort = yes
+				is_senior_consort_party = no
+			}
+			random_consort = {
+				limit = { is_senior_consort_party = yes }
+				save_event_target_as = scoped_father
+			}
 		}
 		#Hollow child is born in this circumstance, giving another chance to avoid game over.
 		custom_tooltip = { text = tooltip_HFP20537_A }
@@ -6750,13 +7089,56 @@ character_event = {
 				if = { #If a dad exists...
 					limit = { event_target:scoped_father = { always = yes } }
 					set_father = event_target:scoped_father
-					if = { # and mom is not matrilineally married...
-						limit = { ROOT = { is_married_matrilineally = no } }
-						event_target:hollow_baby = { 
-							dynasty = event_target:scoped_father 
-							culture = event_target:scoped_father
-							religion = event_target:scoped_father
-						}  
+					if = {
+						limit = {
+							event_target:scoped_father = {
+								NOR = {
+									is_married = ROOT
+									is_consort = ROOT
+								}
+							}
+						}
+						add_trait = bastard
+						if = {
+							limit = {
+								event_target:scoped_father = {
+									NOR = {
+										lower_real_tier_than = ROOT
+										religion_scope = { has_religion_feature = religion_matriarchal }
+									}
+								}
+							}
+							dynasty = father_bastard
+						}
+						else = {
+							dynasty = mother_bastard
+						}
+					}
+					else_if = { # and mom is not matrilineally married...
+						limit = {
+							OR = {
+								event_target:scoped_father = {
+									is_married_matrilineally = no
+									is_married = ROOT
+								}
+								event_target:scoped_father = {
+									is_consort = ROOT
+									is_senior_consort_party = yes
+								}
+							}
+						}
+						dynasty = event_target:scoped_father 
+						culture = event_target:scoped_father
+						religion = event_target:scoped_father
+						if = {
+							limit = {
+								event_target:scoped_father = {
+									is_consort = ROOT
+									is_senior_consort_party = yes
+								}
+							}
+							add_trait = child_of_consort
+						}
 					}
 				}
 				if = {
@@ -7336,154 +7718,204 @@ character_event = {
 		weight_trait_check_effect = yes
 		hidden_tooltip = { 
 			random_list = { 
-				10 = { 
-
-		modifier = { 
-			factor = 0.7
-			persistent_event_target:pregnancy_mother_physician_per = { NOT = { learning = 5 } }
-		}
-		modifier = { 
-			factor = 0.8
-			persistent_event_target:pregnancy_mother_physician_per = { NOT = { learning = 10 } }
-		}
-		modifier = { 
-			factor = 0.9
-			persistent_event_target:pregnancy_mother_physician_per = { trait = slow }
-		}
-		modifier = { 
-			factor = 0.8
-			persistent_event_target:pregnancy_mother_physician_per = { trait = imbecile }
-		}
-		modifier = { 
-			factor = 1.25
-			persistent_event_target:pregnancy_mother_physician_per = { trait = scholar }
-		}
-		modifier = { 
-			factor = 1.5
-			persistent_event_target:pregnancy_mother_physician_per = { trait = physician }
-		}
-		modifier = { 
-			factor = 1.25
-			persistent_event_target:pregnancy_mother_physician_per = { trait = quick }
-		}
-		modifier = { 
-			factor = 1.5
-			persistent_event_target:pregnancy_mother_physician_per = { trait = genius }
-		}
-		modifier = { 
-			factor = 1.25
-			persistent_event_target:pregnancy_mother_physician_per = { learning = 10 }
-		}
-		modifier = { 
-			factor = 1.25
-			persistent_event_target:pregnancy_mother_physician_per = { learning = 15 }
-		}
-		modifier = { 
-			factor = 1.25
-			persistent_event_target:pregnancy_mother_physician_per = { learning = 20 }
-		}
-		modifier = { 
-			factor = 1.5
-			persistent_event_target:pregnancy_mother_physician_per = { learning = 25 }
-		}
-		modifier = { 
-			factor = 0.7
-			persistent_event_target:pregnancy_spouse_physician_per = { NOT = { learning = 5 } }
-		}
-		modifier = { 
-			factor = 0.8
-			persistent_event_target:pregnancy_spouse_physician_per = { NOT = { learning = 10 } }
-		}
-		modifier = { 
-			factor = 0.9
-			persistent_event_target:pregnancy_spouse_physician_per = { trait = slow }
-		}
-		modifier = { 
-			factor = 0.8
-			persistent_event_target:pregnancy_spouse_physician_per = { trait = imbecile }
-		}
-		modifier = { 
-			factor = 1.25
-			persistent_event_target:pregnancy_spouse_physician_per = { trait = scholar }
-		}
-		modifier = { 
-			factor = 1.5
-			persistent_event_target:pregnancy_spouse_physician_per = { trait = physician }
-		}
-		modifier = { 
-			factor = 1.25
-			persistent_event_target:pregnancy_spouse_physician_per = { trait = quick }
-		}
-		modifier = { 
-			factor = 1.5
-			persistent_event_target:pregnancy_spouse_physician_per = { trait = genius }
-		}
-		modifier = { 
-			factor = 1.25
-			persistent_event_target:pregnancy_spouse_physician_per = { learning = 10 }
-		}
-		modifier = { 
-			factor = 1.25
-			persistent_event_target:pregnancy_spouse_physician_per = { learning = 15 }
-		}
-		modifier = { 
-			factor = 1.25
-			persistent_event_target:pregnancy_spouse_physician_per = { learning = 20 }
-		}
-		modifier = { 
-			factor = 1.5
-			persistent_event_target:pregnancy_spouse_physician_per = { learning = 25 }
-		}
-		modifier = { 
-			factor = 0.7
-			persistent_event_target:pregnancy_regent_physician_per = { NOT = { learning = 5 } }
-		}
-		modifier = { 
-			factor = 0.8
-			persistent_event_target:pregnancy_regent_physician_per = { NOT = { learning = 10 } }
-		}
-		modifier = { 
-			factor = 0.9
-			persistent_event_target:pregnancy_regent_physician_per = { trait = slow }
-		}
-		modifier = { 
-			factor = 0.8
-			persistent_event_target:pregnancy_regent_physician_per = { trait = imbecile }
-		}
-		modifier = { 
-			factor = 1.25
-			persistent_event_target:pregnancy_regent_physician_per = { trait = scholar }
-		}
-		modifier = { 
-			factor = 1.5
-			persistent_event_target:pregnancy_regent_physician_per = { trait = physician }
-		}
-		modifier = { 
-			factor = 1.25
-			persistent_event_target:pregnancy_regent_physician_per = { trait = quick }
-		}
-		modifier = { 
-			factor = 1.5
-			persistent_event_target:pregnancy_regent_physician_per = { trait = genius }
-		}
-		modifier = { 
-			factor = 1.25
-			persistent_event_target:pregnancy_regent_physician_per = { learning = 10 }
-		}
-		modifier = { 
-			factor = 1.25
-			persistent_event_target:pregnancy_regent_physician_per = { learning = 15 }
-		}
-		modifier = { 
-			factor = 1.25
-			persistent_event_target:pregnancy_regent_physician_per = { learning = 20 }
-		}
-		modifier = { 
-			factor = 1.5
-			persistent_event_target:pregnancy_regent_physician_per = { learning = 25 }
-		}
-					character_event = { id = HFP.20544 days = 5 random = 5 } } #recovers completely
-				40 = { character_event = { id = HFP.20545 days = 5 random = 5 } } #recovers weakened
+				10 = {
+					modifier = { 
+						factor = 0.7
+						persistent_event_target:pregnancy_mother_physician_per = { NOT = { learning = 5 } }
+					}
+					modifier = { 
+						factor = 0.8
+						persistent_event_target:pregnancy_mother_physician_per = { NOT = { learning = 10 } }
+					}
+					modifier = { 
+						factor = 0.9
+						persistent_event_target:pregnancy_mother_physician_per = { trait = slow }
+					}
+					modifier = { 
+						factor = 0.8
+						persistent_event_target:pregnancy_mother_physician_per = { trait = imbecile }
+					}
+					modifier = { 
+						factor = 1.25
+						persistent_event_target:pregnancy_mother_physician_per = { trait = scholar }
+					}
+					modifier = { 
+						factor = 1.5
+						persistent_event_target:pregnancy_mother_physician_per = { trait = physician }
+					}
+					modifier = { 
+						factor = 1.25
+						persistent_event_target:pregnancy_mother_physician_per = { trait = quick }
+					}
+					modifier = { 
+						factor = 1.5
+						persistent_event_target:pregnancy_mother_physician_per = { trait = genius }
+					}
+					modifier = { 
+						factor = 1.25
+						persistent_event_target:pregnancy_mother_physician_per = { learning = 10 }
+					}
+					modifier = { 
+						factor = 1.25
+						persistent_event_target:pregnancy_mother_physician_per = { learning = 15 }
+					}
+					modifier = { 
+						factor = 1.25
+						persistent_event_target:pregnancy_mother_physician_per = { learning = 20 }
+					}
+					modifier = { 
+						factor = 1.5
+						persistent_event_target:pregnancy_mother_physician_per = { learning = 25 }
+					}
+					modifier = { 
+						factor = 0.7
+						persistent_event_target:pregnancy_spouse_physician_per = { NOT = { learning = 5 } }
+					}
+					modifier = { 
+						factor = 0.8
+						persistent_event_target:pregnancy_spouse_physician_per = { NOT = { learning = 10 } }
+					}
+					modifier = { 
+						factor = 0.9
+						persistent_event_target:pregnancy_spouse_physician_per = { trait = slow }
+					}
+					modifier = { 
+						factor = 0.8
+						persistent_event_target:pregnancy_spouse_physician_per = { trait = imbecile }
+					}
+					modifier = { 
+						factor = 1.25
+						persistent_event_target:pregnancy_spouse_physician_per = { trait = scholar }
+					}
+					modifier = { 
+						factor = 1.5
+						persistent_event_target:pregnancy_spouse_physician_per = { trait = physician }
+					}
+					modifier = { 
+						factor = 1.25
+						persistent_event_target:pregnancy_spouse_physician_per = { trait = quick }
+					}
+					modifier = { 
+						factor = 1.5
+						persistent_event_target:pregnancy_spouse_physician_per = { trait = genius }
+					}
+					modifier = { 
+						factor = 1.25
+						persistent_event_target:pregnancy_spouse_physician_per = { learning = 10 }
+					}
+					modifier = { 
+						factor = 1.25
+						persistent_event_target:pregnancy_spouse_physician_per = { learning = 15 }
+					}
+					modifier = { 
+						factor = 1.25
+						persistent_event_target:pregnancy_spouse_physician_per = { learning = 20 }
+					}
+					modifier = { 
+						factor = 1.5
+						persistent_event_target:pregnancy_spouse_physician_per = { learning = 25 }
+					}
+					modifier = { 
+						factor = 0.7
+						persistent_event_target:pregnancy_regent_physician_per = { NOT = { learning = 5 } }
+					}
+					modifier = { 
+						factor = 0.8
+						persistent_event_target:pregnancy_regent_physician_per = { NOT = { learning = 10 } }
+					}
+					modifier = { 
+						factor = 0.9
+						persistent_event_target:pregnancy_regent_physician_per = { trait = slow }
+					}
+					modifier = { 
+						factor = 0.8
+						persistent_event_target:pregnancy_regent_physician_per = { trait = imbecile }
+					}
+					modifier = { 
+						factor = 1.25
+						persistent_event_target:pregnancy_regent_physician_per = { trait = scholar }
+					}
+					modifier = { 
+						factor = 1.5
+						persistent_event_target:pregnancy_regent_physician_per = { trait = physician }
+					}
+					modifier = { 
+						factor = 1.25
+						persistent_event_target:pregnancy_regent_physician_per = { trait = quick }
+					}
+					modifier = { 
+						factor = 1.5
+						persistent_event_target:pregnancy_regent_physician_per = { trait = genius }
+					}
+					modifier = { 
+						factor = 1.25
+						persistent_event_target:pregnancy_regent_physician_per = { learning = 10 }
+					}
+					modifier = { 
+						factor = 1.25
+						persistent_event_target:pregnancy_regent_physician_per = { learning = 15 }
+					}
+					modifier = { 
+						factor = 1.25
+						persistent_event_target:pregnancy_regent_physician_per = { learning = 20 }
+					}
+					modifier = { 
+						factor = 1.5
+						persistent_event_target:pregnancy_regent_physician_per = { learning = 25 }
+					}
+					character_event = { id = HFP.20544 days = 5 random = 5 } #recovers completely
+				}
+				40 = {
+					modifier = { 
+						factor = 0.7
+						persistent_event_target:pregnancy_mother_physician_per = { NOT = { learning = 5 } }
+					}
+					modifier = { 
+						factor = 0.8
+						persistent_event_target:pregnancy_mother_physician_per = { NOT = { learning = 10 } }
+					}
+					modifier = { 
+						factor = 0.9
+						persistent_event_target:pregnancy_mother_physician_per = { trait = slow }
+					}
+					modifier = { 
+						factor = 0.8
+						persistent_event_target:pregnancy_mother_physician_per = { trait = imbecile }
+					}
+					modifier = { 
+						factor = 1.25
+						persistent_event_target:pregnancy_mother_physician_per = { trait = scholar }
+					}
+					modifier = { 
+						factor = 1.5
+						persistent_event_target:pregnancy_mother_physician_per = { trait = physician }
+					}
+					modifier = { 
+						factor = 1.25
+						persistent_event_target:pregnancy_mother_physician_per = { trait = quick }
+					}
+					modifier = { 
+						factor = 1.5
+						persistent_event_target:pregnancy_mother_physician_per = { trait = genius }
+					}
+					modifier = { 
+						factor = 1.25
+						persistent_event_target:pregnancy_mother_physician_per = { learning = 10 }
+					}
+					modifier = { 
+						factor = 1.25
+						persistent_event_target:pregnancy_mother_physician_per = { learning = 15 }
+					}
+					modifier = { 
+						factor = 1.25
+						persistent_event_target:pregnancy_mother_physician_per = { learning = 20 }
+					}
+					modifier = { 
+						factor = 1.5
+						persistent_event_target:pregnancy_mother_physician_per = { learning = 25 }
+					}
+					character_event = { id = HFP.20545 days = 5 random = 5 } #recovers weakened
+				}
 				20 = { character_event = { id = HFP.20546 days = 5 random = 5 } } #remains infirm
 				30 = { character_event = { id = HFP.20547 days = 5 random = 5 } } #DEATH
 			}
@@ -7524,7 +7956,7 @@ character_event = {
 		set_character_flag = survivor_mom
 		if = { 
 			limit = { is_married = yes } 
-			spouse = { character_event = { id = HFP.20548 } } 
+			any_spouse = { character_event = { id = HFP.20548 } } 
 		}
 	}
 }
@@ -7542,12 +7974,10 @@ character_event = {
 	option = { 
 		name = EVTOPTAHFP20545 #I think I'll rest another couple of days still...
 		if = { 
-			limit = { 
-				trait = feeble
-			} 
+			limit = { trait = feeble }
 			health = -1.0
 		}
-		if = { 
+		else_if = { 
 			limit = { trait = robust } 
 			remove_trait = robust 
 		}
@@ -7575,7 +8005,7 @@ character_event = {
 		set_character_flag = survivor_mom
 		if = { 
 			limit = { is_married = yes } 
-			spouse = { character_event = { id = HFP.20549 } } 
+			any_spouse = { character_event = { id = HFP.20549 } } 
 		}
 	}
 }
@@ -7598,10 +8028,7 @@ character_event = {
 			} 
 			health = -1.0
 		}
-		if = { 
-			limit = { 
-					NOT = { trait = infirm } 
-			} 
+		else = {
 			add_trait = infirm
 		}
 		hidden_tooltip = {	
@@ -7625,7 +8052,7 @@ character_event = {
 		set_character_flag = survivor_mom
 		if = { 
 			limit = { is_married = yes } 
-			spouse = { character_event = { id = HFP.20550 } } 
+			any_spouse = { character_event = { id = HFP.20550 } } 
 		}
 	}
 }
@@ -7662,7 +8089,7 @@ character_event = {
 		death = { death_reason = death_troubled_pregnancy }
 		if = { 
 			limit = { is_married = yes } 
-			spouse = { character_event = { id = HFP.20551 } } 
+			any_spouse = { character_event = { id = HFP.20551 } } 
 		}
 	}
 }
@@ -7841,6 +8268,65 @@ character_event = {
 			}
 			character_event = { id = HFP.20067 }
 		}
+		if = {
+			limit = { is_married = yes }
+			if = {
+				limit = {
+					father_of_unborn_known = yes
+					father_of_unborn = {
+						is_married = ROOT
+						block_general_event_trigger = no
+					}
+				}
+				father_of_unborn = { save_event_target_as = scoped_spouse }
+			}
+			else_if = {
+				limit = {
+					any_spouse = { block_general_event_trigger = no }
+				}
+				random_spouse = {
+					limit = { block_general_event_trigger = no }
+					preferred_limit = {
+						is_main_spouse = yes
+					}
+					save_event_target_as = scoped_spouse
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				is_consort = yes
+				is_senior_consort_party = no
+			}
+			if = { # Senior consort, unlike spouse, will only help if they think child is theirs
+				limit = { father_of_unborn_known = yes }
+				if = {
+					limit = {
+						father_of_unborn = {
+							is_consort = ROOT
+							is_senior_consort_party = yes
+							block_general_event_trigger = no
+						}
+					}
+					father_of_unborn = { save_event_target_as = scoped_spouse }
+				}
+			}
+			else_if = {
+				limit = {
+					any_consort = {
+						is_senior_consort_party = yes
+						block_general_event_trigger = no
+					}
+				}
+				random_consort = {
+					limit = {
+						is_senior_consort_party = yes
+						block_general_event_trigger = no
+					}
+					save_event_target_as = scoped_spouse
+				}
+			}
+		}
 		#First pregnancy scare. 
 		random_list = {
 			20 = {}
@@ -7949,7 +8435,7 @@ character_event = {
 				modifier = { 
 					factor = 0
 					NOT = { higher_tier_than = BARON }
-					spouse = { lower_tier_than = COUNT }
+					event_target:scoped_spouse = { lower_tier_than = COUNT }
 				}
 				modifier = { 
 					factor = 0.25
@@ -7964,7 +8450,7 @@ character_event = {
 					limit = { is_ruler = yes } 
 					character_event = { id = HFP.20030 days = 60 random = 10 }
 				}
-				else = { spouse = { character_event = { id = HFP.20030 days = 60 random = 10 } } } 
+				else = { event_target:scoped_spouse = { character_event = { id = HFP.20030 days = 60 random = 10 } } }
 			}
 			#Baby kicks
 			20 = {
@@ -8024,30 +8510,11 @@ character_event = {
 				}
 				modifier = { #Already have an heir
 					factor = 0
-					any_child = { 
-						is_female = no
-					}
-					OR = { 
-						has_law = agnatic_succession
-						has_law = cognatic_succession
-					}
-				}
-				modifier = { #Already have an heir
-					factor = 0
-					any_child = { 
-						is_female = yes
-					}
-					OR = { 
-						has_law = enatic_cognatic_succession
-						has_law = enatic_succession
-					}
+					any_child = { emf_is_preferred_gender_for_laws_of_PREV = yes }
 				}
 				modifier = { #Doesn't really matter.
 					factor = 0.5
-					OR = { 
-						has_law = status_of_women_4
-						has_law = true_cognatic_succession
-					}
+					primary_title = { succ_law_title = { has_law = true_cognatic_succession } }
 				}
 				character_event = { id = HFP.20559 days = 60 random = 10 }
 			}
@@ -8251,7 +8718,7 @@ character_event = {
 			#Fertility festival for baltic, norse, finnish pagans.
 			90 = {
 				trigger = { 
-					is_married = yes
+					is_married = event_target:scoped_spouse
 					is_main_spouse = yes
 					NOR = { 
 						num_of_children = 3 
@@ -8261,9 +8728,9 @@ character_event = {
 					}
 					OR = { 
 						higher_real_tier_than = COUNT
-						spouse = { higher_real_tier_than = COUNT } 
+						event_target:scoped_spouse = { higher_real_tier_than = COUNT } 
 					} 
-					spouse = { 
+					event_target:scoped_spouse = { 
 						OR = { 
 							religion = norse_pagan
 							religion = norse_pagan_reformed
@@ -8310,21 +8777,21 @@ character_event = {
 					factor = 1.5
 					OR = { 
 						real_tier = KING
-						spouse = { real_tier = KING }
+						event_target:scoped_spouse = { real_tier = KING }
 					}
 				}
 				modifier = { 
 					factor = 1.75
 					OR = { 
 						real_tier = EMPEROR
-						spouse = { real_tier = EMPEROR }
+						event_target:scoped_spouse = { real_tier = EMPEROR }
 					}
 				}
 				modifier = { 
 					factor = 0.85
 					is_ill = yes
 				}
-				spouse = { character_event = { id = HFP.20043 days = 15 random = 8 } }
+				event_target:scoped_spouse = { character_event = { id = HFP.20043 days = 15 random = 8 } }
 			}
 			#Sacrifices for Pagans
 			50 = {
@@ -8345,7 +8812,7 @@ character_event = {
 				}
 				modifier = { #If she qualifies for Fertility Festival, prioritize that instead.
 					factor = 0.2
-					is_married = yes
+					is_married = event_target:scoped_spouse
 					is_main_spouse = yes
 					NOR = { 
 						num_of_children = 3 
@@ -8355,9 +8822,9 @@ character_event = {
 					}
 					OR = { 
 						higher_real_tier_than = COUNT
-						spouse = { higher_real_tier_than = COUNT } 
+						event_target:scoped_spouse = { higher_real_tier_than = COUNT } 
 					} 
-					spouse = { 
+					event_target:scoped_spouse = { 
 						OR = { 
 							religion = norse_pagan
 							religion = norse_pagan_reformed
@@ -8593,36 +9060,13 @@ character_event = {
 				}
 				modifier = { 
 					factor = 0
-					NOT = { 
-						any_spouse = { 
-							is_alive = yes 
-							is_inaccessible_trigger = no
-							is_incapable = no
-							prisoner = no
-						}
-					}
+					NOT = { event_target:scoped_spouse = { is_alive = yes } }
 				}
 				modifier = { 
 					factor = 0.75
-					NOT = { 
-						any_spouse = { 
-							is_alive = yes 
-							is_inaccessible_trigger = no
-							is_incapable = no
-							prisoner = no
-							trait = kind
-						}
-					}
+					NOT = { event_target:scoped_spouse = { trait = kind } }
 				}
-				random_spouse = { 
-					limit = { 
-						is_alive = yes 
-						is_inaccessible_trigger = no
-						is_incapable = no
-						prisoner = no
-					}
-					character_event = { id = HFP.20574 days = 120 random = 20 }
-				}
+				event_target:scoped_spouse = { character_event = { id = HFP.20574 days = 120 random = 20 } }
 			}
 			#Lover
 			30 = {
@@ -8640,22 +9084,16 @@ character_event = {
 				modifier = { 
 					factor = 0
 					NOT = { 
-						any_lover = { 
-							is_alive = yes 
-							is_inaccessible_trigger = no
-							is_incapable = no
-							NOT = { is_married = ROOT } #Loving husbands get event above.
-							prisoner = no
+						any_lover = {
+							NOT = { character = event_target:scoped_spouse }
+							block_general_event_trigger = no
 						}
 					}
 				}
 				random_lover = { 
-					limit = { 
-						is_alive = yes 
-						is_inaccessible_trigger = no
-						is_incapable = no
-						NOT = { is_married = ROOT }
-						prisoner = no
+					limit = {
+						NOT = { character = event_target:scoped_spouse }
+						block_general_event_trigger = no
 					}
 					character_event = { id = HFP.20575 days = 120 random = 20 }
 				}
@@ -8675,19 +9113,22 @@ character_event = {
 				}
 				modifier = { 
 					factor = 0
-					is_married = no
+					NOR = {
+						is_married = event_target:scoped_spouse
+						is_consort = event_target:scoped_spouse
+					}
 				}
 				modifier = {
 					factor = 0
-					spouse = { is_incapable = yes }
+					event_target:scoped_spouse = { is_incapable = yes }
 				}
 				modifier = {
 					factor = 0
-					spouse = { prisoner = yes }
+					event_target:scoped_spouse = { prisoner = yes }
 				}
 				modifier = { #Only for rulers with vassals (or spouses of rulers)
 					factor = 0
-					spouse = { lower_tier_than = COUNT }
+					event_target:scoped_spouse = { lower_tier_than = COUNT }
 					lower_tier_than = COUNT
 				}
 				modifier = { #Make events less likely to become recurring at every pregnancy.
@@ -8722,7 +9163,7 @@ character_event = {
 					factor = 0.1
 					practical_age = 45
 				}
-				spouse = { character_event = { id = HFP.20005 days = 120 random = 20 } } #Fires on husband first.
+				event_target:scoped_spouse = { character_event = { id = HFP.20005 days = 120 random = 20 } } #Fires on husband first.
 			}
 			#Nobody
 			40 = {
@@ -8750,7 +9191,6 @@ character_event = {
 					factor = 3
 					num_of_children = 5
 				}
-
 			}
 		}
 	}
@@ -8953,17 +9393,9 @@ character_event = {
 	}
 	option = { #Ask husband
 		name = EVTOPTBHFP20560
-		trigger = { 
-			is_married = yes 
-			spouse = { 
-				is_inaccessible_trigger = no 
-				prisoner = no
-				is_incapable = no
-				is_ruler = yes
-			}
-		}
+		trigger = { event_target:scoped_spouse = { is_ruler = yes } }
 		custom_tooltip = { text = tooltip_ask_dress_husband }
-		hidden_tooltip = { spouse = { character_event = { id = HFP.20561 } } }
+		hidden_tooltip = { event_target:scoped_spouse = { character_event = { id = HFP.20561 } } }
 		ai_chance = { factor = 50 }
 	}
 	option = { #Buy new dresses
@@ -9195,7 +9627,8 @@ character_event = {
 			name = mother_good_omen
 			duration = 150
 		}
-		hidden_tooltip = { spouse = { character_event = { id = HFP.20566 } }
+		hidden_tooltip = {
+			event_target:scoped_spouse = { character_event = { id = HFP.20566 } }
 			if = { #Chance of a strange positive birth.
 				limit = { NOT = { has_dynasty_flag = flag_vision_baby } }
 				random_list = { 
@@ -9225,7 +9658,8 @@ character_event = {
 	option = { 
 		name = EVTOPTBHFP20565
 		tiered_piety_reward_effect = yes
-		hidden_tooltip = { spouse = { character_event = { id = HFP.20566 } }
+		hidden_tooltip = {
+			event_target:scoped_spouse = { character_event = { id = HFP.20566 } }
 			if = { #Chance of a strange positive birth.
 				limit = { NOT = { has_dynasty_flag = flag_vision_baby } }
 				random_list = { 
@@ -9299,8 +9733,8 @@ character_event = {
 			add_trait = stressed
 			hidden_tooltip = { character_event = { id = 38282 } }
 		}
-		hidden_tooltip = { spouse = { character_event = { id = HFP.20568 } }
-
+		hidden_tooltip = {
+			event_target:scoped_spouse = { character_event = { id = HFP.20568 } }
 			if = { #Chance of a strange bad birth.
 				limit = { NOT = { has_dynasty_flag = flag_vision_baby } }
 				random_list = { 
@@ -9347,8 +9781,8 @@ character_event = {
 			}
 		}
 
-		hidden_tooltip = { spouse = { character_event = { id = HFP.20568 } }
-
+		hidden_tooltip = {
+			event_target:scoped_spouse = { character_event = { id = HFP.20568 } }
 			if = { #Chance of a strange bad birth.
 				limit = { NOT = { has_dynasty_flag = flag_vision_baby } }
 				random_list = { 
@@ -9392,8 +9826,8 @@ character_event = {
 
 		FROM = {
 			hidden_tooltip = {	#Remove the older one first.
-			remove_character_modifier = mother_bad_omen
-		}
+				remove_character_modifier = mother_bad_omen
+			}
 			add_character_modifier = {
 				name = mother_bad_omen
 				duration = 50
@@ -9801,8 +10235,8 @@ character_event = {
 			hidden_tooltip = { character_event = { id = HFP.20421 days = 200 } }   #Post-pregnancy recovery.
 		}
 		add_character_modifier = {
-				name = well_fed
-				years = 2
+			name = well_fed
+			years = 2
 		}
 		ai_chance = { 
 			factor = 50
@@ -9819,13 +10253,12 @@ character_event = {
 			chance = 20
 			add_trait = gluttonous 
 			hidden_tooltip = { character_event = { id = 38277 } } #Notification
-
 		}
 		tiered_prestige_reward_effect = yes
 		scaled_wealth = { value = -0.05 min = -5 max = -100 }
 		add_character_modifier = {
-				name = well_fed
-				years = 2
+			name = well_fed
+			years = 2
 		}
 		ai_chance = { 
 			factor = 50
@@ -9865,9 +10298,9 @@ character_event = {
 		name = EVTOPTEHFP20573
 		trigger = { 
 			is_ruler = no
-			is_main_spouse = yes #Prevent concubine spamming 
+			is_married = event_target:scoped_spouse
 		}
-		hidden_tooltip = { spouse = { character_event = { id = HFP.20596 } } }
+		hidden_tooltip = { event_target:scoped_spouse = { character_event = { id = HFP.20596 } } }
 		ai_chance = { 
 			factor = 20
 		}
@@ -9876,7 +10309,7 @@ character_event = {
 		name = EVTOPTEHFP20573
 		trigger = { 
 			is_ruler = no
-			is_main_spouse = no
+			NOT = { is_married = event_target:scoped_spouse }
 		}
 		ai_chance = { 
 			factor = 20
@@ -11970,7 +12403,15 @@ character_event = {
 		}
 		if = { 
 			limit = { is_main_spouse = yes } 
-			hidden_tooltip = { spouse = { character_event = { id = HFP.20004 days = 15 random = 5 } } } 
+			hidden_tooltip = {
+				random_spouse = {
+					limit = { block_general_event_trigger = no }
+					preferred_limit = {
+						is_main_spouse = yes
+					}
+					character_event = { id = HFP.20004 days = 15 random = 5 }
+				}
+			}
 		}
 		ai_chance = { 
 			factor = 75 
@@ -12060,9 +12501,13 @@ character_event = {
 	}
 	picture = GFX_evt_homage_hf
 
-	trigger = { 
-		FROM = { is_alive = yes is_married = ROOT }  
-	} 
+	trigger = {
+		block_general_event_trigger = no
+		FROM = {
+			is_alive = yes
+			is_married = ROOT
+		}  
+	}
 
 	is_triggered_only = yes
 	
@@ -13908,13 +14353,13 @@ character_event = {
 				} 
 				35 = { #Choke on Communion
 					trigger = {
-						event_target:newborn_baby = { 
+						event_target:newborn_baby = {
 							is_father_real_father = no
 						}
 					}
 					modifier = {
 						factor = 0.1 #Nothing to fight over.
-						event_target:newborn_baby = { 
+						event_target:newborn_baby = {
 							is_alive = no 
 						}
 					}
@@ -14094,7 +14539,7 @@ character_event = {
 				}
 			} 
 			hidden_tooltip = { 
-				spouse = { character_event = { id = HFP.20021 } } #Notify husband
+				event_target:newborn_baby = { father = { character_event = { id = HFP.20021 } } } #Notify husband
 				if = {
 					limit = {
 						NOT = {
@@ -14109,7 +14554,7 @@ character_event = {
 								value = unrestricted
 							}
 							ai = no
-							spouse = { ai = no }
+							event_target:newborn_baby = { father = { ai = no } }
 						}
 					}
 					event_target:newborn_baby = { character_event = { id = HFP.20027 days = 2500 random = 250 } } #Child is blessed
@@ -14123,7 +14568,7 @@ character_event = {
 			}
 			tiered_piety_reward_effect = yes
 			hidden_tooltip = { 
-				spouse = { character_event = { id = HFP.20021 } } #Notify husband
+				event_target:newborn_baby = { father = { character_event = { id = HFP.20021 } } } #Notify husband
 			}
 		}
 		#Churching resulted in negative feeling:
@@ -14139,7 +14584,7 @@ character_event = {
 				random = { chance = 40 add_trait = stressed } 
 			} 
 			hidden_tooltip = { 
-				spouse = { character_event = { id = HFP.20021 } } #Notify husband
+				event_target:newborn_baby = { father = { character_event = { id = HFP.20021 } } } #Notify husband
 			}
 		}
 		#Churching resulted in very negative omen:
@@ -14161,7 +14606,10 @@ character_event = {
 				}
 				add_trait = stressed
 			} 
-			event_target:newborn_baby = { prestige = -100 }
+			event_target:newborn_baby = {
+				prestige = -100
+				father = { save_event_target_as = original_father }
+			}
 
 			hidden_tooltip = { 
 				if = { #If child is not actually illegitimate
@@ -14184,11 +14632,12 @@ character_event = {
 						} 
 					}
 				} 
-			} 
+			}
 			if = { #If spouse is higher tier, the child is no longer an heir.
 				limit = { 
-					spouse = { 
-						higher_tier_than = ROOT 
+					event_target:original_father = {
+						higher_real_tier_than = ROOT
+						NOT = { religion_scope = { has_religion_feature = religion_matriarchal } }
 					}
 				}
 				event_target:newborn_baby = { 
@@ -14206,7 +14655,7 @@ character_event = {
 				}
 			}
 			hidden_tooltip = { 
-				spouse = { character_event = { id = HFP.20021 } } #Notify husband
+				event_target:original_father = { character_event = { id = HFP.20021 } } #Notify husband
 			}
 		}
 		ai_chance = { factor = 100 }
@@ -14686,6 +15135,7 @@ character_event = {
 			is_alive = yes
 			OR = {
 				is_married = ROOT
+				is_consort = ROOT
 				character = ROOT
 			}
 			is_incapable = no
@@ -14833,7 +15283,7 @@ character_event = {
 							}
 							modifier = {
 								factor = 0 
-								ROOT = { 
+								ROOT = {
 									NOR = { 
 										trait = kind
 										has_focus = focus_family
@@ -14844,9 +15294,7 @@ character_event = {
 							}
 							modifier = {
 								factor = 0 
-								ROOT = { 
-									num_of_lovers = 1 
-								}
+								ROOT = { num_of_lovers = 1 }
 							}
 							modifier = {
 								factor = 0 
@@ -14855,10 +15303,6 @@ character_event = {
 							modifier = {
 								factor = 0
 								ROOT = { prefers_men_trigger = no }
-							}
-							modifier = {
-								factor = 0 
-								is_main_spouse = no
 							}
 							modifier = {
 								factor = 0 
@@ -14886,7 +15330,10 @@ character_event = {
 					} 
 					35 = { character_event = { id = HFP.20039 days = 10 random = 10 } #Becomes more popular
 					} 
-					5 = { 
+					5 = {
+						trigger = {
+							event_target:scoped_spouse = { is_alive = yes }
+						}
 						modifier = {
 							factor = 0 
 							NOR = { 
@@ -14898,7 +15345,7 @@ character_event = {
 						}
 						modifier = {
 							factor = 0 
-							spouse = { 
+							event_target:scoped_spouse = { 
 								NOR = { 
 									trait = kind
 									has_focus = focus_family
@@ -14913,7 +15360,7 @@ character_event = {
 						}
 						modifier = {
 							factor = 0
-							spouse = { prefers_men_trigger = yes }
+							event_target:scoped_spouse = { prefers_men_trigger = yes }
 						}
 						modifier = {
 							factor = 0 
@@ -14921,9 +15368,7 @@ character_event = {
 						}
 						modifier = {
 							factor = 0 
-							spouse = { 
-								num_of_lovers = 1 
-							}
+							event_target:scoped_spouse = { num_of_lovers = 1 }
 						}
 						modifier = {
 							factor = 0 
@@ -14968,7 +15413,7 @@ character_event = {
 	option = {
 		name = EVTOPTAHFP20031
 		change_learning = 1
-		hidden_tooltip = { spouse = { character_event = { id = HFP.20032 } } }
+		hidden_tooltip = { event_target:scoped_spouse = { character_event = { id = HFP.20032 } } }
 	}
 }
 
@@ -15014,7 +15459,7 @@ character_event = {
 			}
 			remove_trait = trusting 
 		}
-		hidden_tooltip = { spouse = { character_event = { id = HFP.20034 } } }
+		hidden_tooltip = { event_target:scoped_spouse = { character_event = { id = HFP.20034 } } }
 	}
 }
 
@@ -15050,7 +15495,7 @@ character_event = {
 			limit = { trait = stressed } 
 			remove_trait = stressed
 		} 
-		hidden_tooltip = { spouse = { character_event = { id = HFP.20036 } } }
+		hidden_tooltip = { event_target:scoped_spouse = { character_event = { id = HFP.20036 } } }
 	}
 }
 
@@ -15096,7 +15541,7 @@ character_event = {
 			}
 			remove_trait = shy 
 		}
-		hidden_tooltip = { spouse = { character_event = { id = HFP.20038 } } }
+		hidden_tooltip = { event_target:scoped_spouse = { character_event = { id = HFP.20038 } } }
 	}
 }
 
@@ -15127,7 +15572,7 @@ character_event = {
 			modifier = mother_popular
 			years = 5
 		}
-		hidden_tooltip = { spouse = { character_event = { id = HFP.20040 } } }
+		hidden_tooltip = { event_target:scoped_spouse = { character_event = { id = HFP.20040 } } }
 	}
 }
 
@@ -15152,13 +15597,14 @@ character_event = {
 
 	is_triggered_only = yes
 	
-	immediate = {
-		spouse = { save_event_target_as = scoped_spouse }
+	trigger = {
+		event_target:scoped_spouse = { is_alive = yes }
 	}
+	
 	option = {
 		name = EVTOPTAHFP20041
-		add_lover = event_target:scoped_spouse	
-		hidden_tooltip = { spouse = { character_event = { id = HFP.20042 } } }
+		add_lover = event_target:scoped_spouse
+		hidden_tooltip = { event_target:scoped_spouse = { character_event = { id = HFP.20042 } } }
 	}
 }
 
@@ -15241,14 +15687,14 @@ character_event = {
 			scaled_wealth = { value = -0.25 min = -25 max = -100 }
 		}
 		tiered_piety_reward_effect = yes
-		spouse = {
+		FROM = {
 			show_scope_change = no
 			add_character_modifier = { 
 				modifier = mother_fertility_festival_2
 				years = 4
 			}  
 		}
-		spouse = { 
+		FROM = { 
 			show_scope_change = no
 			opinion = {
 				who = ROOT 
@@ -15283,14 +15729,14 @@ character_event = {
 			limit = { ai = no }
 			scaled_wealth = { value = -0.05 min = -5 max = -50 }
 		}
-		spouse = {
+		FROM = {
 			show_scope_change = no
 			add_character_modifier = { 
 				modifier = mother_fertility_festival_1
 				years = 2
 			}  
 		}
-		spouse = { 
+		FROM = { 
 			show_scope_change = no
 			opinion = {
 				who = ROOT 
@@ -15586,10 +16032,15 @@ character_event = {
 		ai_chance = { factor = 20 }
 	}
 	after = { 
-		hidden_tooltip = { 
-			if = { 
-				limit = { is_married = yes }	
-				spouse =  { character_event = { id = HFP.20054 } } #Spouse notified 
+		hidden_tooltip = {
+			if = {
+				limit = {
+					FROMFROM = {
+						is_alive = yes
+						is_married = ROOT
+					}
+				}
+				FROMFROM = { character_event = { id = HFP.20054 } } # Spouse notified
 			}
 			else =  { 
 				clr_character_flag = flag_mother_festival_gregarious
@@ -15653,9 +16104,14 @@ character_event = {
 	}
 	after = { 
 		hidden_tooltip = { 
-			if = { 
-				limit = { is_married = yes }	
-				spouse =  { character_event = { id = HFP.20054 } } #Spouse notified 
+			if = {
+				limit = {
+					FROMFROM = {
+						is_alive = yes
+						is_married = ROOT
+					}
+				}
+				FROMFROM = { character_event = { id = HFP.20054 } } # Spouse notified
 			}
 			else =  { 
 				clr_character_flag = flag_mother_festival_proud
@@ -15708,9 +16164,14 @@ character_event = {
 	}
 	after = { 
 		hidden_tooltip = { 
-			if = { 
-				limit = { is_married = yes }	
-				spouse =  { character_event = { id = HFP.20054 } } #Spouse notified 
+			if = {
+				limit = {
+					FROMFROM = {
+						is_alive = yes
+						is_married = ROOT
+					}
+				}
+				FROMFROM = { character_event = { id = HFP.20054 } } # Spouse notified
 			}
 			else =  { 
 				clr_character_flag = flag_mother_festival_peasants
@@ -15757,9 +16218,14 @@ character_event = {
 	}
 	after = { 
 		hidden_tooltip = { 
-			if = { 
-				limit = { is_married = yes }	
-				spouse =  { character_event = { id = HFP.20054 } } #Spouse notified 
+			if = {
+				limit = {
+					FROMFROM = {
+						is_alive = yes
+						is_married = ROOT
+					}
+				}
+				FROMFROM = { character_event = { id = HFP.20054 } } # Spouse notified
 			}
 			else =  { 
 				clr_character_flag = flag_mother_festival_vassals
@@ -15841,9 +16307,14 @@ character_event = {
 			years = 5 
 		}
 		hidden_tooltip = { 
-			if = { 
-				limit = { is_married = yes }	
-				spouse =  { character_event = { id = HFP.20054 } } #Spouse notified 
+			if = {
+				limit = {
+					FROMFROM = {
+						is_alive = yes
+						is_married = ROOT
+					}
+				}
+				FROMFROM = { character_event = { id = HFP.20054 } } # Spouse notified
 			}
 			else = { 
 				clr_character_flag = flag_mother_festival_gluttonous
@@ -15909,10 +16380,15 @@ character_event = {
 		}
 	}
 	after = { 
-		hidden_tooltip = { 
-			if = { 
-				limit = { is_married = yes }	
-				spouse =  { character_event = { id = HFP.20054 } } #Spouse notified 
+		hidden_tooltip = {
+			if = {
+				limit = {
+					FROMFROM = {
+						is_alive = yes
+						is_married = ROOT
+					}
+				}
+				FROMFROM = { character_event = { id = HFP.20054 } } # Spouse notified
 			}
 			else = { 
 				clr_character_flag = flag_mother_festival_chaste
@@ -16462,13 +16938,17 @@ character_event = {
 
 	option = { #Not my problem.
 		name = EVTOPTAHFP20061
-		trigger = { 
+		trigger = {
 			FROM = {
-				OR = { 
-					has_character_modifier = adulteress 
-					has_character_modifier = incestuous_adulteress 
-				} 
-			} 
+				NAND = {
+					is_married = no
+					is_consort = no
+				}
+				NOR = {
+					is_married = ROOT
+					is_consort = ROOT
+				}
+			}
 		}
 		ai_chance = { factor = 100 }
 	}
@@ -16477,11 +16957,15 @@ character_event = {
 		trigger = {
 			NOT = { trait = kind }
 			FROM = {
-				NOR = { 
-					has_character_modifier = adulteress 
-					has_character_modifier = incestuous_adulteress 
-				} 
-			} 
+				OR = {
+					AND = {
+						is_married = no
+						is_consort = no
+					}
+					is_married = ROOT
+					is_consort = ROOT
+				}
+			}
 		}
 		opinion = { 
 			who = ROOT
@@ -16525,10 +17009,14 @@ character_event = {
 		trigger = {
 			NOT = { trait = cruel }
 			FROM = {
-				NOR = { 
-					has_character_modifier = adulteress 
-					has_character_modifier = incestuous_adulteress 
-				} 
+				OR = {
+					AND = {
+						is_married = no
+						is_consort = no
+					}
+					is_married = ROOT
+					is_consort = ROOT
+				}
 			} 
 		}
 		FROM = {
@@ -16561,10 +17049,14 @@ character_event = {
 		name = EVTOPTDHFP20061
 		trigger = {
 			FROM = {
-				NOR = { 
-					has_character_modifier = adulteress 
-					has_character_modifier = incestuous_adulteress 
-				} 
+				OR = {
+					AND = {
+						is_married = no
+						is_consort = no
+					}
+					is_married = ROOT
+					is_consort = ROOT
+				}
 			} 
 		}
 		ai_chance = { 

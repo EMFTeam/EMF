@@ -394,7 +394,7 @@ character_event = {
 			NOR = {
 				character = FROM
 				is_close_relative = FROM
-				any_spouse = { character = FROM }
+				is_married = FROM
 				any_ward = { character = FROM }
 				guardian = { character = FROM }
 			}
@@ -405,7 +405,7 @@ character_event = {
 		trigger = {
 			OR = {
 				is_close_relative = FROM
-				any_spouse = { character = FROM }
+				is_married = FROM
 				any_ward = { character = FROM }
 				guardian = { character = FROM }
 			}
@@ -429,7 +429,7 @@ character_event = {
 				}
 				OR = {
 					is_close_relative = FROM
-					any_spouse = { character = FROM }
+					is_married = FROM
 					any_ward = { character = FROM }
 					guardian = { character = FROM }
 				}
@@ -481,7 +481,7 @@ character_event = {
 			NOR = {
 				character = FROM
 				is_close_relative = FROM
-				any_spouse = { character = FROM }
+				is_married = FROM
 				any_ward = { character = FROM }
 				guardian = { character = FROM }
 			}
@@ -492,7 +492,7 @@ character_event = {
 		trigger = {
 			OR = {
 				is_close_relative = FROM
-				any_spouse = { character = FROM }
+				is_married = FROM
 				any_ward = { character = FROM }
 				guardian = { character = FROM }
 			}
@@ -516,7 +516,7 @@ character_event = {
 				}
 				OR = {
 					is_close_relative = FROM
-					any_spouse = { character = FROM }
+					is_married = FROM
 					any_ward = { character = FROM }
 					guardian = { character = FROM }
 				}

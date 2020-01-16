@@ -249,22 +249,65 @@ narrative_event = {
 			culture = frankish
 			culture = old_frankish
 		}
-		spouse = {
+		any_spouse = {
 			culture = lombard
-			father = { culture = lombard }
+			OR = {
+				father = {
+					culture = lombard
+					OR = {
+						is_landed = yes
+						is_patrician = yes
+					}
+				}
+				mother = {
+					culture = lombard
+					OR = {
+						is_landed = yes
+						is_patrician = yes
+					}
+				}
+			}
 		}
 		NOT = {
 			any_sibling = {
 				has_character_flag = is_carloman
-				spouse = { culture = lombard }
+				any_spouse = { culture = lombard }
 			}
+		}
+	}
+	
+	limit = {
+		random_spouse = {
+			limit = {
+				culture = lombard
+				OR = {
+					father = {
+						culture = lombard
+						OR = {
+							is_landed = yes
+							is_patrician = yes
+						}
+					}
+					mother = {
+						culture = lombard
+						OR = {
+							is_landed = yes
+							is_patrician = yes
+						}
+					}
+				}
+			}
+			preferred_limit = {
+				is_main_spouse = yes
+			}
+			save_event_target_as = target_spouse
 		}
 	}
 
 	option = {
 		name = EVTOPTA_CM_1011   # Divorce her
 		piety = -100
-		spouse = {
+		event_target:target_spouse = {
 			any_child = {
 				limit = {
 					is_father = ROOT
@@ -273,7 +316,6 @@ narrative_event = {
 				culture = ROOT
 			}
 			father = {
-				set_character_flag = charlemagne_enemy
 				opinion = {
 					modifier = opinion_furious
 					who = ROOT
@@ -288,14 +330,34 @@ narrative_event = {
 				}
 			}
 			hidden_tooltip = {
-				father = {
-					PREV = {
-						move_character = PREV
+				if = {
+					limit = {
+						father = {
+							culture = lombard
+							OR = {
+								is_landed = yes
+								is_patrician = yes
+							}
+						}
+					}
+					father = {
+						set_character_flag = charlemagne_enemy 
+						PREV = {
+							move_character = PREV
+						}
+					}
+				}
+				else = {
+					mother = {
+						set_character_flag = charlemagne_enemy 
+						PREV = {
+							move_character = PREV
+						}
 					}
 				}
 			}
+			remove_spouse = ROOT
 		}
-		remove_spouse = spouse
 	}
 	option = {
 		name = EVTOPTB_CM_1011   # No, she's my wife
@@ -308,7 +370,11 @@ narrative_event = {
 						culture = frankish
 						culture = old_frankish
 					}
-					NOT = { spouse = { culture = lombard } }
+					NOR = {
+						any_spouse = { culture = lombard }
+						any_friend = { culture = lombard }
+						any_lover = { culture = lombard }
+					}
 				}
 				opinion = {
 					modifier = opinion_angry
@@ -608,20 +674,18 @@ character_event = {
 				}
 			}
 		}
-		spouse = {
-			if = {
-				limit = {
-					NOT = {
-						any_child = {
-							has_character_flag = is_pepin_le_bossu
-						}
+		any_spouse = {
+			limit = {
+				NOT = {
+					any_child = {
+						has_character_flag = is_pepin_le_bossu
 					}
 				}
-				opinion = {
-					who = ROOT
-					modifier = legitimized_bastard
-					years = 20
-				}
+			}
+			opinion = {
+				who = ROOT
+				modifier = legitimized_bastard
+				years = 20
 			}
 		}
 	}
@@ -928,22 +992,22 @@ character_event = {
 			}
 			narrative_event = { id = CM.1003 }
 		}
-		spouse = {
-			if = {
-				limit = {
-					ROOT = {
-						any_sibling = {
-							has_character_flag = is_charlemagne
-							independent = yes
-						}
-						OR = {
-							ai = yes
-							any_sibling = {
-								has_character_flag = is_charlemagne
-								is_primary_heir = ROOT
-							}
-						}
+		if = {
+			limit = {
+				any_sibling = {
+					has_character_flag = is_charlemagne
+					independent = yes
+				}
+				OR = {
+					ai = yes
+					any_sibling = {
+						has_character_flag = is_charlemagne
+						is_primary_heir = ROOT
 					}
+				}
+			}
+			any_spouse = {
+				limit = {
 					OR = {
 						trait = pregnant
 						any_child = {
@@ -2338,7 +2402,7 @@ character_event = {
 		mother = {
 			is_alive = yes
 			is_ruler = no
-			liege = { character = ROOT }
+			vassal_of = ROOT
 			OR = {
 				trait = ambitious
 				trait = proud
@@ -2390,11 +2454,11 @@ character_event = {
 			prisoner = no
 		}
 		NOT = { religion_group = muslim }
-		spouse = {
+		any_spouse = {
 			NOT = { has_character_flag = meddling_mother_conflict }
-			NOT = { ROOT = { mother = { character = PREVPREV } } }
+			NOT = { is_parent_of = ROOT }
 			is_ruler = no
-			liege = { character = ROOT }
+			vassal_of = ROOT
 			OR = {
 				trait = ambitious
 				trait = proud
@@ -2418,13 +2482,31 @@ character_event = {
 	}
 	
 	immediate = {
-		spouse = { set_character_flag = meddling_mother_conflict }
+		random_spouse = {
+			limit = {
+				NOT = { has_character_flag = meddling_mother_conflict }
+				NOT = { is_parent_of = ROOT }
+				is_ruler = no
+				vassal_of = ROOT
+				OR = {
+					trait = ambitious
+					trait = proud
+					is_smart_trigger = yes
+					trait = diligent
+				}
+			}
+			preferred_limit = {
+				is_main_spouse = yes
+			}
+			set_character_flag = meddling_mother_conflict
+			save_event_target_as = target_spouse
+		}
 	}
 	
 	option = {
 		name = EVTOPTA_CM_1160 # Yes mother
 		set_character_flag = meddling_mother_gone_too_far
-		spouse = {
+		event_target:target_spouse = {
 			if = {
 				limit = { is_lover = ROOT }
 				remove_lover = ROOT
@@ -2434,38 +2516,32 @@ character_event = {
 				years = 5
 				modifier = opinion_bitter
 			}
-			ROOT = {
-				mother = {
-					opinion = {
-						who = PREVPREV
-						years = 100
-						modifier = opinion_dislike
-					}
-				}
+		}
+		mother = {
+			opinion = {
+				who = event_target:target_spouse
+				years = 100
+				modifier = opinion_dislike
 			}
 		}
 	}
 	option = {
 		name = EVTOPTB_CM_1160 # No mother
-		spouse = {
-			ROOT = {
-				mother = {
-					opinion = {
-						who = PREVPREV
-						years = 100
-						modifier = opinion_hate
-					}
-					reverse_opinion = {
-						who = PREVPREV
-						years = 100
-						modifier = opinion_dislike
-					}
-					opinion = {
-						who = ROOT
-						years = 3
-						modifier = opinion_angry
-					}
-				}
+		mother = {
+			opinion = {
+				who = event_target:target_spouse
+				years = 100
+				modifier = opinion_hate
+			}
+			reverse_opinion = {
+				who = event_target:target_spouse
+				years = 100
+				modifier = opinion_dislike
+			}
+			opinion = {
+				who = ROOT
+				years = 3
+				modifier = opinion_angry
 			}
 		}
 	}
@@ -2474,25 +2550,19 @@ character_event = {
 		trigger = {
 			religion_group = christian
 			NOT = { trait = craven }
-			mother = {
-				has_character_flag = meddling_mother_gone_too_far
-			}
+			mother = { has_character_flag = meddling_mother_gone_too_far }
 		}
-		spouse = {
-			ROOT = {
-				mother = {
-					add_ascetic_trait_effect = yes
-					opinion = {
-						who = PREVPREV
-						years = 100
-						modifier = opinion_hate
-					}
-					opinion = {
-						who = ROOT
-						years = 10
-						modifier = opinion_bitter
-					}
-				}
+		mother = {
+			add_ascetic_trait_effect = yes
+			opinion = {
+				who = event_target:target_spouse
+				years = 100
+				modifier = opinion_hate
+			}
+			opinion = {
+				who = ROOT
+				years = 10
+				modifier = opinion_bitter
 			}
 		}
 	}
@@ -2524,9 +2594,9 @@ character_event = {
 		any_courtier = {
 			NOT = { has_character_flag = meddling_mother_conflict }
 			NOT = { ROOT = { mother = { character = PREVPREV } } }
-			NOT = { any_child = { character =  ROOT } }
+			NOT = { is_parent_of =  ROOT }
 			is_councillor = yes
-			liege = { character = ROOT }
+			vassal_of = ROOT
 			OR = {
 				trait = ambitious
 				trait = proud
@@ -2553,8 +2623,8 @@ character_event = {
 		any_courtier = {
 			limit = {
 				is_councillor = yes
-				NOT = { any_child = { character =  ROOT } }
-				liege = { character = ROOT }
+				NOT = { is_parent_of = ROOT }
+				vassal_of = ROOT
 				OR = {
 					trait = ambitious
 					trait = proud
@@ -2843,7 +2913,7 @@ character_event = {
 			NOT = { has_character_flag = meddling_mother_conflict }
 			NOT = { ROOT = { mother = { character = PREVPREV } } }
 			prefers_men_trigger = no
-			liege = { character = ROOT }
+			vassal_of = ROOT
 			OR = {
 				trait = humble
 				has_fair_trait_trigger = yes
@@ -2874,7 +2944,7 @@ character_event = {
 				ai = yes
 				NOT = { has_character_flag = meddling_mother_conflict }
 				prefers_men_trigger = no
-				liege = { character = ROOT }
+				vassal_of = ROOT
 				OR = {
 					trait = humble
 					has_fair_trait_trigger = yes
@@ -2926,7 +2996,7 @@ character_event = {
 			religion_group = christian
 			NOT = { trait = craven }
 			mother = {
-				liege = { character = ROOT }
+				vassal_of = ROOT
 				is_ruler = no
 				has_character_flag = meddling_mother_gone_too_far
 			}
@@ -2956,7 +3026,7 @@ character_event = {
 			religion_group = christian
 			NOT = { trait = craven }
 			mother = {
-				liege = { character = ROOT }
+				vassal_of = ROOT
 				is_ruler = no
 				has_character_flag = meddling_mother_gone_too_far
 			}
@@ -3467,7 +3537,7 @@ narrative_event = {
 					dynasty = ROOT
 					NOT = { is_rival = ROOT }
 				}
-				liege = { character = ROOT }
+				vassal_of = ROOT
 			}
 		}
 		if = {
