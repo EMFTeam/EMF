@@ -913,13 +913,19 @@ character_event = {
 	trigger = {
 		FROM = {
 			block_general_event_trigger = no
-			
-			is_landed = yes
-
+			OR = {
+				is_landed = yes
+				is_patrician = yes
+			}
 			NOR = {
-				any_lover = { always = yes }
+				has_lover = yes
 				trait = celibate
 				has_character_flag = gbc_courtly_love
+			}
+			NOT = { practical_age = 65 }
+			OR = {
+				is_female = no
+				NOT = { practical_age = 45 }
 			}
 		}
 	}
@@ -928,14 +934,8 @@ character_event = {
 	is_triggered_only = yes
 
 	immediate = {
-		random_list = {
-			3 = { # Trigger event
-				new_character = { save_event_target_as = gbc_spouse }
-
-				FROM = { character_event = { id = GBC.100 days = 3 } }
-			}
-			97 = { } # Nothing happen
-		}
+		new_character = { save_event_target_as = gbc_spouse }
+		FROM = { character_event = { id = GBC.100 days = 3 } }
 	}
 }
 
@@ -945,49 +945,119 @@ character_event = {
 	
 	hide_window = yes
 	is_triggered_only = yes
-
-	trigger = {
-		ai = no
-	}
+	
+	capable_only = yes
 
 	immediate = {
-
 		#Rival: liege
 		if = {
-			limit = { liege = { ai = yes is_married = yes block_general_event_trigger = no } }
-
+			limit = {
+				liege = {
+					NOR = {
+						is_married = ROOT
+						is_consort = ROOT
+						is_rival = ROOT
+					}
+					ai = yes
+					block_general_event_trigger = no
+					any_spouse = {
+						NOR = {
+							character = ROOT
+							is_married = ROOT
+							is_consort = ROOT
+							is_lover = PREV
+						}
+						block_general_event_trigger = no
+						possibly_romantically_interested_in_each_other_trigger = yes
+						ai = yes
+					}
+				}
+			}
 			liege = {
 				any_spouse = {
 					limit = {
+						NOR = {
+							character = ROOT
+							is_married = ROOT
+							is_consort = ROOT
+							is_lover = PREV
+						}
 						block_general_event_trigger = no
 						possibly_romantically_interested_in_each_other_trigger = yes
+						ai = yes
 					}
 					score_value = { #Prioritizes selecting an interesting courtier...
 			            value = 10
 			            interesting_courtier_selection_score = yes
 			        }
 					save_event_target_as = gbc_lover
-					break = yes
 				}
 			}
 		}
-
 		#Rival: someone else under the same liege
-		if = {
-			limit = { liege = { any_vassal = { NOR = { character = ROOT ai = no is_married = no block_general_event_trigger = no } } } }
-				
+		else_if = {
+			limit = {
+				liege = {
+					any_vassal = {
+						NOR = {
+							character = ROOT
+							is_married = ROOT
+							is_consort = ROOT
+							is_rival = ROOT
+						}
+						is_married = yes
+						ai = yes
+						block_general_event_trigger = no
+						any_spouse = {
+							NOR = {
+								character = ROOT
+								is_married = ROOT
+								is_consort = ROOT
+								is_lover = PREV
+							}
+							ROOT = { liege = { is_liege_or_above_of = PREVPREV } }
+							block_general_event_trigger = no
+							possibly_romantically_interested_in_each_other_trigger = yes
+							ai = yes
+						}
+					}
+				}
+			}
 			#Find a lover
 			liege = { 
 				random_vassal = { 
 					limit = { 
-						NOT = { character = ROOT }
+						NOR = {
+							character = ROOT
+							is_married = ROOT
+							is_consort = ROOT
+							is_rival = ROOT
+						}
 						is_married = yes
 						ai = yes
 						block_general_event_trigger = no
+						any_spouse = {
+							NOR = {
+								character = ROOT
+								is_married = ROOT
+								is_consort = ROOT
+								is_lover = PREV
+							}
+							ROOT = { liege = { is_liege_or_above_of = PREVPREV } }
+							block_general_event_trigger = no
+							possibly_romantically_interested_in_each_other_trigger = yes
+							ai = yes
+						}
 					}
-
 					any_spouse = {
 						limit = {
+							NOR = {
+								character = ROOT
+								is_married = ROOT
+								is_consort = ROOT
+								is_lover = PREV
+							}
+							ROOT = { liege = { is_liege_or_above_of = PREVPREV } }
 							block_general_event_trigger = no
 							possibly_romantically_interested_in_each_other_trigger = yes
 							ai = yes
@@ -997,25 +1067,56 @@ character_event = {
 							sex_appeal_score = yes
 						}
 						save_event_target_as = gbc_lover
-						break = yes
 					}
 				}
 			}
 		}
-
 		#Rival: one of your vassals
-		if = {
-			limit = { any_vassal = { ai = yes is_married = yes block_general_event_trigger = no } }
-
+		else_if = {
+			limit = {
+				any_vassal = {
+					NOR = {
+						is_married = ROOT
+						is_consort = ROOT
+						is_rival = ROOT
+					}
+					ai = yes
+					is_married = yes
+					block_general_event_trigger = no
+					any_spouse = {
+						NOR = {
+							character = ROOT
+							is_married = ROOT
+							is_consort = ROOT
+							is_lover = PREV
+						}
+						is_vassal_or_below_of = ROOT
+						block_general_event_trigger = no
+						possibly_romantically_interested_in_each_other_trigger = yes
+						ai = yes
+					}
+				}
+			}
 			random_vassal = { 
-				limit = { 
+				limit = {
+					NOR = {
+						is_married = ROOT
+						is_consort = ROOT
+						is_rival = ROOT
+					}
 					is_married = yes
 					ai = yes
 					block_general_event_trigger = no
 				}
-
 				any_spouse = {
 					limit = {
+						NOR = {
+							character = ROOT
+							is_married = ROOT
+							is_consort = ROOT
+							is_lover = PREV
+						}
+						is_vassal_or_below_of = ROOT
 						block_general_event_trigger = no
 						possibly_romantically_interested_in_each_other_trigger = yes
 						ai = yes
@@ -1025,7 +1126,6 @@ character_event = {
 			            sex_appeal_score = yes
 			        }
 					save_event_target_as = gbc_lover
-					break = yes
 				}
 			}
 		}
@@ -1034,9 +1134,12 @@ character_event = {
 	option = {
 		if =  { 
 			limit = {
-				event_target:gbc_lover = { always = yes }
+				event_target:gbc_lover = { is_alive = yes }
 			}
-			event_target:gbc_lover = { character_event = { id = GBC.101 } }
+			random = {
+				chance = 3
+				event_target:gbc_lover = { character_event = { id = GBC.101 } } # Trigger event
+			}
 		}
 	}
 }
@@ -1118,7 +1221,7 @@ character_event = {
 			modifier = opinion_charmed
 			who = FROM
 		}
-		spouse = {
+		event_target:gbc_spouse = {
 			opinion = {
 				modifier = opinion_inattentive
 				who = ROOT
@@ -1865,15 +1968,14 @@ character_event = {
 
 		add_rival = event_target:gbc_rival
 
-		if = { 
+		if = {
 			limit = { is_female = yes }
 			add_character_modifier = {
 				modifier = adulteress
 				years = 10
 			}
 		}
-		if = { 
-			limit = { is_female = no }
+		else = {
 			add_character_modifier = {
 				modifier = adulterer
 				years = 10
@@ -1881,15 +1983,14 @@ character_event = {
 		}
 
 		event_target:gbc_lover = {
-			if = { 
+			if = {
 				limit = { is_female = yes }
 				add_character_modifier = {
 					modifier = adulteress
 					years = 10
 				}
 			}
-			if = { 
-				limit = { is_female = no }
+			else = {
 				add_character_modifier = {
 					modifier = adulterer
 					years = 10
@@ -2165,7 +2266,7 @@ letter_event = {
 	option = {
 		name = EVTOPTA_GBC_142
 		if = {
-			limit = { NOT = { any_rival = { character = FROM } } }
+			limit = { NOT = { is_rival = FROM } }
 			add_rival = FROM
 		}
 	}
@@ -2249,7 +2350,7 @@ character_event = {
 		imprison = FROM
 
 		if = {
-			limit = { NOT = { any_rival = { character = FROM } } }
+			limit = { NOT = { is_rival = FROM } }
 			add_rival = FROM
 		}
 	}
@@ -2297,7 +2398,7 @@ character_event = {
 		}
 
 		if = {
-			limit = { NOT = { any_rival = { character = FROM } } }
+			limit = { NOT = { is_rival = FROM } }
 			add_rival = FROM
 		}
 	}

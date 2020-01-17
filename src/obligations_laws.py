@@ -1,14 +1,10 @@
 #!/usr/bin/python3
 
-############################################################
-# Copyright (C) 2019 Matthew D. Hall <zijistark@gmail.com> #
-#                                                          #
-# Free for personal modification. Any redistribution, even #
-# without modification, of this program OR its output is   #
-# expressly forbidden without the consent of the author.   #
-############################################################
+########################
+# Author: Matthew Hall #
+########################
 
-VERSION = '2.0.0'
+VERSION = '2.0.1'
 
 import sys
 import argparse
@@ -385,7 +381,9 @@ def print_laws(vtypes, f):
           st['need_vassal_modifier'] = tabs('''
       modifier = {{ # Must actually have at least one {} vassal
         factor = 0
-        NOT = {{ any_vassal = {{ {} = yes }} }}
+        owner = {{
+          NOT = {{ any_vassal = {{ {} = yes }} }}
+        }}
       }}''').format(vt.gov_type.capitalize(), vt.gov_trigger)
         # All Obligations modifiers from here:
           if not focus:

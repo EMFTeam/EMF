@@ -116,6 +116,7 @@ character_event = {
 	}
 
 	immediate = {
+		new_character = { save_event_target_as = target_spurned_spouse }
 		employer = { character_event = { id = ZE.1011 } }
 	}
 }
@@ -185,9 +186,9 @@ character_event = {
 				modifier = opinion_angry
 				years = 3
 			}
-			spouse = {
+			event_target:target_spurned_spouse = {
 				reverse_opinion = {
-					who = FROMFROM
+					who = PREV
 					modifier = opinion_hate
 					years = 100
 				}
@@ -202,8 +203,7 @@ character_event = {
 			piety = -50
 			prestige = -50
 			save_event_target_as = target_refused_daughter
-			spouse = {
-				save_event_target_as = target_spurned_spouse
+			event_target:target_spurned_spouse = {
 				employer = {
 					opinion = {
 						who = ROOT
@@ -213,8 +213,20 @@ character_event = {
 					hidden_tooltip = { character_event = { id = ZE.1012 } }
 				}
 			}
-			remove_spouse = spouse
-			hidden_tooltip = { move_character = ROOT }
+			remove_spouse = event_target:target_spurned_spouse
+			hidden_tooltip = {
+				if = {
+					limit = {
+						is_ruler = no
+						is_married = no
+						OR = {
+							is_consort = no
+							is_senior_consort_party = yes
+						}
+					}
+					move_character = ROOT
+				}
+			}
 		}
 	}
 }
@@ -531,7 +543,7 @@ character_event = {
 			is_ill = no
 			is_incapable = no
 			NOT = { is_inaccessible_trigger = yes }
-			liege = { character = ROOT }
+			vassal_of = ROOT
 			has_character_flag = disobedient_daughter
 			has_character_flag = disobedient_daughter_unhappy
 		}
@@ -544,7 +556,7 @@ character_event = {
 				is_ill = no
 				is_incapable = no
 				NOT = { is_inaccessible_trigger = yes }
-				liege = { character = ROOT }
+				vassal_of = ROOT
 				has_character_flag = disobedient_daughter
 				has_character_flag = disobedient_daughter_unhappy
 			}
@@ -572,12 +584,13 @@ character_event = {
 					factor = 0
 					OR = {
 						is_married = no
-						spouse = { is_lover = ROOT }
+						NOT = {
+							any_spouse = {
+								ai = yes
+								NOT = { is_lover = ROOT }
+							}
+						}
 					}
-				}
-				modifier = {
-					factor = 0
-					spouse = { ai = no }
 				}
 				modifier = {
 					factor = 0
@@ -593,27 +606,41 @@ character_event = {
 				}
 				modifier = {
 					factor = 0.5
-					spouse = {
-						attribute_diff = {
-							attribute = intrigue
-							character = PREV
-							value = 4
+					NOT = {
+						any_spouse = {
+							ai = yes
+							NOT = { is_lover = ROOT }
+							NOT = {
+								attribute_diff = {
+									attribute = intrigue
+									character = PREV
+									value = 4
+								}
+							}
 						}
 					}
 				}
 				modifier = {
 					factor = 0.5
-					spouse = {
-						attribute_diff = {
-							attribute = intrigue
-							character = PREV
-							value = 8
+					NOT = {
+						any_spouse = {
+							ai = yes
+							NOT = { is_lover = ROOT }
+							NOT = {
+								attribute_diff = {
+									attribute = intrigue
+									character = PREV
+									value = 8
+								}
+							}
 						}
 					}
 				}
 				modifier = {
 					factor = 2
-					spouse = {
+					any_spouse = {
+						ai = yes
+						NOT = { is_lover = ROOT }
 						attribute_diff = {
 							attribute = intrigue
 							character = PREV
@@ -623,7 +650,9 @@ character_event = {
 				}
 				modifier = {
 					factor = 2
-					spouse = {
+					any_spouse = {
+						ai = yes
+						NOT = { is_lover = ROOT }
 						attribute_diff = {
 							attribute = intrigue
 							character = PREV
@@ -631,17 +660,22 @@ character_event = {
 						}
 					}
 				}
-				father = {
-					if = {
-						limit = { ai = no }
-						character_event = { id = ZE.1120 }
-						break = yes
+				if = {
+					limit = {
+						OR = {
+							father = { ai = no }
+							mother = { ai = no }
+						}
 					}
-				}
-				mother = {
-					if = {
-						limit = { ai = no }
-						character_event = { id = ZE.1120 }
+					random_list = {
+						50 = {
+							trigger = { father = { ai = no } }
+							father = { character_event = { id = ZE.1120 } }
+						}
+						50 = {
+							trigger = { mother = { ai = no } }
+							mother = { character_event = { id = ZE.1120 } }
+						}
 					}
 				}
 			}
@@ -658,15 +692,16 @@ character_event = {
 					factor = 0
 					OR = {
 						is_married = no
-						spouse = { is_lover = ROOT }
-						spouse = {
-							combat_rating_diff = { who = ROOT value = 0 }
+						NOR = {
+							any_spouse = {
+								ai = yes
+								NOR = {
+									is_lover = ROOT
+									combat_rating_diff = { who = ROOT value = 0 }
+								}
+							}
 						}
 					}
-				}
-				modifier = {
-					factor = 0
-					spouse = { ai = no }
 				}
 				modifier = {
 					factor = 0
@@ -674,7 +709,9 @@ character_event = {
 				}
 				modifier = {
 					factor = 10
-					spouse = {
+					any_spouse = {
+						ai = yes
+						NOT = { is_lover = ROOT }
 						combat_rating_diff = { who = ROOT value = -40 }
 					}
 				}
@@ -682,23 +719,22 @@ character_event = {
 					factor = 1.5
 					trait = brave
 				}
-				father = {
-					if = {
-						limit = {
-							ai = no
-							is_liege_of = ROOT
+				if = {
+					limit = {
+						OR = {
+							father = { ai = no }
+							mother = { ai = no }
 						}
-						character_event = { id = ZE.1130 }
-						break = yes
 					}
-				}
-				mother = {
-					if = {
-						limit = {
-							ai = no
-							is_liege_of = ROOT
+					random_list = {
+						50 = {
+							trigger = { father = { ai = no } }
+							father = { character_event = { id = ZE.1130 } }
 						}
-						character_event = { id = ZE.1130 }
+						50 = {
+							trigger = { mother = { ai = no } }
+							mother = { character_event = { id = ZE.1130 } }
+						}
 					}
 				}
 			}
@@ -709,7 +745,7 @@ character_event = {
 				}
 				modifier = {
 					factor = 0
-					spouse = { ai = no }
+					NOT = { any_spouse = { ai = yes } }
 				}
 				modifier = {
 					factor = 0
@@ -736,7 +772,7 @@ character_event = {
 				}
 				modifier = {
 					factor = 0
-					spouse = { ai = no }
+					NOT = { any_spouse = { ai = yes } }
 				}
 				modifier = {
 					factor = 0
@@ -750,23 +786,22 @@ character_event = {
 					factor = 3
 					martial = 15
 				}
-				father = {
-					if = {
-						limit = {
-							ai = no
-							is_liege_of = ROOT
+				if = {
+					limit = {
+						OR = {
+							father = { ai = no }
+							mother = { ai = no }
 						}
-						character_event = { id = ZE.1150 }
-						break = yes
 					}
-				}
-				mother = {
-					if = {
-						limit = {
-							ai = no
-							is_liege_of = ROOT
+					random_list = {
+						50 = {
+							trigger = { father = { ai = no } }
+							father = { character_event = { id = ZE.1150 } }
 						}
-						character_event = { id = ZE.1150 }
+						50 = {
+							trigger = { mother = { ai = no } }
+							mother = { character_event = { id = ZE.1150 } }
+						}
 					}
 				}
 			}
@@ -835,7 +870,7 @@ character_event = {
 				}
 				modifier = {
 					factor = 0
-					spouse = { ai = no }
+					NOT = { any_spouse = { ai = yes } }
 				}
 				modifier = {
 					factor = 0
@@ -861,7 +896,8 @@ character_event = {
 					factor = 2
 					trait = cruel
 				}
-				spouse = {
+				random_spouse = {
+					limit = { ai = yes }
 					if = {
 						limit = {
 							trait = depressed
@@ -918,9 +954,11 @@ character_event = {
 				}
 				modifier = {
 					factor = 0
-					NOT = { trait = stressed }
-					NOT = { trait = depressed }
-					NOT = { trait = lunatic }
+					NOR = {
+						trait = stressed
+						trait = depressed
+						trait = lunatic
+					}
 				}
 				modifier = {
 					factor = 3
@@ -950,10 +988,51 @@ character_event = {
 	option = {
 		name = EVTOPTA_ZE_1120  # Is it true?
 		FROM = {
-			spouse = {
+			random_spouse = {
+				limit = {
+					ai = yes
+					NOT = { is_lover = PREV }
+				}
+				preferred_limit = {
+					attribute_diff = {
+						attribute = intrigue
+						character = PREV
+						value = -8
+					}
+				}
+				preferred_limit = {
+					attribute_diff = {
+						attribute = intrigue
+						character = PREV
+						value = -4
+					}
+				}
+				preferred_limit = {
+					NOT = {
+						attribute_diff = {
+							attribute = intrigue
+							character = PREV
+							value = 4
+						}
+					}
+				}
+				preferred_limit = {
+					attribute_diff = {
+						attribute = intrigue
+						character = PREV
+						value = 4
+					}
+				}
+				preferred_limit = {
+					attribute_diff = {
+						attribute = intrigue
+						character = PREV
+						value = 8
+					}
+				}
 				death = {
 					death_reason = death_murder_unknown_poison
-					killer = FROM
+					killer = PREV
 				}
 			}
 		}
@@ -972,10 +1051,16 @@ character_event = {
 	option = {
 		name = EVTOPTA_ZE_1130  # Oh my!
 		FROM = {
-			spouse = {
+			random_spouse = {
+				limit = {
+					ai = yes
+					NOT = { is_lover = PREV }
+					NOT = { combat_rating_diff = { who = PREV value = 0 } }
+				}
+				preferred_limit = { combat_rating_diff = { who = PREV value = -40 } }
 				death = {
 					death_reason = death_murder
-					killer = FROM
+					killer = PREV
 				}
 			}
 		}
@@ -1046,7 +1131,9 @@ character_event = {
 		name = EVTOPTA_ZE_1142
 		FROMFROM = {
 			end_inaccessibility_effect = yes #removes in_hiding or in_seclusion
-			remove_spouse = spouse
+			any_spouse = {
+				remove_spouse = PREV
+			}
 			random_lover = {
 				limit = {
 					ai = yes
@@ -1087,7 +1174,9 @@ character_event = {
 		name = EVTOPTA_ZE_1150
 		FROM = {
 			end_inaccessibility_effect = yes
-			remove_spouse = spouse
+			any_spouse = {
+				remove_spouse = PREV
+			}
 			random_lover = {
 				limit = {
 					ai = yes
@@ -1194,7 +1283,7 @@ character_event = {
 				can_marry = PREV
 			}
 			is_incapable = no
-			liege = { character = ROOT }
+			vassal_of = ROOT
 			has_character_flag = disobedient_daughter
 		}
 	}
@@ -1212,7 +1301,7 @@ character_event = {
 					can_marry = PREV
 				}
 				is_incapable = no
-				liege = { character = ROOT }
+				vassal_of = ROOT
 				has_character_flag = disobedient_daughter
 			}
 			character_event = { id = ZE.1301 }
