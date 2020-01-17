@@ -871,72 +871,72 @@ def print_triggers_true_religion_is_reformed_religion_true_religion(f):
 # These massive triggers are unavoidable because PREVPREVPREV does not work as a left-side scope
 
 true_religion_is_reformed_religion_FROM_true_religion = {{
+	true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = yes }} }}
 	FROM = {{
 		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
-		true_religion_group = pagan_group # Only pagan_group has reformed religions
-		PREV = {{ true_religion_group = pagan_group }} # Only pagan_group has reformed religions
+		true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = no }} }}
 		trigger_if = {{
 			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+			PREV = {{ true_religion_scope = {{ {0} = {{ persistent_event_target:emf_religion_dummy_character = {{ PREVPREV = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = PREVPREV }} }} }} }} }} }}
 		}}'''.format(g_rg_religions_map['pagan_group'][0]), file=f)
 	for r in g_rg_religions_map['pagan_group'][1:]:
 		print('''		trigger_else_if = {{
 			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+			PREV = {{ true_religion_scope = {{ {0} = {{ persistent_event_target:emf_religion_dummy_character = {{ PREVPREV = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = PREVPREV }} }} }} }} }} }}
 		}}'''.format(r), file=f)
 	print('''	}
 }''', file=f)
 	
 	print('''
 true_religion_is_reformed_religion_ROOT_true_religion = {{
+	true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = yes }} }}
 	ROOT = {{
 		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
-		true_religion_group = pagan_group # Only pagan_group has reformed religions
-		PREV = {{ true_religion_group = pagan_group }} # Only pagan_group has reformed religions
+		true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = no }} }}
 		trigger_if = {{
 			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+			PREV = {{ true_religion_scope = {{ {0} = {{ persistent_event_target:emf_religion_dummy_character = {{ PREVPREV = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = PREVPREV }} }} }} }} }} }}
 		}}'''.format(g_rg_religions_map['pagan_group'][0]), file=f)
 	for r in g_rg_religions_map['pagan_group'][1:]:
 		print('''		trigger_else_if = {{
 			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+			PREV = {{ true_religion_scope = {{ {0} = {{ persistent_event_target:emf_religion_dummy_character = {{ PREVPREV = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = PREVPREV }} }} }} }} }} }}
 		}}'''.format(r), file=f)
 	print('''	}
 }''', file=f)
 	
 	print('''
 true_religion_is_reformed_religion_PREV_true_religion = {{
+	true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = yes }} }}
 	PREV = {{
 		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
-		true_religion_group = pagan_group # Only pagan_group has reformed religions
-		PREV = {{ true_religion_group = pagan_group }} # Only pagan_group has reformed religions
+		true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = no }} }}
 		trigger_if = {{
 			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+			PREV = {{ true_religion_scope = {{ {0} = {{ persistent_event_target:emf_religion_dummy_character = {{ PREVPREV = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = PREVPREV }} }} }} }} }} }}
 		}}'''.format(g_rg_religions_map['pagan_group'][0]), file=f)
 	for r in g_rg_religions_map['pagan_group'][1:]:
 		print('''		trigger_else_if = {{
 			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+			PREV = {{ true_religion_scope = {{ {0} = {{ persistent_event_target:emf_religion_dummy_character = {{ PREVPREV = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = PREVPREV }} }} }} }} }} }}
 		}}'''.format(r), file=f)
 	print('''	}
 }''', file=f)
 	
 	print('''
 true_religion_is_reformed_religion_target_ruler_true_religion = {{
+	true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = yes }} }}
 	event_target:target_ruler = {{
 		NOT = {{ true_religion = PREV }} # Skips the rest of the check if same true religion anyway
-		true_religion_group = pagan_group # Only pagan_group has reformed religions
-		PREV = {{ true_religion_group = pagan_group }} # Only pagan_group has reformed religions
+		true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = no }} }}
 		trigger_if = {{
 			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+			PREV = {{ true_religion_scope = {{ {0} = {{ persistent_event_target:emf_religion_dummy_character = {{ PREVPREV = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = PREVPREV }} }} }} }} }} }}
 		}}'''.format(g_rg_religions_map['pagan_group'][0]), file=f)
 	for r in g_rg_religions_map['pagan_group'][1:]:
 		print('''		trigger_else_if = {{
 			limit = {{ true_religion = {0} }}
-			PREV = {{ true_religion_scope = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = {0} }} }} }}
+			PREV = {{ true_religion_scope = {{ {0} = {{ persistent_event_target:emf_religion_dummy_character = {{ PREVPREV = {{ persistent_event_target:emf_religion_dummy_character = {{ is_reformed_religion = PREVPREV }} }} }} }} }} }}
 		}}'''.format(r), file=f)
 	print('''	}
 }''', file=f)
