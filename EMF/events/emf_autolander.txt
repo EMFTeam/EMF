@@ -93,9 +93,44 @@ character_event = {
 			}
 
 			save_event_target_as = target_county
+			location = { save_event_target_as = target_prov }
+		}
+		
+		if = {
+			limit = {
+				NOR = {
+					has_flag = emf_match_province
+					AND = {
+						religion = event_target:target_prov
+						culture = event_target:target_prov
+					}
+				}
+			}
+			if = {
+				limit = {
+					NOR = {
+						religion = event_target:target_prov
+						culture = event_target:target_prov
+					}
+				}
+				set_flag = emf_pay_governor_full
+			}
+			else_if = {
+				limit = {
+					NAND = {
+						religion = event_target:target_prov
+						culture = event_target:target_prov
+					}
+				}
+				set_flag = emf_pay_governor_half
+			}
 		}
 
 		character_event = { id = emf_autolander.11 } # Create random character & grant
+		
+		clr_flag = emf_pay_governor_full
+		clr_flag = emf_pay_governor_half
+		
 		repeat_event = { id = emf_autolander.1 } # Tail-recurse
 	}
 }
@@ -150,10 +185,44 @@ character_event = {
 				can_be_given_away = yes
 			}
 
-			save_event_target_as = target_county
+			location = { save_event_target_as = target_prov }
+		}
+		
+		if = {
+			limit = {
+				NOR = {
+					has_flag = emf_match_province
+					AND = {
+						religion = event_target:target_prov
+						culture = event_target:target_prov
+					}
+				}
+			}
+			if = {
+				limit = {
+					NOR = {
+						religion = event_target:target_prov
+						culture = event_target:target_prov
+					}
+				}
+				set_flag = emf_pay_governor_full
+			}
+			else_if = {
+				limit = {
+					NAND = {
+						religion = event_target:target_prov
+						culture = event_target:target_prov
+					}
+				}
+				set_flag = emf_pay_governor_half
+			}
 		}
 
 		character_event = { id = emf_autolander.11 } # Create random character & grant
+		
+		clr_flag = emf_pay_governor_full
+		clr_flag = emf_pay_governor_half
+		
 		repeat_event = { id = emf_autolander.2 } # Tail-recurse
 	}
 }
@@ -236,28 +305,7 @@ character_event = {
 
 		event_target:target_county = {
 			if = {
-				limit = {
-					num_fitting_characters_for_title = 1
-					NOT = { num_fitting_characters_for_title = 2 }
-				}
-
-				#log = "emf_autolander.3: num_fitting_characters_for_title == 1"
-
-				best_fit_character_for_title = {
-					title = PREV			 # The Title we are looking at
-					perspective = ROOT		# From whose perspective we are viewing the title
-					index = 1				 # The index of the character in the list
-
-					if = {
-						limit = { emf_autolander_is_fit_for_grant = yes }
-						save_event_target_as = char_one
-					}
-				}
-			}
-			if = {
-				limit = {
-					num_fitting_characters_for_title = 2
-				}
+				limit = { num_fitting_characters_for_title = 2 }
 
 				#log = "emf_autolander.3: num_fitting_characters_for_title >= 2"
 
@@ -277,25 +325,86 @@ character_event = {
 					index = 2				 # The index of the character in the list
 
 					if = {
-						limit = { emf_autolander_is_fit_for_grant = yes }
+						limit = {
+							emf_autolander_is_fit_for_grant = yes
+							NOT = { character = event_target:char_one }
+						}
 						save_event_target_as = char_two
 					}
 				}
-
+				
 				if = {
-					limit = { event_target:char_one = { character = event_target:char_two } }
-					#log = "emf_autolander.3: Deduplicating char_one and char_two (!)"
-					clear_event_target = char_two
-				}
+					limit = { NOT = { event_target:char_one = { always = yes } } }
+					if = {
+						limit = { event_target:char_two = { always = yes } }
+						#log = "emf_autolander.3: Renaming char_two to char_one (!)"
+						event_target:char_two = { save_event_target_as = char_one }
+						clear_event_target = char_two
+						if = { # Backup
+							limit = { num_fitting_characters_for_title = 3 }
+							best_fit_character_for_title = {
+								title = PREV			 # The Title we are looking at
+								perspective = ROOT		# From whose perspective we are viewing the title
+								index = 3				 # The index of the character in the list
 
-				if = {
-					limit = {
-						NOT = { event_target:char_one = { always = yes } }
-						event_target:char_two = { always = yes }
+								if = {
+									limit = {
+										emf_autolander_is_fit_for_grant = yes
+										NOT = { character = event_target:char_one }
+									}
+									save_event_target_as = char_two
+								}
+							}
+						}
 					}
-					#log = "emf_autolander.3: Renaming char_two to char_one (!)"
-					event_target:char_two = { save_event_target_as = char_one }
-					clear_event_target = char_two
+					else_if = { # Backup
+						limit = { num_fitting_characters_for_title = 3 }
+						best_fit_character_for_title = {
+							title = PREV			 # The Title we are looking at
+							perspective = ROOT		# From whose perspective we are viewing the title
+							index = 3				 # The index of the character in the list
+
+							if = {
+								limit = { emf_autolander_is_fit_for_grant = yes }
+								save_event_target_as = char_one
+							}
+						}
+					}
+				}
+				else_if = {
+					limit = {
+						NOT = { event_target:char_two = { always = yes } }
+						num_fitting_characters_for_title = 3
+					}
+					best_fit_character_for_title = {
+						title = PREV			 # The Title we are looking at
+						perspective = ROOT		# From whose perspective we are viewing the title
+						index = 3				 # The index of the character in the list
+
+						if = {
+							limit = {
+								emf_autolander_is_fit_for_grant = yes
+								NOT = { character = event_target:char_one }
+							}
+							save_event_target_as = char_two
+						}
+					}
+				}
+			}
+			else_if = {
+				limit = { num_fitting_characters_for_title = 1 }
+
+				#log = "emf_autolander.3: num_fitting_characters_for_title == 1"
+
+				best_fit_character_for_title = {
+					title = PREV			 # The Title we are looking at
+					perspective = ROOT		# From whose perspective we are viewing the title
+					index = 1				 # The index of the character in the list
+
+					if = {
+						limit = { emf_autolander_is_fit_for_grant = yes }
+						save_event_target_as = char_one
+					}
 				}
 			}
 		}
@@ -387,7 +496,7 @@ character_event = {
 		name = emf_autolander.6.opt.a
 
 		hidden_tooltip = {
-			character_event = { id = emf_autolander.11 } # Create random character & grant
+			character_event = { id = emf_autolander.20 } # Prompt selection of courtier type & culture-religion combo
 			character_event = { id = emf_autolander.3 } # Repeat
 		}
 	}
@@ -407,44 +516,32 @@ character_event = {
 						is_close_relative = ROOT
 						dynasty = ROOT
 					}
-					is_councillor = no
-				}
-				custom_tooltip = {
-					text = emf_autolander_ctt_grant_family
-				}
-			}
-			if = {
-				limit = {
-					NOT = {
-						is_close_relative = ROOT
-						dynasty = ROOT
-					}
-					is_councillor = yes
-				}
-				custom_tooltip = {
-					text = emf_autolander_ctt_grant_councillor
-				}
-			}
-			if = {
-				limit = {
-					OR = {
-						is_close_relative = ROOT
-						dynasty = ROOT
-					}
 					is_councillor = yes
 				}
 				custom_tooltip = {
 					text = emf_autolander_ctt_grant_family_councillor
 				}
 			}
-			if = {
+			else_if = {
 				limit = {
-					NOT = {
+					OR = {
 						is_close_relative = ROOT
 						dynasty = ROOT
 					}
-					is_councillor = no
 				}
+				custom_tooltip = {
+					text = emf_autolander_ctt_grant_family
+				}
+			}
+			else_if = {
+				limit = {
+					is_councillor = yes
+				}
+				custom_tooltip = {
+					text = emf_autolander_ctt_grant_councillor
+				}
+			}
+			else = {
 				custom_tooltip = {
 					text = emf_autolander_ctt_grant_other
 				}
@@ -473,49 +570,36 @@ character_event = {
 						is_close_relative = ROOT
 						dynasty = ROOT
 					}
-					is_councillor = no
-				}
-				custom_tooltip = {
-					text = emf_autolander_ctt_grant_family
-				}
-			}
-			if = {
-				limit = {
-					NOT = {
-						is_close_relative = ROOT
-						dynasty = ROOT
-					}
-					is_councillor = yes
-				}
-				custom_tooltip = {
-					text = emf_autolander_ctt_grant_councillor
-				}
-			}
-			if = {
-				limit = {
-					OR = {
-						is_close_relative = ROOT
-						dynasty = ROOT
-					}
 					is_councillor = yes
 				}
 				custom_tooltip = {
 					text = emf_autolander_ctt_grant_family_councillor
 				}
 			}
-			if = {
+			else_if = {
 				limit = {
-					NOT = {
+					OR = {
 						is_close_relative = ROOT
 						dynasty = ROOT
 					}
-					is_councillor = no
 				}
+				custom_tooltip = {
+					text = emf_autolander_ctt_grant_family
+				}
+			}
+			else_if = {
+				limit = {
+					is_councillor = yes
+				}
+				custom_tooltip = {
+					text = emf_autolander_ctt_grant_councillor
+				}
+			}
+			else = {
 				custom_tooltip = {
 					text = emf_autolander_ctt_grant_other
 				}
 			}
-
 			hidden_tooltip = {
 				character_event = { id = emf_autolander.10 } # Grant target_county
 			}
@@ -607,19 +691,32 @@ character_event = {
 	immediate = {
 		if = {
 			limit = { has_flag = emf_match_province }
-			event_target:target_county = {
-				location = { save_event_target_as = emf_match_culrel }
-			}
-			break = yes
+			event_target:target_county = { location = { save_event_target_as = emf_match_culrel } }
 		}
-		save_event_target_as = emf_match_culrel
+		else = {
+			save_event_target_as = emf_match_culrel
+		}
 	}
 
 	option = {
 		name = OK
 
 		if = {
-			limit = { has_flag = emf_military_governor }
+			limit = {
+				OR = {
+					has_flag = emf_military_governor
+					AND = {
+						NOR = {
+							has_flag = emf_priest_governor
+							event_target:target_county = { holding_type = temple }
+						}
+						NOR = {
+							has_flag = emf_steward_governor
+							event_target:target_county = { holding_type = city }
+						}
+					}
+				}
+			}
 			random_list = {
 				50 = {
 					modifier = {
@@ -660,12 +757,8 @@ character_event = {
 				}
 			}
 			new_character = {
-				random = {
-					chance = 80
-					remove_trait = weak
-					remove_trait = feeble
-				}
 				random_list = {
+					25 = {}
 					40 = { change_martial = 1 }
 					20 = { change_martial = 2 }
 					10 = { change_martial = 3 }
@@ -681,12 +774,12 @@ character_event = {
 							add_trait = brilliant_strategist
 						}
 					}
-					if = {
+					else_if = {
 						limit = { trait = tough_soldier }
 						remove_trait = tough_soldier
 						add_trait = skilled_tactician
 					}
-					if = {
+					else_if = {
 						limit = { trait = misguided_warrior }
 						remove_trait = misguided_warrior
 						add_trait = tough_soldier
@@ -697,11 +790,126 @@ character_event = {
 					limit = { trait = imbecile }
 					emf_dna_remove_trait_imbecile = yes
 				}
+				random = {
+					chance = 80
+					if = {
+						limit = { trait = weak }
+						emf_dna_remove_trait_weak = yes
+					}
+					remove_trait = feeble
+				}
 				save_event_target_as = emf_governor
 			}
 		}
-		if = {
-			limit = { NOT = { has_flag = emf_military_governor } }
+		else_if = {
+			limit = {
+				OR = {
+					has_flag = emf_priest_governor
+					AND = {
+						event_target:target_county = { holding_type = temple }
+						NOR = {
+							has_flag = emf_steward_governor
+							event_target:target_county = { holding_type = city }
+						}
+					}
+				}
+			}
+			random_list = {
+				50 = {
+					modifier = {
+						factor = 0
+						OR = {
+							event_target:emf_match_culrel = { religion_allows_female_temple_holders = no }
+							AND = {
+								religion_allows_female_temple_holders = no
+								event_target:emf_match_culrel = { religion_allows_male_temple_holders = yes }
+							}
+						}
+					}
+					create_random_priest = {
+						random_traits = yes
+						religion = event_target:emf_match_culrel
+						culture = event_target:emf_match_culrel
+						dynasty = random
+						female = yes
+						fertility = 0.5
+						health = 5
+						attributes = {
+							learning = 5
+						}
+					}
+				}
+				50 = {
+					modifier = {
+						factor = 0
+						OR = {
+							event_target:emf_match_culrel = { religion_allows_male_temple_holders = no }
+							AND = {
+								religion_allows_male_temple_holders = no
+								event_target:emf_match_culrel = { religion_allows_female_temple_holders = yes }
+							}
+						}
+					}
+					create_random_priest = {
+						random_traits = yes
+						religion = event_target:emf_match_culrel
+						culture = event_target:emf_match_culrel
+						dynasty = random
+						female = no
+						fertility = 0.5
+						health = 5
+						attributes = {
+							learning = 5
+						}
+					}
+				}
+			}
+			new_character = {
+				random_list = {
+					25 = {}
+					40 = { change_learning = 1 }
+					20 = { change_learning = 2 }
+					10 = { change_learning = 3 }
+					5  = { change_learning = 4 }
+				}
+				random = {
+					chance = 50
+					if = {
+						limit = { trait = scholarly_theologian }
+						random = {
+							chance = 50 # 1 out of 4 scholarly_theologians
+							remove_trait = scholarly_theologian
+							add_trait = mastermind_theologian
+						}
+					}
+					else_if = {
+						limit = { trait = martial_cleric }
+						remove_trait = martial_cleric
+						add_trait = scholarly_theologian
+					}
+					else_if = {
+						limit = { trait = detached_priest }
+						remove_trait = detached_priest
+						add_trait = martial_cleric
+					}
+				}
+				emf_new_character_priest = yes
+				if = {
+					limit = { trait = imbecile }
+					emf_dna_remove_trait_imbecile = yes
+				}
+				random = {
+					chance = 80
+					if = {
+						limit = { trait = slow }
+						emf_dna_remove_trait_slow = yes
+					}
+					remove_trait = dull
+				}
+				save_event_target_as = emf_governor
+			}
+		}
+		else = {
 			random_list = {
 				50 = {
 					modifier = {
@@ -743,6 +951,7 @@ character_event = {
 			}
 			new_character = {
 				random_list = {
+					25 = {}
 					40 = { change_stewardship = 1 }
 					20 = { change_stewardship = 2 }
 					10 = { change_stewardship = 3 }
@@ -758,12 +967,12 @@ character_event = {
 							add_trait = midas_touched
 						}
 					}
-					if = {
+					else_if = {
 						limit = { trait = thrifty_clerk }
 						remove_trait = thrifty_clerk
 						add_trait = fortune_builder
 					}
-					if = {
+					else_if = {
 						limit = { trait = indulgent_wastrel }
 						remove_trait = indulgent_wastrel
 						add_trait = thrifty_clerk
@@ -797,12 +1006,12 @@ character_event = {
 				ROOT = {
 					trigger_switch = {
 						on_trigger = religion_group
-						christian		  = { PREV = { add_trait = sympathy_christendom } }
-						muslim			 = { PREV = { add_trait = sympathy_islam } }
-						pagan_group		= { PREV = { add_trait = sympathy_pagans } }
-						zoroastrian_group  = { PREV = { add_trait = sympathy_zoroastrianism } }
-						jewish_group	   = { PREV = { add_trait = sympathy_judaism } }
-						indian_group	   = { PREV = { add_trait = sympathy_indian } }
+						christian			= { PREV = { add_trait = sympathy_christendom } }
+						muslim				= { PREV = { add_trait = sympathy_islam } }
+						pagan_group			= { PREV = { add_trait = sympathy_pagans } }
+						zoroastrian_group 	= { PREV = { add_trait = sympathy_zoroastrianism } }
+						jewish_group	  	= { PREV = { add_trait = sympathy_judaism } }
+						indian_group	   	= { PREV = { add_trait = sympathy_indian } }
 					}
 				}
 			}
@@ -813,11 +1022,19 @@ character_event = {
 			character_event = { id = emf_autolander.10 } # Grant target_county
 		}
 		if = {
-			limit = { has_flag = emf_pay_governor }
+			limit = { has_flag = emf_pay_governor_full }
 			transfer_scaled_wealth = {
 				to = event_target:emf_governor
 				value = 0.125
 				min = 25
+			}
+		}
+		else_if = {
+			limit = { has_flag = emf_pay_governor_half }
+			transfer_scaled_wealth = {
+				to = event_target:emf_governor
+				value = 0.0625
+				min = 12.5
 			}
 		}
 
@@ -845,14 +1062,57 @@ character_event = {
 	}
 
 	option = {
-		name = emf_autolander.20.opt.steward
-		hidden_tooltip = { character_event = { id = emf_autolander.21 } }
-	}
-
-	option = {
 		name = emf_autolander.20.opt.marshal
 		set_flag = emf_military_governor
-		hidden_tooltip = { character_event = { id = emf_autolander.21 } }
+		if = {
+			limit = {
+				NAND = {
+					religion = event_target:target_prov
+					culture = event_target:target_prov
+				}
+			}
+			hidden_tooltip = { character_event = { id = emf_autolander.21 } }
+		}
+		else = {
+			hidden_tooltip = { character_event = { id = emf_autolander.11 } }
+			clr_flag = emf_military_governor
+		}
+	}
+	
+	option = {
+		name = emf_autolander.20.opt.priest
+		set_flag = emf_priest_governor
+		if = {
+			limit = {
+				NAND = {
+					religion = event_target:target_prov
+					culture = event_target:target_prov
+				}
+			}
+			hidden_tooltip = { character_event = { id = emf_autolander.21 } }
+		}
+		else = {
+			hidden_tooltip = { character_event = { id = emf_autolander.11 } }
+			clr_flag = emf_priest_governor
+		}
+	}
+	
+	option = {
+		name = emf_autolander.20.opt.steward
+		set_flag = emf_steward_governor
+		if = {
+			limit = {
+				NAND = {
+					religion = event_target:target_prov
+					culture = event_target:target_prov
+				}
+			}
+			hidden_tooltip = { character_event = { id = emf_autolander.21 } }
+		}
+		else = {
+			hidden_tooltip = { character_event = { id = emf_autolander.11 } }
+			clr_flag = emf_steward_governor
+		}
 	}
 
 	option = {
@@ -863,25 +1123,9 @@ character_event = {
 # emf_autolander.21 -- has selected steward vs. military governor for target_county
 character_event = {
 	id = emf_autolander.21
+	desc = emf_autolander.21.desc
 	picture = GFX_evt_small_town
 	border = GFX_event_normal_frame_economy
-
-	desc = {
-		text = emf_autolander.21.desc_matching_culrel
-		trigger = {
-			religion = event_target:target_prov
-			culture = event_target:target_prov
-		}
-	}
-	desc = {
-		text = emf_autolander.21.desc
-		trigger = {
-			NAND = {
-				religion = event_target:target_prov
-				culture = event_target:target_prov
-			}
-		}
-	}
 
 	is_triggered_only = yes
 	show_ROOT = yes
@@ -889,32 +1133,104 @@ character_event = {
 
 	option = {
 		name = emf_autolander.21.opt.my_culrel
-		trigger = {
-			NAND = {
-				religion = event_target:target_prov
-				culture = event_target:target_prov
-			}
-		}
-		set_flag = emf_pay_governor
-		tooltip = { scaled_wealth = { value = -0.125 min = -25 } }
+		trigger = { NOT = { has_flag = emf_priest_governor } }
 		custom_tooltip = { text = emf_autolander_ctt_pay_governor }
 		if = {
 			limit = {
-				NAND = {
-					scaled_wealth = 0.125
-					wealth = 25
+				NOR = {
+					religion = event_target:target_prov
+					culture = event_target:target_prov
 				}
 			}
-			custom_tooltip = { text = emf_autolander_ctt_negative_gold_warning }
+			set_flag = emf_pay_governor_full
+			tooltip = { scaled_wealth = { value = -0.125 min = -25 } }
+			if = {
+				limit = {
+					NAND = {
+						scaled_wealth = 0.125
+						wealth = 25
+					}
+				}
+				custom_tooltip = { text = emf_autolander_ctt_negative_gold_warning }
+			}
+		}
+		else = {
+			set_flag = emf_pay_governor_half
+			tooltip = { scaled_wealth = { value = -0.0625 min = -12.5 } }
+			if = {
+				limit = {
+					NAND = {
+						scaled_wealth = 0.0625
+						wealth = 12.5
+					}
+				}
+				custom_tooltip = { text = emf_autolander_ctt_negative_gold_warning }
+			}
 		}
 		hidden_tooltip = {
 			character_event = { id = emf_autolander.11 }
 		}
-		clr_flag = emf_pay_governor
+		clr_flag = emf_pay_governor_full
+		clr_flag = emf_pay_governor_half
 	}
 
 	option = {
 		name = emf_autolander.21.opt.prov_culrel
+		trigger = { NOT = { has_flag = emf_priest_governor } }
+		set_flag = emf_match_province
+		custom_tooltip = { text = emf_autolander_ctt_pay_governor_not_required_for_prov_culrel }
+		hidden_tooltip = {
+			character_event = { id = emf_autolander.11 }
+		}
+		clr_flag = emf_match_province
+	}
+	
+	option = {
+		name = emf_autolander.21.opt.my_culrel_priest
+		trigger = { has_flag = emf_priest_governor }
+		custom_tooltip = { text = emf_autolander_ctt_pay_governor }
+		if = {
+			limit = {
+				NOR = {
+					religion = event_target:target_prov
+					culture = event_target:target_prov
+				}
+			}
+			set_flag = emf_pay_governor_full
+			tooltip = { scaled_wealth = { value = -0.125 min = -25 } }
+			if = {
+				limit = {
+					NAND = {
+						scaled_wealth = 0.125
+						wealth = 25
+					}
+				}
+				custom_tooltip = { text = emf_autolander_ctt_negative_gold_warning }
+			}
+		}
+		else = {
+			set_flag = emf_pay_governor_half
+			tooltip = { scaled_wealth = { value = -0.0625 min = -12.5 } }
+			if = {
+				limit = {
+					NAND = {
+						scaled_wealth = 0.0625
+						wealth = 12.5
+					}
+				}
+				custom_tooltip = { text = emf_autolander_ctt_negative_gold_warning }
+			}
+		}
+		hidden_tooltip = {
+			character_event = { id = emf_autolander.11 }
+		}
+		clr_flag = emf_pay_governor_full
+		clr_flag = emf_pay_governor_half
+	}
+
+	option = {
+		name = emf_autolander.21.opt.prov_culrel_priest
+		trigger = { has_flag = emf_priest_governor }
 		set_flag = emf_match_province
 		custom_tooltip = { text = emf_autolander_ctt_pay_governor_not_required_for_prov_culrel }
 		hidden_tooltip = {
@@ -929,5 +1245,7 @@ character_event = {
 
 	after = {
 		clr_flag = emf_military_governor
+		clr_flag = emf_priest_governor
+		clr_flag = emf_steward_governor
 	}
 }
