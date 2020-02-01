@@ -559,77 +559,63 @@ character_event = {
 		# Pick largest valid target in Hungary
 		random_independent_ruler = {
 			limit = {
-				in_revolt = no
+				NOR = {
+					reverse_has_truce = ROOT
+					is_allied_with = ROOT
+					has_non_aggression_pact_with = ROOT
+					pays_tribute_to = ROOT
+				}
+				any_realm_province = {
+					region = emf_region_lower_carpathia
+					county = {
+						is_occupied = no
+						is_contested = no
+					}
+				}
 				any_realm_title = {
 					tier = COUNT
 					de_jure_liege_or_above = k_hungary
 					is_occupied = no
+				}
+			}
+			preferred_limit = {
+				any_realm_title = {
 					count = 7
-				}
-				any_realm_province = {
-					county = {
-						is_occupied = no
-						is_contested = no
-					}
-					region = emf_region_lower_carpathia
-				}
-				NOR = {
-					reverse_has_truce = ROOT
-					is_allied_with = ROOT
-					has_non_aggression_pact_with = ROOT
-					pays_tribute_to = ROOT
-				}
-			}
-			character_event = { id = emf_magyar.3001 }
-			break = yes
-		}
-		random_independent_ruler = {
-			limit = {
-				in_revolt = no
-				any_realm_title = {
 					tier = COUNT
 					de_jure_liege_or_above = k_hungary
 					is_occupied = no
+				}
+			}
+			preferred_limit = {
+				any_realm_title = {
+					count = 6
+					tier = COUNT
+					de_jure_liege_or_above = k_hungary
+					is_occupied = no
+				}
+			}
+			preferred_limit = {
+				any_realm_title = {
 					count = 5
-				}
-				any_realm_province = {
-					county = {
-						is_occupied = no
-						is_contested = no
-					}
-					region = emf_region_lower_carpathia
-				}
-				NOR = {
-					reverse_has_truce = ROOT
-					is_allied_with = ROOT
-					has_non_aggression_pact_with = ROOT
-					pays_tribute_to = ROOT
-				}
-			}
-			character_event = { id = emf_magyar.3001 }
-			break = yes
-		}
-		random_independent_ruler = {
-			limit = {
-				in_revolt = no
-				any_realm_title = {
 					tier = COUNT
 					de_jure_liege_or_above = k_hungary
 					is_occupied = no
+				}
+			}
+			preferred_limit = {
+				any_realm_title = {
+					count = 4
+					tier = COUNT
+					de_jure_liege_or_above = k_hungary
+					is_occupied = no
+				}
+			}
+			preferred_limit = {
+				any_realm_title = {
 					count = 3
-				}
-				any_realm_province = {
-					county = {
-						is_occupied = no
-						is_contested = no
-					}
-					region = emf_region_lower_carpathia
-				}
-				NOR = {
-					reverse_has_truce = ROOT
-					is_allied_with = ROOT
-					has_non_aggression_pact_with = ROOT
-					pays_tribute_to = ROOT
+					tier = COUNT
+					de_jure_liege_or_above = k_hungary
+					is_occupied = no
 				}
 			}
 			character_event = { id = emf_magyar.3001 }
@@ -706,8 +692,7 @@ character_event = {
 			limit = { is_tributary = yes }
 			suzerain = { remove_tributary = ROOT }
 		}
-		any_playable_ruler = {
-			limit = { pays_tribute_to = ROOT }
+		any_tributary = {
 			ROOT = { remove_tributary = PREV }
 		}
 
@@ -2291,7 +2276,7 @@ character_event = {
 						any_direct_de_jure_vassal_title = { de_jure_liege = k_hungary }
 					}
 					emf_destroy_title = yes
-					activate_title = { title = THIS status = no }
+					set_flag = emf_defunct
 				}
 			}
 		}
@@ -2347,7 +2332,13 @@ narrative_event = {
 		set_flag = king_converted
 		religion_authority = { modifier = ruler_converted_from }
 		religion = catholic
-		religion_authority = { modifier = ruler_converted_to }
+		catholic = {
+			show_scope_change = no
+			persistent_event_target:emf_religion_dummy_character = {
+				show_scope_change = no
+				religion_authority = { modifier = ruler_converted_to }
+			}
+		}
 		save_event_target_as = king_hungary
 		random_realm_character = {
 			limit = {
@@ -2413,9 +2404,11 @@ character_event = {
 			religion = catholic
 			if = {
 				limit = { higher_tier_than = BARON }
-				hidden_tooltip = {
-					religion_authority = {
-						modifier = ruler_converted_to
+				catholic = {
+					show_scope_change = no
+					persistent_event_target:emf_religion_dummy_character = {
+						show_scope_change = no
+						religion_authority = { modifier = ruler_converted_to }
 					}
 				}
 			}
@@ -2483,3 +2476,52 @@ character_event = {
 	}
 }
 
+# Magyar startup event. Called from main emf_startup.
+character_event = {
+	id = emf_magyar.3025
+
+	is_triggered_only = yes
+	hide_window = yes
+
+	trigger = {
+		has_landed_title = k_hungary
+		NOT = { has_game_rule = { name = railroading value = passive } }
+		start_date >= 907.1.1
+		start_date <= 955.8.10 # Allowing for Lechfeld in theory (review actual dates of scripted war when time comes)
+	}
+
+	immediate = {
+		# Spawn old_hungarian-style retinue regiments of 250 x 3 x 3 = 2250 HA, scattered about in k_hungary but
+		# merged into balanced flanks
+		while = {
+			count = 3
+			limit = { always = yes }
+			random_realm_province = {
+				limit = {
+					owner_under_ROOT = yes
+					de_jure_liege_or_above = k_hungary
+					NOT = { has_flag = emf_magyar_stack_tmp }
+				}
+				set_flag = emf_magyar_stack_tmp
+				while = {
+					count = 3
+					limit = { always = yes }
+					ROOT = {
+						spawn_unit = {
+							province = PREV
+							cannot_inherit = yes
+							reinforces = yes
+							merge = yes
+							maintenance_multiplier = 0
+							attrition = 1.0
+							troops = {
+								horse_archers = { 250 250 }
+							}
+						}
+					}
+				}
+			}
+		}
+		any_realm_province = { clr_flag = emf_magyar_stack_tmp }
+	}
+}
