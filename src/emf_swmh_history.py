@@ -531,7 +531,7 @@ def main():
             parser.write(tree, emfswmhhistory / 'titles/b_trazak.txt')
         elif path.stem == 'k_hungary':
             changed = True
-            assert len(tree.contents) == 56
+            assert len(tree.contents) == 57
             # comment out the last (and only) item in the 580 block (set_coa)
             assert len(tree[580, 1, 1].contents) == 1
             item = tree[580, 1, 1].contents.pop()
@@ -562,7 +562,7 @@ def main():
             tree.contents[22].pre_comments = tree.contents[24].pre_comments
             tree.contents[24].pre_comments = []
             # prepend a pair to the 907 obj
-            tree[907, 1, 1].contents[:0] = parser.parse('''
+            tree[907, 7, 4].contents[:0] = parser.parse('''
                 set_global_flag = emf_conquest_hungary_completed
                 ''').contents
             # prepend a pair to the 1000 obj
