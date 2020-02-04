@@ -91,55 +91,161 @@ character_event = {
 	hide_window = yes
 
 	min_age = 14
-	only_women = yes
+	#only_women = yes	# Men can also become more infertile from diseases, especially cancer, lover's pox, syphilis, and aztec syphilis (of the illnesses represented in CK2)
 	is_sick = yes
 
 	trigger = {
-		NOT = { practical_age = 45 }
 		is_ill = yes
-		NOR = {
-			trait = sterile_secret
-			trait = sterile_known
-			has_flag = emf_is_sterile
+		trigger_if = {
+			limit = { is_female = yes }
+			NOT = { practical_age = 45 }
+		}
+		trigger_else = {
+			NOT = { practical_age = 65 }
+		}
+		OR = { # CK2 diseases that can have a permanent effect on fertility
+			trait = has_aztec_disease
+			has_character_flag = got_aztec_disease
+			trait = syphilitic
+			has_character_flag = got_syphilis
+			trait = cancer
+			has_character_flag = got_cancer
+			trait = leper
+			trait = lovers_pox
+			AND = {
+				is_female = no
+				OR = {
+					trait = has_tuberculosis
+					has_character_flag = got_tuberculosis
+					trait = has_typhoid_fever
+					has_character_flag = got_typhoid_fever
+					trait = has_small_pox
+					has_character_flag = got_smallpox
+					trait = flu
+					has_character_flag = got_flu
+					trait = ill
+				}
+			}
 		}
 	}
 
 	mean_time_to_happen = {
-		months = 600
-		modifier = {
-			factor = 1.5
-			is_strong_trigger = yes
-		}
+		months = 240
+		# Modifiers related to the character are part of the effect instead of modifying MTTH directly
 		modifier = {
 			factor = 0.5
-			OR = {
-				is_weak_trigger = yes
-				trait = inbred
-				NOT = { health = 4.1 }
+			OR = { # The serious ones
+				trait = has_aztec_disease
+				has_character_flag = got_aztec_disease
+				trait = syphilitic
+				has_character_flag = got_syphilis
+				trait = cancer
+				has_character_flag = got_cancer
+				trait = leper
+				AND = {
+					is_female = yes
+					trait = lovers_pox
+				}
 			}
 		}
 		modifier = {
 			factor = 0.5
-			character_disease_trigger = yes
+			health <= 1 # Very sick
+		}
+		# Make sure that relative fertility loss with time due to sickness is constant
+		modifier = {
+			factor = 2
+			trait = infertile # Infertile halves baseline fertility (50% -> 25%), so it should make this event occur half as often
 		}
 		modifier = {
-			factor = 0.75
-			practical_age = 30
-		}
-		modifier = {
-			factor = 0.75
-			practical_age = 35
-		}
-		modifier = {
-			factor = 0.75
-			practical_age = 40
+			factor = 0.667
+			trait = fertile # Fertile gives 1.5x baseline fertility (50% -> 75%), so it should make this event occur 1.5x as often
 		}
 	}
 
 	immediate = {
-		random = {
-			chance = 50
-			emf_reduce_fertility = yes
+		hidden_tooltip = { # Fertility reduction of 0% - 25% in a binomial distribution, average is 12.5%
+			while = {
+				count = 5
+				limit = { always = yes }
+				random_list = {
+					50 = {
+						modifier = {
+							factor = 2.0
+							NOT = { trait = inbred }
+							health = 6 # illness itself also reduces health, but using base_health removes the effects of other traits
+						}
+						modifier = {
+							factor = 0.5
+							OR = {
+								trait = inbred
+								health <= 1 # illness itself also reduces health, but using base_health removes the effects of other traits
+							}
+						}
+						modifier = {
+							factor = 2.0
+							NOT = { practical_age = 20 }
+						}
+						modifier = {
+							factor = 0.8
+							practical_age = 30
+						}
+						modifier = {
+							factor = 0.8
+							practical_age = 35
+						}
+						modifier = {
+							factor = 0.8
+							practical_age = 40
+						}
+						modifier = {
+							factor = 0.8
+							practical_age = 45
+						}
+						modifier = {
+							factor = 0.8
+							practical_age = 50
+						}
+						modifier = {
+							factor = 0.8
+							practical_age = 55
+						}
+						modifier = {
+							factor = 0.8
+							practical_age = 60
+						}
+						modifier = {
+							factor = 2.0
+							is_female = yes # IRL, male fertility starts dropping off much sooner than female (though the tail is longer), so females getting an indirect fertility boost here is fine.
+							NOT = { any_child_even_if_dead = { always = yes } }
+						}
+						modifier = {
+							factor = 2.0
+							is_female = yes # IRL, male fertility starts dropping off much sooner than female (though the tail is longer), so females getting an indirect fertility boost here is fine.
+							NOT = { any_child_even_if_dead = { count = 2 } }
+						}
+						modifier = {
+							factor = 0.8
+							is_female = yes
+							any_child_even_if_dead = { count = 3 }
+						}
+						modifier = {
+							factor = 0.8
+							is_female = yes
+							any_child_even_if_dead = { count = 5 }
+						}
+						modifier = {
+							factor = 0.8
+							is_female = yes
+							any_child_even_if_dead = { count = 7 }
+						}
+						# no fertility reduction
+					}
+					50 = {
+						emf_reduce_fertility = yes
+					}
+				}
+			}
 		}
 	}
 }
