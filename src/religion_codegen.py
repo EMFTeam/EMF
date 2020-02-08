@@ -1108,6 +1108,11 @@ emf_sr_adopt_faith_from_flag = {
 			modifier = ruler_converted_from
 		}
 	}
+	if = { # Needed to circumvent bug where converting theocracies immediately get replaced with a new character
+		limit = { emf_requires_workaround_for_religion_switch = yes }
+		set_flag = needs_fake_feudal_government
+		set_government_type = fake_feudal_government
+	}
 	trigger_switch = {
 		on_trigger = has_flag''', file=f)
 
@@ -1115,6 +1120,11 @@ emf_sr_adopt_faith_from_flag = {
 		print(TAB*2 + 'adopt_faith_{0} = {{ religion = {0} }}'.format(rel), file=f)
 
 	print('''	}
+	if = {
+		limit = { has_flag = needs_fake_feudal_government }
+		emf_set_theocracy_government_safe = yes
+		clr_flag = needs_fake_feudal_government
+	}
 	if = {
 		limit = { higher_tier_than = BARON }
 		hidden_tooltip = {
