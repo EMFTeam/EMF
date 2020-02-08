@@ -34,8 +34,7 @@ letter_event = {
 			limit = { character = event_target:emf_cb_loser }
 			log = "-> emf_relsub.0: holy war ultimatum received by defending liege [Root.EMF_GetDebugName] from [From.EMF_GetDebugName], a [From.EMF_GetDebugTier]-tier [From.Religion.GetName] ([From.Religion.GetGroupName])"
 		}
-		if = {
-			limit = { NOT = { character = event_target:emf_cb_loser } }
+		else = {
 			log = "-> emf_relsub.0: holy war ultimatum received by underling: [Root.EMF_GetDebugName]"
 		}
 		religion_scope = { save_event_target_as = emf_old_religion }
@@ -238,7 +237,17 @@ letter_event = {
 				limit = { higher_tier_than = BARON }
 				religion_authority = { modifier = ruler_mass_converted_from years = 20 }
 			}
-			religion = event_target:emf_cb_winner
+			if = { # Needed to circumvent bug where converting theocracies immediately get replaced with a new character
+				limit = { emf_requires_workaround_for_religion_switch = yes }
+				set_flag = needs_fake_feudal_government
+				set_government_type = fake_feudal_government
+				religion = event_target:emf_cb_winner
+				emf_set_theocracy_government_safe = yes
+				clr_flag = needs_fake_feudal_government
+			}
+			else = {
+				religion = event_target:emf_cb_winner
+			}
 			if = {
 				limit = { higher_tier_than = BARON }
 				event_target:emf_cb_winner = {
@@ -295,7 +304,17 @@ letter_event = {
 			limit = { higher_tier_than = BARON }
 			religion_authority = { modifier = ruler_mass_converted_from years = 20 }
 		}
-		religion = event_target:emf_cb_winner
+		if = { # Needed to circumvent bug where converting theocracies immediately get replaced with a new character
+			limit = { emf_requires_workaround_for_religion_switch = yes }
+			set_flag = needs_fake_feudal_government
+			set_government_type = fake_feudal_government
+			religion = event_target:emf_cb_winner
+			emf_set_theocracy_government_safe = yes
+			clr_flag = needs_fake_feudal_government
+		}
+		else = {
+			religion = event_target:emf_cb_winner
+		}
 		if = {
 			limit = { higher_tier_than = BARON }
 			event_target:emf_cb_winner = {
@@ -636,7 +655,17 @@ letter_event = {
 			limit = { higher_tier_than = BARON }
 			religion_authority = { modifier = ruler_mass_converted_from years = 20 }
 		}
-		religion = event_target:emf_cb_winner
+		if = { # Needed to circumvent bug where converting theocracies immediately get replaced with a new character
+			limit = { emf_requires_workaround_for_religion_switch = yes }
+			set_flag = needs_fake_feudal_government
+			set_government_type = fake_feudal_government
+			religion = event_target:emf_cb_winner
+			emf_set_theocracy_government_safe = yes
+			clr_flag = needs_fake_feudal_government
+		}
+		else = {
+			religion = event_target:emf_cb_winner
+		}
 		if = {
 			limit = { higher_tier_than = BARON }
 			event_target:emf_cb_winner = {
@@ -693,7 +722,17 @@ letter_event = {
 			limit = { higher_tier_than = BARON }
 			religion_authority = { modifier = ruler_mass_converted_from years = 20 }
 		}
-		religion = event_target:emf_cb_winner
+		if = { # Needed to circumvent bug where converting theocracies immediately get replaced with a new character
+			limit = { emf_requires_workaround_for_religion_switch = yes }
+			set_flag = needs_fake_feudal_government
+			set_government_type = fake_feudal_government
+			religion = event_target:emf_cb_winner
+			emf_set_theocracy_government_safe = yes
+			clr_flag = needs_fake_feudal_government
+		}
+		else = {
+			religion = event_target:emf_cb_winner
+		}
 		if = {
 			limit = { higher_tier_than = BARON }
 			event_target:emf_cb_winner = {
@@ -988,25 +1027,21 @@ character_event = {
 		# Mark titles to be taken (for tooltip only, as we freshen our "list" at option execution time)
 		any_opinion_modifier_target = {
 			limit = { reverse_has_opinion_modifier = { who = PREV modifier = refused_my_relsub } }
-			save_event_target_as = emf_refuser
 			any_demesne_title = {
 				limit = {
 					de_jure_liege_or_above = event_target:emf_cb_title
-					event_target:emf_refuser = { NOT = { family_palace = { title = PREVPREV } } }
+					emf_is_title_type_special = no
 				}
 				set_flag = emf_relsub_tmp_take_title
-				event_target:emf_cb_winner = {
-					if = {
-						limit = { PREV = { tier = COUNT } }
-						change_variable = { which = "emf_relsub_counties_taken" value = 1 }
-					}
-					if = {
-						limit = { PREV = { tier = BARON } }
-						change_variable = { which = "emf_relsub_baronies_taken" value = 1 }
-					}
+				if = {
+					limit = { tier = COUNT }
+					ROOT = { change_variable = { which = "emf_relsub_counties_taken" value = 1 } }
+				}
+				else_if = {
+					limit = { tier = BARON }
+					ROOT = { change_variable = { which = "emf_relsub_baronies_taken" value = 1 } }
 				}
 			}
-			clear_event_target = emf_refuser
 		}
 
 		# Save the provinces which were already ours before religious subjugation
@@ -1028,7 +1063,17 @@ character_event = {
 					any_de_jure_vassal_title = {
 						count = 2
 						tier = COUNT
-						owner_under_target_ruler = yes
+						NOT = { has_flag = emf_relsub_tmp_take_title }
+						holder_scope = {
+							under_target_ruler = yes
+							ai = yes
+							any_demesne_province = {
+								NOR = {
+									province = PREVPREV
+									county = { has_flag = emf_relsub_tmp_take_title }
+								}
+							}
+						}
 					}
 				}
 			}
@@ -1043,7 +1088,12 @@ character_event = {
 						owner = {
 							under_target_ruler = yes
 							ai = yes
-							any_demesne_province = { NOT = { province = PREVPREV } }
+							any_demesne_province = {
+								NOR = {
+									province = PREVPREV
+									county = { has_flag = emf_relsub_tmp_take_title }
+								}
+							}
 						}
 					}
 					preferred_limit = {
@@ -1076,10 +1126,14 @@ character_event = {
 						owner = {
 							under_target_ruler = yes
 							ai = yes
-							any_demesne_province = { NOT = { province = PREVPREV } }
+							any_demesne_province = {
+								NOR = {
+									province = PREVPREV
+									county = { has_flag = emf_relsub_tmp_take_title }
+								}
+							}
 						}
 						NOT = { province = event_target:emf_prov_1 }
-						
 					}
 					preferred_limit = {
 						num_of_settlements = 7
@@ -1111,7 +1165,12 @@ character_event = {
 						owner = {
 							under_target_ruler = yes
 							ai = yes
-							any_demesne_province = { NOT = { province = PREVPREV } }
+							any_demesne_province = {
+								NOR = {
+									province = PREVPREV
+									county = { has_flag = emf_relsub_tmp_take_title }
+								}
+							}
 						}
 						NOR = {
 							province = event_target:emf_prov_1

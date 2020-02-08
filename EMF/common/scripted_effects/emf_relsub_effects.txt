@@ -49,8 +49,7 @@ emf_relsub_basic_submission_decision = {
 				limit = { religion = PREV }
 				change_variable = { which = "emf_relsub_lords_liberated" value = 1 }
 			}
-			if = {
-				limit = { NOT = { religion = PREV } }
+			else = {
 				change_variable = { which = "emf_relsub_lords_converted" value = 1 }
 			}
 		}
@@ -81,14 +80,25 @@ emf_relsub_convert_court = {
 			any_courtier = {
 				limit = {
 					OR = {
-						is_married = ROOT
-						is_close_relative = ROOT
-						dynasty = ROOT
+						is_married = PREV
+						is_close_relative = PREV
+						dynasty = PREV
 					}
 					NOT = { religion = event_target:emf_cb_winner }
-					vassal_of = ROOT
+					vassal_of = PREV
 					is_ruler = no
 					prisoner = no # Who is going to agree to convert while staying imprisoned despite it?
+				}
+				if = { # Needed to circumvent bug where converting theocracies immediately get replaced with a new character
+					limit = { emf_requires_workaround_for_religion_switch = yes }
+					set_flag = needs_fake_feudal_government
+					set_government_type = fake_feudal_government
+					religion = event_target:emf_cb_winner
+					emf_set_theocracy_government_safe = yes
+					clr_flag = needs_fake_feudal_government
+				}
+				else = {
+					religion = event_target:emf_cb_winner
 				}
 				random_list = {
 					20 = {
@@ -103,7 +113,6 @@ emf_relsub_convert_court = {
 						modifier = { factor = 2.0 NOT = { age = 10 } }
 					}
 				}
-				religion = event_target:emf_cb_winner
 				event_target:emf_cb_winner = {
 					change_variable = { which = "emf_relsub_nobles_converted" value = 1 }
 				}
@@ -121,16 +130,26 @@ emf_relsub_pretend_to_convert_court = {
 			any_courtier = {
 				limit = {
 					OR = {
-						is_married = ROOT
-						is_close_relative = ROOT
-						dynasty = ROOT
+						is_married = PREV
+						is_close_relative = PREV
+						dynasty = PREV
 					}
 					NOT = { religion = event_target:emf_cb_winner }
-					vassal_of = ROOT
+					vassal_of = PREV
 					is_ruler = no
 					prisoner = no # Who is going to agree to convert while staying imprisoned despite it?
 				}
-				religion = event_target:emf_cb_winner
+				if = { # Needed to circumvent bug where converting theocracies immediately get replaced with a new character
+					limit = { emf_requires_workaround_for_religion_switch = yes }
+					set_flag = needs_fake_feudal_government
+					set_government_type = fake_feudal_government
+					religion = event_target:emf_cb_winner
+					emf_set_theocracy_government_safe = yes
+					clr_flag = needs_fake_feudal_government
+				}
+				else = {
+					religion = event_target:emf_cb_winner
+				}
 				if = {
 					limit = { has_secret_religion = no }
 					set_secret_religion = event_target:emf_old_religion
@@ -162,23 +181,22 @@ emf_relsub_subjugate = {
 	custom_tooltip = { text = RELSUB_WILL_BECOME_VASSAL_TO_WINNER }
 	hidden_tooltip = {
 		emf_ROOT_subjugate_ruler = yes
-		event_target:emf_cb_winner = { save_event_target_as = target_ruler }
 		any_realm_province = {
 			limit = {
 				de_jure_liege_or_above = event_target:emf_cb_title
-				emf_hostile_religion_to_target_ruler = yes
+				emf_hostile_religion_to_ROOT = yes
 			}
 			emf_relsub_set_base_unrest = yes
 		}
-		clear_event_target = target_ruler
 		any_realm_province = {
-			limit = { religion = event_target:emf_cb_winner }
+			limit = { religion = ROOT }
 			remove_province_modifier = emf_relsub_liberation_modifier
 			add_province_modifier = { name = emf_relsub_liberation_modifier years = 20 }
 		}
 	}
 }
 
+# ROOT = event_target:emf_cb_winner
 emf_relsub_complete = {
 	custom_tooltip = { text = RELSUB_STATISTICS }
 	if = {
@@ -231,16 +249,15 @@ emf_relsub_complete = {
 		# Instead of choosing the considerably more efficient way to access the titles marked for taking (i.e., scope
 		# to rulers via refused_my_relsub TOM and then scope to their flagged demesne titles), we use
 		# any_landed_title so that we can ensure the tier-based sort/priority order is upheld in the tooltip:
-		event_target:emf_cb_winner = { save_event_target_as = target_ruler }
 		any_landed_title = {
 			limit = {
 				tier = COUNT
 				has_flag = emf_relsub_tmp_take_title
-				owner = { reverse_has_opinion_modifier = { who = ROOT modifier = refused_my_relsub } }
+				holder_scope = { reverse_has_opinion_modifier = { who = ROOT modifier = refused_my_relsub } }
 			}
 			if = {
 				limit = { always = yes } # auto-tooltip black magic
-				usurp_title_plus_barony_if_unlanded = { target = event_target:emf_cb_winner type = holy_war }
+				usurp_title_plus_barony_if_unlanded = { target = ROOT type = holy_war }
 				location = {
 					hidden_tooltip = {
 						capital_holding = {
@@ -248,40 +265,35 @@ emf_relsub_complete = {
 							add_holding_modifier = { name = new_administration duration = 10950 }
 						}
 						if = {
-							limit = { emf_hostile_religion_to_target_ruler = yes }
-							emf_relsub_set_base_unrest = yes
-						}
-						if = {
-							limit = { religion = event_target:emf_cb_winner }
+							limit = { religion = ROOT }
 							add_province_modifier = { name = emf_relsub_liberation_modifier years = 20 }
+						}
+						else_if = {
+							limit = { emf_hostile_religion_to_ROOT = yes }
+							emf_relsub_set_base_unrest = yes
 						}
 					}
 				}
 			}
+			clr_flag = emf_relsub_tmp_take_title
 		}
 		any_landed_title = {
 			limit = {
 				tier = BARON
 				has_flag = emf_relsub_tmp_take_title
-				owner = { reverse_has_opinion_modifier = { who = ROOT modifier = refused_my_relsub } }
+				holder_scope = { reverse_has_opinion_modifier = { who = ROOT modifier = refused_my_relsub } }
+				NOT = { holder = ROOT }
 			}
 			# Hide usurpation tooltip for province capital baronies, as they're covered by the count-tier case
 			if = {
-				limit = {
-					is_capital = yes
-					NOT = { holder = ROOT }
-				}
+				limit = { is_capital = yes }
 				hidden_tooltip = {
 					usurp_title_plus_barony_if_unlanded = { target = ROOT type = holy_war }
 					remove_holding_modifier = new_administration
 					add_holding_modifier = { name = new_administration duration = 10950 }
 				}
 			}
-			if = {
-				limit = {
-					is_capital = no
-					NOT = { holder = ROOT }
-				}
+			else = {
 				usurp_title_plus_barony_if_unlanded = { target = ROOT type = holy_war }
 				hidden_tooltip = {
 					remove_holding_modifier = new_administration
@@ -289,13 +301,13 @@ emf_relsub_complete = {
 				}
 				location = {
 					if = {
-						limit = { emf_hostile_religion_to_target_ruler = yes }
+						limit = { emf_hostile_religion_to_ROOT = yes }
 						emf_relsub_add_unrest = yes
 					}
 				}
 			}
+			clr_flag = emf_relsub_tmp_take_title
 		}
-		clear_event_target = target_ruler
 	}
 }
 
@@ -321,7 +333,6 @@ emf_relsub_reset_unrest = {
 
 emf_relsub_set_base_unrest = {
 	hidden_tooltip = {
-		save_event_target_as = emf_relsub_unrest_province
 		# reset first
 		emf_relsub_reset_unrest = yes
 		# baseline is determined by aggressiveness of subjugation
@@ -329,7 +340,7 @@ emf_relsub_set_base_unrest = {
 			trigger_switch = {
 				on_trigger = has_flag
 				emf_relsub_tmp_light_approach = {
-					event_target:emf_relsub_unrest_province = {
+					PREV = {
 						add_province_modifier = {
 							modifier = emf_relsub_light_unrest_base_modifier
 							years = 30
@@ -337,7 +348,7 @@ emf_relsub_set_base_unrest = {
 					}
 				}
 				emf_relsub_tmp_normal_approach = {
-					event_target:emf_relsub_unrest_province = {
+					PREV = {
 						add_province_modifier = {
 							modifier = emf_relsub_normal_unrest_base_modifier
 							years = 30
@@ -345,7 +356,7 @@ emf_relsub_set_base_unrest = {
 					}
 				}
 				emf_relsub_tmp_heavy_approach = {
-					event_target:emf_relsub_unrest_province = {
+					PREV = {
 						add_province_modifier = {
 							modifier = emf_relsub_heavy_unrest_base_modifier
 							years = 30
@@ -354,7 +365,6 @@ emf_relsub_set_base_unrest = {
 				}
 			}
 		}
-		clear_event_target = emf_relsub_unrest_province
 	}
 }
 
@@ -365,11 +375,11 @@ emf_relsub_add_unrest = {
 			limit = { emf_relsub_has_light_unrest = yes }
 			add_province_modifier = { name = emf_relsub_light_unrest_modifier years = 20 stacking = yes }
 		}
-		if = {
+		else_if = {
 			limit = { emf_relsub_has_normal_unrest = yes }
 			add_province_modifier = { name = emf_relsub_normal_unrest_modifier years = 20 stacking = yes }
 		}
-		if = {
+		else_if = {
 			limit = { emf_relsub_has_heavy_unrest = yes }
 			add_province_modifier = { name = emf_relsub_heavy_unrest_modifier years = 20 stacking = yes }
 		}
@@ -387,10 +397,10 @@ emf_relsub_disinherit_from_religion_group = {
 			limit = {
 				is_ruler = no
 				OR = {
-					dynasty = ROOT
-					is_close_relative = ROOT
-					father_even_if_dead = { is_close_relative = ROOT }
-					mother_even_if_dead = { is_close_relative = ROOT }
+					dynasty = PREV
+					is_close_relative = PREV
+					father_even_if_dead = { is_close_relative = PREVPREV }
+					mother_even_if_dead = { is_close_relative = PREVPREV }
 				}
 			}
 			set_flag = emf_relsub_disinherit
@@ -403,10 +413,10 @@ emf_relsub_disinherit_from_religion_group = {
 					limit = {
 						is_ruler = no
 						OR = {
-							dynasty = ROOT
-							is_close_relative = ROOT
-							father_even_if_dead = { is_close_relative = ROOT }
-							mother_even_if_dead = { is_close_relative = ROOT }
+							dynasty = PREV
+							is_close_relative = PREV
+							father_even_if_dead = { is_close_relative = PREVPREV }
+							mother_even_if_dead = { is_close_relative = PREVPREV }
 						}
 					}
 					set_flag = emf_relsub_disinherit_christian
@@ -418,10 +428,10 @@ emf_relsub_disinherit_from_religion_group = {
 					limit = {
 						is_ruler = no
 						OR = {
-							dynasty = ROOT
-							is_close_relative = ROOT
-							father_even_if_dead = { is_close_relative = ROOT }
-							mother_even_if_dead = { is_close_relative = ROOT }
+							dynasty = PREV
+							is_close_relative = PREV
+							father_even_if_dead = { is_close_relative = PREVPREV }
+							mother_even_if_dead = { is_close_relative = PREVPREV }
 						}
 					}
 					set_flag = emf_relsub_disinherit_muslim
@@ -433,10 +443,10 @@ emf_relsub_disinherit_from_religion_group = {
 					limit = {
 						is_ruler = no
 						OR = {
-							dynasty = ROOT
-							is_close_relative = ROOT
-							father_even_if_dead = { is_close_relative = ROOT }
-							mother_even_if_dead = { is_close_relative = ROOT }
+							dynasty = PREV
+							is_close_relative = PREV
+							father_even_if_dead = { is_close_relative = PREVPREV }
+							mother_even_if_dead = { is_close_relative = PREVPREV }
 						}
 					}
 					set_flag = emf_relsub_disinherit_pagan_group
@@ -448,10 +458,10 @@ emf_relsub_disinherit_from_religion_group = {
 					limit = {
 						is_ruler = no
 						OR = {
-							dynasty = ROOT
-							is_close_relative = ROOT
-							father_even_if_dead = { is_close_relative = ROOT }
-							mother_even_if_dead = { is_close_relative = ROOT }
+							dynasty = PREV
+							is_close_relative = PREV
+							father_even_if_dead = { is_close_relative = PREVPREV }
+							mother_even_if_dead = { is_close_relative = PREVPREV }
 						}
 					}
 					set_flag = emf_relsub_disinherit_zoroastrian_group
@@ -463,10 +473,10 @@ emf_relsub_disinherit_from_religion_group = {
 					limit = {
 						is_ruler = no
 						OR = {
-							dynasty = ROOT
-							is_close_relative = ROOT
-							father_even_if_dead = { is_close_relative = ROOT }
-							mother_even_if_dead = { is_close_relative = ROOT }
+							dynasty = PREV
+							is_close_relative = PREV
+							father_even_if_dead = { is_close_relative = PREVPREV }
+							mother_even_if_dead = { is_close_relative = PREVPREV }
 						}
 					}
 					set_flag = emf_relsub_disinherit_jewish_group
@@ -478,10 +488,10 @@ emf_relsub_disinherit_from_religion_group = {
 					limit = {
 						is_ruler = no
 						OR = {
-							dynasty = ROOT
-							is_close_relative = ROOT
-							father_even_if_dead = { is_close_relative = ROOT }
-							mother_even_if_dead = { is_close_relative = ROOT }
+							dynasty = PREV
+							is_close_relative = PREV
+							father_even_if_dead = { is_close_relative = PREVPREV }
+							mother_even_if_dead = { is_close_relative = PREVPREV }
 						}
 					}
 					set_flag = emf_relsub_disinherit_indian_group
