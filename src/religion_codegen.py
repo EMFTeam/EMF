@@ -357,6 +357,7 @@ def main():
 	with rel_effect_path.open('w', encoding='cp1252', newline='\n') as f:
 		print_file_header(f, 'ck2.scripted_effects')
 		print_effect_calc_realm_province_religion_breakdown_of_THIS_for_ROOT(f, loc)
+		print_effect_character_set_religion_to_reformed(f)
 		print_effect_reset_settable_religion_flags(f)
 		print_effect_set_default_religion_flags(f)
 	
@@ -1103,15 +1104,37 @@ def print_effect_adopt_faith_from_flag(f):
 	print('''
 emf_sr_adopt_faith_from_flag = {
 	if = {
-		limit = { higher_tier_than = BARON }
-		religion_authority = {
-			modifier = ruler_converted_from
+		limit = {
+			independent = yes
+			higher_real_tier_than = DUKE
+			NOT = { religion_group = christian }
+		}
+		set_flag = emf_tmp_check_for_christian_conversion
+	}
+	if = {
+		limit = { higher_real_tier_than = BARON }
+		if = {
+			limit = { real_tier = EMPEROR }
+			religion_authority = { modifier = emperor_converted_from }
+		}
+		else_if = {
+			limit = { real_tier = KING }
+			religion_authority = { modifier = king_converted_from }
+		}
+		else_if = {
+			limit = { real_tier = DUKE }
+			religion_authority = { modifier = duke_converted_from }
+		}
+		else = {
+			religion_authority = { modifier = count_converted_from }
 		}
 	}
-	if = { # Needed to circumvent bug where converting theocracies immediately get replaced with a new character
-		limit = { emf_requires_workaround_for_religion_switch = yes }
-		set_flag = needs_fake_feudal_government
-		set_government_type = fake_feudal_government
+	hidden_effect = {
+		if = { # Needed to circumvent bug where converting theocracies immediately get replaced with a new character
+			limit = { emf_requires_workaround_for_religion_switch = yes }
+			set_flag = needs_fake_feudal_government
+			set_government_type = fake_feudal_government
+		}
 	}
 	trigger_switch = {
 		on_trigger = has_flag''', file=f)
@@ -1120,18 +1143,78 @@ emf_sr_adopt_faith_from_flag = {
 		print(TAB*2 + 'adopt_faith_{0} = {{ religion = {0} }}'.format(rel), file=f)
 
 	print('''	}
-	if = {
-		limit = { has_flag = needs_fake_feudal_government }
-		emf_set_theocracy_government_safe = yes
-		clr_flag = needs_fake_feudal_government
-	}
-	if = {
-		limit = { higher_tier_than = BARON }
-		hidden_tooltip = {
-			religion_authority = {
-				modifier = ruler_converted_to
+	hidden_effect = {
+		if = {
+			limit = { has_flag = needs_fake_feudal_government }
+			emf_set_theocracy_government_safe = yes
+			clr_flag = needs_fake_feudal_government
+		}
+		if = {
+			limit = { higher_real_tier_than = BARON }
+			if = {
+				limit = { real_tier = EMPEROR }
+				religion_authority = { modifier = emperor_converted_to }
+			}
+			else_if = {
+				limit = { real_tier = KING }
+				religion_authority = { modifier = king_converted_to }
+			}
+			else_if = {
+				limit = { real_tier = DUKE }
+				religion_authority = { modifier = duke_converted_to }
+			}
+			else = {
+				religion_authority = { modifier = count_converted_to }
 			}
 		}
+	}
+	abdicate_holy_order_if_religion_changes_effect = yes
+	if = {
+		limit = { has_flag = emf_tmp_check_for_christian_conversion }
+		if = {
+			limit = { religion_group = christian }
+			set_character_flag = king_converted
+		}
+		clr_flag = emf_tmp_check_for_christian_conversion
+	}
+	if = {
+		limit = {
+			has_character_flag = king_converted
+			NOT = { religion_group = christian }
+		}
+		clr_character_flag = king_converted
+	}
+	if = {
+		limit = { has_dharmic_religion_trigger = yes }
+		set_character_flag = india_converted
+		trigger_switch = { # Choose branch
+			on_trigger = religion
+			hindu = { character_event = { id = RoI.110 } }
+			buddhist = { character_event = { id = RoI.111 } }
+			jain = { character_event = { id = RoI.112 } }
+		}
+	}
+	else_if = {
+		limit = { # Fast-track the decision to pick a pagan branch for the AI
+			ai = yes
+			OR = {
+				has_religion_feature = religion_no_leader
+				AND = {
+					has_religion_features = no
+					OR = {
+						religion = west_african_pagan_reformed
+						religion = bon_reformed
+					}
+				}
+			}
+			NOR = { 
+				trait = pagan_branch_1
+				trait = pagan_branch_2
+				trait = pagan_branch_3 
+				trait = pagan_branch_4
+			}
+		}
+		hidden_tooltip = { character_event = { id = HF.23016 days = 20 random = 20 } }
 	}
 }''', file=f)
 
@@ -1802,6 +1885,119 @@ emf_calc_realm_province_religion_breakdown_of_THIS_for_ROOT = {
 	print(TAB + TAB + '}', file=f)
 	print(TAB + '}', file=f)
 	print('}', file=f)
+
+
+def print_effect_character_set_religion_to_reformed(f):
+	print('''
+emf_character_set_religion_to_reformed = {
+	if = {
+		limit = {
+			OR = {''', file=f)
+	for r in g_religions:
+		if (g_religions_properties_map[r].reformed is not None):
+			print(TAB + TAB + TAB + TAB + "religion = {0}".format(r), file=f)
+	print(TAB + TAB + TAB + '''}
+		}
+		if = {
+			limit = { higher_real_tier_than = BARON }
+			if = {
+				limit = { real_tier = EMPEROR }
+				religion_authority = { modifier = emperor_converted_from }
+			}
+			else_if = {
+				limit = { real_tier = KING }
+				religion_authority = { modifier = king_converted_from }
+			}
+			else_if = {
+				limit = { real_tier = DUKE }
+				religion_authority = { modifier = duke_converted_from }
+			}
+			else = {
+				religion_authority = { modifier = count_converted_from }
+			}
+		}
+		hidden_effect = {
+			if = { # Needed to circumvent bug where converting theocracies immediately get replaced with a new character
+				limit = { emf_requires_workaround_for_religion_switch = yes }
+				set_flag = needs_fake_feudal_government
+				set_government_type = fake_feudal_government
+			}
+		}''', file=f)
+	prefix = TAB + TAB + "if"
+	for r in g_religions:
+		if (g_religions_properties_map[r].reformed is not None):
+			print(prefix + ''' = {{
+			limit = {{ religion = {0} }}
+			religion = {1}
+		}}'''.format(r, g_religions_properties_map[r].reformed), file=f)
+			prefix = TAB + TAB + "else_if"
+	print(TAB + TAB + '''hidden_effect = {
+			if = {
+				limit = { has_flag = needs_fake_feudal_government }
+				emf_set_theocracy_government_safe = yes
+				clr_flag = needs_fake_feudal_government
+			}
+			if = {
+				limit = { higher_real_tier_than = BARON }
+				if = {
+					limit = { real_tier = EMPEROR }
+					religion_authority = { modifier = emperor_converted_to }
+				}
+				else_if = {
+					limit = { real_tier = KING }
+					religion_authority = { modifier = king_converted_to }
+				}
+				else_if = {
+					limit = { real_tier = DUKE }
+					religion_authority = { modifier = duke_converted_to }
+				}
+				else = {
+					religion_authority = { modifier = count_converted_to }
+				}
+			}
+		}
+		abdicate_holy_order_if_religion_changes_effect = yes
+		if = {
+			limit = {
+				has_character_flag = king_converted
+				NOT = { religion_group = christian }
+			}
+			clr_character_flag = king_converted
+		}
+		if = {
+			limit = { has_dharmic_religion_trigger = yes }
+			set_character_flag = india_converted
+			trigger_switch = { # Choose branch
+				on_trigger = religion
+				hindu = { character_event = { id = RoI.110 } }
+				buddhist = { character_event = { id = RoI.111 } }
+				jain = { character_event = { id = RoI.112 } }
+			}
+		}
+		else_if = {
+			limit = { # Fast-track the decision to pick a pagan branch for the AI
+				ai = yes
+				OR = {
+					has_religion_feature = religion_no_leader
+					AND = {
+						has_religion_features = no
+						OR = {
+							religion = west_african_pagan_reformed
+							religion = bon_reformed
+						}
+					}
+				}
+				NOR = { 
+					trait = pagan_branch_1
+					trait = pagan_branch_2
+					trait = pagan_branch_3 
+					trait = pagan_branch_4
+				}
+			}
+			hidden_tooltip = { character_event = { id = HF.23016 days = 20 random = 20 } }
+		}
+	}
+}''', file=f)
 
 
 def print_effect_reset_settable_religion_flags(f):
