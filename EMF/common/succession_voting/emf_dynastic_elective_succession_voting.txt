@@ -17,29 +17,129 @@ dynastic_elective = {
 		days = -5 		#If below 0, ROOT is not valid to be an Elector.
 		additive_modifier = {
 			value = -1000
-			FROMFROM = { has_holder = no }
-		}
-		additive_modifier = { 
-			value = 10
-			is_vassal_or_below_of = FROMFROM
-			#Any vassals of one or two lower tiers than the main title are viable Electors.
-			trigger_if = {
-				limit = { FROMFROM = { real_tier = EMPEROR } }
-				higher_real_tier_than = COUNT #Dukes and Kings
-			}
-			trigger_else_if = {
-				limit = { FROMFROM = { real_tier = KING } }
-				higher_real_tier_than = BARON #Counts and Dukes
-			}
-			trigger_else = {
-				is_ruler = yes #Barons and Counts / Barons
+			FROMFROM = {
+				OR = {
+					has_holder = no
+					NOR = { #Either title is higher than Duke-tier, or must be primary.
+						higher_tier_than = DUKE
+						holder_scope = { primary_title = { title = PREVPREV } }
+					}
+				}
 			}
 		}
 		additive_modifier = { #Current ruler is always an elector.
+			value = 500
+			FROMFROM = { holder = ROOT }
+		}
+		additive_modifier = {
+			value = -100
+			NAND = {
+				is_liege_or_above = FROMFROM
+				#Any rulers of one or two lower tiers than the main title are viable Electors.
+				trigger_if = {
+					limit = { FROMFROM = { real_tier = EMPEROR } }
+					higher_real_tier_than = COUNT #Dukes and Kings
+				}
+				trigger_else_if = {
+					limit = { FROMFROM = { real_tier = KING } }
+					higher_real_tier_than = BARON #Counts and Dukes
+				}
+				trigger_else = {
+					is_ruler = yes #Barons and Counts / Barons
+				}
+			}
+		}
+		additive_modifier = {
 			value = 10
+			is_feudal = yes
+		}
+		additive_modifier = { #Theocracies favored over other government forms, feudalism left at base score.
+			value = 14
+			is_theocracy = yes
+			#Tied to religion.
+			OR = {
+				is_heretic = no
+				FROMFROM = {
+					holder_scope = {
+						OR = {
+							religion = ROOT
+							NOT = { religion_group = ROOT }
+						}
+					}
+				}
+			}
 			FROMFROM = {
 				holder_scope = {
-					character = ROOT
+					OR = {
+						religion = ROOT
+						is_heretic = yes
+						emf_unreformed_pagan = yes
+						has_religion_feature = religion_cosmopolitan
+						religion = hellenic_pagan
+						AND = {
+							religion = hellenic_pagan_reformed
+							has_religion_features = no
+						}
+					}
+				}
+			}
+		}
+		additive_modifier = {
+			value = 10
+			OR = {
+				is_tribal = yes
+				is_nomadic = yes
+				is_republic = yes
+			}
+			# Non-feudals and non-theocracies can only vote if they are not baronies and are either direct vassals or independent
+			OR = {
+				higher_real_tier_than = BARON
+				FROMFROM = { holder_scope = { is_feudal = no } }
+			}
+			OR = {
+				independent = yes
+				FROMFROM = { holder_scope = { is_liege_of = ROOT } }
+			}
+		}
+		additive_modifier = { # Prioritization based on culture
+			value = -2
+			FROMFROM = { holder_scope = { NOT = { culture = ROOT } } }
+		}
+		additive_modifier = { # Prioritization based on culture group
+			value = -2
+			FROMFROM = { holder_scope = { NOT = { culture_group = ROOT } } }
+		}
+		additive_modifier = { # Prioritization based on religion
+			value = -2
+			FROMFROM = {
+				holder_scope = {
+					is_heretic = no
+					NOR = {
+						religion = ROOT
+						has_religion_feature = religion_cosmopolitan
+						religion = hellenic_pagan
+						AND = {
+							religion = hellenic_pagan_reformed
+							has_religion_features = no
+						}
+					}
+				}
+			}
+		}
+		additive_modifier = { # Prioritization based on religion group
+			value = -2
+			FROMFROM = {
+				holder_scope = {
+					NOR = {
+						religion_group = ROOT
+						emf_syncretized_religion_with_ROOT = yes
+						has_religion_feature = religion_cosmopolitan
+						religion = hellenic_pagan
+						AND = {
+							religion = hellenic_pagan_reformed
+							has_religion_features = no
+						}
+					}
 				}
 			}
 		}
