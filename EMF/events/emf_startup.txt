@@ -31,6 +31,15 @@ character_event = {
 
 		# Global EMF config pre-startup settings (great for easy tweaking of EMF behavior in your submod):
 		character_event = { id = emf_config.0 }
+		
+		# History's Forgotten Wives (generated before genetics are processed so that genetic inheritance can properly happen to children)
+		if = {
+			limit = { NOT = { has_game_rule = { name = generate_forgotten_women value = off } } }
+			random_character = {
+				limit = { emf_startup_character_needs_wife = yes }
+				character_event = { id = emf_startup.24 }
+			}
+		}
 
 		# Initialize genetics on randomly-generated rulers:
 		character_event = { id = emf_dna.0 }
@@ -1057,6 +1066,26 @@ character_event = {
 	}
 }
 
+# emf_startup.24 [Any Character]
+#
+# Recursively create wives where they're lacking in scripted history, but the character has non-bastard children
+character_event = {
+	id = emf_startup.24
+
+	hide_window = yes
+	is_triggered_only = yes
+
+	immediate = {
+		set_flag = emf_initial_wife_check
+		emf_startup_create_wife = yes
+		# Move onto the next character
+		random_character = {
+			limit = { emf_startup_character_needs_wife = yes }
+			character_event = { id = emf_startup.24 }
+		}
+	}
+}
+
 # emf_startup.25 [Playable Ruler]
 #
 # Recursively create extra daughters where they're lacking in scripted history and will not affect succession
@@ -1070,59 +1099,232 @@ character_event = {
 		set_flag = emf_initial_daughter_check
 		# Chance of a daughter
 		random = {
-			chance = 40
+			chance = 60
 			modifier = {
-				factor = 1.25
+				factor = 0.8
 				OR = {
-					higher_tier_than = DUKE
-					NOT = { religion_group = christian }
+					higher_real_tier_than = DUKE
+					religion_group = christian
 				}
 			}
 			modifier = {
-				factor = 1.5
-				OR = {
-					is_patrician = yes
-					higher_tier_than = COUNT
+				factor = 0.5
+				trigger_if = {
+					limit = { is_female = yes }
+					practical_age < 45
 				}
+				trigger_else = {
+					practical_age < 65
+				}
+				fertility < 0.5
+			}
+			modifier = {
+				factor = 0.5
+				trigger_if = {
+					limit = { is_female = yes }
+					practical_age < 45
+				}
+				trigger_else = {
+					practical_age < 65
+				}
+				fertility < 0.25
 			}
 			modifier = {
 				factor = 1.25
-				start_date >= 1018.1.1
-				start_date < 1066.1.1
+				num_of_children < 1
 			}
 			modifier = {
-				factor = 1.5
-				start_date < 1018.1.1
+				factor = 1.25
+				num_of_children < 2
+			}
+			modifier = {
+				factor = 1.25
+				start_date < 1066.9.14
+			}
+			modifier = {
+				factor = 1.25
+				start_date < 955.8.15
 			}
 			emf_startup_create_daughter = yes
 		}
-		# Another, smaller chance at a [potentially second] daughter
-		random = {
-			chance = 20
-			modifier = {
-				factor = 1.25
-				OR = {
-					higher_tier_than = DUKE
-					NOT = { religion_group = christian }
+		if = {
+			limit = {
+				# Aggressive: Expected childgiving ages: 20, 23, 26, 30, 35
+				trigger_if = {
+					limit = { has_game_rule = { name = generate_forgotten_women value = aggressive } }
+					trigger_if = {
+						limit = { age < 23 }
+						num_of_children < 1
+					}
+					trigger_else_if = {
+						limit = { age < 26 }
+						num_of_children < 2
+					}
+					trigger_else_if = {
+						limit = { age < 30 }
+						num_of_children < 3
+					}
+					trigger_else_if = {
+						limit = { age < 35 }
+						num_of_children < 4
+					}
+					trigger_else = {
+						num_of_children < 5
+					}
+				}
+				# Default: Expected childgiving ages: 20, 25, 35
+				trigger_else = {
+					NOR = { # Not one of Temujin's descendants (who should have fairly complete histories)
+						dynasty = 7379
+						dynasty = 7380
+						dynasty = 1000054550
+						dynasty = 101916
+						dynasty = 11100
+					}
+					OR = {
+						lower_real_tier_than = KING
+						is_nomadic = yes
+						NOT = { religion_group = christian }
+					}
+					trigger_if = {
+						limit = { age < 25 }
+						num_of_children < 1
+					}
+					trigger_else_if = {
+						limit = { age < 35 }
+						num_of_children < 2
+					}
+					trigger_else = {
+						num_of_children < 3
+					}
+				}
+				any_spouse_even_if_dead = {
+					is_ruler = no
+					trigger_if = {
+						limit = { is_female = yes }
+						age < 66
+					}
+					trigger_else = {
+						age < 86
+					}
+					trigger_if = {
+						limit = {
+							trigger_if = {
+								limit = { is_female = yes }
+								practical_age = 45
+							}
+							trigger_else = {
+								practical_age = 65
+							}
+						}
+						NOR = {
+							trait = celibate
+							trait = eunuch
+							has_nickname = nick_the_chaste
+						}
+					}
+					trigger_else = {
+						fertility > 0
+					}
+					trigger_if = {
+						limit = { has_game_rule = { name = generate_forgotten_women value = aggressive } }
+						trigger_if = {
+							limit = { age < 23 }
+							num_of_children < 1
+						}
+						trigger_else_if = {
+							limit = { age < 26 }
+							num_of_children < 2
+						}
+						trigger_else_if = {
+							limit = { age < 30 }
+							num_of_children < 3
+						}
+						trigger_else_if = {
+							limit = { age < 35 }
+							num_of_children < 4
+						}
+						trigger_else = {
+							num_of_children < 5
+						}
+					}
+					trigger_else = {
+						NOR = { # Not one of Temujin's descendants (who should have fairly complete histories)
+							dynasty = 7379
+							dynasty = 7380
+							dynasty = 1000054550
+							dynasty = 101916
+							dynasty = 11100
+						}
+						OR = {
+							lower_real_tier_than = KING
+							is_nomadic = yes
+							NOT = { religion_group = christian }
+						}
+						trigger_if = {
+							limit = { age < 25 }
+							num_of_children < 1
+						}
+						trigger_else_if = {
+							limit = { age < 35 }
+							num_of_children < 2
+						}
+						trigger_else = {
+							num_of_children < 3
+						}
+					}
 				}
 			}
-			modifier = {
-				factor = 1.5
-				OR = {
-					is_patrician = yes
-					higher_tier_than = COUNT
+			# Another, smaller chance at a [potentially second] daughter
+			random = {
+				chance = 30
+				modifier = {
+					factor = 0.8
+					OR = {
+						higher_real_tier_than = DUKE
+						religion_group = christian
+					}
 				}
+				modifier = {
+					factor = 0.5
+					trigger_if = {
+						limit = { is_female = yes }
+						practical_age < 45
+					}
+					trigger_else = {
+						practical_age < 65
+					}
+					fertility < 0.5
+				}
+				modifier = {
+					factor = 0.5
+					trigger_if = {
+						limit = { is_female = yes }
+						practical_age < 45
+					}
+					trigger_else = {
+						practical_age < 65
+					}
+					fertility < 0.25
+				}
+				modifier = {
+					factor = 1.25
+					num_of_children < 1
+				}
+				modifier = {
+					factor = 1.25
+					num_of_children < 2
+				}
+				modifier = {
+					factor = 1.25
+					start_date < 1066.9.14
+				}
+				modifier = {
+					factor = 1.25
+					start_date < 955.8.15
+				}
+				emf_startup_create_daughter = yes
 			}
-			modifier = {
-				factor = 1.25
-				start_date >= 1018.1.1
-				start_date < 1066.1.1
-			}
-			modifier = {
-				factor = 1.5
-				start_date < 1018.1.1
-			}
-			emf_startup_create_daughter = yes
 		}
 		recalc_succession = yes
 		# Move onto the next ruler
