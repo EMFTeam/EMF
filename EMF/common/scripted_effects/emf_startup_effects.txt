@@ -158,33 +158,43 @@ emf_startup_create_wife = {
 		}
 		save_event_target_as = emf_youngest_valid_child
 	}
-	if = {
-		limit = { event_target:emf_youngest_valid_child = { always = yes } }
-		any_child_even_if_dead = {
-			limit = {
-				NOR = {
-					# Because we're only generating one wife per character (who will be alive), their age will be synced to the youngest child
-					age_diff = {
-						who = event_target:emf_youngest_valid_child
-						years = 29 # Maximum age range of children from a single mother
-					}
-					mother_even_if_dead = { always = yes }
-					trait = bastard
-					trait = legit_bastard
-					trait = child_of_consort
-					trait = child_of_consort_male
-					any_sibling_even_if_dead = {
-						is_child_of = PREVPREV
-						is_older_than = PREV
+	any_child_even_if_dead = {
+		limit = {
+			NOR = {
+				# Because we're only generating one wife per character (who will be alive), their age will be synced to the youngest child
+				mother_even_if_dead = { always = yes }
+				trait = bastard
+				trait = legit_bastard
+				trait = child_of_consort
+				trait = child_of_consort_male
+				trigger_if = {
+					limit = { event_target:emf_youngest_valid_child = { always = yes } }
+					OR = {
 						age_diff = {
 							who = event_target:emf_youngest_valid_child
 							years = 29 # Maximum age range of children from a single mother
 						}
+						any_sibling_even_if_dead = {
+							is_child_of = PREVPREV
+							is_older_than = PREV
+							NOT = {
+								age_diff = {
+									who = event_target:emf_youngest_valid_child
+									years = 29 # Maximum age range of children from a single mother
+								}
+							}
+						}
+					}
+				}
+				trigger_else = {
+					any_sibling_even_if_dead = {
+						is_child_of = PREVPREV
+						is_older_than = PREV
 					}
 				}
 			}
-			save_event_target_as = emf_oldest_valid_child
 		}
+		save_event_target_as = emf_oldest_valid_child
 	}
 	set_variable = { which = new_char_age value = 16 }
 	if = {
@@ -192,55 +202,85 @@ emf_startup_create_wife = {
 		export_to_variable = { which = minimum_new_age value = age who = event_target:emf_oldest_valid_child }
 		change_variable = { which = minimum_new_age value = 16 }
 		if = {
-			limit = { NOT = { check_variable = { which = minimum_new_age which = new_char_age } } }
-			set_variable = { which = new_char_age value = minimum_new_age }
+			limit = { NOT = { check_variable = { which = new_char_age which = minimum_new_age } } }
+			set_variable = { which = new_char_age which = minimum_new_age }
 		}
 		set_variable = { which = minimum_new_age value = 0 }
 	}
+	export_to_variable = { which = target_age value = age }
 	if = {
-		limit = { immortal = no }
-		export_to_variable = { which = target_age value = age }
+		limit = { immortal = yes }
 		if = {
-			limit = { NOT = { check_variable = { which = target_age which = new_char_age } } }
-			set_variable = { which = maximum_new_age which = target_age }
-			if = {
-				limit = { event_target:emf_youngest_valid_child = { always = yes } }
-				export_to_variable = { which = maximum_new_age value = age who = event_target:emf_youngest_valid_child }
-				change_variable = { which = maximum_new_age value = 44 }
-			}
-			set_variable = { which = loop_count which = 0 }
-			while = {
-				limit = {
-					NOR = {
-						check_variable = { which = target_age which = loop_count }
-						check_variable = { which = maximum_new_age which = new_char_age }
+			limit = { event_target:emf_youngest_valid_child = { always = yes } }
+			export_to_variable = { which = target_age value = age who = event_target:emf_youngest_valid_child }
+			change_variable = { which = target_age value = 44 }
+		}
+		else = {
+			set_variable = { which = target_age which = new_char_age }
+		}
+	}
+	if = {
+		limit = { NOT = { check_variable = { which = new_char_age which = target_age } } }
+		set_variable = { which = maximum_new_age which = target_age }
+		if = {
+			limit = {
+				event_target:emf_youngest_valid_child = {
+					age_diff = {
+						who = PREV
+						years = 44
 					}
 				}
-				change_variable = { which = loop_count value = 1 }
-				random = {
-					chance = 50
-					change_variable = { which = new_char_age value = 1 }
+			}
+			export_to_variable = { which = maximum_new_age value = age who = event_target:emf_youngest_valid_child }
+			change_variable = { which = maximum_new_age value = 44 }
+		}
+		# Binomial distribution between min and target, but deliberately capped to max so that it is more likely to be selected.
+		set_variable = { which = loop_count which = new_char_age }
+		while = {
+			limit = {
+				NOR = {
+					check_variable = { which = loop_count which = target_age }
+					check_variable = { which = new_char_age which = maximum_new_age }
 				}
 			}
-			set_variable = { which = loop_count which = 0 }
-			set_variable = { which = maximum_new_age which = 0 }
+			change_variable = { which = loop_count value = 1 }
+			random = {
+				chance = 50
+				change_variable = { which = new_char_age value = 1 }
+			}
 		}
-		set_variable = { which = target_age which = 0 }
+		set_variable = { which = maximum_new_age which = 0 }
 	}
+	set_variable = { which = target_age which = 0 }
 	clear_event_target = emf_youngest_valid_child
 	clear_event_target = emf_oldest_valid_child
 	create_character = {
 		random_traits = yes
-		age = new_char_age
+		age = 16
 		female = yes
 		culture = THIS
 		religion = THIS
 		dynasty = actually_culture
 	}
+	new_character = { save_event_target_as = emf_spouse }
+	set_variable = { which = loop_count value = 16 }
+	while = {
+		limit = { NOT = { check_variable = { which = loop_count which = new_char_age } } }
+		change_variable = { which = loop_count value = 1 }
+		event_target:emf_spouse = { add_age = 1 }
+	}
+	set_variable = { which = loop_count value = 0 }
 	set_variable = { which = new_char_age which = 0 }
-	new_character = {
+	export_to_variable = { which = original_prestige value = prestige } # Needed because marrying through scripts still has prestige effects
+	if = {
+		limit = { is_ruler = yes }
+		log = "INFO: emf_startup.24: [emf_spouse.GetBestName] (#[emf_spouse.GetID]) created as wife on startup for [This.GetBestName] (#[This.GetID]/[This.PrimaryTitle.GetID])."
+	}
+	else = {
+		log = "INFO: emf_startup.24: [emf_spouse.GetBestName] (#[emf_spouse.GetID]) created as wife on startup for [This.GetBestName] (#[This.GetID]/Courtier in [This.Liege.PrimaryTitle.GetID])."
+	}
+	event_target:emf_spouse = {
 		set_flag = emf_extra_wife
-		log = "INFO: emf_startup.24: [This.GetBestName] (#[This.GetID]) created as wife on startup for [Prev.GetBestName] (#[Prev.GetID]/[Prev.PrimaryTitle.GetID])"
 		if = {
 			limit = { emf_religion_has_castes = yes }
 			emf_copy_caste_from_PREV = yes
@@ -248,8 +288,16 @@ emf_startup_create_wife = {
 		emf_new_character = yes # Technically not necessary because this effect should be run before DNA stuff is initialized at startup, but here just in case.
 		remove_trait = celibate
 		add_spouse = PREV
-		save_event_target_as = emf_spouse
+		while = { # Have to clear prestige the hacky way
+			limit = { prestige = 1 }
+			prestige = -1
+		}
 	}
+	while = { # Have to reset prestige the hacky way
+		limit = { NOT = { prestige = original_prestige } }
+		prestige = 1
+	}
+	set_variable = { which = original_prestige value = 0 }
 	any_child_even_if_dead = {
 		limit = {
 			NOR = {
@@ -267,6 +315,30 @@ emf_startup_create_wife = {
 }
 
 emf_startup_create_daughter = {
+	set_variable = { which = minimum_new_age value = 0 }
+	if = {
+		limit = { immortal = no }
+		if = {
+			limit = {
+				is_female = yes
+				age = 45
+			}
+			export_to_variable = { which = minimum_new_age value = age }
+			subtract_variable = { which = minimum_new_age value = 44 }
+		}
+		else_if = {
+			limit = { age = 65 }
+			export_to_variable = { which = minimum_new_age value = age }
+			subtract_variable = { which = minimum_new_age value = 64 }
+		}
+	}
+	export_to_variable = { which = maximum_new_age value = age }
+	subtract_variable = { which = maximum_new_age value = 16 }
+	if = {
+		limit = { check_variable = { which = maximum_new_age value = 22 } }
+		set_variable = { which = maximum_new_age value = 22 }
+	}
+	clear_event_target = youngest_possible_spouse_parent
 	random_spouse_even_if_dead = {
 		limit = {
 			is_ruler = no
@@ -333,11 +405,12 @@ emf_startup_create_daughter = {
 			trigger_else = {
 				num_of_children < 3
 			}
-			PREV = {
+			ROOT = {
 				NOT = {
 					any_spouse_even_if_dead = {
-						is_ruler = no
+						NOT = { character = PREVPREV }
 						NOT = { is_older_than = PREVPREV }
+						is_ruler = no
 						age = 20
 						trigger_if = {
 							limit = { is_female = yes }
@@ -411,64 +484,80 @@ emf_startup_create_daughter = {
 		save_event_target_as = youngest_possible_spouse_parent
 	}
 	if = {
-		limit = { NOT = { event_target:youngest_possible_spouse_parent = { always = yes } } }
-		break = yes
-	}
-	set_variable = { which = minimum_new_age value = 0 }
-	export_to_variable = { which = maximum_new_age value = age }
-	if = {
-		limit = { immortal = no }
+		limit = { event_target:youngest_possible_spouse_parent = { always = yes } }
 		if = {
-			limit = {
-				event_target:youngest_possible_spouse_parent = {
-					immortal = no
-					is_older_than = PREV
-				}
-			}
-			export_to_variable = { which = youngest_spouse_age value = age who = event_target:youngest_possible_spouse_parent }
+			limit = { event_target:youngest_possible_spouse_parent = { immortal = no } }
 			if = {
 				limit = {
 					event_target:youngest_possible_spouse_parent = {
 						is_female = yes
 						age = 45
+						OR = {
+							is_older_than = PREV
+							NOT = {
+								age_diff = {
+									who = PREV
+									years = 20
+								}
+							}
+						}
 					}
 				}
-				change_variable = { which = minimum_new_age which = youngest_spouse_age }
-				subtract_variable = { which = minimum_new_age value = 45 }
+				export_to_variable = { which = minimum_new_age value = age who = event_target:youngest_possible_spouse_parent }
+				subtract_variable = { which = minimum_new_age value = 44 }
 			}
 			else_if = {
-				limit = { event_target:youngest_possible_spouse_parent = { age = 65 } }
-				change_variable = { which = minimum_new_age which = youngest_spouse_age }
-				subtract_variable = { which = minimum_new_age value = 65 }
+				limit = {
+					event_target:youngest_possible_spouse_parent = {
+						age = 65
+						is_older_than = PREV
+						age_diff = {
+							who = PREV
+							years = 20
+						}
+					}
+				}
+				export_to_variable = { which = minimum_new_age value = age who = event_target:youngest_possible_spouse_parent }
+				subtract_variable = { which = minimum_new_age value = 64 }
 			}
-			set_variable = { which = youngest_spouse_age value = 0 }
 		}
 		if = {
 			limit = {
-				is_female = yes
-				age = 45
+				any_demesne_title = {
+					succ_law_title = {
+						has_law = succ_ultimogeniture
+						OR = {
+							has_law = enatic_succession
+							has_law = enatic_cognatic_succession
+							has_law = true_cognatic_succession
+							AND = {
+								has_law = cognatic_succession
+								PREVPREV = {
+									NOT = {
+										any_child = {
+											count = 3
+											emf_can_inherit = yes
+											is_female = no
+										}
+									}
+								}
+							}
+						}
+					}
+				}
 			}
-			change_variable = { which = minimum_new_age which = maximum_new_age }
-			subtract_variable = { which = minimum_new_age value = 45 }
-		}
-		else_if = {
-			limit = { age = 65 }
-			change_variable = { which = minimum_new_age which = maximum_new_age }
-			subtract_variable = { which = minimum_new_age value = 65 }
-		}
-	}
-	if = {
-		limit = {
-			any_demesne_title = {
-				succ_law_title = {
-					has_law = succ_ultimogeniture
-					OR = {
-						has_law = enatic_succession
-						has_law = enatic_cognatic_succession
-						has_law = true_cognatic_succession
-						AND = {
-							has_law = cognatic_succession
-							PREVPREV = {
+			random_child_even_if_dead = {
+				limit = {
+					trigger_if = {
+						limit = { is_female = yes }
+						PREV = {
+							OR = {
+								any_demesne_title = {
+									succ_law_title = {
+										has_law = succ_ultimogeniture
+										has_law = true_cognatic_succession
+									}
+								}
 								NOT = {
 									any_child = {
 										count = 3
@@ -479,54 +568,160 @@ emf_startup_create_daughter = {
 							}
 						}
 					}
-				}
-			}
-		}
-		random_child_even_if_dead = {
-			limit = {
-				trigger_if = {
-					limit = { is_female = yes }
-					PREV = {
-						OR = {
-							any_demesne_title = {
-								succ_law_title = {
-									has_law = succ_ultimogeniture
-									has_law = true_cognatic_succession
-								}
-							}
-							NOT = {
-								any_child = {
-									count = 3
-									emf_can_inherit = yes
-									is_female = no
+					trigger_else = {
+						NOT = {
+							PREV = {
+								any_demesne_title = {
+									succ_law_title = {
+										has_law = succ_ultimogeniture
+										OR = {
+											has_law = enatic_succession
+											has_law = enatic_cognatic_succession
+										}
+									}
 								}
 							}
 						}
 					}
-				}
-				trigger_else = {
+					emf_can_inherit = yes
+					OR = {
+						is_alive = yes
+						AND = {
+							any_child = { emf_can_inherit = yes }
+							OR = {
+								NOT = {
+									PREV = {
+										any_demesne_title = {
+											succ_law_title = {
+												has_law = succ_ultimogeniture
+												OR = {
+													has_law = enatic_succession
+													has_law = enatic_cognatic_succession
+												}
+											}
+										}
+									}
+								}
+								any_child = {
+									is_female = yes
+									emf_can_inherit = yes
+								}
+							}
+							OR = {
+								NOT = {
+									PREV = {
+										any_demesne_title = {
+											succ_law_title = {
+												has_law = succ_ultimogeniture
+												OR = {
+													has_law = agnatic_succession
+													has_law = cognatic_succession
+												}
+											}
+										}
+									}
+								}
+								any_child = {
+									is_female = no
+									emf_can_inherit = yes
+								}
+							}
+						}
+					}
+					age < 22
 					NOT = {
-						PREV = {
-							any_demesne_title = {
-								succ_law_title = {
-									has_law = succ_ultimogeniture
+						any_sibling_even_if_dead = {
+							count = 3
+							NOT = { is_older_than = PREV }
+							trigger_if = {
+								limit = { is_female = yes }
+								PREVPREV = {
 									OR = {
-										has_law = enatic_succession
-										has_law = enatic_cognatic_succession
+										any_demesne_title = {
+											succ_law_title = {
+												has_law = succ_ultimogeniture
+												has_law = true_cognatic_succession
+											}
+										}
+										NOT = {
+											any_child = {
+												count = 3
+												emf_can_inherit = yes
+												is_female = no
+											}
+										}
+									}
+								}
+							}
+							trigger_else = {
+								NOT = {
+									PREVPREV = {
+										any_demesne_title = {
+											succ_law_title = {
+												has_law = succ_ultimogeniture
+												OR = {
+													has_law = enatic_succession
+													has_law = enatic_cognatic_succession
+												}
+											}
+										}
+									}
+								}
+							}
+							emf_can_inherit = yes
+							OR = {
+								is_alive = yes
+								AND = {
+									any_child = { emf_can_inherit = yes }
+									OR = {
+										NOT = {
+											PREVPREV = {
+												any_demesne_title = {
+													succ_law_title = {
+														has_law = succ_ultimogeniture
+														OR = {
+															has_law = enatic_succession
+															has_law = enatic_cognatic_succession
+														}
+													}
+												}
+											}
+										}
+										any_child = {
+											is_female = yes
+											emf_can_inherit = yes
+										}
+									}
+									OR = {
+										NOT = {
+											PREVPREV = {
+												any_demesne_title = {
+													succ_law_title = {
+														has_law = succ_ultimogeniture
+														OR = {
+															has_law = agnatic_succession
+															has_law = cognatic_succession
+														}
+													}
+												}
+											}
+										}
+										any_child = {
+											is_female = no
+											emf_can_inherit = yes
+										}
 									}
 								}
 							}
 						}
 					}
 				}
-				emf_can_inherit = yes
-				OR = {
-					is_alive = yes
+				preferred_limit = {
 					AND = {
 						any_child = { emf_can_inherit = yes }
 						OR = {
 							NOT = {
-								PREV = {
+								PREVPREV = {
 									any_demesne_title = {
 										succ_law_title = {
 											has_law = succ_ultimogeniture
@@ -545,7 +740,264 @@ emf_startup_create_daughter = {
 						}
 						OR = {
 							NOT = {
-								PREV = {
+								PREVPREV = {
+									any_demesne_title = {
+										succ_law_title = {
+											has_law = succ_ultimogeniture
+											OR = {
+												has_law = agnatic_succession
+												has_law = cognatic_succession
+											}
+										}
+									}
+								}
+							}
+							any_child = {
+								is_female = no
+								emf_can_inherit = yes
+							}
+						}
+					}
+					NOT = {
+						any_sibling_even_if_dead = {
+							NOT = { is_older_than = PREV }
+							trigger_if = {
+								limit = { is_female = yes }
+								PREVPREV = {
+									OR = {
+										any_demesne_title = {
+											succ_law_title = {
+												has_law = succ_ultimogeniture
+												has_law = true_cognatic_succession
+											}
+										}
+										NOT = {
+											any_child = {
+												count = 3
+												emf_can_inherit = yes
+												is_female = no
+											}
+										}
+									}
+								}
+							}
+							trigger_else = {
+								NOT = {
+									PREVPREV = {
+										any_demesne_title = {
+											succ_law_title = {
+												has_law = succ_ultimogeniture
+												OR = {
+													has_law = enatic_succession
+													has_law = enatic_cognatic_succession
+												}
+											}
+										}
+									}
+								}
+							}
+							emf_can_inherit = yes
+							OR = {
+								is_alive = yes
+								AND = {
+									any_child = { emf_can_inherit = yes }
+									OR = {
+										NOT = {
+											PREVPREV = {
+												any_demesne_title = {
+													succ_law_title = {
+														has_law = succ_ultimogeniture
+														OR = {
+															has_law = enatic_succession
+															has_law = enatic_cognatic_succession
+														}
+													}
+												}
+											}
+										}
+										any_child = {
+											is_female = yes
+											emf_can_inherit = yes
+										}
+									}
+									OR = {
+										NOT = {
+											PREVPREV = {
+												any_demesne_title = {
+													succ_law_title = {
+														has_law = succ_ultimogeniture
+														OR = {
+															has_law = agnatic_succession
+															has_law = cognatic_succession
+														}
+													}
+												}
+											}
+										}
+										any_child = {
+											is_female = no
+											emf_can_inherit = yes
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				preferred_limit = {
+					AND = {
+						any_child = { emf_can_inherit = yes }
+						OR = {
+							NOT = {
+								PREVPREV = {
+									any_demesne_title = {
+										succ_law_title = {
+											has_law = succ_ultimogeniture
+											OR = {
+												has_law = enatic_succession
+												has_law = enatic_cognatic_succession
+											}
+										}
+									}
+								}
+							}
+							any_child = {
+								is_female = yes
+								emf_can_inherit = yes
+							}
+						}
+						OR = {
+							NOT = {
+								PREVPREV = {
+									any_demesne_title = {
+										succ_law_title = {
+											has_law = succ_ultimogeniture
+											OR = {
+												has_law = agnatic_succession
+												has_law = cognatic_succession
+											}
+										}
+									}
+								}
+							}
+							any_child = {
+								is_female = no
+								emf_can_inherit = yes
+							}
+						}
+					}
+					NOT = {
+						any_sibling_even_if_dead = {
+							count = 2
+							NOT = { is_older_than = PREV }
+							trigger_if = {
+								limit = { is_female = yes }
+								PREVPREV = {
+									OR = {
+										any_demesne_title = {
+											succ_law_title = {
+												has_law = succ_ultimogeniture
+												has_law = true_cognatic_succession
+											}
+										}
+										NOT = {
+											any_child = {
+												count = 3
+												emf_can_inherit = yes
+												is_female = no
+											}
+										}
+									}
+								}
+							}
+							trigger_else = {
+								NOT = {
+									PREVPREV = {
+										any_demesne_title = {
+											succ_law_title = {
+												has_law = succ_ultimogeniture
+												OR = {
+													has_law = enatic_succession
+													has_law = enatic_cognatic_succession
+												}
+											}
+										}
+									}
+								}
+							}
+							emf_can_inherit = yes
+							OR = {
+								is_alive = yes
+								AND = {
+									any_child = { emf_can_inherit = yes }
+									OR = {
+										NOT = {
+											PREVPREV = {
+												any_demesne_title = {
+													succ_law_title = {
+														has_law = succ_ultimogeniture
+														OR = {
+															has_law = enatic_succession
+															has_law = enatic_cognatic_succession
+														}
+													}
+												}
+											}
+										}
+										any_child = {
+											is_female = yes
+											emf_can_inherit = yes
+										}
+									}
+									OR = {
+										NOT = {
+											PREVPREV = {
+												any_demesne_title = {
+													succ_law_title = {
+														has_law = succ_ultimogeniture
+														OR = {
+															has_law = agnatic_succession
+															has_law = cognatic_succession
+														}
+													}
+												}
+											}
+										}
+										any_child = {
+											is_female = no
+											emf_can_inherit = yes
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				preferred_limit = {
+					AND = {
+						any_child = { emf_can_inherit = yes }
+						OR = {
+							NOT = {
+								PREVPREV = {
+									any_demesne_title = {
+										succ_law_title = {
+											has_law = succ_ultimogeniture
+											OR = {
+												has_law = enatic_succession
+												has_law = enatic_cognatic_succession
+											}
+										}
+									}
+								}
+							}
+							any_child = {
+								is_female = yes
+								emf_can_inherit = yes
+							}
+						}
+						OR = {
+							NOT = {
+								PREVPREV = {
 									any_demesne_title = {
 										succ_law_title = {
 											has_law = succ_ultimogeniture
@@ -564,1788 +1016,1564 @@ emf_startup_create_daughter = {
 						}
 					}
 				}
-				age < 22
-				NOT = {
-					any_sibling_even_if_dead = {
-						count = 3
-						NOT = { is_older_than = PREV }
-						trigger_if = {
-							limit = { is_female = yes }
-							PREVPREV = {
-								OR = {
-									any_demesne_title = {
-										succ_law_title = {
-											has_law = succ_ultimogeniture
-											has_law = true_cognatic_succession
-										}
-									}
-									NOT = {
-										any_child = {
-											count = 3
-											emf_can_inherit = yes
-											is_female = no
-										}
-									}
-								}
-							}
-						}
-						trigger_else = {
-							NOT = {
+				preferred_limit = {
+					NOT = {
+						any_sibling_even_if_dead = {
+							count = 2
+							NOT = { is_older_than = PREV }
+							trigger_if = {
+								limit = { is_female = yes }
 								PREVPREV = {
-									any_demesne_title = {
-										succ_law_title = {
-											has_law = succ_ultimogeniture
-											OR = {
-												has_law = enatic_succession
-												has_law = enatic_cognatic_succession
+									OR = {
+										any_demesne_title = {
+											succ_law_title = {
+												has_law = succ_ultimogeniture
+												has_law = true_cognatic_succession
+											}
+										}
+										NOT = {
+											any_child = {
+												count = 3
+												emf_can_inherit = yes
+												is_female = no
 											}
 										}
 									}
 								}
 							}
-						}
-						emf_can_inherit = yes
-						OR = {
-							is_alive = yes
-							AND = {
-								any_child = { emf_can_inherit = yes }
-								OR = {
-									NOT = {
-										PREVPREV = {
-											any_demesne_title = {
-												succ_law_title = {
-													has_law = succ_ultimogeniture
-													OR = {
-														has_law = enatic_succession
-														has_law = enatic_cognatic_succession
-													}
+							trigger_else = {
+								NOT = {
+									PREVPREV = {
+										any_demesne_title = {
+											succ_law_title = {
+												has_law = succ_ultimogeniture
+												OR = {
+													has_law = enatic_succession
+													has_law = enatic_cognatic_succession
 												}
 											}
 										}
 									}
-									any_child = {
-										is_female = yes
-										emf_can_inherit = yes
-									}
 								}
-								OR = {
-									NOT = {
-										PREVPREV = {
-											any_demesne_title = {
-												succ_law_title = {
-													has_law = succ_ultimogeniture
-													OR = {
-														has_law = agnatic_succession
-														has_law = cognatic_succession
+							}
+							emf_can_inherit = yes
+							OR = {
+								is_alive = yes
+								AND = {
+									any_child = { emf_can_inherit = yes }
+									OR = {
+										NOT = {
+											PREVPREV = {
+												any_demesne_title = {
+													succ_law_title = {
+														has_law = succ_ultimogeniture
+														OR = {
+															has_law = enatic_succession
+															has_law = enatic_cognatic_succession
+														}
 													}
 												}
 											}
 										}
-									}
-									any_child = {
-										is_female = no
-										emf_can_inherit = yes
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-			preferred_limit = {
-				AND = {
-					any_child = { emf_can_inherit = yes }
-					OR = {
-						NOT = {
-							PREVPREV = {
-								any_demesne_title = {
-									succ_law_title = {
-										has_law = succ_ultimogeniture
-										OR = {
-											has_law = enatic_succession
-											has_law = enatic_cognatic_succession
-										}
-									}
-								}
-							}
-						}
-						any_child = {
-							is_female = yes
-							emf_can_inherit = yes
-						}
-					}
-					OR = {
-						NOT = {
-							PREVPREV = {
-								any_demesne_title = {
-									succ_law_title = {
-										has_law = succ_ultimogeniture
-										OR = {
-											has_law = agnatic_succession
-											has_law = cognatic_succession
-										}
-									}
-								}
-							}
-						}
-						any_child = {
-							is_female = no
-							emf_can_inherit = yes
-						}
-					}
-				}
-				NOT = {
-					any_sibling_even_if_dead = {
-						NOT = { is_older_than = PREV }
-						trigger_if = {
-							limit = { is_female = yes }
-							PREVPREV = {
-								OR = {
-									any_demesne_title = {
-										succ_law_title = {
-											has_law = succ_ultimogeniture
-											has_law = true_cognatic_succession
-										}
-									}
-									NOT = {
 										any_child = {
-											count = 3
+											is_female = yes
 											emf_can_inherit = yes
-											is_female = no
 										}
 									}
-								}
-							}
-						}
-						trigger_else = {
-							NOT = {
-								PREVPREV = {
-									any_demesne_title = {
-										succ_law_title = {
-											has_law = succ_ultimogeniture
-											OR = {
-												has_law = enatic_succession
-												has_law = enatic_cognatic_succession
-											}
-										}
-									}
-								}
-							}
-						}
-						emf_can_inherit = yes
-						OR = {
-							is_alive = yes
-							AND = {
-								any_child = { emf_can_inherit = yes }
-								OR = {
-									NOT = {
-										PREVPREV = {
-											any_demesne_title = {
-												succ_law_title = {
-													has_law = succ_ultimogeniture
-													OR = {
-														has_law = enatic_succession
-														has_law = enatic_cognatic_succession
+									OR = {
+										NOT = {
+											PREVPREV = {
+												any_demesne_title = {
+													succ_law_title = {
+														has_law = succ_ultimogeniture
+														OR = {
+															has_law = agnatic_succession
+															has_law = cognatic_succession
+														}
 													}
 												}
 											}
 										}
-									}
-									any_child = {
-										is_female = yes
-										emf_can_inherit = yes
-									}
-								}
-								OR = {
-									NOT = {
-										PREVPREV = {
-											any_demesne_title = {
-												succ_law_title = {
-													has_law = succ_ultimogeniture
-													OR = {
-														has_law = agnatic_succession
-														has_law = cognatic_succession
-													}
-												}
-											}
-										}
-									}
-									any_child = {
-										is_female = no
-										emf_can_inherit = yes
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-			preferred_limit = {
-				AND = {
-					any_child = { emf_can_inherit = yes }
-					OR = {
-						NOT = {
-							PREVPREV = {
-								any_demesne_title = {
-									succ_law_title = {
-										has_law = succ_ultimogeniture
-										OR = {
-											has_law = enatic_succession
-											has_law = enatic_cognatic_succession
-										}
-									}
-								}
-							}
-						}
-						any_child = {
-							is_female = yes
-							emf_can_inherit = yes
-						}
-					}
-					OR = {
-						NOT = {
-							PREVPREV = {
-								any_demesne_title = {
-									succ_law_title = {
-										has_law = succ_ultimogeniture
-										OR = {
-											has_law = agnatic_succession
-											has_law = cognatic_succession
-										}
-									}
-								}
-							}
-						}
-						any_child = {
-							is_female = no
-							emf_can_inherit = yes
-						}
-					}
-				}
-				NOT = {
-					any_sibling_even_if_dead = {
-						count = 2
-						NOT = { is_older_than = PREV }
-						trigger_if = {
-							limit = { is_female = yes }
-							PREVPREV = {
-								OR = {
-									any_demesne_title = {
-										succ_law_title = {
-											has_law = succ_ultimogeniture
-											has_law = true_cognatic_succession
-										}
-									}
-									NOT = {
 										any_child = {
-											count = 3
-											emf_can_inherit = yes
 											is_female = no
+											emf_can_inherit = yes
 										}
-									}
-								}
-							}
-						}
-						trigger_else = {
-							NOT = {
-								PREVPREV = {
-									any_demesne_title = {
-										succ_law_title = {
-											has_law = succ_ultimogeniture
-											OR = {
-												has_law = enatic_succession
-												has_law = enatic_cognatic_succession
-											}
-										}
-									}
-								}
-							}
-						}
-						emf_can_inherit = yes
-						OR = {
-							is_alive = yes
-							AND = {
-								any_child = { emf_can_inherit = yes }
-								OR = {
-									NOT = {
-										PREVPREV = {
-											any_demesne_title = {
-												succ_law_title = {
-													has_law = succ_ultimogeniture
-													OR = {
-														has_law = enatic_succession
-														has_law = enatic_cognatic_succession
-													}
-												}
-											}
-										}
-									}
-									any_child = {
-										is_female = yes
-										emf_can_inherit = yes
-									}
-								}
-								OR = {
-									NOT = {
-										PREVPREV = {
-											any_demesne_title = {
-												succ_law_title = {
-													has_law = succ_ultimogeniture
-													OR = {
-														has_law = agnatic_succession
-														has_law = cognatic_succession
-													}
-												}
-											}
-										}
-									}
-									any_child = {
-										is_female = no
-										emf_can_inherit = yes
 									}
 								}
 							}
 						}
 					}
 				}
-			}
-			preferred_limit = {
-				AND = {
-					any_child = { emf_can_inherit = yes }
-					OR = {
-						NOT = {
-							PREVPREV = {
-								any_demesne_title = {
-									succ_law_title = {
-										has_law = succ_ultimogeniture
-										OR = {
-											has_law = enatic_succession
-											has_law = enatic_cognatic_succession
+				preferred_limit = {
+					NOT = {
+						any_sibling_even_if_dead = {
+							NOT = { is_older_than = PREV }
+							trigger_if = {
+								limit = { is_female = yes }
+								PREVPREV = {
+									OR = {
+										any_demesne_title = {
+											succ_law_title = {
+												has_law = succ_ultimogeniture
+												has_law = true_cognatic_succession
+											}
+										}
+										NOT = {
+											any_child = {
+												count = 3
+												emf_can_inherit = yes
+												is_female = no
+											}
 										}
 									}
 								}
 							}
-						}
-						any_child = {
-							is_female = yes
+							trigger_else = {
+								NOT = {
+									PREVPREV = {
+										any_demesne_title = {
+											succ_law_title = {
+												has_law = succ_ultimogeniture
+												OR = {
+													has_law = enatic_succession
+													has_law = enatic_cognatic_succession
+												}
+											}
+										}
+									}
+								}
+							}
 							emf_can_inherit = yes
-						}
-					}
-					OR = {
-						NOT = {
-							PREVPREV = {
-								any_demesne_title = {
-									succ_law_title = {
-										has_law = succ_ultimogeniture
-										OR = {
-											has_law = agnatic_succession
-											has_law = cognatic_succession
+							OR = {
+								is_alive = yes
+								AND = {
+									any_child = { emf_can_inherit = yes }
+									OR = {
+										NOT = {
+											PREVPREV = {
+												any_demesne_title = {
+													succ_law_title = {
+														has_law = succ_ultimogeniture
+														OR = {
+															has_law = enatic_succession
+															has_law = enatic_cognatic_succession
+														}
+													}
+												}
+											}
 										}
-									}
-								}
-							}
-						}
-						any_child = {
-							is_female = no
-							emf_can_inherit = yes
-						}
-					}
-				}
-			}
-			preferred_limit = {
-				NOT = {
-					any_sibling_even_if_dead = {
-						count = 2
-						NOT = { is_older_than = PREV }
-						trigger_if = {
-							limit = { is_female = yes }
-							PREVPREV = {
-								OR = {
-									any_demesne_title = {
-										succ_law_title = {
-											has_law = succ_ultimogeniture
-											has_law = true_cognatic_succession
-										}
-									}
-									NOT = {
 										any_child = {
-											count = 3
+											is_female = yes
 											emf_can_inherit = yes
-											is_female = no
 										}
 									}
-								}
-							}
-						}
-						trigger_else = {
-							NOT = {
-								PREVPREV = {
-									any_demesne_title = {
-										succ_law_title = {
-											has_law = succ_ultimogeniture
-											OR = {
-												has_law = enatic_succession
-												has_law = enatic_cognatic_succession
-											}
-										}
-									}
-								}
-							}
-						}
-						emf_can_inherit = yes
-						OR = {
-							is_alive = yes
-							AND = {
-								any_child = { emf_can_inherit = yes }
-								OR = {
-									NOT = {
-										PREVPREV = {
-											any_demesne_title = {
-												succ_law_title = {
-													has_law = succ_ultimogeniture
-													OR = {
-														has_law = enatic_succession
-														has_law = enatic_cognatic_succession
+									OR = {
+										NOT = {
+											PREVPREV = {
+												any_demesne_title = {
+													succ_law_title = {
+														has_law = succ_ultimogeniture
+														OR = {
+															has_law = agnatic_succession
+															has_law = cognatic_succession
+														}
 													}
 												}
 											}
 										}
-									}
-									any_child = {
-										is_female = yes
-										emf_can_inherit = yes
-									}
-								}
-								OR = {
-									NOT = {
-										PREVPREV = {
-											any_demesne_title = {
-												succ_law_title = {
-													has_law = succ_ultimogeniture
-													OR = {
-														has_law = agnatic_succession
-														has_law = cognatic_succession
-													}
-												}
-											}
-										}
-									}
-									any_child = {
-										is_female = no
-										emf_can_inherit = yes
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-			preferred_limit = {
-				NOT = {
-					any_sibling_even_if_dead = {
-						NOT = { is_older_than = PREV }
-						trigger_if = {
-							limit = { is_female = yes }
-							PREVPREV = {
-								OR = {
-									any_demesne_title = {
-										succ_law_title = {
-											has_law = succ_ultimogeniture
-											has_law = true_cognatic_succession
-										}
-									}
-									NOT = {
 										any_child = {
-											count = 3
-											emf_can_inherit = yes
 											is_female = no
+											emf_can_inherit = yes
 										}
-									}
-								}
-							}
-						}
-						trigger_else = {
-							NOT = {
-								PREVPREV = {
-									any_demesne_title = {
-										succ_law_title = {
-											has_law = succ_ultimogeniture
-											OR = {
-												has_law = enatic_succession
-												has_law = enatic_cognatic_succession
-											}
-										}
-									}
-								}
-							}
-						}
-						emf_can_inherit = yes
-						OR = {
-							is_alive = yes
-							AND = {
-								any_child = { emf_can_inherit = yes }
-								OR = {
-									NOT = {
-										PREVPREV = {
-											any_demesne_title = {
-												succ_law_title = {
-													has_law = succ_ultimogeniture
-													OR = {
-														has_law = enatic_succession
-														has_law = enatic_cognatic_succession
-													}
-												}
-											}
-										}
-									}
-									any_child = {
-										is_female = yes
-										emf_can_inherit = yes
-									}
-								}
-								OR = {
-									NOT = {
-										PREVPREV = {
-											any_demesne_title = {
-												succ_law_title = {
-													has_law = succ_ultimogeniture
-													OR = {
-														has_law = agnatic_succession
-														has_law = cognatic_succession
-													}
-												}
-											}
-										}
-									}
-									any_child = {
-										is_female = no
-										emf_can_inherit = yes
 									}
 								}
 							}
 						}
 					}
 				}
+				save_event_target_as = oldest_ultimo_heir
 			}
-			save_event_target_as = oldest_ultimo_heir
-		}
-		if = {
-			limit = { event_target:oldest_ultimo_heir = { always = yes } }
-			export_to_variable = { which = oldest_ultimo_heir_age value = age who = event_target:oldest_ultimo_heir }
 			if = {
-				limit = { check_variable = { which = minimum_new_age which = oldest_ultimo_heir_age } }
-				set_variable = { which = minimum_new_age which = oldest_ultimo_heir_age }
-				subtract_variable = { which = minimum_new_age value = 1 }
+				limit = { event_target:oldest_ultimo_heir = { always = yes } }
+				export_to_variable = { which = oldest_ultimo_heir_age value = age who = event_target:oldest_ultimo_heir }
+				if = {
+					limit = { check_variable = { which = minimum_new_age which = oldest_ultimo_heir_age } }
+					set_variable = { which = minimum_new_age which = oldest_ultimo_heir_age }
+					change_variable = { which = minimum_new_age value = 1 }
+				}
+				set_variable = { which = oldest_ultimo_heir_age value = 0 }
+				clear_event_target = oldest_ultimo_heir
 			}
-			set_variable = { which = oldest_ultimo_heir_age value = 0 }
 		}
-	}
-	random_spouse_even_if_dead = {
-		limit = {
-			is_ruler = no
-			age = 20
-			trigger_if = {
-				limit = { is_female = yes }
-				age < 66
+		clear_event_target = oldest_possible_spouse_parent
+		random_spouse_even_if_dead = {
+			limit = {
+				is_ruler = no
+				age = 20
 				trigger_if = {
-					limit = { practical_age = 45 }
-					NOR = {
-						trait = celibate
-						trait = eunuch
-						has_nickname = nick_the_chaste
+					limit = { is_female = yes }
+					age < 66
+					trigger_if = {
+						limit = { practical_age = 45 }
+						NOR = {
+							trait = celibate
+							trait = eunuch
+							has_nickname = nick_the_chaste
+						}
+					}
+					trigger_else = {
+						fertility > 0
 					}
 				}
 				trigger_else = {
-					fertility > 0
-				}
-			}
-			trigger_else = {
-				age < 86
-				trigger_if = {
-					limit = { practical_age = 65 }
-					NOR = {
-						trait = celibate
-						trait = eunuch
-						has_nickname = nick_the_chaste
+					age < 86
+					trigger_if = {
+						limit = { practical_age = 65 }
+						NOR = {
+							trait = celibate
+							trait = eunuch
+							has_nickname = nick_the_chaste
+						}
+					}
+					trigger_else = {
+						fertility > 0
 					}
 				}
-				trigger_else = {
-					fertility > 0
-				}
-			}
-			trigger_if = {
-				limit = { has_game_rule = { name = generate_forgotten_women value = aggressive } }
 				trigger_if = {
-					limit = { age < 23 }
+					limit = { has_game_rule = { name = generate_forgotten_women value = aggressive } }
+					trigger_if = {
+						limit = { age < 23 }
+						num_of_children < 1
+					}
+					trigger_else_if = {
+						limit = { age < 26 }
+						num_of_children < 2
+					}
+					trigger_else_if = {
+						limit = { age < 30 }
+						num_of_children < 3
+					}
+					trigger_else_if = {
+						limit = { age < 35 }
+						num_of_children < 4
+					}
+					trigger_else = {
+						num_of_children < 5
+					}
+				}
+				trigger_else_if = {
+					limit = { age < 25 }
 					num_of_children < 1
 				}
 				trigger_else_if = {
-					limit = { age < 26 }
+					limit = { age < 35 }
 					num_of_children < 2
 				}
-				trigger_else_if = {
-					limit = { age < 30 }
+				trigger_else = {
 					num_of_children < 3
 				}
-				trigger_else_if = {
-					limit = { age < 35 }
-					num_of_children < 4
-				}
-				trigger_else = {
-					num_of_children < 5
-				}
-			}
-			trigger_else_if = {
-				limit = { age < 25 }
-				num_of_children < 1
-			}
-			trigger_else_if = {
-				limit = { age < 35 }
-				num_of_children < 2
-			}
-			trigger_else = {
-				num_of_children < 3
-			}
-			PREV = {
-				NOT = {
-					any_spouse_even_if_dead = {
-						is_ruler = no
-						is_older_than = PREVPREV
-						age = 20
-						trigger_if = {
-							limit = { is_female = yes }
-							age < 66
+				ROOT = {
+					NOT = {
+						any_spouse_even_if_dead = {
+							is_ruler = no
+							NOT = { character = PREVPREV }
+							is_older_than = PREVPREV
+							age = 20
 							trigger_if = {
-								limit = { practical_age = 45 }
-								NOR = {
-									trait = celibate
-									trait = eunuch
-									has_nickname = nick_the_chaste
+								limit = { is_female = yes }
+								age < 66
+								trigger_if = {
+									limit = { practical_age = 45 }
+									NOR = {
+										trait = celibate
+										trait = eunuch
+										has_nickname = nick_the_chaste
+									}
+								}
+								trigger_else = {
+									fertility > 0
 								}
 							}
 							trigger_else = {
-								fertility > 0
-							}
-						}
-						trigger_else = {
-							age < 86
-							trigger_if = {
-								limit = { practical_age = 65 }
-								NOR = {
-									trait = celibate
-									trait = eunuch
-									has_nickname = nick_the_chaste
+								age < 86
+								trigger_if = {
+									limit = { practical_age = 65 }
+									NOR = {
+										trait = celibate
+										trait = eunuch
+										has_nickname = nick_the_chaste
+									}
+								}
+								trigger_else = {
+									fertility > 0
 								}
 							}
-							trigger_else = {
-								fertility > 0
-							}
-						}
-						trigger_if = {
-							limit = { has_game_rule = { name = generate_forgotten_women value = aggressive } }
 							trigger_if = {
-								limit = { age < 23 }
+								limit = { has_game_rule = { name = generate_forgotten_women value = aggressive } }
+								trigger_if = {
+									limit = { age < 23 }
+									num_of_children < 1
+								}
+								trigger_else_if = {
+									limit = { age < 26 }
+									num_of_children < 2
+								}
+								trigger_else_if = {
+									limit = { age < 30 }
+									num_of_children < 3
+								}
+								trigger_else_if = {
+									limit = { age < 35 }
+									num_of_children < 4
+								}
+								trigger_else = {
+									num_of_children < 5
+								}
+							}
+							trigger_else_if = {
+								limit = { age < 25 }
 								num_of_children < 1
 							}
 							trigger_else_if = {
-								limit = { age < 26 }
+								limit = { age < 35 }
 								num_of_children < 2
 							}
-							trigger_else_if = {
-								limit = { age < 30 }
+							trigger_else = {
 								num_of_children < 3
 							}
-							trigger_else_if = {
-								limit = { age < 35 }
-								num_of_children < 4
-							}
-							trigger_else = {
-								num_of_children < 5
-							}
-						}
-						trigger_else_if = {
-							limit = { age < 25 }
-							num_of_children < 1
-						}
-						trigger_else_if = {
-							limit = { age < 35 }
-							num_of_children < 2
-						}
-						trigger_else = {
-							num_of_children < 3
 						}
 					}
 				}
 			}
+			preferred_limit = {
+				is_main_spouse = yes
+			}
+			save_event_target_as = oldest_possible_spouse_parent
 		}
-		preferred_limit = {
-			is_main_spouse = yes
-		}
-		save_event_target_as = oldest_possible_spouse_parent
-	}
-	if = {
-		limit = { NOT = { event_target:oldest_possible_spouse_parent = { always = yes } } }
-		set_variable = { which = minimum_new_age value = 0 }
-		set_variable = { which = maximum_new_age value = 0 }
-		break = yes
-	}
-	if = {
-		limit = { is_older_than = event_target:oldest_possible_spouse_parent }
-		export_to_variable = { which = maximum_new_age value = age who = event_target:oldest_possible_spouse_parent }
-	}
-	subtract_variable = { which = maximum_new_age value = 16 }
-	if = {
-		limit = { check_variable = { which = maximum_new_age value = 22 } }
-		set_variable = { which = maximum_new_age value = 22 }
-	}
-	if = {
-		limit = {
-			any_demesne_title = {
-				succ_law_title = {
-					OR = {
-						has_law = succ_seniority
-						has_law = succ_patrician_elective
-					}
-					has_law = cognatic_succession
-					PREVPREV = {
-						NOT = {
-							any_dynasty_member = {
-								is_female = no
-								emf_can_inherit = yes
-								OR = {
-									PREV = { is_patrician = no }
-									is_ruler = no
+		if = {
+			limit = { event_target:oldest_possible_spouse_parent = { always = yes } }
+			if = {
+				limit = { is_older_than = event_target:oldest_possible_spouse_parent }
+				export_to_variable = { which = maximum_new_age value = age who = event_target:oldest_possible_spouse_parent }
+				subtract_variable = { which = maximum_new_age value = 16 }
+				if = {
+					limit = { check_variable = { which = maximum_new_age value = 22 } }
+					set_variable = { which = maximum_new_age value = 22 }
+				}
+			}
+			if = {
+				limit = {
+					any_demesne_title = {
+						succ_law_title = {
+							OR = {
+								has_law = succ_seniority
+								has_law = succ_patrician_elective
+							}
+							has_law = cognatic_succession
+							PREVPREV = {
+								NOT = {
+									any_dynasty_member = {
+										is_female = no
+										emf_can_inherit = yes
+										OR = {
+											PREV = { is_patrician = no }
+											is_ruler = no
+										}
+									}
 								}
 							}
 						}
 					}
 				}
-			}
-		}
-		random_dynasty_member = {
-			limit = {
-				is_female = yes
-				emf_can_inherit = yes
-				OR = {
-					PREV = { is_patrician = no }
-					is_ruler = no
-				}
-				age = 1
-				NOT = {
-					any_dynasty_member = {
-						count = 3
-						OR = {
-							is_female = no
-							is_older_than = PREV
-						}
-						NOT = { character = PREVPREV }
+				random_dynasty_member = {
+					limit = {
+						is_female = yes
 						emf_can_inherit = yes
 						OR = {
 							PREV = { is_patrician = no }
 							is_ruler = no
 						}
 						age = 1
-					}
-				}
-			}
-			preferred_limit = {
-				any_dynasty_member = {
-					count = 2
-					OR = {
-						is_female = no
-						is_older_than = PREV
-					}
-					NOT = { character = PREVPREV }
-					emf_can_inherit = yes
-					OR = {
-						PREV = { is_patrician = no }
-						is_ruler = no
-					}
-					age = 1
-				}
-			}
-			preferred_limit = {
-				any_dynasty_member = {
-					OR = {
-						is_female = no
-						is_older_than = PREV
-					}
-					NOT = { character = PREVPREV }
-					emf_can_inherit = yes
-					OR = {
-						PREV = { is_patrician = no }
-						is_ruler = no
-					}
-					age = 1
-				}
-			}
-			save_event_target_as = youngest_seniority_heir
-		}
-		if = {
-			limit = { event_target:youngest_seniority_heir = { always = yes } }
-			export_to_variable = { which = youngest_seniority_heir_age value = age who = event_target:youngest_seniority_heir }
-			if = {
-				limit = { check_variable = { which = maximum_new_age which = youngest_seniority_heir_age } }
-				set_variable = { which = maximum_new_age which = youngest_seniority_heir_age }
-			}
-			set_variable = { which = youngest_seniority_heir_age value = 0 }
-			clear_event_target = youngest_seniority_heir
-		}
-	}
-	if = {
-		limit = {
-			any_demesne_title = {
-				succ_law_title = {
-					OR = {
-						has_law = succ_gavelkind
-						has_law = succ_primogeniture
-						has_law = succ_turkish_succession
-					}
-					OR = {
-						has_law = enatic_succession
-						has_law = enatic_cognatic_succession
-						has_law = true_cognatic_succession
-						AND = {
-							has_law = cognatic_succession
-							PREVPREV = {
-								NOT = {
-									any_child = {
-										count = 3
-										emf_can_inherit = yes
-										is_female = no
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		random_child_even_if_dead = {
-			limit = {
-				trigger_if = {
-					limit = { is_female = yes }
-					PREV = {
-						OR = {
-							any_demesne_title = {
-								succ_law_title = {
-									OR = {
-										has_law = succ_gavelkind
-										has_law = succ_primogeniture
-										has_law = succ_turkish_succession
-									}
-									has_law = true_cognatic_succession
-								}
-							}
-							NOT = {
-								any_child = {
-									count = 3
-									emf_can_inherit = yes
+						NOT = {
+							any_dynasty_member = {
+								count = 3
+								OR = {
 									is_female = no
+									is_older_than = PREV
 								}
-							}
-						}
-					}
-				}
-				trigger_else = {
-					NOT = {
-						PREV = {
-							any_demesne_title = {
-								succ_law_title = {
-									OR = {
-										has_law = succ_gavelkind
-										has_law = succ_primogeniture
-										has_law = succ_turkish_succession
-									}
-									OR = {
-										has_law = enatic_succession
-										has_law = enatic_cognatic_succession
-									}
-								}
-							}
-						}
-					}
-				}
-				emf_can_inherit = yes
-				OR = {
-					is_alive = yes
-					AND = {
-						any_child = { emf_can_inherit = yes }
-						OR = {
-							NOT = {
-								PREV = {
-									any_demesne_title = {
-										succ_law_title = {
-											OR = {
-												has_law = succ_gavelkind
-												has_law = succ_primogeniture
-												has_law = succ_turkish_succession
-											}
-											OR = {
-												has_law = enatic_succession
-												has_law = enatic_cognatic_succession
-											}
-										}
-									}
-								}
-							}
-							any_child = {
-								is_female = yes
+								NOT = { character = PREVPREV }
 								emf_can_inherit = yes
+								OR = {
+									PREV = { is_patrician = no }
+									is_ruler = no
+								}
+								age = 1
 							}
 						}
-						OR = {
-							NOT = {
-								PREV = {
-									any_demesne_title = {
-										succ_law_title = {
-											OR = {
-												has_law = succ_gavelkind
-												has_law = succ_primogeniture
-												has_law = succ_turkish_succession
-											}
-											OR = {
-												has_law = agnatic_succession
-												has_law = cognatic_succession
-											}
-										}
-									}
-								}
-							}
-							any_child = {
+					}
+					preferred_limit = {
+						any_dynasty_member = {
+							count = 2
+							OR = {
 								is_female = no
-								emf_can_inherit = yes
+								is_older_than = PREV
 							}
+							NOT = { character = PREVPREV }
+							emf_can_inherit = yes
+							OR = {
+								PREV = { is_patrician = no }
+								is_ruler = no
+							}
+							age = 1
 						}
 					}
+					preferred_limit = {
+						any_dynasty_member = {
+							OR = {
+								is_female = no
+								is_older_than = PREV
+							}
+							NOT = { character = PREVPREV }
+							emf_can_inherit = yes
+							OR = {
+								PREV = { is_patrician = no }
+								is_ruler = no
+							}
+							age = 1
+						}
+					}
+					save_event_target_as = youngest_seniority_heir
 				}
-				age = 1
-				NOT = {
-					any_sibling_even_if_dead = {
-						count = 3
-						is_older_than = PREV
-						trigger_if = {
-							limit = { is_female = yes }
-							PREVPREV = {
-								OR = {
-									any_demesne_title = {
-										succ_law_title = {
-											OR = {
-												has_law = succ_gavelkind
-												has_law = succ_primogeniture
-												has_law = succ_turkish_succession
-											}
-											has_law = true_cognatic_succession
-										}
-									}
-									NOT = {
-										any_child = {
-											count = 3
-											emf_can_inherit = yes
-											is_female = no
-										}
-									}
-								}
-							}
-						}
-						trigger_else = {
-							NOT = {
-								PREVPREV = {
-									any_demesne_title = {
-										succ_law_title = {
-											OR = {
-												has_law = succ_gavelkind
-												has_law = succ_primogeniture
-												has_law = succ_turkish_succession
-											}
-											OR = {
-												has_law = enatic_succession
-												has_law = enatic_cognatic_succession
-											}
-										}
-									}
-								}
-							}
-						}
-						emf_can_inherit = yes
-						OR = {
-							is_alive = yes
-							AND = {
-								any_child = { emf_can_inherit = yes }
-								OR = {
-									NOT = {
-										PREVPREV = {
-											any_demesne_title = {
-												succ_law_title = {
-													OR = {
-														has_law = succ_gavelkind
-														has_law = succ_primogeniture
-														has_law = succ_turkish_succession
-													}
-													OR = {
-														has_law = enatic_succession
-														has_law = enatic_cognatic_succession
-													}
-												}
-											}
-										}
-									}
-									any_child = {
-										is_female = yes
-										emf_can_inherit = yes
-									}
-								}
-								OR = {
-									NOT = {
-										PREVPREV = {
-											any_demesne_title = {
-												succ_law_title = {
-													OR = {
-														has_law = succ_gavelkind
-														has_law = succ_primogeniture
-														has_law = succ_turkish_succession
-													}
-													OR = {
-														has_law = agnatic_succession
-														has_law = cognatic_succession
-													}
-												}
-											}
-										}
-									}
-									any_child = {
-										is_female = no
-										emf_can_inherit = yes
-									}
-								}
-							}
-						}
+				if = {
+					limit = { event_target:youngest_seniority_heir = { always = yes } }
+					export_to_variable = { which = youngest_seniority_heir_age value = age who = event_target:youngest_seniority_heir }
+					if = {
+						limit = { check_variable = { which = maximum_new_age which = youngest_seniority_heir_age } }
+						set_variable = { which = maximum_new_age which = youngest_seniority_heir_age }
+						subtract_variable = { which = maximum_new_age value = 1 }
 					}
+					set_variable = { which = youngest_seniority_heir_age value = 0 }
+					clear_event_target = youngest_seniority_heir
 				}
 			}
-			preferred_limit = {
-				AND = {
-					any_child = { emf_can_inherit = yes }
-					OR = {
-						NOT = {
-							PREVPREV = {
-								any_demesne_title = {
-									succ_law_title = {
-										OR = {
-											has_law = succ_gavelkind
-											has_law = succ_primogeniture
-											has_law = succ_turkish_succession
-										}
-										OR = {
-											has_law = enatic_succession
-											has_law = enatic_cognatic_succession
-										}
-									}
-								}
-							}
-						}
-						any_child = {
-							is_female = yes
-							emf_can_inherit = yes
-						}
-					}
-					OR = {
-						NOT = {
-							PREVPREV = {
-								any_demesne_title = {
-									succ_law_title = {
-										OR = {
-											has_law = succ_gavelkind
-											has_law = succ_primogeniture
-											has_law = succ_turkish_succession
-										}
-										OR = {
-											has_law = agnatic_succession
-											has_law = cognatic_succession
-										}
-									}
-								}
-							}
-						}
-						any_child = {
-							is_female = no
-							emf_can_inherit = yes
-						}
-					}
-				}
-				NOT = {
-					any_sibling_even_if_dead = {
-						is_older_than = PREV
-						trigger_if = {
-							limit = { is_female = yes }
-							PREVPREV = {
-								OR = {
-									any_demesne_title = {
-										succ_law_title = {
-											OR = {
-												has_law = succ_gavelkind
-												has_law = succ_primogeniture
-												has_law = succ_turkish_succession
-											}
-											has_law = true_cognatic_succession
-										}
-									}
-									NOT = {
-										any_child = {
-											count = 3
-											emf_can_inherit = yes
-											is_female = no
-										}
-									}
-								}
-							}
-						}
-						trigger_else = {
-							NOT = {
-								PREVPREV = {
-									any_demesne_title = {
-										succ_law_title = {
-											OR = {
-												has_law = succ_gavelkind
-												has_law = succ_primogeniture
-												has_law = succ_turkish_succession
-											}
-											OR = {
-												has_law = enatic_succession
-												has_law = enatic_cognatic_succession
-											}
-										}
-									}
-								}
-							}
-						}
-						emf_can_inherit = yes
-						OR = {
-							is_alive = yes
-							AND = {
-								any_child = { emf_can_inherit = yes }
-								OR = {
-									NOT = {
-										PREVPREV = {
-											any_demesne_title = {
-												succ_law_title = {
-													OR = {
-														has_law = succ_gavelkind
-														has_law = succ_primogeniture
-														has_law = succ_turkish_succession
-													}
-													OR = {
-														has_law = enatic_succession
-														has_law = enatic_cognatic_succession
-													}
-												}
-											}
-										}
-									}
-									any_child = {
-										is_female = yes
-										emf_can_inherit = yes
-									}
-								}
-								OR = {
-									NOT = {
-										PREVPREV = {
-											any_demesne_title = {
-												succ_law_title = {
-													OR = {
-														has_law = succ_gavelkind
-														has_law = succ_primogeniture
-														has_law = succ_turkish_succession
-													}
-													OR = {
-														has_law = agnatic_succession
-														has_law = cognatic_succession
-													}
-												}
-											}
-										}
-									}
-									any_child = {
-										is_female = no
-										emf_can_inherit = yes
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-			preferred_limit = {
-				AND = {
-					any_child = { emf_can_inherit = yes }
-					OR = {
-						NOT = {
-							PREVPREV = {
-								any_demesne_title = {
-									succ_law_title = {
-										OR = {
-											has_law = succ_gavelkind
-											has_law = succ_primogeniture
-											has_law = succ_turkish_succession
-										}
-										OR = {
-											has_law = enatic_succession
-											has_law = enatic_cognatic_succession
-										}
-									}
-								}
-							}
-						}
-						any_child = {
-							is_female = yes
-							emf_can_inherit = yes
-						}
-					}
-					OR = {
-						NOT = {
-							PREVPREV = {
-								any_demesne_title = {
-									succ_law_title = {
-										OR = {
-											has_law = succ_gavelkind
-											has_law = succ_primogeniture
-											has_law = succ_turkish_succession
-										}
-										OR = {
-											has_law = agnatic_succession
-											has_law = cognatic_succession
-										}
-									}
-								}
-							}
-						}
-						any_child = {
-							is_female = no
-							emf_can_inherit = yes
-						}
-					}
-				}
-				NOT = {
-					any_sibling_even_if_dead = {
-						count = 2
-						is_older_than = PREV
-						trigger_if = {
-							limit = { is_female = yes }
-							PREVPREV = {
-								OR = {
-									any_demesne_title = {
-										succ_law_title = {
-											OR = {
-												has_law = succ_gavelkind
-												has_law = succ_primogeniture
-												has_law = succ_turkish_succession
-											}
-											has_law = true_cognatic_succession
-										}
-									}
-									NOT = {
-										any_child = {
-											count = 3
-											emf_can_inherit = yes
-											is_female = no
-										}
-									}
-								}
-							}
-						}
-						trigger_else = {
-							NOT = {
-								PREVPREV = {
-									any_demesne_title = {
-										succ_law_title = {
-											OR = {
-												has_law = succ_gavelkind
-												has_law = succ_primogeniture
-												has_law = succ_turkish_succession
-											}
-											OR = {
-												has_law = enatic_succession
-												has_law = enatic_cognatic_succession
-											}
-										}
-									}
-								}
-							}
-						}
-						emf_can_inherit = yes
-						OR = {
-							is_alive = yes
-							AND = {
-								any_child = { emf_can_inherit = yes }
-								OR = {
-									NOT = {
-										PREVPREV = {
-											any_demesne_title = {
-												succ_law_title = {
-													OR = {
-														has_law = succ_gavelkind
-														has_law = succ_primogeniture
-														has_law = succ_turkish_succession
-													}
-													OR = {
-														has_law = enatic_succession
-														has_law = enatic_cognatic_succession
-													}
-												}
-											}
-										}
-									}
-									any_child = {
-										is_female = yes
-										emf_can_inherit = yes
-									}
-								}
-								OR = {
-									NOT = {
-										PREVPREV = {
-											any_demesne_title = {
-												succ_law_title = {
-													OR = {
-														has_law = succ_gavelkind
-														has_law = succ_primogeniture
-														has_law = succ_turkish_succession
-													}
-													OR = {
-														has_law = agnatic_succession
-														has_law = cognatic_succession
-													}
-												}
-											}
-										}
-									}
-									any_child = {
-										is_female = no
-										emf_can_inherit = yes
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-			preferred_limit = {
-				AND = {
-					any_child = { emf_can_inherit = yes }
-					OR = {
-						NOT = {
-							PREVPREV = {
-								any_demesne_title = {
-									succ_law_title = {
-										OR = {
-											has_law = succ_gavelkind
-											has_law = succ_primogeniture
-											has_law = succ_turkish_succession
-										}
-										OR = {
-											has_law = enatic_succession
-											has_law = enatic_cognatic_succession
-										}
-									}
-								}
-							}
-						}
-						any_child = {
-							is_female = yes
-							emf_can_inherit = yes
-						}
-					}
-					OR = {
-						NOT = {
-							PREVPREV = {
-								any_demesne_title = {
-									succ_law_title = {
-										OR = {
-											has_law = succ_gavelkind
-											has_law = succ_primogeniture
-											has_law = succ_turkish_succession
-										}
-										OR = {
-											has_law = agnatic_succession
-											has_law = cognatic_succession
-										}
-									}
-								}
-							}
-						}
-						any_child = {
-							is_female = no
-							emf_can_inherit = yes
-						}
-					}
-				}
-			}
-			preferred_limit = {
-				NOT = {
-					any_sibling_even_if_dead = {
-						count = 2
-						is_older_than = PREV
-						trigger_if = {
-							limit = { is_female = yes }
-							PREVPREV = {
-								OR = {
-									any_demesne_title = {
-										succ_law_title = {
-											OR = {
-												has_law = succ_gavelkind
-												has_law = succ_primogeniture
-												has_law = succ_turkish_succession
-											}
-											has_law = true_cognatic_succession
-										}
-									}
-									NOT = {
-										any_child = {
-											count = 3
-											emf_can_inherit = yes
-											is_female = no
-										}
-									}
-								}
-							}
-						}
-						trigger_else = {
-							NOT = {
-								PREVPREV = {
-									any_demesne_title = {
-										succ_law_title = {
-											OR = {
-												has_law = succ_gavelkind
-												has_law = succ_primogeniture
-												has_law = succ_turkish_succession
-											}
-											OR = {
-												has_law = enatic_succession
-												has_law = enatic_cognatic_succession
-											}
-										}
-									}
-								}
-							}
-						}
-						emf_can_inherit = yes
-						OR = {
-							is_alive = yes
-							AND = {
-								any_child = { emf_can_inherit = yes }
-								OR = {
-									NOT = {
-										PREVPREV = {
-											any_demesne_title = {
-												succ_law_title = {
-													OR = {
-														has_law = succ_gavelkind
-														has_law = succ_primogeniture
-														has_law = succ_turkish_succession
-													}
-													OR = {
-														has_law = enatic_succession
-														has_law = enatic_cognatic_succession
-													}
-												}
-											}
-										}
-									}
-									any_child = {
-										is_female = yes
-										emf_can_inherit = yes
-									}
-								}
-								OR = {
-									NOT = {
-										PREVPREV = {
-											any_demesne_title = {
-												succ_law_title = {
-													OR = {
-														has_law = succ_gavelkind
-														has_law = succ_primogeniture
-														has_law = succ_turkish_succession
-													}
-													OR = {
-														has_law = agnatic_succession
-														has_law = cognatic_succession
-													}
-												}
-											}
-										}
-									}
-									any_child = {
-										is_female = no
-										emf_can_inherit = yes
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-			preferred_limit = {
-				NOT = {
-					any_sibling_even_if_dead = {
-						is_older_than = PREV
-						trigger_if = {
-							limit = { is_female = yes }
-							PREVPREV = {
-								OR = {
-									any_demesne_title = {
-										succ_law_title = {
-											OR = {
-												has_law = succ_gavelkind
-												has_law = succ_primogeniture
-												has_law = succ_turkish_succession
-											}
-											has_law = true_cognatic_succession
-										}
-									}
-									NOT = {
-										any_child = {
-											count = 3
-											emf_can_inherit = yes
-											is_female = no
-										}
-									}
-								}
-							}
-						}
-						trigger_else = {
-							NOT = {
-								PREVPREV = {
-									any_demesne_title = {
-										succ_law_title = {
-											OR = {
-												has_law = succ_gavelkind
-												has_law = succ_primogeniture
-												has_law = succ_turkish_succession
-											}
-											OR = {
-												has_law = enatic_succession
-												has_law = enatic_cognatic_succession
-											}
-										}
-									}
-								}
-							}
-						}
-						emf_can_inherit = yes
-						OR = {
-							is_alive = yes
-							AND = {
-								any_child = { emf_can_inherit = yes }
-								OR = {
-									NOT = {
-										PREVPREV = {
-											any_demesne_title = {
-												succ_law_title = {
-													OR = {
-														has_law = succ_gavelkind
-														has_law = succ_primogeniture
-														has_law = succ_turkish_succession
-													}
-													OR = {
-														has_law = enatic_succession
-														has_law = enatic_cognatic_succession
-													}
-												}
-											}
-										}
-									}
-									any_child = {
-										is_female = yes
-										emf_can_inherit = yes
-									}
-								}
-								OR = {
-									NOT = {
-										PREVPREV = {
-											any_demesne_title = {
-												succ_law_title = {
-													OR = {
-														has_law = succ_gavelkind
-														has_law = succ_primogeniture
-														has_law = succ_turkish_succession
-													}
-													OR = {
-														has_law = agnatic_succession
-														has_law = cognatic_succession
-													}
-												}
-											}
-										}
-									}
-									any_child = {
-										is_female = no
-										emf_can_inherit = yes
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-			save_event_target_as = youngest_primo_heir
-		}
-		if = {
-			limit = { event_target:youngest_primo_heir = { always = yes } }
-			export_to_variable = { which = youngest_primo_heir_age value = age who = event_target:youngest_primo_heir }
 			if = {
-				limit = { check_variable = { which = maximum_new_age which = youngest_primo_heir_age } }
-				set_variable = { which = maximum_new_age which = youngest_primo_heir_age }
+				limit = {
+					any_demesne_title = {
+						succ_law_title = {
+							OR = {
+								has_law = succ_gavelkind
+								has_law = succ_primogeniture
+								has_law = succ_turkish_succession
+							}
+							OR = {
+								has_law = enatic_succession
+								has_law = enatic_cognatic_succession
+								has_law = true_cognatic_succession
+								AND = {
+									has_law = cognatic_succession
+									PREVPREV = {
+										NOT = {
+											any_child = {
+												count = 3
+												emf_can_inherit = yes
+												is_female = no
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				random_child_even_if_dead = {
+					limit = {
+						trigger_if = {
+							limit = { is_female = yes }
+							PREV = {
+								OR = {
+									any_demesne_title = {
+										succ_law_title = {
+											OR = {
+												has_law = succ_gavelkind
+												has_law = succ_primogeniture
+												has_law = succ_turkish_succession
+											}
+											has_law = true_cognatic_succession
+										}
+									}
+									NOT = {
+										any_child = {
+											count = 3
+											emf_can_inherit = yes
+											is_female = no
+										}
+									}
+								}
+							}
+						}
+						trigger_else = {
+							NOT = {
+								PREV = {
+									any_demesne_title = {
+										succ_law_title = {
+											OR = {
+												has_law = succ_gavelkind
+												has_law = succ_primogeniture
+												has_law = succ_turkish_succession
+											}
+											OR = {
+												has_law = enatic_succession
+												has_law = enatic_cognatic_succession
+											}
+										}
+									}
+								}
+							}
+						}
+						emf_can_inherit = yes
+						OR = {
+							is_alive = yes
+							AND = {
+								any_child = { emf_can_inherit = yes }
+								OR = {
+									NOT = {
+										PREV = {
+											any_demesne_title = {
+												succ_law_title = {
+													OR = {
+														has_law = succ_gavelkind
+														has_law = succ_primogeniture
+														has_law = succ_turkish_succession
+													}
+													OR = {
+														has_law = enatic_succession
+														has_law = enatic_cognatic_succession
+													}
+												}
+											}
+										}
+									}
+									any_child = {
+										is_female = yes
+										emf_can_inherit = yes
+									}
+								}
+								OR = {
+									NOT = {
+										PREV = {
+											any_demesne_title = {
+												succ_law_title = {
+													OR = {
+														has_law = succ_gavelkind
+														has_law = succ_primogeniture
+														has_law = succ_turkish_succession
+													}
+													OR = {
+														has_law = agnatic_succession
+														has_law = cognatic_succession
+													}
+												}
+											}
+										}
+									}
+									any_child = {
+										is_female = no
+										emf_can_inherit = yes
+									}
+								}
+							}
+						}
+						age = 1
+						NOT = {
+							any_sibling_even_if_dead = {
+								count = 3
+								is_older_than = PREV
+								trigger_if = {
+									limit = { is_female = yes }
+									PREVPREV = {
+										OR = {
+											any_demesne_title = {
+												succ_law_title = {
+													OR = {
+														has_law = succ_gavelkind
+														has_law = succ_primogeniture
+														has_law = succ_turkish_succession
+													}
+													has_law = true_cognatic_succession
+												}
+											}
+											NOT = {
+												any_child = {
+													count = 3
+													emf_can_inherit = yes
+													is_female = no
+												}
+											}
+										}
+									}
+								}
+								trigger_else = {
+									NOT = {
+										PREVPREV = {
+											any_demesne_title = {
+												succ_law_title = {
+													OR = {
+														has_law = succ_gavelkind
+														has_law = succ_primogeniture
+														has_law = succ_turkish_succession
+													}
+													OR = {
+														has_law = enatic_succession
+														has_law = enatic_cognatic_succession
+													}
+												}
+											}
+										}
+									}
+								}
+								emf_can_inherit = yes
+								OR = {
+									is_alive = yes
+									AND = {
+										any_child = { emf_can_inherit = yes }
+										OR = {
+											NOT = {
+												PREVPREV = {
+													any_demesne_title = {
+														succ_law_title = {
+															OR = {
+																has_law = succ_gavelkind
+																has_law = succ_primogeniture
+																has_law = succ_turkish_succession
+															}
+															OR = {
+																has_law = enatic_succession
+																has_law = enatic_cognatic_succession
+															}
+														}
+													}
+												}
+											}
+											any_child = {
+												is_female = yes
+												emf_can_inherit = yes
+											}
+										}
+										OR = {
+											NOT = {
+												PREVPREV = {
+													any_demesne_title = {
+														succ_law_title = {
+															OR = {
+																has_law = succ_gavelkind
+																has_law = succ_primogeniture
+																has_law = succ_turkish_succession
+															}
+															OR = {
+																has_law = agnatic_succession
+																has_law = cognatic_succession
+															}
+														}
+													}
+												}
+											}
+											any_child = {
+												is_female = no
+												emf_can_inherit = yes
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					preferred_limit = {
+						AND = {
+							any_child = { emf_can_inherit = yes }
+							OR = {
+								NOT = {
+									PREVPREV = {
+										any_demesne_title = {
+											succ_law_title = {
+												OR = {
+													has_law = succ_gavelkind
+													has_law = succ_primogeniture
+													has_law = succ_turkish_succession
+												}
+												OR = {
+													has_law = enatic_succession
+													has_law = enatic_cognatic_succession
+												}
+											}
+										}
+									}
+								}
+								any_child = {
+									is_female = yes
+									emf_can_inherit = yes
+								}
+							}
+							OR = {
+								NOT = {
+									PREVPREV = {
+										any_demesne_title = {
+											succ_law_title = {
+												OR = {
+													has_law = succ_gavelkind
+													has_law = succ_primogeniture
+													has_law = succ_turkish_succession
+												}
+												OR = {
+													has_law = agnatic_succession
+													has_law = cognatic_succession
+												}
+											}
+										}
+									}
+								}
+								any_child = {
+									is_female = no
+									emf_can_inherit = yes
+								}
+							}
+						}
+						NOT = {
+							any_sibling_even_if_dead = {
+								is_older_than = PREV
+								trigger_if = {
+									limit = { is_female = yes }
+									PREVPREV = {
+										OR = {
+											any_demesne_title = {
+												succ_law_title = {
+													OR = {
+														has_law = succ_gavelkind
+														has_law = succ_primogeniture
+														has_law = succ_turkish_succession
+													}
+													has_law = true_cognatic_succession
+												}
+											}
+											NOT = {
+												any_child = {
+													count = 3
+													emf_can_inherit = yes
+													is_female = no
+												}
+											}
+										}
+									}
+								}
+								trigger_else = {
+									NOT = {
+										PREVPREV = {
+											any_demesne_title = {
+												succ_law_title = {
+													OR = {
+														has_law = succ_gavelkind
+														has_law = succ_primogeniture
+														has_law = succ_turkish_succession
+													}
+													OR = {
+														has_law = enatic_succession
+														has_law = enatic_cognatic_succession
+													}
+												}
+											}
+										}
+									}
+								}
+								emf_can_inherit = yes
+								OR = {
+									is_alive = yes
+									AND = {
+										any_child = { emf_can_inherit = yes }
+										OR = {
+											NOT = {
+												PREVPREV = {
+													any_demesne_title = {
+														succ_law_title = {
+															OR = {
+																has_law = succ_gavelkind
+																has_law = succ_primogeniture
+																has_law = succ_turkish_succession
+															}
+															OR = {
+																has_law = enatic_succession
+																has_law = enatic_cognatic_succession
+															}
+														}
+													}
+												}
+											}
+											any_child = {
+												is_female = yes
+												emf_can_inherit = yes
+											}
+										}
+										OR = {
+											NOT = {
+												PREVPREV = {
+													any_demesne_title = {
+														succ_law_title = {
+															OR = {
+																has_law = succ_gavelkind
+																has_law = succ_primogeniture
+																has_law = succ_turkish_succession
+															}
+															OR = {
+																has_law = agnatic_succession
+																has_law = cognatic_succession
+															}
+														}
+													}
+												}
+											}
+											any_child = {
+												is_female = no
+												emf_can_inherit = yes
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					preferred_limit = {
+						AND = {
+							any_child = { emf_can_inherit = yes }
+							OR = {
+								NOT = {
+									PREVPREV = {
+										any_demesne_title = {
+											succ_law_title = {
+												OR = {
+													has_law = succ_gavelkind
+													has_law = succ_primogeniture
+													has_law = succ_turkish_succession
+												}
+												OR = {
+													has_law = enatic_succession
+													has_law = enatic_cognatic_succession
+												}
+											}
+										}
+									}
+								}
+								any_child = {
+									is_female = yes
+									emf_can_inherit = yes
+								}
+							}
+							OR = {
+								NOT = {
+									PREVPREV = {
+										any_demesne_title = {
+											succ_law_title = {
+												OR = {
+													has_law = succ_gavelkind
+													has_law = succ_primogeniture
+													has_law = succ_turkish_succession
+												}
+												OR = {
+													has_law = agnatic_succession
+													has_law = cognatic_succession
+												}
+											}
+										}
+									}
+								}
+								any_child = {
+									is_female = no
+									emf_can_inherit = yes
+								}
+							}
+						}
+						NOT = {
+							any_sibling_even_if_dead = {
+								count = 2
+								is_older_than = PREV
+								trigger_if = {
+									limit = { is_female = yes }
+									PREVPREV = {
+										OR = {
+											any_demesne_title = {
+												succ_law_title = {
+													OR = {
+														has_law = succ_gavelkind
+														has_law = succ_primogeniture
+														has_law = succ_turkish_succession
+													}
+													has_law = true_cognatic_succession
+												}
+											}
+											NOT = {
+												any_child = {
+													count = 3
+													emf_can_inherit = yes
+													is_female = no
+												}
+											}
+										}
+									}
+								}
+								trigger_else = {
+									NOT = {
+										PREVPREV = {
+											any_demesne_title = {
+												succ_law_title = {
+													OR = {
+														has_law = succ_gavelkind
+														has_law = succ_primogeniture
+														has_law = succ_turkish_succession
+													}
+													OR = {
+														has_law = enatic_succession
+														has_law = enatic_cognatic_succession
+													}
+												}
+											}
+										}
+									}
+								}
+								emf_can_inherit = yes
+								OR = {
+									is_alive = yes
+									AND = {
+										any_child = { emf_can_inherit = yes }
+										OR = {
+											NOT = {
+												PREVPREV = {
+													any_demesne_title = {
+														succ_law_title = {
+															OR = {
+																has_law = succ_gavelkind
+																has_law = succ_primogeniture
+																has_law = succ_turkish_succession
+															}
+															OR = {
+																has_law = enatic_succession
+																has_law = enatic_cognatic_succession
+															}
+														}
+													}
+												}
+											}
+											any_child = {
+												is_female = yes
+												emf_can_inherit = yes
+											}
+										}
+										OR = {
+											NOT = {
+												PREVPREV = {
+													any_demesne_title = {
+														succ_law_title = {
+															OR = {
+																has_law = succ_gavelkind
+																has_law = succ_primogeniture
+																has_law = succ_turkish_succession
+															}
+															OR = {
+																has_law = agnatic_succession
+																has_law = cognatic_succession
+															}
+														}
+													}
+												}
+											}
+											any_child = {
+												is_female = no
+												emf_can_inherit = yes
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					preferred_limit = {
+						AND = {
+							any_child = { emf_can_inherit = yes }
+							OR = {
+								NOT = {
+									PREVPREV = {
+										any_demesne_title = {
+											succ_law_title = {
+												OR = {
+													has_law = succ_gavelkind
+													has_law = succ_primogeniture
+													has_law = succ_turkish_succession
+												}
+												OR = {
+													has_law = enatic_succession
+													has_law = enatic_cognatic_succession
+												}
+											}
+										}
+									}
+								}
+								any_child = {
+									is_female = yes
+									emf_can_inherit = yes
+								}
+							}
+							OR = {
+								NOT = {
+									PREVPREV = {
+										any_demesne_title = {
+											succ_law_title = {
+												OR = {
+													has_law = succ_gavelkind
+													has_law = succ_primogeniture
+													has_law = succ_turkish_succession
+												}
+												OR = {
+													has_law = agnatic_succession
+													has_law = cognatic_succession
+												}
+											}
+										}
+									}
+								}
+								any_child = {
+									is_female = no
+									emf_can_inherit = yes
+								}
+							}
+						}
+					}
+					preferred_limit = {
+						NOT = {
+							any_sibling_even_if_dead = {
+								count = 2
+								is_older_than = PREV
+								trigger_if = {
+									limit = { is_female = yes }
+									PREVPREV = {
+										OR = {
+											any_demesne_title = {
+												succ_law_title = {
+													OR = {
+														has_law = succ_gavelkind
+														has_law = succ_primogeniture
+														has_law = succ_turkish_succession
+													}
+													has_law = true_cognatic_succession
+												}
+											}
+											NOT = {
+												any_child = {
+													count = 3
+													emf_can_inherit = yes
+													is_female = no
+												}
+											}
+										}
+									}
+								}
+								trigger_else = {
+									NOT = {
+										PREVPREV = {
+											any_demesne_title = {
+												succ_law_title = {
+													OR = {
+														has_law = succ_gavelkind
+														has_law = succ_primogeniture
+														has_law = succ_turkish_succession
+													}
+													OR = {
+														has_law = enatic_succession
+														has_law = enatic_cognatic_succession
+													}
+												}
+											}
+										}
+									}
+								}
+								emf_can_inherit = yes
+								OR = {
+									is_alive = yes
+									AND = {
+										any_child = { emf_can_inherit = yes }
+										OR = {
+											NOT = {
+												PREVPREV = {
+													any_demesne_title = {
+														succ_law_title = {
+															OR = {
+																has_law = succ_gavelkind
+																has_law = succ_primogeniture
+																has_law = succ_turkish_succession
+															}
+															OR = {
+																has_law = enatic_succession
+																has_law = enatic_cognatic_succession
+															}
+														}
+													}
+												}
+											}
+											any_child = {
+												is_female = yes
+												emf_can_inherit = yes
+											}
+										}
+										OR = {
+											NOT = {
+												PREVPREV = {
+													any_demesne_title = {
+														succ_law_title = {
+															OR = {
+																has_law = succ_gavelkind
+																has_law = succ_primogeniture
+																has_law = succ_turkish_succession
+															}
+															OR = {
+																has_law = agnatic_succession
+																has_law = cognatic_succession
+															}
+														}
+													}
+												}
+											}
+											any_child = {
+												is_female = no
+												emf_can_inherit = yes
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					preferred_limit = {
+						NOT = {
+							any_sibling_even_if_dead = {
+								is_older_than = PREV
+								trigger_if = {
+									limit = { is_female = yes }
+									PREVPREV = {
+										OR = {
+											any_demesne_title = {
+												succ_law_title = {
+													OR = {
+														has_law = succ_gavelkind
+														has_law = succ_primogeniture
+														has_law = succ_turkish_succession
+													}
+													has_law = true_cognatic_succession
+												}
+											}
+											NOT = {
+												any_child = {
+													count = 3
+													emf_can_inherit = yes
+													is_female = no
+												}
+											}
+										}
+									}
+								}
+								trigger_else = {
+									NOT = {
+										PREVPREV = {
+											any_demesne_title = {
+												succ_law_title = {
+													OR = {
+														has_law = succ_gavelkind
+														has_law = succ_primogeniture
+														has_law = succ_turkish_succession
+													}
+													OR = {
+														has_law = enatic_succession
+														has_law = enatic_cognatic_succession
+													}
+												}
+											}
+										}
+									}
+								}
+								emf_can_inherit = yes
+								OR = {
+									is_alive = yes
+									AND = {
+										any_child = { emf_can_inherit = yes }
+										OR = {
+											NOT = {
+												PREVPREV = {
+													any_demesne_title = {
+														succ_law_title = {
+															OR = {
+																has_law = succ_gavelkind
+																has_law = succ_primogeniture
+																has_law = succ_turkish_succession
+															}
+															OR = {
+																has_law = enatic_succession
+																has_law = enatic_cognatic_succession
+															}
+														}
+													}
+												}
+											}
+											any_child = {
+												is_female = yes
+												emf_can_inherit = yes
+											}
+										}
+										OR = {
+											NOT = {
+												PREVPREV = {
+													any_demesne_title = {
+														succ_law_title = {
+															OR = {
+																has_law = succ_gavelkind
+																has_law = succ_primogeniture
+																has_law = succ_turkish_succession
+															}
+															OR = {
+																has_law = agnatic_succession
+																has_law = cognatic_succession
+															}
+														}
+													}
+												}
+											}
+											any_child = {
+												is_female = no
+												emf_can_inherit = yes
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					save_event_target_as = youngest_primo_heir
+				}
+				if = {
+					limit = { event_target:youngest_primo_heir = { always = yes } }
+					export_to_variable = { which = youngest_primo_heir_age value = age who = event_target:youngest_primo_heir }
+					if = {
+						limit = { check_variable = { which = maximum_new_age which = youngest_primo_heir_age } }
+						set_variable = { which = maximum_new_age which = youngest_primo_heir_age }
+						subtract_variable = { which = maximum_new_age value = 1 }
+					}
+					set_variable = { which = youngest_primo_heir_age value = 0 }
+					clear_event_target = youngest_primo_heir
+				}
 			}
-			set_variable = { which = youngest_primo_heir_age value = 0 }
-			clear_event_target = youngest_primo_heir
+			if = {
+				limit = { check_variable = { which = maximum_new_age which = minimum_new_age } }
+				set_variable = { which = loop_count which = minimum_new_age }
+				set_variable = { which = new_char_age which = minimum_new_age }
+				while = {
+					limit = { NOT = { check_variable = { which = loop_count which = maximum_new_age } } }
+					change_variable = { which = loop_count value = 1 }
+					random = {
+						chance = 50
+						modifier = {
+							factor = 0.8
+							practical_age < 25
+						}
+						modifier = {
+							factor = 0.8
+							practical_age < 30
+						}
+						modifier = {
+							factor = 1.25
+							practical_age = 35
+						}
+						modifier = {
+							factor = 1.25
+							practical_age = 40
+						}
+						change_variable = { which = new_char_age value = 1 }
+					}
+				}
+				if = {
+					limit = { check_variable = { which = new_char_age value = 16 } }
+					create_character = {
+						random_traits = yes
+						age = 16
+						female = yes
+						culture = THIS
+						religion = THIS
+						dynasty = THIS
+					}
+					new_character = { save_event_target_as = emf_daughter }
+					set_variable = { which = loop_count value = 16 }
+					while = {
+						limit = { NOT = { check_variable = { which = loop_count which = new_char_age } } }
+						change_variable = { which = loop_count value = 1 }
+						event_target:emf_daughter = { add_age = 1 }
+					}
+					set_variable = { which = loop_count value = 0 }
+				}
+				# Generate minors this way to make sure random traits are generated in an age-appropriate fashion
+				else_if = {
+					limit = { check_variable = { which = new_char_age value = 8 } }
+					if = {
+						limit = { check_variable = { which = new_char_age value = 9 } }
+						# Need to generate at age 9 and add years if between the ages of 9 and 15 in order to avoid a bug that can cause too many traits to be assigned
+						create_character = {
+							random_traits = yes
+							age = 9
+							female = yes
+							culture = THIS
+							religion = THIS
+							dynasty = THIS
+						}
+						new_character = { save_event_target_as = emf_daughter }
+						set_variable = { which = loop_count value = 9 }
+						while = {
+							limit = { NOT = { check_variable = { which = loop_count which = new_char_age } } }
+							change_variable = { which = loop_count value = 1 }
+							event_target:emf_daughter = { add_age = 1 }
+						}
+						set_variable = { which = loop_count value = 0 }
+					}
+					else = {
+						create_character = {
+							random_traits = yes
+							age = 8
+							female = yes
+							culture = THIS
+							religion = THIS
+							dynasty = THIS
+						}
+						new_character = { save_event_target_as = emf_daughter }
+					}
+				}
+				else = {
+					if = {
+						limit = { check_variable = { which = new_char_age value = 4 } }
+						if = {
+							limit = { check_variable = { which = new_char_age value = 6 } }
+							if = {
+								limit = { check_variable = { which = new_char_age value = 7 } }
+								create_character = {
+									random_traits = yes
+									age = 7
+									female = yes
+									culture = THIS
+									religion = THIS
+									dynasty = THIS
+								}
+							}
+							else = {
+								create_character = {
+									random_traits = yes
+									age = 6
+									female = yes
+									culture = THIS
+									religion = THIS
+									dynasty = THIS
+								}
+							}
+						}
+						else_if = {
+							limit = { check_variable = { which = new_char_age value = 5 } }
+							create_character = {
+								random_traits = yes
+								age = 5
+								female = yes
+								culture = THIS
+								religion = THIS
+								dynasty = THIS
+							}
+						}
+						else = {
+							create_character = {
+								random_traits = yes
+								age = 4
+								female = yes
+								culture = THIS
+								religion = THIS
+								dynasty = THIS
+							}
+						}
+					}
+					else_if = {
+						limit = { check_variable = { which = new_char_age value = 2 } }
+						if = {
+							limit = { check_variable = { which = new_char_age value = 3 } }
+							create_character = {
+								random_traits = yes
+								age = 3
+								female = yes
+								culture = THIS
+								religion = THIS
+								dynasty = THIS
+							}
+						}
+						else = {
+							create_character = {
+								random_traits = yes
+								age = 2
+								female = yes
+								culture = THIS
+								religion = THIS
+								dynasty = THIS
+							}
+						}
+					}
+					else_if = {
+						limit = { check_variable = { which = new_char_age value = 1 } }
+						create_character = {
+							random_traits = yes
+							age = 1
+							female = yes
+							culture = THIS
+							religion = THIS
+							dynasty = THIS
+						}
+					}
+					else = {
+						create_character = {
+							random_traits = yes
+							age = 0
+							female = yes
+							culture = THIS
+							religion = THIS
+							dynasty = THIS
+						}
+					}
+					new_character = { save_event_target_as = emf_daughter }
+				}
+				set_variable = { which = new_char_age which = 0 }
+				random_spouse_even_if_dead = {
+					limit = {
+						could_be_parent_of = event_target:emf_daughter
+						is_opposite_sex = PREV # Ya never know.
+					}
+					preferred_limit = {
+						has_children = no
+						is_main_spouse = yes
+					}
+					save_event_target_as = emf_spouse
+				}
+				if = {
+					limit = { event_target:emf_spouse = { always = yes } }
+					log = "INFO: emf_startup.25: [emf_daughter.GetBestName] (#[emf_daughter.GetID]) created as extra daughter on startup for [This.GetBestName] (#[This.GetID]/[This.PrimaryTitle.GetID]) and [emf_spouse.GetBestName]."
+					event_target:emf_daughter = {
+						set_flag = emf_extra_daughter
+						if = {
+							limit = { PREV = { is_female = yes } }
+							set_mother = PREV
+						}
+						else = {
+							set_father = PREV
+						}
+						if = {
+							limit = { event_target:emf_spouse = { is_female = yes } }
+							set_mother = event_target:emf_spouse
+						}
+						else = {
+							set_father = event_target:emf_spouse
+						}
+					}
+					if = { # A twin!
+						limit = {
+							any_child_even_if_dead = {
+								NOR = {
+									# Not the new daughter:
+									character = event_target:emf_daughter
+									# Same age exactly:
+									is_older_than = event_target:emf_daughter
+									event_target:emf_daughter = { is_older_than = PREV }
+									# Not already a twin
+									trait = twin
+								}
+								# Same parents:
+								trigger_if = {
+									limit = { PREV = { is_female = yes } }
+									OR = {
+										father_even_if_dead = { is_parent_of = event_target:emf_daughter }
+										NOR = { # No dad. So sad.
+											father_even_if_dead = { always = yes }
+											event_target:emf_daughter = { father = { always = yes } }
+										}
+									}
+								}
+								trigger_else = {
+									OR = {
+										mother_even_if_dead = { is_parent_of = event_target:emf_daughter }
+										NOR = { # No mom.
+											mother_even_if_dead = { always = yes }
+											event_target:emf_daughter = { mother_even_if_dead = { always = yes } }
+										}
+									}
+								}
+							}
+						}
+						random_child_even_if_dead = { # "random_" instead of "any_" to make sure only one child is ever selected
+							limit = {
+								NOR = {
+									# Not the new daughter:
+									character = event_target:emf_daughter
+									# Same age exactly:
+									is_older_than = event_target:emf_daughter
+									event_target:emf_daughter = { is_older_than = PREV }
+									# Not already a twin
+									trait = twin
+								}
+								# Same parents:
+								trigger_if = {
+									limit = { PREV = { is_female = yes } }
+									OR = {
+										father_even_if_dead = { is_parent_of = event_target:emf_daughter }
+										NOR = { # No dad. So sad.
+											father_even_if_dead = { always = yes }
+											event_target:emf_daughter = { father = { always = yes } }
+										}
+									}
+								}
+								trigger_else = {
+									OR = {
+										mother_even_if_dead = { is_parent_of = event_target:emf_daughter }
+										NOR = { # No mom.
+											mother_even_if_dead = { always = yes }
+											event_target:emf_daughter = { mother_even_if_dead = { always = yes } }
+										}
+									}
+								}
+							}
+							add_trait = twin
+							log = "INFO: emf_startup.25: [This.GetBestName] (#[This.GetID]) is a twin as a result of daughter creation!"
+						}
+						event_target:emf_daughter = { add_trait = twin }
+					}
+					event_target:emf_daughter = {
+						if = {
+							limit = { emf_religion_has_castes = yes }
+							emf_copy_caste_from_PREV = yes
+						}
+						emf_new_character = yes
+					}
+					clear_event_target = emf_spouse
+				}
+				else = {
+					log = "ERROR: emf_startup.25: Tried to create extra daughter for [This.GetBestName] (#[This.GetID]/[This.PrimaryTitle.GetID]), aged [This.GetAgeYears], but no valid spouse parent was found. Daughter age: [emf_daughter.GetAgeYears]. Youngest possible spouse parent: [youngest_possible_spouse_parent.GetAgeYears]. Oldest possible spouse parent: [oldest_possible_spouse_parent.GetAgeYears]."
+					log = "---- Minimum age: [minimum_new_age.GetValue]. Maximum age: [maximum_new_age.GetValue]."
+					event_target:emf_daughter = { death = { death_reason = death_missing } }
+				}
+				clear_event_target = emf_daughter
+			}
+			else = {
+				log = "ERROR: emf_startup.25: Tried to create extra daughter for [This.GetBestName] (#[This.GetID]/[This.PrimaryTitle.GetID]), but minimum age ([minimum_new_age.GetValue]) is greater than maximum age ([maximum_new_age.GetValue]). Youngest possible spouse parent: [youngest_possible_spouse_parent.GetBestName], age [youngest_possible_spouse_parent.GetAgeYears]. Oldest possible spouse parent: [oldest_possible_spouse_parent.GetBestName], age [oldest_possible_spouse_parent.GetAgeYears]."
+			}
+			clear_event_target = oldest_possible_spouse_parent
 		}
-	}
-	if = {
-		limit = { NOT = { check_variable = { which = minimum_new_age which = maximum_new_age } } }
-		log = "INFO: emf_startup.25: ERROR: Tried to create extra daughter for [This.GetBestName] (#[This.GetID]/[Prev.PrimaryTitle.GetID]), but minimum age (#[minimum_new_age.GetValue]) is greater than maximum age (#[maximum_new_age.GetValue])."
-		break = yes
-	}
-	set_variable = { which = loop_count which = minimum_new_age }
-	set_variable = { which = target_age which = minimum_new_age }
-	while = {
-		limit = { NOT = { check_variable = { which = maximum_new_age which = loop_count } } }
-		change_variable = { which = loop_count value = 1 }
-		random = {
-			chance = 50
-			change_variable = { which = target_age value = 1 }
+		else = {
+			log = "ERROR: emf_startup.25: Tried to create extra daughter for [This.GetBestName] (#[This.GetID]/[This.PrimaryTitle.GetID]), but could not determine oldest possible spouse parent. Youngest possible spouse parent: [youngest_possible_spouse_parent.GetBestName], age [youngest_possible_spouse_parent.GetAgeYears]."
 		}
+		clear_event_target = youngest_possible_spouse_parent
 	}
-	set_variable = { which = loop_count value = 0 }
+	else = {
+		log = "ERROR: emf_startup.25: Tried to create extra daughter for [This.GetBestName] (#[This.GetID]/[This.PrimaryTitle.GetID]), but could not determine youngest possible spouse parent."
+	}
 	set_variable = { which = minimum_new_age value = 0 }
 	set_variable = { which = maximum_new_age value = 0 }
-	create_character = {
-		random_traits = yes
-		age = target_age
-		female = yes
-		culture = THIS
-		religion = THIS
-		dynasty = THIS
-	}
-	set_variable = { which = target_age value = 0 }
-	new_character = {
-		save_event_target_as = emf_daughter
-	}
-	random_spouse_even_if_dead = {
-		limit = {
-			could_be_parent_of = event_target:emf_daughter
-			is_opposite_sex = PREV # Ya never know.
-		}
-		preferred_limit = {
-			has_children = no
-			is_main_spouse = yes
-		}
-		save_event_target_as = emf_spouse
-	}
-	if = {
-		limit = { NOT = { event_target:emf_spouse = { always = yes } } }
-		log = "INFO: emf_startup.25: ERROR: Tried to create extra daughter for [This.GetBestName] (#[This.GetID]/[Prev.PrimaryTitle.GetID]), aged #[This.GetAgeYears], but no valid spouse parent was found. Daughter age: #[emf_daughter.GetAgeYears]. Youngest possible estimated possible spouse parent: #[youngest_possible_spouse_parent.GetAgeYears]. Oldest possible estimated possible spouse parent: #[oldest_possible_spouse_parent.GetAgeYears]."
-		clear_event_target = emf_daughter
-		clear_event_target = youngest_possible_spouse_parent
-		clear_event_target = oldest_possible_spouse_parent
-		break = yes
-	}
-	clear_event_target = youngest_possible_spouse_parent
-	clear_event_target = oldest_possible_spouse_parent
-	event_target:emf_daughter = {
-		log = "INFO: emf_startup.25: [This.GetBestName] (#[This.GetID]) created as extra daughter on startup for [Prev.GetBestName] (#[Prev.GetID]/[Prev.PrimaryTitle.GetID])"
-		set_flag = emf_extra_daughter
-		if = {
-			limit = { PREV = { is_female = yes } }
-			set_mother = PREV
-		}
-		else = {
-			set_father = PREV
-		}
-		if = {
-			limit = { event_target:emf_spouse = { is_female = yes } }
-			set_mother = event_target:emf_spouse
-		}
-		else = {
-			set_father = event_target:emf_spouse
-		}
-	}
-	if = { # A twin!
-		limit = {
-			any_child_even_if_dead = {
-				NOR = {
-					# Not the new daughter:
-					character = event_target:emf_daughter
-					# Same age exactly:
-					is_older_than = event_target:emf_daughter
-					event_target:emf_daughter = { is_older_than = PREV }
-					# Not already a twin
-					trait = twin
-				}
-				# Same parents:
-				trigger_if = {
-					limit = { PREV = { is_female = yes } }
-					OR = {
-						father_even_if_dead = { is_parent_of = event_target:emf_daughter }
-						NOR = { # No dad. So sad.
-							father_even_if_dead = { always = yes }
-							event_target:emf_daughter = { father = { always = yes } }
-						}
-					}
-				}
-				trigger_else = {
-					OR = {
-						mother_even_if_dead = { is_parent_of = event_target:emf_daughter }
-						NOR = { # No mom.
-							mother_even_if_dead = { always = yes }
-							event_target:emf_daughter = { mother_even_if_dead = { always = yes } }
-						}
-					}
-				}
-			}
-		}
-		random_child_even_if_dead = { # "random_" instead of "any_" to make sure only one child is ever selected
-			limit = {
-				NOR = {
-					# Not the new daughter:
-					character = event_target:emf_daughter
-					# Same age exactly:
-					is_older_than = event_target:emf_daughter
-					event_target:emf_daughter = { is_older_than = PREV }
-					# Not already a twin
-					trait = twin
-				}
-				# Same parents:
-				trigger_if = {
-					limit = { PREV = { is_female = yes } }
-					OR = {
-						father_even_if_dead = { is_parent_of = event_target:emf_daughter }
-						NOR = { # No dad. So sad.
-							father_even_if_dead = { always = yes }
-							event_target:emf_daughter = { father = { always = yes } }
-						}
-					}
-				}
-				trigger_else = {
-					OR = {
-						mother_even_if_dead = { is_parent_of = event_target:emf_daughter }
-						NOR = { # No mom.
-							mother_even_if_dead = { always = yes }
-							event_target:emf_daughter = { mother_even_if_dead = { always = yes } }
-						}
-					}
-				}
-			}
-			add_trait = twin
-			log = "INFO: emf_startup.25: [This.GetBestName] (#[This.GetID]) is a twin as a result of daughter creation!"
-		}
-		event_target:emf_daughter = { add_trait = twin }
-	}
-	event_target:emf_daughter = {
-		if = {
-			limit = { emf_religion_has_castes = yes }
-			emf_copy_caste_from_ROOT = yes
-		}
-		emf_new_character = yes
-	}
-	clear_event_target = emf_daughter
-	clear_event_target = emf_spouse
 }
