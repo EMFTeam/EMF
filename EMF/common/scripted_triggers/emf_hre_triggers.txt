@@ -75,14 +75,21 @@ emf_hre_theocratic_elector_potential = {
 		is_theocracy = yes
 		has_flag = needs_fake_feudal_government # Makes sure theocracy religion switch won't cause people to get fired
 	}
-	event_target:emf_global_hre = {
-		owner = {
-			religion = PREVPREV
-			NOT = { character = PREVPREV }
+	event_target:emf_global_hre = { owner = { religion = PREVPREV } }
+	emf_has_too_many_hre_elector_titles = no
+	any_dejure_liege = { title = event_target:emf_global_hre }
+	any_demesne_title = {
+		de_jure_liege_or_above = event_target:emf_global_hre
+		NOT = {
+			any_dejure_liege = {
+				emf_is_hre_elector_title = yes
+				OR = {
+					is_theocracy = yes
+					has_flag = needs_fake_feudal_government # Makes sure theocracy religion switch won't cause people to get fired
+				}
+			}
 		}
 	}
-	any_dejure_liege = { title = event_target:emf_global_hre }
-	any_demesne_title = { de_jure_liege_or_above = event_target:emf_global_hre }
 }
 
 emf_hre_secular_elector_potential = {
@@ -91,21 +98,34 @@ emf_hre_secular_elector_potential = {
 		is_feudal = yes
 		is_tribal = yes
 	}
-	event_target:emf_global_hre = {
-		owner = {
-			NOT = { character = PREVPREV }
+	emf_has_too_many_hre_elector_titles = no
+	OR = {
+		has_landed_title = event_target:emf_global_hre
+		AND = {
+			any_dejure_liege = { title = event_target:emf_global_hre }
+			any_demesne_title = {
+				higher_tier_than = BARON
+				de_jure_liege_or_above = event_target:emf_global_hre
+				NOT = {
+					any_dejure_liege = {
+						emf_is_hre_elector_title = yes
+						OR = {
+							is_feudal = yes
+							is_tribal = yes
+						}
+					}
+				}
+			}
 		}
-	}
-	any_dejure_liege = { title = event_target:emf_global_hre }
-	any_demesne_title = {
-		higher_tier_than = BARON
-		de_jure_liege_or_above = event_target:emf_global_hre
 	}
 }
 
 emf_is_valid_hre_elector_title = {
 	owner = {
-		any_dejure_liege = { title = event_target:emf_global_hre }
+		OR = {
+			has_landed_title = event_target:emf_global_hre
+			any_dejure_liege = { title = event_target:emf_global_hre }
+		}
 	}
 }
 
@@ -414,72 +434,69 @@ emf_is_valid_karling_usurper = {
 #### Decision to view HRE elector titles (exported here so the HRE and SER can use different icon flavors)
 
 emf_view_hre_elector_titles_potential = {
-	OR = {
-		event_target:emf_global_hre = {
-			has_holder = yes
-			succ_law_title = {
-				has_law = succ_hre_elective
-			}
-		}
+	trigger_if = {
+		limit = { has_global_flag = emf_debug_hre }
 		# Electors are maintained [silently] even if the succession law is not currently Princely Elective, so for
 		# debugging, we may still want to see them:
-		has_global_flag = emf_debug_hre
+		always = yes
 	}
-	OR = {
+	trigger_else = {
 		event_target:emf_global_hre = {
-			OR = {
-				# Relations to the Emperor:
-				owner = {
-					OR = {
-						character = ROOT # The emperor
-						is_liege_or_above_of = ROOT # Any of his realm
-						any_tributary = {
-							OR = {
-								character = ROOT # Any tribute
-								is_liege_or_above_of = ROOT # Any of his tribute's realm
+			has_holder = yes
+			succ_law_title = { has_law = succ_hre_elective }
+		}
+		OR = {
+			event_target:emf_global_hre = {
+				OR = {
+					# Relations to the Emperor:
+					owner = {
+						OR = {
+							character = ROOT # The emperor
+							is_liege_or_above_of = ROOT # Any of his realm
+							any_tributary = {
+								OR = {
+									character = ROOT # Any tribute
+									is_liege_or_above_of = ROOT # Any of his tribute's realm
+								}
 							}
-						}
-						suzerain = {
-							OR = {
-								character = ROOT # His suzerain
-								is_liege_or_above_of = ROOT # Any of his suzerain's realm
+							suzerain = {
+								OR = {
+									character = ROOT # His suzerain
+									is_liege_or_above_of = ROOT # Any of his suzerain's realm
+								}
 							}
+							religion_head = { character = ROOT } # His religion head
+							parent_religion_head = { character = ROOT } # His potential parent religion's head
 						}
-						religion_head = { character = ROOT } # His religion head
-						parent_religion_head = { character = ROOT } # His potential parent religion's head
+					}
+					# My realm has any provinces within the de jure HRE:
+					any_de_jure_vassal_title = {
+						tier = COUNT
+						owner_under_ROOT = yes
 					}
 				}
-				# My realm has any provinces within the de jure HRE:
-				any_de_jure_vassal_title = {
-					tier = COUNT
-					owner_under_ROOT = yes
-				}
 			}
-		}
-		# Being a potential elector (were we part of the HRE):
-		any_dejure_liege = { title = event_target:emf_global_hre }
-		# Any lieges being potential electors (were we part of the HRE):
-		any_liege = {
+			# Being a potential elector (were we part of the HRE):
 			any_dejure_liege = { title = event_target:emf_global_hre }
-		}
-		# Any realm lord that's actually an elector (elector's aren't necessarily de facto HRE):
-		any_realm_lord = {
-			emf_is_hre_elector = yes
-		}
-		# Anybody who has a capital in a duchy neighboring the de facto empire or de jure empire:
-		capital_scope = {
-			duchy = {
-				any_direct_de_jure_vassal_title = {
-					location = {
-						any_neighbor_province = {
-							OR = {
-								# De jure neighbor:
-								de_jure_liege_or_above = event_target:emf_global_hre
-								# De facto neighbor:
-								owner = {
-									OR = {
-										emf_has_hre = yes
-										is_vassal_or_below_of = event_target:emf_global_hre
+			# Any lieges being potential electors (were we part of the HRE):
+			any_liege = { any_dejure_liege = { title = event_target:emf_global_hre } }
+			# Any realm lord that's actually an elector (elector's aren't necessarily de facto HRE):
+			any_realm_lord = { emf_is_hre_elector = yes }
+			# Anybody who has a capital in a duchy neighboring the de facto empire or de jure empire:
+			capital_scope = {
+				duchy = {
+					any_direct_de_jure_vassal_title = {
+						location = {
+							any_neighbor_province = {
+								OR = {
+									# De jure neighbor:
+									de_jure_liege_or_above = event_target:emf_global_hre
+									# De facto neighbor:
+									owner = {
+										OR = {
+											emf_has_hre = yes
+											is_vassal_or_below_of = event_target:emf_global_hre
+										}
 									}
 								}
 							}
@@ -488,7 +505,6 @@ emf_view_hre_elector_titles_potential = {
 				}
 			}
 		}
-		has_global_flag = emf_debug_hre
 	}
 }
 

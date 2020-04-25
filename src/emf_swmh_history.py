@@ -314,7 +314,17 @@ changeset = {
     ],
     'e_hre': [
         ((962, 2, 2), 1, '''
-            effect = { set_variable = { which = "imperial_dynasty_count" value = 0 } }
+            effect = {
+                set_global_flag = emf_hre_restored
+                set_variable = { which = "imperial_dynasty_count" value = 0 }
+                save_persistent_event_target = { name = hre_title_1_per scope = d_koln }
+                save_persistent_event_target = { name = hre_title_2_per scope = d_mainz }
+                save_persistent_event_target = { name = hre_title_3_per scope = d_trier }
+                save_persistent_event_target = { name = hre_title_4_per scope = d_bavaria }
+                save_persistent_event_target = { name = hre_title_5_per scope = d_saxony }
+                save_persistent_event_target = { name = hre_title_6_per scope = d_franconia }
+                save_persistent_event_target = { name = hre_title_7_per scope = d_swabia }
+            }
             '''),
         ((973, 5, 7), 1, '''
             effect = { set_variable = { which = "imperial_dynasty_count" value = 1 } }
@@ -347,7 +357,10 @@ changeset = {
             effect = { set_variable = { which = "imperial_dynasty_count" value = 0 } }
             '''),
         ((1152, 2, 15), 1, '''
-            effect = { set_variable = { which = "imperial_dynasty_count" value = 1 } }
+            effect = {
+                set_variable = { which = "imperial_dynasty_count" value = 1 }
+                save_persistent_event_target = { name = hre_title_6_per scope = k_bohemia }
+            }
             '''),
         ((1190, 6, 10), 1, '''
             effect = { set_variable = { which = "imperial_dynasty_count" value = 2 } }
@@ -364,13 +377,49 @@ changeset = {
         ((1250, 12, 13), 1, '''
             effect = { set_variable = { which = "imperial_dynasty_count" value = 1 } }
             '''),
+        ((1253, 11, 29), 1, '''
+            effect = { save_persistent_event_target = { name = hre_title_4_per scope = d_pfalz } }
+            '''),
         ((1254, 5, 21), 1, '''
             effect = { set_variable = { which = "imperial_dynasty_count" value = 0 } }
             '''),
+        ((1268, 10, 29), 1, '''
+            effect = { save_persistent_event_target = { name = hre_title_7_per scope = d_brandenburg } }
+            '''),
         ((1272, 4, 2), 1, '''
-            effect = {
-                set_variable = { which = "imperial_decay" value = 30 }
-            }
+            effect = { set_variable = { which = "imperial_decay" value = 30 } }
+            '''),
+        ((1296, 1, 1), 1, '''
+            effect = { save_persistent_event_target = { name = hre_title_5_per scope = d_saxewittenberg } }
+            ''')
+    ],
+    'e_china_west_governor': [
+        ((618, 6, 18), 0, '''
+            effect = { set_coa = e_china_tang }
+            '''),
+        ((690, 10, 16), 0, '''
+            effect = { set_coa = e_china_zhou }
+            '''),
+        ((705, 12, 16), 0, '''
+            effect = { set_coa = e_china_tang }
+            '''),
+        ((907, 5, 12), 0, '''
+            effect = { reset_coa = THIS }
+            '''),
+        ((960, 2, 1), 0, '''
+            effect = { set_coa = e_china_song }
+            '''),
+        ((1005, 1, 1), 1, '''
+            effect = { set_coa = e_china_liao }
+            '''),
+        ((1125, 3, 26), 1, '''
+            effect = { set_coa = e_china_jin }
+            '''),
+        ((1234, 2, 10), 2, '''
+            effect = { set_coa = e_mongol_empire }
+            '''),
+        ((1264, 8, 21), 2, '''
+            effect = { set_coa = e_china_yuan }
             ''')
     ],
     'd_hashshashin': [
@@ -504,11 +553,27 @@ def main():
         if path.stem in changeset:
             changed = True
             for date, where, text in changeset[path.stem]:
-                try:
-                    tree[date].contents[where:where] = parser.parse(text).contents
-                except:
-                    print(path)
-                    raise
+                if date in tree.dictionary:
+                    try:
+                        tree[date].contents[where:where] = parser.parse(text).contents
+                    except:
+                        print(path)
+                        raise
+                else:
+                    pre_comments = []
+                    if (len(tree.dictionary) > 0):
+                        pre_comments = tree.contents[0].pre_comments
+                        tree.contents[0].pre_comments = []
+                    later_history = []
+                    for p in reversed(tree):
+                        if p.key.val >= date:
+                            tree.contents.remove(p)
+                            later_history.insert(0, p)
+                    (year, month, day) = date
+                    tree.contents.extend(parser.parse('\n' + str(year) + '.' + str(month) + '.' + str(day) + '= {\n' + text + '\n}\n').contents)
+                    tree.contents.extend(later_history)
+                    if (len(pre_comments) > 0):
+                        tree.contents[0].pre_comments = pre_comments
         elif path.stem == 'd_apostolic':
             for p in reversed(tree):
                 for p2 in reversed(p.value):
@@ -569,44 +634,6 @@ def main():
             tree[1000, 12, 25].contents[:0] = parser.parse('''
                 effect = { set_title_flag = ai_converted_catholic }
                 ''').contents
-        elif path.stem == 'e_china_west_governor':
-            changed = True
-            assert len(tree.contents) == 43
-            tree[1264, 8, 21].contents.extend(parser.parse('''
-                effect = { set_coa = e_china_yuan }
-                ''').contents)
-            tree[1234, 2, 10].contents.extend(parser.parse('''
-                effect = { set_coa = e_mongol_empire }
-                ''').contents)
-            tree[1125, 3, 26].contents.extend(parser.parse('''
-                effect = { set_coa = e_china_jin }
-                ''').contents)
-            tree[1005, 1, 1].contents.extend(parser.parse('''
-                effect = { set_coa = e_china_liao }
-                ''').contents)
-            tree.contents[11:11] = parser.parse('''
-                960.2.1 = {
-                    effect = { set_coa = e_china_song }
-                }
-                ''').contents
-            tree.contents[6:6] = parser.parse('''
-                907.5.12 = {
-                    effect = { reset_coa = THIS }
-                }
-                ''').contents
-            tree.contents[:0] = parser.parse('''
-                618.6.18 = {
-                    effect = { set_coa = e_china_tang }
-                }
-                690.10.16 = {
-                    effect = { set_coa = e_china_zhou }
-                }
-                705.12.16 = {
-                    effect = { set_coa = e_china_tang }
-                }
-                ''').contents
-            tree.contents[0].pre_comments = tree.contents[3].pre_comments
-            tree.contents[3].pre_comments = []
         for n, v in tree:
             # removes attached comments, eh, whatever
             bad = {p2 for p2 in v.contents
