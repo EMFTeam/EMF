@@ -525,6 +525,60 @@ character_event = {
 				ROOT = { change_variable = { which = "n_connected" value = 1 } }
 			}
 		}
+		
+		# Check for any provinces in the home region that are only connected through provinces outside it
+		while = {
+			limit = {
+				any_realm_province = {
+					NOT = { has_flag = emf_mongol_connected }
+					OR = {
+						AND = {
+							ROOT = { has_landed_title = e_golden_horde }
+							emf_golden_horde_province = yes
+						}
+						AND = {
+							ROOT = { has_landed_title = e_il-khanate }
+							emf_il_khanate_province = yes
+						}
+						AND = {
+							ROOT = { has_landed_title = e_chagatai }
+							emf_chagatai_province = yes
+						}
+					}
+					owner_under_ROOT = yes # need actual county ownership, not some stray barony
+					any_neighbor_province = {
+						owner_under_ROOT = yes
+						has_flag = emf_mongol_connected
+					}
+				}
+			}
+			any_realm_province = {
+				limit = {
+					NOT = { has_flag = emf_mongol_connected }
+					OR = {
+						AND = {
+							ROOT = { has_landed_title = e_golden_horde }
+							emf_golden_horde_province = yes
+						}
+						AND = {
+							ROOT = { has_landed_title = e_il-khanate }
+							emf_il_khanate_province = yes
+						}
+						AND = {
+							ROOT = { has_landed_title = e_chagatai }
+							emf_chagatai_province = yes
+						}
+					}
+					owner_under_ROOT = yes # need actual county ownership, not some stray barony
+					any_neighbor_province = {
+						owner_under_ROOT = yes
+						has_flag = emf_mongol_connected
+					}
+				}
+				set_flag = emf_mongol_connected
+				ROOT = { change_variable = { which = "n_connected" value = 1 } }
+			}
+		}
 
 		set_variable = { which = "n_disconnected" which = "n_total" }
 		subtract_variable = { which = "n_disconnected" which = "n_connected" }
@@ -2621,6 +2675,184 @@ character_event = {
 	is_triggered_only = yes
 
 	immediate = {
+		# First transfer vassals wholesale if possible instead of transfering county ownership directly
+		while = {
+			limit = {
+				any_realm_lord = {
+					higher_real_tier_than = BARON
+					is_patrician = no
+					is_nomadic = no
+					ai = yes
+					NOT = {
+						any_realm_province = {
+							owner_under_PREV = yes
+							has_flag = emf_mongol_connected
+						}
+					}
+					any_realm_province = {
+						owner_under_PREV = yes
+						any_neighbor_province = {
+							has_flag = emf_mongol_connected
+							owner_under_ROOT = no
+							owner = {
+								top_liege = {
+									OR = {
+										character = event_target:emf_mongol_heir_1
+										character = event_target:emf_mongol_heir_2
+										character = event_target:emf_mongol_heir_3
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			random_realm_lord = {
+				limit = {
+					higher_real_tier_than = BARON
+					is_patrician = no
+					is_nomadic = no
+					ai = yes
+					NOT = {
+						any_realm_province = {
+							owner_under_PREV = yes
+							has_flag = emf_mongol_connected
+						}
+					}
+					any_realm_province = {
+						owner_under_PREV = yes
+						any_neighbor_province = {
+							has_flag = emf_mongol_connected
+							owner_under_ROOT = no
+							owner = {
+								top_liege = {
+									OR = {
+										character = event_target:emf_mongol_heir_1
+										character = event_target:emf_mongol_heir_2
+										character = event_target:emf_mongol_heir_3
+									}
+								}
+							}
+						}
+					}
+				}
+				preferred_limit = {
+					real_tier = KING
+				}
+				preferred_limit = {
+					real_tier = DUKE
+				}
+				set_variable = { which = emf_num_provinces_bordering_mongol_heir_1 value = 0 }
+				set_variable = { which = emf_num_provinces_bordering_mongol_heir_2 value = 0 }
+				set_variable = { which = emf_num_provinces_bordering_mongol_heir_3 value = 0 }
+				any_realm_province = {
+					limit = {
+						owner_under_PREV = yes
+						any_neighbor_province = {
+							has_flag = emf_mongol_connected
+							owner_under_ROOT = no
+							owner = {
+								top_liege = {
+									OR = {
+										character = event_target:emf_mongol_heir_1
+										character = event_target:emf_mongol_heir_2
+										character = event_target:emf_mongol_heir_3
+									}
+								}
+							}
+						}
+					}
+					if = {
+						limit = {
+							any_neighbor_province = {
+								has_flag = emf_mongol_connected
+								owner_under_ROOT = no
+								owner = { top_liege = { character = event_target:emf_mongol_heir_1 } }
+							}
+						}
+						PREV = { change_variable = { which = emf_num_provinces_bordering_mongol_heir_1 value = 1 } }
+					}
+					if = {
+						limit = {
+							any_neighbor_province = {
+								has_flag = emf_mongol_connected
+								owner_under_ROOT = no
+								owner = { top_liege = { character = event_target:emf_mongol_heir_2 } }
+							}
+						}
+						PREV = { change_variable = { which = emf_num_provinces_bordering_mongol_heir_2 value = 1 } }
+					}
+					if = {
+						limit = {
+							any_neighbor_province = {
+								has_flag = emf_mongol_connected
+								owner_under_ROOT = no
+								owner = { top_liege = { character = event_target:emf_mongol_heir_3 } }
+							}
+						}
+						PREV = { change_variable = { which = emf_num_provinces_bordering_mongol_heir_3 value = 1 } }
+					}
+				}
+				if = {
+					limit = { check_variable = { which = emf_num_provinces_bordering_mongol_heir_1 which = emf_num_provinces_bordering_mongol_heir_2 } }
+					if = {
+						limit = { check_variable = { which = emf_num_provinces_bordering_mongol_heir_1 which = emf_num_provinces_bordering_mongol_heir_3 } }
+						event_target:emf_mongol_heir_1 = { save_event_target_as = loop_mongol_heir }
+					}
+					else = {
+						event_target:emf_mongol_heir_3 = { save_event_target_as = loop_mongol_heir }
+					}
+				}
+				else_if = {
+					limit = { check_variable = { which = emf_num_provinces_bordering_mongol_heir_2 which = emf_num_provinces_bordering_mongol_heir_3 } }
+					event_target:emf_mongol_heir_2 = { save_event_target_as = loop_mongol_heir }
+				}
+				else = {
+					event_target:emf_mongol_heir_3 = { save_event_target_as = loop_mongol_heir }
+				}
+				any_realm_province = {
+					limit = {
+						owner_under_PREV = yes
+						any_neighbor_province = {
+							has_flag = emf_mongol_connected
+							owner_under_ROOT = no
+							owner = { top_liege = { character = event_target:loop_mongol_heir } }
+						}
+					}
+					set_flag = emf_mongol_connected
+				}
+				while = {
+					limit = {
+						any_realm_province = {
+							owner_under_PREV = yes
+							NOT = { has_flag = emf_mongol_connected }
+							any_neighbor_province = {
+								has_flag = emf_mongol_connected
+								owner_under_PREVPREV = yes
+							}
+						}
+					}
+					any_realm_province = {
+						limit = {
+							owner_under_PREV = yes
+							NOT = { has_flag = emf_mongol_connected }
+							any_neighbor_province = {
+								has_flag = emf_mongol_connected
+								owner_under_PREVPREV = yes
+							}
+						}
+						set_flag = emf_mongol_connected
+					}
+				}
+				set_defacto_liege = event_target:loop_mongol_heir
+				emf_liege_change = yes
+				set_variable = { which = emf_num_provinces_bordering_mongol_heir_1 value = 0 }
+				set_variable = { which = emf_num_provinces_bordering_mongol_heir_2 value = 0 }
+				set_variable = { which = emf_num_provinces_bordering_mongol_heir_3 value = 0 }
+				clear_event_target = loop_mongol_heir
+			}
+		}
+		# Then transfer individual titles
 		while = {
 			limit = {
 				any_realm_title = {
