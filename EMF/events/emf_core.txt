@@ -1693,6 +1693,14 @@ character_event = {
 					}
 				}
 			}
+			if = { # Set flag for if the title is an HRE elector title here, for safety reasons and also to make sure things go smoothly if the character holds multiple, auto-destruction-eligible elector titles
+				limit = { emf_is_hre_elector_title = yes }
+				emf_remove_hre_elector_from_title = yes
+				ROOT = {
+					log = " ----> title is HRE elector title! Will need to assign new elector title to [This.EMF_GetDebugName] if they are still eligible"
+					set_flag = emf_needs_hre_elector_assignment
+				}
+			}
 			# DESTROY! RUIN! DEFUNCT!
 			if = {
 				limit = { emf_can_safely_autodestroy_title = yes }
@@ -1703,22 +1711,23 @@ character_event = {
 			}
 			set_flag = emf_autodestroy_defunct
 			set_flag = emf_defunct
-			# If the title destroyed was an HRE elector title, then try to select a new valid elector title from ROOT's
-			# demesne, and replace its PET slot in e_hre *if and only if* we fulfill the potential for being an HRE
-			# elector again.
-			if = { # Did the destruction cause us to no longer be an HRE elector, yet we're fit to be one?
-				limit = {
-					emf_is_hre_elector_title = yes # But it's no longer valid due to being unheld
-					ROOT = { emf_hre_elector_potential = yes }
-				}
-				# Then select a new elector title and replace an invalid slot in the elector title PET array:
-				ROOT = { emf_select_hre_elector_demesne_title = yes }
-				event_target:emf_new_elector_title = {
-					emf_replace_invalid_hre_elector_title = yes
-				}
-				clear_event_target = emf_former_elector_title # Probable product of replacement effect
-				clear_event_target = emf_new_elector_title
+		}
+		# If the title destroyed was an HRE elector title, then try to select a new valid elector title from ROOT's
+		# demesne, and replace its PET slot in e_hre *if and only if* we fulfill the potential for being an HRE
+		# elector again.
+		if = {
+			limit = {
+				has_flag = emf_needs_hre_elector_assignment
+				emf_hre_elector_potential = yes # will be False if ROOT is still an elector
 			}
+			clr_flag = emf_needs_hre_elector_assignment
+			# Then select a new elector title and replace an invalid slot in the elector title PET array:
+			emf_select_hre_elector_demesne_title = yes
+			event_target:emf_new_elector_title = {
+				emf_replace_invalid_hre_elector_title = yes
+			}
+			clear_event_target = emf_former_elector_title # Probable product of replacement effect
+			clear_event_target = emf_new_elector_title
 		}
 	}
 }
