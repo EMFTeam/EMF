@@ -313,6 +313,15 @@ changeset = {
             ''')
     ],
     'e_hre': [
+        ((773, 1, 1), 1, '''
+            effect = {
+                set_global_flag = saxon_wars
+                set_global_flag = irminsul
+            }
+        '''),
+        ((800, 12, 25), 2, '''
+            effect = { set_global_flag = charlemagne_hre }
+        '''),
         ((962, 2, 2), 1, '''
             effect = {
                 set_global_flag = emf_hre_restored
