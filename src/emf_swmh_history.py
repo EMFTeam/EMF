@@ -331,7 +331,7 @@ changeset = {
                 save_persistent_event_target = { name = hre_title_3_per scope = d_trier }
                 save_persistent_event_target = { name = hre_title_4_per scope = d_bavaria }
                 save_persistent_event_target = { name = hre_title_5_per scope = d_saxony }
-                save_persistent_event_target = { name = hre_title_6_per scope = d_franconia }
+                save_persistent_event_target = { name = hre_title_6_per scope = d_upper_lorraine } # Needed because d_franconia doesn't exist until 1056.10.5
                 save_persistent_event_target = { name = hre_title_7_per scope = d_swabia }
             }
             '''),
@@ -357,6 +357,7 @@ changeset = {
             effect = {
                 set_variable = { which = "imperial_decay" value = 10 }
                 set_variable = { which = "imperial_dynasty_count" value = 2 }
+                save_persistent_event_target = { name = hre_title_6_per scope = d_franconia }
             }
             '''),
         ((1106, 8, 7), 1, '''
