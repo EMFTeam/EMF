@@ -584,6 +584,23 @@ def main():
                     tree.contents.extend(later_history)
                     if (len(pre_comments) > 0):
                         tree.contents[0].pre_comments = pre_comments
+        elif path.stem == 'k_papal_state':
+            changed = True
+            # comment out the last item in the 1099.7.15 block (set_global_flag = muslim_jihads_unlocked)
+            assert len(tree[1099, 7, 15].contents) == 2
+            item = tree[1099, 7, 15].contents.pop()
+            comments = item.pre_comments
+            item.pre_comments = []
+            comments.extend([Comment(x) for x in item.inline_str(parser)[0].splitlines()])
+            tree[1099, 7, 15].ker.pre_comments[:0] = comments
+            # replace the flag for the Fourth Crusade with the one used in EMF
+            tree[1204, 5, 16].contents = parser.parse('''
+                set_global_flag = fourth_crusade_complete
+                ''').contents
+            for p in reversed(tree):
+                if p.key.val == (1099, 1, 1):
+                    tree.contents.remove(p)
+                    break
         elif path.stem == 'd_apostolic':
             for p in reversed(tree):
                 for p2 in reversed(p.value):
