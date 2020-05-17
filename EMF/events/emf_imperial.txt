@@ -123,8 +123,7 @@ character_event = {
 			limit = { event_target:viceroy_title = { has_flag = usurped_title } }
 			log = "emf_imperial.3202: [viceroy_title.GetFullName] ([viceroy_title.GetID]) has been usurped by [From.GetBestName] ([FROM.GetID]) in Imperial realm"
 		}
-		if = {
-			limit = { event_target:viceroy_title = { NOT = { has_flag = usurped_title } } }
+		else = {
 			log = "emf_imperial.3202: [viceroy_title.GetFullName] ([viceroy_title.GetID]) has been inherited by [From.GetBestName] ([FROM.GetID]) in Imperial realm"
 		}
 	}
@@ -657,7 +656,7 @@ letter_event = {
 			limit = { event_target:viceroy_title = { tier = DUKE } }
 			reverse_opinion = { who = FROM modifier = opinion_granted_duchy_vice_royalty }
 		}
-		if = {
+		else_if = {
 			limit = { event_target:viceroy_title = { tier = KING } }
 			reverse_opinion = { who = FROM modifier = opinion_granted_kingdom_vice_royalty }
 		}
@@ -1295,10 +1294,7 @@ character_event = {
 				event_target:former_viceroy = {
 					is_alive = yes
 					emf_imperial_valid_viceroy = yes
-					OR = {
-						NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
-						ROOT = { any_voter = { character = PREVPREV } }
-					}
+					NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
 				}
 			}
 			event_target:former_viceroy = {
@@ -1309,186 +1305,195 @@ character_event = {
 		if = {
 			limit = {
 				event_target:current_viceroy = {
+					is_alive = yes
 					emf_imperial_valid_viceroy = yes
-					OR = {
-						NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
-						ROOT = { any_voter = { character = PREVPREV } }
-					}
+					NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
 				}
 			}
 			event_target:current_viceroy = {
 				emf_imperial_save_viceroy_pick = yes
 			}
 		}
-		# Then check for someone that is friends/relative of someone on the council, or on the council, and nearby
-		random_playable_ruler = {
+		while = {
+			count = 3 # Just in case
 			limit = {
-				emf_imperial_close_viceroy = yes
-				NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
-				ROOT = {
-					any_voter = {
+				NAND = {
+					event_target:council_first_pick = { always = yes }
+					event_target:council_second_pick = { always = yes }
+					event_target:council_third_pick = { always = yes }
+				}
+				any_playable_ruler = {
+					emf_imperial_valid_viceroy = yes
+					NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
+				}
+			}
+			random_playable_ruler = {
+				limit = {
+					emf_imperial_valid_viceroy = yes
+					NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
+				}
+				# Then check for someone that is friends/relative of someone on the council, or on the council, and nearby
+				preferred_limit = {
+					any_realm_province = {
 						OR = {
-							character = PREVPREV
-							is_friend = PREVPREV
-							is_close_relative = PREVPREV
+							de_jure_liege_or_above = event_target:viceroy_title
+							any_neighbor_province = {
+								OR = {
+									duchy = { title = event_target:viceroy_title }
+									kingdom = { title = event_target:viceroy_title }
+								}
+							}
 						}
 					}
-				}
-			}
-			emf_imperial_save_viceroy_pick = yes
-		}
-		# Then expand criteria to someone with a strong claim on the title who a voter likes, and nearby
-		random_playable_ruler = {
-			limit = {
-				emf_imperial_close_viceroy = yes
-				NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
-				OR = {
 					ROOT = {
 						any_voter = {
 							OR = {
 								character = PREVPREV
+								is_lover = PREVPREV
 								is_friend = PREVPREV
 								is_close_relative = PREVPREV
+								is_aunt_uncle_of = PREVPREV
+								is_nibling_of = PREVPREV
+								is_cousin_of = PREVPREV
 							}
+							NOT = { is_foe = PREVPREV }
 						}
 					}
-					AND = {
-						has_strong_claim = event_target:viceroy_title
-						ROOT = { any_voter = { opinion = { who = PREVPREV value = 0 } } }
-					}
 				}
-			}
-			emf_imperial_save_viceroy_pick = yes
-		}
-		# Then expand criteria to anyone with a claim on the title who a voter likes, and nearby
-		random_playable_ruler = {
-			limit = {
-				emf_imperial_close_viceroy = yes
-				NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
-				OR = {
-					ROOT = {
-						any_voter = {
-							OR = {
-								dynasty = PREVPREV
-								character = PREVPREV
-								is_friend = PREVPREV
-								is_close_relative = PREVPREV
-							}
-						}
-					}
-					AND = {
-						has_claim = event_target:viceroy_title
-						ROOT = { any_voter = { opinion = { who = PREVPREV value = 0 } } }
-					}
-				}
-			}
-			emf_imperial_save_viceroy_pick = yes
-		}
-		# Then check for anyone qualified and nearby who at least one voter likes
-		random_playable_ruler = {
-			limit = {
-				emf_imperial_close_viceroy = yes
-				NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
-				ROOT = {
-					any_voter = {
-						opinion = { who = PREVPREV value = 20 }
-					}
-				}
-			}
-			emf_imperial_save_viceroy_pick = yes
-		}
-		# Then check for anyone qualified and nearby who isn't disliked by anyone
-		random_playable_ruler = {
-			limit = {
-				emf_imperial_close_viceroy = yes
-				NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
-			}
-			emf_imperial_save_viceroy_pick = yes
-		}
-		# Then check for someone that is friends/relative of someone on the council, or on the council
-		random_playable_ruler = {
-			limit = {
-				emf_imperial_valid_viceroy = yes
-				NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
-				ROOT = {
-					any_voter = {
+				# Then expand criteria to someone with a strong claim on the title who a voter likes, and nearby
+				preferred_limit = {
+					any_realm_province = {
 						OR = {
-							character = PREVPREV
-							is_friend = PREVPREV
-							is_close_relative = PREVPREV
+							de_jure_liege_or_above = event_target:viceroy_title
+							any_neighbor_province = {
+								OR = {
+									duchy = { title = event_target:viceroy_title }
+									kingdom = { title = event_target:viceroy_title }
+								}
+							}
+						}
+					}
+					has_strong_claim = event_target:viceroy_title
+					ROOT = { any_voter = { opinion = { who = PREVPREV value = 0 } } }
+				}
+				# Then expand criteria to anyone with a claim on the title who a voter likes, and nearby
+				preferred_limit = {
+					any_realm_province = {
+						OR = {
+							de_jure_liege_or_above = event_target:viceroy_title
+							any_neighbor_province = {
+								OR = {
+									duchy = { title = event_target:viceroy_title }
+									kingdom = { title = event_target:viceroy_title }
+								}
+							}
+						}
+					}
+					ROOT = {
+						OR = {
+							any_voter = {
+								OR = {
+									dynasty = PREVPREV
+									character = PREVPREV
+									is_lover = PREVPREV
+									is_friend = PREVPREV
+									is_close_relative = PREVPREV
+									is_aunt_uncle_of = PREVPREV
+									is_nibling_of = PREVPREV
+									is_cousin_of = PREVPREV
+								}
+								NOT = { is_foe = PREVPREV }
+							}
+							AND = {
+								has_claim = event_target:viceroy_title
+								ROOT = { any_voter = { opinion = { who = PREVPREV value = 0 } } }
+							}
 						}
 					}
 				}
-			}
-			emf_imperial_save_viceroy_pick = yes
-		}
-		# Then expand criteria to someone with a strong claim on the title who a voter likes
-		random_playable_ruler = {
-			limit = {
-				emf_imperial_valid_viceroy = yes
-				NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
-				OR = {
+				# Then check for anyone qualified and nearby who at least one voter likes
+				preferred_limit = {
+					any_realm_province = {
+						OR = {
+							de_jure_liege_or_above = event_target:viceroy_title
+							any_neighbor_province = {
+								OR = {
+									duchy = { title = event_target:viceroy_title }
+									kingdom = { title = event_target:viceroy_title }
+								}
+							}
+						}
+					}
+					ROOT = { any_voter = { opinion = { who = PREVPREV value = 20 } } }
+				}
+				# Then check for anyone qualified and nearby who isn't disliked by anyone
+				preferred_limit = {
+					any_realm_province = {
+						OR = {
+							de_jure_liege_or_above = event_target:viceroy_title
+							any_neighbor_province = {
+								OR = {
+									duchy = { title = event_target:viceroy_title }
+									kingdom = { title = event_target:viceroy_title }
+								}
+							}
+						}
+					}
+				}
+				# Then check for someone that is friends/relative of someone on the council, or on the council
+				preferred_limit = {
 					ROOT = {
 						any_voter = {
 							OR = {
 								character = PREVPREV
+								is_lover = PREVPREV
 								is_friend = PREVPREV
 								is_close_relative = PREVPREV
+								is_aunt_uncle_of = PREVPREV
+								is_nibling_of = PREVPREV
+								is_cousin_of = PREVPREV
 							}
+							NOT = { is_foe = PREVPREV }
 						}
 					}
-					AND = {
-						has_strong_claim = event_target:viceroy_title
-						ROOT = { any_voter = { opinion = { who = PREVPREV value = 0 } } }
-					}
 				}
-			}
-			emf_imperial_save_viceroy_pick = yes
-		}
-		# Then expand criteria to anyone with a claim on the title who a voter likes
-		random_playable_ruler = {
-			limit = {
-				emf_imperial_valid_viceroy = yes
-				NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
-				OR = {
+				# Then expand criteria to someone with a strong claim on the title who a voter likes
+				preferred_limit = {
+					has_strong_claim = event_target:viceroy_title
+					ROOT = { any_voter = { opinion = { who = PREVPREV value = 0 } } }
+				}
+				# Then expand criteria to anyone with a claim on the title who a voter likes
+				preferred_limit = {
 					ROOT = {
-						any_voter = {
-							OR = {
-								dynasty = PREVPREV
-								character = PREVPREV
-								is_friend = PREVPREV
-								is_close_relative = PREVPREV
+						OR = {
+							any_voter = {
+								OR = {
+									dynasty = PREVPREV
+									character = PREVPREV
+									is_lover = PREVPREV
+									is_friend = PREVPREV
+									is_close_relative = PREVPREV
+									is_aunt_uncle_of = PREVPREV
+									is_nibling_of = PREVPREV
+									is_cousin_of = PREVPREV
+								}
+								NOT = { is_foe = PREVPREV }
+							}
+							AND = {
+								has_claim = event_target:viceroy_title
+								ROOT = { any_voter = { opinion = { who = PREVPREV value = 0 } } }
 							}
 						}
 					}
-					AND = {
-						has_claim = event_target:viceroy_title
-						ROOT = { any_voter = { opinion = { who = PREVPREV value = 0 } } }
-					}
 				}
-			}
-			emf_imperial_save_viceroy_pick = yes
-		}
-		# Then check for anyone qualified who at least one voter likes
-		random_playable_ruler = {
-			limit = {
-				emf_imperial_valid_viceroy = yes
-				NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
-				ROOT = {
-					any_voter = {
-						opinion = { who = PREVPREV value = 20 }
-					}
+				# Then check for anyone qualified who at least one voter likes
+				preferred_limit = {
+					emf_imperial_close_viceroy = yes
+					ROOT = { any_voter = { opinion = { who = PREVPREV value = 20 } } }
 				}
+				# Finally check for anyone qualified who isn't disliked by anyone (no preferred_limit)
+				emf_imperial_save_viceroy_pick = yes
 			}
-			emf_imperial_save_viceroy_pick = yes
-		}
-		# Then check for anyone qualified who isn't disliked by anyone
-		random_playable_ruler = {
-			limit = {
-				emf_imperial_valid_viceroy = yes
-				NOT = { ROOT = { any_voter = { NOT = { opinion = { who = PREVPREV value = -20 } } } } }
-			}
-			emf_imperial_save_viceroy_pick = yes
 		}
 		# Failing that, the default is whoever holds the title now
 		if = {
@@ -1505,12 +1510,12 @@ character_event = {
 				OR = {
 					event_target:council_second_pick = { always = yes }
 					event_target:council_third_pick = { always = yes }
-					AND = {
-						event_target:viceroy_title = { tier = DUKE }
+					trigger_if = {
+						limit = { event_target:viceroy_title = { tier = DUKE } }
 						prestige = 200
 					}
-					AND = {
-						event_target:viceroy_title = { tier = KING }
+					trigger_else_if = {
+						limit = { event_target:viceroy_title = { tier = KING } }
 						prestige = 400
 					}
 				}
@@ -1523,12 +1528,12 @@ character_event = {
 				OR = {
 					event_target:council_second_pick = { always = yes }
 					event_target:council_third_pick = { always = yes }
-					AND = {
-						event_target:viceroy_title = { tier = DUKE }
+					trigger_if = {
+						limit = { event_target:viceroy_title = { tier = DUKE } }
 						prestige = 200
 					}
-					AND = {
-						event_target:viceroy_title = { tier = KING }
+					trigger_else_if = {
+						limit = { event_target:viceroy_title = { tier = KING } }
 						prestige = 400
 					}
 				}
@@ -1540,12 +1545,12 @@ character_event = {
 				NOR = {
 					event_target:council_second_pick = { always = yes }
 					event_target:council_third_pick = { always = yes }
-					AND = {
-						event_target:viceroy_title = { tier = DUKE }
+					trigger_if = {
+						limit = { event_target:viceroy_title = { tier = DUKE } }
 						prestige = 200
 					}
-					AND = {
-						event_target:viceroy_title = { tier = KING }
+					trigger_else_if = {
+						limit = { event_target:viceroy_title = { tier = KING } }
 						prestige = 400
 					}
 				}
@@ -1556,12 +1561,8 @@ character_event = {
 			limit = { event_target:council_first_pick = { character = event_target:current_viceroy } }
 			hidden_tooltip = { event_target:current_viceroy = { letter_event = { id = emf_imperial.3216 } } } #notify
 		}
-		if = {
-			limit = { NOT = { event_target:council_first_pick = { character = event_target:current_viceroy } } }
+		else = {
 			hidden_tooltip = { event_target:council_first_pick = { letter_event = { id = emf_imperial.3217 } } } #notify
-		}
-		if = {
-			limit = { NOT = { event_target:council_first_pick = { character = event_target:current_viceroy } } }
 			hidden_tooltip = { reverse_opinion = { who = event_target:current_viceroy modifier = opinion_outraged years = 20 } }
 			event_target:viceroy_title = {
 				set_flag = granted_by_liege
@@ -1572,7 +1573,7 @@ character_event = {
 			limit = { event_target:viceroy_title = { tier = DUKE } }
 			reverse_opinion = { who = event_target:council_first_pick modifier = opinion_granted_duchy_vice_royalty }
 		}
-		if = {
+		else_if = {
 			limit = { event_target:viceroy_title = { tier = KING } }
 			reverse_opinion = { who = event_target:council_first_pick modifier = opinion_granted_kingdom_vice_royalty }
 		}
@@ -1592,12 +1593,8 @@ character_event = {
 			limit = { event_target:council_second_pick = { character = event_target:current_viceroy } }
 			hidden_tooltip = { event_target:current_viceroy = { letter_event = { id = emf_imperial.3216 } } } #notify
 		}
-		if = {
-			limit = { NOT = { event_target:council_second_pick = { character = event_target:current_viceroy } } }
+		else = {
 			hidden_tooltip = { event_target:council_second_pick = { letter_event = { id = emf_imperial.3217 } } } #notify
-		}
-		if = {
-			limit = { NOT = { event_target:council_second_pick = { character = event_target:current_viceroy } } }
 			hidden_tooltip = { reverse_opinion = { who = event_target:current_viceroy modifier = opinion_outraged years = 20 } }
 			event_target:viceroy_title = {
 				set_flag = granted_by_liege
@@ -1608,7 +1605,7 @@ character_event = {
 			limit = { event_target:viceroy_title = { tier = DUKE } }
 			reverse_opinion = { who = event_target:council_second_pick modifier = opinion_granted_duchy_vice_royalty }
 		}
-		if = {
+		else_if = {
 			limit = { event_target:viceroy_title = { tier = KING } }
 			reverse_opinion = { who = event_target:council_second_pick modifier = opinion_granted_kingdom_vice_royalty }
 		}
@@ -1628,12 +1625,8 @@ character_event = {
 			limit = { event_target:council_third_pick = { character = event_target:current_viceroy } }
 			hidden_tooltip = { event_target:current_viceroy = { letter_event = { id = emf_imperial.3216 } } } #notify
 		}
-		if = {
-			limit = { NOT = { event_target:council_third_pick = { character = event_target:current_viceroy } } }
+		else = {
 			hidden_tooltip = { event_target:council_third_pick = { letter_event = { id = emf_imperial.3217 } } } #notify
-		}
-		if = {
-			limit = { NOT = { event_target:council_third_pick = { character = event_target:current_viceroy } } }
 			hidden_tooltip = { reverse_opinion = { who = event_target:current_viceroy modifier = opinion_outraged years = 20 } }
 			event_target:viceroy_title = {
 				set_flag = granted_by_liege
@@ -1644,7 +1637,7 @@ character_event = {
 			limit = { event_target:viceroy_title = { tier = DUKE } }
 			reverse_opinion = { who = event_target:council_third_pick modifier = opinion_granted_duchy_vice_royalty }
 		}
-		if = {
+		else_if = {
 			limit = { event_target:viceroy_title = { tier = KING } }
 			reverse_opinion = { who = event_target:council_third_pick modifier = opinion_granted_kingdom_vice_royalty }
 		}
@@ -1652,15 +1645,13 @@ character_event = {
 	option = {
 		name = EVTOPTD_emf_imperial_3215 #usurp title
 		trigger = {
-			OR = {
-				AND = {
-					event_target:viceroy_title = { tier = DUKE }
-					prestige = 200
-				}
-				AND = {
-					event_target:viceroy_title = { tier = KING }
-					prestige = 400
-				}
+			trigger_if = {
+				limit = { event_target:viceroy_title = { tier = DUKE } }
+				prestige = 200
+			}
+			trigger_else_if = {
+				limit = { event_target:viceroy_title = { tier = KING } }
+				prestige = 400
 			}
 		}
 		log = "---> emf_imperial.3215: [Root.GetBestName] has elected to keep the [viceroy_title.GetFullName] for [Root.GetHerHim]self"
@@ -1668,7 +1659,7 @@ character_event = {
 			limit = { event_target:viceroy_title = { tier = DUKE } }
 			prestige = -200
 		}
-		if = {
+		else_if = {
 			limit = { event_target:viceroy_title = { tier = KING } }
 			prestige = -400
 		}
@@ -2088,69 +2079,41 @@ character_event = {
 			higher_real_tier_than = COUNT
 			is_tribal = no
 			is_nomadic = no
-			religion = ROOT
+			emf_hostile_religion_to_PREV = no
 			has_regent = no
 			war = no
-			is_close_relative = ROOT
+			OR = {
+				is_close_relative = ROOT
+				is_aunt_uncle_of = ROOT
+				is_nibling_of = ROOT
+				is_cousin_of = ROOT
+			}
+			PREV = { emf_is_preferred_gender_for_laws_of_PREV = yes }
 		}
 		top_liege = {
 			real_tier = EMPEROR
 			is_tribal = no
 			is_nomadic = no
-			religion = ROOT
+			emf_hostile_religion_to_PREV = no
 			war = no
 			NOR = {
 				is_liege_of = ROOT
+				free_court_slots < -10
 				any_courtier = {
+					prisoner = no
 					is_ruler = no
 					count = 50
 				}
 			}
 		}
 		OR = {
-			is_female = no
-			AND = {
-				OR = {
-					is_married = no
-					is_married_matrilineally = yes
-				}
-				liege = {
-					OR = {
-						has_law = true_cognatic_succession
-						has_law = enatic_cognatic_succession
-						has_law = enatic_succession
-					}
-				}
-				top_liege = {
-					OR = {
-						has_law = true_cognatic_succession
-						has_law = enatic_cognatic_succession
-						has_law = enatic_succession
-					}
-				}
+			is_married = no
+			trigger_if = {
+				limit = { is_female = yes }
+				is_married_matrilineally = yes
 			}
-		}
-		OR = {
-			is_female = yes
-			AND = {
-				OR = {
-					is_married = no
-					is_married_matrilineally = no
-				}
-				liege = {
-					OR = {
-						has_law = true_cognatic_succession
-						has_law = cognatic_succession
-						has_law = agnatic_succession
-					}
-				}
-				top_liege = {
-					OR = {
-						has_law = true_cognatic_succession
-						has_law = cognatic_succession
-						has_law = agnatic_succession
-					}
-				}
+			trigger_else = {
+				is_married_matrilineally = no
 			}
 		}
 		OR = {
@@ -2163,6 +2126,7 @@ character_event = {
 			intrigue = 8
 		}
 		NOR = {
+			is_consort = yes
 			is_ill = yes
 			emf_is_voter = yes
 			trait = slothful
@@ -2179,8 +2143,12 @@ character_event = {
 				NOT = { trait = bastard }
 				is_adult = no
 			}
-			any_liege = { holy_order = yes }
-			any_liege = { mercenary = yes }
+			any_liege = {
+				OR = {
+					holy_order = yes
+					mercenary = yes
+				}
+			}
 			has_minor_title = title_appointed_regent
 			has_minor_title = title_commander
 			has_character_modifier = planning_claimant_adventure
@@ -2533,72 +2501,72 @@ character_event = {
 				remove_trait = intricate_webweaver
 				add_trait = elusive_shadow
 			}
-			if = {
+			else_if = {
 				limit = { trait = flamboyant_schemer }
 				remove_trait = flamboyant_schemer
 				add_trait = intricate_webweaver
 			}
-			if = {
+			else_if = {
 				limit = { trait = amateurish_plotter }
 				remove_trait = amateurish_plotter
 				add_trait = flamboyant_schemer
 			}
-			if = {
+			else_if = {
 				limit = { trait = charismatic_negotiator }
 				remove_trait = charismatic_negotiator
 				add_trait = grey_eminence
 			}
-			if = {
+			else_if = {
 				limit = { trait = underhanded_rogue }
 				remove_trait = underhanded_rogue
 				add_trait = charismatic_negotiator
 			}
-			if = {
+			else_if = {
 				limit = { trait = naive_appeaser }
 				remove_trait = naive_appeaser
 				add_trait = underhanded_rogue
 			}
-			if = {
+			else_if = {
 				limit = { trait = fortune_builder }
 				remove_trait = fortune_builder
 				add_trait = midas_touched
 			}
-			if = {
+			else_if = {
 				limit = { trait = thrifty_clerk }
 				remove_trait = thrifty_clerk
 				add_trait = fortune_builder
 			}
-			if = {
+			else_if = {
 				limit = { trait = indulgent_wastrel }
 				remove_trait = indulgent_wastrel
 				add_trait = thrifty_clerk
 			}
-			if = {
+			else_if = {
 				limit = { trait = skilled_tactician }
 				remove_trait = skilled_tactician
 				add_trait = brilliant_strategist
 			}
-			if = {
+			else_if = {
 				limit = { trait = tough_soldier }
 				remove_trait = tough_soldier
 				add_trait = skilled_tactician
 			}
-			if = {
+			else_if = {
 				limit = { trait = misguided_warrior }
 				remove_trait = misguided_warrior
 				add_trait = tough_soldier
 			}
-			if = {
+			else_if = {
 				limit = { trait = scholarly_theologian }
 				remove_trait = scholarly_theologian
 				add_trait = mastermind_theologian
 			}
-			if = {
+			else_if = {
 				limit = { trait = martial_cleric }
 				remove_trait = martial_cleric
 				add_trait = scholarly_theologian
 			}
-			if = {
+			else_if = {
 				limit = { trait = detached_priest }
 				remove_trait = detached_priest
 				add_trait = martial_cleric
@@ -2677,19 +2645,19 @@ character_event = {
 				limit = { has_education_intrigue_trigger = yes }
 				change_intrigue = 2
 			}
-			if = {
+			else_if = {
 				limit = { has_education_diplomacy_trigger = yes }
 				change_diplomacy = 2
 			}
-			if = {
+			else_if = {
 				limit = { has_education_stewardship_trigger = yes }
 				change_stewardship = 2
 			}
-			if = {
+			else_if = {
 				limit = { has_education_martial_trigger = yes }
 				change_martial = 2
 			}
-			if = {
+			else_if = {
 				limit = { has_education_learning_trigger = yes }
 				change_learning = 2
 			}
@@ -2760,19 +2728,19 @@ character_event = {
 				limit = { has_education_intrigue_trigger = yes }
 				add_trait = schemer
 			}
-			if = {
+			else_if = {
 				limit = { has_education_diplomacy_trigger = yes }
 				add_trait = socializer
 			}
-			if = {
+			else_if = {
 				limit = { has_education_stewardship_trigger = yes }
 				add_trait = administrator
 			}
-			if = {
+			else_if = {
 				limit = { has_education_martial_trigger = yes }
 				add_trait = duelist
 			}
-			if = {
+			else_if = {
 				limit = { has_education_learning_trigger = yes }
 				add_trait = theologian
 			}
@@ -2794,18 +2762,18 @@ character_event = {
 	has_character_flag = serving_empire
 
 	trigger = {
-		OR = {
-			is_female = no
-			trait = shieldmaiden
-			gender_equality_trigger = yes
-			has_religion_feature = religion_equal
-			has_religion_feature = religion_feature_bon
-			has_religion_feature = religion_matriarchal
-			religion = bon
-			AND = {
-				religion = bon_reformed
-				has_religion_features = no
+		trigger_if = {
+			limit = { is_female = yes }
+			OR = {
+				emf_feminist_religion = yes
+				AND = {
+					trait = shieldmaiden
+					emf_accepts_shieldmaidens = yes
+				}
 			}
+		}
+		trigger_else = {
+			NOT = { religion_scope = { has_religion_feature = religion_matriarchal } }
 		}
 		can_marry = yes
 		NOT = { trait = homosexual }
@@ -2854,7 +2822,7 @@ character_event = {
 						culture = THIS
 						religion = THIS
 						female = no
-						age = 17
+						age = 16
 					}
 				}
 				else = {
@@ -2863,11 +2831,30 @@ character_event = {
 						culture = THIS
 						religion = THIS
 						female = yes
-						age = 17
+						age = 16
 					}
 				}
-				new_character = {
-					save_event_target_as = new_spouse
+				new_character = { save_event_target_as = new_spouse }
+				if = {
+					limit = { FROM = { immortal = no } }
+					export_to_variable = {
+						which = emf_spouse_target_age
+						value = age
+						who = FROM
+					}
+					set_variable = { which = loop_count value = 16 }
+					while = {
+						limit = { NOT = { check_variable = { which = loop_count which = emf_spouse_target_age } } }
+						change_variable = { which = loop_count value = 1 }
+						random = {
+							chance = 50
+							event_target:emf_spouse = { add_age = 1 }
+						}
+					}
+				}
+				set_variable = { which = loop_count value = 0 }
+				set_variable = { which = emf_spouse_target_age value = 0 }
+				event_target:new_spouse = {
 					if = {
 						limit = { emf_religion_has_castes = yes }
 						emf_copy_caste_from_FROM = yes
@@ -3436,12 +3423,12 @@ character_event = {
 					}
 				}
 				random_dynasty_member = {
-					limit = { higher_tier_than = COUNT }
+					limit = { higher_real_tier_than = COUNT }
 					reverse_banish = PREV
 					break = yes
 				}
 				random_dynasty_member = {
-					limit = { higher_tier_than = BARON }
+					limit = { higher_real_tier_than = BARON }
 					reverse_banish = PREV
 					break = yes
 				}
@@ -3491,15 +3478,12 @@ character_event = {
 					NOT = { character = event_target:original_liege }
 				}
 			}
-			top_liege = {
-				ROOT = { move_character = PREV }
-			}
-			break = yes
+			top_liege = { ROOT = { move_character = PREV } }
 		}
 		#otherwise, return home immediately
-		clr_flag = serving_empire
-		event_target:original_liege = {
-			ROOT = { move_character = PREV }
+		else = {
+			clr_flag = serving_empire
+			event_target:original_liege = { ROOT = { move_character = PREV } }
 		}
 	}
 }
@@ -3523,13 +3507,7 @@ character_event = {
 		real_tier = EMPEROR
 		in_command = yes
 		NOT = { has_character_modifier = away_from_court }
-		capital_scope = {
-			ROOT = {
-				location = {
-					NOT = { province_id = PREVPREV }
-				}
-			}
-		}
+		capital_scope = { ROOT = { location = { NOT = { province_id = PREVPREV } } } }
 	}
 
 	mean_time_to_happen = {
@@ -3563,13 +3541,7 @@ character_event = {
 			NAND = {
 				in_command = yes
 				war = yes
-				capital_scope = {
-					ROOT = {
-						location = {
-							NOT = { province_id = PREVPREV }
-						}
-					}
-				}
+				capital_scope = { ROOT = { location = { NOT = { province_id = PREVPREV } } } }
 			}
 		}
 	}
@@ -3688,15 +3660,7 @@ character_event = {
 		}
 		modifier = {
 			factor = 0.75
-			NOT = {
-				plot_target_char = {
-					location = {
-						PREV = {
-							capital_scope = { province_id = PREVPREV }
-						}
-					}
-				}
-			}
+			NOT = { plot_target_char = { location = { PREV = { capital_scope = { province_id = PREVPREV } } } } }
 		}
 		modifier = {
 			factor = 0.5
@@ -3761,66 +3725,29 @@ character_event = {
 		clr_flag = captured_during_coup
 		clr_flag = coup_succeeds
 		if = {
-			limit = {
-				NOT = { plot_power = 1.0 }
-				plot_target_char = {
-					NOT = { has_character_modifier = away_from_court }
-				}
+			limit = { plot_target_char = { has_character_modifier = away_from_court } }
+			if = {
+				limit = { NOT = { plot_power = 1.0 } }
+				set_flag = chance_low_not_home
 			}
+			else_if = {
+				limit = { NOT = { plot_power = 2.0 } }
+				set_flag = chance_med_not_home
+			}
+			else = {
+				set_flag = chance_high_not_home
+			}
+		}
+		else_if = {
+			limit = { NOT = { plot_power = 1.0 } }
 			set_flag = chance_low_home
-			break = yes
 		}
-		if = {
-			limit = {
-				plot_power = 1.0
-				NOT = { plot_power = 2.0 }
-				plot_target_char = {
-					NOT = { has_character_modifier = away_from_court }
-				}
-			}
+		else_if = {
+			limit = { NOT = { plot_power = 2.0 } }
 			set_flag = chance_med_home
-			break = yes
 		}
-		if = {
-			limit = {
-				plot_power = 2.0
-				plot_target_char = {
-					NOT = { has_character_modifier = away_from_court }
-				}
-			}
+		else = {
 			set_flag = chance_high_home
-			break = yes
-		}
-		if = {
-			limit = {
-				NOT = { plot_power = 1.0 }
-				plot_target_char = {
-					has_character_modifier = away_from_court
-				}
-			}
-			set_flag = chance_low_not_home
-			break = yes
-		}
-		if = {
-			limit = {
-				plot_power = 1.0
-				NOT = { plot_power = 2.0 }
-				plot_target_char = {
-					has_character_modifier = away_from_court
-				}
-			}
-			set_flag = chance_med_not_home
-			break = yes
-		}
-		if = {
-			limit = {
-				plot_power = 2.0
-				plot_target_char = {
-					has_character_modifier = away_from_court
-				}
-			}
-			set_flag = chance_high_not_home
-			break = yes
 		}
 	}
 
@@ -4254,11 +4181,7 @@ character_event = {
 							in_command = no
 							event_target:coup_target = { war = no }
 						}
-						NOT = {
-							any_backed_character = {
-								character = ROOT
-							}
-						}
+						NOT = { any_backed_character = { character = ROOT } }
 					}
 					character_event = { id = emf_imperial.3348 } # Notification of coup start
 				}
@@ -4390,17 +4313,16 @@ character_event = {
 							primary_title = { save_event_target_as = usurped_title }
 							clr_flag = on_guard_coup
 							if = {
-								limit = { NOT = { has_character_modifier = away_from_court } }
+								limit = { has_character_modifier = away_from_court }
+								# Ruler is not in the capital during successful coup (days = 2)
+								character_event = { id = emf_imperial.3358 days = 2 }
+							}
+							else = {
 								random = {
 									chance = 50
 									# Ruler is injured/maimed/killed/captured in successful coup (days = 2)
 									character_event = { id = emf_imperial.3359 days = 2 }
 								}
-							}
-							if = {
-								limit = { has_character_modifier = away_from_court }
-								# Ruler is not in the capital during successful coup (days = 2)
-								character_event = { id = emf_imperial.3358 days = 2 }
 							}
 						}
 						random = {
@@ -4455,9 +4377,7 @@ character_event = {
 				}
 				modifier = {
 					factor = 0.8
-					plot_target_char = {
-						has_character_modifier = away_from_court
-					}
+					plot_target_char = { has_character_modifier = away_from_court }
 				}
 				custom_tooltip = {
 					text = COUP_FAILS
@@ -4465,17 +4385,16 @@ character_event = {
 						event_target:coup_target = {
 							clr_flag = on_guard_coup
 							if = {
-								limit = { NOT = { has_character_modifier = away_from_court } }
+								limit = { has_character_modifier = away_from_court }
+								# Ruler is not in the capital during failed coup (days = 2)
+								character_event = { id = emf_imperial.3356 days = 2 }
+							}
+							else = {
 								random = {
 									chance = 25
 									# Ruler is injured/maimed/killed in failed coup (days = 2)
 									character_event = { id = emf_imperial.3355 days = 2 }
 								}
-							}
-							if = {
-								limit = { has_character_modifier = away_from_court }
-								# Ruler is not in the capital during failed coup (days = 2)
-								character_event = { id = emf_imperial.3356 days = 2 }
 							}
 						}
 						random = {
@@ -4513,11 +4432,7 @@ character_event = {
 							in_command = no
 							event_target:coup_target = { war = no }
 						}
-						NOT = {
-							any_backed_character = {
-								character = ROOT
-							}
-						}
+						NOT = { any_backed_character = { character = ROOT } }
 					}
 					character_event = { id = emf_imperial.3347 days = 1 } # Assigning events during coup
 				}
@@ -4586,9 +4501,7 @@ character_event = {
 				}
 				modifier = {
 					factor = 0
-					event_target:coup_target = {
-						has_character_modifier = away_from_court
-					}
+					event_target:coup_target = { has_character_modifier = away_from_court }
 				}
 				# Co-conspirator comes to ruler's attention in failed coup
 				character_event = { id = emf_imperial.3353 }
@@ -4635,9 +4548,7 @@ character_event = {
 			3 = {
 				modifier = {
 					factor = 0
-					event_target:coup_target = {
-						has_character_modifier = away_from_court
-					}
+					event_target:coup_target = { has_character_modifier = away_from_court }
 				}
 				modifier = {
 					factor = 0
@@ -5483,11 +5394,12 @@ character_event = {
 			religion = ROOT
 		}
 		OR = {
-			is_female = no
-			liege = {
-				primary_title = {
-					has_law = status_of_women_4
-				}
+			trigger_if = {
+				limit = { is_female = yes }
+				female_can_hold_minor_title_trigger = yes
+			}
+			trigger_else = {
+				male_can_hold_minor_title_trigger = yes
 			}
 			AND = {
 				can_be_chancellor_trigger = yes
@@ -5519,7 +5431,14 @@ character_event = {
 					trait = flamboyant_schemer
 					trait = intricate_webweaver
 					trait = elusive_shadow
-
+				}
+			}
+			AND = {
+				can_be_spiritual_trigger = yes
+				OR = {
+					trait = martial_cleric
+					trait = scholarly_theologian
+					trait = mastermind_theologian
 				}
 			}
 		}
@@ -5603,9 +5522,8 @@ character_event = {
 			}
 			add_trait = imperial_guard
 			set_flag = is_imperial_guard
-			break = yes
 		}
-		if = {
+		else_if = {
 			limit = {
 				OR = {
 					trait = thrifty_clerk
@@ -5618,10 +5536,11 @@ character_event = {
 			}
 			add_trait = imperial_bureaucrat
 			set_flag = is_imperial_bureaucrat
-			break = yes
 		}
-		add_trait = imperial_courtier
-		set_flag = is_imperial_courtier
+		else = {
+			add_trait = imperial_courtier
+			set_flag = is_imperial_courtier
+		}
 	}
 }
 
@@ -5649,10 +5568,13 @@ character_event = {
 			is_nomadic = no
 			NOT = { dynasty = ROOT }
 			war = no
-			any_courtier = {
-				prisoner = no
-				is_ruler = no
-				count = 30
+			OR = {
+				free_court_slots <= 0
+				any_courtier = {
+					prisoner = no
+					is_ruler = no
+					count = 30
+				}
 			}
 		}
 		NOR = {
@@ -5675,17 +5597,22 @@ character_event = {
 				limit = {
 					higher_real_tier_than = COUNT
 					religion = ROOT
+					has_regent = no
+					reverse_opinion = { who = ROOT value = 0 }
+					NOT = { reverse_has_opinion_modifier = { who = ROOT modifier = opinion_disappointed } }
+					OR = {
+						NOT = { any_courtier = { has_job_title = job_treasurer } }
+						job_treasurer = {
+							NOT = { stewardship = ROOT }
+							NOT = { among_most_powerful_vassals = 4 }
+						}
+					}
+				}
+				preferred_limit = {
 					culture = ROOT
-					has_regent = no
-					reverse_opinion = { who = ROOT value = 0 }
-					NOT = { reverse_has_opinion_modifier = { who = ROOT modifier = opinion_disappointed } }
-					OR = {
-						NOT = { any_courtier = { has_job_title = job_treasurer } }
-						job_treasurer = {
-							NOT = { stewardship = ROOT }
-							NOT = { among_most_powerful_vassals = 4 }
-						}
-					}
+				}
+				preferred_limit = {
+					culture_group = ROOT
 				}
 				if = {
 					limit = { ai = yes }
@@ -5693,41 +5620,9 @@ character_event = {
 						move_character = PREV
 						clr_flag = is_imperial_bureaucrat
 					}
-					break = yes
 				}
-				if = {
-					limit = { ai = no }
+				else = {
 					letter_event = { id = emf_imperial.3369 }
-					break = yes
-				}
-			}
-			random_realm_lord = {
-				limit = {
-					higher_real_tier_than = COUNT
-					religion = ROOT
-					has_regent = no
-					reverse_opinion = { who = ROOT value = 0 }
-					NOT = { reverse_has_opinion_modifier = { who = ROOT modifier = opinion_disappointed } }
-					OR = {
-						NOT = { any_courtier = { has_job_title = job_treasurer } }
-						job_treasurer = {
-							NOT = { stewardship = ROOT }
-							NOT = { among_most_powerful_vassals = 4 }
-						}
-					}
-				}
-				if = {
-					limit = { ai = yes }
-					ROOT = {
-						move_character = PREV
-						clr_flag = is_imperial_bureaucrat
-					}
-					break = yes
-				}
-				if = {
-					limit = { ai = no }
-					letter_event = { id = emf_imperial.3369 }
-					break = yes
 				}
 			}
 		}
@@ -5751,12 +5646,14 @@ character_event = {
 		emf_is_voter = no
 		health = 4
 		OR = {
-			diplomacy = 8
-			intrigue = 8
-		}
-		OR = {
-			can_be_chancellor_trigger = yes
-			can_be_spymaster_trigger = yes
+			AND = {
+				diplomacy = 8
+				can_be_chancellor_trigger = yes
+			}
+			AND = {
+				intrigue = 8
+				can_be_spymaster_trigger = yes
+			}
 		}
 		liege = {
 			real_tier = EMPEROR
@@ -5764,10 +5661,13 @@ character_event = {
 			is_nomadic = no
 			NOT = { dynasty = ROOT }
 			war = no
-			any_courtier = {
-				prisoner = no
-				is_ruler = no
-				count = 30
+			OR = {
+				free_court_slots <= 0
+				any_courtier = {
+					prisoner = no
+					is_ruler = no
+					count = 30
+				}
 			}
 		}
 		NOR = {
@@ -5786,23 +5686,31 @@ character_event = {
 
 	immediate = {
 		if = {
-			limit = { can_be_spymaster_trigger = yes }
+			limit = {
+				intrigue = 8
+				can_be_spymaster_trigger = yes
+			}
 			liege = {
 				random_realm_lord = {
 					limit = {
 						higher_real_tier_than = COUNT
 						religion = ROOT
+						has_regent = no
+						reverse_opinion = { who = ROOT value = 0 }
+						NOT = { reverse_has_opinion_modifier = { who = ROOT modifier = opinion_disappointed } }
+						OR = {
+							NOT = { any_courtier = { has_job_title = job_spymaster } }
+							job_spymaster = {
+								NOT = { intrigue = ROOT }
+								NOT = { among_most_powerful_vassals = 4 }
+							}
+						}
+					}
+					preferred_limit = {
 						culture = ROOT
-						has_regent = no
-						reverse_opinion = { who = ROOT value = 0 }
-						NOT = { reverse_has_opinion_modifier = { who = ROOT modifier = opinion_disappointed } }
-						OR = {
-							NOT = { any_courtier = { has_job_title = job_spymaster } }
-							job_spymaster = {
-								NOT = { intrigue = ROOT }
-								NOT = { among_most_powerful_vassals = 4 }
-							}
-						}
+					}
+					preferred_limit = {
+						culture_group = ROOT
 					}
 					if = {
 						limit = { ai = yes }
@@ -5810,62 +5718,39 @@ character_event = {
 							move_character = PREV
 							clr_flag = is_imperial_courtier
 						}
-						break = yes
 					}
-					if = {
-						limit = { ai = no }
+					else = {
 						letter_event = { id = emf_imperial.3369 }
-						break = yes
 					}
-				}
-				random_realm_lord = {
-					limit = {
-						higher_real_tier_than = COUNT
-						religion = ROOT
-						has_regent = no
-						reverse_opinion = { who = ROOT value = 0 }
-						NOT = { reverse_has_opinion_modifier = { who = ROOT modifier = opinion_disappointed } }
-						OR = {
-							NOT = { any_courtier = { has_job_title = job_spymaster } }
-							job_spymaster = {
-								NOT = { intrigue = ROOT }
-								NOT = { among_most_powerful_vassals = 4 }
-							}
-						}
-					}
-					if = {
-						limit = { ai = yes }
-						ROOT = {
-							move_character = PREV
-							clr_flag = is_imperial_courtier
-						}
-						break = yes
-					}
-					if = {
-						limit = { ai = no }
-						letter_event = { id = emf_imperial.3369 }
-						break = yes
-					}
+					break = yes
 				}
 			}
 		}
 		if = {
-			limit = { can_be_chancellor_trigger = yes }
+			limit = {
+				diplomacy = 8
+				can_be_chancellor_trigger = yes
+			}
 			liege = {
 				random_realm_lord = {
 					limit = {
 						higher_real_tier_than = COUNT
 						religion = ROOT
+						has_regent = no
+						reverse_opinion = { who = ROOT value = 0 }
+						OR = {
+							NOT = { any_courtier = { has_job_title = job_chancellor } }
+							job_chancellor = {
+								NOT = { diplomacy = ROOT }
+								NOT = { among_most_powerful_vassals = 4 }
+							}
+						}
+					}
+					preferred_limit = {
 						culture = ROOT
-						has_regent = no
-						reverse_opinion = { who = ROOT value = 0 }
-						OR = {
-							NOT = { any_courtier = { has_job_title = job_chancellor } }
-							job_chancellor = {
-								NOT = { diplomacy = ROOT }
-								NOT = { among_most_powerful_vassals = 4 }
-							}
-						}
+					}
+					preferred_limit = {
+						culture_group = ROOT
 					}
 					if = {
 						limit = { ai = yes }
@@ -5873,40 +5758,9 @@ character_event = {
 							move_character = PREV
 							clr_flag = is_imperial_courtier
 						}
-						break = yes
 					}
-					if = {
-						limit = { ai = no }
+					else = {
 						letter_event = { id = emf_imperial.3369 }
-						break = yes
-					}
-				}
-				random_realm_lord = {
-					limit = {
-						higher_real_tier_than = COUNT
-						religion = ROOT
-						has_regent = no
-						reverse_opinion = { who = ROOT value = 0 }
-						OR = {
-							NOT = { any_courtier = { has_job_title = job_chancellor } }
-							job_chancellor = {
-								NOT = { diplomacy = ROOT }
-								NOT = { among_most_powerful_vassals = 4 }
-							}
-						}
-					}
-					if = {
-						limit = { ai = yes }
-						ROOT = {
-							move_character = PREV
-							clr_flag = is_imperial_courtier
-						}
-						break = yes
-					}
-					if = {
-						limit = { ai = no }
-						letter_event = { id = emf_imperial.3369 }
-						break = yes
 					}
 				}
 			}
@@ -5938,10 +5792,13 @@ character_event = {
 			is_nomadic = no
 			NOT = { dynasty = ROOT }
 			war = no
-			any_courtier = {
-				prisoner = no
-				is_ruler = no
-				count = 30
+			OR = {
+				free_court_slots <= 0
+				any_courtier = {
+					prisoner = no
+					is_ruler = no
+					count = 30
+				}
 			}
 		}
 		NOR = {
@@ -5964,17 +5821,22 @@ character_event = {
 				limit = {
 					higher_real_tier_than = COUNT
 					religion = ROOT
+					has_regent = no
+					reverse_opinion = { who = ROOT value = 0 }
+					NOT = { reverse_has_opinion_modifier = { who = ROOT modifier = opinion_disappointed } }
+					OR = {
+						NOT = { any_courtier = { has_job_title = job_marshal } }
+						job_marshal = {
+							NOT = { martial = ROOT }
+							NOT = { among_most_powerful_vassals = 4 }
+						}
+					}
+				}
+				preferred_limit = {
 					culture = ROOT
-					has_regent = no
-					reverse_opinion = { who = ROOT value = 0 }
-					NOT = { reverse_has_opinion_modifier = { who = ROOT modifier = opinion_disappointed } }
-					OR = {
-						NOT = { any_courtier = { has_job_title = job_marshal } }
-						job_marshal = {
-							NOT = { martial = ROOT }
-							NOT = { among_most_powerful_vassals = 4 }
-						}
-					}
+				}
+				preferred_limit = {
+					culture_group = ROOT
 				}
 				if = {
 					limit = { ai = yes }
@@ -5982,41 +5844,9 @@ character_event = {
 						move_character = PREV
 						clr_flag = is_imperial_guard
 					}
-					break = yes
 				}
-				if = {
-					limit = { ai = no }
+				else = {
 					letter_event = { id = emf_imperial.3369 }
-					break = yes
-				}
-			}
-			random_realm_lord = {
-				limit = {
-					higher_real_tier_than = COUNT
-					religion = ROOT
-					has_regent = no
-					reverse_opinion = { who = ROOT value = 0 }
-					NOT = { reverse_has_opinion_modifier = { who = ROOT modifier = opinion_disappointed } }
-					OR = {
-						NOT = { any_courtier = { has_job_title = job_marshal } }
-						job_marshal = {
-							NOT = { martial = ROOT }
-							NOT = { among_most_powerful_vassals = 4 }
-						}
-					}
-				}
-				if = {
-					limit = { ai = yes }
-					ROOT = {
-						move_character = PREV
-						clr_flag = is_imperial_guard
-					}
-					break = yes
-				}
-				if = {
-					limit = { ai = no }
-					letter_event = { id = emf_imperial.3369 }
-					break = yes
 				}
 			}
 		}
@@ -6478,19 +6308,15 @@ character_event = {
 					limit = { trait = deceitful }
 					wealth = 25
 				}
-				if = {
-					limit = {
-						NOT = { trait = honest }
-						NOT = { trait = deceitful }
-					}
+				else_if = {
+					limit = { NOT = { trait = honest } }
 					wealth = 10
 					random = {
 						chance = 50
 						add_trait = deceitful
 					}
 				}
-				if = {
-					limit = { trait = honest }
+				else = {
 					random = {
 						chance = 50
 						remove_trait = honest
@@ -6651,8 +6477,7 @@ character_event = {
 			opinion = { who = event_target:courtier modifier = opinion_very_grateful years = 5 }
 			reverse_opinion = { who = event_target:courtier modifier = opinion_very_grateful years = 5 }
 		}
-		if = {
-			limit = { NOT = { num_of_friends = 5 } }
+		else = {
 			add_friend = event_target:courtier
 		}
 		random_list = {
@@ -6872,13 +6697,7 @@ character_event = {
 			opinion = { who = event_target:first_courtier modifier = opinion_very_grateful years = 5 }
 			reverse_opinion = { who = event_target:first_courtier modifier = opinion_very_grateful years = 5 }
 		}
-		if = {
-			limit = {
-				NOR = {
-					num_of_friends = 5
-					is_friend = event_target:first_courtier
-				}
-			}
+		else = {
 			add_friend = event_target:first_courtier
 		}
 		if = {
@@ -6890,13 +6709,7 @@ character_event = {
 			}
 			reverse_opinion = { who = event_target:second_courtier modifier = opinion_hatred years = 5 }
 		}
-		if = {
-			limit = {
-				NOR = {
-					num_of_rivals = 5
-					is_rival = event_target:second_courtier
-				}
-			}
+		else = {
 			add_rival = event_target:second_courtier
 		}
 	}
@@ -6912,13 +6725,7 @@ character_event = {
 			opinion = { who = event_target:second_courtier modifier = opinion_very_grateful years = 5 }
 			reverse_opinion = { who = event_target:second_courtier modifier = opinion_very_grateful years = 5 }
 		}
-		if = {
-			limit = {
-				NOR = {
-					num_of_friends = 5
-					is_friend = event_target:second_courtier
-				}
-			}
+		else = {
 			add_friend = event_target:second_courtier
 		}
 		if = {
@@ -6930,13 +6737,7 @@ character_event = {
 			}
 			reverse_opinion = { who = event_target:first_courtier modifier = opinion_hatred years = 5 }
 		}
-		if = {
-			limit = {
-				NOR = {
-					num_of_rivals = 5
-					is_rival = event_target:first_courtier
-				}
-			}
+		else = {
 			add_rival = event_target:first_courtier
 		}
 	}
@@ -7556,4 +7357,3 @@ character_event = {
 		opinion = { who = FROM modifier = opinion_basileus_claimant months = 60 }
 	}
 }
-
