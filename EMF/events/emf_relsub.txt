@@ -779,6 +779,14 @@ long_character_event = {
 					has_flag = emf_relsub_tmp_heavy_approach
 					NOT = { had_flag = { flag = emf_relsub_tmp_heavy_approach days = 2 } }
 				}
+				trigger_if = {
+					limit = { has_dlc = "Zeus" }
+					primary_title = { has_law = ze_revokation_2 }
+				}
+				trigger_else = {
+					crownlaw_title = { has_law = revokation_2 }
+					event_target:emf_cb_loser = { de_jure_liege_or_above = ROOT }
+				}
 			}
 		}
 		ai_chance = {
@@ -1677,6 +1685,157 @@ character_event = {
 			else_if = {
 				limit = { has_flag = emf_relsub_disinherit_indian_group }
 				ROOT = { set_flag = emf_relsub_disinherit_indian_group }
+			}
+		}
+	}
+}
+
+# emf_relsub.53 -- If the new holder of a province or any liege has free religion revocation, apply default relsub modifier when conquering from an owner with its religion if the new owner is hostile to it
+character_event = {
+	id = emf_relsub.53
+	is_triggered_only = yes
+	hide_window = yes
+	
+	trigger = {
+		FROM = {
+			NOT = { has_flag = emf_relsub_tmp_take_title } # Don't do this is if we are taking the title through relsub, which already applies its modifiers
+			OR = {
+				tier = COUNT
+				AND = {
+					tier = BARON
+					location = { owner_under_ROOT = yes }
+				}
+			}
+			location = {
+				OR = {
+					religion = ROOT_FROMFROM
+					NOR = {
+						NOT = { religion_group = ROOT_FROMFROM }
+						is_heresy_of = ROOT_FROMFROM
+						is_parent_religion = ROOT_FROMFROM
+						ROOT_FROMFROM = { religion_scope = { has_flag = emf_hostile_within_group } }
+					}
+				}
+			}
+		}
+		trigger_if = {
+			limit = { has_dlc = "Zeus" } 
+			OR = {
+				AND = {
+					primary_title = { has_law = ze_revokation_2 }
+					FROM = {
+						location = {
+							NOT = { religion = ROOT }
+							OR = {
+								NOT = { religion_group = ROOT }
+								is_heresy_of = ROOT
+								is_parent_religion = ROOT
+								ROOT = { religion_scope = { has_flag = emf_hostile_within_group } }
+							}
+						}
+					}
+				}
+				any_liege = {
+					primary_title = { has_law = ze_revokation_2 }
+					FROM = {
+						location = {
+							NOT = { religion = PREVPREV }
+							OR = {
+								NOT = { religion_group = PREVPREV }
+								is_heresy_of = PREVPREV
+								is_parent_religion = PREVPREV
+								PREVPREV = { religion_scope = { has_flag = emf_hostile_within_group } }
+							}
+						}
+					}
+				}
+			}
+		}
+		trigger_else = {
+			FROM = { crownlaw_title = { has_law = revokation_2 } }
+			OR = {
+				FROM = {
+					location = {
+						NOT = { religion = ROOT }
+						OR = {
+							NOT = { religion_group = ROOT }
+							is_heresy_of = ROOT
+							is_parent_religion = ROOT
+							ROOT = { religion_scope = { has_flag = emf_hostile_within_group } }
+						}
+					}
+				}
+				any_liege = {
+					FROM = {
+						location = {
+							NOT = { religion = PREVPREV }
+							OR = {
+								NOT = { religion_group = PREVPREV }
+								is_heresy_of = PREVPREV
+								is_parent_religion = PREVPREV
+								PREVPREV = { religion_scope = { has_flag = emf_hostile_within_group } }
+							}
+						}
+					}
+				}
+			}			
+		}
+	}
+
+	immediate = {
+		FROM = {
+			location = {
+				# reset relsub penalties first
+				emf_relsub_reset_unrest = yes
+				# apply base modifier
+				add_province_modifier = {
+					modifier = emf_relsub_normal_unrest_base_modifier
+					years = 30
+				}
+				# apply a modifier for every barony owned in the location
+				any_province_holding = {
+					limit = {
+						tier = BARON
+						OR = {
+							AND = {
+								owner_under_ROOT = yes
+								OR = {
+									NOT = { has_dlc = "Zeus" }
+									ROOT = { primary_title = { has_law = ze_revokation_2 } }
+								}
+								location = {
+									NOT = { religion = ROOT }
+									OR = {
+										NOT = { religion_group = ROOT }
+										is_heresy_of = ROOT
+										is_parent_religion = ROOT
+										ROOT = { religion_scope = { has_flag = emf_hostile_within_group } }
+									}
+								}
+							}
+							owner = {
+								any_liege = {
+									OR = {
+										NOT = { has_dlc = "Zeus" }
+										primary_title = { has_law = ze_revokation_2 }
+									}
+									ROOT_FROM = {
+										location = {
+											NOT = { religion = PREVPREV }
+											OR = {
+												NOT = { religion_group = PREVPREV }
+												is_heresy_of = PREVPREV
+												is_parent_religion = PREVPREV
+												PREVPREV = { religion_scope = { has_flag = emf_hostile_within_group } }
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					PREV = { add_province_modifier = { name = emf_relsub_normal_unrest_modifier years = 20 stacking = yes } }
+				}
 			}
 		}
 	}
