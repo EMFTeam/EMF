@@ -1223,3 +1223,353 @@ narrative_event = {
 		}
 	}
 }
+
+# emf_religion.17 -- Overwrite vanilla caste assignment from mixed caste marriages so that the child follows their dynastic parent's caste
+character_event = {
+	id = emf_religion.17
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	trigger = {
+		emf_religion_has_castes = yes
+		# Parents of different caste
+		trigger_if = {
+			limit = { mother_even_if_dead = { trait = brahmin } }
+			father_even_if_dead = { NOT = { trait = brahmin } }
+		}
+		trigger_else_if = {
+			limit = { mother_even_if_dead = { trait = kshatriya } }
+			father_even_if_dead = { NOT = { trait = kshatriya } }
+		}
+		trigger_else_if = {
+			limit = { mother_even_if_dead = { trait = vaishya } }
+			father_even_if_dead = { NOT = { trait = vaishya } }
+		}
+		trigger_else = {
+			mother_even_if_dead = { always = yes } # Makes sure mother actually exists and so is casteless
+			father_even_if_dead = {
+				OR = {
+					trait = brahmin
+					trait = kshatriya
+					trait = vaishya
+				}
+			}
+		}
+	}
+	
+	immediate = {
+		remove_trait = brahmin
+		remove_trait = kshatriya
+		remove_trait = vaishya
+		mother_even_if_dead = { save_event_target_as = child_mother }
+		father_even_if_dead = { save_event_target_as = child_father }
+		# Follow marriage if this is a normal child of a marriage
+		if = {
+			limit = { event_target:child_father = { is_married = event_target:child_mother } }
+			if = {
+				limit = { event_target:child_mother = { is_married_matrilineally = no } }
+				event_target:child_father = { save_event_target_as = caste_source }
+			}
+			else = {
+				event_target:child_mother = { save_event_target_as = caste_source }
+			}
+		}
+		# Follow senior consort if this is a child of a concubinage
+		else_if = {
+			limit = { event_target:child_mother = { is_consort = event_target:child_father } }
+			event_target:child_father = { save_event_target_as = caste_source }
+		}
+		else_if = {
+			limit = { event_target:child_father = { is_consort = event_target:child_mother } }
+			event_target:child_mother = { save_event_target_as = caste_source }
+		}
+		# Same dynasty as only one parent, so just use that parent
+		else_if = {
+			limit = {
+				dynasty = event_target:child_father
+				NOT = { dynasty = event_target:child_mother }
+			}
+			event_target:child_father = { save_event_target_as = caste_source }
+		}
+		else_if = {
+			limit = {
+				dynasty = event_target:child_mother
+				NOT = { dynasty = event_target:child_father }
+			}
+			event_target:child_mother = { save_event_target_as = caste_source }
+		}
+		# Bastard or some other complex situation, use the same trigger as event id 301 (father decides what to do with bastard)
+		else_if = {
+			limit = {
+				event_target:child_father = {
+					event_target:child_mother = {
+						NOR = {
+							lower_tier_than = PREV #In case the mother is a higher tier ruler, she gets to decide what happens to the child.
+							AND = {
+								tier = PREV	# In case mother is same tier as real_father, real_father gets to claim the child provided that agnatic succession is in place.
+								NOR = {
+									has_law = enatic_succession
+									has_law = enatic_cognatic_succession
+									has_law = true_cognatic_succession
+								}
+							}
+						}
+					}
+				}
+			}
+			event_target:child_father = { save_event_target_as = caste_source }
+		}
+		else = {
+			event_target:child_mother = { save_event_target_as = caste_source }
+		}
+		# Copy caste from source
+		event_target:caste_source = { ROOT = { emf_copy_caste_from_PREV = yes } }
+	}
+}
+
+# emf_religion.18 -- Fill in the gaps on startup for characters with missing caste traits
+character_event = {
+	id = religion.18
+	
+	is_triggered_only = yes
+	hide_window = yes
+	
+	trigger = {
+		any_character = { emf_needs_caste_trait_at_startup = yes }
+	}
+	
+	immediate = {
+		# First pass: fill in rulers, their dynasty, spouses, and their dynasty based on holding types
+		any_independent_ruler = {
+			any_realm_character = {
+				limit = { emf_needs_caste_trait_at_startup = yes }
+				if = {
+					limit = { is_ruler = yes }
+					if = {
+						limit = { is_theocracy = yes }
+						add_trait = brahmin
+						any_dynasty_member = {
+							limit = {
+								is_landed = no
+								emf_needs_caste_trait_at_startup = yes
+								OR = {
+									is_vassal_or_below_of = PREV
+									NOT = { # Has a better liege whose caste should be copied
+										any_liege = {
+											dynasty = PREV
+											emf_needs_caste_trait_at_startup = yes
+										}
+									}
+								}
+							}
+							add_trait = brahmin
+						}
+					}
+					else_if = {
+						limit = { is_republic = yes }
+						add_trait = vaishya
+						any_dynasty_member = {
+							limit = {
+								is_ruler = no
+								emf_needs_caste_trait_at_startup = yes
+								OR = {
+									is_vassal_or_below_of = PREV
+									NOT = { # Has a better liege whose caste should be copied
+										any_liege = {
+											dynasty = PREV
+											emf_needs_caste_trait_at_startup = yes
+										}
+									}
+								}
+							}
+							add_trait = vaishya
+						}
+					}
+					else_if = {
+						limit = {
+							emf_can_hold_temples = yes
+							OR = {
+								has_education_learning_trigger = yes
+								NOT = {
+									any_demesne_title = {
+										OR = {
+											tier = COUNT
+											tier = BARON
+										}
+										NOT = { holding_type = temple }
+									}
+								}
+							}
+						}
+						add_trait = brahmin
+						any_dynasty_member = {
+							limit = {
+								is_landed = no
+								emf_needs_caste_trait_at_startup = yes
+								OR = {
+									is_vassal_or_below_of = PREV
+									NOT = { # Has a better liege whose caste should be copied
+										any_liege = {
+											dynasty = PREV
+											emf_needs_caste_trait_at_startup = yes
+										}
+									}
+								}
+							}
+							add_trait = brahmin
+						}
+					}
+					else = {
+						add_trait = kshatriya
+						any_dynasty_member = {
+							limit = {
+								is_ruler = no
+								emf_needs_caste_trait_at_startup = yes
+								OR = {
+									is_vassal_or_below_of = PREV
+									NOT = { # Has a better liege whose caste should be copied
+										any_liege = {
+											dynasty = PREV
+											emf_needs_caste_trait_at_startup = yes
+										}
+									}
+								}
+							}
+							add_trait = kshatriya
+						}
+					}
+				}
+				else_if = {
+					limit = {
+						any_spouse = { is_ruler = yes }
+						NOT = {
+							any_liege = { # Has a better liege whose caste should be copied
+								dynasty = PREV
+								emf_needs_caste_trait_at_startup = yes
+							}
+						}
+					}
+					random_spouse = {
+						limit = { is_ruler = yes }
+						preferred_limit = {
+							is_main_spouse = yes
+						}
+						save_event_target_as = target_spouse
+					}
+					if = {
+						limit = { event_target:target_spouse = { is_theocracy = yes } }
+						add_trait = brahmin
+						any_dynasty_member = {
+							limit = {
+								is_ruler = no
+								emf_needs_caste_trait_at_startup = yes
+								OR = {
+									is_vassal_or_below_of = event_target:target_spouse
+									NOT = { # Has a better liege whose caste should be copied
+										any_liege = {
+											dynasty = PREV
+											emf_needs_caste_trait_at_startup = yes
+										}
+									}
+								}
+							}
+							add_trait = brahmin
+						}
+					}
+					else_if = {
+						limit = { event_target:target_spouse = { is_republic = yes } }
+						add_trait = vaishya
+						any_dynasty_member = {
+							limit = {
+								is_ruler = no
+								emf_needs_caste_trait_at_startup = yes
+								OR = {
+									is_vassal_or_below_of = event_target:target_spouse
+									NOT = { # Has a better liege whose caste should be copied
+										any_liege = {
+											dynasty = PREV
+											emf_needs_caste_trait_at_startup = yes
+										}
+									}
+								}
+							}
+							add_trait = vaishya
+						}
+					}
+					else_if = {
+						limit = {
+							event_target:target_spouse = {
+								emf_can_hold_temples = yes
+								OR = {
+									has_education_learning_trigger = yes
+									NOT = {
+										any_demesne_title = {
+											OR = {
+												tier = COUNT
+												tier = BARON
+											}
+											NOT = { holding_type = temple }
+										}
+									}
+								}
+							}
+						}
+						add_trait = brahmin
+						any_dynasty_member = {
+							limit = {
+								is_ruler = no
+								emf_needs_caste_trait_at_startup = yes
+								OR = {
+									is_vassal_or_below_of = event_target:target_spouse
+									NOT = { # Has a better liege whose caste should be copied
+										any_liege = {
+											dynasty = PREV
+											emf_needs_caste_trait_at_startup = yes
+										}
+									}
+								}
+							}
+							add_trait = brahmin
+						}
+					}
+					else = {
+						limit = { event_target:target_spouse = { is_feudal = yes } }
+						add_trait = kshatriya
+						any_dynasty_member = {
+							limit = {
+								is_ruler = no
+								emf_needs_caste_trait_at_startup = yes
+								OR = {
+									is_vassal_or_below_of = event_target:target_spouse
+									NOT = { # Has a better liege whose caste should be copied
+										any_liege = {
+											dynasty = PREV
+											emf_needs_caste_trait_at_startup = yes
+										}
+									}
+								}
+							}
+							add_trait = kshatriya
+						}
+					}
+				}
+			}
+		}
+		# Second pass: only unlanded courtiers with no ruler or ruler consort dynasty members remain, so fill them in based on education
+		any_character = {
+			limit = { emf_needs_caste_trait_at_startup = yes }
+			if = {
+				limit = { has_education_learning_trigger = yes }
+				add_trait = brahmin
+			}
+			else_if = {
+				limit = { has_education_stewardship_trigger = yes }
+				add_trait = vaishya
+			}
+			else = {
+				add_trait = kshatriya
+			}
+		}
+	}
+}
