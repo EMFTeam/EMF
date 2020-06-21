@@ -437,140 +437,10 @@ character_event = {
 	ai = yes
 
 	trigger = {
-		# No females permitted to become cadets unless Gender Equality GR is set to Full
-		OR = {
-			is_female = no
-			has_game_rule = { name = gender value = all }
-		}
-		is_lowborn = no
-		is_ruler = no
-		NOR = {
-			# Not already a cadet & not a cadet that was later disqualified
-			has_flag = emf_cadet
-			has_flag = emf_disqualified_cadet
-			trait = bastard # Bastards create bastard dynasties -- not cadet dynasties
-			trigger_if = {
-				limit = { is_female = no }
-				is_married_matrilineally = yes # No matrilineally married males
-			}
-			trigger_else = {
-				# No females with regular marriages:
-				is_married = yes
-				NOT = { is_married_matrilineally = yes }
-			}
-			# Do not split cadet houses off the Seljuk dynasty until their AI Invasion Mission is complete, or it's
-			# 1100+, or Turkic Conquerors are disabled:
-			AND = {
-				emf_seljuk_dynasty = yes
-				NOT = { has_game_rule = { name = turkic_invasions value = off } }
-				OR = {
-					NOT = { has_global_flag = emf_seljuk_invasion_done }
-					year < 1100
-				}
-			}
-			# Cannot be heir to any title that's not a barony in someone else's capital county (emf_gavelkind would take
-			# their barony away anyway). Note if they were actually heir to the associated county, this would fail:
-			any_heir_title = {
-				NAND = {
-					tier = BARON
-					location = {
-						is_capital = yes
-						owner = {
-							higher_real_tier_than = COUNT
-							is_nomadic = no
-							is_merchant_republic = no
-							has_landed_title = PREVPREV
-						}
-					}
-				}
-				# Exemption for appointed successors to Bishoprics under Free Investiture (they'll be disqualified if they
-				# don't form a cadet house before ascending to the priesthood):
-				NOT = { succ_law_title = { has_law = succ_catholic_bishopric } }
-			}
-		}
-		# Must have an older sibling that could technically inherit:
-		OR = {
-			father_even_if_dead = {
-				dynasty = ROOT
-				any_child = {
-					NOT = { character = ROOT }
-					dynasty = PREV
-					is_older_than = ROOT
-					OR = {
-						is_female = no
-						has_game_rule = { name = gender value = all }
-					}
-					emf_can_inherit = yes
-				}
-			}
-			mother_even_if_dead = {
-				dynasty = ROOT
-				any_child = {
-					NOT = { character = ROOT }
-					dynasty = PREV
-					is_older_than = ROOT
-					OR = {
-						is_female = no
-						has_game_rule = { name = gender value = all }
-					}
-					emf_can_inherit = yes
-				}
-			}
-		}
-		dynasty_head = {
-			NOR = {
-				character = ROOT # Cadets are not dynasty heads.
-				# Has no marriage ties to cadet and none of cadet's children are close relatives of him:
-				ROOT = {
-					OR = {
-						any_child = {
-							is_close_relative = PREVPREV
-						}
-						any_spouse = {
-							is_close_relative = PREVPREV
-						}
-					}
-				}
-			}
-			trigger_if = {
-				limit = {
-					culture = ROOT
-					emf_same_basic_religion_as_ROOT = yes
-				}
-				# Since of same culture as dynasty head, neither cadet's parents nor himself should be close relatives of
-				# THIS dynasty_head.
-				NOR = {
-					is_close_relative = ROOT
-					#ROOT = {
-					#	OR = {
-					#		father_even_if_dead = {
-					#			is_close_relative = PREVPREV
-					#		}
-					#		mother_even_if_dead = {
-					#			is_close_relative = PREVPREV
-					#		}
-					#	}
-					#}
-				}
-			}
-			trigger_else_if = {
-				limit = {
-					emf_same_basic_religion_as_ROOT = yes
-				}
-				# Since of different culture as dynasty head, we only require that the dynasty head is neither the
-				# father nor the mother of the cadet.
-				NOR = {
-					is_father = ROOT
-					is_mother = ROOT
-				}
-			}
-			trigger_else = {
-				# This code branch is just documentation and could be removed. Since of a different religion (where that's
-				# defined as including heresies) and culture than dynasty_head, the dynasty_head has zero further restrictions
-				# upon relation to us.
-				always = yes
-			}
-		}
+		# Not already flagged as a possible cadet
+		NOT = { has_flag = emf_cadet }
+		# Make sure we are permitted to become a cadet
+		emf_is_cadet_disqualified = no
 		# Dynasty must have at least 30 other living members, unless the cadet is a legitimized bastard. Why the
 		# exception for legit bastards? We'd simply like to encourage them over others to break off and form their own
 		# cadet dynasties. We'd encourage actual bastards, but the hard-coded bastard dynasty "feature" (dynasty randomly
@@ -625,6 +495,7 @@ character_event = {
 	has_character_flag = emf_cadet
 
 	trigger = {
+		prestige = 500 # Makes sure this character is actually important enough to found a cadet dynasty
 		# Proper type of government and primary title:
 		OR = {
 			is_feudal = yes
@@ -641,6 +512,8 @@ character_event = {
 			}
 		}
 		emf_is_cadet_disqualified = no
+		# Must not have a temporary title of any kind:
+		emf_has_no_temporary_title = yes
 		# Avoid forming cadet dynasties with player dynastic progeny (players don't want to have their dynasty up and
 		# switched on them, although mechanically it's fine):
 		NOT = {
@@ -682,23 +555,6 @@ character_event = {
 
 	is_triggered_only = yes
 	hide_window = yes
-
-	trigger = {
-		# Cannot form a cadet dynasty with the same character twice in their lifetime:
-		NOT = { has_flag = emf_founded_cadet_dynasty }
-		# Can't be lowborn for this to work:
-		is_lowborn = no
-		# Bastard dynasties are a different thing than cadet dynasties (and the hard-coded dynasty change mechanics for
-		# the bastard trait would make creating a cadet dynasty pointless anyhow):
-		NOT = { trait = bastard }
-		# At least one of our parents has to share our own dynasty:
-		OR = {
-			father_even_if_dead = { dynasty = ROOT }
-			mother_even_if_dead = { dynasty = ROOT }
-		}
-		# Must not have a temporary title of any kind:
-		emf_has_no_temporary_title = yes
-	}
 
 	immediate = {
 		log = "DEBUG: emf_cadet.100: forming new cadet dynasty: [This.EMF_GetDebugName]"
