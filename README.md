@@ -1,4 +1,4 @@
-EMF - Spanish Translation (WIP)
+EMF
 ===
 
-Spanish localisation for HIP module Extended Mechanics &amp; Flavor
+Extended Mechanics &amp; Flavor
